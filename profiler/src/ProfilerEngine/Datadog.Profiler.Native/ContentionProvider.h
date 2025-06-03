@@ -28,6 +28,7 @@ class IFrameStore;
 class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
+class RawSampleTransformer;
 class SampleValueTypeProvider;
 
 
@@ -40,10 +41,7 @@ public:
         SampleValueTypeProvider& valueTypeProvider,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
-        IFrameStore* pFrameStore,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
+        RawSampleTransformer* rawSampleTransformer,
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,

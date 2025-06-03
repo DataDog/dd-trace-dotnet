@@ -404,7 +404,7 @@ namespace Datadog.Trace
                     // When apm tracing is disabled, only distributed traces with the `_dd.p.ts` tag (with a trace source)
                     // are propagated downstream, however we need 1 trace per minute sent to the backend, so
                     // we unset sampling priority so the rate limiter decides.
-                    if (Settings?.ApmTracingEnabledInternal == false)
+                    if (Settings?.ApmTracingEnabled == false)
                     {
                         // If the trace has appsec propagation tag, the default priority is user keep
                         samplingPriority = propagatedTags.HasTraceSources(TraceSources.Asm) ? SamplingPriorityValues.UserKeep : null;

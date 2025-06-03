@@ -1,0 +1,48 @@
+name: Auto delete hotfix branch after release
+# We run a scheduled nightly job on hotfix branches (same as master), but we don't need this after
+# doing a release, so delete the branch
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update_benchmark_branches:
+    # only run on "hotfix" releases, i.e releases that _don't_ end with .0
+    # i.e. run on 
+    # - 3.2.1
+    # - 4.1.2
+    # - 3.15.2-prerelease
+    # but not on
+    # - 3.2.0
+    # - 4.1.0
+    # - 3.15.0-prerelease
+    if: |
+      !endsWith(github.event.release.tag_name, '.0')
+      && !endsWith(github.event.release.tag_name, '.0-prerelease')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Creates and deletes branches
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '9.0.203'
+
+      - name: "Output current version"
+        id: versions
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
+
+      - name: "Configure Git Credentials"
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: "Delete old hotfix branch"
+        run: |
+          hotfix_branch=hotfix/${{ steps.versions.outputs.full_version }}
+          git push origin --delete $hotfix_branch;

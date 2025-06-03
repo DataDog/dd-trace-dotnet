@@ -269,8 +269,7 @@ namespace Datadog.Trace.TestHelpers
                            Trace.Ci.Tags.CommonTags.RuntimeName => new KeyValuePair<string, string>(kvp.Key, "RuntimeName"),
                            Trace.Ci.Tags.CommonTags.RuntimeVersion => new KeyValuePair<string, string>(kvp.Key, "RuntimeVersion"),
                            Trace.Ci.Tags.CommonTags.LibraryVersion => new KeyValuePair<string, string>(kvp.Key, "LibraryVersion"),
-                           // In CI, we build the samples separately, so can end up with additional prefix in the source file
-                           Trace.Ci.Tags.TestTags.SourceFile => new KeyValuePair<string, string>(kvp.Key, kvp.Value.Substring(kvp.Value.StartsWith(@"D:/a/1/s/") ? 9 : 0)),
+                           Trace.Ci.Tags.TestTags.SourceFile => new KeyValuePair<string, string>(kvp.Key, ScrubSourceFile(kvp.Value)),
                            Trace.Ci.Tags.TestTags.Command => new KeyValuePair<string, string>(kvp.Key, "Command"),
                            Trace.Ci.Tags.TestTags.CommandWorkingDirectory => new KeyValuePair<string, string>(kvp.Key, "CommandWorkingDirectory"),
                            Trace.Ci.Tags.TestTags.FrameworkVersion => new KeyValuePair<string, string>(kvp.Key, "FrameworkVersion"),
@@ -280,6 +279,17 @@ namespace Datadog.Trace.TestHelpers
                        })
                   .OrderBy(x => x.Key)
                   .ToDictionary(x => x.Key, x => x.Value);
+
+            // In CI, we build the samples separately, so can end up with additional prefixes in the source file, dependent on the build agent
+            static string ScrubSourceFile(string path) =>
+                path switch
+                {
+                    _ when path.StartsWith(@"D:/a/1/s/") => path.Substring(9),
+                    _ when path.StartsWith(@"D:/a/_work/1/s/") => path.Substring(15),
+                    _ when Environment.GetEnvironmentVariable("BUILD_REPOSITORY_LOCALPATH") is { Length: > 0 } x
+                        && path.StartsWith(x) => path.Substring(x.Length),
+                    _ => path,
+                };
         }
 
         public static Dictionary<string, double>? ScrubCIVisibilityMetrics(MockSpan span, Dictionary<string, double>? metrics) => ScrubCIVisibilityMetrics(metrics);

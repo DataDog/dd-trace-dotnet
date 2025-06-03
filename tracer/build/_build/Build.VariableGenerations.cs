@@ -11,21 +11,31 @@ using Nuke.Common.CI.AzurePipelines;
 using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.MSBuild;
 using NukeExtensions;
-using YamlDotNet.Serialization.NamingConventions;
 using Logger = Serilog.Log;
 
 partial class Build : NukeBuild
 {
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
+    private const string TracingDotnet = "@DataDog/tracing-dotnet";
+    private const string ASMDotnet = "@DataDog/asm-dotnet";
+    private const string DebuggerDotnet = "@DataDog/debugger-dotnet";
+    private const string ProfilerDotnet = "@DataDog/profiling-dotnet";
 
-    static private Dictionary<string, string> _isChangedTeam = new()
-            {
-                { "isAppSecChanged", "@DataDog/asm-dotnet" },
-                { "isTracerChanged", "@DataDog/tracing-dotnet" },
-                { "isDebuggerChanged", "@DataDog/debugger-dotnet" },
-                { "isProfilerChanged", "@DataDog/profiling-dotnet" }
-            };
+    class ChangedTeamValue
+    {
+        public string VariableName { get; set; }
+        public string TeamName { get; set; }
+        public bool IsChanged { get; set; }
+    }
+
+    static private ChangedTeamValue[] _changedTeamValue = new ChangedTeamValue[]
+    {
+        new ChangedTeamValue { VariableName = "isAsmChanged", TeamName = ASMDotnet},
+        new ChangedTeamValue { VariableName = "isTracerChanged", TeamName = TracingDotnet},
+        new ChangedTeamValue { VariableName = "isDebuggerChanged", TeamName = DebuggerDotnet},
+        new ChangedTeamValue { VariableName = "isProfilerChanged", TeamName = ProfilerDotnet},
+    };
 
     Target GenerateVariables
         => _ =>
@@ -44,20 +54,60 @@ partial class Build : NukeBuild
                        GenerateIntegrationTestsDebuggerArm64Matrices();
                    });
 
+            bool CommonTracerChanges(string[] changedFiles, CodeOwnersParser codeOwners)
+            {
+                // These folders are owned by @DataDog/tracing-dotnet but changes should not affect ASM functionality
+                string[] nonCommonDirectories = new[]
+                {
+                    "tracer/test/",
+                    "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/",
+                    "tracer/src/Datadog.Trace.", // Does not match the main tracer project
+                    "tracer/src/Datadog.Trace/Agent/",
+                    "tracer/src/Datadog.Trace/ContinuousProfiler/",
+                    "tracer/src/Datadog.Trace/Generated/",
+                    "tracer/src/Datadog.Trace/Logging/",
+                    "tracer/src/Datadog.Trace/OpenTelemetry/",
+                    "tracer/src/Datadog.Trace/PDBs/",
+                    "tracer/src/Datadog.Trace/LibDatadog/",
+                    "tracer/src/Datadog.Trace/FaultTolerant/",
+                    "tracer/src/Datadog.Trace/DogStatsd/",
+                };
+
+                // Directories that are not explicitelly owned by ASM but are common to both teams
+                string[] commonDirectories = new[]
+{
+                    "tracer/test/Datadog.Trace.TestHelpers/",
+                };
+
+                foreach (var file in changedFiles)
+                {
+                    if ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
+                        (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
+                        !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))
+                        ))
+                    {
+                        Logger.Information($"File {file} was detected as common.");
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
             void GenerateConditionVariables()
             {
                 CodeOwnersParser codeOwners = new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CodeOwners", "CODEOWNERS"));
 
-                foreach(var variableName in _isChangedTeam.Keys)
+                foreach(var changedTeamValue in _changedTeamValue)
                 {
-                    GenerateConditionVariableBasedOnGitChange(variableName, codeOwners);
+                    GenerateConditionVariableBasedOnGitChange(changedTeamValue, codeOwners);
                 }
 
-                void GenerateConditionVariableBasedOnGitChange(string variableName, CodeOwnersParser codeOwners)
+                void GenerateConditionVariableBasedOnGitChange(ChangedTeamValue changedTeamValue, CodeOwnersParser codeOwners)
                 {
                     var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
                     bool isChanged = false;
-                    var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
+                    var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{changedTeamValue.VariableName}";
 
                     if (Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
                     {
@@ -72,6 +122,7 @@ partial class Build : NukeBuild
                     else if(IsGitBaseBranch(baseBranch))
                     {
                         // on master, treat everything as having changed
+                        Logger.Information($"All tests will be launched (master branch).");
                         isChanged = true;
                     }
                     else
@@ -79,24 +130,30 @@ partial class Build : NukeBuild
                         var changedFiles = GetGitChangedFiles(baseBranch);
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
 
-                        var teamName = _isChangedTeam[variableName];
-                        foreach (var changedFile in changedFiles)
+                        if (changedTeamValue.TeamName == ASMDotnet && CommonTracerChanges(changedFiles, codeOwners))
                         {
-                            var match = codeOwners.Match("/" + changedFile);
-                            if (match?.Owners.Contains(teamName) == true)
+                            isChanged = true;
+                            Logger.Information($"ASM tests will be launched based on common changes.");
+                        }
+                        else
+                        {
+                            foreach (var changedFile in changedFiles)
                             {
-                                Logger.Information($"File {changedFile} is owned by {teamName}");
-                                isChanged = true;
-                                break;
+                                if (codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
+                                {
+                                    Logger.Information($"File {changedFile} is owned by {changedTeamValue.TeamName}");
+                                    isChanged = true;
+                                    break;
+                                }
                             }
                         }
                     }
 
-                    Logger.Information($"{variableName} - {isChanged}");
-
+                    Logger.Information($"{changedTeamValue.VariableName} - {isChanged}");
                     var variableValue = isChanged.ToString();
-                    EnvironmentInfo.SetVariable(variableName, variableValue);
-                    AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
+                    EnvironmentInfo.SetVariable(changedTeamValue.VariableName, variableValue);
+                    AzurePipelines.Instance.SetOutputVariable(changedTeamValue.VariableName, variableValue);
+                    changedTeamValue.IsChanged = isChanged;
                 }
             }
 
@@ -132,6 +189,17 @@ partial class Build : NukeBuild
                 }
             }
 
+            // We only call this method for the tracer and ASM areas
+            bool ShouldBeIncluded(string area)
+            {
+                if (area == AsmArea)
+                {
+                    return _changedTeamValue.First(x => x.TeamName == ASMDotnet).IsChanged;
+                }
+
+                return true;
+            }
+
             void GenerateIntegrationTestsWindowsMatrices()
             {
                 GenerateIntegrationTestsWindowsMatrix();
@@ -154,7 +222,10 @@ partial class Build : NukeBuild
                     {
                         foreach (var area in areas)
                         {
-                            matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, area = area });
+                            if (ShouldBeIncluded(area))
+                            {
+                                matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, area = area });
+                            }
                         }
                     }
                 }
@@ -235,7 +306,10 @@ partial class Build : NukeBuild
                         var enable32bit = targetPlatform == "x86";
                         foreach (var area in areas)
                         {
-                            matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit, area = area });
+                            if (ShouldBeIncluded(area))
+                            {
+                                matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit, area = area });
+                            }
                         }
                     }
                 }
@@ -298,7 +372,10 @@ partial class Build : NukeBuild
                             var areas = new[] { TracerArea, AsmArea };
                             foreach (var area in areas)
                             {
-                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                                if (ShouldBeIncluded(area))
+                                {
+                                    matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                                }
                             }
                         }
                     }
@@ -325,7 +402,14 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        if (ShouldBeIncluded(AsmArea))
+                        {
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        }
+                        else
+                        {
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = TracerArea });
+                        }
                     }
                 }
 

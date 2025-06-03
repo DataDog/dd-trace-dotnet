@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 
+//#define ETW_DEBUG_SESSION
 
 EtwEventsHandler::EtwEventsHandler()
     :
@@ -133,9 +134,11 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
             {
                 _pReceiver->OnEvent(timestamp, tid, version, keyword, level, id, userDataLength, pUserData);
 
+#ifdef ETW_DEBUG_SESSION
                 std::stringstream builder;
                 builder << "ETW event #" << eventsCount << " | " << keyword << " - " << id;
                 _logger->Info(builder.str());
+#endif
             }
 
             // fire and forget so no need to answer

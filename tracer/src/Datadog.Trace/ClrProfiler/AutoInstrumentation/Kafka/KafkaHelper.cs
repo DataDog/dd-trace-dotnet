@@ -353,5 +353,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 Log.Warning(ex, "There was a problem injecting headers into the Kafka record. Disabling Headers injection");
             }
         }
+
+        internal static void DisableHeadersIfUnsupportedBroker(Exception exception)
+        {
+            if (_headersInjectionEnabled && exception is not null && exception.Message.IndexOf("Unknown broker error", StringComparison.OrdinalIgnoreCase) != -1)
+            {
+                // If we get this exception, it likely means that the message format being used is pre-0.11
+                // We do not retry the failed message, we think this will have unnecessary complexity due to the likely rarity of this error
+                // We do not selectively disable headers injection, we disable it globally due to the likely rarity of this error
+                _headersInjectionEnabled = false;
+
+                Log.Error(exception, "Kafka Broker responded with UNKNOWN_SERVER_ERROR (-1). Please look at broker logs for more information. Tracer message header injection for Kafka is disabled.");
+            }
+        }
     }
 }

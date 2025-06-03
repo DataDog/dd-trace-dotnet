@@ -25,10 +25,18 @@ internal class CreatedumpCommand : Command
 {
     private const int SymbolNameMaxLength = 1024;
 
+    private const string EnvironmentForceCrash = "DD_INTERNAL_CRASHTRACKING_CRASH";
+    private const string EnvironmentPassThrough = "DD_INTERNAL_CRASHTRACKING_PASSTHROUGH";
+    private const string EnvironmentOutput = "DD_INTERNAL_CRASHTRACKING_OUTPUT";
+    private const string EnvironmentFilteringEnabled = "DD_CRASHTRACKING_FILTERING_ENABLED";
+    private const string EnvironmentLogToConsole = "DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE";
+
     private static readonly List<string> Errors = new();
     private static ClrRuntime? _runtime;
     private static DataTarget? _dataTarget;
     private static IntPtr _oldUnhandledExceptionFilter;
+
+    private static bool? _debugOutputEnabled;
 
     private readonly Argument<string[]> _allArguments = new("args");
 
@@ -191,16 +199,48 @@ internal class CreatedumpCommand : Command
         return false;
     }
 
+    private static void AddError(string error)
+    {
+        DebugPrint(error);
+        Errors.Add(error);
+    }
+
+    private static void DebugPrint(string message)
+    {
+        // Note: the debug output won't be visible on Windows.
+        // That's because crashtracking runs in a background process (WerFault.exe).
+        // If that becomes a concern, it's worth considering using OutputDebugString instead.
+        if (_debugOutputEnabled == null)
+        {
+            var value = Environment.GetEnvironmentVariable(EnvironmentLogToConsole);
+            if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) || value == "1")
+            {
+                _debugOutputEnabled = true;
+            }
+            else
+            {
+                _debugOutputEnabled = false;
+            }
+        }
+
+        if (_debugOutputEnabled == true)
+        {
+            AnsiConsole.WriteLine(message);
+        }
+    }
+
     [UnmanagedCallersOnly]
     private static unsafe int ResolveManagedCallstack(int threadId, IntPtr context, ResolveMethodData** managedCallstack, int* numberOfFrames)
     {
         try
         {
+            DebugPrint($"Resolving managed callstack for thread {threadId}");
+
             *numberOfFrames = 0;
 
             if (_runtime == null)
             {
-                Errors.Add("ClrRuntime is not initialized");
+                AddError("ClrRuntime is not initialized");
                 return 2;
             }
 
@@ -267,7 +307,7 @@ internal class CreatedumpCommand : Command
         }
         catch (Exception ex)
         {
-            Errors.Add($"Error while resolving method: {ex.Message}");
+            AddError($"Error while resolving method: {ex.Message}");
             return 3;
         }
     }
@@ -283,6 +323,8 @@ internal class CreatedumpCommand : Command
 
         // We're running managed code in a completely unsupported state, so keep the amount of work to an absolute minimum.
         _dataTarget?.Dispose();
+
+        DebugPrint("Unhandled native error");
 
         if (_oldUnhandledExceptionFilter != IntPtr.Zero)
         {
@@ -402,6 +444,8 @@ internal class CreatedumpCommand : Command
 
     private void Execute(InvocationContext context)
     {
+        DebugPrint($"dd-dotnet invoked with command-line: {Environment.CommandLine}");
+
         var allArguments = _allArguments.GetValue(context);
 
         try
@@ -412,11 +456,19 @@ internal class CreatedumpCommand : Command
                 {
                     GenerateCrashReport(pid, signal, crashThread);
                 }
+                else
+                {
+                    AddError($"Unable to parse the command-line arguments: {string.Join(" ", allArguments)}");
+                }
+            }
+            else
+            {
+                DebugPrint("Telemetry is disabled, not generating crash report");
             }
         }
         catch (Exception ex)
         {
-            Errors.Add($"Unexpected exception: {ex}");
+            AddError($"Unexpected exception: {ex}");
         }
         finally
         {
@@ -437,18 +489,30 @@ internal class CreatedumpCommand : Command
 
             // Note: if refactoring, make sure to dispose the ClrMD DataTarget before calling createdump,
             // otherwise the calls to ptrace from createdump will fail
-            if (Environment.GetEnvironmentVariable("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH") == "1")
+            if (Environment.GetEnvironmentVariable(EnvironmentPassThrough) == "1")
             {
                 if (allArguments.Length > 0)
                 {
                     InvokeCreatedump(allArguments[0]);
                 }
+                else
+                {
+                    DebugPrint("Unable to call createdump, missing arguments");
+                }
+            }
+            else
+            {
+                DebugPrint("No passthrough, exiting without calling createdump");
             }
         }
+
+        DebugPrint("dd-dotnet exited normally");
     }
 
     private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread)
     {
+        DebugPrint($"Generating crash report for pid {pid} (signal: {signal}, crashing thread id: {crashThread})");
+
         var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
         var profilerLibrary = $"Datadog.Profiler.Native.{extension}";
 
@@ -456,11 +520,13 @@ internal class CreatedumpCommand : Command
 
         try
         {
-            lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, profilerLibrary));
+            var path = Path.Combine(AppContext.BaseDirectory, profilerLibrary);
+            DebugPrint($"Loading native library {path}");
+            lib = NativeLibrary.Load(path);
         }
         catch (DllNotFoundException ex) when (ex.Message.Contains("GLIBC"))
         {
-            Errors.Add($"The GLIBC version is too old");
+            AddError("The GLIBC version is too old");
             return;
         }
 
@@ -468,7 +534,7 @@ internal class CreatedumpCommand : Command
 
         if (export == 0)
         {
-            Errors.Add("Failed to load the CreateCrashReport function");
+            AddError("Failed to load the CreateCrashReport function");
             return;
         }
 
@@ -480,6 +546,8 @@ internal class CreatedumpCommand : Command
             _oldUnhandledExceptionFilter = SetUnhandledExceptionFilter((IntPtr)unhandledExceptionFilter);
         }
 
+        DebugPrint($"Attaching to process {pid}");
+
         using var target = DataTarget.AttachToProcess(pid, suspend: true);
         _dataTarget = target;
         _runtime = target.ClrVersions[0].CreateRuntime();
@@ -490,7 +558,7 @@ internal class CreatedumpCommand : Command
 
         if (ptr == IntPtr.Zero)
         {
-            Errors.Add("Failed to create crash report");
+            AddError("Failed to create crash report");
             return;
         }
 
@@ -500,7 +568,7 @@ internal class CreatedumpCommand : Command
 
         if (result != 0)
         {
-            Errors.Add($"Failed to query interface: {result}");
+            AddError($"Failed to query interface: {result}");
             return;
         }
 
@@ -508,17 +576,18 @@ internal class CreatedumpCommand : Command
 
         try
         {
+            DebugPrint("Initializing crash report");
             crashReport.Initialize();
         }
         catch (Win32Exception ex)
         {
-            Errors.Add($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
+            AddError($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
             return;
         }
 
-        if (Environment.GetEnvironmentVariable("DD_INTERNAL_CRASHTRACKING_CRASH") == "1")
+        if (Environment.GetEnvironmentVariable(EnvironmentForceCrash) == "1")
         {
-            AnsiConsole.WriteLine("DD_INTERNAL_CRASHTRACKING_CRASH is set, crashing on purpose...");
+            AnsiConsole.WriteLine($"{EnvironmentForceCrash} is set, crashing on purpose...");
 
             try
             {
@@ -540,6 +609,7 @@ internal class CreatedumpCommand : Command
             if (firstThreadWithException != null)
             {
                 crashThread = (int)firstThreadWithException.OSThreadId;
+                DebugPrint($"Crashing thread is not set, using the first thread with an exception: {crashThread}");
             }
         }
 
@@ -558,12 +628,13 @@ internal class CreatedumpCommand : Command
 
         try
         {
+            DebugPrint("Resolving callstacks");
             var callback = (delegate* unmanaged<int, IntPtr, ResolveMethodData**, int*, int>)&ResolveManagedCallstack;
             crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
         }
         catch (Win32Exception ex)
         {
-            Errors.Add($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
+            AddError($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
             return;
         }
         finally
@@ -574,6 +645,11 @@ internal class CreatedumpCommand : Command
             {
                 NativeMemory.Free((void*)nativeMemory);
             }
+        }
+
+        if (isSuspicious)
+        {
+            DebugPrint("Found a suspicious frame");
         }
 
         if (!isSuspicious && exception != null)
@@ -598,20 +674,30 @@ internal class CreatedumpCommand : Command
                 isSuspicious = exception.Message?.Contains("datadog", StringComparison.OrdinalIgnoreCase) == true
                     || exception.StackTrace.Any(f => f.Method != null && IsMethodSuspicious(f.Method));
             }
+
+            if (isSuspicious)
+            {
+                DebugPrint($"Found a suspicious exception: {exceptionType}");
+            }
+            else
+            {
+                DebugPrint("Found no suspicious exception");
+            }
         }
 
         if (!isSuspicious)
         {
-            var filteringEnabled = Environment.GetEnvironmentVariable("DD_CRASHTRACKING_FILTERING_ENABLED") ?? string.Empty;
+            var filteringEnabled = Environment.GetEnvironmentVariable(EnvironmentFilteringEnabled) ?? string.Empty;
 
             if (filteringEnabled == "0"
                 || filteringEnabled.Equals("false", StringComparison.OrdinalIgnoreCase)
                 || filteringEnabled.Equals("off", StringComparison.OrdinalIgnoreCase))
             {
-                AnsiConsole.WriteLine("Datadog - The crash is not suspicious, but filtering has been disabled with DD_CRASHTRACKING_FILTERING_ENABLED, sending crash report...");
+                AnsiConsole.WriteLine($"Datadog - The crash is not suspicious, but filtering has been disabled with {EnvironmentFilteringEnabled}, sending crash report...");
             }
             else
             {
+                DebugPrint("The crash is not suspicious, not sending crash report");
                 return;
             }
         }
@@ -622,14 +708,16 @@ internal class CreatedumpCommand : Command
 
         if (signal.HasValue)
         {
+            DebugPrint("Adding signal information to the crash report");
             _ = SetSignal(crashReport, signal.Value);
         }
 
+        DebugPrint("Setting crash report metadata");
         _ = SetMetadata(crashReport, _runtime, exception);
 
         try
         {
-            var outputFile = Environment.GetEnvironmentVariable("DD_INTERNAL_CRASHTRACKING_OUTPUT");
+            var outputFile = Environment.GetEnvironmentVariable(EnvironmentOutput);
 
             if (!string.IsNullOrEmpty(outputFile))
             {
@@ -651,16 +739,18 @@ internal class CreatedumpCommand : Command
             }
             else
             {
+                DebugPrint("Sending crash report");
                 crashReport.Send();
             }
         }
         catch (Win32Exception ex)
         {
-            Errors.Add($"Failed to send crash report: {GetLastError(crashReport, ex)}");
+            AddError($"Failed to send crash report: {GetLastError(crashReport, ex)}");
             return;
         }
 
         AnsiConsole.WriteLine("Datadog - Crash report sent successfully");
+        DebugPrint("Crash report generated successfully");
     }
 
     private void InvokeCreatedump(string createdumpPath)
@@ -676,8 +766,13 @@ internal class CreatedumpCommand : Command
             }
             else
             {
+                DebugPrint($"Calling createdump with arguments: {string.Join(" ", commandLineArgs[2..])}");
                 System.Diagnostics.Process.Start(commandLineArgs[2], commandLineArgs[3..]).WaitForExit();
             }
+        }
+        else
+        {
+            DebugPrint($"Unable to call createdump, file not found: {createdumpPath}");
         }
     }
 
@@ -707,7 +802,7 @@ internal class CreatedumpCommand : Command
         }
         catch (Win32Exception ex)
         {
-            Errors.Add($"Failed to set signal info: {GetLastError(crashReport, ex)}");
+            AddError($"Failed to set signal info: {GetLastError(crashReport, ex)}");
             return false;
         }
 
@@ -796,7 +891,7 @@ internal class CreatedumpCommand : Command
             }
             catch (Win32Exception ex)
             {
-                Errors.Add($"Failed to set metadata: {GetLastError(crashReport, ex)}");
+                AddError($"Failed to set metadata: {GetLastError(crashReport, ex)}");
                 return false;
             }
 

@@ -81,11 +81,18 @@ internal partial class MainViewModel
                 }
             }
 
+            if (methodDef.DeclaringType.IsInterface && methodDef.DeclaringType.HasGenericParameters)
+            {
+                SourceCode = "// Generics Interfaces are not supported by CallTarget.";
+                return;
+            }
+
             var integrationSourceBuilder = new StringBuilder(ResourceLoader.LoadResource("Integration.cs"));
             integrationSourceBuilder.Replace("$(Filename)", EditorHelper.GetFileName(methodDef));
             integrationSourceBuilder.Replace("$(Namespace)", EditorHelper.GetNamespace(methodDef));
             integrationSourceBuilder.Replace("$(FullName)", EditorHelper.GetMethodFullNameForComments(methodDef));
             integrationSourceBuilder.Replace("$(AssemblyName)", methodDef.DeclaringType.DefinitionAssembly.Name);
+
             if (methodDef.DeclaringType.IsNested)
             {
                 integrationSourceBuilder.Replace(
@@ -103,7 +110,16 @@ internal partial class MainViewModel
             integrationSourceBuilder.Replace("$(MinimumVersion)", EditorHelper.GetMinimumVersion(methodDef));
             integrationSourceBuilder.Replace("$(MaximumVersion)", EditorHelper.GetMaximumVersion(methodDef));
             integrationSourceBuilder.Replace("$(IntegrationClassName)", EditorHelper.GetIntegrationClassName(methodDef));
-            integrationSourceBuilder.Replace("$(IntegrationName)", EditorHelper.GetIntegrationName(methodDef));
+            integrationSourceBuilder.Replace("$(IntegrationValue)", EditorHelper.GetIntegrationValue(methodDef));
+
+            if (methodDef.DeclaringType.IsInterface)
+            {
+                integrationSourceBuilder.Replace("$(IntegrationKind)", $",{Environment.NewLine}    CallTargetIntegrationKind = CallTargetKind.Interface");
+            }
+            else
+            {
+                integrationSourceBuilder.Replace("$(IntegrationKind)", string.Empty);
+            }
 
             var isStatic = methodDef.IsStatic;
             var isVoid = !methodDef.HasReturnType;
@@ -232,7 +248,7 @@ internal partial class MainViewModel
         onMethodBeginSourceBuilder.Replace("$(TArgsTypesParamDocumentation)", argsTypesParamDocumentation.Count == 0 ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsTypesParamDocumentation));
         onMethodBeginSourceBuilder.Replace("$(TArgsTypes)", strTArgsTypes);
         onMethodBeginSourceBuilder.Replace("$(TArgsParameters)", strTArgsParameters);
-        onMethodBeginSourceBuilder.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
+        onMethodBeginSourceBuilder.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 || methodDef.DeclaringType.HasGenericParameters ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
         return onMethodBeginSourceBuilder;
     }
 
@@ -296,7 +312,7 @@ internal partial class MainViewModel
             onMethodEndSource.Replace("$(TReturnTypeParameter)", returnTypeParameter);
         }
 
-        onMethodEndSource.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
+        onMethodEndSource.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 || methodDef.DeclaringType.HasGenericParameters ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
 
         return onMethodEndSource;
     }
@@ -375,7 +391,7 @@ internal partial class MainViewModel
         onAsyncMethodEndSource.Replace("$(TReturnParamDocumentation)", returnParamDocumentation);
         onAsyncMethodEndSource.Replace("$(TReturnType)", returnType);
         onAsyncMethodEndSource.Replace("$(TReturnTypeParameter)", returnTypeParameter);
-        onAsyncMethodEndSource.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
+        onAsyncMethodEndSource.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 || methodDef.DeclaringType.HasGenericParameters ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
         return onAsyncMethodEndSource;
     }
 }

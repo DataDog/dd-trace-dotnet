@@ -7,6 +7,7 @@
 #include "IManagedThreadList.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
+#include "RawSampleTransformer.h"
 
 #include <chrono>
 
@@ -20,10 +21,7 @@ NetworkProvider::NetworkProvider(
     SampleValueTypeProvider& valueTypeProvider,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
-    IFrameStore* pFrameStore,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
+    RawSampleTransformer* rawSampleTransformer,
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
@@ -32,10 +30,7 @@ NetworkProvider::NetworkProvider(
     CollectorBase<RawNetworkSample>(
         "NetworkProvider",
         valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
-        pThreadsCpuManager,
-        pFrameStore,
-        pAppDomainStore,
-        pRuntimeIdStore,
+        rawSampleTransformer,
         memoryResource),
     _pCorProfilerInfo{ pCorProfilerInfo },
     _pManagedThreadList{ pManagedThreadList },

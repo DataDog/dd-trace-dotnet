@@ -74,7 +74,7 @@ public sealed class Test
         tags.CapabilitiesAutoTestRetries = "1";
         tags.CapabilitiesTestManagementQuarantine = "1";
         tags.CapabilitiesTestManagementDisable = "1";
-        tags.CapabilitiesTestManagementAttemptToFix = "2";
+        tags.CapabilitiesTestManagementAttemptToFix = "4";
 
         CurrentTest.Value = this;
         lock (OpenedTests)

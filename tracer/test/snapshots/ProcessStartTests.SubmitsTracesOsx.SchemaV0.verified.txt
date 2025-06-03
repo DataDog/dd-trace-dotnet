@@ -7,7 +7,7 @@
     Service: Samples.ProcessStart-command,
     Type: system,
     Tags: {
-      cmd.component: process,
+      component: process,
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
@@ -30,9 +30,9 @@
     Type: system,
     Error: 1,
     Tags: {
-      cmd.component: process,
       cmd.environment_variables:
 PATH=testPath,
+      component: process,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
@@ -56,9 +56,9 @@ PATH=testPath,
     Type: system,
     Error: 1,
     Tags: {
-      cmd.component: process,
       cmd.environment_variables:
 PATH=testPath,
+      component: process,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,

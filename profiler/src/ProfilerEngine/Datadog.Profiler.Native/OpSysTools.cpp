@@ -46,9 +46,12 @@ uint64_t OpSysTools::s_ticksPerSecond = 0;
 
 
 #ifdef _WINDOWS
-bool OpSysTools::s_isRunTimeLinkingThreadDescriptionDone = false;
+bool OpSysTools::s_areWindowsDelegateSet = false;
 OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::s_setThreadDescriptionDelegate = nullptr;
 OpSysTools::GetThreadDescriptionDelegate_t OpSysTools::s_getThreadDescriptionDelegate = nullptr;
+OpSysTools::GetFileVersionInfoSizeDelegate_t OpSysTools::s_getFileVersionInfoSizeW = nullptr;
+OpSysTools::GetFileVersionInfoDelegate_t OpSysTools::s_getFileVersionInfoW = nullptr;
+OpSysTools::VerQueryValueDelegate_t OpSysTools::s_verQueryValueW = nullptr;
 #endif
 
 int32_t OpSysTools::GetProcId()
@@ -115,15 +118,15 @@ std::int64_t OpSysTools::GetHighPrecisionNanosecondsFallback()
 }
 
 #ifdef _WINDOWS
-void OpSysTools::InitDelegates_GetSetThreadDescription()
+void OpSysTools::InitWindowsDelegates()
 {
-    if (s_isRunTimeLinkingThreadDescriptionDone)
+    if (s_areWindowsDelegateSet)
     {
         // s_isRunTimeLinkingThreadDescriptionDone is not volatile. benign init race.
         return;
     }
 
-    // We do not bother unloading KernelBase.dll later. It is prbably already loaded, and if not, we can keep it in mem.
+    // We do not bother unloading KernelBase.dll later. It is probably already loaded, and if not, we can keep it in mem.
     HMODULE moduleHandle = GetModuleHandle(WStr("KernelBase.dll"));
     if (NULL == moduleHandle)
     {
@@ -133,18 +136,26 @@ void OpSysTools::InitDelegates_GetSetThreadDescription()
     if (NULL != moduleHandle)
     {
         s_setThreadDescriptionDelegate = reinterpret_cast<SetThreadDescriptionDelegate_t>(GetProcAddress(moduleHandle, "SetThreadDescription"));
-        ;
         s_getThreadDescriptionDelegate = reinterpret_cast<GetThreadDescriptionDelegate_t>(GetProcAddress(moduleHandle, "GetThreadDescription"));
-        ;
+        s_getFileVersionInfoSizeW = reinterpret_cast<GetFileVersionInfoSizeDelegate_t>(GetProcAddress(moduleHandle, "GetFileVersionInfoSizeW"));
+        s_getFileVersionInfoW = reinterpret_cast<GetFileVersionInfoDelegate_t>(GetProcAddress(moduleHandle, "GetFileVersionInfoW"));
+        s_verQueryValueW = reinterpret_cast<VerQueryValueDelegate_t>(GetProcAddress(moduleHandle, "VerQueryValueW"));
     }
 
-    Log::Debug("OpSysTools::InitDelegates_GetSetThreadDescription() completed."
+    Log::Debug("OpSysTools::InitWindowsDelegates() completed."
                " s_setThreadDescriptionDelegate set: ",
                (nullptr != s_setThreadDescriptionDelegate),
                "; s_getThreadDescriptionDelegate set: ",
-               (nullptr != s_getThreadDescriptionDelegate));
+               (nullptr != s_getThreadDescriptionDelegate),
+               "; s_getFileVersionInfoSizeW set: ",
+               (nullptr != s_getFileVersionInfoSizeW),
+               "; s_getFileVersionInfoW set: ",
+               (nullptr != s_getFileVersionInfoW),
+               "; s_verQueryValueW set: ",
+               (nullptr != s_verQueryValueW)
+               );
 
-    s_isRunTimeLinkingThreadDescriptionDone = true;
+    s_areWindowsDelegateSet = true;
 }
 
 OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::GetDelegate_SetThreadDescription()
@@ -152,7 +163,7 @@ OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::GetDelegate_SetThreadDesc
     SetThreadDescriptionDelegate_t setThreadDescriptionDelegate = s_setThreadDescriptionDelegate;
     if (nullptr == setThreadDescriptionDelegate)
     {
-        InitDelegates_GetSetThreadDescription();
+        InitWindowsDelegates();
         setThreadDescriptionDelegate = s_setThreadDescriptionDelegate;
     }
 
@@ -164,11 +175,44 @@ OpSysTools::GetThreadDescriptionDelegate_t OpSysTools::GetDelegate_GetThreadDesc
     GetThreadDescriptionDelegate_t getThreadDescriptionDelegate = s_getThreadDescriptionDelegate;
     if (nullptr == getThreadDescriptionDelegate)
     {
-        InitDelegates_GetSetThreadDescription();
+        InitWindowsDelegates();
         getThreadDescriptionDelegate = s_getThreadDescriptionDelegate;
     }
 
     return getThreadDescriptionDelegate;
+}
+
+OpSysTools::GetFileVersionInfoSizeDelegate_t OpSysTools::GetDelegate_GetFileVersionInfoSize()
+{
+    GetFileVersionInfoSizeDelegate_t getFileVersionInfoSizeDelegate = s_getFileVersionInfoSizeW;
+    if (nullptr == getFileVersionInfoSizeDelegate)
+    {
+        InitWindowsDelegates();
+        getFileVersionInfoSizeDelegate = s_getFileVersionInfoSizeW;
+    }
+    return getFileVersionInfoSizeDelegate;
+}
+
+OpSysTools::GetFileVersionInfoDelegate_t OpSysTools::GetDelegate_GetFileVersionInfo()
+{
+    GetFileVersionInfoDelegate_t getFileVersionInfoDelegate = s_getFileVersionInfoW;
+    if (nullptr == getFileVersionInfoDelegate)
+    {
+        InitWindowsDelegates();
+        getFileVersionInfoDelegate = s_getFileVersionInfoW;
+    }
+    return getFileVersionInfoDelegate;
+}
+
+OpSysTools::VerQueryValueDelegate_t OpSysTools::GetDelegate_VerQueryValue()
+{
+    VerQueryValueDelegate_t verQueryValueDelegate = s_verQueryValueW;
+    if (nullptr == verQueryValueDelegate)
+    {
+        InitWindowsDelegates();
+        verQueryValueDelegate = s_verQueryValueW;
+    }
+    return verQueryValueDelegate;
 }
 #endif // #ifdef _WINDOWS
 
@@ -244,6 +288,108 @@ ScopedHandle OpSysTools::GetThreadHandle(DWORD threadId)
     }
     return handle;
 }
+
+bool OpSysTools::GetFileVersion(LPCWSTR pszFilename, uint16_t& major, uint16_t& minor, uint16_t& build, uint16_t& reviews)
+{
+    GetFileVersionInfoSizeDelegate_t getFileVersionInfoSize = GetDelegate_GetFileVersionInfoSize();
+    if (nullptr == getFileVersionInfoSize)
+    {
+        return false;
+    }
+    GetFileVersionInfoDelegate_t getFileVersionInfo = GetDelegate_GetFileVersionInfo();
+    if (nullptr == getFileVersionInfo)
+    {
+        return false;
+    }
+    VerQueryValueDelegate_t verQueryValue = GetDelegate_VerQueryValue();
+    if (nullptr == verQueryValue)
+    {
+        return false;
+    }
+
+    DWORD dummy = 0;
+    DWORD size = getFileVersionInfoSize(pszFilename, &dummy);
+    if (size == 0)
+    {
+        return false;
+    }
+
+    std::vector<BYTE> versionInfo(size);
+    if (!getFileVersionInfo(pszFilename, 0, size, versionInfo.data()))
+    {
+        return false;
+    }
+
+    VS_FIXEDFILEINFO* fileInfo = nullptr;
+    UINT len = 0;
+    if (!verQueryValue(versionInfo.data(), L"\\", (LPVOID*)&fileInfo, &len))
+    {
+        return false;
+    }
+    if (len == 0)
+    {
+        return false;
+    }
+
+    major = HIWORD(fileInfo->dwFileVersionMS);
+    minor = LOWORD(fileInfo->dwFileVersionMS);
+    reviews = LOWORD(fileInfo->dwFileVersionLS);
+
+    // the build element should be mapped to a version number based on the ranges of the the mscorlib.dll found in the installers
+    // but rely on Minimum versions listed in https://learn.microsoft.com/en-us/dotnet/framework/install/how-to-determine-which-versions-are-installed#minimum-version
+    build = HIWORD(fileInfo->dwFileVersionLS);
+    //  4.8.1   4.8.9032.0
+    //  4.8     4.8.3752.0
+    //  4.7.2   4.7.3056.0
+    //  4.7.1   4.7.2556.0
+    //  4.7     4.7.2046.0
+    //  4.6.2   4.6.1586.0
+    //  4.6.1   4.6.1038.0
+    if (minor == 8)
+    {
+        if (build >= 9032)
+        {
+            build = 1;
+        }
+        else
+        {
+            build = 0;
+        }
+    }
+    else if (minor == 7)
+    {
+        if (build >= 3056)
+        {
+            build = 2;
+        }
+        else if (build >= 2556)
+        {
+            build = 1;
+        }
+        else
+        {
+            build = 0;
+        }
+    }
+    else if (minor == 6)
+    {
+        if (build >= 1586)
+        {
+            build = 2;
+        }
+        else if (build >= 1038)
+        {
+            build = 1;
+        }
+        else
+        {
+            build = 0;
+        }
+    }
+
+    return true;
+}
+
 #else
 shared::WSTRING OpSysTools::GetNativeThreadName(pid_t tid)
 {

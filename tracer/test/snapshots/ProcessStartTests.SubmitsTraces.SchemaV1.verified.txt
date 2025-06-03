@@ -8,7 +8,7 @@
     Type: system,
     Error: 1,
     Tags: {
-      cmd.component: process,
+      component: process,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
@@ -32,10 +32,10 @@
     Type: system,
     Error: 1,
     Tags: {
-      cmd.component: process,
       cmd.environment_variables:
 Path=testPath
 ,
+      component: process,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
@@ -59,10 +59,10 @@ Path=testPath
     Type: system,
     Error: 1,
     Tags: {
-      cmd.component: process,
       cmd.environment_variables:
 Path=testPath
 ,
+      component: process,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
@@ -86,10 +86,10 @@ Path=testPath
     Type: system,
     Error: 1,
     Tags: {
-      cmd.component: process,
       cmd.environment_variables:
 Path=testPath
 ,
+      component: process,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
@@ -113,10 +113,10 @@ Path=testPath
     Type: system,
     Error: 1,
     Tags: {
-      cmd.component: process,
       cmd.environment_variables:
 Path=testPath
 ,
+      component: process,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,

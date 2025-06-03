@@ -47,6 +47,7 @@ ENV DD_PROFILING_ENABLED=1 \
     CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8} \
     DD_DOTNET_TRACER_HOME="c:\monitoring-home" \
     DD_TRACE_LOG_DIRECTORY="C:\logs" \
+    DD_REMOTE_CONFIGURATION_ENABLED=0 \
     ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore

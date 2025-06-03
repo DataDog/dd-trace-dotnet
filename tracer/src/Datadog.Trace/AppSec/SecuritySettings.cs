@@ -47,6 +47,8 @@ namespace Datadog.Trace.AppSec
             CanBeToggled = !enabledEnvVar.ConfigurationResult.IsValid;
             AppsecEnabled = enabledEnvVar.WithDefault(false);
 
+            ApmTracingEnabled = config.WithKeys(ConfigurationKeys.ApmTracingEnabled).AsBool(true);
+
             Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString();
             CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString();
             var extraHeaders = config.WithKeys(ConfigurationKeys.AppSec.ExtraHeaders).AsString();
@@ -183,6 +185,8 @@ namespace Datadog.Trace.AppSec
         public int ApiSecurityEndpointCollectionMessageLimit { get; }
 
         public bool AppsecEnabled { get; }
+
+        public bool ApmTracingEnabled { get; }
 
         public bool UseUnsafeEncoder { get; }
 

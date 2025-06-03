@@ -55,7 +55,8 @@ internal class TestOptimizationTestCommand
         }
 
         // Execute test
-        result = ExecuteTest(context, 0, out var testTags, out var duration);
+        var retryState = new RetryState();
+        result = ExecuteTest(context, 0, ref retryState, out var testTags, out var duration);
         var resultStatus = result.ResultState.Status;
 
         // If test is quarantined we mark it as skipped after the first run so we hide the actual test status to the testing framework
@@ -142,7 +143,7 @@ internal class TestOptimizationTestCommand
         }
     }
 
-    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber, out TestSpanTags? testTags, out TimeSpan duration)
+    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber, ref RetryState retryState, out TestSpanTags? testTags, out TimeSpan duration)
     {
         ITestResult? testResult = null;
         var test = NUnitIntegration.GetOrCreateTest(context.CurrentTest, executionNumber);
@@ -165,13 +166,39 @@ internal class TestOptimizationTestCommand
             testTags = test?.GetTags();
         }
 
-        if (test is not null)
+        var attemptToFixRetryBehavior = retryState.BehaviorType == typeof(AttemptToFixRetryBehavior);
+        if (retryState.IsARetry)
+        {
+            if (testResult.ResultState.Status != TestStatus.Failed)
+            {
+                retryState.AllRetriesFailed = false;
+            }
+            else if (attemptToFixRetryBehavior)
+            {
+                retryState.AllAttemptsPassed = false;
+            }
+        }
+
+        if (test is not null && testTags is not null)
         {
             if (duration.TotalMinutes >= 5 &&
                 TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true &&
-                testTags!.TestIsNew == "true")
+                testTags.TestIsNew == "true")
             {
                 testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+            }
+
+            if (retryState.IsLastRetry)
+            {
+                if (attemptToFixRetryBehavior)
+                {
+                    testTags.AttemptToFixPassed = retryState.AllAttemptsPassed ? "true" : "false";
+                }
+
+                if (retryState.AllRetriesFailed)
+                {
+                    testTags.HasFailedAllRetries = "true";
+                }
             }
 
             NUnitIntegration.FinishTest(test, testResult);
@@ -187,12 +214,19 @@ internal class TestOptimizationTestCommand
         var remainingRetries = behavior.RemainingRetries;
         var retryNumber = 0;
         var totalRetries = remainingRetries;
+        var retryState = new RetryState
+        {
+            IsARetry = true,
+            BehaviorType = typeof(AttemptToFixRetryBehavior)
+        };
         while (remainingRetries-- > 0)
         {
             retryNumber++;
             Common.Log.Debug<string?, int, int>("TestOptimizationTestCommand: {Mode}: [Retry {Num}] Running retry of {TotalRetries}.", behavior.RetryMode, retryNumber, totalRetries);
             ClearResultForRetry(context);
-            var retryResult = ExecuteTest(context, executionNumber++, out _, out _);
+
+            retryState.IsLastRetry = remainingRetries == 0;
+            var retryResult = ExecuteTest(context, executionNumber++, ref retryState, out _, out _);
             Common.Log.Debug<string?, int>("TestOptimizationTestCommand: {Mode}: [Retry {Num}] Aggregating results.", behavior.RetryMode, retryNumber);
             AgregateResults(result, retryResult);
             if (!behavior.ShouldRetry(result))
@@ -208,5 +242,23 @@ internal class TestOptimizationTestCommand
         }
 
         return behavior.ResultChanges(result);
+    }
+
+    private ref struct RetryState
+    {
+        public bool IsARetry;
+        public bool IsLastRetry;
+        public bool AllAttemptsPassed;
+        public bool AllRetriesFailed;
+        public Type? BehaviorType;
+
+        public RetryState()
+        {
+            IsARetry = false;
+            IsLastRetry = false;
+            AllAttemptsPassed = true;
+            AllRetriesFailed = true;
+            BehaviorType = null;
+        }
     }
 }

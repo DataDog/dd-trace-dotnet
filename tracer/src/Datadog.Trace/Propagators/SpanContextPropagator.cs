@@ -80,7 +80,7 @@ namespace Datadog.Trace.Propagators
             if (context.SpanContext is { } spanContext)
             {
                 // If apm tracing is disabled and no other product owns the trace -> stop propagation
-                if (spanContext.TraceContext is { Tracer.Settings.ApmTracingEnabledInternal: false } trace &&
+                if (spanContext.TraceContext is { Tracer.Settings.ApmTracingEnabled: false } trace &&
                     !trace.Tags.HasTraceSources())
                 {
                     return;

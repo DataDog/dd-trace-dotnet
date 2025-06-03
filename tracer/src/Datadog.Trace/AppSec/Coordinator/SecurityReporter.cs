@@ -195,8 +195,7 @@ internal partial class SecurityReporter
                 _span.SetTag(Tags.AppSecBlocked, "true");
             }
 
-            var security = Security.Instance;
-            security.SetTraceSamplingPriority(_span);
+            Security.Instance?.SetTraceSamplingPriority(_span);
 
             LogMatchesIfDebugEnabled(result.Data, blocked);
 
@@ -241,6 +240,7 @@ internal partial class SecurityReporter
 
         if (result.ExtractSchemaDerivatives?.Count > 0)
         {
+            bool written = false;
             foreach (var derivative in result.ExtractSchemaDerivatives)
             {
                 var serializeObject = JsonConvert.SerializeObject(derivative.Value);
@@ -257,12 +257,18 @@ internal partial class SecurityReporter
                     {
                         var gzipBase64 = Convert.ToBase64String(bytesResult.Array!, bytesResult.Offset, bytesResult.Count);
                         _span.SetTag(derivative.Key, gzipBase64);
+                        written = true;
                     }
                     else
                     {
                         Log.Debug("Could not TryGetBuffer from the appsec schema extraction memoryStream");
                     }
                 }
+            }
+
+            if (written)
+            {
+                Security.Instance?.SetTraceSamplingPriority(_span, false); // Avoid downstream propagation in Standalone mode
             }
         }
     }

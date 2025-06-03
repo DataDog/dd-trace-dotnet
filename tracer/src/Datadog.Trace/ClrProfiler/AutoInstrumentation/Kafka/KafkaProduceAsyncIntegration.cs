@@ -107,6 +107,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
             }
 
+            KafkaHelper.DisableHeadersIfUnsupportedBroker(exception);
             state.Scope.DisposeWithException(exception);
             return response;
         }

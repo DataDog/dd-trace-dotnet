@@ -25,11 +25,7 @@ class StopTheWorldGCProvider
 public:
     StopTheWorldGCProvider(
         SampleValueTypeProvider& valueTypeProvider,
-        IFrameStore* pFrameStore,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration,
+        RawSampleTransformer* rawSampleTransformer,
         shared::pmr::memory_resource* memoryResource);
 
     // Inherited via IGCSuspensionsListener

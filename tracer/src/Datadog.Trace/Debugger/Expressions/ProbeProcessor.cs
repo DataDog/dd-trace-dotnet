@@ -15,6 +15,7 @@ using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
@@ -161,7 +162,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public bool ShouldProcess(in ProbeData probeData)
         {
-            return HasCondition() || (probeData.Sampler.Sample());
+            return HasCondition() || probeData.Sampler.Sample();
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
@@ -343,7 +344,10 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
-            SetSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
+            if (Log.IsEnabled(LogEventLevel.Debug) && evaluationResult.HasError)
+            {
+                Log.Debug("Evaluation errors: {Errors}", evaluationResult.Errors.Select(er => $"Expression: {er.Expression}{Environment.NewLine}Error: {er.Message}"));
+            }
 
             if (evaluationResult.Metric.HasValue && ProbeInfo.MetricKind.HasValue)
             {
@@ -354,12 +358,17 @@ namespace Datadog.Trace.Debugger.Expressions
                 shouldStopCapture = true;
             }
 
+            if (evaluationResult.Decorations != null)
+            {
+                SetSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
+            }
+
             if (evaluationResult.HasError)
             {
                 return evaluationResult;
             }
 
-            if (evaluationResult.Condition != null && // meaning not metric, span probe or span decoration
+            if (evaluationResult.Condition != null && // i.e. not a metric, span probe, or span decoration
                 (evaluationResult.Condition is false ||
                 !sampler.Sample()))
             {
@@ -373,8 +382,9 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
-            if (evaluationResult.Decorations == null || Tracer.Instance?.ScopeManager?.Active == null)
+            if (Tracer.Instance?.ScopeManager?.Active == null)
             {
+                Log.Warning("The tracer scope manager is null, so we can't set the tags. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
                 return;
             }
 
@@ -414,6 +424,14 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     attachedTags = true;
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID={ProbeId}", decoration.TagName, targetSpan.SpanId, ProbeInfo.ProbeId);
+                    }
+                }
+                else
+                {
+                    Log.Warning("No root span or active span is available, so we can't set the {Tag} tag. Probe ID: {ProbeId}", decoration.TagName, ProbeInfo.ProbeId);
                 }
             }
 

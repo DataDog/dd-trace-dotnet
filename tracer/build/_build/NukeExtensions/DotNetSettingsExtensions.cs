@@ -280,4 +280,9 @@ internal static partial class DotNetSettingsExtensions
               .SetProcessEnvironmentVariable("RABBITMQ_HOST", "localhost")
               .SetProcessEnvironmentVariable("AWS_SDK_HOST", "localhost:4566");
     }
+
+    public static T ConfigureDotNetRunSettings<T>(this T toolSettings, Func<T, T> configure) where T : DotNetRunSettings
+    {
+        return configure(toolSettings);
+    }
 }
