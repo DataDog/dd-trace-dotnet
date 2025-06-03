@@ -248,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                                             Util.StringBuilderCache.Release(builder);
                                         }
                                     }
-                                    else if (value is ulong or decimal || !Util.SpanEventConverter.IsAllowedType(value))
+                                    else if (!Util.SpanEventConverter.IsAllowedType(value))
                                     {
                                         value = value.ToString();
                                     }
