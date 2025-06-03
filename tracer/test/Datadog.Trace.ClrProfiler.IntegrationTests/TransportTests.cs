@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
-            EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
             EnvironmentHelper.EnableTransport(GetTransport(transportType));
 
             using var telemetry = this.ConfigureTelemetry();

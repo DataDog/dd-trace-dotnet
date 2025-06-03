@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected async Task RunTest(TestTransports transport, bool dataPipelineEnabled)
         {
             EnvironmentHelper.EnableTransport(transport);
-            EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             {

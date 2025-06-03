@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             EnvironmentHelper.EnableTransport(transportType);
-            EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
 
             using var agent = EnvironmentHelper.GetMockAgent();
             var customResponse = behaviour switch

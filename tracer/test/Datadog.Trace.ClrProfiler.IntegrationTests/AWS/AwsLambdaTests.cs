@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 return;
             }
 
-            EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
             using var extensionWithContext = new MockLambdaExtension(shouldSendContext: true, port: 9004, Output);
             using var extensionNoContext = new MockLambdaExtension(shouldSendContext: false, port: 9003, Output);
             using var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002);
