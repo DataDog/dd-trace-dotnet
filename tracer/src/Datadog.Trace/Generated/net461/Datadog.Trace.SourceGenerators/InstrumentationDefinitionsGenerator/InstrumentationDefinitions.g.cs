@@ -354,7 +354,6 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.Grpc,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionctorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionAddIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionRemoveIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Hangfire,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"

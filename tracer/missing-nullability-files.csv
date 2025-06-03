@@ -469,7 +469,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/ErrorLocationStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/GraphQLCommonBase.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/GraphQLTags.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/OperationTypeProxy.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/DatadogHangfireAttribute.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/DatadogHangfireClientFilter.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/DatadogHangfireServerFilter.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/HangfireCommon.cs

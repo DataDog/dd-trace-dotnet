@@ -375,7 +375,6 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.Grpc,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionctorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionAddIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionRemoveIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Hangfire,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"

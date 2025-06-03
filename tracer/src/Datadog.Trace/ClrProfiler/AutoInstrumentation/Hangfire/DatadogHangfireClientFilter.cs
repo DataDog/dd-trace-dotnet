@@ -54,7 +54,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         public void OnCreated(object context)
         {
             var createContext = context.DuckCast<ICreateContextProxy>();
-            // ((ReadOnlyDictionary<string, object>)createdContext.Parameters).TryGetValue("DD_SCOPE", out var scope);
             ((Dictionary<string, object>)createContext.Items).TryGetValue(HangfireConstants.DatadogScopeKey, out var scope);
             ((Scope)scope)?.Dispose();
         }
