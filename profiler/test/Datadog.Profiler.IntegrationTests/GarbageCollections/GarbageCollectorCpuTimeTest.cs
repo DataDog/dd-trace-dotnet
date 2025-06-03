@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
@@ -31,7 +30,21 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0" })]
-        public void CheckCpuTimeForGcThreadsIsReported(string appName, string framework, string appAssembly)
+        public void CheckCpuTimeForGcThreadsIsEnabledByDefaultWithServerGC(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioAllocations);
+            // Enable GC Server
+            runner.Environment.SetVariable("DOTNET_gcServer", "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().Contain(sample => IsGcCpuSample(sample) && sample.StackTrace.Equals(GcStack));
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0" })]
+        public void CheckCpuTimeForGcThreadsValueIsReported(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioAllocations);
             EnvironmentHelper.DisableDefaultProfilers(runner);
@@ -91,28 +104,8 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => IsGcCpuSample(sample));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "netcoreapp3.1" })]
-        public void CheckFeatureIsDisabledIfNetCoreVersionIsLessThan_5(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "1");
-
-            // make sure walltime is activated to have samples
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
-            // enable gc server
-            runner.Environment.SetVariable("COMPlus_gcServer", "1");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => IsGcCpuSample(sample));
-        }
-
-        [TestAppFact("Samples.Computer01", new[] { "net48" })]
-        public void CheckFeatureIsDisabledIfDotNetFramework(string appName, string framework, string appAssembly)
+        [TestAppFact("Samples.Computer01", new[] { "netcoreapp3.1", "net48" })]
+        public void CheckFeatureIsDisabledIfUnsupportedDotnetVersions(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
             EnvironmentHelper.DisableDefaultProfilers(runner);
