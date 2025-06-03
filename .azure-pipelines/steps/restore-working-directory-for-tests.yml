@@ -16,14 +16,12 @@ steps:
     echo "setting universalArtifactSuffix to ${output}"
     echo "##vso[task.setvariable variable=universalArtifactSuffix]${output}"
 
-- task: DownloadPipelineArtifact@2
-  displayName: Download universal home binaries
-  inputs:
+- template: download-artifact.yml
+  parameters:
     artifact: linux-universal-home-$(universalArtifactSuffix)
     path: $(monitoringHome)/${{ parameters.artifactSuffix }}
 
-- task: DownloadPipelineArtifact@2
-  displayName: Download profiler binaries
-  inputs:
+- template: download-artifact.yml
+  parameters:
     artifact: linux-profiler-home-${{ parameters.artifactSuffix }}
     path: $(monitoringHome)

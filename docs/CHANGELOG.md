@@ -20,6 +20,52 @@
 
 
 
+
+## [Release 3.18.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.18.0)
+
+## Summary
+
+* Add support for async Oracle DB commands
+* Add support for Microsoft.Extensions.Telemetry v9.5.0
+* Various bug fixes
+
+## Changes
+
+### Tracer
+* Differentiate between error states in logs (#7030)
+
+### ASM
+* [AAP] Update waf value obfuscation default regex value (#7004)
+* [AAP] Update waf to v1.25.0 (#7005)
+
+### Fixes
+* Ensure that there is an ActiveScope for AWS SDK Http integration (#7013)
+* Fix Microsoft.Extensions.Telemetry logging integration for 9.5.0 (#6989)
+* Fix a `NullReferenceException` in AWS SDK `RuntimePipelineInvokeAsyncIntegration` (#7019)
+* fix: enable retries on failure due to script error (#7022)
+* Fix support for async Oracle DB commands (#7034)
+* [Code Origin] DEBUG-3935 Fix type handle mismatch when resolving attribute type (#6994)
+
+### Miscellaneous
+* Add `net8.0` and `net9.0` to trimming nuspec (#6983)
+* Add `ILogger.ErrorSkipTelemetry()` to exclude certain logs from telemetry (#7028)
+
+### Build / Test
+* Update Microsoft.Azure.Functions.Worker.Sdk to 2.0.3 (#6996)
+* Pre-install the .NET SDK in Windows CI runners (#7001)
+* Fix timeout exception (#7007)
+* Add timeouts and retries to `LiveDebuggerTests` when debugger is disabled (#7010)
+* Allow specifying `SampleName` filter and comprehensive version testing (#7015)
+* Revert "Benchmarks: Update microbenchmarks to customize BenchmarkDotNet command line arguments" (#7016)
+* Update Microsoft.Azure.Functions.Worker.Sdk to 2.0.4 (#7018)
+* Replace DownloadPipelineArtifact by a pipeline step (#7021)
+* Skip flaky debugger tests on x86 (#7023)
+* Streamline release process by not explicitly creating a tag in `create_draft_release.yml` (#7024)
+* Mark a couple of tests as flaky (#7026)
+
+
+[Changes since 3.17.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.17.0...v3.18.0)
+
 ## [Release 3.17.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.17.0)
 
 ## Summary
