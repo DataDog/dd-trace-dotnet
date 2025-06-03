@@ -423,7 +423,7 @@ namespace Datadog.Trace.Configuration
             {
                 DataPipelineEnabled = false;
                 Log.Warning(
-                    "{ConfigurationKey} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling {ConfigurationKeys.TraceDataPipelineEnabled}.",
+                    "{ConfigurationKey} is enabled, but {StatsComputationEnabled} is enabled. Disabling {TraceDataPipelineEnabled}.",
                     ConfigurationKeys.TraceDataPipelineEnabled,
                     ConfigurationKeys.StatsComputationEnabled,
                     ConfigurationKeys.TraceDataPipelineEnabled);
