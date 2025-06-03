@@ -974,6 +974,7 @@ partial class Build
         .Executes(() =>
         {
             // extract debug info from everything in monitoring home and copy it to the linux symbols directory
+            // except libdatadog since debug symbols are already stripped as part of libdatadog release.
             var files = MonitoringHomeDirectory.GlobFiles("linux-*/*.so")
                 .Where(file => !Path.GetFileName(file).Contains("libdatadog_profiling.so"));
 
