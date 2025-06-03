@@ -13,6 +13,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 
@@ -88,14 +89,19 @@ public class GetRecordsAsyncIntegration
                         {
                             Console.WriteLine("[GetRecordsAsyncIntegration] Found _datadog key in JSON");
                             var adapter = new KinesisContextAdapter();
-                            if (datadogContext is Dictionary<string, object> contextDict)
+                            if (datadogContext is JObject jObject)
                             {
-                                Console.WriteLine($"[GetRecordsAsyncIntegration] Converting context to dictionary with {contextDict.Count} items");
-                                adapter.SetDictionary(contextDict);
+                                Console.WriteLine($"[GetRecordsAsyncIntegration] Converting JObject context");
+                                var contextDict = jObject.ToObject<Dictionary<string, object>>();
+                                if (contextDict != null)
+                                {
+                                    Console.WriteLine($"[GetRecordsAsyncIntegration] Converted to dictionary with {contextDict.Count} items");
+                                    adapter.SetDictionary(contextDict);
+                                }
                             }
                             else
                             {
-                                Console.WriteLine($"[GetRecordsAsyncIntegration] Context is not a dictionary, type: {datadogContext?.GetType().Name ?? "null"}");
+                                Console.WriteLine($"[GetRecordsAsyncIntegration] Context is not a JObject, type: {datadogContext?.GetType().Name ?? "null"}");
                             }
 
                             parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
