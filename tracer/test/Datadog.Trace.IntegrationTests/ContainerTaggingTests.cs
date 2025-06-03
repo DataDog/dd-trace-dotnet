@@ -33,12 +33,8 @@ namespace Datadog.Trace.IntegrationTests
             {
                 var settings = TracerSettings.Create(new()
                 {
-                    {
-                        ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}"
-                    },
-                    {
-                        ConfigurationKeys.TraceDataPipelineEnabled, "false"
-                    }
+                    { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+                    { ConfigurationKeys.TraceDataPipelineEnabled, "false" }
                 });
                 var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
 

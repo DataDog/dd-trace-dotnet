@@ -61,7 +61,7 @@ public class TraceExporterTests
         };
 
         var discovery = DiscoveryService.Create(tracerSettings.Exporter);
-        var tracer = TracerHelper.Create(tracerSettings, discoveryService: discovery);
+        await using var tracer = TracerHelper.Create(tracerSettings, discoveryService: discovery);
 
         using var span = tracer.StartSpan("operationName");
         span.ResourceName = "resourceName";
@@ -81,7 +81,7 @@ public class TraceExporterTests
         var recordedSpans = agent.WaitForSpans(1);
         recordedSpans.Should().ContainSingle();
 
-        var recordedSpan = recordedSpans[0];
+        var recordedSpan = recordedSpans.Should().ContainSingle().Subject;
         recordedSpan.Name.Should().Be("operationName");
         recordedSpan.Resource.Should().Be("resourceName");
         recordedSpan.Service.Should().Be("default-service");
