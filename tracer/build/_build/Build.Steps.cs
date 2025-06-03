@@ -661,7 +661,7 @@ partial class Build
                     {
                         foreach (var arch in WindowsArchitectureFolders)
                         {
-                            var source = MonitoringHomeDirectory / $"win-{arch}" / "datadog_profiling_ffi.dll";
+                            var source = MonitoringHomeDirectory / arch / "datadog_profiling_ffi.dll";
                             var dest = testBinFolder / framework / "LibDatadog.dll";
                             CopyFile(source, dest, FileExistsPolicy.Overwrite);
                          }
