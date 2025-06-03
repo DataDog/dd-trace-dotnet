@@ -12,6 +12,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.LibDatadog;
@@ -78,16 +79,16 @@ public class TraceExporterTests
 
         await tracer.TracerManager.ShutdownAsync();
         var recordedSpans = agent.WaitForSpans(1);
-        Assert.Equal(1, recordedSpans.Count);
+        recordedSpans.Should().ContainSingle();
 
         var recordedSpan = recordedSpans[0];
-        Assert.Equal("operationName", recordedSpan.Name);
-        Assert.Equal("resourceName", recordedSpan.Resource);
-        Assert.Equal("default-service", recordedSpan.Service);
+        recordedSpan.Name.Should().Be("operationName");
+        recordedSpan.Resource.Should().Be("resourceName");
+        recordedSpan.Service.Should().Be("default-service");
 
-        Assert.Single(recordedSpan.MetaStruct);
-        var recordedMetaStructBytes  = recordedSpan.MetaStruct["test-meta-struct"];
-        Assert.Equal(metaStructBytes, recordedMetaStructBytes);
+        recordedSpan.MetaStruct.Should().ContainSingle();
+        var recordedMetaStructBytes = recordedSpan.MetaStruct["test-meta-struct"];
+        recordedMetaStructBytes.Should().BeEquivalentTo(metaStructBytes);
 
         Dictionary<string, object> GetSettings()
         {
