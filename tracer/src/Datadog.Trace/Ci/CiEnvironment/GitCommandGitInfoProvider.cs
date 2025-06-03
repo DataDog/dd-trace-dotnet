@@ -53,7 +53,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                     useWhereIsIfFileNotFound: true));
             if (repositoryOutput?.ExitCode == 0)
             {
-                localGitInfo.Repository = repositoryOutput.Output.Trim();
+                localGitInfo.Repository = repositoryOutput.Output.Replace("\n", string.Empty).Trim();
             }
             else
             {
@@ -67,7 +67,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                     arguments: "rev-parse --abbrev-ref HEAD",
                     workingDirectory: gitDirectory.FullName,
                     useWhereIsIfFileNotFound: true));
-            if (branchOutput?.ExitCode == 0 && branchOutput.Output.Trim() is { Length: > 0 } branchName && branchName != "HEAD")
+            if (branchOutput?.ExitCode == 0 && branchOutput.Output.Replace("\n", string.Empty).Trim() is { Length: > 0 } branchName && branchName != "HEAD")
             {
                 localGitInfo.Branch = branchName;
             }
@@ -89,7 +89,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 return false;
             }
 
-            var gitLogDataArray = gitLogOutput.Output.Trim().Split(["|,|"], StringSplitOptions.None);
+            var gitLogDataArray = gitLogOutput.Output.Replace("\n", string.Empty).Trim().Split(["|,|"], StringSplitOptions.None);
             if (gitLogDataArray.Length < 8)
             {
                 localGitInfo.Errors.Add($"Git log output does not contain the expected number of fields: {gitLogOutput.Output}");
