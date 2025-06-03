@@ -130,8 +130,7 @@ inline WSTRING GetCurrentProcessName()
 
     if (len != -1)
     {
-        buffer[len] = '\0'; // Null-terminate the string
-        name = std::string(buffer);
+        name = std::string(buffer, len);
     }
     else
     {
