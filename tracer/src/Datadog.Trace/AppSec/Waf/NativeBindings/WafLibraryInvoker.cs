@@ -182,7 +182,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             if (libName != null && runtimeIds != null)
             {
                 var paths = LibraryLocationHelper.GetDatadogNativeFolders(fd, runtimeIds);
-                if (!LibraryLocationHelper.TryLoadLibraryFromPaths(libName, paths, out libraryHandle))
+                if (!LibraryLocationHelper.TryLoadLibraryFromPaths(fd, libName, paths, out libraryHandle))
                 {
                     return new LibraryInitializationResult(LibraryInitializationResult.LoadStatus.LibraryLoad);
                 }
