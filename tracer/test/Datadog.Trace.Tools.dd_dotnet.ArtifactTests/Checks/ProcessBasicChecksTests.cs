@@ -214,6 +214,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
         public async Task WorkingWithContinuousProfiler(string enabled, bool? ssiInjectionEnabled)
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            // The continuous profiler isn't currently supported on ARM
+            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 
             var ssiInjection = ssiInjectionEnabled is null
                                    ? null
