@@ -191,6 +191,20 @@ internal static class GitCommandHelper
         }
     }
 
+    /// <summary>
+    /// Detects the base branch information from the given Git repository working directory.
+    /// Based on: https://datadoghq.atlassian.net/wiki/spaces/SDTEST/pages/4516480052/Impacted+tests+detection
+    /// </summary>
+    /// <param name="workingDirectory">The path to the Git repository working directory.</param>
+    /// <param name="targetBranch">The target branch from which the base branch will be determined. Optional.</param>
+    /// <param name="remoteName">The name of the remote repository to consult. Optional.</param>
+    /// <param name="defaultBranch">The default branch of the repository. This may be used if no explicit base branch can be determined. Optional.</param>
+    /// <param name="pullRequestBaseBranch">The base branch of the pull request, if applicable. Optional.</param>
+    /// <param name="fetchRemoteBranches">Indicates whether remote branches should be fetched before determining the base branch. Default is true.</param>
+    /// <returns>
+    /// An instance of <see cref="BaseBranchInfo"/> containing information about the detected base branch,
+    /// or null if the base branch could not be determined.
+    /// </returns>
     public static BaseBranchInfo? DetectBaseBranch(
         string workingDirectory,
         string? targetBranch = null,
@@ -211,8 +225,14 @@ internal static class GitCommandHelper
             if (string.IsNullOrEmpty(remoteName))
             {
                 var originNameOutput = RunGitCommand(workingDirectory, "config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
-                remoteName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
+                remoteName = originNameOutput?.Output.Replace("\n", string.Empty).Trim() ?? "origin";
                 Log.Debug("GitCommandHelper: Auto-detected remote name: {RemoteName}", remoteName);
+            }
+
+            if (remoteName is not { Length: > 0 })
+            {
+                Log.Warning("GitCommandHelper: Cannot detect remote because remoteName is null or empty");
+                return null;
             }
 
             // Step 1b - Get source branch (target branch) if not provided
@@ -221,6 +241,13 @@ internal static class GitCommandHelper
                 var gitOutput = RunGitCommand(workingDirectory, "branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
                 targetBranch = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
                 Log.Debug("GitCommandHelper: Auto-detected source branch: {SourceBranch}", targetBranch);
+            }
+
+            // Bail out if the target branch is still empty
+            if (string.IsNullOrEmpty(targetBranch))
+            {
+                Log.Warning("GitCommandHelper: Cannot detect base branch because target branch is null or empty");
+                return null;
             }
 
             // Verify branch exists
@@ -236,10 +263,10 @@ internal static class GitCommandHelper
             }
 
             // Check if the target branch is already a main-like branch
-            string shortTargetName = targetBranch!;
-            if (shortTargetName.StartsWith($"{remoteName}/"))
+            var shortTargetName = targetBranch;
+            if (shortTargetName is { Length: > 0 } && shortTargetName.StartsWith($"{remoteName}/"))
             {
-                shortTargetName = shortTargetName.Substring(remoteName!.Length + 1);
+                shortTargetName = shortTargetName.Substring(remoteName.Length + 1);
             }
 
             if (BranchFilterRegex.IsMatch(shortTargetName))
@@ -251,15 +278,15 @@ internal static class GitCommandHelper
             // Step 2 - Build candidate branches list and fetch them from remote
             var candidateBranches = new List<string>();
 
-            if (!string.IsNullOrEmpty(pullRequestBaseBranch))
+            if (pullRequestBaseBranch is { Length: > 0 })
             {
                 // Step 2b - We have git.pull_request.base_branch
                 if (fetchRemoteBranches)
                 {
-                    CheckAndFetchBranch(workingDirectory, pullRequestBaseBranch!, remoteName!);
+                    CheckAndFetchBranch(workingDirectory, pullRequestBaseBranch, remoteName);
                 }
 
-                candidateBranches.Add(pullRequestBaseBranch!);
+                candidateBranches.Add(pullRequestBaseBranch);
                 Log.Debug("GitCommandHelper: Using pull request base branch from CI: {BaseBranch}", pullRequestBaseBranch);
             }
             else
@@ -269,7 +296,7 @@ internal static class GitCommandHelper
                 {
                     foreach (var branch in PossibleBaseBranches)
                     {
-                        CheckAndFetchBranch(workingDirectory, branch, remoteName!);
+                        CheckAndFetchBranch(workingDirectory, branch, remoteName);
                     }
                 }
 
@@ -285,19 +312,24 @@ internal static class GitCommandHelper
                     return null;
                 }
 
-                candidateBranches.AddRange(SplitLines(branchesOutput!.Output)
-                                   .Select(b => b.Trim('\'', ' '))
-                                   .Where(b => !string.Equals(b, targetBranch, StringComparison.OrdinalIgnoreCase))
-                                   .Where(b =>
-                                    {
-                                        string nameToCheck = b;
-                                        if (b.StartsWith($"{remoteName}/"))
-                                        {
-                                            nameToCheck = b.Substring(remoteName!.Length + 1);
-                                        }
+                candidateBranches.AddRange(
+                    SplitLines(branchesOutput.Output)
+                       .Select(b => b.Trim('\'', ' '))
+                       .Where(b =>
+                        {
+                            if (!string.Equals(b, targetBranch, StringComparison.OrdinalIgnoreCase))
+                            {
+                                string nameToCheck = b;
+                                if (b.StartsWith($"{remoteName}/"))
+                                {
+                                    nameToCheck = b.Substring(remoteName.Length + 1);
+                                }
 
-                                        return BranchFilterRegex.IsMatch(nameToCheck);
-                                    }));
+                                return BranchFilterRegex.IsMatch(nameToCheck);
+                            }
+
+                            return false;
+                        }));
 
                 Log.Debug(
                     "GitCommandHelper: Found {Count} candidate branches: {Branches}",
@@ -328,7 +360,7 @@ internal static class GitCommandHelper
                     continue; // Skip if no common history
                 }
 
-                var mergeBaseSha = mergeBaseOutput!.Output.Trim();
+                var mergeBaseSha = mergeBaseOutput.Output.Trim();
 
                 // Get ahead/behind counts
                 var revListOutput = RunGitCommand(
@@ -341,7 +373,7 @@ internal static class GitCommandHelper
                     continue;
                 }
 
-                var counts = revListOutput!.Output.Split(WhitespaceSeparators, StringSplitOptions.RemoveEmptyEntries);
+                var counts = revListOutput.Output.Split(WhitespaceSeparators, StringSplitOptions.RemoveEmptyEntries);
                 if (counts.Length != 2 ||
                     !int.TryParse(counts[0], out var behind) ||
                     !int.TryParse(counts[1], out var ahead))
@@ -364,22 +396,23 @@ internal static class GitCommandHelper
             int bestAhead = metrics[0].Ahead;
             var bestCandidate = metrics[0]; // Default to first
 
-            // Check for collision and handle accordingly
-            if (metrics.Skip(1).Any(m => m.Ahead == bestAhead))
+            // Find the best candidate among those with the same bestAhead value in a single pass
+            foreach (var candidate in metrics)
             {
-                // Collision exists, find the best candidate
-                foreach (var candidate in metrics)
+                if (candidate.Ahead == bestAhead)
                 {
-                    if (candidate.Ahead == bestAhead)
-                    {
-                        bestCandidate = candidate;
+                    bestCandidate = candidate;
 
-                        // If this is the default branch, it's the best choice
-                        if (IsDefaultBranch(candidate.Branch))
-                        {
-                            break; // Found the best possible candidate
-                        }
+                    // If this is the default branch, it's the best choice
+                    if (IsDefaultBranch(candidate.Branch))
+                    {
+                        break; // Found the best possible candidate
                     }
+                }
+                else
+                {
+                    // Since metrics are sorted by Ahead, once we hit a different value, we're done
+                    break;
                 }
             }
 

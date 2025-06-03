@@ -43,8 +43,7 @@ internal sealed partial class TestOptimizationClient
                 knownTestsEnabled: false,
                 testManagement: new TestManagementSettingsResponse(
                     enabled: false,
-                    attemptToFixRetries: 0),
-                defaultBranch: null);
+                    attemptToFixRetries: 0));
         }
 
         return new SettingsResponse(
@@ -60,8 +59,7 @@ internal sealed partial class TestOptimizationClient
             knownTestsEnabled: settings.KnownTestsEnabled,
             testManagement: new TestManagementSettingsResponse(
                 enabled: settings.TestManagementEnabled,
-                attemptToFixRetries: settings.TestManagementAttemptToFixRetryCount),
-            defaultBranch: settings.DefaultBranch);
+                attemptToFixRetries: settings.TestManagementAttemptToFixRetryCount));
     }
 
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
@@ -204,7 +202,7 @@ internal sealed partial class TestOptimizationClient
         {
         }
 
-        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection, bool? knownTestsEnabled, TestManagementSettingsResponse testManagement, string? defaultBranch)
+        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection, bool? knownTestsEnabled, TestManagementSettingsResponse testManagement)
         {
             CodeCoverage = codeCoverage;
             TestsSkipping = testsSkipping;
@@ -214,7 +212,6 @@ internal sealed partial class TestOptimizationClient
             EarlyFlakeDetection = earlyFlakeDetection;
             KnownTestsEnabled = knownTestsEnabled;
             TestManagement = testManagement;
-            DefaultBranch = defaultBranch;
         }
     }
 
