@@ -659,7 +659,7 @@ partial class Build
                 {
                     foreach (var fmk in frameworks)
                     {
-                        var (arch, ext) = GetWinArchitectureAndExtension(fmk);
+                        var (arch, ext) = GetWinArchitectureAndExtension();
                         var source = MonitoringHomeDirectory / arch / "datadog_profiling_ffi.dll";
                         var dest = testBinFolder / fmk / "LibDatadog.dll";
                         CopyFile(source, dest, FileExistsPolicy.Overwrite);
@@ -2746,7 +2746,7 @@ partial class Build
             (false, true) => ($"linux-musl-{UnixArchitectureIdentifier}", "so"),
         };
 
-    private (string Arch, string Ext) GetWinArchitectureAndExtension(string fmk)
+    private (string Arch, string Ext) GetWinArchitectureAndExtension()
     {
         return RuntimeInformation.ProcessArchitecture switch
         {
