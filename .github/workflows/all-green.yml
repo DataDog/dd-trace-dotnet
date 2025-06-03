@@ -5,7 +5,9 @@ on:
       - opened
       - synchronize
       - reopened
-      
+  push:
+    branches:
+      - master
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +20,7 @@ jobs:
       checks: read
       statuses: read
     steps:
-      - uses: DataDog/ensure-ci-success@f40e6ffd8e60280d478b9b92209aaa30d3d56895
+      - uses: DataDog/ensure-ci-success@4a4b720e881d965254a9de2a4f14d1ec0c3d0d7c
         with:
           initial-delay-seconds: 10  # wait for this delay before starting
           max-retries: 120  # how many retries before stopping 
