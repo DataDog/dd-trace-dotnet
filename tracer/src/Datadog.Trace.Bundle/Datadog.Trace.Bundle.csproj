@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>3.19.0</Version>
     <Title>Datadog APM Auto-instrumentation Assets</Title>
     <Description>Auto-instrumentation assets for Datadog APM</Description>
     <IncludeBuildOutput>false</IncludeBuildOutput>
