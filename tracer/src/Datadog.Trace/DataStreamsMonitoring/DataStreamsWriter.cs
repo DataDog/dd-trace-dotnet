@@ -231,7 +231,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
             if (!_completionSource.Task.IsCompleted)
             {
-                await _completionSource.Task.WaitAsync(_waitTimeSpan).ConfigureAwait(false);
+                _completionSource.Task.Wait(_waitTimeSpan);
             }
 
             // _resetEvent.Wait(_waitTimeSpan);
