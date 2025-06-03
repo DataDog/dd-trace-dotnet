@@ -35,14 +35,12 @@ public class JobFilterCollectionctorIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         where TTarget : IJobFilterCollectionProxy
     {
-        Log.Debug("Did we get in? JobFilterCollectionctorIntegration.OnMethodBegin");
         return CallTargetState.GetDefault();
     }
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         where TTarget : IJobFilterCollectionProxy
     {
-        Log.Debug("Did we get in? JobFilterCollectionctorIntegration.OnMethodEnd");
         return CallTargetReturn.GetDefault();
     }
 }
