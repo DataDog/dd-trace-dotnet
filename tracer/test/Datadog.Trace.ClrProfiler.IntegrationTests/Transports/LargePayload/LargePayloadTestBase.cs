@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             if (transport == TestTransports.Uds && !EnvironmentTools.IsLinux() && dataPipelineEnabled)
             {
-                throw new SkipException("Can't use UnixDomainSocket on non-Linux with data pipeline enabled");
+                throw new SkipException("Unix Domain Sockets (UDS) transport is only supported on Linux when data pipeline is enabled");
             }
 
             EnvironmentHelper.EnableTransport(transport);

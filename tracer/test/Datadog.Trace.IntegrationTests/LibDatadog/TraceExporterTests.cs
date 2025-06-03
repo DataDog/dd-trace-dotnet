@@ -26,17 +26,17 @@ public class TraceExporterTests
     {
         if (EnvironmentTools.IsWindows() && Environment.Is64BitProcess == false)
         {
-            throw new SkipException("Can't use data pipeline on x86, there is no good way to copy native libraries for x86");
+            throw new SkipException("Can't use data pipeline on win-x86, there is no good way to copy native libraries for win-x86");
         }
 
         if (transport == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
         {
-            throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+            throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
         }
 
         if (transport == TestTransports.Uds && !EnvironmentTools.IsLinux())
         {
-            throw new SkipException("Can't use Unix Domain Sockets on non-Linux with data pipeline enabled");
+                throw new SkipException("Unix Domain Sockets (UDS) transport is only supported on Linux when data pipeline is enabled");
         }
 
         var pipeName = $"trace-{Guid.NewGuid()}";

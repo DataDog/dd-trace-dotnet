@@ -92,12 +92,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             if (transportType == TracesTransportType.WindowsNamedPipe && !EnvironmentTools.IsWindows())
             {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+                throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
             if (transportType == TracesTransportType.UnixDomainSocket && !EnvironmentTools.IsLinux() && dataPipelineEnabled)
             {
-                throw new SkipException("Can't use UnixDomainSocket on non-Linux with data pipeline enabled");
+                throw new SkipException("Unix Domain Sockets (UDS) transport is only supported on Linux when data pipeline is enabled");
             }
 
             EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();

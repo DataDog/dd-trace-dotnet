@@ -57,15 +57,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
             {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+                throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
             if (transportType == TestTransports.Uds && !EnvironmentTools.IsLinux() && dataPipelineEnabled)
             {
-                throw new SkipException("Can't use UnixDomainSocket on non-Linux with data pipeline enabled");
+                throw new SkipException("Unix Domain Sockets (UDS) transport is only supported
             }
 
-            EnvironmentHelper.EnableTransport(transportType);
+            EnvironmentHelper.EnableTransport(transportType)only supported
             EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
 
             using var agent = EnvironmentHelper.GetMockAgent();
