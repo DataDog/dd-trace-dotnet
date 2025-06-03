@@ -25,7 +25,6 @@ public class TraceExporterTests
     [InlineData(TestTransports.WindowsNamedPipe)]
     public async Task SendsTracesUsingDataPipeline(TestTransports transport)
     {
-
         if (transport == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
         {
             throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
