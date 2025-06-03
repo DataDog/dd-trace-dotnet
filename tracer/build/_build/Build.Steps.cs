@@ -657,11 +657,11 @@ partial class Build
 
                 if (IsWin)
                 {
-                    foreach (var fmk in frameworks)
+                    foreach (var framework in frameworks)
                     {
                         var (arch, ext) = GetWinArchitectureAndExtension();
                         var source = MonitoringHomeDirectory / arch / "datadog_profiling_ffi.dll";
-                        var dest = testBinFolder / fmk / "LibDatadog.dll";
+                        var dest = testBinFolder / framework / "LibDatadog.dll";
                         CopyFile(source, dest, FileExistsPolicy.Overwrite);
                     }
                 }
@@ -669,9 +669,9 @@ partial class Build
                 {
                     var (arch, ext) = GetUnixArchitectureAndExtension();
                     var source = MonitoringHomeDirectory / arch / $"libdatadog_profiling.{ext}";
-                    foreach (var fmk in frameworks)
+                    foreach (var framework in frameworks)
                     {
-                        var dest = testBinFolder / fmk / $"LibDatadog.{ext}";
+                        var dest = testBinFolder / framework / $"LibDatadog.{ext}";
                         CopyFile(source, dest, FileExistsPolicy.Overwrite);
                     }
                 }
@@ -702,9 +702,9 @@ partial class Build
                             {
                                 var oldVersionPath = oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
                                 var source = MonitoringHomeDirectory / arch;
-                                foreach (var fmk in frameworks)
+                                foreach (var framework in frameworks)
                                 {
-                                    var dest = testBinFolder / fmk / arch;
+                                    var dest = testBinFolder / framework / arch;
                                     CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                                     CopyFile(oldVersionPath, dest / $"ddwaf-{olderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
                                 }
@@ -723,7 +723,7 @@ partial class Build
                             var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
                             await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
                             {
-                                foreach (var fmk in frameworks)
+                                foreach (var framework in frameworks)
                                 {
                                     // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
                                     // This is because these tests try to load the WAF.
@@ -732,7 +732,7 @@ partial class Build
                                     // - The native tracer must be side-by-side with the running dll
                                     // As this is a managed-only unit test, the native tracer _must_ be in the root folder
                                     // For simplicity, we just copy all the native dlls there
-                                    var dest = testBinFolder / fmk;
+                                    var dest = testBinFolder / framework;
 
                                     // use the files from the monitoring native folder
                                     CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
