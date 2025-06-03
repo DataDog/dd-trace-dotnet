@@ -37,8 +37,7 @@ internal class AppSecBenchmarkUtils
             _ => throw new Exception($"RID not detected or supported: {fDesc.OSPlatform} / {fDesc.ProcessArchitecture}")
         };
 
-        var initialFolder = new DirectoryInfo(Environment.CurrentDirectory);
-        var folder = initialFolder;
+        var folder = new DirectoryInfo(Environment.CurrentDirectory);
         var path = Environment.CurrentDirectory;
         while (folder.Exists)
         {
@@ -54,11 +53,6 @@ internal class AppSecBenchmarkUtils
             }
 
             folder = folder.Parent;
-
-            if (folder is null)
-            {
-                throw new DirectoryNotFoundException($"The Path: './shared/bin/monitoring-home' was not found. Initially looking from {initialFolder}");
-            }
         }
 
         path = Path.Combine(path, $"./{rid}/");
