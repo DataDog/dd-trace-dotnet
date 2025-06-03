@@ -62,7 +62,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
             // make sure walltime is activated to have samples
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            // cpu profiler ia disabled to ensure:
+            // cpu profiler is disabled to ensure:
             // - The app does not crash
             // - The GC sample is not present
             runner.Environment.SetVariable("DOTNET_gcServer", "1");
