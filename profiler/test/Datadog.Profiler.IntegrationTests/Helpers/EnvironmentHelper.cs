@@ -96,6 +96,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "0");
         }
 
         internal void EnableTracer()

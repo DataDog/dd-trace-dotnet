@@ -20,6 +20,14 @@ EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListen
     {
         _enabledProfilers |= RuntimeProfiler::Exceptions;
     }
+    if (pConfiguration->IsGcThreadsCpuTimeEnabled())
+    {
+        _enabledProfilers |= RuntimeProfiler::CpuGc;
+    }
+    if (pConfiguration->IsThreadLifetimeEnabled())
+    {
+        _enabledProfilers |= RuntimeProfiler::ThreadsLifetime;
+    }
 
     // CLR events driven profilers
     if (isListeningToClrEvents)

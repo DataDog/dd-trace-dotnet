@@ -458,6 +458,8 @@ void CorProfilerCallback::InitializeServices()
 
         // http profiling is not supported in .NET Framework
         _pEnabledProfilers->Disable(RuntimeProfiler::Network);
+
+        _pEnabledProfilers->Disable(RuntimeProfiler::CpuGc); // GC threads CPU consumption is not supported in .NET Framework
     }
     else
     {
@@ -465,6 +467,12 @@ void CorProfilerCallback::InitializeServices()
         if (_pRuntimeInfo->GetMajorVersion() < 7)
         {
             _pEnabledProfilers->Disable(RuntimeProfiler::Network);
+        }
+
+        // GC threads CPU consumption is not supported in .NET 5 and earlier
+        if (_pRuntimeInfo->GetMajorVersion() < 5)
+        {
+            _pEnabledProfilers->Disable(RuntimeProfiler::CpuGc);
         }
     }
 
