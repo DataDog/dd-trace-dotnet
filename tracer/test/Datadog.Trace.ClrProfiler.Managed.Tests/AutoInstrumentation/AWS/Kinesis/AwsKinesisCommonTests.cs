@@ -42,7 +42,7 @@ public class AwsKinesisCommonTests
     [MemberData(nameof(GetStreamNameTestData))]
     public void GetStreamName(string streamName, string streamArn, string expected)
     {
-        var request = new Mock<IAmazonKinesisRequest>();
+        var request = new Mock<IAmazonKinesisRequestWithStreamName>();
         request.Setup(x => x.StreamName).Returns(streamName);
         request.Setup(x => x.StreamARN).Returns(streamArn);
 

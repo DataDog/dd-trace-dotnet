@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     /// <summary>
     /// PutRecordRequest interface for duck typing.
     /// </summary>
-    internal interface IPutRecordRequest : IAmazonKinesisRequest, IContainsData
+    internal interface IPutRecordRequest : IAmazonKinesisRequestWithStreamName, IContainsData
     {
     }
 }

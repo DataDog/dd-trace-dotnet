@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             return arnComponents[1];
         }
 
-        public static string? GetStreamName(IAmazonKinesisRequest request)
+        public static string? GetStreamName(IAmazonKinesisRequestWithStreamName request)
         {
             return request.StreamName;
             // string? streamName = request.StreamName;
