@@ -113,21 +113,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             var size = MessageSizeHelper.TryGetSize(message.Key);
             size += MessageSizeHelper.TryGetSize(message.Value);
 
-            if (message.Headers == null)
-            {
-                return size;
-            }
+            // if (message.Headers == null)
+            // {
+            //     return size;
+            // }
 
-            for (var i = 0; i < message.Headers.Count; i++)
-            {
-                var header = message.Headers[i];
-                size += Encoding.UTF8.GetByteCount(header.Key);
-                var value = header.GetValueBytes();
-                if (value != null)
-                {
-                    size += value.Length;
-                }
-            }
+            // for (var i = 0; i < message.Headers.Count; i++)
+            // {
+            //     var header = message.Headers[i];
+            //     size += Encoding.UTF8.GetByteCount(header.Key);
+            //     var value = header.GetValueBytes();
+            //     if (value != null)
+            //     {
+            //         size += value.Length;
+            //     }
+            // }
 
             return size;
         }

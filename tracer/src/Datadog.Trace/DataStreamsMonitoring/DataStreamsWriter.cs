@@ -24,7 +24,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(10_000);
-    private readonly ManualResetEventSlim _resetEvent = new(false);
     private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
     private readonly Task _processTask;
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -233,8 +232,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
             {
                 _completionSource.Task.Wait(_waitTimeSpan);
             }
-
-            // _resetEvent.Wait(_waitTimeSpan);
         }
     }
 
