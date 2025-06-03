@@ -5,11 +5,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
@@ -174,26 +172,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             using var agent = GetAgent(tests, agentRequestProcessor);
 
             using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
-            var deadline = DateTime.UtcNow.AddMilliseconds(5000);
+            var stopwatch = Stopwatch.StartNew();
+            const int timeoutMs = 5000;
             testFilter ??= _ => true;
 
             List<MockCIVisibilityTest> filteredTests = tests;
-            while (DateTime.UtcNow < deadline)
+            while (stopwatch.ElapsedMilliseconds < timeoutMs)
             {
                 filteredTests = tests.Where(testFilter).ToList();
-                if (tests.Count() >= ExpectedTestCount)
+                if (tests.Count >= ExpectedTestCount)
                 {
                     break;
                 }
 
-                Thread.Sleep(500);
+                await Task.Delay(500);
             }
 
             // Sort and aggregate
             var results = filteredTests.Select(t => t.Resource).Distinct().OrderBy(t => t).ToList();
 
-            tests.Count().Should().BeGreaterOrEqualTo(ExpectedTestCount, "Expected test count not met");
-            results.Count().Should().Be(expectedTests, "Expected filtered test count not met");
+            tests.Count.Should().BeGreaterOrEqualTo(ExpectedTestCount, "Expected test count not met");
+            results.Count.Should().Be(expectedTests, "Expected filtered test count not met");
 
             // Additional validation: ensure only modified tests have the is_modified tag
             var modifiedTests = tests.Where(TestIsModified).ToList();

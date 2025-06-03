@@ -61,7 +61,7 @@ internal class ImpactedTestsModule
         if (!string.IsNullOrEmpty(baseCommitSha))
         {
             Log.Debug("ImpactedTestsModule: PR detected. Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
-            // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
+            // Retrieve diff files and lines from Git Diff CLI
             try
             {
                 modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, baseCommitSha);
@@ -75,17 +75,16 @@ internal class ImpactedTestsModule
         // We don't have any modified files, let's try to calculate the PR base commit
         if (modifiedFiles.Length == 0)
         {
-            // TODO(Borja): I believe milestones as we knew them don't make sense anymore, since there is no backend now.
-            // Milestone 1 : Retrieve diff files from Backend
+            // Retrieve diff files from Backend
 
             // set the new base commit SHA
-            baseCommitSha = CalculateBaseCommit(workspacePath, defaultBranch);
+            baseCommitSha = CalculateBaseCommit(workspacePath, defaultBranch, environmentValues);
 
             // First, we try to use the calculated base commit SHA for the diff
             if (!string.IsNullOrEmpty(baseCommitSha))
             {
                 Log.Debug("ImpactedTestsModule: Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
-                // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI but with the calculated base commit (always try the maximum accuracy)
+                // Retrieve diff files and lines from Git Diff CLI but with the calculated base commit (always try the maximum accuracy)
                 try
                 {
                     modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, baseCommitSha);
@@ -206,9 +205,13 @@ internal class ImpactedTestsModule
     /// Attempts to calculate the base PR commit.
     /// </summary>
     /// <returns>Calculated commit</returns>
-    private static string CalculateBaseCommit(string workingDirectory, string? defaultBranch)
+    private static string CalculateBaseCommit(string workingDirectory, string? defaultBranch, CIEnvironmentValues environmentValues)
     {
-        var baseBranchInfo = GitCommandHelper.DetectBaseBranch(workingDirectory, defaultBranch: defaultBranch);
+        var baseBranchInfo = GitCommandHelper.DetectBaseBranch(
+            workingDirectory,
+            defaultBranch: defaultBranch,
+            targetBranch: environmentValues.Branch,
+            pullRequestBaseBranch: environmentValues.PrBaseBranch);
         return baseBranchInfo is not null
                    ? baseBranchInfo.MergeBaseSha
                    : string.Empty;

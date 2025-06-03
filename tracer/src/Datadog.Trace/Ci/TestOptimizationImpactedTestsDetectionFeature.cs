@@ -21,7 +21,7 @@ internal class TestOptimizationImpactedTestsDetectionFeature : ITestOptimization
     private TestOptimizationImpactedTestsDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, CIEnvironmentValues environmentValues)
     {
         _environmentValues = environmentValues;
-        _defaultBranch = settings.DefaultBranch;
+        _defaultBranch = clientSettingsResponse.DefaultBranch;
         if (settings.ImpactedTestsDetectionEnabled == null && clientSettingsResponse.ImpactedTestsEnabled.HasValue)
         {
             Log.Information("TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection has been changed to {Value} by the settings api.", clientSettingsResponse.ImpactedTestsEnabled.Value);

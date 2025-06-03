@@ -49,7 +49,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             try
             {
-                var sw = System.Diagnostics.Stopwatch.StartNew();
                 var gitOutput = ProcessHelpers.RunCommand(
                     new ProcessHelpers.Command(
                         "git",
