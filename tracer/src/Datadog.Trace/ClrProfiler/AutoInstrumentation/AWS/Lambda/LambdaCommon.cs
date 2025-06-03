@@ -23,8 +23,40 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
+    static LambdaCommon()
+    {
+        Log("Lambda container starting - registering shutdown handler", debug: false);
+        try
+        {
+            // Register Lambda shutdown handler
+            LifetimeManager.Instance.AddAsyncShutdownTask(async (exception) =>
+            {
+                Log("Lambda shutdown signal received - starting final flush", debug: false);
+                try
+                {
+                    // Give a final chance to flush any remaining traces
+                    Log("Attempting final trace flush during shutdown", debug: false);
+                    await Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                        .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime))
+                        .ConfigureAwait(false);
+                    Log("Final trace flush completed successfully", debug: false);
+                }
+                catch (Exception ex)
+                {
+                    Log("Could not flush traces during Lambda shutdown", ex, false);
+                }
+            });
+            Log("Lambda shutdown handler registered successfully", debug: false);
+        }
+        catch (Exception ex)
+        {
+            Log("Failed to register Lambda shutdown handler", ex, false);
+        }
+    }
+
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
+        Log("Creating placeholder scope for Lambda invocation", debug: true);
         var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
 
         var span = tracer.StartSpan(
@@ -40,6 +72,7 @@ internal abstract class LambdaCommon
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
     {
+        Log("Starting Lambda invocation", debug: false);
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context);
@@ -48,6 +81,7 @@ internal abstract class LambdaCommon
         var headers = response.Headers.Wrap();
         if (!ValidateOkStatus(response))
         {
+            Log("Failed to validate OK status for start invocation", debug: false);
             return null;
         }
 
@@ -57,6 +91,7 @@ internal abstract class LambdaCommon
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
     {
+        Log($"Ending Lambda invocation (isError: {isError})", debug: false);
         var request = requestBuilder.GetEndInvocationRequest(scope, isError);
         WriteRequestPayload(request, data);
         using var response = (HttpWebResponse)request.GetResponse();
@@ -69,11 +104,15 @@ internal abstract class LambdaCommon
 
     internal static async Task EndInvocationAsync(string returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
     {
+        Log("Starting end invocation async process", debug: false);
         try
         {
+            // Try to flush traces immediately for this invocation
+            Log("Attempting to flush traces for current invocation", debug: false);
             await Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
                         .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime))
                         .ConfigureAwait(false);
+            Log("Successfully flushed traces for current invocation", debug: false);
         }
         catch (Exception ex)
         {
@@ -84,6 +123,7 @@ internal abstract class LambdaCommon
         {
             if (exception != null && scope is { Span: var span })
             {
+                Log($"Setting exception on span: {exception.Message}", debug: false);
                 span.SetException(exception);
             }
 
@@ -95,17 +135,19 @@ internal abstract class LambdaCommon
         }
 
         scope?.Dispose();
+        Log("Completed end invocation async process", debug: false);
     }
 
     private static bool ValidateOkStatus(HttpWebResponse response)
     {
         var statusCode = response.StatusCode;
-        Log("The extension responds with statusCode = " + statusCode);
+        Log($"The extension responds with statusCode = {statusCode}", debug: true);
         return statusCode == HttpStatusCode.OK;
     }
 
     private static void WriteRequestPayload(WebRequest request, string data)
     {
+        Log("Writing request payload", debug: true);
         var byteArray = Encoding.UTF8.GetBytes(data);
         request.ContentLength = byteArray.Length;
         var dataStream = request.GetRequestStream();
@@ -115,6 +157,7 @@ internal abstract class LambdaCommon
 
     private static void WriteRequestHeaders(WebRequest request, IDictionary<string, string> context)
     {
+        Log("Writing request headers", debug: true);
         if (context != null)
         {
             foreach (var kv in context)
