@@ -28,7 +28,8 @@ internal static class SpanExtensions
         var hash = span.Context.PathwayContext?.Hash.Value ?? 0;
         if (hash != 0)
         {
-            span.SetTag("pathway.hash", hash.ToString());
+            // Disable span tagging
+            // span.SetTag("pathway.hash", hash.ToString());
         }
     }
 }
