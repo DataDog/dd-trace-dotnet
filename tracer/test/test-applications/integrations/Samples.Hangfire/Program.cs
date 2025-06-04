@@ -15,6 +15,7 @@ namespace Samples.Hangfire
                                .UseFilter(new AutomaticRetryAttribute
                                 {
                                     Attempts = 1, // customize retry count
+                                    DelaysInSeconds = new[] { 5 },
                                     OnAttemptsExceeded = AttemptsExceededAction.Fail // or Delete, depending on your needs
                                 });
 
