@@ -569,7 +569,7 @@ partial class Build : NukeBuild
 
                 // tracer home / fleet installer smoke tests
                 GenerateWindowsTracerHomeSmokeTestsMatrix();
-                GenerateWindowsFleetInstalerSmokeTestsMatrix();
+                GenerateWindowsFleetInstallerIisSmokeTestsMatrix();
 
                 // macos smoke tests
                 GenerateMacosDotnetToolNugetSmokeTestsMatrix();
@@ -1479,7 +1479,7 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetOutputVariable("tracer_home_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
-                void GenerateWindowsFleetInstalerSmokeTestsMatrix()
+                void GenerateWindowsFleetInstallerIisSmokeTestsMatrix()
                 {
                     var dockerName = "mcr.microsoft.com/dotnet/framework/aspnet";
 
@@ -1504,9 +1504,9 @@ partial class Build : NukeBuild
                                          channel = GetInstallerChannel(image.PublishFramework),
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 
-                    Logger.Information($"Installer smoke tests fleet-installer matrix Windows");
+                    Logger.Information($"Installer smoke tests fleet-installer iis matrix Windows");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                    AzurePipelines.Instance.SetOutputVariable("fleet_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                    AzurePipelines.Instance.SetOutputVariable("fleet_installer_windows_iis_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
                 void GenerateWindowsNuGetSmokeTestsMatrix()

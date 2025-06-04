@@ -5929,7 +5929,7 @@ stages:
     - script: tracer\build.cmd CheckSmokeTestsForErrors
       displayName: CheckSmokeTestsForErrors
 
-- stage: fleet_installer_smoke_tests
+- stage: fleet_installer_iis_smoke_tests
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5943,7 +5943,7 @@ stages:
     - job: windows
       timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
       strategy:
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.fleet_installer_windows_smoke_tests_matrix'] ]
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.fleet_installer_windows_iis_smoke_tests_matrix'] ]
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
@@ -5983,7 +5983,7 @@ stages:
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg CHANNEL="$(channel)" \
               --build-arg TARGET_PLATFORM="$(targetPlatform)" \
-              fleet-installer-smoke-tests.windows
+              fleet-installer-smoke-tests-iis.windows
           env:
             dockerTag: $(dockerTag)
           displayName: docker-compose build smoke-tests
@@ -5991,7 +5991,7 @@ stages:
 
         - template: steps/run-snapshot-test.yml
           parameters:
-            target: 'fleet-installer-smoke-tests.windows'
+            target: 'fleet-installer-smoke-tests-iis.windows'
             snapshotPrefix: "smoke_test_iis"
             isLinux: false
             dockerComposePath: $(dockerComposePath)
