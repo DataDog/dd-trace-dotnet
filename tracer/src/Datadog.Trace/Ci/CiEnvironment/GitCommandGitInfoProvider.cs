@@ -15,6 +15,8 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 {
+    private static readonly char[] GitOutputTrimChars = ['\n', '\r', ' '];
+
     private GitCommandGitInfoProvider()
     {
     }
@@ -53,7 +55,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                     useWhereIsIfFileNotFound: true));
             if (repositoryOutput?.ExitCode == 0)
             {
-                localGitInfo.Repository = repositoryOutput.Output.Replace("\n", string.Empty).Trim();
+                localGitInfo.Repository = repositoryOutput.Output.Trim(GitOutputTrimChars);
             }
             else
             {
@@ -67,7 +69,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                     arguments: "rev-parse --abbrev-ref HEAD",
                     workingDirectory: gitDirectory.FullName,
                     useWhereIsIfFileNotFound: true));
-            if (branchOutput?.ExitCode == 0 && branchOutput.Output.Replace("\n", string.Empty).Trim() is { Length: > 0 } branchName && branchName != "HEAD")
+            if (branchOutput?.ExitCode == 0 && branchOutput.Output.Trim(GitOutputTrimChars) is { Length: > 0 } branchName && branchName != "HEAD")
             {
                 localGitInfo.Branch = branchName;
             }
@@ -89,7 +91,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 return false;
             }
 
-            var gitLogDataArray = gitLogOutput.Output.Replace("\n", string.Empty).Trim().Split(["|,|"], StringSplitOptions.None);
+            var gitLogDataArray = gitLogOutput.Output.Trim(GitOutputTrimChars).Split(["|,|"], StringSplitOptions.None);
             if (gitLogDataArray.Length < 8)
             {
                 localGitInfo.Errors.Add($"Git log output does not contain the expected number of fields: {gitLogOutput.Output}");
@@ -117,7 +119,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             localGitInfo.CommitterDate = DateTimeOffset.FromUnixTimeSeconds(committerUnixDate);
             localGitInfo.CommitterName = gitLogDataArray[5];
             localGitInfo.CommitterEmail = gitLogDataArray[6];
-            localGitInfo.Message = string.Join("|,|", gitLogDataArray.Skip(7)).Trim();
+            localGitInfo.Message = string.Join("|,|", gitLogDataArray.Skip(7)).Trim(GitOutputTrimChars);
             if (localGitInfo.Commit.StartsWith("'"))
             {
                 localGitInfo.Commit = localGitInfo.Commit.Substring(1);
@@ -125,7 +127,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 
             if (localGitInfo.Message.EndsWith("'"))
             {
-                localGitInfo.Message = localGitInfo.Message.Substring(0, localGitInfo.Message.Length - 1).Trim();
+                localGitInfo.Message = localGitInfo.Message.Substring(0, localGitInfo.Message.Length - 1).Trim(GitOutputTrimChars);
             }
         }
         catch (Exception ex)
