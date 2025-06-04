@@ -39,7 +39,7 @@ public class HangfireTests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent))
         {
-            const int expectedSpanCount = 4;
+            const int expectedSpanCount = 7;
             var spans = agent.WaitForSpans(expectedSpanCount);
 
             using var s = new AssertionScope();
