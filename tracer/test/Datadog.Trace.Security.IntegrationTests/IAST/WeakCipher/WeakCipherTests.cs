@@ -25,6 +25,9 @@ public class WeakCipherTests : TestHelper
     public WeakCipherTests(ITestOutputHelper output)
         : base("WeakCipher", output)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
+        EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
         SetServiceVersion("1.0.0");
         SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
     }

@@ -687,6 +687,9 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
     [Trait("RunOnWindows", "True")]
     public async Task TestSessionTimeoutVulnerability(int timeoutMinutes)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
+        EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
         SetEnvironmentVariable("IAST_TEST_SESSION_IDLE_TIMEOUT", timeoutMinutes.ToString());
 
         var filename = "Iast.SessionIdleTimeout.AspNetCore5.IastEnabled";
@@ -1319,6 +1322,9 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
 
         SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
+#pragma warning disable CS0618 // Type or member is obsolete
+        EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
     }
 
     protected AspNetCoreTestFixture Fixture { get; }
