@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
 
@@ -20,7 +20,8 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
 /// </summary>
 internal class DataStreamsAggregator
 {
-    private readonly ReaderWriterLock _lock = new();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsAggregator>();
+    private readonly ReaderWriterLockSlim _lock = new();
     private readonly int _lockTimeoutMs = 500;
 
     // The inner dictionary is constrained in size by the number of unique hashes seen by the app
@@ -54,7 +55,7 @@ internal class DataStreamsAggregator
     {
         try
         {
-            _lock.AcquireReaderLock(_lockTimeoutMs);
+            _lock.TryEnterReadLock(_lockTimeoutMs);
             try
             {
                 var currentBucketStartTime = BucketStartTimeForTimestamp(point.TimestampNs);
@@ -66,7 +67,7 @@ internal class DataStreamsAggregator
             }
             finally
             {
-                _lock.ReleaseReaderLock();
+                _lock.ExitReadLock();
             }
         }
         catch
@@ -79,7 +80,7 @@ internal class DataStreamsAggregator
     {
         try
         {
-            _lock.AcquireReaderLock(_lockTimeoutMs);
+            _lock.TryEnterReadLock(_lockTimeoutMs);
             try
             {
                 var currentBucketStartTime = BucketStartTimeForTimestamp(point.TimestampNs);
@@ -96,7 +97,7 @@ internal class DataStreamsAggregator
             }
             finally
             {
-                _lock.ReleaseReaderLock();
+                _lock.ExitReadLock();
             }
         }
         catch
@@ -116,7 +117,7 @@ internal class DataStreamsAggregator
         Interlocked.Exchange(ref _pointsDropped, 0);
         try
         {
-            _lock.AcquireWriterLock(_lockTimeoutMs);
+            _lock.TryEnterWriteLock(_lockTimeoutMs);
             try
             {
                 var statsToAdd = Export(maxBucketFlushTimeNs) ?? new();
@@ -134,7 +135,7 @@ internal class DataStreamsAggregator
             finally
             {
                 var dropped = Interlocked.Read(ref _pointsDropped);
-                _lock.ReleaseWriterLock();
+                _lock.ExitWriteLock();
 
                 if (dropped > 0)
                 {

@@ -22,8 +22,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
-    private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(10_000);
-    private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(10_000);
+    private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
+    private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
     private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
     private readonly Task _processTask;
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -229,7 +229,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
             if (!_completionSource.Task.IsCompleted)
             {
-                _completionSource.Task.Wait(_waitTimeSpan);
+                await _completionSource.Task.WaitAsync(_waitTimeSpan).ConfigureAwait(false);
             }
         }
     }
