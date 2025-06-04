@@ -630,7 +630,7 @@ partial class Build
                             CopyFileToDirectory(pdbFile, dest, FileExistsPolicy.Overwrite);
                         }
                     }
-                    else if (IsLinux || IsOsx)
+                    else if (IsLinux)
                     {
                         var (destArch, ext) = GetUnixArchitectureAndExtension();
 
@@ -638,6 +638,14 @@ partial class Build
 
                         var source = NativeBuildDirectory / "libdatadog-install" / "lib" / libdatadogFileName;
                         var dest = MonitoringHomeDirectory / destArch;
+                        CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                    }
+                    else if (IsOsx)
+                    {
+                        var libdatadogFileName = $"libdatadog_profiling.dylib";
+
+                        var source = NativeBuildDirectory / "libdatadog-install" / "lib" / libdatadogFileName;
+                        var dest = MonitoringHomeDirectory / "osx";
                         CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
                     }
                 });
