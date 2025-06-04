@@ -37,11 +37,15 @@ rootCommand.AddExample("""
 rootCommand.AddExample("""
                        remove-iis-instrumentation"
                        """);
+rootCommand.AddExample("""
+                       available-commands"
+                       """);
 
 rootCommand.AddCommand(new InstallVersionCommand());
 rootCommand.AddCommand(new UninstallVersionCommand());
 rootCommand.AddCommand(new EnableIisInstrumentationCommand());
 rootCommand.AddCommand(new RemoveIisInstrumentation());
+rootCommand.AddCommand(new AvailableCommandsCommand(rootCommand));
 
 return builder.Build().Invoke(args);
 
