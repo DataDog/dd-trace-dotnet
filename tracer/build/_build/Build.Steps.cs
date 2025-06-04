@@ -630,7 +630,7 @@ partial class Build
                             CopyFileToDirectory(pdbFile, dest, FileExistsPolicy.Overwrite);
                         }
                     }
-                    else if (IsLinux || IsOsx)
+                    else if (IsLinux)
                     {
                         var (destArch, ext) = GetUnixArchitectureAndExtension();
 
@@ -638,6 +638,14 @@ partial class Build
 
                         var source = NativeBuildDirectory / "libdatadog-install" / "lib" / libdatadogFileName;
                         var dest = MonitoringHomeDirectory / destArch;
+                        CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                    }
+                    else if (IsOsx)
+                    {
+                        var libdatadogFileName = $"libdatadog_profiling.dylib";
+
+                        var source = NativeBuildDirectory / "libdatadog-install" / "lib" / libdatadogFileName;
+                        var dest = MonitoringHomeDirectory / "osx";
                         CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
                     }
                 });
@@ -664,13 +672,22 @@ partial class Build
                         CopyFile(source, dest, FileExistsPolicy.Overwrite);
                     }
                 }
-                else
+                else if (IsLinux)
                 {
                     var (arch, ext) = GetUnixArchitectureAndExtension();
                     var source = MonitoringHomeDirectory / arch / $"libdatadog_profiling.{ext}";
                     foreach (var framework in frameworks)
                     {
                         var dest = testBinFolder / framework / $"LibDatadog.{ext}";
+                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    }
+                }
+                else if (IsOsx)
+                {
+                    var source = MonitoringHomeDirectory/ "osx" / $"libdatadog_profiling.dylib";
+                    foreach (var framework in frameworks)
+                    {
+                        var dest = testBinFolder / framework / $"LibDatadog.dylib";
                         CopyFile(source, dest, FileExistsPolicy.Overwrite);
                     }
                 }
