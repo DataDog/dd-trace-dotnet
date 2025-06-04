@@ -29,12 +29,13 @@ RUN  $url='https://builds.dotnet.microsoft.com/dotnet/aspnetcore/Runtime/' + $en
 # Copy the tracer home file from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
 COPY --from=builder /src/artifacts /install
 
+ARG INSTALL_COMMAND
 RUN mkdir /logs; \
     mkdir /monitoring-home; \
     cd /install; \
     Expand-Archive 'c:\install\windows-tracer-home.zip' -DestinationPath 'c:\monitoring-home\';  \
     c:\install\installer\Datadog.FleetInstaller.exe install-version --home-path c:\monitoring-home; \
-    c:\install\installer\Datadog.FleetInstaller.exe enable-iis-instrumentation --home-path c:\monitoring-home; \
+    c:\install\installer\Datadog.FleetInstaller.exe $env:INSTALL_COMMAND --home-path c:\monitoring-home; \
     cd /app;
 
 # Set the additional env vars

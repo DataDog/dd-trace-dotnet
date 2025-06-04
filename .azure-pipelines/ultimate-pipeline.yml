@@ -5983,6 +5983,7 @@ stages:
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg CHANNEL="$(channel)" \
               --build-arg TARGET_PLATFORM="$(targetPlatform)" \
+              --build-arg INSTALL_COMMAND="$(installCommand)" \
               fleet-installer-smoke-tests-iis.windows
           env:
             dockerTag: $(dockerTag)
