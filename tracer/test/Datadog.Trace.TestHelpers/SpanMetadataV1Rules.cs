@@ -659,14 +659,14 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsHangfireV1(this MockSpan span) => Result.FromSpan(span)
            .Properties(
                 s => s
-                    .MatchesOneOf(Name, "Hangfire.onCreate", "Hangfire.onPerform")
+                    .MatchesOneOf(Name,  "Hangfire.onPerform")
                     .Matches(Type, "Hangfire"))
            .Tags(s => s
                      .Matches("component", "Hangfire")
+                     .Matches("span.kind", "server")
                      .IsOptional("_dd.base_service")
                      .IsOptional("job.ID")
-                     .IsOptional("job.CreatedAt")
-                     .IsPresent("span.kind"));
+                     .IsOptional("job.CreatedAt"));
 
         public static Result IsHotChocolateV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
