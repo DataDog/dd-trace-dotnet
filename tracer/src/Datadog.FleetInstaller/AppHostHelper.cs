@@ -16,14 +16,14 @@ internal static class AppHostHelper
     public static bool SetAllEnvironmentVariables(ILogger log, TracerValues tracerValues)
     {
         log.WriteInfo("Setting app pool environment variables");
-        return ModifyEnvironmentVariablesWithRetry(log, tracerValues.RequiredEnvVariables, SetEnvVars);
+        return ModifyEnvironmentVariablesWithRetry(log, tracerValues.IisRequiredEnvVariables, SetEnvVars);
     }
 
     public static bool RemoveAllEnvironmentVariables(ILogger log)
     {
         log.WriteInfo("Removing app pool environment variables");
         // we don't need to know the exact tracer values, we just use the _keys_ in removeEnvVars
-        var envVars = new TracerValues(string.Empty).RequiredEnvVariables;
+        var envVars = new TracerValues(string.Empty).IisRequiredEnvVariables;
         return ModifyEnvironmentVariablesWithRetry(log, envVars, RemoveEnvVars);
     }
 
