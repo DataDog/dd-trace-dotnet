@@ -224,7 +224,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 // do one more loop to make sure everything is flushed
                 RequestFlush();
                 isFinalFlush = true;
-
                 continue;
             }
 
