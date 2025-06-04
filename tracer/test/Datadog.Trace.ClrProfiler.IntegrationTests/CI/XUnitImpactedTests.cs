@@ -109,23 +109,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 // Get the current branch name
                 var currentBranchOutput = RunGitCommand("branch --show-current");
-                Skip.IfNot(currentBranchOutput.ExitCode == 0, "Failed to get current branch");
+                currentBranchOutput.ExitCode.Should().Be(0, "Failed to get current branch");
                 originalBranch = currentBranchOutput.Output.Trim();
                 Output.WriteLine($"Original branch: {originalBranch}");
 
                 // Create and checkout a new test branch
                 var createBranchOutput = RunGitCommand($"checkout -b {testBranchName}");
-                Skip.IfNot(createBranchOutput.ExitCode == 0, $"Failed to create test branch: {createBranchOutput.Error}");
+                createBranchOutput.ExitCode.Should().Be(0, $"Failed to create test branch: {createBranchOutput.Error}");
 
                 // Modify the test file
                 ModifyFile();
 
                 // Stage and commit the changes
                 var addOutput = RunGitCommand($"add {GetTestFile()}");
-                Skip.IfNot(addOutput.ExitCode == 0, $"Failed to stage changes: {addOutput.Error}");
+                addOutput.ExitCode.Should().Be(0, $"Failed to stage changes: {addOutput.Error}");
 
                 var commitOutput = RunGitCommand($"commit -m \"Test modifications for impact detection test\"");
-                Skip.IfNot(commitOutput.ExitCode == 0, $"Failed to commit changes: {commitOutput.Error}");
+                commitOutput.ExitCode.Should().Be(0, $"Failed to commit changes: {commitOutput.Error}");
 
                 // Enable impact detection
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, "True");
@@ -148,7 +148,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     if (!string.IsNullOrEmpty(originalBranch))
                     {
                         var output = RunGitCommand($"checkout {originalBranch}");
-                        Skip.IfNot(output.ExitCode == 0, $"Failed to checkout changes: {output.Error}");
+                        output.ExitCode.Should().Be(0, $"Failed to checkout changes: {output.Error}");
                     }
 
                     // Delete the test branch

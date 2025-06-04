@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         useWhereIsIfFileNotFound: true),
                     null);
 
-                if (gitOutput is null || (gitOutput.ExitCode < 0 && gitOutput.Error is not { Length: > 0 }))
+                if (gitOutput is null || (gitOutput.ExitCode != 0 && gitOutput.Error is not { Length: > 0 }))
                 {
                     return new ProcessHelpers.CommandOutput(null, "git command returned null output", -1, false);
                 }
