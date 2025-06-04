@@ -27,8 +27,9 @@ public class AvroTests : TracingIntegrationTest
     public static IEnumerable<object[]> TestData
     {
         get => from type in new[] { "Default", "SpecificDatum", "GenericDatum" }
+               from packageVersionArray in PackageVersions.Avro
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new object[] { type, metadataSchemaVersion };
+               select new object[] { type, packageVersionArray, metadataSchemaVersion };
     }
 
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion)
@@ -39,12 +40,12 @@ public class AvroTests : TracingIntegrationTest
     [SkippableTheory]
     [MemberData(nameof(TestData))]
     [Trait("Category", "EndToEnd")]
-    public async Task TagTraces(string type, string metadataSchemaVersion)
+    public async Task TagTraces(string type, string packageVersion, string metadataSchemaVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, type))
+        using (await RunSampleAndWaitForExit(agent, type, packageVersion))
         {
             using var assertionScope = new AssertionScope();
             var spans = agent.WaitForSpans(2);
