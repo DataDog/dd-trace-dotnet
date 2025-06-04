@@ -52,7 +52,7 @@ internal class RegistryHelper
 
     public static bool SetIisRegistrySettings(ILogger log, TracerValues values, string w3SvcKey, string wasKey)
     {
-        var keyValues = values.RequiredEnvVariables.Select(kvp => kvp + "=" + kvp.Value).ToArray();
+        var keyValues = values.IisRequiredEnvVariables.Select(kvp => kvp + "=" + kvp.Value).ToArray();
         if (!SetIisRegistrySettings(log, w3SvcKey, keyValues))
         {
             return false;

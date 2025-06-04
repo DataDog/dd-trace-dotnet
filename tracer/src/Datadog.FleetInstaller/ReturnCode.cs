@@ -20,4 +20,6 @@ internal enum ReturnCode
     ErrorReadingIisConfiguration,
     ErrorSettingIisFallbackVariables,
     ErrorRemovingIisFallbackVariables,
+    ErrorSettingGlobalEnvironmentVariables,
+    ErrorRemovingGlobalEnvironmentVariables,
 }

@@ -214,8 +214,8 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
                       .BeTrue();
 
         // verify the key is there with expected value
-        var expected = values.RequiredEnvVariables.Select(kvp => kvp + "=" + kvp.Value).ToArray();
-        expected.Should().HaveSameCount(values.RequiredEnvVariables);
+        var expected = values.IisRequiredEnvVariables.Select(kvp => kvp + "=" + kvp.Value).ToArray();
+        expected.Should().HaveSameCount(values.IisRequiredEnvVariables);
         VerifyIisRegKey(key1, expected);
         VerifyIisRegKey(key2, expected);
     }
@@ -237,8 +237,8 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
                       .Should()
                       .BeTrue();
 
-        var expected = values.RequiredEnvVariables.Select(kvp => kvp + "=" + kvp.Value).ToArray();
-        expected.Should().HaveSameCount(values.RequiredEnvVariables);
+        var expected = values.IisRequiredEnvVariables.Select(kvp => kvp + "=" + kvp.Value).ToArray();
+        expected.Should().HaveSameCount(values.IisRequiredEnvVariables);
         VerifyIisRegKey(key1, expected);
         VerifyIisRegKey(key2, expected);
     }
@@ -268,8 +268,8 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
                       .Should()
                       .BeTrue();
 
-        var expected = values.RequiredEnvVariables.Select(kvp => kvp + "=" + kvp.Value).ToArray();
-        expected.Should().HaveSameCount(values.RequiredEnvVariables);
+        var expected = values.IisRequiredEnvVariables.Select(kvp => kvp + "=" + kvp.Value).ToArray();
+        expected.Should().HaveSameCount(values.IisRequiredEnvVariables);
         VerifyIisRegKey(key1, expected);
         VerifyIisRegKey(key2, expected);
     }
