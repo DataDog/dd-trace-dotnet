@@ -212,8 +212,6 @@ internal class ImpactedTestsModule
             defaultBranch: defaultBranch,
             targetBranch: environmentValues.Branch,
             pullRequestBaseBranch: environmentValues.PrBaseBranch);
-        return baseBranchInfo is not null
-                   ? baseBranchInfo.MergeBaseSha
-                   : string.Empty;
+        return baseBranchInfo?.MergeBaseSha ?? string.Empty;
     }
 }
