@@ -82,6 +82,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Tombstone = "true";
                 }
 
+                if (topicPartition is not null && !string.IsNullOrEmpty(topicPartition.Topic))
+                {
+                    tags.Topic = topicPartition.Topic;
+                }
+
                 // Producer spans should always be measured
                 span.SetMetric(Trace.Tags.Measured, 1.0);
 
@@ -155,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                SpanContext? propagatedContext = null;
+                PropagationContext extractedContext = default;
                 PathwayContext? pathwayContext = null;
 
                 // Try to extract propagated context from headers
@@ -165,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                     try
                     {
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headers);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
@@ -188,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
                 var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
 
-                scope = tracer.StartActiveInternal(operationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parent: extractedContext.SpanContext, tags: tags, serviceName: serviceName);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
@@ -225,6 +230,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Tombstone = "true";
                 }
 
+                if (!string.IsNullOrEmpty(topic))
+                {
+                    tags.Topic = topic;
+                }
+
                 // Consumer spans should always be measured
                 span.SetTag(Tags.Measured, "1");
 
@@ -247,7 +257,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         pathwayContext);
 
                     message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext); // remove eventual junk
-                    if (!tracer.Settings.KafkaCreateConsumerScopeEnabledInternal && message?.Headers is not null && span.Context.PathwayContext != null)
+                    if (!tracer.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
                     {
                         // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual
                         // call to SpanContextExtractor.Extract by a user who'd like to re-pair pathways after a batch consume.
@@ -270,7 +280,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             try
             {
                 if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
-                    || !tracer.Settings.KafkaCreateConsumerScopeEnabledInternal)
+                    || !tracer.Settings.KafkaCreateConsumerScopeEnabled)
                 {
                     // integration disabled, skip this trace
                     return;
@@ -323,7 +333,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
 
-                SpanContextPropagator.Instance.Inject(span.Context, adapter);
+                var context = new PropagationContext(span.Context, Baggage.Current);
+                Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, adapter);
 
                 if (dataStreamsManager.IsEnabled)
                 {
@@ -340,6 +351,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // don't keep trying if we run into problems
                 _headersInjectionEnabled = false;
                 Log.Warning(ex, "There was a problem injecting headers into the Kafka record. Disabling Headers injection");
+            }
+        }
+
+        internal static void DisableHeadersIfUnsupportedBroker(Exception exception)
+        {
+            if (_headersInjectionEnabled && exception is not null && exception.Message.IndexOf("Unknown broker error", StringComparison.OrdinalIgnoreCase) != -1)
+            {
+                // If we get this exception, it likely means that the message format being used is pre-0.11
+                // We do not retry the failed message, we think this will have unnecessary complexity due to the likely rarity of this error
+                // We do not selectively disable headers injection, we disable it globally due to the likely rarity of this error
+                _headersInjectionEnabled = false;
+
+                Log.Error(exception, "Kafka Broker responded with UNKNOWN_SERVER_ERROR (-1). Please look at broker logs for more information. Tracer message header injection for Kafka is disabled.");
             }
         }
     }

@@ -76,6 +76,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountContextHeaderTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderTruncationReason tag, int increment = 1)
+    {
+    }
+
     public void RecordCountStatsApiRequests(int increment = 1)
     {
     }
@@ -85,6 +89,14 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     }
 
     public void RecordCountStatsApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountOpenTelemetryConfigHiddenByDatadogConfig(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountOpenTelemetryConfigInvalid(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
     {
     }
 
@@ -104,6 +116,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountUnsupportedCustomInstrumentationServices(int increment = 1)
+    {
+    }
+
     public void RecordCountDirectLogLogs(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
     {
     }
@@ -120,11 +136,11 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountWafInit(int increment = 1)
+    public void RecordCountWafInit(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1)
     {
     }
 
-    public void RecordCountWafUpdates(int increment = 1)
+    public void RecordCountWafUpdates(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1)
     {
     }
 
@@ -140,7 +156,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountRaspRuleMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
+    public void RecordCountRaspRuleMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleTypeMatch tag, int increment = 1)
     {
     }
 
@@ -148,7 +164,19 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
+    public void RecordCountMissingUserId(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFrameworkWithEventType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountMissingUserLogin(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFrameworkWithEventType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountUserEventSdk(Datadog.Trace.Telemetry.Metrics.MetricTags.UserEventSdk tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType tag, int increment = 1)
     {
     }
 
@@ -156,11 +184,15 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
+    public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastVulnerabilityType tag, int increment = 1)
     {
     }
 
     public void RecordCountIastRequestTainted(int increment = 1)
+    {
+    }
+
+    public void RecordCountIastSuppressedVulnerabilities(Datadog.Trace.Telemetry.Metrics.MetricTags.IastVulnerabilityType tag, int increment = 1)
     {
     }
 }

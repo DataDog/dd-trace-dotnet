@@ -12,10 +12,10 @@
     <None Remove="xunit.runner.json" />
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="VerifyHelper.cs" />
     <Content Include="applicationHost.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="xunit.runner.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
@@ -39,9 +39,21 @@
     <None Update="ApiSecurity\ruleset-with-block.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+
+    <None Update="remote-rules-override-blocking.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Update="ruleset.3.0-full.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Update="ruleset.blocked.users.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR $(TargetFramework.StartsWith('net4'))">
+  <ItemGroup Condition="'$(TargetFramework)'=='net9.0' OR '$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR $(TargetFramework.StartsWith('net4'))">
     <PackageReference Include="System.DirectoryServices" Version="7.0.1" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="7.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="7.0.0" />
@@ -67,14 +79,17 @@
 
   <ItemGroup>
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
+    <PackageReference Include="AWSSDK.SimpleEmail" Version="3.7.402.28" />
+    <PackageReference Include="MailKit" Version="4.10.0" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="CI\Data\*.*">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="CI\Data\**\*.*">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
@@ -85,7 +100,7 @@
     <None Update="remote-rules.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ruleset.3.0.json">
+    <None Update="remote-rules-override-blocking.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ruleset.3.0.json">

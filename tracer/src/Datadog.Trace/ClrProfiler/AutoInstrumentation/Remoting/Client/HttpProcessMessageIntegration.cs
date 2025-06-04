@@ -66,7 +66,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
                     // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.
                     // At the same time, we don't want to set an active scope now, because it's possible that GetResponse will never be called.
                     // Instead, we generate a spancontext and inject it in the headers. GetResponse will fetch them and create an active scope with the right id.
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, requestHeaders, (headers, key, value) => headers[key] = value);
+                    var context = new PropagationContext(scope.Span.Context, Baggage.Current);
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, requestHeaders, (headers, key, value) => headers[key] = value);
 
                     // "Disable" tracing so that the regular WebRequest instrumentation does not fire for this request
                     requestHeaders["x-datadog-tracing-enabled"] = "false";

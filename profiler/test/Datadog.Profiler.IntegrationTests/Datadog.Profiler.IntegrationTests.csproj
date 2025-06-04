@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
     <Platforms>AnyCPU;x64;x86</Platforms>
@@ -20,8 +20,32 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Allocations\allocations-32.bevents" />
+    <None Remove="Allocations\allocations-64.bevents" />
+    <None Remove="Contention\lockContention-32.bevents" />
+    <None Remove="Contention\lockContention-64.bevents" />
+    <None Remove="GarbageCollections\3x3GCs-32.bevents" />
+    <None Remove="GarbageCollections\3x3GCs-64.bevents" />
     <None Remove="xunit.runner.json" />
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="Always" />
+    <Content Include="Allocations\allocations-32.bevents">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Allocations\allocations-64.bevents">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Contention\lockContention-32.bevents">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Contention\lockContention-64.bevents">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="GarbageCollections\3x3GCs-32.bevents">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="GarbageCollections\3x3GCs-64.bevents">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,6 +54,18 @@
     </Compile>
     <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockSpanLink.cs">
       <Link>Tracer\MockSpanLink.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockSpanEvent.cs">
+      <Link>Tracer\MockSpanEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockAttributeAnyValue.cs">
+      <Link>Tracer\MockAttributeAnyValue.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockAttributeArray.cs">
+      <Link>Tracer\MockAttributeArray.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockAttributeArrayValue.cs">
+      <Link>Tracer\MockAttributeArrayValue.cs</Link>
     </Compile>
     <Compile Include="..\..\..\tracer\src\Datadog.Trace\Tags.cs">
       <Link>Tracer\Tags.cs</Link>
@@ -42,6 +78,7 @@
     <PackageReference Include="K4os.Compression.LZ4.Streams" Version="1.3.6" />
     <PackageReference Include="MessagePack" Version="1.9.11" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="xunit" Version="2.4.2" />

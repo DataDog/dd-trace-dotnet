@@ -1,0 +1,11 @@
+{
+  "dsl": "ref IntNumber > DoubleNumber",
+  "gt": [
+    {
+      "ref": "IntNumber"
+    },
+    {
+      "ref": "DoubleNumber"
+    }
+  ]
+}

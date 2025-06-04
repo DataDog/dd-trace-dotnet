@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Tests
             Assert.Throws<ArgumentNullException>(() => Tracer.Instance = null);
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
-            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory(CIVisibility.Settings, NullDiscoveryService.Instance, false)));
+            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new TestOptimizationTracerManagerFactory(TestOptimization.Instance.Settings, TestOptimization.Instance.TracerManagement!, false)));
         }
 
         [Fact]
@@ -75,31 +76,27 @@ namespace Datadog.Trace.Tests
 
             using (var agent = MockTracerAgent.Create(null, agentPort))
             {
-                var oldSettings = new TracerSettings
-                {
-                    Exporter = new ExporterSettings()
+                var oldSettings = TracerSettings.Create(
+                    new()
                     {
-                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
-                    },
-                    TracerMetricsEnabled = false,
-                    StartupDiagnosticLogEnabled = false,
-                    GlobalTags = new Dictionary<string, string> { { "test-tag", "original-value" } },
-                };
+                        { ConfigurationKeys.AgentUri, new Uri($"http://127.0.0.1:{agent.Port}") },
+                        { ConfigurationKeys.TracerMetricsEnabled, false },
+                        { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                        { ConfigurationKeys.GlobalTags, "test-tag:original-value" },
+                    });
                 Tracer.Configure(oldSettings);
 
                 var scope = Tracer.Instance.StartActive("Test span");
                 (scope.Span as Span).IsRootSpan.Should().BeTrue();
 
-                var newSettings = new TracerSettings
-                {
-                    Exporter = new ExporterSettings()
+                var newSettings = TracerSettings.Create(
+                    new()
                     {
-                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
-                    },
-                    TracerMetricsEnabled = false,
-                    StartupDiagnosticLogEnabled = false,
-                    GlobalTags = new Dictionary<string, string> { { "test-tag", "new-value" } },
-                };
+                        { ConfigurationKeys.AgentUri, new Uri($"http://127.0.0.1:{agent.Port}") },
+                        { ConfigurationKeys.TracerMetricsEnabled, false },
+                        { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                        { ConfigurationKeys.GlobalTags, "test-tag:new-value" },
+                    });
 
                 Tracer.Configure(newSettings);
 
@@ -123,7 +120,7 @@ namespace Datadog.Trace.Tests
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager()
-                : base(new ImmutableTracerSettings(new TracerSettings()), null, null, null, null, null, null, null, null, null, null, null, null, Mock.Of<IRemoteConfigurationManager>(), Mock.Of<IDynamicConfigurationManager>(), Mock.Of<ITracerFlareManager>())
+                : base(new TracerSettings(), null, null, null, null, null, null, null, null, null, null, null, null, Mock.Of<IRemoteConfigurationManager>(), Mock.Of<IDynamicConfigurationManager>(), Mock.Of<ITracerFlareManager>(), Mock.Of<ISpanEventsManager>())
             {
             }
         }

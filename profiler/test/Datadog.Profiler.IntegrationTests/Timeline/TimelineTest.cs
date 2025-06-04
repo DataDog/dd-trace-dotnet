@@ -34,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.Timeline
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "1");
             // TODO: add any new profiler to ensure that all are setting timestamps as label
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             Assert.True(CheckTimestampsAsLabelForAllSamples(runner.Environment.PprofDir));

@@ -114,15 +114,25 @@ namespace Datadog.Trace.Propagators
             Sampled = 1,
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public PropagatorType PropagatorType => PropagatorType.TraceContext;
+
+        public string DisplayName => "tracecontext";
+
+        public void Inject<TCarrier, TCarrierSetter>(PropagationContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
+            if (context.SpanContext is not { } spanContext)
+            {
+                // nothing to inject
+                return;
+            }
+
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.TraceContext);
 
-            var traceparent = CreateTraceParentHeader(context);
+            var traceparent = CreateTraceParentHeader(spanContext);
             carrierSetter.Set(carrier, TraceParentHeaderName, traceparent);
 
-            var tracestate = CreateTraceStateHeader(context);
+            var tracestate = CreateTraceStateHeader(spanContext);
 
             if (!string.IsNullOrWhiteSpace(tracestate))
             {
@@ -144,7 +154,7 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateTraceStateHeader(SpanContext context)
         {
-            var sb = StringBuilderCache.Acquire(100);
+            var sb = StringBuilderCache.Acquire();
 
             try
             {
@@ -201,7 +211,7 @@ namespace Datadog.Trace.Propagators
                     sb.Append(additionalState);
                 }
 
-                return sb.ToString();
+                return StringBuilderCache.GetStringAndRelease(sb);
             }
             finally
             {
@@ -343,7 +353,7 @@ namespace Datadog.Trace.Propagators
             int? samplingPriority = null;
             string? origin = null;
             string? lastParent = null;
-            var propagatedTagsBuilder = StringBuilderCache.Acquire(50);
+            var propagatedTagsBuilder = StringBuilderCache.Acquire();
 
             try
             {
@@ -592,10 +602,10 @@ namespace Datadog.Trace.Propagators
         public bool TryExtract<TCarrier, TCarrierGetter>(
             TCarrier carrier,
             TCarrierGetter carrierGetter,
-            [NotNullWhen(true)] out SpanContext? spanContext)
+            out PropagationContext context)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
-            spanContext = null;
+            context = default;
 
             // get the "traceparent" header
             var traceParentHeaders = carrierGetter.Get(carrier, TraceParentHeaderName);
@@ -635,7 +645,7 @@ namespace Datadog.Trace.Propagators
                 traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
             }
 
-            spanContext = new SpanContext(
+            var spanContext = new SpanContext(
                 traceId: traceParent.TraceId,
                 spanId: traceParent.ParentId,
                 samplingPriority: samplingPriority,
@@ -648,11 +658,17 @@ namespace Datadog.Trace.Propagators
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
             spanContext.LastParentId = traceState.LastParent;
+
+            context = new PropagationContext(spanContext, baggage: null);
+
+            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.TraceContext);
             return true;
         }
 
-        private static bool TryGetSingle(IEnumerable<string?> values, out string value)
+        // internal for regression testing
+        internal static bool TryGetSingle(IEnumerable<string?> values, out string value)
         {
+            // null values is handled in TryGetSingleRare
             // fast path for string[], List<string>, and others
             if (values is IReadOnlyList<string?> list)
             {
@@ -669,28 +685,35 @@ namespace Datadog.Trace.Propagators
             return TryGetSingleRare(values, out value);
         }
 
-        private static bool TryGetSingleRare(IEnumerable<string?> values, out string value)
+        // internal for regression testing
+        internal static bool TryGetSingleRare(IEnumerable<string?> values, out string value)
         {
-            value = string.Empty;
-            var hasValue = false;
-
-            foreach (var s in values)
+            if (values is null)
             {
-                if (!hasValue)
-                {
-                    // save first item
-                    value = s ?? string.Empty;
-                    hasValue = true;
-                }
-                else
-                {
-                    // we already saved the first item and there is a second one
-                    return false;
-                }
+                value = string.Empty;
+                return false;
             }
 
-            // there were no items
-            return false;
+            using var enumerator = values.GetEnumerator();
+
+            if (!enumerator.MoveNext())
+            {
+                // there were no items
+                value = string.Empty;
+                return false;
+            }
+
+            // store first value
+            value = enumerator.Current ?? string.Empty;
+
+            // is there a second value?
+            if (enumerator.MoveNext())
+            {
+                value = string.Empty;
+                return false; // more than one value
+            }
+
+            return true;
         }
 
         private static string TrimAndJoinStrings(IEnumerable<string?> values)
@@ -714,7 +737,7 @@ namespace Datadog.Trace.Propagators
                 }
             }
 
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
 
             switch (values)
             {

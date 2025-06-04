@@ -22,11 +22,33 @@ const ::shared::WSTRING cfg_copying_originals_modules_env = WStr("DD_COPY_ORIGIN
 const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
 
 // Note that this list should be kept in sync with the values in tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h
+// Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
 const shared::WSTRING default_exclude_assemblies[]{
+    WStr("aspnet_state.exe"),
+    WStr("csc.exe"),
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
-    WStr("aspnet_state.exe"),
+    WStr("devenv.exe"),
+    WStr("iisexpresstray.exe"),
+    WStr("InetMgr.exe"),
+    WStr("Microsoft.ServiceHub.Controller.exe"),
+    WStr("MSBuild.exe"),
+    WStr("MsDtsSrvr.exe"),
+    WStr("msvsmon.exe"),
+    WStr("PerfWatson2.exe"),
+    WStr("ServiceHub.DataWarehouseHost.exe"),
+    WStr("ServiceHub.Host.CLR.exe"),
+    WStr("ServiceHub.Host.CLR.x86.exe"),
+    WStr("ServiceHub.IdentityHost.exe"),
+    WStr("ServiceHub.RoslynCodeAnalysisService32.exe"),
+    WStr("ServiceHub.SettingsHost.exe"),
+    WStr("ServiceHub.TestWindowStoreHost.exe"),
+    WStr("ServiceHub.ThreadedWaitDialog.exe"),
+    WStr("ServiceHub.VSDetouredHost.exe"),
+    WStr("sqlagent.exe"),
+    WStr("sqlbrowser.exe"),
     WStr("sqlservr.exe"),
+    WStr("VBCSCompiler.exe"),
     WStr("vsdbg"),
     WStr("vsdbg.exe"),
 };
@@ -99,4 +121,69 @@ inline bool IsRunningOnIIS()
 {
     const auto& process_name = ::shared::GetCurrentProcessName();
     return process_name == WStr("w3wp.exe") || process_name == WStr("iisexpress.exe");
+}
+
+inline std::string GetCurrentOsArch(bool isRunningOnAlpine)
+{
+#if AMD64
+
+#if _WINDOWS
+    return "win-x64";
+#elif LINUX
+    return isRunningOnAlpine ? "linux-musl-x64" : "linux-x64";
+#elif MACOS
+    return "osx-x64";
+#else
+#error "currentOsArch not defined."
+#endif
+
+#elif X86
+
+#if _WINDOWS
+    return "win-x86";
+#elif LINUX
+    return isRunningOnAlpine ? "linux-musl-x86" : "linux-x86";
+#elif MACOS
+    return "osx-x86";
+#else
+#error "currentOsArch not defined."
+#endif
+
+#elif ARM64
+
+#if _WINDOWS
+    return "win-arm64";
+#elif LINUX
+    return isRunningOnAlpine ? "linux-musl-arm64" : "linux-arm64";
+#elif MACOS
+    return "osx-arm64";
+#else
+#error "currentOsArch not defined."
+#endif
+
+#elif ARM
+
+#if _WINDOWS
+    return "win-arm";
+#elif LINUX
+    return isRunningOnAlpine ? "linux-musl-arm" : "linux-arm";
+#elif MACOS
+    return "osx-arm";
+#else
+#error "currentOsArch not defined."
+#endif
+
+#else
+#error "currentOsArch not defined."
+#endif
+}
+
+inline bool IsRunningOnAlpine()
+{
+#if LINUX
+    std::error_code ec; // fs::exists might throw if no error_code parameter is provided
+    return fs::exists("/etc/alpine-release", ec);
+#else
+    return false;
+#endif
 }

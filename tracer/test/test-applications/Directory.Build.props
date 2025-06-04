@@ -1,14 +1,22 @@
 <Project>
   <PropertyGroup>
     <!-- only run .NET Framework tests on Windows -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net462;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net48;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
 
     <OutputType>Exe</OutputType>
     <LangVersion>latest</LangVersion>
 
-    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
-    <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>
+    <!-- Control build output locations -->
+    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPivots Condition="'$(ApiVersion)'!=''">$(Configuration.ToLowerInvariant())_$(TargetFramework.ToLowerInvariant())_$(ApiVersion)</ArtifactsPivots>
+
+    <!-- This is to try to force NuGet to restore the packages to the correct location when we're doing a multi-package build -->
+    <DD_RestoreProjectName>$(MSBuildProjectName)</DD_RestoreProjectName>
+    <DD_RestoreProjectName Condition="'$(AssemblyName)' != '' ">$(AssemblyName)</DD_RestoreProjectName>
+    <DD_RestoreProjectName Condition="'$(PackageId)' != '' ">$(PackageId)</DD_RestoreProjectName>
+    <MSBuildProjectExtensionsPath Condition="'$(ApiVersion)'!='' ">$(ArtifactsPath)/obj/$(DD_RestoreProjectName)/$(ArtifactsPivots)</MSBuildProjectExtensionsPath>
 
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>

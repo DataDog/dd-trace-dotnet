@@ -2,13 +2,14 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
 #nullable enable
-
 using System;
 using System.Text;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
 
@@ -17,6 +18,8 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// </summary>
 internal class DataStreamsContextPropagator
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsContextPropagator>();
+
     public static DataStreamsContextPropagator Instance { get; } = new();
 
     /// <summary>
@@ -28,10 +31,42 @@ internal class DataStreamsContextPropagator
     /// <typeparam name="TCarrier">Type of header collection</typeparam>
     public void Inject<TCarrier>(PathwayContext context, TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
+        => Inject(context, headers, Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled);
+
+    // Internal for testing
+    internal void Inject<TCarrier>(PathwayContext context, TCarrier headers, bool isDataStreamsLegacyHeadersEnabled)
+        where TCarrier : IBinaryHeadersCollection
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        headers.Add(DataStreamsPropagationHeaders.PropagationKey, PathwayContextEncoder.Encode(context));
+        var encodedBytes = PathwayContextEncoder.Encode(context);
+
+        // Calculate the maximum length of the base64 encoded data
+        // Base64 encoding encodes 3 bytes of data into 4 bytes of encoded data
+        // So the maximum length is ceil(encodedBytes.Length / 3) * 4 and using integer arithmetic it's ((encodedBytes.Length + 2) / 3) * 4
+        int base64Length = ((encodedBytes.Length + 2) / 3) * 4;
+        byte[] base64EncodedContextBytes = new byte[base64Length];
+        var status = Base64.EncodeToUtf8(encodedBytes, base64EncodedContextBytes, out _, out int bytesWritten);
+
+        if (status != OperationStatus.Done)
+        {
+            Log.Error("Failed to encode Data Streams context to Base64. OperationStatus: {Status}", status);
+            return;
+        }
+
+        if (bytesWritten == base64EncodedContextBytes.Length)
+        {
+            headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContextBytes);
+        }
+        else
+        {
+            headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContextBytes.AsSpan(0, bytesWritten).ToArray());
+        }
+
+        if (isDataStreamsLegacyHeadersEnabled)
+        {
+            headers.Add(DataStreamsPropagationHeaders.PropagationKey, encodedBytes);
+        }
     }
 
     /// <summary>
@@ -42,12 +77,68 @@ internal class DataStreamsContextPropagator
     /// <returns>A new <see cref="PathwayContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
     public PathwayContext? Extract<TCarrier>(TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
+        => Extract(headers, Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled);
+
+    // internal for testing
+    internal PathwayContext? Extract<TCarrier>(TCarrier headers, bool isDataStreamsLegacyHeadersEnabled)
+        where TCarrier : IBinaryHeadersCollection
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        var bytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
+        // Try to extract from the base64 header first
+        var base64Bytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKeyBase64);
+        if (base64Bytes is { Length: > 0 })
+        {
+            try
+            {
+                // Calculate the maximum decoded length
+                // Base64 encoding encodes 3 bytes of data into 4 bytes of encoded data
+                // So the maximum decoded length is (base64Bytes.Length * 3) / 4
+                int decodedLength = (base64Bytes.Length * 3) / 4;
+                byte[] decodedBytes = new byte[decodedLength];
 
-        return bytes is { } ? PathwayContextEncoder.Decode(bytes) : null;
+                var status = Base64.DecodeFromUtf8(base64Bytes, decodedBytes, out _, out int bytesWritten);
+
+                if (status != OperationStatus.Done)
+                {
+                    Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
+                    return null;
+                }
+                else
+                {
+                    if (bytesWritten == decodedBytes.Length)
+                    {
+                        return PathwayContextEncoder.Decode(decodedBytes);
+                    }
+                    else
+                    {
+                        return PathwayContextEncoder.Decode(decodedBytes.AsSpan(0, bytesWritten).ToArray());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to decode base64 Data Streams context.");
+            }
+        }
+
+        if (isDataStreamsLegacyHeadersEnabled)
+        {
+            var binaryBytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
+            if (binaryBytes is { Length: > 0 })
+            {
+                try
+                {
+                    return PathwayContextEncoder.Decode(binaryBytes);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to decode binary Data Streams context.");
+                }
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -81,6 +172,17 @@ internal class DataStreamsContextPropagator
         {
             // Checking string[] allows to avoid the enumerator allocation.
             foreach (string? headerValue in stringValues)
+            {
+                if (!string.IsNullOrEmpty(headerValue))
+                {
+                    return PathwayContextEncoder.Decode(Convert.FromBase64String(headerValue));
+                }
+            }
+        }
+        else
+        {
+            // can happen if the value is coming from a user-provided getter, for instance via SpanContextExtractor
+            foreach (var headerValue in headerValues)
             {
                 if (!string.IsNullOrEmpty(headerValue))
                 {

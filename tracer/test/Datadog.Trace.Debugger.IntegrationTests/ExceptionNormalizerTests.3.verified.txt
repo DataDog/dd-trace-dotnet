@@ -1,0 +1,9 @@
+Microsoft.Data.SqlClient.SqlException
+   at Foo.Bar.Core.App.WorkOrders.GetStats(Int32 associationId, Nullable`1 accountNumber, String unitNumber, String categoryName, List`1 associationIds)
+   at Foo.Bar.Core.App.WorkOrders.GetStats(Int32 associationId, Nullable`1 accountNumber, String unitNumber, String categoryName, List`1 associationIds)
+   at Foo.Bar.Backend.Controllers.WorkOrdersController.GetStats(GetWorkOrderStatsRequestFooApi request)
+   at Foo.Bar.Backend.Middleware.GetCompanyMiddleware.Invoke(HttpContext httpContext, ISessionCache sessionCache, IApiFunctions api)
+   at Foo.Bar.Backend.Middleware.CheckRouteMiddleware.Invoke(HttpContext context, IApiFunctions api)
+   at Foo.Bar.Backend.Middleware.CheckAccessMiddleware.Invoke(HttpContext context, IApiFunctions api, IConfiguration config)
+   at Foo.Bar.Backend.Middleware.ErrorHandlingMiddleware.Invoke(HttpContext context)
+Resulting Hash: 832236129

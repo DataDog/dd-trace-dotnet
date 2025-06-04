@@ -8,7 +8,7 @@
 namespace Datadog.Trace.Iast.Dataflow;
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-internal sealed class AspectMethodInsertBeforeAttribute : AspectAttribute
+internal class AspectMethodInsertBeforeAttribute : AspectAttribute
 {
     public AspectMethodInsertBeforeAttribute(string targetMethod, params int[] paramShift)
         : base(targetMethod, string.Empty, paramShift, new bool[0], new AspectFilter[0], AspectType.Default)

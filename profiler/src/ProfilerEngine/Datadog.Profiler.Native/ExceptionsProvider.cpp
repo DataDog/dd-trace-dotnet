@@ -9,6 +9,7 @@
 #include "IConfiguration.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
+#include "RawSampleTransformer.h"
 #include "ScopeFinalizer.h"
 #include "SampleValueTypeProvider.h"
 #include "shared/src/native-src/com_ptr.h"
@@ -26,14 +27,12 @@ ExceptionsProvider::ExceptionsProvider(
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
     IConfiguration* pConfiguration,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
+    RawSampleTransformer* rawSampleTransformer,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
     shared::pmr::memory_resource* memoryResource)
     :
-    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource),
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
@@ -45,7 +44,8 @@ ExceptionsProvider::ExceptionsProvider(
     _loggedMscorlibError(false),
     _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval(), true),
     _pConfiguration(pConfiguration),
-    _callstackProvider{std::move(callstackProvider)}
+    _callstackProvider{std::move(callstackProvider)},
+    _metricsRegistry{metricsRegistry}
 {
     _exceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_exceptions");
     _sampledExceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_exceptions");
@@ -138,12 +138,16 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         }
     }
 
-    std::shared_ptr<ManagedThreadInfo> threadInfo;
-
-    INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo == nullptr)
+    {
+        LogOnce(Warn, "ExceptionsProvider::OnExceptionThrown: Profiler failed at getting the current managed thread info ");
+        return false;
+    }
 
     uint32_t hrCollectStack = E_FAIL;
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+        _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
 
     pStackFramesCollector->PrepareForNextCollection();
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
@@ -201,9 +205,9 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
     return true;
 }
 
-UpscalingInfo ExceptionsProvider::GetInfo()
+std::list<UpscalingInfo> ExceptionsProvider::GetInfos()
 {
-    return {GetValueOffsets(), Sample::ExceptionTypeLabel, _sampler.GetGroups()};
+    return {{GetValueOffsets(), Sample::ExceptionTypeLabel, _sampler.GetGroups()}};
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()

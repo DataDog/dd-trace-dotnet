@@ -66,7 +66,11 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
     return std::make_pair(errorCode, message);
 }
 
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration, CallstackProvider* callstackProvider)
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
+    ICorProfilerInfo4* pCorProfilerInfo,
+    IConfiguration const* const pConfiguration,
+    CallstackProvider* callstackProvider,
+    MetricsRegistry&)
 {
 #ifdef BIT64
     static_assert(8 * sizeof(void*) == 64);
@@ -77,7 +81,7 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 #endif
 }
 
-uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
+std::chrono::milliseconds GetThreadCpuTime(IThreadInfo* pThreadInfo)
 {
     FILETIME creationTime, exitTime = {}; // not used here
     FILETIME kernelTime = {};
@@ -87,7 +91,7 @@ uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
     if (::GetThreadTimes(pThreadInfo->GetOsThreadHandle(), &creationTime, &exitTime, &kernelTime, &userTime))
     {
         uint64_t milliseconds = GetTotalMilliseconds(userTime) + GetTotalMilliseconds(kernelTime);
-        return milliseconds;
+        return std::chrono::milliseconds(milliseconds);
     }
     else
     {
@@ -106,7 +110,7 @@ uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
             }
         }
     }
-    return 0;
+    return 0ms;
 }
 
 typedef LONG KPRIORITY;
@@ -193,16 +197,14 @@ bool IsRunning(ULONG threadState)
     // If some callstacks show non cpu-bound frames at the top, return true only for Running state
 }
 
-bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
+//    isRunning,        cpu time          , failed 
+std::tuple<bool, std::chrono::milliseconds, bool> IsRunning(IThreadInfo* pThreadInfo)
 {
-    failed = true;
-    cpuTime = 0;
-
     if (NtQueryInformationThread == nullptr)
     {
         if (!InitializeNtQueryInformationThreadCallback())
         {
-            return false;
+            return {false, 0ms, true};
         }
     }
 
@@ -230,14 +232,12 @@ bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
         }
 #endif
         // This always happens in 32 bit so uses another API to at least get the CPU consumption
-        cpuTime = GetThreadCpuTime(pThreadInfo);
-        return false;
+        return {false, GetThreadCpuTime(pThreadInfo), true};
     }
 
-    failed = false;
-    cpuTime = GetTotalMilliseconds(sti.UserTime) + GetTotalMilliseconds(sti.KernelTime);
+    auto cpuTime = std::chrono::milliseconds(GetTotalMilliseconds(sti.UserTime) + GetTotalMilliseconds(sti.KernelTime));
 
-    return IsRunning(sti.ThreadState);
+    return {IsRunning(sti.ThreadState), cpuTime, false};
 }
 
 // https://devblogs.microsoft.com/oldnewthing/20200824-00/?p=104116
@@ -340,6 +340,32 @@ std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
 {
     auto manager = std::make_unique<EtwEventsManager>(pAllocationListener, pContentionListener, pGCSuspensionsListener, pConfiguration);
     return manager;
+}
+
+double GetProcessLifetime()
+{
+    FILETIME creationTime;
+    FILETIME exitTime;
+    FILETIME userTime;
+    FILETIME kernelTime;
+    if (!::GetProcessTimes(::GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime))
+    {
+        return 0;
+    }
+
+    ::GetSystemTimeAsFileTime(&exitTime);
+
+    // Convert the FILETIME structures to ULARGE_INTEGER to make arithmetic calculations easier.
+    ULARGE_INTEGER start;
+    ULARGE_INTEGER end;
+    start.LowPart = creationTime.dwLowDateTime;
+    start.HighPart = creationTime.dwHighDateTime;
+    end.LowPart = exitTime.dwLowDateTime;
+    end.HighPart = exitTime.dwHighDateTime;
+
+    // Calculate the difference and convert it from 100-nanosecond intervals to seconds.
+    double duration = static_cast<double>(end.QuadPart - start.QuadPart) / 10000000.0;
+    return duration;
 }
 
 } // namespace OsSpecificApi

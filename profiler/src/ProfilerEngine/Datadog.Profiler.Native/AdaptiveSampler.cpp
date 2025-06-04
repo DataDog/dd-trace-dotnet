@@ -3,7 +3,10 @@
 #include "Log.h"
 
 #include <algorithm>
+#include <chrono>
 #include <stdexcept>
+
+using namespace std::chrono_literals;
 
 void AdaptiveSampler::Counts::AddTest()
 {
@@ -83,7 +86,7 @@ AdaptiveSampler::AdaptiveSampler(
     _rng = std::mt19937(rd());
     _distribution = std::uniform_real_distribution<>(0.0, 1.0);
 
-    if (windowDuration != std::chrono::milliseconds::zero())
+    if (windowDuration != 0ms)
     {
         _timer.Start();
     }

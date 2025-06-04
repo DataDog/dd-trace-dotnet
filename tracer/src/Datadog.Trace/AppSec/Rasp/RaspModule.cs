@@ -7,6 +7,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
@@ -19,6 +21,14 @@ namespace Datadog.Trace.AppSec.Rasp;
 internal static class RaspModule
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
+    private static bool _nullContextReported = false;
+
+    internal enum BlockType
+    {
+        Irrelevant = 0,
+        Success = 1,
+        Failure = 2
+    }
 
     private static RaspRuleType? TryGetAddressRuleType(string address)
     => address switch
@@ -26,6 +36,49 @@ internal static class RaspModule
         AddressesConstants.FileAccess => RaspRuleType.Lfi,
         AddressesConstants.UrlAccess => RaspRuleType.Ssrf,
         AddressesConstants.DBStatement => RaspRuleType.SQlI,
+        AddressesConstants.ShellInjection => RaspRuleType.CommandInjectionShell,
+        AddressesConstants.CommandInjection => RaspRuleType.CommandInjectionExec,
+        _ => null,
+    };
+
+    private static RaspRuleTypeMatch? TryGetAddressRuleTypeMatch(string address, BlockType blockType)
+    => address switch
+    {
+        AddressesConstants.FileAccess => blockType switch
+        {
+            BlockType.Success => RaspRuleTypeMatch.LfiSuccess,
+            BlockType.Failure => RaspRuleTypeMatch.LfiFailure,
+            BlockType.Irrelevant => RaspRuleTypeMatch.LfiIrrelevant,
+            _ => null,
+        },
+        AddressesConstants.UrlAccess => blockType switch
+        {
+            BlockType.Success => RaspRuleTypeMatch.SsrfSuccess,
+            BlockType.Failure => RaspRuleTypeMatch.SsrfFailure,
+            BlockType.Irrelevant => RaspRuleTypeMatch.SsrfIrrelevant,
+            _ => null,
+        },
+        AddressesConstants.DBStatement => blockType switch
+        {
+            BlockType.Success => RaspRuleTypeMatch.SQlISuccess,
+            BlockType.Failure => RaspRuleTypeMatch.SQlIFailure,
+            BlockType.Irrelevant => RaspRuleTypeMatch.SQlIIrrelevant,
+            _ => null,
+        },
+        AddressesConstants.ShellInjection => blockType switch
+        {
+            BlockType.Success => RaspRuleTypeMatch.CommandInjectionShellSuccess,
+            BlockType.Failure => RaspRuleTypeMatch.CommandInjectionShellFailure,
+            BlockType.Irrelevant => RaspRuleTypeMatch.CommandInjectionShellIrrelevant,
+            _ => null,
+        },
+        AddressesConstants.CommandInjection => blockType switch
+        {
+            BlockType.Success => RaspRuleTypeMatch.CommandInjectionExecSuccess,
+            BlockType.Failure => RaspRuleTypeMatch.CommandInjectionExecFailure,
+            BlockType.Irrelevant => RaspRuleTypeMatch.CommandInjectionExecIrrelevant,
+            _ => null,
+        },
         _ => null,
     };
 
@@ -64,7 +117,7 @@ internal static class RaspModule
     {
         var security = Security.Instance;
 
-        if (!security.RaspEnabled)
+        if (!security.RaspEnabled || !security.AddressEnabled(address))
         {
             return;
         }
@@ -79,7 +132,7 @@ internal static class RaspModule
         RunWafRasp(arguments, rootSpan, address);
     }
 
-    private static void RecordRaspTelemetry(string address, bool isMatch, bool timeOut)
+    private static void RecordRaspTelemetry(string address, bool isMatch, bool timeOut, BlockType matchType)
     {
         var ruleType = TryGetAddressRuleType(address);
 
@@ -93,7 +146,15 @@ internal static class RaspModule
 
         if (isMatch)
         {
-            TelemetryFactory.Metrics.RecordCountRaspRuleMatch(ruleType.Value);
+            var ruleTypeMatch = TryGetAddressRuleTypeMatch(address, matchType);
+
+            if (ruleTypeMatch is null)
+            {
+                Log.Warning("RASP: Rule match type not found for address {Address} {MatchType}", address, matchType);
+                return;
+            }
+
+            TelemetryFactory.Metrics.RecordCountRaspRuleMatch(ruleTypeMatch.Value);
         }
 
         if (timeOut)
@@ -104,20 +165,25 @@ internal static class RaspModule
 
     private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
-        var securityCoordinator = new SecurityCoordinator(Security.Instance, rootSpan);
+        var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, rootSpan);
 
         // We need a context for RASP
-        if (!securityCoordinator.HasContext() || securityCoordinator.IsAdditiveContextDisposed())
+        if (securityCoordinator is null)
         {
+            if (!_nullContextReported)
+            {
+                Log.Warning("Tried to run Rasp but security coordinator couldn't be instantiated, probably because of httpcontext missing");
+                _nullContextReported = true;
+            }
+            else
+            {
+                Log.Debug("Tried to run Rasp but security coordinator couldn't be instantiated, probably because of httpcontext missing");
+            }
+
             return;
         }
 
-        var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
-
-        if (result is not null)
-        {
-            RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
-        }
+        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
 
         try
         {
@@ -136,16 +202,33 @@ internal static class RaspModule
                 }
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             Log.Error(ex, "RASP: Error while sending stack.");
         }
 
         AddSpanId(result);
 
-        // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
-        // the blockings, so we report first and then block
-        securityCoordinator.ReportAndBlock(result);
+        if (result is not null)
+        {
+            // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
+            // the blockings, so we report first and then block
+            try
+            {
+                var matchSuccesCode = result.ReturnCode == WafReturnCode.Match && result.ShouldBlock ?
+                    BlockType.Success : BlockType.Irrelevant;
+
+                securityCoordinator.Value.ReportAndBlock(result, () => RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchSuccesCode));
+            }
+            catch (Exception ex) when (ex is not BlockException)
+            {
+                var matchFailureCode = result.ReturnCode == WafReturnCode.Match && result.ShouldBlock ?
+                    BlockType.Failure : BlockType.Irrelevant;
+
+                RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchFailureCode);
+                Log.Error(ex, "RASP: Error while reporting and blocking.");
+            }
+        }
     }
 
     private static void AddSpanId(IResult? result)
@@ -170,11 +253,45 @@ internal static class RaspModule
 
     private static void SendStack(Span rootSpan, string id)
     {
-        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, id);
+        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, Security.Instance.Settings.MaxStackTraceDepthTopPercent, id);
 
         if (stack is not null)
         {
-            rootSpan.Context.TraceContext.AddStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
+            rootSpan.Context.TraceContext.AppSecRequestContext.AddRaspStackTrace(stack, Security.Instance.Settings.MaxStackTraces);
+        }
+    }
+
+    internal static void OnCommandInjection(string fileName, string argumentLine, Collection<string>? argumentList, bool useShellExecute)
+    {
+        try
+        {
+            if (!Security.Instance.RaspEnabled)
+            {
+                return;
+            }
+
+            if (useShellExecute)
+            {
+                var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(fileName, argumentLine, argumentList);
+
+                if (!string.IsNullOrEmpty(commandLine))
+                {
+                    CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.ShellInjection] = commandLine }, AddressesConstants.ShellInjection);
+                }
+            }
+            else
+            {
+                var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommandArray(fileName, argumentLine, argumentList);
+
+                if (commandLine is not null)
+                {
+                    CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.CommandInjection] = commandLine }, AddressesConstants.CommandInjection);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            Log.Error(ex, "RASP: Error while checking command injection.");
         }
     }
 }

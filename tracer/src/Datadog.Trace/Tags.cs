@@ -8,7 +8,7 @@ using System;
 namespace Datadog.Trace
 {
     /// <summary>
-    /// Standard span tags used by integrations.
+    /// Standard Datadog span tags.
     /// </summary>
     public static partial class Tags
     {
@@ -431,6 +431,21 @@ namespace Datadog.Trace
         internal const string AwsQueueUrl = "aws.queue.url";
 
         /// <summary>
+        /// The rule name associated with the AWS EventBridge span.
+        /// </summary>
+        internal const string RuleName = "rulename";
+
+        /// <summary>
+        /// The bucket name associated with the AWS S3 span.
+        /// </summary>
+        internal const string BucketName = "bucketname";
+
+        /// <summary>
+        /// The object key associated with the AWS S3 span.
+        /// </summary>
+        internal const string ObjectKey = "objectkey";
+
+        /// <summary>
         /// The stream name associated with the AWS SDK Kinesis span.
         /// </summary>
         internal const string StreamName = "streamname";
@@ -439,6 +454,11 @@ namespace Datadog.Trace
         /// The table name associated with the AWS SDK DynamoDB span.
         /// </summary>
         internal const string TableName = "tablename";
+
+        /// <summary>
+        /// The state machine name associated with the AWS SDK Step Functions span.
+        /// </summary>
+        internal const string StateMachineName = "statemachinename";
 
         /// <summary>
         /// Configures Trace Analytics.
@@ -595,11 +615,41 @@ namespace Datadog.Trace
         internal const string AppSecWafVersion = "_dd.appsec.waf.version";
 
         /// <summary>
+        /// The most relevant WAF error code during a request
+        /// </summary>
+        public const string WafError = "_dd.appsec.waf.error";
+
+        /// <summary>
+        /// The most relevant WAF error code during a request when using RASP
+        /// </summary>
+        public const string RaspWafError = "_dd.appsec.rasp.error";
+
+        /// <summary>
         ///  String-serialized JSON array, each item being a map containing:
         ///  Error(e) - the error string.
         ///  Rules(r) - an array of rules which failed to load with this error.
         /// </summary>
         internal const string AppSecWafInitRuleErrors = "_dd.appsec.event_rules.errors";
+
+        /// <summary>
+        /// Indicates the http endpoint fingerprint
+        /// </summary>
+        internal const string AppSecFpEndpoint = "_dd.appsec.fp.http.endpoint";
+
+        /// <summary>
+        /// Indicates the http header fingerprint
+        /// </summary>
+        internal const string AppSecFpHeader = "_dd.appsec.fp.http.header";
+
+        /// <summary>
+        /// Indicates the http network fingerprint
+        /// </summary>
+        internal const string AppSecFpHttpNetwork = "_dd.appsec.fp.http.network";
+
+        /// <summary>
+        /// Indicates the session fingerprint
+        /// </summary>
+        internal const string AppSecFpSession = "_dd.appsec.fp.session";
 
         /// <summary>
         /// Should contain the public IP of the host initiating the request.
@@ -615,6 +665,11 @@ namespace Datadog.Trace
         /// Indicates if the vulnerability json has been truncated because it exceeds the maximum tag size
         /// </summary>
         internal const string IastJsonTagSizeExceeded = "_dd.iast.json.tag.size.exceeded";
+
+        /// <summary>
+        /// Indicates if the vulnerability meta struct has been truncated because it exceeds the maximum tag size
+        /// </summary>
+        internal const string IastMetaStructTagSizeExceeded = "_dd.iast.metastruct.tag.size.exceeded";
 
         /// <summary>
         /// Indicates at the end of a request if IAST analisys has been performned
@@ -675,7 +730,6 @@ namespace Datadog.Trace
         internal const string ServiceRemotingInvocationId = "service-fabric.service-remoting.invocation-id";
 
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
-        internal const string ProcessComponent = "cmd.component";
         internal const string ProcessCommandExec = "cmd.exec";
         internal const string ProcessCommandShell = "cmd.shell";
         internal const string ProcessTruncated = "cmd.truncated";
@@ -687,6 +741,15 @@ namespace Datadog.Trace
         /// </summary>
         internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
 
+        // Data Streams Monitoring
+        internal const string SchemaDefinition = "schema.definition";
+        internal const string SchemaWeight = "schema.weight";
+        internal const string SchemaType = "schema.type";
+        internal const string SchemaId = "schema.id";
+        internal const string SchemaTopic = "schema.topic";
+        internal const string SchemaOperation = "schema.operation";
+        internal const string SchemaName = "schema.name";
+
         /// <summary>
         /// Holds the original value for Service when Service is overriden after span creation
         /// </summary>
@@ -697,6 +760,9 @@ namespace Datadog.Trace
         /// lower-case 16 characters hexadecimal string
         /// </summary>
         internal const string LastParentId = "_dd.parent_id";
+
+        // inferred proxy tags
+        internal const string ProxyStage = "stage";
 
         internal static class User
         {
@@ -725,6 +791,11 @@ namespace Datadog.Trace
             /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
             /// </summary>
             internal const string TraceIdUpper = "_dd.p.tid";
+
+            /// <summary>
+            /// A two char hex string with the product being the trace source
+            /// </summary>
+            internal const string TraceSource = "_dd.p.ts";
         }
     }
 }

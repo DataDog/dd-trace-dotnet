@@ -26,67 +26,67 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
     internal static CIEnvironmentValues Create(TValueProvider valueProvider)
     {
-        if (valueProvider.GetValue(Constants.Travis) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Travis)))
         {
             return new TravisEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.CircleCI) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.CircleCI)))
         {
             return new CircleCiEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.JenkinsUrl) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.JenkinsUrl)))
         {
             return new JenkinsEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.GitlabCI) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.GitlabCI)))
         {
             return new GitlabEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.Appveyor) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Appveyor)))
         {
             return new AppveyorEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.AzureTFBuild) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.AzureTFBuild)))
         {
             return new AzurePipelinesEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.BitBucketCommit) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.BitBucketCommit)))
         {
             return new BitbucketEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.GitHubSha) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.GitHubSha)))
         {
             return new GithubActionsEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.TeamCityVersion) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.TeamCityVersion)))
         {
             return new TeamcityEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.BuildKite) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.BuildKite)))
         {
             return new BuildkiteEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.BitriseBuildSlug) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.BitriseBuildSlug)))
         {
             return new BitriseEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.Buddy) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Buddy)))
         {
             return new BuddyEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.CodefreshBuildId) != null)
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.CodefreshBuildId)))
         {
             return new CodefreshEnvironmentValues<TValueProvider>(valueProvider);
         }
@@ -100,7 +100,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         return new UnsupportedCIEnvironmentValues<TValueProvider>(valueProvider);
     }
 
-    protected override void Setup(GitInfo gitInfo)
+    protected override void Setup(IGitInfo gitInfo)
     {
         OnInitialize(gitInfo);
 
@@ -146,7 +146,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 // If we have the original commit message we use that.
                 if (string.IsNullOrWhiteSpace(Message) ||
                     (Message!.StartsWith("Merge", StringComparison.Ordinal) &&
-                     !gitInfo.Message.StartsWith("Merge", StringComparison.Ordinal)))
+                     !gitInfo.Message!.StartsWith("Merge", StringComparison.Ordinal)))
                 {
                     Message = gitInfo.Message;
                 }
@@ -181,11 +181,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, and the Git repository could not be automatically extracted");
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an empty value, and the Git repository could not be automatically extracted");
                         }
                         else
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{Default}'", defaultValue);
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{Default}'", defaultValue);
                         }
 
                         return false;
@@ -195,11 +195,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), and the Git repository could not be automatically extracted", value);
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), and the Git repository could not be automatically extracted", value);
                         }
                         else
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), defaulting to '{Default}'", value, defaultValue);
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), defaulting to '{Default}'", value, defaultValue);
                         }
 
                         return false;
@@ -211,7 +211,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
                 if (string.IsNullOrEmpty(defaultValue))
                 {
-                    Log.Error("The Git repository couldn't be automatically extracted.");
+                    Log.Warning("The Git repository couldn't be automatically extracted.");
                 }
 
                 // If not set use the default value
@@ -245,7 +245,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
                 if (string.IsNullOrEmpty(defaultValue))
                 {
-                    Log.Error("The Git commit sha couldn't be automatically extracted.");
+                    Log.Warning("The Git commit sha couldn't be automatically extracted.");
                 }
 
                 // If not set use the default value
@@ -258,6 +258,8 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         CommitterName = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterName, CommitterName);
         CommitterEmail = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterEmail, CommitterEmail);
         CommitterDate = GetDateTimeOffsetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterDate, CommitterDate);
+
+        Message = Message?.Trim();
     }
 
     protected string? GetVariableIfIsNotEmpty(string key, string? defaultValue, Func<string?, string?, bool>? validator = null)
@@ -342,7 +344,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         return path;
     }
 
-    protected abstract void OnInitialize(GitInfo gitInfo);
+    protected abstract void OnInitialize(IGitInfo gitInfo);
 }
 
 #pragma warning restore SA1649

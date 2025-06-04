@@ -10,21 +10,11 @@
     <NoWarn>RS2008</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectType.cs" Link="AspectsDefinitions\Sources\AspectType.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectAttribute.cs" Link="AspectsDefinitions\Sources\AspectAttribute.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectClassAttribute.cs" Link="AspectsDefinitions\Sources\AspectClassAttribute.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectCtorReplaceAttribute.cs" Link="AspectsDefinitions\Sources\AspectCtorReplaceAttribute.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectFilter.cs" Link="AspectsDefinitions\Sources\AspectFilter.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodInsertAfterAttribute.cs" Link="AspectsDefinitions\Sources\AspectMethodInsertAfterAttribute.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodInsertBeforeAttribute.cs" Link="AspectsDefinitions\Sources\AspectMethodInsertBeforeAttribute.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodReplaceAttribute.cs" Link="AspectsDefinitions\Sources\AspectMethodReplaceAttribute.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\VulnerabilityType.cs" Link="AspectsDefinitions\Sources\VulnerabilityType.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\VulnerabilityTypeName.cs" Link="AspectsDefinitions\Sources\VulnerabilityTypeName.cs" />    
+  <ItemGroup>    
+    <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />    
     <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Attributes.cs">
       <Link>MessagePack\Attributes.cs</Link>
     </Compile>
@@ -283,8 +273,5 @@
     <Content Include="..\Datadog.Trace\Vendors\MessagePack\_last_downloaded_source_url.txt">
       <Link>MessagePack\_last_downloaded_source_url.txt</Link>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="AspectsDefinitions\Sources\" />
   </ItemGroup>
 </Project>

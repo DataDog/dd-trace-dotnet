@@ -45,7 +45,7 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new TracerSettings(), "DefaultServiceName");
         controller.Start();
 
         var data = await WaitForRequestStarted(transport, _timeout);
@@ -69,7 +69,7 @@ public class TelemetryControllerTests
         var sha = "testCommitSha";
         var repo = "testRepositoryUrl";
         controller.RecordGitMetadata(new GitMetadata(sha, repo));
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new TracerSettings(), "DefaultServiceName");
         controller.Start();
 
         var data = await WaitForRequestStarted(transport, _timeout);
@@ -115,7 +115,7 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new TracerSettings(), "DefaultServiceName");
         controller.Start();
 
         var data = await WaitForRequestStarted(transport, _timeout);
@@ -150,7 +150,7 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        var settings = new ImmutableTracerSettings(new TracerSettings());
+        var settings = new TracerSettings();
         controller.RecordTracerSettings(settings, "DefaultServiceName");
 
         // Just basic check that we have the same number of config values
@@ -199,7 +199,7 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new TracerSettings(), "DefaultServiceName");
         controller.Start();
 
         var requiredHeartbeats = 10;
@@ -244,7 +244,7 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new TracerSettings(), "DefaultServiceName");
         controller.Start();
 
         var allData = await WaitForRequestStarted(transport, _timeout);
@@ -270,6 +270,52 @@ public class TelemetryControllerTests
     }
 
     [Fact]
+    public async Task TelemetryControllerRecordsAppEndpoints()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        controller.RecordTracerSettings(new TracerSettings(), "DefaultServiceName");
+        controller.RecordAppEndpoints(new List<AppEndpointData>
+        {
+            new("GET", "/api/test"),
+            new("POST", "/api/test"),
+        });
+
+        controller.Start();
+
+        var data = await WaitForRequestStarted(transport, _timeout);
+
+        var payloads = data
+                      .Where(x => ContainsMessage(x, TelemetryRequestTypes.AppEndpoints))
+                      .Select(x => GetPayload(x, TelemetryRequestTypes.AppEndpoints).Payload)
+                      .Cast<AppEndpointsPayload>()
+                      .ToList();
+
+        payloads.Should().NotBeNull();
+        payloads.Count.Should().Be(1);
+
+        var payload = payloads.First();
+
+        payload.IsFirst.Should().BeTrue();
+
+        var endpoints = payload.Endpoints;
+
+        endpoints.Should().Contain(x => x.Method == "GET" && x.Path == "/api/test" && x.Type == "REST" && x.OperationName == "http.request");
+        endpoints.Should().Contain(x => x.Method == "POST" && x.Path == "/api/test" && x.Type == "REST" && x.OperationName == "http.request");
+
+        await controller.DisposeAsync();
+    }
+
+    [Fact]
     public async Task TelemetryControllerDumpsAllTelemetryToFile()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
@@ -289,7 +335,7 @@ public class TelemetryControllerTests
         File.ReadAllText(tempFile).Should().BeNullOrEmpty();
 
         // after starting telemetry
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new TracerSettings(), "DefaultServiceName");
         controller.Start();
 
         await WaitForRequestStarted(transport, _timeout);

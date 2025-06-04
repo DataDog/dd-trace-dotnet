@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 namespace Datadog.Trace.Ci.Tags;
 
@@ -171,6 +172,11 @@ internal static class CommonTags
     public const string TestingFrameworkNameXUnit = "xUnit";
 
     /// <summary>
+    /// XUnit.v3 testing framework
+    /// </summary>
+    public const string TestingFrameworkNameXUnitV3 = "xUnit.v3";
+
+    /// <summary>
     /// NUnit testing framework
     /// </summary>
     public const string TestingFrameworkNameNUnit = "NUnit";
@@ -184,4 +190,29 @@ internal static class CommonTags
     /// BenchmarkDotNet testing framework
     /// </summary>
     public const string TestingFrameworkNameBenchmarkDotNet = "BenchmarkDotNet";
+
+    /// <summary>
+    /// Logical CPU count
+    /// </summary>
+    public const string LogicalCpuCount = "_dd.host.vcpu_count";
+
+    /// <summary>
+    /// GIT Head commit hash
+    /// </summary>
+    public const string GitHeadCommit = "git.commit.head_sha";
+
+    /// <summary>
+    /// GIT PR Base commit hash
+    /// </summary>
+    public const string GitPrBaseCommit = "git.pull_request.base_branch_sha";
+
+    /// <summary>
+    /// GIT PR Base branch name
+    /// </summary>
+    public const string GitPrBaseBranch = "git.pull_request.base_branch";
+
+    /// <summary>
+    /// Defines if the service is a user provided test service
+    /// </summary>
+    public const string UserProvidedTestServiceTag = "_dd.test.is_user_provided_service";
 }

@@ -26,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static readonly bool IsAllMinorPackageVersions = false;
 #endif
 
+        public static IEnumerable<object[]> AwsSdk => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSdk : PackageVersionsLatestSpecific.AwsSdk;
+
         public static IEnumerable<object[]> AwsDynamoDb => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsDynamoDb : PackageVersionsLatestSpecific.AwsDynamoDb;
 
         public static IEnumerable<object[]> AwsKinesis => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsKinesis : PackageVersionsLatestSpecific.AwsKinesis;
@@ -35,6 +37,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> AwsSqs => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSqs : PackageVersionsLatestSpecific.AwsSqs;
 
         public static IEnumerable<object[]> AwsSns => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSns : PackageVersionsLatestSpecific.AwsSns;
+
+        public static IEnumerable<object[]> AwsEventBridge => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsEventBridge : PackageVersionsLatestSpecific.AwsEventBridge;
+
+        public static IEnumerable<object[]> AwsS3 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsS3 : PackageVersionsLatestSpecific.AwsS3;
+
+        public static IEnumerable<object[]> AwsStepFunctions => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsStepFunctions : PackageVersionsLatestSpecific.AwsStepFunctions;
 
         public static IEnumerable<object[]> MongoDB => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MongoDB : PackageVersionsLatestSpecific.MongoDB;
 
@@ -51,6 +59,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> HotChocolate => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.HotChocolate : PackageVersionsLatestSpecific.HotChocolate;
 
         public static IEnumerable<object[]> Npgsql => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Npgsql : PackageVersionsLatestSpecific.Npgsql;
+
+        public static IEnumerable<object[]> Protobuf => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Protobuf : PackageVersionsLatestSpecific.Protobuf;
 
         public static IEnumerable<object[]> RabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.RabbitMQ : PackageVersionsLatestSpecific.RabbitMQ;
 
@@ -72,11 +82,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> XUnit => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.XUnit : PackageVersionsLatestSpecific.XUnit;
 
+        public static IEnumerable<object[]> XUnitRetries => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.XUnitRetries : PackageVersionsLatestSpecific.XUnitRetries;
+
+        public static IEnumerable<object[]> XUnitV3 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.XUnitV3 : PackageVersionsLatestSpecific.XUnitV3;
+
+        public static IEnumerable<object[]> XUnitRetriesV3 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.XUnitRetriesV3 : PackageVersionsLatestSpecific.XUnitRetriesV3;
+
         public static IEnumerable<object[]> NUnit => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NUnit : PackageVersionsLatestSpecific.NUnit;
+
+        public static IEnumerable<object[]> NUnitRetries => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NUnitRetries : PackageVersionsLatestSpecific.NUnitRetries;
 
         public static IEnumerable<object[]> MSTest => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest : PackageVersionsLatestSpecific.MSTest;
 
         public static IEnumerable<object[]> MSTest2 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest2 : PackageVersionsLatestSpecific.MSTest2;
+
+        public static IEnumerable<object[]> MSTest2Retries => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest2Retries : PackageVersionsLatestSpecific.MSTest2Retries;
 
         public static IEnumerable<object[]> Kafka => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Kafka : PackageVersionsLatestSpecific.Kafka;
 

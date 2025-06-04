@@ -129,6 +129,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                             // Set the error tags manually, as we don't have an exception + stack trace here
                             // Should we create a stack trace manually?
                             var ex = new Exception(report.Error.ToString());
+                            KafkaHelper.DisableHeadersIfUnsupportedBroker(ex); // "Unknown broker error" will be the message that disables it
                             span.SetException(ex);
                         }
 

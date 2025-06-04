@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.Threading;
 using Datadog.Trace.Ci.Tags;
@@ -27,37 +28,37 @@ internal partial class TestModuleSpanTags : TestSessionSpanTags
     public ulong ModuleId { get; set; }
 
     [Tag(TestTags.Type)]
-    public string Type { get; set; }
+    public string? Type { get; set; }
 
     [Tag(TestTags.Module)]
-    public string Module { get; set; }
+    public string? Module { get; set; }
 
     [Tag(TestTags.Bundle)]
-    public string Bundle => Module;
+    public string? Bundle => Module;
 
     [Tag(TestTags.Framework)]
-    public string Framework { get; set; }
+    public string? Framework { get; set; }
 
     [Tag(TestTags.FrameworkVersion)]
-    public string FrameworkVersion { get; set; }
+    public string? FrameworkVersion { get; set; }
 
     [Tag(CommonTags.RuntimeName)]
-    public string RuntimeName { get; set; }
+    public string? RuntimeName { get; set; }
 
     [Tag(CommonTags.RuntimeVersion)]
-    public string RuntimeVersion { get; set; }
+    public string? RuntimeVersion { get; set; }
 
     [Tag(CommonTags.RuntimeArchitecture)]
-    public string RuntimeArchitecture { get; set; }
+    public string? RuntimeArchitecture { get; set; }
 
     [Tag(CommonTags.OSArchitecture)]
-    public string OSArchitecture { get; set; }
+    public string? OSArchitecture { get; set; }
 
     [Tag(CommonTags.OSPlatform)]
-    public string OSPlatform { get; set; }
+    public string? OSPlatform { get; set; }
 
     [Tag(CommonTags.OSVersion)]
-    public string OSVersion { get; set; }
+    public string? OSVersion { get; set; }
 
     [Metric(IntelligentTestRunnerTags.SkippingCount)]
     public double? IntelligentTestRunnerSkippingCount => _itrSkippingCount == 0 ? null : _itrSkippingCount;

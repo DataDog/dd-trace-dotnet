@@ -30,8 +30,8 @@ public:
     {
         assert(valueOffsets.size() == 1);
         sample->AddValue(1, valueOffsets[0]);
-        sample->AddLabel(Label(Sample::ExceptionMessageLabel, ExceptionMessage));
-        sample->AddLabel(Label(Sample::ExceptionTypeLabel, ExceptionType));
+        sample->AddLabel(StringLabel(Sample::ExceptionMessageLabel, ExceptionMessage));
+        sample->AddLabel(StringLabel(Sample::ExceptionTypeLabel, ExceptionType));
     }
 
     std::string ExceptionMessage;

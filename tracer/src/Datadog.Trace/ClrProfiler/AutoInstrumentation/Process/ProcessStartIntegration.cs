@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Util;
@@ -20,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
        MethodName = "Start",
        ReturnTypeName = ClrNames.Process,
        MinimumVersion = "1.0.0",
-       MaximumVersion = "8.*.*",
+       MaximumVersion = SupportedVersions.LatestDotNet,
        IntegrationName = nameof(Configuration.IntegrationId.Process))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -38,15 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             if (instance is System.Diagnostics.Process { StartInfo: var startInfo }
                 && ProcessHelpers.ShouldTraceProcessStart())
             {
-                if (Iast.Iast.Instance.Settings.Enabled)
-                {
-#if NETCOREAPP3_1_OR_GREATER
-                    IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList, Configuration.IntegrationId.Process);
-#else
-                    IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, null, Configuration.IntegrationId.Process);
-#endif
-                }
-
+                VulnerabilitiesModule.OnCommandInjection(startInfo);
                 return new CallTargetState(scope: ProcessStartCommon.CreateScope(startInfo));
             }
 

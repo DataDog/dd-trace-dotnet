@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
@@ -40,7 +41,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 var name = Path.GetFileNameWithoutExtension(filePath);
                 var content = File.ReadAllText(filePath);
                 var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, string>[][]>(content);
-                yield return new object[] { new JsonDataItem(name, jsonObject) };
+                if (jsonObject is not null)
+                {
+                    yield return [new JsonDataItem(name, jsonObject)];
+                }
             }
         }
 
@@ -132,6 +136,42 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     Assert.Equal(spanDataItem.Value, value);
                 }
             }
+        }
+
+        [SkippableFact]
+        public void GithubEventJsonTest()
+        {
+            var reloadEnvironmentData = typeof(CIEnvironmentValues).GetMethod("ReloadEnvironmentData", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            // Check if the CI\Data folder exists.
+            var ciDataFolder = DataHelpers.GetCiDataDirectory();
+
+            // JSON file path
+            var jsonFile = Path.Combine(ciDataFolder, "githubevent", "github-event.json");
+
+            // Let's test the github-event.json load and check the values first.
+            var githubEnvVars = new GithubActionsEnvironmentValues<DictionaryValuesProvider>(
+                new DictionaryValuesProvider(
+                    new Dictionary<string, string>
+                    {
+                        [CIEnvironmentValues.Constants.GitHubEventPath] = jsonFile,
+                    }));
+
+            reloadEnvironmentData?.Invoke(githubEnvVars, null);
+            githubEnvVars.HeadCommit.Should().Be("df289512a51123083a8e6931dd6f57bb3883d4c4");
+            githubEnvVars.PrBaseCommit.Should().Be("52e0974c74d41160a03d59ddc73bb9f5adab054b");
+            githubEnvVars.PrBaseBranch.Should().Be("main");
+
+            // Let's test now the `GITHUB_BASE_REF` environment variable.
+            githubEnvVars = new GithubActionsEnvironmentValues<DictionaryValuesProvider>(
+                new DictionaryValuesProvider(
+                    new Dictionary<string, string>
+                    {
+                        [CIEnvironmentValues.Constants.GitHubBaseRef] = "my-custom-branch",
+                    }));
+
+            reloadEnvironmentData?.Invoke(githubEnvVars, null);
+            githubEnvVars.PrBaseBranch.Should().Be("my-custom-branch");
         }
 
         public class JsonDataItem : IXunitSerializable

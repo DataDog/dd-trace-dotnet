@@ -19,8 +19,6 @@ namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class NewtonsoftJsonAspects
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NewtonsoftJsonAspects>();
-
     private static readonly ICanParse? JObjectProxy;
     private static readonly ICanParse? JArrayProxy;
     private static readonly ICanParse? JTokenProxy;
@@ -40,7 +38,7 @@ public class NewtonsoftJsonAspects
             }
             else
             {
-                Log.Warning("Failed to create JObject proxy");
+                IastModule.Log.Warning("Failed to create JObject proxy");
             }
 
             var jArrayProxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), jArrayType);
@@ -50,7 +48,7 @@ public class NewtonsoftJsonAspects
             }
             else
             {
-                Log.Warning("Failed to create JArray proxy");
+                IastModule.Log.Warning("Failed to create JArray proxy");
             }
 
             var jTokenProxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), jTokenType);
@@ -60,12 +58,12 @@ public class NewtonsoftJsonAspects
             }
             else
             {
-                Log.Warning("Failed to create JToken proxy");
+                IastModule.Log.Warning("Failed to create JToken proxy");
             }
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error while initializing NewtonsoftJsonAspects");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -87,7 +85,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error while tainting the JObject");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -115,7 +113,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error while tainting the JArray");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -138,7 +136,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error while tainting the JToken");
+            IastModule.LogAspectException(ex);
         }
 
         return result;

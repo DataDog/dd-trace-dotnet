@@ -10,16 +10,24 @@ namespace Samples.SqlServer
 {
     internal static class Program
     {
-        private static async Task Main()
+        private static async Task<int> Main()
         {
             var commandFactory = new DbCommandFactory($"[System-Data-SqlClient-Test-{Guid.NewGuid():N}]");
             var commandExecutor = new SqlCommandExecutor();
             var commandExecutorVb = new SqlCommandExecutorVb();
             var cts = new CancellationTokenSource();
+            var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
+@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
 
             // Use the connection type that is loaded by the runtime through the typical loading algorithm
-            using (var connection = OpenConnection(typeof(SqlConnection)))
+            using (var connection = OpenConnection(typeof(SqlConnection), connectionString))
             {
+                if (connection is null)
+                {
+                    Console.WriteLine("No connection could be established. Exiting with skip code (13)");
+                    return 13;
+                }
+
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
                 await RelationalDatabaseTestHarness.RunSingleAsync(connection, commandFactory, commandExecutorVb, cts.Token);
             }
@@ -28,21 +36,31 @@ namespace Samples.SqlServer
             // On .NET Core this results in a new assembly being loaded whose types are not considered the same
             // as the types loaded through the default loading mechanism, potentially causing type casting issues in CallSite instrumentation
             var loadFileType = AssemblyHelpers.LoadFileAndRetrieveType(typeof(SqlConnection));
-            using (var connection = OpenConnection(loadFileType))
+            using (var connection = OpenConnection(loadFileType, connectionString))
             {
+                if (connection is null)
+                {
+                    Console.WriteLine("No connection could be established. Exiting with skip code (13)");
+                    return 13;
+                }
+
                 // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
                 await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
             }
 
+            // this uses a SqlConnection directly as it is easier / quicker
+            // we don't have tests for stored procedures
+            await StoredProcedure.RunStoredProcedureTestAsync(connectionString, cts.Token);
+
             // allow time to flush
             await Task.Delay(2000, cts.Token);
+
+            return 0;
         }
 
-        private static DbConnection OpenConnection(Type connectionType)
+        private static DbConnection OpenConnection(Type connectionType, string connectionString)
         {
             int numAttempts = 3;
-            var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
-@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
 
             for (int i = 0; i < numAttempts; i++)
             {
@@ -61,7 +79,8 @@ namespace Samples.SqlServer
                 }
             }
 
-            throw new Exception($"Unable to open connection to connection string {connectionString} after {numAttempts} attempts");
+            Console.WriteLine($"Unable to open connection to connection string {connectionString} after {numAttempts} attempts");
+            return null;
         }
     }
 }

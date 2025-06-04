@@ -5,13 +5,12 @@
 #include "cor.h"
 #include "corprof.h"
 
-#include "ServiceBase.h"
 #include "ManagedThreadInfo.h"
 
 #include <functional>
 #include <memory>
 
-class IManagedThreadList : public ServiceBase
+class IManagedThreadList
 {
 public:
     virtual bool RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThreadInfo) = 0;
@@ -23,7 +22,6 @@ public:
     virtual uint32_t GetLowCountAndReset() = 0;
     virtual uint32_t CreateIterator() = 0;
     virtual std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) = 0;
-    virtual HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) = 0;
     virtual std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId) = 0;
     virtual bool TryGetThreadInfo(uint32_t osThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) = 0;
     virtual void ForEach(std::function<void (ManagedThreadInfo*)> callback) = 0;

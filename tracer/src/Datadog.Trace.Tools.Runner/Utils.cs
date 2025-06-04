@@ -11,14 +11,17 @@ using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tools.Runner.Gac;
 using Datadog.Trace.Util;
 using Spectre.Console;
 
@@ -160,7 +163,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             var environment = options.Environment.GetValue(context);
 
-            // Settings back DD_ENV to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_ENV to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(environment))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Environment, environment);
@@ -168,7 +171,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var service = options.Service.GetValue(context);
 
-            // Settings back DD_SERVICE to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_SERVICE to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(service))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceName, service);
@@ -176,7 +179,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var version = options.Version.GetValue(context);
 
-            // Settings back DD_VERSION to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_VERSION to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(version))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, version);
@@ -184,7 +187,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var agentUrl = options.AgentUrl.GetValue(context);
 
-            // Settings back DD_TRACE_AGENT_URL to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_TRACE_AGENT_URL to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(agentUrl))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.AgentUri, agentUrl);
@@ -401,16 +404,15 @@ namespace Datadog.Trace.Tools.Runner
                 env[ConfigurationKeys.AgentUri] = agentUrl;
             }
 
-            var configurationSource = new CompositeConfigurationSourceInternal();
-            configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
-            configurationSource.AddInternal(GlobalConfigurationSource.Instance);
+            var configurationSource = new CompositeConfigurationSource();
+            configurationSource.Add(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
+            configurationSource.Add(GlobalConfigurationSource.Instance);
 
-            var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry());
-            var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
+            var settings = new TracerSettings(configurationSource, new ConfigurationTelemetry(), new OverrideErrorLog());
 
-            Log.Debug("Creating DiscoveryService for: {AgentUriInternal}", settings.ExporterInternal.AgentUriInternal);
+            Log.Debug("Creating DiscoveryService for: {AgentUri}", settings.Exporter.AgentUri);
             var discoveryService = DiscoveryService.Create(
-                settings.ExporterInternal,
+                settings.Exporter,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 200,
                 maxRetryDelayMs: 1000,
@@ -424,7 +426,7 @@ namespace Datadog.Trace.Tools.Runner
             using (cts.Token.Register(
                        () =>
                        {
-                           WriteError($"Error connecting to the Datadog Agent at {tracerSettings.ExporterInternal.AgentUriInternal}.");
+                           WriteError($"Error connecting to the Datadog Agent at {settings.Exporter.AgentUri}.");
                            tcs.TrySetResult(null);
                        }))
             {
@@ -562,9 +564,10 @@ namespace Datadog.Trace.Tools.Runner
                 }
                 else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
                 {
-                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Trace.ClrProfiler.Native.so"));
+                    var archFolder = IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Trace.ClrProfiler.Native.so"));
                     tracerProfilerArm64 = tracerProfiler64;
-                    ldPreload = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Linux.ApiWrapper.x64.so"));
+                    ldPreload = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Linux.ApiWrapper.x64.so"));
                 }
                 else
                 {
@@ -608,6 +611,12 @@ namespace Datadog.Trace.Tools.Runner
                 envVars["COR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
             }
 
+            const string installTypeKey = "DD_INSTRUMENTATION_INSTALL_TYPE";
+            if (string.IsNullOrEmpty(GetEnvironmentVariable(installTypeKey)))
+            {
+                envVars[installTypeKey] = "dd_trace_tool";
+            }
+
             if (!string.IsNullOrEmpty(devPath))
             {
                 envVars["DEVPATH"] = devPath;
@@ -626,23 +635,45 @@ namespace Datadog.Trace.Tools.Runner
                 if (platform == Platform.Windows && datadogTraceDllPath is not null)
                 {
 #pragma warning disable CA1416
-                    using var container = Gac.NativeMethods.CreateAssemblyCache();
+                    const string datadogTraceAssemblyName = "Datadog.Trace";
+                    var datadogTraceAssemblyNameInfo = AssemblyName.GetAssemblyName(datadogTraceDllPath);
+                    using var gacMethods = Gac.GacNativeMethods.Create();
+                    var assemblyCache = gacMethods.CreateAssemblyCache();
                     var asmInfo = new Gac.AssemblyInfo();
-                    var hr = container.AssemblyCache.QueryAssemblyInfo(Gac.QueryAssemblyInfoFlag.QUERYASMINFO_FLAG_GETSIZE, "Datadog.Trace", ref asmInfo);
+                    var hr = assemblyCache.QueryAssemblyInfo(Gac.QueryAssemblyInfoFlag.QUERYASMINFO_FLAG_GETSIZE, datadogTraceAssemblyName, ref asmInfo);
                     if (hr == 0 && asmInfo.AssemblyFlags == Gac.AssemblyInfoFlags.ASSEMBLYINFO_FLAG_INSTALLED)
                     {
-                        // Datadog.Trace is in the GAC, do nothing
-                        Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace is already installed in the gac.");
-                        return true;
+                        try
+                        {
+                            // Datadog.Trace is in the GAC, let's get the version
+                            var installedAssemblyNames = gacMethods.GetAssemblyNames(datadogTraceAssemblyName);
+                            var hasSameVersionInstalled = false;
+                            foreach (var installedAssemblyName in installedAssemblyNames)
+                            {
+                                Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace version {Version} installed.", installedAssemblyName.Version);
+                                hasSameVersionInstalled |= installedAssemblyName.Version == datadogTraceAssemblyNameInfo.Version;
+                            }
+
+                            if (hasSameVersionInstalled)
+                            {
+                                // the same version of Datadog.Trace is in the GAC, do nothing
+                                Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace version {Version} is already installed in the gac.", datadogTraceAssemblyNameInfo.Version);
+                                return true;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error getting the installed assembly names.");
+                        }
                     }
 
-                    Log.Warning("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace is not in the GAC, let's try to install it.");
+                    Log.Warning("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace ({Version}) is not in the GAC, let's try to install it.", datadogTraceAssemblyNameInfo.Version);
 
                     if (Gac.AdministratorHelper.IsElevated)
                     {
                         WriteInfo("Datadog.Trace is not installed in the GAC, installing it...");
 
-                        hr = container.AssemblyCache.InstallAssembly(0, datadogTraceDllPath, IntPtr.Zero);
+                        hr = assemblyCache.InstallAssembly(AssemblyCacheInstallFlags.IASSEMBLYCACHE_INSTALL_FLAG_FORCE_REFRESH, datadogTraceDllPath, IntPtr.Zero);
                         if (hr == 0)
                         {
                             Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace was installed in the gac.");
@@ -659,6 +690,12 @@ namespace Datadog.Trace.Tools.Runner
 #else
                         var processPath = Environment.GetCommandLineArgs()[0];
 #endif
+                        // If we get the .dll filepath we change it to the .exe one
+                        if (string.Equals(Path.GetExtension(processPath), ".dll", StringComparison.OrdinalIgnoreCase))
+                        {
+                            processPath = Path.ChangeExtension(processPath, ".exe");
+                        }
+
                         if (ProcessHelpers.RunCommand(new ProcessHelpers.Command(processPath, $"gac install {datadogTraceDllPath}", verb: "runas")) is { } cmdGacInstallResponse &&
                             cmdGacInstallResponse.ExitCode == 0)
                         {
@@ -838,7 +875,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             const char Quote = '\"';
             const char Backslash = '\\';
-            var stringBuilder = StringBuilderCache.Acquire(100);
+            var stringBuilder = StringBuilderCache.Acquire();
 
             foreach (var argument in args)
             {

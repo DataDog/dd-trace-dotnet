@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Linq;
 using System.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Helpers;
@@ -14,44 +15,94 @@ namespace Datadog.Trace.Iast;
 
 internal static partial class IastModule
 {
-    public static string? OnXssEscape(string? text)
+    public static string? OnXssEscape(string? text, string? encoded)
     {
-        var res = WebUtility.HtmlEncode(text);
+        return (string?)OnEscape(text, encoded, SecureMarks.Xss, true, IntegrationId.Xss);
+    }
+
+    public static string? OnSsrfEscape(string? text, string? encoded)
+    {
+        return (string?)OnEscape(text, encoded, SecureMarks.Ssrf, true, IntegrationId.Ssrf);
+    }
+
+    public static object? OnCustomEscape(object? text, SecureMarks marks)
+    {
+        return OnEscape(text, text, marks, false);
+    }
+
+    private static object? OnEscape(object? textObj, object? encodedObj, SecureMarks secureMarks, bool ensureDifferentInstance, params IntegrationId[] integrations)
+    {
         try
         {
-            if (!iastSettings.Enabled || string.IsNullOrEmpty(text))
+            if (!IastSettings.Enabled ||
+                textObj is null || encodedObj is null)
             {
-                return res;
+                return encodedObj;
+            }
+
+            var text = textObj as string;
+            var encoded = encodedObj as string;
+            if (text is { Length: 0 } || encoded is { Length: 0 })
+            {
+                return encodedObj;
             }
 
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Xss))
+            if (integrations is { Length: > 0 } && !integrations.Any((i) => tracer.Settings.IsIntegrationEnabled(i)))
             {
-                return res;
+                return encodedObj;
             }
 
             var scope = tracer.ActiveScope as Scope;
             var traceContext = scope?.Span?.Context?.TraceContext;
+            var iastContext = traceContext?.IastRequestContext;
 
-            if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
+            if (iastContext is null || iastContext.AddVulnerabilitiesAllowed() != true)
             {
-                return res;
+                return encodedObj;
             }
 
-            var tainted = traceContext?.IastRequestContext?.GetTainted(text!);
+            var tainted = traceContext?.IastRequestContext?.GetTainted(textObj!);
             if (tainted is null)
             {
-                return res;
+                return encodedObj;
             }
 
-            // Add the mark (exclusion) to the tainted ranges
-            tainted.Ranges = Ranges.CopyWithMark(tainted.Ranges, SecureMarks.Xss);
+            // Special case. The encoded string is already tainted. We must check instance is not the same as the original text
+            if (text is not null && encoded is not null)
+            {
+                if (ensureDifferentInstance && object.ReferenceEquals(text, encoded))
+                {
+                    // return a new instance of the encoded string with the secure marks
+#if NETCOREAPP3_0_OR_GREATER
+                    var newEncoded = new string(encoded.AsSpan());
+#else
+                    var newEncoded = new string(encoded.ToCharArray());
+#endif
+                    iastContext.GetTaintedObjects().Taint(newEncoded, Ranges.CopyWithMark(tainted.Ranges, secureMarks));
+                    return newEncoded;
+                }
+
+                if (text.Length == encoded.Length)
+                {
+                    iastContext.GetTaintedObjects().Taint(encoded, Ranges.CopyWithMark(tainted.Ranges, secureMarks));
+                }
+                else
+                {
+                    iastContext.GetTaintedObjects().Taint(encoded, [new Range(0, encoded.Length, tainted.Ranges[0].Source, tainted.Ranges[0].SecureMarks | secureMarks)]);
+                }
+            }
+            else
+            {
+                // Taint the whole escaped string with the new secure marks
+                iastContext.GetTaintedObjects().Taint(encodedObj, [new Range(tainted.Ranges[0].Source, tainted.Ranges[0].SecureMarks | secureMarks)]);
+            }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while escaping string for XSS.");
+            Log.Error(ex, "Error while escaping string.");
         }
 
-        return res;
+        return encodedObj;
     }
 }

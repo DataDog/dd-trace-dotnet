@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -52,7 +52,8 @@
 },
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -155,17 +156,15 @@
     Resource: POST /graphql/{*slug},
     Service: Samples.HotChocolate,
     Type: web,
-    Error: 1,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
       aspnet_core.route: /graphql/{**slug},
       component: aspnet_core,
       env: integration_tests,
-      error.msg: The HTTP response has status code 500.,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /graphql/{**slug},
-      http.status_code: 500,
+      http.status_code: 200,
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
@@ -204,7 +203,8 @@ query Book {
 },
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -233,7 +233,8 @@ mutation m {
 },
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -278,7 +279,8 @@ errors: [
 },
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -288,7 +290,7 @@ errors: [
     TraceId: Id_10,
     SpanId: Id_15,
     Name: graphql.execute,
-    Resource: Uncompleted operation,
+    Resource: Query ErrorQuery,
     Service: Samples.HotChocolate-graphql,
     Type: graphql,
     ParentId: Id_11,
@@ -300,23 +302,27 @@ errors: [
       error.stack:
 errors: [
 {
-"message": "The specified root type `Subscription` is not supported by this server.",
+"message": "Unexpected Execution Error",
 "locations": [
+{
+"line": 1,
+"column": 18
+},
 ]
 },
 ]
 ,
       error.type: HotChocolate.Error,
-      graphql.operation.type: Uncompleted,
+      graphql.operation.name: ErrorQuery,
+      graphql.operation.type: Query,
       graphql.source:
-subscription NotImplementedSub {
-  throwNotImplementedException {
-    name
-  }
+query ErrorQuery {
+  throwException
 },
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
       _dd.top_level: 1.0

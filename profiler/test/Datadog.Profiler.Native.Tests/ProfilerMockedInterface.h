@@ -2,21 +2,29 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "cor.h"
+#include "corprof.h"
+
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
 #include "Configuration.h"
+#include "IAllocationsListener.h"
 #include "IApplicationStore.h"
+#include "IContentionListener.h"
 #include "IExporter.h"
 #include "IMetricsSender.h"
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
 #include "CpuProfilerType.h"
+#include "ISsiLifetime.h"
+#include "ISsiManager.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "TagsHelper.h"
 
+#include <chrono>
 #include <memory>
 
 class MockConfiguration : public IConfiguration
@@ -74,18 +82,27 @@ public:
     MOCK_METHOD(EnablementStatus, GetEnablementStatus, (), (const override));
     MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
     MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
+    MOCK_METHOD(std::string const&, GetEtwReplayEndpoint, (), (const override));
     MOCK_METHOD(CpuProfilerType, GetCpuProfilerType, (), (const override));
     MOCK_METHOD(std::chrono::milliseconds, GetCpuProfilingInterval, (), (const override));
+    MOCK_METHOD(std::chrono::milliseconds, GetSsiLongLivedThreshold, (), (const override));
+    MOCK_METHOD(bool, IsTelemetryToDiskEnabled, (), (const override));
+    MOCK_METHOD(bool, IsSsiTelemetryEnabled, (), (const override));
+    MOCK_METHOD(bool, IsHttpProfilingEnabled, (), (const override));
+    MOCK_METHOD(std::chrono::milliseconds, GetHttpRequestDurationThreshold, (), (const override));
+    MOCK_METHOD(bool, ForceHttpSampling, (), (const override));
+    MOCK_METHOD(bool, IsWaitHandleProfilingEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
 {
 public:
     MOCK_METHOD(void, Add, (std::shared_ptr<Sample> const& sample), (override));
-    MOCK_METHOD(bool, Export, (), (override));
+    MOCK_METHOD(bool, Export, (bool lastCall), (override));
     MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
     MOCK_METHOD(void, RegisterUpscaleProvider, (IUpscaleProvider * provider), (override));
     MOCK_METHOD(void, RegisterProcessSamplesProvider, (ISamplesProvider * provider), (override));
+    MOCK_METHOD(void, RegisterApplication, (std::string_view runtimeId), (override));
 };
 
 class MockSamplesCollector : public ISamplesCollector
@@ -100,6 +117,21 @@ class MockSampleProvider : public ISamplesProvider
 public:
     MOCK_METHOD(std::unique_ptr<SamplesEnumerator>, GetSamples, (), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
+};
+
+class MockSsiManager : public ISsiManager
+{
+public:
+    // Inherited via ISsiManager
+    MOCK_METHOD(void, OnSpanCreated, (), (override));
+    MOCK_METHOD(bool, IsSpanCreated, (),  (const override));
+    MOCK_METHOD(bool, IsLongLived, (), (const override));
+    MOCK_METHOD(bool, IsProfilerEnabled, (), (override));
+    MOCK_METHOD(bool, IsProfilerStarted, (), (override));
+    MOCK_METHOD(void, ProcessStart, (), (override));
+    MOCK_METHOD(void, ProcessEnd, (), (override));
+    MOCK_METHOD(SkipProfileHeuristicType, GetSkipProfileHeuristic, (), (const override));
+    MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
 };
 
 class MockMetricsSender : public IMetricsSender
@@ -139,9 +171,6 @@ public:
     MOCK_METHOD(ApplicationInfo, GetApplicationInfo, (const std::string& runtimeId), (override));
     MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&), (override));
     MOCK_METHOD(void, SetGitMetadata, (std::string, std::string, std::string), (override));
-    MOCK_METHOD(const char*, GetName, (), (override));
-    MOCK_METHOD(bool, StartImpl, (), (override));
-    MOCK_METHOD(bool, StopImpl, (), (override));
 };
 
 class MockRuntimeIdStore : public IRuntimeIdStore
@@ -155,6 +184,55 @@ class MockProcessSamplesProvider : public ISamplesProvider
 public:
     MOCK_METHOD(std::unique_ptr<SamplesEnumerator>, GetSamples, (), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
+};
+
+class SsiLifetimeForTest : public ISsiLifetime
+{
+public:
+    void OnStartDelayedProfiling() override
+    {
+        _hasBeenStarted = true;
+    }
+
+    bool IsProfilingEnabled() const
+    {
+        return _hasBeenStarted;
+    }
+
+private:
+    bool _hasBeenStarted = false;
+};
+
+class MockContentionListener : public IContentionListener
+{
+public:
+    MOCK_METHOD(void, OnContention, (std::chrono::nanoseconds contentionDurationNs), (override));
+    MOCK_METHOD(void, OnContention, (std::chrono::nanoseconds timestamp, uint32_t threadId, std::chrono::nanoseconds contentionDurationNs, const std::vector<uintptr_t>& stack), (override));
+    MOCK_METHOD(void, SetBlockingThread, (uint64_t osThreadId), (override));
+    MOCK_METHOD(void, OnWaitStart, (std::chrono::nanoseconds timestamp, uintptr_t associatedObjectId), (override));
+    MOCK_METHOD(void, OnWaitStop, (std::chrono::nanoseconds timestamp), (override));
+};
+
+class MockAllocationListener : public IAllocationsListener
+{
+public:
+    MOCK_METHOD(void, OnAllocation, (uint32_t allocationKind,
+                              ClassID classId,
+                              const WCHAR* typeName,
+                              uintptr_t address,
+                              uint64_t objectSize,
+                              uint64_t allocationAmount), (override));
+
+    // for .NET Framework, events are received asynchronously
+    // and the callstack is received as a sibling event
+    // --> we cannot walk the stack of the current thread
+    MOCK_METHOD(void, OnAllocation, (std::chrono::nanoseconds timestamp,
+                              uint32_t threadId,
+                              uint32_t allocationKind,
+                              ClassID classId,
+                              const std::string& typeName,
+                              uint64_t allocationAmount,
+                              const std::vector<uintptr_t>& stack), (override));
 };
 
 template <typename T, typename U, typename... Args>
@@ -171,6 +249,7 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
+std::tuple<std::unique_ptr<ISsiManager>, MockSsiManager&> CreateSsiManager();
 
 std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
 

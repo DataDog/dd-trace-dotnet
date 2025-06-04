@@ -147,9 +147,8 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, useUnsafeEncoder: newEncoder);
+            var initResult = CreateWaf(useUnsafeEncoder: newEncoder);
             using var waf = initResult.Waf;
-            waf.Should().NotBeNull();
             using var context = waf.CreateContext();
             var result = context.Run(args, TimeoutMicroSeconds);
             result.Timeout.Should().BeFalse("Timeout should be false");
@@ -165,7 +164,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             if (extractSchema)
             {
-                var serializedDerivatives = JsonConvert.SerializeObject(result.Derivatives);
+                var serializedDerivatives = JsonConvert.SerializeObject(result.ExtractSchemaDerivatives);
                 serializedDerivatives.Should().BeJsonEquivalentTo(schemaExtraction);
             }
         }

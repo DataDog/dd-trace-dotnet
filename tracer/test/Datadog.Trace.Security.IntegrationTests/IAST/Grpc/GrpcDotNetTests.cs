@@ -34,6 +34,7 @@ public class GrpcDotNetTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "1");
 
         SetEnvironmentVariable("IAST_GRPC_SOURCE_TEST", "1");
+        SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
     }
 
     [SkippableFact]
@@ -46,8 +47,13 @@ public class GrpcDotNetTests : TestHelper
 
         const int expectedSpanCount = 24;
         const string filename = "Iast.GrpcDotNetTests.BodyPropagation.SubmitsTraces";
+
+        // No meta structs support for this test as vulnerabilities can be triggered at the start of the app
+        // The tracer could possibly not have the time to load the mock agent configuration
         using var agent = EnvironmentHelper.GetMockAgent();
+        agent.Configuration.SpanMetaStructs = false;
         using var process = await RunSampleAndWaitForExit(agent);
+
         var spans = agent.WaitForSpans(expectedSpanCount);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 

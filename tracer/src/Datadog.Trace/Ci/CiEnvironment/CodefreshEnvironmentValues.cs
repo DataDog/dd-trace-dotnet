@@ -5,18 +5,20 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class CodefreshEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: Codefresh detected");
 
         IsCI = true;
         Provider = "codefresh";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.Codefresh;
         PipelineId = ValueProvider.GetValue(Constants.CodefreshBuildId);
         PipelineName = ValueProvider.GetValue(Constants.CodefreshPipelineName);
         PipelineUrl = ValueProvider.GetValue(Constants.CodefreshBuildUrl);
@@ -39,5 +41,7 @@ internal sealed class CodefreshEnvironmentValues<TValueProvider>(TValueProvider 
         SetVariablesIfNotEmpty(
             VariablesToBypass,
             Constants.CodefreshBuildId);
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.CodefreshPullRequestTarget);
     }
 }

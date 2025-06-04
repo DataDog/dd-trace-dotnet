@@ -1,0 +1,38 @@
+﻿Iteration 0:
+     _dd.di._eh : -1268833861
+     _dd.di._er : NotEligible
+Iteration 1:
+     _dd.debug.error.0.frame_data.class_name : ExceptionWithNonSupportedFramesTest
+     _dd.debug.error.0.frame_data.function : SupportedFrame
+     _dd.debug.error.0.snapshot_id : <Redacted>
+     _dd.debug.error.1.frame_data.class_name : ExceptionWithNonSupportedFramesTest
+     _dd.debug.error.1.frame_data.function : NotSupportedFrame
+     _dd.debug.error.1.no_capture_reason : The method NotSupportedFrame_Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.NotSupportedFrame(String str) has failed in instrumentation. Failure reason: Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.
+     _dd.debug.error.10.frame_data.class_name : ControllerActionInvoker
+     _dd.debug.error.10.frame_data.function : InvokeInnerFilterAsync
+     _dd.debug.error.10.no_capture_reason : The method InvokeInnerFilterAsync_Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync() is blacklisted.
+     _dd.debug.error.2.frame_data.class_name : ExceptionWithNonSupportedFramesTest
+     _dd.debug.error.2.frame_data.function : Run
+     _dd.debug.error.2.snapshot_id : <Redacted>
+     _dd.debug.error.3.frame_data.class_name : <RunTest>d__6
+     _dd.debug.error.3.frame_data.function : MoveNext
+     _dd.debug.error.3.snapshot_id : <Redacted>
+     _dd.debug.error.4.frame_data.class_name : <RunTest>d__5
+     _dd.debug.error.4.frame_data.function : MoveNext
+     _dd.debug.error.4.snapshot_id : <Redacted>
+     _dd.debug.error.8.frame_data.class_name : ControllerActionInvoker
+     _dd.debug.error.8.frame_data.function : Rethrow
+     _dd.debug.error.8.no_capture_reason : The method Rethrow_Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context) is blacklisted.
+     _dd.debug.error.9.frame_data.class_name : ControllerActionInvoker
+     _dd.debug.error.9.frame_data.function : Next
+     _dd.debug.error.9.no_capture_reason : The method Next_Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted) is blacklisted.
+     _dd.debug.error.exception_hash : <Redacted>
+     _dd.debug.error.exception_id : <Redacted>
+     _dd.di._eh : -1268833861
+     _dd.di._er : Eligible
+Iteration 2:
+     _dd.di._eh : -1268833861
+     _dd.di._er : CachedDoneExceptionCase
+Iteration 3:
+     _dd.di._eh : -1268833861
+     _dd.di._er : CachedDoneExceptionCase

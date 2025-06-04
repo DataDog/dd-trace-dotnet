@@ -20,6 +20,7 @@ namespace iast
 
     class SignatureInfo : public ISignatureBuilder
     {
+        friend class ModuleInfo;
     public:
         SignatureInfo(ModuleInfo* moduleInfo, PCCOR_SIGNATURE pSig, DWORD nSig);
         virtual ~SignatureInfo();

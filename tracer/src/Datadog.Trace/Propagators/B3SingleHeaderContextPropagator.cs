@@ -25,18 +25,28 @@ namespace Datadog.Trace.Propagators
         {
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public PropagatorType PropagatorType => PropagatorType.TraceContext;
+
+        public string DisplayName => "b3";
+
+        public void Inject<TCarrier, TCarrierSetter>(PropagationContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
+            if (context.SpanContext is not { } spanContext)
+            {
+                // nothing to inject
+                return;
+            }
+
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.B3SingleHeader);
-            var header = CreateHeader(context);
+            var header = CreateHeader(spanContext);
             carrierSetter.Set(carrier, B3, header);
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out PropagationContext context)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
-            spanContext = null;
+            context = default;
 
             var brValue = ParseUtility.ParseString(carrier, carrierGetter, B3)?.Trim();
             if (!string.IsNullOrEmpty(brValue))
@@ -89,7 +99,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString(), isRemote: true);
+                var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString(), isRemote: true);
 #else
                 string? rawTraceId;
                 string? rawSpanId;
@@ -127,8 +137,10 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
+                var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
 #endif
+
+                context = new PropagationContext(spanContext, baggage: null);
 
                 TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.B3SingleHeader);
                 return true;

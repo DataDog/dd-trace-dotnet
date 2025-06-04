@@ -99,6 +99,16 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     {
         await TestStrictTransportSecurityHeaderMissingVulnerability(test, url);
     }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/Print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1")]
+    public async Task TestQueryParameterNameVulnerability(string test, string url)
+    {
+        await TestQueryParameterName(test, url);
+    }
 }
 
 [Collection("IisTests")]
@@ -135,7 +145,6 @@ public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
 public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
 
     public AspNetMvc5ClassicWithIastTelemetryEnabled(IisFixture iisFixture, ITestOutputHelper output)
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
@@ -147,6 +156,7 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.StackTraceEnabled, "false");
 
         _iisFixture = iisFixture;
         _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
@@ -210,7 +220,6 @@ public class AspNetMvc5ClassicWithoutIast : AspNetMvc5IastTests
 public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
     private readonly bool _enableIast;
     private readonly bool _classicMode;
 
@@ -226,6 +235,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
         DisableObfuscationQueryString();
         SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.StackTraceEnabled, "false");
 
         _iisFixture = iisFixture;
         _classicMode = classicMode;
@@ -395,7 +405,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/Ldap?path=LDAP://fakeorg,DC=com&userName=BabsJensen", null)]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com", null)]
     public async Task TestIastLdapRequest(string test, string url, string body)
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
@@ -457,6 +467,24 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
         var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
         var filename = GetFileName("XpathInjection");
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/SendEmail?email=alice@aliceland.com&name=Alice&lastname=Stevens&escape=false")]
+    public async Task TestIastEmailHtmlInjectionRequest(string test, string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
+        var filename = GetFileName("EmailHtmlInjection");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -629,6 +657,19 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{testName}.path={sanitisedUrl}")
+                          .DisableRequireUniquePrefix();
+    }
+
+    protected async Task TestQueryParameterName(string test, string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
+        var filename = GetFileName("QueryParameterName");
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
 

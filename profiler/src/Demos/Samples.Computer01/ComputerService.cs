@@ -44,14 +44,17 @@ namespace Samples.Computer01
         private NullThreadNameBugCheck _nullThreadNameBugCheck;
         private MethodsSignature _methodsSignature;
         private SigSegvHandlerExecution _sigsegvHandler;
+#if NETCOREAPP3_0_OR_GREATER
+        private LinuxDlIteratePhdrDeadlock _linuxDlIteratePhdrDeadlock;
+#endif
 
 #if NET5_0_OR_GREATER
         private OpenLdapCrash _openldapCrash;
         private SocketTimeout _socketTest;
 #endif
-        private Obfuscation _obfuscation;
         private ThreadSpikes _threadSpikes;
         private StringConcat _stringConcat;
+        private SyncOverAsync _syncOverAsync;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -165,10 +168,6 @@ namespace Samples.Computer01
                     StartSocketTimeout();
                     break;
 #endif
-                case Scenario.Obfuscation:
-                    StartObfuscation();
-                    break;
-
                 case Scenario.ForceSigSegvHandler:
                     StartForceSigSegvHandler();
                     break;
@@ -179,6 +178,22 @@ namespace Samples.Computer01
 
                 case Scenario.StringConcat:
                     StartStringConcat(parameter);
+                    break;
+
+#if NETCOREAPP3_0_OR_GREATER
+                case Scenario.LinuxDlIteratePhdrDeadlock:
+                    StartLinuxDlIteratePhdrDeadlock();
+                    break;
+#endif
+
+                case Scenario.SyncOverAsyncWithGetAwaiterGetResult:
+                    _syncOverAsync = new SyncOverAsync(nbThreads, false);
+                    _syncOverAsync.Start();
+                    break;
+
+                case Scenario.SyncOverAsyncWithResult:
+                    _syncOverAsync = new SyncOverAsync(nbThreads, true);
+                    _syncOverAsync.Start();
                     break;
 
                 default:
@@ -296,10 +311,6 @@ namespace Samples.Computer01
                     break;
 #endif
 
-                case Scenario.Obfuscation:
-                    StopObfuscation();
-                    break;
-
                 case Scenario.ForceSigSegvHandler:
                     StopForceSigSegvHandler();
                     break;
@@ -310,6 +321,17 @@ namespace Samples.Computer01
 
                 case Scenario.StringConcat:
                     StopStringConcat();
+                    break;
+
+#if NETCOREAPP3_0_OR_GREATER
+                case Scenario.LinuxDlIteratePhdrDeadlock:
+                    StopLinuxDlIteratePhdrDeadlock();
+                    break;
+#endif
+
+                case Scenario.SyncOverAsyncWithGetAwaiterGetResult:
+                case Scenario.SyncOverAsyncWithResult:
+                    _syncOverAsync.Stop();
                     break;
             }
         }
@@ -434,16 +456,20 @@ namespace Samples.Computer01
                         RunForceSigSegvHandler();
                         break;
 
-                    case Scenario.Obfuscation:
-                        RunObfuscation();
-                        break;
-
                     case Scenario.ThreadSpikes:
                         RunThreadSpikes(nbThreads, parameter);
                         break;
 
                     case Scenario.StringConcat:
                         RunStringConcat(parameter);
+                        break;
+
+                    case Scenario.SyncOverAsyncWithGetAwaiterGetResult:
+                        RunSyncOverAsync(nbThreads, false);
+                        break;
+
+                    case Scenario.SyncOverAsyncWithResult:
+                        RunSyncOverAsync(nbThreads, true);
                         break;
 
                     default:
@@ -575,6 +601,14 @@ namespace Samples.Computer01
             _linuxMallockDeadlock.Start();
         }
 
+#if NETCOREAPP3_0_OR_GREATER
+        private void StartLinuxDlIteratePhdrDeadlock()
+        {
+            _linuxDlIteratePhdrDeadlock = new LinuxDlIteratePhdrDeadlock();
+            _linuxDlIteratePhdrDeadlock.Start();
+        }
+#endif
+
         private void StartMeasureAllocations()
         {
             _measureAllocations = new MeasureAllocations();
@@ -618,12 +652,6 @@ namespace Samples.Computer01
             _socketTest.Start();
         }
 #endif
-
-        private void StartObfuscation()
-        {
-            _obfuscation = new Obfuscation();
-            _obfuscation.Start();
-        }
 
         private void StopForceSigSegvHandler()
         {
@@ -724,11 +752,6 @@ namespace Samples.Computer01
         }
 #endif
 
-        private void StopObfuscation()
-        {
-            _obfuscation.Stop();
-        }
-
         private void StopGarbageCollections()
         {
             _garbageCollections.Stop();
@@ -748,6 +771,13 @@ namespace Samples.Computer01
         {
             _linuxMallockDeadlock.Stop();
         }
+
+#if NETCOREAPP3_0_OR_GREATER
+        private void StopLinuxDlIteratePhdrDeadlock()
+        {
+            _linuxDlIteratePhdrDeadlock.Stop();
+        }
+#endif
 
         private void StopMeasureAllocations()
         {
@@ -953,12 +983,6 @@ namespace Samples.Computer01
             test.Run();
         }
 
-        private void RunObfuscation()
-        {
-            var test = new Obfuscation();
-            test.Run();
-        }
-
         private void RunThreadSpikes(int threadCount, int duration)
         {
             var test = new ThreadSpikes(threadCount, duration);
@@ -968,6 +992,12 @@ namespace Samples.Computer01
         private void RunStringConcat(int count)
         {
             var test = new StringConcat(count);
+            test.Run();
+        }
+
+        private void RunSyncOverAsync(int threadCount, bool useResultProperty)
+        {
+            var test = new SyncOverAsync(threadCount, useResultProperty);
             test.Run();
         }
 

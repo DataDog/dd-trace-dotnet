@@ -12,6 +12,7 @@ using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -39,6 +40,12 @@ namespace Datadog.Trace.AspNet
         private static bool _canReadHttpResponseHeaders = true;
 
         private readonly string _httpContextScopeKey;
+
+        /// <summary>
+        /// This key is only present when inferred proxy spans are enabled AND necessary proxy headers were present.
+        /// </summary>
+        /// <see cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
+        private readonly string _httpContextProxyScopeKey;
         private readonly string _requestOperationName;
 
         /// <summary>
@@ -62,6 +69,7 @@ namespace Datadog.Trace.AspNet
 
             _requestOperationName = operationName;
             _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _requestOperationName);
+            _httpContextProxyScopeKey = string.Concat(_httpContextScopeKey, ".proxy");
         }
 
         /// <inheritdoc />
@@ -77,16 +85,32 @@ namespace Datadog.Trace.AspNet
         {
         }
 
+        private static string BuildResourceName(Tracer tracer, HttpRequest httpRequest)
+        {
+            var url = tracer.Settings.BypassHttpRequestUrlCachingEnabled
+                               ? RequestDataHelper.BuildUrl(httpRequest)
+                               : RequestDataHelper.GetUrl(httpRequest);
+            if (url is not null)
+            {
+                var path = UriHelpers.GetCleanUriPath(url, httpRequest.ApplicationPath);
+                return $"{httpRequest.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+            }
+            else
+            {
+                return $"{httpRequest.HttpMethod.ToUpperInvariant()}";
+            }
+        }
+
         internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
         {
-            if (!Tracer.Instance.Settings.HeaderTagsInternal.IsNullOrEmpty() &&
+            if (!Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty() &&
                 httpContext != null &&
                 HttpRuntime.UsingIntegratedPipeline &&
                 _canReadHttpResponseHeaders)
             {
                 try
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
                 catch (PlatformNotSupportedException ex)
                 {
@@ -104,6 +128,7 @@ namespace Datadog.Trace.AspNet
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
             Scope scope = null;
+            Scope inferredProxyScope = null;
             bool shouldDisposeScope = true;
             try
             {
@@ -130,15 +155,27 @@ namespace Datadog.Trace.AspNet
                 }
 
                 HttpRequest httpRequest = httpContext.Request;
-                NameValueHeadersCollection? headers = null;
-                SpanContext propagatedContext = null;
+                var requestHeaders = RequestDataHelper.GetHeaders(httpRequest) ?? [];
+                var headers = requestHeaders.Wrap();
+                PropagationContext extractedContext = default;
+
                 if (tracer.InternalActiveScope == null)
                 {
                     try
                     {
                         // extract propagated http headers
-                        headers = httpRequest.Headers.Wrap();
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
+
+                        // if inferred proxy spans are enabled, try to extract and create the proxy span
+                        if (tracer.Settings.InferredProxySpansEnabled)
+                        {
+                            if (InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, headers, extractedContext) is { } proxyContext)
+                            {
+                                inferredProxyScope = proxyContext.Scope;
+                                // updates the extracted context with the inferred proxy span context so that it has the inferred context
+                                extractedContext = proxyContext.Context;
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -146,22 +183,24 @@ namespace Datadog.Trace.AspNet
                     }
                 }
 
-                string host = httpRequest.Headers.Get("Host");
-                var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
+                string host = requestHeaders.Get("Host");
+                var userAgent = requestHeaders.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                string url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                 var tags = new WebTags();
-                scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
-                scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
-                if (headers is not null)
-                {
-                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
-                }
 
-                if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
+                // Attempt to set Resource Name to something that will be close to what is expected
+                // Note: we will go and re-do it in OnEndRequest, but doing it here will allow for resource-based sampling
+                // this likely won't be perfect - but we need something to try and allow resource-based sampling to function
+                var resourceName = BuildResourceName(tracer, httpRequest);
+                scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
+                tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+
+                if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                 {
-                    Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => httpRequest.Headers[key], tracer.Settings.IpHeader, tags);
+                    Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => requestHeaders[key], tracer.Settings.IpHeader, tags);
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
@@ -171,7 +210,13 @@ namespace Datadog.Trace.AspNet
                 // (e.g. WCF being hosted in IIS)
                 if (HttpRuntime.UsingIntegratedPipeline)
                 {
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, httpRequest.Headers.Wrap());
+                    var injectedContext = new PropagationContext(scope.Span.Context, Baggage.Current);
+                    tracer.TracerManager.SpanContextPropagator.Inject(injectedContext, requestHeaders.Wrap());
+                }
+
+                if (inferredProxyScope is not null)
+                {
+                    httpContext.Items[_httpContextProxyScopeKey] = inferredProxyScope;
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -180,10 +225,10 @@ namespace Datadog.Trace.AspNet
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
                 var security = Security.Instance;
-                if (security.Enabled)
+                if (security.AppsecEnabled)
                 {
-                    SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
-                    var securityCoordinator = new SecurityCoordinator(security, scope.Span);
+                    var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, httpContext);
+                    securityCoordinator.Reporter.ReportWafInitInfoOnce(security.WafInitResult);
 
                     // request args
                     var args = securityCoordinator.GetBasicRequestArgsForWaf();
@@ -192,10 +237,13 @@ namespace Datadog.Trace.AspNet
                     if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
                         var bodyArgs = securityCoordinator.GetBodyFromRequest();
-                        args.Add(AddressesConstants.RequestBody, bodyArgs);
+                        if (bodyArgs is not null)
+                        {
+                            args.Add(AddressesConstants.RequestBody, bodyArgs);
+                        }
                     }
 
-                    securityCoordinator.BlockAndReport(args);
+                    securityCoordinator.BlockAndReport(args, isInHttpTracingModule: true);
                 }
 
                 var iastInstance = Iast.Iast.Instance;
@@ -212,6 +260,7 @@ namespace Datadog.Trace.AspNet
                 {
                     // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
                     scope?.Dispose();
+                    inferredProxyScope?.Dispose();
                 }
 
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
@@ -220,8 +269,6 @@ namespace Datadog.Trace.AspNet
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
-            var securityContextCleaned = false;
-
             try
             {
                 var tracer = Tracer.Instance;
@@ -234,17 +281,20 @@ namespace Datadog.Trace.AspNet
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
+                    var proxyScope = app.Context.Items[_httpContextProxyScopeKey] as Scope;
+
                     try
                     {
+                        var currentSpan = scope.Span;
                         var rootScope = scope.Root;
                         var rootSpan = rootScope.Span;
 
                         // the security needs to come before collecting the response code,
                         // since blocking will change the response code
                         var security = Security.Instance;
-                        if (security.Enabled)
+                        if (security.AppsecEnabled)
                         {
-                            var securityCoordinator = new SecurityCoordinator(security, rootSpan);
+                            var securityCoordinator = SecurityCoordinator.Get(security, rootSpan, app.Context);
                             var args = securityCoordinator.GetBasicRequestArgsForWaf();
                             args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
 
@@ -267,10 +317,9 @@ namespace Datadog.Trace.AspNet
                                 }
                             }
 
-                            securityCoordinator.BlockAndReport(args, true);
+                            securityCoordinator.BlockAndReport(args, true, isInHttpTracingModule: true);
 
-                            securityCoordinator.AddResponseHeadersToSpanAndCleanup();
-                            securityContextCleaned = true;
+                            securityCoordinator.Reporter.AddResponseHeadersToSpan();
                         }
 
                         if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
@@ -279,8 +328,15 @@ namespace Datadog.Trace.AspNet
                             {
                                 try
                                 {
-                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, app.Context.Request.Url.Scheme);
-                                    InsecureAuthAnalyzer.AnalyzeInsecureAuth(app.Context.Request.Headers, IntegrationId, app.Context.Response.StatusCode);
+                                    var requestUrl = tracer.Settings.BypassHttpRequestUrlCachingEnabled
+                                        ? RequestDataHelper.BuildUrl(app.Context.Request)
+                                        : RequestDataHelper.GetUrl(app.Context.Request);
+                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, requestUrl?.Scheme);
+                                    var headers = RequestDataHelper.GetHeaders(app.Context.Request);
+                                    if (headers is not null)
+                                    {
+                                        InsecureAuthAnalyzer.AnalyzeInsecureAuth(headers, IntegrationId, app.Context.Response.StatusCode);
+                                    }
                                 }
                                 catch (PlatformNotSupportedException ex)
                                 {
@@ -309,40 +365,55 @@ namespace Datadog.Trace.AspNet
                         //
                         // Note: HttpServerUtility.TransferRequest cannot be invoked more than once, so we'll have at most two nested (in-process)
                         // aspnet.request spans at any given time: https://referencesource.microsoft.com/#System.Web/Hosting/IIS7WorkerRequest.cs,2400
+
+                        var response = app.Context.Response;
+                        int status;
+
+                        if (response.StatusCode == 500 && !response.IsClientConnected && app.Context.Error is null)
+                        {
+                            // rare case when client disconnects - IIS returns a 400 but reports a 500
+                            status = 400;
+                        }
+                        else
+                        {
+                            status = response.StatusCode;
+                        }
+
+                        // add "http.status_code" tag to the root span
                         if (!rootSpan.HasHttpStatusCode())
                         {
-                            var response = app.Context.Response;
-                            var status = response.StatusCode;
-                            if (status == 500 && !response.IsClientConnected && app.Context.Error is null)
-                            {
-                                // rare case when client disconnects - IIS returns a 400 but reports a 500
-                                status = 400;
-                            }
-
                             rootSpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
                             AddHeaderTagsFromHttpResponse(app.Context, rootScope);
+                        }
 
-                            if (scope.Span != rootSpan)
-                            {
-                                scope.Span.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
-                                AddHeaderTagsFromHttpResponse(app.Context, scope);
-                            }
+                        // also add "http.status_code" tag to the current span if it's not the root
+                        if (currentSpan != rootSpan && !currentSpan.HasHttpStatusCode())
+                        {
+                            currentSpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
+                            AddHeaderTagsFromHttpResponse(app.Context, scope);
+                        }
+
+                        // also add "http.status_code" tag to the inferred proxy span
+                        if (proxyScope?.Span is { } proxySpan && proxySpan != rootSpan && !proxySpan.HasHttpStatusCode())
+                        {
+                            proxySpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
+                            AddHeaderTagsFromHttpResponse(app.Context, proxyScope);
                         }
 
                         if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
                          && !string.IsNullOrEmpty(resourceName))
                         {
-                            scope.Span.ResourceName = resourceName;
+                            currentSpan.ResourceName = resourceName;
                         }
                         else
                         {
-                            string path = UriHelpers.GetCleanUriPath(app.Request.Url, app.Request.ApplicationPath);
-                            scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                            currentSpan.ResourceName = BuildResourceName(tracer, app.Request);
                         }
                     }
                     finally
                     {
                         scope.Dispose();
+                        proxyScope?.Dispose();
                         // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
                         TryClearContext(app.Context);
                     }
@@ -351,16 +422,6 @@ namespace Datadog.Trace.AspNet
             catch (Exception ex)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
-            }
-            finally
-            {
-                // security might have been disabled in the meantime but contexts would still be open
-                // and this integration may be disabled but others might have opened a context
-                if (!securityContextCleaned && sender is HttpApplication app)
-                {
-                    var securityTransport = new SecurityCoordinator.HttpTransport(app.Context);
-                    securityTransport.DisposeAdditiveContext();
-                }
             }
         }
 
@@ -385,16 +446,23 @@ namespace Datadog.Trace.AspNet
 
                 if (httpContext?.Items[_httpContextScopeKey] is Scope scope)
                 {
+                    var proxyScope = httpContext?.Items[_httpContextProxyScopeKey] as Scope;
                     AddHeaderTagsFromHttpResponse(httpContext, scope);
+                    if (proxyScope != null)
+                    {
+                        AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
+                    }
 
                     if (exception != null && !is404 && exception is not AppSec.BlockException)
                     {
                         scope.Span.SetException(exception);
+                        proxyScope?.Span.SetException(exception);
                         if (!HttpRuntime.UsingIntegratedPipeline)
                         {
                             // in classic mode, the exception won't cause the correct status code to be set
                             // even though a 500 response will be sent ultimately, so set it manually
                             scope.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
+                            proxyScope?.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
                         }
                     }
                 }
@@ -410,6 +478,7 @@ namespace Datadog.Trace.AspNet
             try
             {
                 context.Items.Remove(_httpContextScopeKey);
+                context.Items.Remove(_httpContextProxyScopeKey);
             }
             catch (Exception ex)
             {

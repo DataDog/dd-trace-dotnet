@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -21,31 +23,16 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-    internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
+    internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
-        Span span;
+        var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
 
-        if (traceId == null)
-        {
-            Log("traceId not found");
-            span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
-        }
-        else
-        {
-            Log($"creating the placeholder traceId = {traceId}");
-            span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: (TraceId)Convert.ToUInt64(traceId), addToTraceContext: false);
-        }
-
-        if (samplingPriority == null)
-        {
-            Log("samplingPriority not found");
-            _ = span.Context.TraceContext?.GetOrMakeSamplingDecision();
-        }
-        else
-        {
-            Log($"setting the placeholder sampling priority to = {samplingPriority}");
-            span.Context.TraceContext?.SetSamplingPriority(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
-        }
+        var span = tracer.StartSpan(
+            PlaceholderOperationName,
+            tags: null,
+            parent: context.SpanContext,
+            serviceName: PlaceholderServiceName,
+            addToTraceContext: false);
 
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
         return tracer.TracerManager.ScopeManager.Activate(span, false);
@@ -56,22 +43,25 @@ internal abstract class LambdaCommon
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context);
-        var response = (HttpWebResponse)request.GetResponse();
-        var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
-        var samplingPriority = response.Headers.Get(HttpHeaderNames.SamplingPriority);
-        if (ValidateOkStatus(response))
+        using var response = (HttpWebResponse)request.GetResponse();
+
+        var headers = response.Headers.Wrap();
+        if (!ValidateOkStatus(response))
         {
-            return CreatePlaceholderScope(Tracer.Instance, traceId, samplingPriority);
+            return null;
         }
 
-        return null;
+        var tracer = Tracer.Instance;
+        return CreatePlaceholderScope(tracer, headers);
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
     {
         var request = requestBuilder.GetEndInvocationRequest(scope, isError);
         WriteRequestPayload(request, data);
-        if (!ValidateOkStatus((HttpWebResponse)request.GetResponse()))
+        using var response = (HttpWebResponse)request.GetResponse();
+
+        if (!ValidateOkStatus(response))
         {
             Log("Extension does not send a status 200 OK", debug: false);
         }

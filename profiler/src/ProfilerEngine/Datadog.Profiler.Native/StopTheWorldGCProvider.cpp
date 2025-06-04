@@ -13,6 +13,7 @@
 #include "IThreadsCpuManager.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
+#include "RawSampleTransformer.h"
 #include "SampleValueTypeProvider.h"
 #include "TimelineSampleType.h"
 
@@ -22,18 +23,14 @@
 
 StopTheWorldGCProvider::StopTheWorldGCProvider(
     SampleValueTypeProvider& valueTypeProvider,
-    IFrameStore* pFrameStore,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration,
+    RawSampleTransformer* rawSampleTransformer,
     shared::pmr::memory_resource* memoryResource)
     :
-    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource)
+    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
 {
 }
 
-void StopTheWorldGCProvider::OnSuspension(uint64_t timestamp, int32_t number, uint32_t generation, uint64_t pauseDuration)
+void StopTheWorldGCProvider::OnSuspension(std::chrono::nanoseconds timestamp, int32_t number, uint32_t generation, std::chrono::nanoseconds pauseDuration)
 {
     RawStopTheWorldSample rawSample;
     rawSample.Timestamp = timestamp;

@@ -8,7 +8,6 @@
 
 #include "corprof.h"
 
-#include "AllocationsProvider.h"
 #include "IBatchedSamplesProvider.h"
 #include "IGarbageCollectionsListener.h"
 #include "ISampledAllocationsListener.h"
@@ -17,12 +16,9 @@
 #include "ServiceBase.h"
 
 class IManagedThreadList;
-class IFrameStore;
-class IThreadsCpuManager;
-class IAppDomainStore;
-class IRuntimeIdStore;
 class IConfiguration;
 class ISampledAllocationsListener;
+class RawSampleTransformer;
 class SampleValueTypeProvider;
 
 class LiveObjectsProvider : public ServiceBase,
@@ -32,17 +28,14 @@ class LiveObjectsProvider : public ServiceBase,
 {
 public:
     LiveObjectsProvider(
-        SampleValueTypeProvider& valueTypeProvider,
         ICorProfilerInfo13* pCorProfilerInfo,
-        IManagedThreadList* pManagedThreadList,
-        IFrameStore* pFrameStore,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration,
-        MetricsRegistry& metricsRegistry);
+        SampleValueTypeProvider& valueTypeProvider,
+        RawSampleTransformer* rawSampleTransformer,
+        IConfiguration* pConfiguration);
 
 public:
+
+    static std::vector<SampleValueType> SampleTypeDefinitions;
 
     // Inherited via IBatchedSamplesProvider
     std::unique_ptr<SamplesEnumerator> GetSamples() override;
@@ -54,20 +47,21 @@ public:
 
     // Inherited via IGarbageCollectionsListener
     void OnGarbageCollectionStart(
-        uint64_t timestamp,
+        std::chrono::nanoseconds timestamp,
         int32_t number,
         uint32_t generation,
         GCReason reason,
         GCType type) override;
+
     void OnGarbageCollectionEnd(
         int32_t number,
         uint32_t generation,
         GCReason reason,
         GCType type,
         bool isCompacting,
-        uint64_t pauseDuration,
-        uint64_t totalDuration,
-        uint64_t endTimestamp,
+        std::chrono::nanoseconds pauseDuration,
+        std::chrono::nanoseconds totalDuration,
+        std::chrono::nanoseconds endTimestamp,
         uint64_t gen2Size,
         uint64_t lohSize,
         uint64_t pohSize) override;
@@ -82,16 +76,14 @@ private:
     bool StopImpl() override;
 
 private:
-    static std::vector<SampleValueType> SampleTypeDefinitions;
 
     ICorProfilerInfo13* _pCorProfilerInfo = nullptr;
-    std::unique_ptr<AllocationsProvider> _pAllocationsProvider;
-
-    bool _isTimestampsAsLabelEnabled = false;
+    RawSampleTransformer* _rawSampleTransformer = nullptr;
 
     std::mutex _liveObjectsLock;
     std::list<LiveObjectInfo> _monitoredObjects;
     // WeakHandle are checked after each GC
+    std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
 
     static const std::string Gen1;
     static const std::string Gen2;

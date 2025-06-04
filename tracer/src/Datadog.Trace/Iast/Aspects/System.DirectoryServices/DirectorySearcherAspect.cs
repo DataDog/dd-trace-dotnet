@@ -30,7 +30,15 @@ public partial class DirectorySearcherAspect
     [AspectMethodInsertBefore("System.DirectoryServices.DirectorySearcher::.ctor(System.DirectoryServices.DirectoryEntry,System.String,System.String[],System.DirectoryServices.SearchScope)", 2)]
     public static object Init(string path)
     {
-        IastModule.OnLdapInjection(path);
-        return path;
+        try
+        {
+            IastModule.OnLdapInjection(path);
+            return path;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+            return path;
+        }
     }
 }

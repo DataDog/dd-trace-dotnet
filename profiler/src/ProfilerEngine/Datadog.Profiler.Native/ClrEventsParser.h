@@ -8,6 +8,7 @@
 #include "corprof.h"
 // end
 
+#include <chrono>
 #include <map>
 #include <math.h>
 #include <shared_mutex>
@@ -24,9 +25,9 @@
 
 
 // keywords
-const int KEYWORD_CONTENTION = 0x00004000;
-const int KEYWORD_GC = 0x00000001;
-const int KEYWORD_STACKWALK = 0x40000000;
+const int64_t KEYWORD_CONTENTION = 0x00004000;
+const int64_t KEYWORD_GC = 0x00000001;
+const int64_t KEYWORD_STACKWALK = 0x40000000;
 
 // events id
 const int EVENT_CONTENTION_STOP = 91; // version 1 contains the duration in nanoseconds
@@ -79,6 +80,7 @@ struct AllocationTickV2Payload  // for .NET Framework ???
     uint32_t HeapIndex;            // The heap where the object was allocated. This value is 0 (zero) when running with workstation garbage collection.
 };
 
+// This will not be filled up but represents what is received from the .NET Framework
 struct AllocationTickV3Payload  // for .NET Framework 4.8
 {
     uint32_t AllocationAmount;     // The allocation size, in bytes.
@@ -91,10 +93,10 @@ struct AllocationTickV3Payload  // for .NET Framework 4.8
     uint64_t AllocationAmount64;   // The allocation size, in bytes.This value is accurate for very large allocations.
     uintptr_t TypeId;              // The address of the MethodTable. When there are several types of objects that were allocated during this event,
                                    // this is the address of the MethodTable that corresponds to the last object allocated (the object that caused the 100 KB threshold to be exceeded).
-    const WCHAR* TypeName;         // The name of the type that was allocated. When there are several types of objects that were allocated during this event,
+    WCHAR FirstCharInName;         // The name of the type that was allocated. When there are several types of objects that were allocated during this event,
                                    // this is the type of the last object allocated (the object that caused the 100 KB threshold to be exceeded).
-    uint32_t HeapIndex;            // The heap where the object was allocated. This value is 0 (zero) when running with workstation garbage collection.
-    uintptr_t Address;             // The address of the last allocated object.
+
+    // uint32_t HeapIndex and uintptr_t Address appear AFTER the TypeName
 };
 
 struct AllocationTickV4Payload
@@ -127,6 +129,16 @@ struct ContentionStopV1Payload // for .NET Core/ 5+
     uint8_t ContentionFlags;   // 0 for managed; 1 for native.
     uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
     double_t DurationNs;       // Duration of the contention (without spinning)
+};
+
+struct ContentionStartV2Payload // for .NET Core/ 5+
+{
+    uint8_t ContentionFlags; // 0 for managed; 1 for native.
+    uint16_t ClrInstanceId;  // Unique ID for the instance of CLR.
+    uintptr_t LockId;
+    uintptr_t AssociatedObjectID;
+    // This is a copy/paste from the CLR, but the LockOwnerThreadID is not a ThreadID but an OS Thread Id
+    uint64_t LockOwnerThreadID;
 };
 
 struct GCStartPayload
@@ -192,6 +204,18 @@ struct GCGlobalHeapPayload
     uint32_t Reason;
     uint32_t GlobalMechanisms;
 };
+
+struct WaitHandleWaitStartPayload // for .NET 9+
+{
+    uint8_t WaitSource;   // 0 if AssociatedObjectID is null or 1 otherwise
+    uintptr_t AssociatedObjectID; // null or the address of the WaitHandle-derived object
+    uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
+};
+
+struct WaitHandleWaitStopPayload // for .NET 9+
+{
+    uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
+};
 #pragma pack()
 
 class IContentionListener;
@@ -204,8 +228,8 @@ struct GCDetails
     GCReason Reason;
     GCType Type;
     bool IsCompacting;
-    uint64_t PauseDuration;
-    uint64_t StartTimestamp;
+    std::chrono::nanoseconds PauseDuration;
+    std::chrono::nanoseconds StartTimestamp;
 
     uint64_t gen2Size;
     uint64_t lohSize;
@@ -220,8 +244,9 @@ struct GCDetails
 class ClrEventsParser
 {
 public:
-    static const int KEYWORD_GC = 0x1;
-    static const int KEYWORD_CONTENTION = 0x4000;
+    static const int64_t KEYWORD_GC = 0x1;
+    static const int64_t KEYWORD_CONTENTION = 0x4000;
+    static const int64_t KEYWORD_WAITHANDLE = 0x40000000000; // .NET 9+ only
 
 public:
     ClrEventsParser(
@@ -236,10 +261,10 @@ public:
     // is only valid (different from 0) in the asynchronous scenario.
     // As of today, only the GC related events could be received asynchronously.
     //
-    // Lock contention and AllocationTick qre synchronous only here.
+    // Lock contention and AllocationTick are synchronous only here.
     //
     void ParseEvent(
-        uint64_t timestamp,
+        std::chrono::nanoseconds timestamp,
         DWORD version,
         INT64 keywords,
         DWORD id,
@@ -250,19 +275,20 @@ public:
     void Register(IGarbageCollectionsListener* pGarbageCollectionsListener);
 
 private:
-    void ParseGcEvent(uint64_t timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
+    void ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
     void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
+    void ParseWaitHandleEvent(std::chrono::nanoseconds timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
 
     // garbage collection events processing
     void OnGCTriggered();
-    void OnGCStart(uint64_t timestamp, GCStartPayload& payload);
+    void OnGCStart(std::chrono::nanoseconds timestamp, GCStartPayload& payload);
     void OnGCEnd(GCEndPayload& payload);
-    void OnGCSuspendEEBegin(uint64_t timestamp);
-    void OnGCRestartEEEnd(uint64_t timestamp);
-    void OnGCHeapStats(uint64_t timestamp, uint64_t gen2Size, uint64_t lohSize, uint64_t pohSize);
-    void OnGCGlobalHeapHistory(uint64_t timestamp, GCGlobalHeapPayload& payload);
-    void NotifySuspension(uint64_t timestamp, uint32_t number, uint32_t generation, uint64_t duration);
-    void NotifyGarbageCollectionStarted(uint64_t timestamp, int32_t number, uint32_t generation, GCReason reason, GCType type);
+    void OnGCSuspendEEBegin(std::chrono::nanoseconds timestamp);
+    void OnGCRestartEEEnd(std::chrono::nanoseconds timestamp);
+    void OnGCHeapStats(std::chrono::nanoseconds timestamp, uint64_t gen2Size, uint64_t lohSize, uint64_t pohSize);
+    void OnGCGlobalHeapHistory(std::chrono::nanoseconds timestamp, GCGlobalHeapPayload& payload);
+    void NotifySuspension(std::chrono::nanoseconds timestamp, uint32_t number, uint32_t generation, std::chrono::nanoseconds duration);
+    void NotifyGarbageCollectionStarted(std::chrono::nanoseconds timestamp, int32_t number, uint32_t generation, GCReason reason, GCType type);
 
     void NotifyGarbageCollectionEnd(
         int32_t number,
@@ -270,46 +296,16 @@ private:
         GCReason reason,
         GCType type,
         bool isCompacting,
-        uint64_t pauseDuration,
-        uint64_t totalDuration,
-        uint64_t endTimestamp,
+        std::chrono::nanoseconds pauseDuration,
+        std::chrono::nanoseconds totalDuration,
+        std::chrono::nanoseconds endTimestamp,
         uint64_t gen2Size,
         uint64_t lohSize,
         uint64_t pohSize
         );
     GCDetails& GetCurrentGC();
-    void InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPayload& payload);
+    void InitializeGC(std::chrono::nanoseconds timestamp, GCDetails& gc, GCStartPayload& payload);
     static void ResetGC(GCDetails& gc);
-    static uint64_t GetCurrentTimestamp();
-
-
-public:
-    // Points to the UTF16, null terminated string from the given event data buffer
-    // and update the offset accordingly
-    static WCHAR* ReadWideString(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
-    {
-        WCHAR* start = (WCHAR*)(eventData + *offset);
-        size_t length = WStrLen(start);
-
-        // Account for the null character
-        *offset += (ULONG)((length + 1) * sizeof(WCHAR));
-
-        assert(*offset <= cbEventData);
-        return start;
-    }
-
-    template <typename T>
-    static bool Read(T& value, LPCBYTE eventData, ULONG cbEventData, ULONG& offset)
-    {
-        if ((offset + sizeof(T)) > cbEventData)
-        {
-            return false;
-        }
-
-        memcpy(&value, (T*)(eventData + offset), sizeof(T));
-        offset += sizeof(T);
-        return true;
-    }
 
 private:
     IAllocationsListener* _pAllocationListener = nullptr;
@@ -317,10 +313,12 @@ private:
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
     std::vector<IGarbageCollectionsListener*> _pGarbageCollectionsListeners;
 
+    template <typename... Args>
+    void LogGcEvent(Args const&... args);
  // state for garbage collection details including Stop The World duration
 private:
     // set when GCSuspendEEBegin is received (usually no GC is known at that time)
-    uint64_t _suspensionStart;
+    std::chrono::nanoseconds _suspensionStart;
 
     // for concurrent mode, a background GC could be started
     GCDetails _currentBGC;
@@ -330,7 +328,10 @@ private:
 
 private:
     const int EVENT_ALLOCATION_TICK = 10;   // version 4 contains the size + reference
+    const int EVENT_CONTENTION_START = 81; // version 2 contains thread id of the threads that owns the lock
     const int EVENT_CONTENTION_STOP = 91;   // version 1 contains the duration in nanoseconds
+    const int EVENT_WAITHANDLE_START = 301;
+    const int EVENT_WAITHANDLE_STOP = 302;
 
     // Events emitted during garbage collection lifetime
     // read https://medium.com/criteo-engineering/spying-on-net-garbage-collector-with-net-core-eventpipes-9f2a986d5705?source=friends_link&sk=baf9a7766fb5c7899b781f016803597f

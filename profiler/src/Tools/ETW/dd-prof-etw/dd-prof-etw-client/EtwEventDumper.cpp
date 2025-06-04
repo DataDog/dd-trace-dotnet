@@ -10,7 +10,6 @@
 #include <iomanip>
 #include <iostream>
 
-
 bool EtwEventDumper::BuildClrEvent(
     std::string& name,
     uint32_t tid, uint8_t version, uint16_t id, uint64_t keyword, uint8_t level,
@@ -183,11 +182,11 @@ void EtwEventDumper::DumpAllocationTick(uint32_t cbEventData, const uint8_t* pEv
     {
         std::wcout << L"   large | ";
     }
-    std::wcout << (wchar_t*)&(pPayload->TypeName) << L"\n";
+    std::wcout << (wchar_t*)&(pPayload->FirstCharInName) << L"\n";
 }
 
 void EtwEventDumper::OnEvent(
-    uint64_t timestamp,
+    etw_timestamp timestamp,
     uint32_t tid,
     uint32_t version,
     uint64_t keyword,

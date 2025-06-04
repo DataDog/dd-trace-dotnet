@@ -1,0 +1,35 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
+{
+  "name": "Tracer",
+  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  "dockerFile": "../tracer/build/_build/docker/debian.dockerfile",
+  "context": "../tracer/build/_build",
+  "build": {
+    "args": {
+      "DOTNETSDK_VERSION": "9.0.203"
+    }
+  },
+  // Allow access to host machine
+  "runArgs": ["--network=host"],
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  // "features": {},
+
+  // Configure tool-specific properties.
+  "customizations": {
+    "vscode": {
+        "extensions": [
+            "ms-dotnettools.csdevkit",
+            "ms-vscode.cpptools",
+            "EditorConfig.EditorConfig",
+            "ms-vscode.cmake-tools"
+        ],
+    "settings": {
+      "csharp.preview.improvedLaunchExperience": true
+    }
+    }
+  }
+
+  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  // "remoteUser": "root"
+}

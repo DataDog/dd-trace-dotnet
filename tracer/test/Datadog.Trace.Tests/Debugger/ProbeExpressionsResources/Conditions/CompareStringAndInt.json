@@ -1,0 +1,21 @@
+{
+    "dsl": "this.String > this.IntNumber",
+    "gt": [
+      {
+        "getmember": [
+          {
+            "ref": "this"
+          },
+          "String"
+        ]
+      },
+      {
+        "getmember": [
+          {
+            "ref": "this"
+          },
+          "IntNumber"
+        ]
+      }
+    ]
+  }

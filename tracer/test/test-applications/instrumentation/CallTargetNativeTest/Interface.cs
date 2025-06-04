@@ -1,4 +1,5 @@
 using System;
+using CallTargetNativeTest.NoOp;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace CallTargetNativeTest;
@@ -10,10 +11,12 @@ partial class Program
         InterfaceType implicitImpl = new ImplicitImplInterface();
         Console.WriteLine($"{typeof(ImplicitImplInterface).FullName}.VoidMethod");
         RunMethod(() => implicitImpl.VoidMethod("Hello World"));
+        RunMethod(() => implicitImpl.VoidMethod(Noop1ArgumentsVoidIntegration.SKIPMETHODBODY));
 
         InterfaceType explicitImpl = new ExplicitImplInterface();
         Console.WriteLine($"{typeof(ExplicitImplInterface).FullName}.VoidMethod");
         RunMethod(() => explicitImpl.VoidMethod("Hello World"));
+        RunMethod(() => explicitImpl.VoidMethod(Noop1ArgumentsVoidIntegration.SKIPMETHODBODY));
 
         // Note: This demonstrates that, through interface instrumentation, the instrumented type must directly implement the interface
         // This case requires additional derived instrumentation

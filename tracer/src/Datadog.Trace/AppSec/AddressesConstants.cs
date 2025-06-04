@@ -15,6 +15,8 @@ namespace Datadog.Trace.AppSec
         public const string DBStatement = "server.db.statement";
         public const string DBSystem = "server.db.system";
         public const string UrlAccess = "server.io.net.url";
+        public const string ShellInjection = "server.sys.shell.cmd";
+        public const string CommandInjection = "server.sys.exec.cmd";
         public const string RequestMethod = "server.request.method";
         public const string RequestQuery = "server.request.query";
         public const string RequestCookies = "server.request.cookies";
@@ -31,6 +33,13 @@ namespace Datadog.Trace.AppSec
         public const string ResponseHeaderNoCookies = "server.response.headers.no_cookies";
 
         public const string UserId = "usr.id";
+        public const string UserLogin = "usr.login";
+        public const string UserSessionId = "usr.session_id";
+        public const string UserBusinessPrefix = "server.business_logic.users.";
+        public const string UserBusinessLoginFailure = UserBusinessPrefix + "login.failure";
+        public const string UserBusinessLoginSuccess = UserBusinessPrefix + "login.success";
+        public const string UserBusinessSignup = UserBusinessPrefix + "signup";
+
         public const string WafContextProcessor = "waf.context.processor";
     }
 }

@@ -116,6 +116,9 @@
     <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp">
       <Filter>Iast</Filter>
     </ClCompile>
+    <ClCompile Include="signature_builder.cpp" />
+    <ClCompile Include="Generated\generated_callsites.g.cpp" />
+    <ClCompile Include="Generated\generated_calltargets.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -134,7 +137,6 @@
     <ClInclude Include="metadata_builder.h" />
     <ClInclude Include="rejit_handler.h" />
     <ClInclude Include="stats.h" />
-    <ClInclude Include="version.h" />
     <ClInclude Include="debugger_members.h">
       <Filter>Debugger</Filter>
     </ClInclude>
@@ -266,6 +268,9 @@
     <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h">
       <Filter>Iast</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\shared\src\native-src\version.h" />
+    <ClInclude Include="Generated\generated_definitions.h" />
+    <ClInclude Include="signature_builder.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">

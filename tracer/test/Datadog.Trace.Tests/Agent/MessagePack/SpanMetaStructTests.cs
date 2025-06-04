@@ -21,6 +21,7 @@ public class SpanMetaStructTests
 {
     private const string MetaStructStr = "meta_struct";
     private const string DdStackKey = "_dd.stack.exploit";
+    private const string AppsecKey = "appsec";
     private const string StringKey = "StringKey";
     private const string StringValue = "value";
     private static readonly IFormatterResolver FormatterResolver = SpanFormatterResolver.Instance;
@@ -36,13 +37,59 @@ public class SpanMetaStructTests
                     MetaStructHelper.StackTraceInfoToDictionary("type2222", "dotnet", "test55555", null, new List<Dictionary<string, object>>() { stackFrame3, stackFrame4 }),
                 };
 
+    // appsec event: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["id"],"value":"appscan_fingerprint"}]}]}]},
+    private static List<object> appsecData =
+                new()
+                {
+                    new Dictionary<string, object>()
+                    {
+                        {
+                            "rule", new Dictionary<string, object>
+                            {
+                                { "id", "crs-913-120" },
+                                { "name", "Known security scanner filename/argument" },
+                                {
+                                    "tags", new Dictionary<string, object>
+                                    {
+                                        { "category", "attack_attempt" },
+                                        { "type", "security_scanner" }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "rule_matches", new List<object>
+                            {
+                                new Dictionary<string, object>
+                                {
+                                    { "operator", "phrase_match" },
+                                    { "operator_value", string.Empty },
+                                    {
+                                        "parameters", new List<object>
+                                        {
+                                            new Dictionary<string, object>
+                                            {
+                                                { "address", "server.request.path_params" },
+                                                { "highlight", new List<string> { "appscan_fingerprint" } },
+                                                { "key_path", new List<string>() { "id" } },
+                                                { "value", "appscan_fingerprint" }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+
     public static TheoryData<List<Tuple<string, object?>>> Data
     => new()
        {
             new()
             {
                    new(StringKey, StringValue),
-                   new(DdStackKey, stackData)
+                   new(DdStackKey, stackData),
+                   new(AppsecKey, appsecData),
             },
             new()
             {
@@ -56,7 +103,7 @@ public class SpanMetaStructTests
             }
        };
 
-    [MemberData(nameof(Data))]
+    [MemberData(nameof(Data), DisableDiscoveryEnumeration = true)]
     [Theory]
     public static void GivenAEncodedSpanWithMetaStruct_WhenDecoding_ThenMetaStructIsCorrectlyDecoded(List<Tuple<string, object?>> dataToEncode)
     {

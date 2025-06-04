@@ -8,9 +8,7 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      runtime-id: Guid_1
     },
     Metrics: {
       process_id: 0,
@@ -33,11 +31,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sns,
       peer.service: aws_sns,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -62,11 +59,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       peer.service: MyTopic,
       span.kind: producer,
       topicname: MyTopic,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: topicname
     }
   },
@@ -91,11 +87,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       peer.service: MyTopic,
       span.kind: producer,
       topicname: MyTopic,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: topicname
     }
   },
@@ -113,11 +108,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sns,
       peer.service: aws_sns,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -130,9 +124,7 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      runtime-id: Guid_1
     },
     Metrics: {
       process_id: 0,
@@ -155,11 +147,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sns,
       peer.service: aws_sns,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -184,11 +175,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       peer.service: MyTopic,
       span.kind: producer,
       topicname: MyTopic,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: topicname
     }
   },
@@ -213,11 +203,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       peer.service: MyTopic,
       span.kind: producer,
       topicname: MyTopic,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: topicname
     }
   },
@@ -235,11 +224,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sns,
       peer.service: aws_sns,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   }

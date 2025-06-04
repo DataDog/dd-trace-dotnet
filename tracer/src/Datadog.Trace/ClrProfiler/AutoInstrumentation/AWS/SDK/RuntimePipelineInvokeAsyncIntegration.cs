@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         ReturnTypeName = ClrNames.GenericTaskWithGenericClassParameter,
         ParameterTypeNames = new[] { "Amazon.Runtime.IExecutionContext" },
         MinimumVersion = "3.0.0",
-        MaximumVersion = "3.*.*",
+        MaximumVersion = "4.*.*",
         IntegrationName = AwsConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -73,19 +73,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             {
                 if (state.State is IExecutionContext { RequestContext.Request: { } request })
                 {
-                    var uri = request.Endpoint;
-                    var absolutePath = uri?.AbsolutePath;
-                    var path = request.ResourcePath switch
-                    {
-                        null => absolutePath,
-                        string resourcePath when absolutePath == "/" => resourcePath,
-                        string resourcePath => UriHelpers.Combine(absolutePath, resourcePath),
-                    };
-
-                    // The request object is populated later by the Marshaller,
-                    // so we wait until the method end callback to read it
                     tags.HttpMethod = request.HttpMethod?.ToUpperInvariant();
-                    tags.HttpUrl = $"{uri?.Scheme}{Uri.SchemeDelimiter}{uri?.Authority}{path}";
+                    if (tags.HttpUrl is null)
+                    {
+                        var uri = request.Endpoint;
+                        var absolutePath = uri?.AbsolutePath;
+                        var path = request.ResourcePath switch
+                        {
+                            null => absolutePath,
+                            string resourcePath when absolutePath is null or "/" => resourcePath,
+                            string resourcePath => UriHelpers.Combine(absolutePath, resourcePath),
+                        };
+
+                        // The request object is populated later by the Marshaller,
+                        // so we wait until the method end callback to read it
+                        tags.HttpUrl = $"{uri?.Scheme}{Uri.SchemeDelimiter}{uri?.Authority}{path}";
+                    }
                 }
 
                 if (response.Instance is not null)

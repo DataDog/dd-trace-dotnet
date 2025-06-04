@@ -375,6 +375,24 @@ ILInstr* ILRewriterWrapper::CreateInstr(unsigned opCode) const
     return pNewInstr;
 }
 
+ILInstr* ILRewriterWrapper::CreateInstr(unsigned opCode, uint32_t arg) const
+{
+    ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+    pNewInstr->m_opcode = opCode;
+    pNewInstr->m_Arg32 = arg;
+    m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::CreateInstr(unsigned opCode, ILInstr* target) const
+{
+    ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+    pNewInstr->m_opcode = opCode;
+    pNewInstr->m_pTarget = target;
+    m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
+}
+
 ILInstr* ILRewriterWrapper::InitObj(mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();

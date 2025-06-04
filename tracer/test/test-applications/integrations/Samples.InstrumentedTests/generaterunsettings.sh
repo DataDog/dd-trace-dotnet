@@ -13,13 +13,16 @@ echo FILE $FILE
 echo SOLUTIONFOLDER $SOLUTIONFOLDER
 
 if [[ "$ARCH" == *"aarch64"* ]]; then
-  BIN_FOLDER="linux-arm64"
+    case $DISTRIBUTION in
+    *"Alpine"*) echo Alpine; BIN_FOLDER="linux-musl-arm64";;
+    *) echo Linux; BIN_FOLDER="linux-arm64";;
+    esac
   else
 	  case $DISTRIBUTION in 
 		*"Ubuntu"*) echo Ubuntu; BIN_FOLDER="linux-x64";;
 		*"Alpine"*) echo Alpine; BIN_FOLDER="linux-musl-x64";;
 		*) echo Linux; BIN_FOLDER="linux-x64";;
-	  esac 
+	  esac
 fi
 
 # Check for macos
@@ -43,4 +46,10 @@ echo "<DD_TRACE_DEBUG>1</DD_TRACE_DEBUG>" >> $FILE
 echo "<DD_IAST_ENABLED>1</DD_IAST_ENABLED>" >> $FILE
 echo "<DD_CIVISIBILITY_ENABLED>0</DD_CIVISIBILITY_ENABLED>" >> $FILE
 echo "<DD_IAST_DEDUPLICATION_ENABLED>0</DD_IAST_DEDUPLICATION_ENABLED>" >> $FILE
+echo "<DD_IAST_SECURITY_CONTROLS_CONFIGURATION>" >> $FILE
+echo "    INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String);" >> $FILE
+echo "    INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String,System.String,System.String,System.String):0,1;" >> $FILE
+echo "    SANITIZER:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Sanitize(System.String)" >> $FILE
+echo "</DD_IAST_SECURITY_CONTROLS_CONFIGURATION>" >> $FILE
 echo "</EnvironmentVariables></RunConfiguration></RunSettings>" >> $FILE
+

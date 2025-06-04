@@ -23,25 +23,25 @@ public class HashTests
     [InlineData("B", -583938850)]
     [InlineData("c", 1271575169)]
     [InlineData("C", 1034095137)]
-    [InlineData(VulnerabilityTypeName.CommandInjection, -969366626)]
-    [InlineData(VulnerabilityTypeName.HardcodedSecret, 900913240)]
-    [InlineData(VulnerabilityTypeName.HeaderInjection, -283297663)]
-    [InlineData(VulnerabilityTypeName.HstsHeaderMissing, 1456880170)]
-    [InlineData(VulnerabilityTypeName.InsecureCookie, 598480805)]
-    [InlineData(VulnerabilityTypeName.LdapInjection, 1959242366)]
-    [InlineData(VulnerabilityTypeName.NoHttpOnlyCookie, -853801519)]
-    [InlineData(VulnerabilityTypeName.NoSameSiteCookie, -386409364)]
-    [InlineData(VulnerabilityTypeName.NoSqlMongoDbInjection, -356000854)]
-    [InlineData(VulnerabilityTypeName.PathTraversal, 1047354834)]
-    [InlineData(VulnerabilityTypeName.SqlInjection, -1258592580)]
-    [InlineData(VulnerabilityTypeName.Ssrf, -972587577)]
-    [InlineData(VulnerabilityTypeName.StackTraceLeak, 968833153)]
-    [InlineData(VulnerabilityTypeName.TrustBoundaryViolation, -633406949)]
-    [InlineData(VulnerabilityTypeName.UnvalidatedRedirect, -1467920366)]
-    [InlineData(VulnerabilityTypeName.WeakHash, 924640792)]
-    [InlineData(VulnerabilityTypeName.WeakRandomness, -1681736197)]
-    [InlineData(VulnerabilityTypeName.XContentTypeHeaderMissing, -1311908003)]
-    [InlineData(VulnerabilityTypeName.XPathInjection, 1860579842)]
+    [InlineData(VulnerabilityTypeUtils.CommandInjection, -969366626)]
+    [InlineData(VulnerabilityTypeUtils.HardcodedSecret, 900913240)]
+    [InlineData(VulnerabilityTypeUtils.HeaderInjection, -283297663)]
+    [InlineData(VulnerabilityTypeUtils.HstsHeaderMissing, 1456880170)]
+    [InlineData(VulnerabilityTypeUtils.InsecureCookie, 598480805)]
+    [InlineData(VulnerabilityTypeUtils.LdapInjection, 1959242366)]
+    [InlineData(VulnerabilityTypeUtils.NoHttpOnlyCookie, -853801519)]
+    [InlineData(VulnerabilityTypeUtils.NoSameSiteCookie, -386409364)]
+    [InlineData(VulnerabilityTypeUtils.NoSqlMongoDbInjection, -356000854)]
+    [InlineData(VulnerabilityTypeUtils.PathTraversal, 1047354834)]
+    [InlineData(VulnerabilityTypeUtils.SqlInjection, -1258592580)]
+    [InlineData(VulnerabilityTypeUtils.Ssrf, -972587577)]
+    [InlineData(VulnerabilityTypeUtils.StackTraceLeak, 968833153)]
+    [InlineData(VulnerabilityTypeUtils.TrustBoundaryViolation, -633406949)]
+    [InlineData(VulnerabilityTypeUtils.UnvalidatedRedirect, -1467920366)]
+    [InlineData(VulnerabilityTypeUtils.WeakHash, 924640792)]
+    [InlineData(VulnerabilityTypeUtils.WeakRandomness, -1681736197)]
+    [InlineData(VulnerabilityTypeUtils.XContentTypeHeaderMissing, -1311908003)]
+    [InlineData(VulnerabilityTypeUtils.XPathInjection, 1860579842)]
     [InlineData(0, 391)]
     [InlineData(1, 392)]
     [InlineData(10, 401)]
@@ -56,12 +56,24 @@ public class HashTests
     }
 
     [Theory]
-    [InlineData(VulnerabilityTypeName.WeakHash, "AspNetCoreRateLimit.RateLimitProcessor", "BuildCounterKey", 890383720)]
-    [InlineData(VulnerabilityTypeName.Xss, "AspNetCore.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d", "MoveNext", -1004380463)]
+    [InlineData(VulnerabilityTypeUtils.WeakHash, "AspNetCoreRateLimit.RateLimitProcessor", "BuildCounterKey", 890383720)]
+    [InlineData(VulnerabilityTypeUtils.Xss, "AspNetCore.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d", "MoveNext", -1004380463)]
     public void GivenAKownVulnerability_WhenCalculatedHash_ValueIsExpected(string vulnName, string path, string method, int expectedHash)
     {
         var vulnerability = new Vulnerability(vulnName, new Location(path, method, null, 849303611103961300), new Evidence("Evidence"));
         var hashCode = vulnerability.GetHashCode();
         Assert.Equal(expectedHash, hashCode);
+    }
+
+    [Theory]
+    [InlineData(VulnerabilityTypeUtils.InsecureCookie, "AspNetCoreRateLimit.RateLimitProcessor", false, -304624042)]
+    [InlineData(VulnerabilityTypeUtils.InsecureCookie, "AspNetCoreRateLimit.RateLimitProcessor", true, 990913114)]
+    [InlineData(VulnerabilityTypeUtils.InsecureCookie, "AspNetCore.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d", true, 990913114)]
+    [InlineData(VulnerabilityTypeUtils.NoSameSiteCookie, "AspNetCore.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d", false, 1003850134)]
+    [InlineData(VulnerabilityTypeUtils.NoSameSiteCookie, "AspNetCore.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d", true, -636226626)]
+    [InlineData(VulnerabilityTypeUtils.NoSameSiteCookie, "AspNetCoreRateLimit.RateLimitProcessor", true, -636226626)]
+    public void GivenACookie_WhenCalculatedHash_ValueIsExpected(string vulnName, string cookieName, bool isFiltered, int hash)
+    {
+        IastModule.GetCookieHash(vulnName, cookieName, isFiltered).Should().Be(hash);
     }
 }

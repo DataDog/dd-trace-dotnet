@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">6.0.0</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">7.0.0</ApiVersion>
+    <DefineConstants Condition="$(ApiVersion) &gt;= 7.0.0">$(DefineConstants);RABBITMQ_7_0</DefineConstants>
     <DefineConstants Condition="$(ApiVersion) &gt;= 6.0.0">$(DefineConstants);RABBITMQ_6_0</DefineConstants>
     <DefineConstants Condition="$(ApiVersion) &gt;= 5.0.0">$(DefineConstants);RABBITMQ_5_0</DefineConstants>
     <RequiresDockerDependency>All</RequiresDockerDependency>

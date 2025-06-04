@@ -1,0 +1,27 @@
+# downloads the working directory and the tracer + profiler home assets
+# Beneficial as it can avoid the need to wait for the package stage
+parameters:
+  - name: 'artifactSuffix'
+    type: 'string'
+    default: 'linux-x64'
+
+steps:
+- template: ./restore-working-directory.yml
+  parameters:
+    artifact: build-${{ parameters.artifactSuffix }}-working-directory
+
+- bash: |
+    input="${{ parameters.artifactSuffix }}"
+    output="${input/-musl/}"
+    echo "setting universalArtifactSuffix to ${output}"
+    echo "##vso[task.setvariable variable=universalArtifactSuffix]${output}"
+
+- template: download-artifact.yml
+  parameters:
+    artifact: linux-universal-home-$(universalArtifactSuffix)
+    path: $(monitoringHome)/${{ parameters.artifactSuffix }}
+
+- template: download-artifact.yml
+  parameters:
+    artifact: linux-profiler-home-${{ parameters.artifactSuffix }}
+    path: $(monitoringHome)

@@ -1,44 +1,52 @@
-
 stages:
   - build
-  - package
   - publish
-  - deploy
+  - package
+  - shared-pipeline
+  - publish
   - benchmarks
 
 include:
-  - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
+  - local: .gitlab/one-pipeline.locked.yaml
 
 variables:
-  GIT_PROFILER_REF: master
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
+  REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
 
 build:
-  only:
-    - master
-    - main
-    - /^hotfix.*$/
-    - /^release.*$/
   except:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["windows-v2:2019"]
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
-    - if (Test-Path artifacts) { remove-item -recurse -force artifacts }
-    - docker run --rm -m 8192M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e ENABLE_MULTIPROCESSOR_COMPILATION=false -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true -e NUGET_CERT_REVOCATION_MODE=offline registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:latest
-    - mkdir artifacts
-    - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts
+    - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
+    - |
+      docker run --rm -m 8192M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e ENABLE_MULTIPROCESSOR_COMPILATION=false `
+        -e WINDOWS_BUILDER=true `
+        -e AWS_NETWORKING=true `
+        -e SIGN_WINDOWS=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:latest `
+        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi
+    - mkdir artifacts-out
+    - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
     - remove-item -recurse -force build-out\${CI_JOB_ID}
     - get-childitem build-out
-    - get-childitem artifacts
+    - get-childitem artifacts-out
   artifacts:
     expire_in: 2 weeks
     paths:
-    - artifacts
+    - artifacts-out
 
 publish:
   only:
@@ -51,9 +59,12 @@ publish:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: publish
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["windows-v2:2019"]
   dependencies:
     - build
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
   script:
     - $result =  aws sts assume-role --role-arn "arn:aws:iam::486234852809:role/ci-datadog-windows-filter" --role-session-name AWSCLI-Session
     - $resultjson = $result | convertfrom-json
@@ -66,7 +77,7 @@ publish:
       do {
           try {
               # The grants option at the end is used to allow public access on the files we upload as the acls only aren't enough.
-              aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              aws s3 cp artifacts-out/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
               If ($LASTEXITCODE -eq 0) { 
                 return
               }
@@ -81,107 +92,84 @@ publish:
           }
       } while ($i -lt 3)
 
-# The 2 jobs below, do not depend on the packaging stage. So they are always run, even if package stage can fail.
-generate-lib-init-tag-values:
-  tags: ["arch:amd64"]
-  image: registry.ddbuild.io/ci/auto_inject/gitlab:current
-  stage: deploy
+download-single-step-artifacts:
+  stage: package
+  image: registry.ddbuild.io/docker:20.10.13-gbi-focal
+  timeout: 45m
+  tags: [ "arch:amd64" ]
+  needs:
+    - job: build
+      optional: true
+      artifacts: true
   rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-    # We don't tag prerelease versions
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: always
-    - when: manual
-      allow_failure: true
-  variables:
-    IMG_DESTINATION_BASE: dd-lib-dotnet-init
-    ADDITIONAL_TAG_SUFFIXES: musl # comma separated list of additional tag suffixes
+    - if: $DOTNET_PACKAGE_VERSION
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: on_success # Artifacts are downloaded from the GitHub release, which creates the tag on publish
+      allow_failure: false
+    - when: on_success # Artifacts come from Azure pipeline, but as we already depend on build, we already have a delayed start
   script:
-    - ./.gitlab/build-lib-init.sh
+    - .gitlab/download-single-step-artifacts.sh
+    - cp tracer/build/artifacts/requirements.json artifacts/requirements.json
+    - cp -r artifacts-out artifacts/windows
   artifacts:
-    reports:
-      dotenv: build.env
+    expire_in: 2 weeks
+    paths:
+      - artifacts
 
-deploy-lib-init-trigger:
-  stage: deploy
-  trigger:
-#    project: DataDog/dd-trace-dotnet-gitlab-test # can be used for testing
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
-    IMG_DESTINATIONS: $IMG_DESTINATIONS
-    IMG_SIGNING: "false"
-  # needs the version from the generate-tag-values job
-  needs:
-    - job: generate-lib-init-tag-values
-      artifacts: true
-
-deploy-musl-lib-init-trigger:
-  stage: deploy
-  trigger:
-#    project: DataDog/dd-trace-dotnet-gitlab-test # can be used for testing
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA-musl
-    IMG_DESTINATIONS: $IMG_DESTINATIONS_musl
-    IMG_SIGNING: "false"
-  # needs the version from the generate-tag-values job
-  needs:
-    - job: generate-lib-init-tag-values
-      artifacts: true
-
-package:
-  extends: .package
+requirements_json_test:
   rules:
-    - if: $DOTNET_PACKAGE_VERSION
-      when: on_success
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: manual
-      allow_failure: false
-  script:
-    - ../.gitlab/build-deb-rpm.sh
+    - when: on_success
   variables:
-    ARCH: amd64
-
-package-arm:
-  extends: .package-arm
-  rules:
-    - if: $DOTNET_PACKAGE_VERSION
-      when: on_success
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: manual
-      allow_failure: false
-  script:
-    - ../.gitlab/build-deb-rpm.sh
-  variables:
-    ARCH: arm64
+    REQUIREMENTS_BLOCK_JSON_PATH: "tracer/build/artifacts/requirements_block.json"
+    REQUIREMENTS_ALLOW_JSON_PATH: "tracer/build/artifacts/requirements_allow.json"
 
 package-oci:
+  needs: [ download-single-step-artifacts ]
+
+generate-lib-init-pinned-tag-values:
+  variables:
+    ADDITIONAL_TAG_SUFFIXES: musl #add -musl to all generated image tags
+
+configure_system_tests:
+  variables:
+    SYSTEM_TESTS_SCENARIOS_GROUPS: "simple_onboarding,simple_onboarding_profiling,lib-injection"
+
+deploy_to_reliability_env:
+  rules:
+    - when: never # dd-trace-dotnet does not use reliability environment
+
+download-serverless-artifacts:
   stage: package
-  extends: .package-oci
+  image: registry.ddbuild.io/docker:20.10.13-gbi-focal
+  tags: [ "arch:amd64" ]
+  needs: []
   rules:
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: manual
+      when: on_success # Artifacts are downloaded from the GitHub release, which creates the tag on publish
       allow_failure: false
+    - when: delayed # Artifacts come from Azure pipeline, wait a reasonable time before polling
+      start_in: 15 minutes
   script:
-    - ../.gitlab/build-oci.sh
-  parallel:
-    matrix:
-      - ARCH:
-        - arm64
-        - amd64
+    - .gitlab/download-serverless-artifacts.sh
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - artifacts
 
-.release-package:
-  stage: deploy
+aws-lambda-layer:
+  stage: package
+  needs: [download-serverless-artifacts]
+  when: manual
+  trigger:
+    project: DataDog/dd-trace-dotnet-aws-lambda-layer
+    strategy: depend
   variables:
-    PRODUCT_NAME: auto_inject-dotnet
+    UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+    UPSTREAM_PIPELINE_REF: $CI_COMMIT_REF_NAME
+  allow_failure: true
 
 benchmark-serverless:
   stage: benchmarks
@@ -211,3 +199,24 @@ benchmark-serverless-trigger:
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
     UPSTREAM_GITLAB_USER_LOGIN: $GITLAB_USER_LOGIN
     UPSTREAM_GITLAB_USER_EMAIL: $GITLAB_USER_EMAIL
+
+macrobenchmarks:
+  stage: benchmarks
+  needs: [ ]
+  trigger:
+    include: .gitlab/benchmarks/macrobenchmarks.yml
+  allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+      when: always
+    - when: manual
+
+microbenchmarks:
+  stage: benchmarks
+  needs: [ ]
+  trigger:
+    include: .gitlab/benchmarks/microbenchmarks.yml
+  allow_failure: true
+    

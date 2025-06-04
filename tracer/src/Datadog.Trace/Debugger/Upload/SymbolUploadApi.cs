@@ -5,6 +5,8 @@
 
 #nullable enable
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -24,25 +26,28 @@ namespace Datadog.Trace.Debugger.Upload
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly ArraySegment<byte> _eventMetadata;
+        private readonly bool _enableCompression;
 
         private SymbolUploadApi(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            ArraySegment<byte> eventMetadata)
+            ArraySegment<byte> eventMetadata,
+            bool enableCompression)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
             _apiRequestFactory = apiRequestFactory;
             _eventMetadata = eventMetadata;
-
+            _enableCompression = enableCompression;
             discoveryService.SubscribeToChanges(c => Endpoint = c.SymbolDbEndpoint);
         }
 
-        public static IBatchUploadApi Create(
+        internal static IBatchUploadApi Create(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            string serviceName)
+            string serviceName,
+            bool enableCompression)
         {
             ArraySegment<byte> GetEventMetadataAsArraySegment()
             {
@@ -55,11 +60,16 @@ namespace Datadog.Trace.Debugger.Upload
             }
 
             var eventMetadata = GetEventMetadataAsArraySegment();
-            return new SymbolUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, eventMetadata);
+            return new SymbolUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, eventMetadata, enableCompression);
         }
 
         public override async Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
         {
+            if (symbols.Array == null || symbols.Count == 0)
+            {
+                return false;
+            }
+
             var uri = BuildUri();
             if (string.IsNullOrEmpty(uri))
             {
@@ -72,11 +82,24 @@ namespace Datadog.Trace.Debugger.Upload
             var retries = 0;
             var sleepDuration = StartingSleepDuration;
 
-            var items = new MultipartFormItem[]
+            MultipartFormItem symbolsItem;
+
+            if (!this._enableCompression)
             {
-                new("file", MimeTypes.Json, "file.json", symbols),
-                new("event", MimeTypes.Json, "event.json", _eventMetadata)
-            };
+                symbolsItem = new MultipartFormItem("file", MimeTypes.Json, "file.json", symbols);
+            }
+            else
+            {
+                var compressedSymbols = await CompressDataAsync(symbols).ConfigureAwait(false);
+                if (compressedSymbols == null)
+                {
+                    return false;
+                }
+
+                symbolsItem = new MultipartFormItem("file", MimeTypes.Gzip, "file.gz", compressedSymbols.Value);
+            }
+
+            var items = new[] { symbolsItem, new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata) };
 
             while (retries < MaxRetries)
             {
@@ -101,6 +124,43 @@ namespace Datadog.Trace.Debugger.Upload
             }
 
             return false;
+        }
+
+        internal async Task<ArraySegment<byte>?> CompressDataAsync(ArraySegment<byte> data)
+        {
+            using var memoryStream = new MemoryStream();
+
+#if NETFRAMEWORK
+            using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream))
+#else
+            using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+#endif
+            {
+                await gzipStream.WriteAsync(data.Array!, data.Offset, data.Count).ConfigureAwait(false);
+                await gzipStream.FlushAsync().ConfigureAwait(false);
+            }
+
+            var compressedData = memoryStream.ToArray();
+
+            // see here about the following validation: https://forensics.wiki/gzip/
+            // minimum size for header + footer
+            if (compressedData.Length < 18)
+            {
+                Log.Error("Compression produced invalid data: size {Size} bytes is below minimum valid GZip size", property: compressedData.Length);
+                return null;
+            }
+
+            // header magic numbers
+            if (compressedData[0] != 0x1F || compressedData[1] != 0x8B)
+            {
+                Log.Error(
+                    "Compression produced invalid data: invalid GZip header {Header}",
+                    BitConverter.ToString(System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Take(compressedData, 2))));
+
+                return null;
+            }
+
+            return new ArraySegment<byte>(compressedData);
         }
     }
 }

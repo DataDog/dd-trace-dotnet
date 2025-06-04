@@ -1,0 +1,20 @@
+# .azure-pipelines/steps/download-artifact.yml
+parameters:
+  artifact: ''
+  path: ''
+  patterns: ''
+  condition: ''
+  # Defaults
+  timeoutInMinutes: 10
+  retryCountOnTaskFailure: 3
+
+steps:
+- task: DownloadPipelineArtifact@2
+  displayName: "Download ${{ parameters.artifact }}"
+  condition: ${{ parameters.condition }}
+  timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
+  retryCountOnTaskFailure: ${{ parameters.retryCountOnTaskFailure }}
+  inputs:
+    artifact: ${{ parameters.artifact }}
+    path: ${{ parameters.path }}
+    patterns: ${{ parameters.patterns }}

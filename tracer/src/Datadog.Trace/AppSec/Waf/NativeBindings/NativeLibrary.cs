@@ -109,7 +109,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             var hresult = GetLastError();
             if (hresult != 0)
             {
-                var msgOut = StringBuilderCache.Acquire(256);
+                var msgOut = StringBuilderCache.Acquire();
                 var size = FormatMessage(FORMAT_MESSAGE.ALLOCATE_BUFFER | FORMAT_MESSAGE.FROM_SYSTEM | FORMAT_MESSAGE.IGNORE_INSERTS, IntPtr.Zero, hresult, 0, ref msgOut, (uint)msgOut.Capacity, IntPtr.Zero);
                 var message = StringBuilderCache.GetStringAndRelease(msgOut).Trim();
                 Log.Warning("Error occurred when calling {Function} message was: 0x{HResult}: {Message}", source, hresult.ToString("X8"), message);

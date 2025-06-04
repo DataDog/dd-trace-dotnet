@@ -1,17 +1,14 @@
-version: '3.4'
 services:
   # ARM64 dependencies
   localstack_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb
+      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
     ports:
       - "4566:4566"
-    volumes:
-      - "./tracer/build_data/localstack:/tmp"
 
   elasticsearch7_arm64:
     image: elasticsearch:7.10.1
@@ -93,7 +90,7 @@ services:
   localstack:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb
+      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -101,13 +98,6 @@ services:
       - "4566:4566"
     volumes:
       - "./.localstack:/tmp"
-
-  aerospike:
-    # pinning to a known good version because latest version (6.3.0.5 at time of issue)
-    # causes 'Server memory error' and flake
-    image: aerospike/aerospike-server:6.2.0.6
-    ports:
-    - "127.0.0.1:3000:3000"
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -337,54 +327,13 @@ services:
       LDAP_ADMIN_PASSWORD: "Passw0rd"
       LDAP_BASE_DN: "dc=dd-trace-dotnet,dc=com"
 
-
-  # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
-  # and only after switching to run Windows containers
-  IntegrationTests.IIS:
-    build:
-      context: ./
-      args:
-        - ENABLE_32_BIT
-        - DOTNET_TRACER_MSI
-      dockerfile: ./tracer/build/_build/docker/iis.dockerfile
-    image: datadog-iis-loaderoptimizationregkey
-    ports:
-    - "8080:80"
-    environment:
-      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
-      - DD_LOGGER_DD_API_KEY
-      - DD_LOGGER_DD_SERVICE
-      - DD_LOGGER_DD_ENV
-      - DD_LOGGER_ENABLED
-      - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
-      - DD_LOGGER_BUILD_BUILDID
-      - DD_LOGGER_BUILD_DEFINITIONNAME
-      - DD_LOGGER_BUILD_SOURCESDIRECTORY
-      - DD_LOGGER_BUILD_REPOSITORY_URI
-      - DD_LOGGER_BUILD_SOURCEVERSION
-      - DD_LOGGER_BUILD_SOURCEBRANCH
-      - DD_LOGGER_BUILD_SOURCEBRANCHNAME
-      - DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE
-      - DD_LOGGER_BUILD_REQUESTEDFORID
-      - DD_LOGGER_BUILD_REQUESTEDFOREMAIL
-      - DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI
-      - DD_LOGGER_SYSTEM_TEAMPROJECTID
-      - DD_LOGGER_SYSTEM_STAGEDISPLAYNAME
-      - DD_LOGGER_SYSTEM_JOBDISPLAYNAME
-      - DD_LOGGER_SYSTEM_JOBID
-      - DD_LOGGER_SYSTEM_TASKINSTANCEID=${SYSTEM_TASKINSTANCEID:-}
-      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
-      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
-      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
-      - DD_LOGGER_DD_TAGS
-
   ProfilerIntegrationTests:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -433,11 +382,12 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
+    command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
+      - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - SYS_PTRACE
     environment:
@@ -472,7 +422,6 @@ services:
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SDK_HOST=localstack:4566
       - ORACLE_HOST=oracle
-      - AEROSPIKE_HOST=aerospike:3000
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
       - CONTAINER_HOSTNAME=http://integrationtests
@@ -501,9 +450,9 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
+      - RANDOM_SEED
     hostname: integrationtests
     depends_on:
-      - aerospike
       - servicestackredis
       - stackexchangeredis
       - stackexchangeredis-replica
@@ -528,8 +477,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -571,6 +520,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
+      - RANDOM_SEED
     hostname: integrationtests
 
   IntegrationTests.Serverless:
@@ -578,9 +528,9 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
+    command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -626,6 +576,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
+      - RANDOM_SEED
     hostname: integrationtests
 
   ExplorationTests:
@@ -633,8 +584,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
@@ -679,7 +630,6 @@ services:
   StartDependencies:
     image: andrewlock/wait-for-dependencies
     depends_on:
-      - aerospike
       - servicestackredis
       - stackexchangeredis
       - stackexchangeredis-replica
@@ -700,16 +650,16 @@ services:
       - couchbase
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210 # oracle:1521
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210  # oracle:1521
 
   IntegrationTests.ARM64:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
+    command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -767,6 +717,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
+      - RANDOM_SEED
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -803,8 +754,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -844,6 +795,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
+      - RANDOM_SEED
 
   start-test-agent:
     image: andrewlock/wait-for-dependencies
@@ -857,13 +809,15 @@ services:
     image: ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
     volumes:
     - ./tracer/build/smoke_test_snapshots:/snapshots
-    - ./tracer/build_data/snapshots:/debug_snapshots
+    - ./artifacts/build_data/snapshots:/debug_snapshots
     ports:
     - "8126:8126"
     environment:
     - ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length
     - SNAPSHOT_CI=1
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id
+    # network.client.ip and http.client_ip differs between docker compose v1 and v2 - once we're migrated to v2 completely we can remove it from here
+    # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers
 
   smoke-tests:
     build:
@@ -876,10 +830,11 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - INSTALL_CMD=
     image: dd-trace-dotnet/${dockerTag:-not-set}-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -895,13 +850,15 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
         # - RELATIVE_PROFILER_PATH=
         # - RELATIVE_API_WRAPPER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -917,13 +874,15 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
         # - RELATIVE_PROFILER_PATH=
         # - RELATIVE_API_WRAPPER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -939,11 +898,13 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -961,10 +922,11 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - INSTALL_CMD=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-self-instrument-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -980,11 +942,13 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-nuget-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1002,10 +966,11 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - INSTALL_CMD=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs:/var/log/datadog/dotnet
-      - ./tracer/build_data/dumps:/dumps
+      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1023,10 +988,11 @@ services:
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
     image: dd-trace-dotnet/${dockerTag:-not-set}-chiseled-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs:/var/log/datadog/dotnet
-      - ./tracer/build_data/dumps:/dumps
+      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1045,10 +1011,11 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - RUNTIME_ID=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-chiseled-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs:/var/log/datadog/dotnet
-      - ./tracer/build_data/dumps:/dumps
+      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1067,10 +1034,36 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - RUNTIME_ID=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-arm64-chiseled-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs:/var/log/datadog/dotnet
-      - ./tracer/build_data/dumps:/dumps
+      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
+    environment:
+      - dockerTag=${dockerTag:-unset}
+      - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+      - test-agent
+
+  trimming-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.trimming.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - INSTALL_CMD=
+        # - TOOL_VERSION=
+        # - PACKAGE_NAME=
+        # - RUNTIME_IDENTIFIER=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-trimming-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    volumes:
+      - ./:/project
+      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1100,7 +1093,7 @@ services:
   localstack_osx_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb
+      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1

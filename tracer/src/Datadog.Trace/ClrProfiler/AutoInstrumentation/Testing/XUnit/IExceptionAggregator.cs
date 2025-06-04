@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Data;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
@@ -18,4 +19,15 @@ internal interface IExceptionAggregator
     /// </summary>
     /// <returns>Exception instance</returns>
     Exception ToException();
+
+    /// <summary>
+    /// Clears the aggregator.
+    /// </summary>
+    void Clear();
+
+    /// <summary>
+    /// Adds an exception to the aggregator.
+    /// </summary>
+    /// <param name="ex">The exception to be added.</param>
+    void Add(Exception ex);
 }

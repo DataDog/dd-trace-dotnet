@@ -10,20 +10,23 @@
 #include "MetricsRegistry.h"
 #include "MeanMaxMetric.h"
 
+class RawSampleTransformer;
+
 class GCThreadsCpuProvider : public NativeThreadsCpuProviderBase
 {
 public:
-    GCThreadsCpuProvider(CpuTimeProvider* cpuTimeProvider, MetricsRegistry& metricsRegistry);
+    GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry);
 
     // Inherited via ISamplesProvider
     const char* GetName() override;
 
 protected:
-    void OnCpuDuration(std::uint64_t cpuTime) override;
+    void OnCpuDuration(std::chrono::milliseconds cpuTime) override;
 
 private:
     bool IsGcThread(std::shared_ptr<IThreadInfo> const& thread);
     std::vector<std::shared_ptr<IThreadInfo>> const& GetThreads() override;
+    Labels GetLabels() override;
     std::vector<FrameInfoView> GetFrames() override;
 
     std::vector<std::shared_ptr<IThreadInfo>> _gcThreads;

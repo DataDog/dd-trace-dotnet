@@ -5,12 +5,11 @@ using System.Linq;
 using System.Text;
 using Nuke.Common;
 using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Tools.NuGet;
-
+using Logger = Serilog.Log;
 internal static partial class DotNetSettingsExtensions
 {
     public static DotNetBuildSettings SetTargetPlatformAnyCPU(this DotNetBuildSettings settings)
@@ -106,7 +105,8 @@ internal static partial class DotNetSettingsExtensions
         {
             return settings
                 .SetProcessEnvironmentVariable("COMPlus_DbgEnableMiniDump", "1")
-                .SetProcessEnvironmentVariable("COMPlus_DbgMiniDumpType", ((int) dumpType).ToString());
+                .SetProcessEnvironmentVariable("COMPlus_DbgMiniDumpType", ((int) dumpType).ToString())
+                .SetProcessEnvironmentVariable("COMPlus_EnableCrashReport", "1");
         }
 
         return settings;
@@ -136,7 +136,7 @@ internal static partial class DotNetSettingsExtensions
         }
         catch
         {
-            Serilog.Log.Information("MSBuild auto-detection failed, checking fallback paths");
+            Logger.Information("MSBuild auto-detection failed, checking fallback paths");
             // favour the Preview version and x64 versions first 
             var editions = new[] { "Preview", "Enterprise", "Professional", "Community", "BuildTools", };
             var programFiles = new[] { EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFiles), EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFilesX86)! };
@@ -146,12 +146,12 @@ internal static partial class DotNetSettingsExtensions
             toolPath = allPaths.FirstOrDefault(File.Exists);
             if (toolPath is null)
             {
-                Serilog.Log.Error("Error locating MSBuild. Checked the following paths:{Paths}", string.Join(Environment.NewLine, allPaths));
+                Logger.Error("Error locating MSBuild. Checked the following paths:{Paths}", string.Join(Environment.NewLine, allPaths));
                 throw new ArgumentException("Error locating MSBuild");
             }
         }
 
-        Serilog.Log.Information("Using MSBuild path '{MSBuild}'", toolPath);
+        Logger.Information("Using MSBuild path '{MSBuild}'", toolPath);
 
         return settings.SetProcessToolPath(toolPath);
     }
@@ -279,5 +279,10 @@ internal static partial class DotNetSettingsExtensions
               .SetProcessEnvironmentVariable("MYSQL_PORT", "3306")
               .SetProcessEnvironmentVariable("RABBITMQ_HOST", "localhost")
               .SetProcessEnvironmentVariable("AWS_SDK_HOST", "localhost:4566");
+    }
+
+    public static T ConfigureDotNetRunSettings<T>(this T toolSettings, Func<T, T> configure) where T : DotNetRunSettings
+    {
+        return configure(toolSettings);
     }
 }

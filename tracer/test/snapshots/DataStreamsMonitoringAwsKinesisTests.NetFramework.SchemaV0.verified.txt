@@ -1,0 +1,45 @@
+﻿{
+  Env: integration_tests,
+  Service: Samples.AWS.Kinesis,
+  TracerVersion: <snip>,
+  Lang: dotnet,
+  Stats: [
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
+            direction:out,
+            topic:MyStreamName,
+            type:kinesis
+          ],
+          Hash: 488941857031791118,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        }
+      ]
+    },
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
+            direction:out,
+            topic:MyStreamName,
+            type:kinesis
+          ],
+          Hash: 488941857031791118,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: origin
+        }
+      ]
+    }
+  ],
+  ProductMask: 3
+}

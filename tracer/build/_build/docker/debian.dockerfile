@@ -10,7 +10,15 @@ ENV \
     # Do not generate certificate
     DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
     # Do not show first run text
-    DOTNET_NOLOGO=true \
+    DOTNET_NOLOGO=1 \
+    # We build the images ahead of time, so the first-time experience, which should speed up subsequent execution, is run at VM build time
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=0 \
+    # Disable telemetry to reduce overhead
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    # Disable the SDK from picking up a global install
+    DOTNET_MULTILEVEL_LOOKUP=0 \
+    # Set CLI language to English for consistent logs
+    DOTNET_CLI_UI_LANGUAGE="en" \
     # Enable correct mode for dotnet watch (only mode supported in a container)
     DOTNET_USE_POLLING_FILE_WATCHER=true \
     # Skip extraction of XML docs - generally not useful within an image/container - helps performance
@@ -18,7 +26,9 @@ ENV \
     # Disable LTTng tracing with QUIC
     QUIC_LTTng=0
 
-RUN apt-get update \
+    # Add nfpm source
+RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
+    && apt-get update \
     && apt-get -y upgrade \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
         git \
@@ -30,9 +40,6 @@ RUN apt-get update \
         gcc \
         build-essential \
         rpm \
-        ruby \
-        ruby-dev \
-        rubygems \
         uuid-dev \
         autoconf \
         libtool \
@@ -45,10 +52,7 @@ RUN apt-get update \
         lsb-release \
         software-properties-common \
         gnupg \
-        \
-    && gem install --version 1.6.0 --user-install git \
-    && gem install --version 2.7.6 dotenv \
-    && gem install --version 1.14.2 --minimal-deps --no-document fpm \
+        nfpm \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Clang
@@ -61,7 +65,7 @@ RUN wget https://apt.llvm.org/llvm.sh && \
     ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
 
 # Install the .NET SDK
-RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
+RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh  \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \
@@ -93,7 +97,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     then export NETCORERUNTIME2_1=aspnetcore; \
     else export NETCORERUNTIME2_1=dotnet; \
     fi \
-    && curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
+    && curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --runtime $NETCORERUNTIME2_1 --channel 2.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
@@ -101,6 +105,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="TraceChunkModel.cs" company="Datadog">
+// <copyright file="TraceChunkModel.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -55,6 +55,8 @@ internal readonly struct TraceChunkModel
 
     public readonly ImmutableAzureAppServiceSettings? AzureAppServiceSettings = null;
 
+    public readonly bool IsApmEnabled = true;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="TraceChunkModel"/> struct.
     /// </summary>
@@ -94,6 +96,7 @@ internal readonly struct TraceChunkModel
                 {
                     IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
                     AzureAppServiceSettings = settings.AzureAppServiceMetadata ?? null;
+                    IsApmEnabled = settings.ApmTracingEnabled;
                 }
 
                 if (tracer.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
@@ -123,7 +126,7 @@ internal readonly struct TraceChunkModel
             // skip the HashSet to avoid initializing it yet, always iterate the array of spans.
             ContainsLocalRootSpan = IndexOf(localRootSpanId, spans.Count - 1) >= 0;
 
-            HasUpstreamService = localRootSpan.Context.ParentIdInternal is not (null or 0);
+            HasUpstreamService = localRootSpan.Context.ParentId is not (null or 0);
         }
     }
 
@@ -140,7 +143,7 @@ internal readonly struct TraceChunkModel
         }
 
         var span = _spans.Array![_spans.Offset + spanIndex];
-        var parentId = span.Context.ParentIdInternal ?? 0;
+        var parentId = span.Context.ParentId ?? 0;
         bool isLocalRoot = parentId is 0 || span.SpanId == LocalRootSpanId;
         bool isFirstSpan = spanIndex == 0;
 

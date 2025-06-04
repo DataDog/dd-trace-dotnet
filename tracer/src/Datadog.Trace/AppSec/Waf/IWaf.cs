@@ -3,13 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
-using System.Collections.Generic;
 using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -17,10 +15,16 @@ namespace Datadog.Trace.AppSec.Waf
     {
         public string Version { get; }
 
-        public IContext CreateContext();
+        bool Disposed { get; }
 
-        internal unsafe WafReturnCode Run(IntPtr contextHandle, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
+        public IContext? CreateContext();
 
-        UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus);
+        internal unsafe WafReturnCode Run(IntPtr contextHandle, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafObjectStruct retNative, ulong timeoutMicroSeconds);
+
+        UpdateResult Update(ConfigurationState configurationStatus);
+
+        public string[] GetKnownAddresses();
+
+        public bool IsKnowAddressesSuported();
     }
 }

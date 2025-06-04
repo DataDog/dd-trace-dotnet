@@ -8,12 +8,13 @@
     Type: system,
     Error: 1,
     Tags: {
-      cmd.component: process,
+      component: process,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: internal
+      span.kind: internal,
+      _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
       process_id: 0,
@@ -31,15 +32,16 @@
     Type: system,
     Error: 1,
     Tags: {
-      cmd.component: process,
       cmd.environment_variables:
 LD_PRELOAD=path
 PATH=testPath,
+      component: process,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: internal
+      span.kind: internal,
+      _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
       process_id: 0,
@@ -57,15 +59,16 @@ PATH=testPath,
     Type: system,
     Error: 1,
     Tags: {
-      cmd.component: process,
       cmd.environment_variables:
 LD_PRELOAD=path
 PATH=testPath,
+      component: process,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: internal
+      span.kind: internal,
+      _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
       process_id: 0,

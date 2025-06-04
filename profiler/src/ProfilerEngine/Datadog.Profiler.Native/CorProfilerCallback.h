@@ -20,6 +20,7 @@
 #include "IFrameStore.h"
 #include "IMetricsSender.h"
 #include "ISamplesProvider.h"
+#include "ISsiManager.h"
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
 #include "SamplesCollector.h"
@@ -28,6 +29,7 @@
 #include "LiveObjectsProvider.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
+#include "MemoryResourceManager.h"
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
 #include "IAllocationsRecorder.h"
@@ -35,7 +37,7 @@
 #include "ThreadLifetimeProvider.h"
 #include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
-#include "MemoryResourceManager.h"
+#include "ISsiLifetime.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -47,11 +49,13 @@ class ContentionProvider;
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
-class IStackSamplerLoopManager;
+class StackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
+class RawSampleTransformer;
+class RuntimeIdStore;
 class TimerCreateCpuProfiler;
-
+class NetworkProvider;
 
 #ifdef LINUX
 class SystemCallsShield;
@@ -62,7 +66,7 @@ class Loader;
 }
 
 
-class CorProfilerCallback : public ICorProfilerCallback10
+class CorProfilerCallback : public ICorProfilerCallback10, public ISsiLifetime
 {
 public:
     CorProfilerCallback(std::shared_ptr<IConfiguration> pConfiguration);
@@ -194,6 +198,11 @@ public:
 
     IClrLifetime* GetClrLifetime() const;
 
+    // ISsiLifetime implementation
+    // for SSI, the services need to be started after the runtime is initialized
+    void OnStartDelayedProfiling() override;
+
+
 // Access to global services
 // All services are allocated/started and stopped/deleted by the CorProfilerCallback (no need to use unique_ptr/shared_ptr)
 // Their lifetime lasts between Initialize() and Shutdown()
@@ -201,10 +210,11 @@ public:
     IThreadsCpuManager* GetThreadsCpuManager() { return _pThreadsCpuManager; }
     IManagedThreadList* GetManagedThreadList() { return _pManagedThreadList; }
     IManagedThreadList* GetCodeHotspotThreadList() { return _pCodeHotspotsThreadList; }
-    IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
+    //IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
     IExporter* GetExporter() { return _pExporter.get(); }
     SamplesCollector* GetSamplesCollector() { return _pSamplesCollector; }
+    void TraceContextHasBeenSet() { _pSsiManager->OnSpanCreated(); }
 
 private :
     static CorProfilerCallback* _this;
@@ -225,7 +235,7 @@ private :
     // The pointer here are observable pointer which means that they are used only to access the data.
     // Their lifetime is managed by the _services vector.
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
-    IStackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
+    StackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
     IManagedThreadList* _pCodeHotspotsThreadList = nullptr;
     IApplicationStore* _pApplicationStore = nullptr;
@@ -239,6 +249,8 @@ private :
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
     LiveObjectsProvider* _pLiveObjectsProvider = nullptr;
     ThreadLifetimeProvider* _pThreadLifetimeProvider = nullptr;
+    NetworkProvider* _pNetworkProvider = nullptr;
+    RuntimeIdStore* _pRuntimeIdStore = nullptr;
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
     TimerCreateCpuProfiler* _pCpuProfiler = nullptr;
@@ -251,6 +263,7 @@ private :
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
+    bool _isFrameworkVersionKnown = false;
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;
     std::unique_ptr<IAllocationsRecorder> _pAllocationsRecorder = nullptr;
     std::unique_ptr<IDebugInfoStore> _pDebugInfoStore = nullptr;
@@ -259,11 +272,14 @@ private :
     std::shared_ptr<ProxyMetric> _managedThreadsMetric;
     std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
 
-    std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider;
-    std::unique_ptr<IMetadataProvider> _pMetadataProvider;
-    std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
+    std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider = nullptr;
+    std::unique_ptr<IMetadataProvider> _pMetadataProvider = nullptr;
+    std::unique_ptr<IEtwEventsManager> _pEtwEventsManager = nullptr;
     bool _isETWStarted = false;
     MemoryResourceManager _memoryResourceManager;
+
+    std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
+    std::unique_ptr<RawSampleTransformer> _rawSampleTransformer;
 
 private:
     static void ConfigureDebugLog();
@@ -271,14 +287,19 @@ private:
     static void InspectProcessorInfo();
     static const char* SysInfoProcessorArchitectureToStr(WORD wProcArch);
     static void PrintEnvironmentVariables();
+    static void OnThreadRoutineFinished();
 
     void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType);
-    void DisposeInternal();
-    bool InitializeServices();
+#ifdef _WINDOWS
+    void GetFullFrameworkVersion(ModuleID moduleId);
+#endif
+
+void DisposeInternal();
+    void InitializeServices();
     bool DisposeServices();
     bool StartServices();
     bool StopServices();
-
+    void StartEtwCommunication();
 
     template <class T, typename... ArgTypes>
     T* RegisterService(ArgTypes&&... args)

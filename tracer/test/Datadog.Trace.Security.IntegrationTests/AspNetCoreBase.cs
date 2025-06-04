@@ -8,8 +8,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,8 +17,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public abstract class AspNetCoreBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCoreBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string testName = null)
-            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName)
+        public AspNetCoreBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string testName = null, bool clearMetaStruct = false)
+            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName, clearMetaStruct: clearMetaStruct)
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
@@ -55,6 +55,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                              null,
                              null,
                              null,
+                             accept: null,
                              new List<KeyValuePair<string, string>>
                              {
                                  new("X-SigSci-Tags", "SQLI"),

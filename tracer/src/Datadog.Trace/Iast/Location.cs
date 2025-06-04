@@ -6,12 +6,18 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Rasp;
 
 namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
+    internal readonly StackTrace? _stack = null;
+
     public Location(string method)
     {
         var index = method.LastIndexOf("::", StringComparison.Ordinal);
@@ -29,7 +35,7 @@ internal readonly struct Location
         }
     }
 
-    public Location(StackFrame? stackFrame, ulong? spanId)
+    public Location(StackFrame? stackFrame, StackTrace? stack, string? stackId, ulong? spanId)
     {
         var method = stackFrame?.GetMethod();
         Path = method?.DeclaringType?.FullName;
@@ -38,9 +44,12 @@ internal readonly struct Location
         Line = line > 0 ? line : null;
 
         SpanId = spanId == 0 ? null : spanId;
+
+        _stack = stack;
+        StackId = stackId;
     }
 
-    public Location(string? typeName, string? methodName, int? line, ulong? spanId)
+    internal Location(string? typeName, string? methodName, int? line, ulong? spanId) // For testing purposes only
     {
         this.Path = typeName;
         this.Method = methodName;
@@ -57,9 +66,25 @@ internal readonly struct Location
 
     public int? Line { get; }
 
+    public string? StackId { get; }
+
     public override int GetHashCode()
     {
         // We do not calculate the hash including the spanId nor the line
         return IastUtils.GetHashCode(Path, Method);
+    }
+
+    internal void ReportStack(Span? span)
+    {
+        if (span is not null && StackId is not null && _stack is not null && _stack.FrameCount > 0)
+        {
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types. Some TFMs (pre net 6) don't have null annotations
+            var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, Security.Instance.Settings.MaxStackTraceDepthTopPercent, StackId, _stack.GetFrames());
+#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+            if (stack is not null)
+            {
+                span.Context.TraceContext?.AppSecRequestContext.AddVulnerabilityStackTrace(stack, Security.Instance.Settings.MaxStackTraces);
+            }
+        }
     }
 }

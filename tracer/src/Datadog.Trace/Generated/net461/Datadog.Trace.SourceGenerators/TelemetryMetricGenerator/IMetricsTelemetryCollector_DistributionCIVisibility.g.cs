@@ -35,9 +35,21 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordDistributionCIVisibilityCodeCoverageFiles(double value);
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionRequestMs(double value);
+    public void RecordDistributionCIVisibilityKnownTestsRequestMs(double value);
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value);
+    public void RecordDistributionCIVisibilityKnownTestsResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value);
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(double value);
+    public void RecordDistributionCIVisibilityKnownTestsResponseTests(double value);
+
+    public void RecordDistributionCIVisibilityImpactedTestsDetectionRequestMs(double value);
+
+    public void RecordDistributionCIVisibilityImpactedTestsDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value);
+
+    public void RecordDistributionCIVisibilityImpactedTestsDetectionResponseFiles(double value);
+
+    public void RecordDistributionCIVisibilityTestManagementTestsRequestMs(double value);
+
+    public void RecordDistributionCIVisibilityTestManagementTestsResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value);
+
+    public void RecordDistributionCIVisibilityTestManagementTestsResponseTests(double value);
 }

@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -25,6 +26,7 @@ internal class DataStreamsManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
+    private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly NodeHashBase _nodeHashBase;
     private bool _isEnabled;
     private IDataStreamsWriter? _writer;
@@ -43,7 +45,7 @@ internal class DataStreamsManager
     public bool IsEnabled => Volatile.Read(ref _isEnabled);
 
     public static DataStreamsManager Create(
-        ImmutableTracerSettings settings,
+        TracerSettings settings,
         IDiscoveryService discoveryService,
         string defaultServiceName)
     {
@@ -51,7 +53,7 @@ internal class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, discoveryService, defaultServiceName)
                          : null;
 
-        return new DataStreamsManager(settings.EnvironmentInternal, defaultServiceName, writer);
+        return new DataStreamsManager(settings.Environment, defaultServiceName, writer);
     }
 
     public async Task DisposeAsync()
@@ -83,21 +85,12 @@ internal class DataStreamsManager
     public void InjectPathwayContext<TCarrier>(PathwayContext? context, TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
     {
-        if (!IsEnabled)
+        if (!IsEnabled || context is null)
         {
             return;
         }
 
-        if (context is not null)
-        {
-            DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
-            return;
-        }
-
-        // This shouldn't happen normally, as you should call SetCheckpoint before calling InjectPathwayContext
-        // But if data streams was disabled, you call SetCheckpoint, and then data streams is enabled
-        // you will hit this code path
-        Log.Debug("Attempted to inject null pathway context");
+        DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
     }
 
     public void TrackBacklog(string tags, long value)
@@ -231,5 +224,26 @@ internal class DataStreamsManager
             Volatile.Write(ref _isEnabled, false);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Make sure we only extract the schema (a costly operation) on select occasions
+    /// </summary>
+    public bool ShouldExtractSchema(Span span, string operation, out int weight)
+    {
+        var limiter = _schemaRateLimiters.GetOrAdd(operation, _ => new RateLimiter());
+        if (limiter.PeekDecision())
+        {
+            // we only want to "consume" a decision to extract the schema for a span that we are going to keep
+            // && we don't want to make the sampling decision if we know we have no chance of getting selected by the rate limiter
+            var spanSamplingDecision = span.Context.GetOrMakeSamplingDecision();
+            if (spanSamplingDecision != null && SamplingPriorityValues.IsKeep(spanSamplingDecision.Value))
+            {
+                return limiter.GetDecision(out weight);
+            }
+        }
+
+        weight = 0;
+        return false;
     }
 }

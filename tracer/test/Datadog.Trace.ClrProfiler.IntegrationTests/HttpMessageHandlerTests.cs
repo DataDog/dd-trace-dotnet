@@ -4,13 +4,13 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -30,37 +30,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        internal static IEnumerable<InstrumentationOptions> InstrumentationOptionsValues =>
-            new List<InstrumentationOptions>
-            {
-                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
-                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
-                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
-                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
-            };
+        public static InstrumentationOptions[] GetInstrumentationOptions()
+        {
+            return
+            [
+                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
+                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
+                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
+                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
+            ];
+        }
 
-        public static IEnumerable<object[]> IntegrationConfig() =>
-            from instrumentationOptions in InstrumentationOptionsValues
-            from socketHandlerEnabled in new[] { true, false }
-            select new object[] { instrumentationOptions, socketHandlerEnabled };
-
-        public static IEnumerable<object[]> IntegrationConfigWithObfuscation() =>
-            from instrumentationOptions in InstrumentationOptionsValues
-            from socketHandlerEnabled in new[] { true, false }
-            from queryStringEnabled in new[] { true, false }
-            from queryStringSizeAndExpectation in new[] { new KeyValuePair<int?, string>(null, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(200, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(2, "?k") }
-            from metadataSchemaVersion in new[] { "v0", "v1" }
-            from traceId128Enabled in new[] { true, false }
-            select new object[]
-                   {
-                       instrumentationOptions,
-                       socketHandlerEnabled,
-                       queryStringEnabled,
-                       queryStringSizeAndExpectation.Key,
-                       queryStringSizeAndExpectation.Value,
-                       metadataSchemaVersion,
-                       traceId128Enabled
-                   };
+        public static StringSizeExpectation[] GetStringSizeAndExpectation()
+        {
+            return
+            [
+                new StringSizeExpectation(null, "?key1=value1&<redacted>"),
+                new StringSizeExpectation(200, "?key1=value1&<redacted>"),
+                new StringSizeExpectation(2, "?k")
+            ];
+        }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHttpMessageHandler(metadataSchemaVersion);
 
@@ -68,14 +57,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        [MemberData(nameof(IntegrationConfigWithObfuscation))]
+        [CombinatorialOrPairwiseData]
+        [Flaky("This test often fails with an ObjectDisposedException on shutdown. It seems tied to the HttpListener/WebServer implementation, but I couldn't figure out why")]
         public async Task HttpClient_SubmitsTraces(
-            InstrumentationOptions instrumentation,
+            [CombinatorialMemberData(nameof(GetInstrumentationOptions))] InstrumentationOptions instrumentation,
             bool socketsHandlerEnabled,
             bool queryStringCaptureEnabled,
-            int? queryStringSize,
-            string expectedQueryString,
-            string metadataSchemaVersion,
+            [CombinatorialMemberData(nameof(GetStringSizeAndExpectation))] StringSizeExpectation queryStringSizeAndExpected,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
             bool traceId128Enabled)
         {
             try
@@ -85,6 +74,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
                 SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", traceId128Enabled ? "true" : "false");
                 SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+
+                int? queryStringSize = queryStringSizeAndExpected.Size;
+                string expectedQueryString = queryStringSizeAndExpected.Expectation;
 
                 if (queryStringSize.HasValue)
                 {
@@ -104,75 +96,73 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
 
                 using var telemetry = this.ConfigureTelemetry();
-                using (var agent = EnvironmentHelper.GetMockAgent())
-                using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+                using var agent = EnvironmentHelper.GetMockAgent();
+                using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
+
+                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+                var spans = agent.WaitForSpans(expectedSpanCount);
+                spans.Should().HaveCount(expectedSpanCount);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+                foreach (var span in spans)
                 {
-                    agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                    var spans = agent.WaitForSpans(expectedSpanCount);
-                    Assert.Equal(expectedSpanCount, spans.Count);
-                    ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
-
-                    foreach (var span in spans)
+                    if (span.Tags[Tags.HttpStatusCode] == "502")
                     {
-                        if (span.Tags[Tags.HttpStatusCode] == "502")
-                        {
-                            Assert.Equal(1, span.Error);
-                        }
-
-                        if (span.Tags.TryGetValue(Tags.HttpUrl, out var url))
-                        {
-                            if (queryStringCaptureEnabled)
-                            {
-                                url.Should().EndWith(expectedQueryString);
-                            }
-                            else
-                            {
-                                new Uri(url).Query.Should().BeNullOrEmpty();
-                            }
-                        }
+                        span.Error.Should().Be(1);
                     }
 
-                    // parse http headers from stdout
-                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                    var propagatedTags = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.PropagatedTags);
-
-                    var firstSpan = spans.First();
-                    Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                    Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
-
-                    var traceTags = TagPropagation.ParseHeader(propagatedTags);
-                    var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
-                    var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
-
-                    if (traceId128Enabled)
+                    if (span.Tags.TryGetValue(Tags.HttpUrl, out var url))
                     {
-                        // assert that "_dd.p.tid" was added to the "x-datadog-tags" header (horizontal propagation)
-                        // note this assumes Datadog propagation headers are enabled (which is the default).
-                        Assert.NotNull(traceIdUpperTagFromHeader);
-
-                        // not all spans will have this tag, but if it is present,
-                        // it should match the value in the "x-datadog-tags" header
-                        if (traceIdUpperTagFromSpan != null)
+                        if (queryStringCaptureEnabled)
                         {
-                            Assert.Equal(traceIdUpperTagFromHeader, traceIdUpperTagFromSpan);
+                            url.Should().EndWith(expectedQueryString);
+                        }
+                        else
+                        {
+                            new Uri(url).Query.Should().BeNullOrEmpty();
                         }
                     }
-                    else
-                    {
-                        // assert that "_dd.p.tid" was NOT added
-                        Assert.Null(traceIdUpperTagFromHeader);
-                        Assert.Null(traceIdUpperTagFromSpan);
-                    }
-
-                    using var scope = new AssertionScope();
-                    telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
-                    // ignore for now auto enabled for simplicity
-                    telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
-                    telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
-                    telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
-                    VerifyInstrumentation(processResult.Process);
                 }
+
+                // parse http headers from stdout
+                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput).ToList();
+
+                var firstSpan = spans.First();
+                headers.FirstOrDefault(h => h.Key == HttpHeaderNames.TraceId).Value.Should().Be(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture));
+                headers.FirstOrDefault(h => h.Key == HttpHeaderNames.ParentId).Value.Should().Be(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture));
+
+                var propagatedTags = headers.FirstOrDefault(h => h.Key == HttpHeaderNames.PropagatedTags);
+                var traceTags = TagPropagation.ParseHeader(propagatedTags.Value);
+                var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
+                var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
+
+                if (traceId128Enabled)
+                {
+                    // assert that "_dd.p.tid" was added to the "x-datadog-tags" header (horizontal propagation)
+                    // note this assumes Datadog propagation headers are enabled (which is the default).
+                    traceIdUpperTagFromHeader.Should().NotBeNull();
+
+                    // not all spans will have this tag, but if it is present,
+                    // it should match the value in the "x-datadog-tags" header
+                    if (traceIdUpperTagFromSpan != null)
+                    {
+                        traceIdUpperTagFromSpan.Should().Be(traceIdUpperTagFromHeader);
+                    }
+                }
+                else
+                {
+                    // assert that "_dd.p.tid" was NOT added
+                    traceIdUpperTagFromHeader.Should().BeNull();
+                    traceIdUpperTagFromSpan.Should().BeNull();
+                }
+
+                using var scope = new AssertionScope();
+                telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                // ignore for now auto enabled for simplicity
+                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
+                VerifyInstrumentation(processResult.Process);
             }
             catch (ExitCodeException)
             {
@@ -189,8 +179,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        [MemberData(nameof(IntegrationConfig))]
-        public async Task TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        [CombinatorialOrPairwiseData]
+        public async Task TracingDisabled_DoesNotSubmitsTraces(
+            [CombinatorialMemberData(nameof(GetInstrumentationOptions))] InstrumentationOptions instrumentation,
+            bool enableSocketsHandler)
         {
             try
             {
@@ -198,30 +190,48 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
                 using var telemetry = this.ConfigureTelemetry();
-                int httpPort = TcpPortProvider.GetOpenPort();
+                var httpPort = TcpPortProvider.GetOpenPort();
 
-                using (var agent = EnvironmentHelper.GetMockAgent())
-                using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
+                using var agent = EnvironmentHelper.GetMockAgent();
+                using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}");
+
+                agent.Spans.Should().NotContain(s => s.Type == SpanTypes.Http);
+
+                // parse http headers from stdout
+                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput).ToList();
+                headers.Where(h => h.Key == HttpHeaderNames.TracingEnabled).Should().AllSatisfy(h => h.Value.Should().Be("false"));
+
+                // when tracing is disabled, we should not see any trace context or baggage headers
+                using (_ = new AssertionScope())
                 {
-                    var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
-                    Assert.Empty(spans);
+                    // Datadog trace context headers
+                    headers.Should().NotContainKey(HttpHeaderNames.TraceId);
+                    headers.Should().NotContainKey(HttpHeaderNames.ParentId);
+                    headers.Should().NotContainKey(HttpHeaderNames.SamplingPriority);
+                    headers.Should().NotContainKey(HttpHeaderNames.Origin);
+                    headers.Should().NotContainKey(HttpHeaderNames.PropagatedTags);
 
-                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                    var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+                    // W3C trace context headers
+                    headers.Should().NotContainKey(W3CTraceContextPropagator.TraceParentHeaderName);
+                    headers.Should().NotContainKey(W3CTraceContextPropagator.TraceStateHeaderName);
 
-                    Assert.Null(traceId);
-                    Assert.Null(parentSpanId);
-                    Assert.Equal("false", tracingEnabled);
+                    // B3 trace context headers
+                    headers.Should().NotContainKey(B3SingleHeaderContextPropagator.B3);
+                    headers.Should().NotContainKey(B3MultipleHeaderContextPropagator.TraceId);
+                    headers.Should().NotContainKey(B3MultipleHeaderContextPropagator.SpanId);
+                    headers.Should().NotContainKey(B3MultipleHeaderContextPropagator.Sampled);
 
-                    using var scope = new AssertionScope();
-                    // ignore auto enabled for simplicity
-                    telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
-                    telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
-                    telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
-                    telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
-                    VerifyInstrumentation(processResult.Process);
+                    // Baggage header
+                    headers.Should().NotContainKey(W3CBaggagePropagator.BaggageHeaderName);
                 }
+
+                using var scope = new AssertionScope();
+                // ignore auto enabled for simplicity
+                telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
+                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
+                VerifyInstrumentation(processResult.Process);
             }
             catch (ExitCodeException)
             {
@@ -365,6 +375,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             public override string ToString() =>
                 $"InstrumentSocketHandler={InstrumentSocketHandler},InstrumentWinHttpOrCurlHandler={InstrumentWinHttpOrCurlHandler}";
+        }
+
+        public class StringSizeExpectation : IXunitSerializable
+        {
+            public StringSizeExpectation()
+            {
+            }
+
+            public StringSizeExpectation(int? size, string expectation)
+            {
+                Size = size;
+                Expectation = expectation;
+            }
+
+            public int? Size { get; private set; }
+
+            public string Expectation { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                Size = info.GetValue<int?>(nameof(Size));
+                Expectation = info.GetValue<string>(nameof(Expectation));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(Size), Size);
+                info.AddValue(nameof(Expectation), Expectation);
+            }
+
+            public override string ToString() => $"Size={Size},Expectation={Expectation}";
         }
     }
 }

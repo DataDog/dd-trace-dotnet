@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// </summary>
 internal class TaintedRangeBasedTokenizer : ITokenizer
 {
-    public TaintedRangeBasedTokenizer(TimeSpan timeout)
+    public TaintedRangeBasedTokenizer()
     {
     }
 

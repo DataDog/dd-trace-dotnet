@@ -433,7 +433,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     // *** BeginMethod exception handling clause
     EHClause beginMethodExClause{};
-    if (m_corProfiler->call_target_bubble_up_exception_available)
+    if (filter != nullptr)
     {
         beginMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FILTER;
         beginMethodExClause.m_pTryBegin = firstInstruction;
@@ -452,12 +452,36 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         beginMethodExClause.m_ClassToken = tracerTokens->GetExceptionTypeRef();
     }
 
-    // ***
-    // METHOD EXECUTION
-    // ***
-    ILInstr* beginOriginalMethodInstr = reWriterWrapper.GetCurrentILInstr();
-    pStateLeaveToBeginOriginalMethodInstr->m_pTarget = beginOriginalMethodInstr;
-    beginMethodCatchLeaveInstr->m_pTarget = beginOriginalMethodInstr;
+    // Let's check if the CallTargetState.SkipMethodBody property is available.
+    ILInstr* skipMethodBodyReturnInstr = nullptr;
+    if (m_corProfiler->call_target_state_skip_method_body_function_available)
+    {
+        // ***
+        // CHECK IF WE NEED TO SKIP THE METHOD BODY
+        // ***
+        ILInstr* skipMethodCheckFirstMethodInstr = reWriterWrapper.LoadLocalAddress(callTargetStateIndex);
+        reWriterWrapper.CallMember(tracerTokens->GetCallTargetStateSkipMethodBodyMemberRef(), false);
+
+        ILInstr* brTrueSJumpMethodInstr = rewriter.NewILInstr();
+        brTrueSJumpMethodInstr->m_opcode = CEE_BRFALSE_S;
+        brTrueSJumpMethodInstr->m_pTarget = reWriterWrapper.GetCurrentILInstr();
+        rewriter.InsertBefore(reWriterWrapper.GetCurrentILInstr(), brTrueSJumpMethodInstr);
+
+        skipMethodBodyReturnInstr = reWriterWrapper.Return();
+
+        // leave from the begin method structure should go here in skip method body check
+        pStateLeaveToBeginOriginalMethodInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
+        beginMethodCatchLeaveInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
+    }
+    else
+    {
+        // ***
+        // METHOD EXECUTION
+        // ***
+        ILInstr* beginOriginalMethodInstr = reWriterWrapper.GetCurrentILInstr();
+        pStateLeaveToBeginOriginalMethodInstr->m_pTarget = beginOriginalMethodInstr;
+        beginMethodCatchLeaveInstr->m_pTarget = beginOriginalMethodInstr;
+    }
 
     // ***
     // ENDING OF THE METHOD EXECUTION
@@ -580,7 +604,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     ILInstr* filterEnd = nullptr;
     ILInstr* endMethodCatchFirstInstr = nullptr;
-    if (m_corProfiler->call_target_bubble_up_exception_available)
+    if (m_corProfiler->call_target_bubble_up_exception_available && bubbleup_exception_typeref != mdTypeRefNil)
     {
         Logger::Debug("Creating filter for try / catch for CallTargetBubbleUpException (end method).");
         filterEnd = CreateFilterForException(&reWriterWrapper, tracerTokens->GetExceptionTypeRef(),
@@ -598,7 +622,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     // *** EndMethod exception handling clause
     EHClause endMethodExClause{};
-    if (m_corProfiler->call_target_bubble_up_exception_available)
+    if (filterEnd != nullptr)
     {
         endMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FILTER;
         endMethodExClause.m_pTryBegin = endMethodTryStartInstr;
@@ -641,7 +665,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
             {
                 if (pInstr != methodReturnInstr)
                 {
-                    if (isVoid)
+                    if (isVoid || pInstr == skipMethodBodyReturnInstr)
                     {
                         pInstr->m_opcode = CEE_LEAVE_S;
                         pInstr->m_pTarget = endFinallyInstr->m_pNext;

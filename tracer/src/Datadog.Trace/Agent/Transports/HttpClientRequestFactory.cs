@@ -32,6 +32,9 @@ namespace Datadog.Trace.Agent.Transports
             {
                 _client.DefaultRequestHeaders.Add(pair.Key, pair.Value);
             }
+
+            // Disable keep-alive
+            _client.DefaultRequestHeaders.ConnectionClose = true;
         }
 
         public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpoint, relativePath);

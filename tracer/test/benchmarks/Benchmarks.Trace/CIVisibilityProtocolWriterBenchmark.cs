@@ -5,6 +5,8 @@ using Datadog.Trace;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 
 namespace Benchmarks.Trace
 {
@@ -20,9 +22,13 @@ namespace Benchmarks.Trace
 
         static CIVisibilityProtocolWriterBenchmark()
         {
-            var settings = CIVisibilitySettings.FromDefaultSources();
-            settings.TracerSettings.StartupDiagnosticLogEnabled = false;
-            settings.TracerSettings.TraceEnabled = false;
+            var overrides = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString() },
+                { ConfigurationKeys.TraceEnabled, false.ToString() },
+            });
+            var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
+            var settings = new TestOptimizationSettings(sources, NullConfigurationTelemetry.Instance);
 
             EventWriter = new CIVisibilityProtocolWriter(settings, new FakeCIVisibilityProtocolWriter());
 

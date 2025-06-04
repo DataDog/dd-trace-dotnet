@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -33,11 +34,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly ConcurrentDictionary<MethodUniqueIdentifier, ExceptionDebuggingProbe> MethodToProbe = new();
         private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
 
-        internal static ExceptionCase Instrument(ExceptionIdentifier exceptionId)
+        internal static ExceptionCase Instrument(ExceptionIdentifier exceptionId, string exceptionToString)
         {
             Log.Information("Instrumenting {ExceptionId}", exceptionId);
 
-            var participatingUserMethods = GetMethodsToRejit(exceptionId.StackTrace);
+            var parsedFramesFromExceptionToString = StackTraceProcessor.ParseFrames(exceptionToString).ToArray();
+            var stackTrace = exceptionId.StackTrace.Where(frame => parsedFramesFromExceptionToString.Any(f => MethodMatcher.IsMethodMatch(f, frame.Method))).ToArray();
+            var participatingUserMethods = GetMethodsToRejit(stackTrace);
 
             var uniqueMethods = participatingUserMethods
                                .Distinct(EqualityComparer<MethodUniqueIdentifier>.Default)
@@ -65,7 +68,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            var newCase = new ExceptionCase(exceptionId, probes);
+            var newCase = new ExceptionCase(exceptionId.ExceptionTypes, probes);
 
             foreach (var method in uniqueMethods)
             {
@@ -84,6 +87,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static List<MethodUniqueIdentifier> GetMethodsToRejit(ParticipatingFrame[] allFrames)
         {
             var methodsToRejit = new List<MethodUniqueIdentifier>();
+            MethodUniqueIdentifier? lastMethod = null;
+            var wasLastMisleading = false;
 
             foreach (var frame in allFrames)
             {
@@ -102,11 +107,24 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         continue;
                     }
 
-                    methodsToRejit.Add(frame.MethodIdentifier);
+                    var currentMethod = frame.MethodIdentifier;
+                    var isCurrentMisleading = currentMethod.IsMisleadMethod();
+
+                    // Add the method if either:
+                    // 1. It's not misleading (we keep all non-misleading methods)
+                    // 2. It's misleading but different from the last misleading method we saw
+                    // 3. It's the first misleading method after non-misleading methods
+                    if (!isCurrentMisleading || currentMethod != lastMethod || !wasLastMisleading)
+                    {
+                        methodsToRejit.Add(currentMethod);
+                    }
+
+                    lastMethod = currentMethod;
+                    wasLastMisleading = isCurrentMisleading;
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Failed to instrument frame the frame: {FrameToRejit}", frame);
+                    Log.Error(ex, "Failed to instrument the frame: {FrameToRejit}", frame);
                 }
             }
 
@@ -115,7 +133,20 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal static void Revert(ExceptionCase @case)
         {
-            Log.Information("Reverting {ExceptionCase}", @case);
+            if (@case.Probes == null || @case.Processors == null)
+            {
+                Log.Information("Received empty @case, nothing to revert.");
+                return;
+            }
+
+            try
+            {
+                Log.Information("Reverting {ExceptionCase}", @case);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to log an exception case while reverting...");
+            }
 
             foreach (var probe in @case.Probes)
             {

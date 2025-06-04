@@ -112,6 +112,7 @@ namespace iast
         virtual bool IsCoreLib();
         WSTRING GetModuleFullName();
         mdToken DefineMemberRef(const WSTRING& moduleName, const WSTRING& typeName, const WSTRING& methodName, const WSTRING& methodParams);
+        mdMethodSpec DefineMethodSpec(mdMemberRef targetMethod, SignatureInfo* sig);
 
         virtual bool IsInlineEnabled();
 

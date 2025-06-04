@@ -38,9 +38,11 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/Guid_4/,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Telemetry
     },
     Metrics: {
       _dd.top_level: 1.0

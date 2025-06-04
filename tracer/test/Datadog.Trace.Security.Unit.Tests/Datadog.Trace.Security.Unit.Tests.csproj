@@ -43,6 +43,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ruleset-withblockips.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="wrong-tags-rule-set.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -7,16 +7,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
+using System.Globalization;
+using System.Reflection;
+using System.Threading;
 using System.Web;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 #endif
 using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
@@ -31,6 +31,11 @@ internal class IastRequestContext
     private bool _routedParametersAdded = false;
     private bool _querySourcesAdded = false;
     private ExecutedTelemetryHelper? _executedTelemetryHelper = ExecutedTelemetryHelper.Enabled() ? new ExecutedTelemetryHelper() : null;
+    private int _lastVulnerabilityStackId = 0;
+
+    private bool _routeVulnerabilityStatsDirty = false;
+    private VulnerabilityStats _routeVulnerabilityStats;
+    private VulnerabilityStats _requestVulnerabilityStats;
 
     internal static void AddIastDisabledFlagToSpan(Span span)
     {
@@ -43,13 +48,41 @@ internal class IastRequestContext
         {
             span.Tags.SetTag(Tags.IastEnabled, "1");
 
+            if (_routeVulnerabilityStatsDirty)
+            {
+                if (AddVulnerabilitiesAllowed())
+                {
+                    // Global budget not depleted. Reset route stats so vulns can be detected again.
+                    Log.Debug("Clearing Vulnerability Stats for Route {Route} (Budget left)", _routeVulnerabilityStats.Route);
+                    _routeVulnerabilityStats = new VulnerabilityStats(_requestVulnerabilityStats.Route);
+                }
+                else
+                {
+                    // Global budget depleted. Update route stats so vulns new can be detected.
+                    Log.Debug("Updating Vulnerability Stats for Route {Route} (Budget depleted)", _routeVulnerabilityStats.Route);
+                    _routeVulnerabilityStats.TransferNewVulns(ref _requestVulnerabilityStats);
+                }
+
+                IastModule.UpdateRouteVulnerabilityStats(ref _routeVulnerabilityStats);
+            }
+
             if (_vulnerabilityBatch != null)
             {
-                span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
-
-                if (_vulnerabilityBatch.IsTruncated())
+                if (Iast.Instance.IsMetaStructSupported())
                 {
-                    span.Tags.SetTag(Tags.IastJsonTagSizeExceeded, "1");
+                    span.SetMetaStruct(IastModule.IastMetaStructKey, _vulnerabilityBatch.ToMessagePack());
+                    if (_vulnerabilityBatch.IsTruncated())
+                    {
+                        span.Tags.SetTag(Tags.IastMetaStructTagSizeExceeded, "1");
+                    }
+                }
+                else
+                {
+                    span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
+                    if (_vulnerabilityBatch.IsTruncated())
+                    {
+                        span.Tags.SetTag(Tags.IastJsonTagSizeExceeded, "1");
+                    }
                 }
             }
 
@@ -66,7 +99,51 @@ internal class IastRequestContext
 
     internal bool AddVulnerabilitiesAllowed()
     {
+        // Check global budget
         return ((_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < Iast.Instance.Settings.VulnerabilitiesPerRequest);
+    }
+
+    internal bool AddVulnerabilityTypeAllowed(Span? span, string vulnerabilityType, Func<Span?, VulnerabilityStats> getForCurrentRoute)
+    {
+        // Check global budget
+        if (AddVulnerabilitiesAllowed())
+        {
+            if (_requestVulnerabilityStats.Route is null)
+            {
+                // Init the route vulnerability stats
+                _routeVulnerabilityStats = getForCurrentRoute(span);
+                _requestVulnerabilityStats = new(_routeVulnerabilityStats.Route);
+            }
+
+            if (_requestVulnerabilityStats.Route is { Length: > 0 })
+            {
+                // Check route budget
+                var index = (int)VulnerabilityTypeUtils.FromName(vulnerabilityType);
+                _requestVulnerabilityStats[index]++;
+
+                string debugTxt = string.Empty;
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                {
+                    var currentVulns = (_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) + 1;
+                    debugTxt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}  Budget: {currentVulns} out of {Iast.Instance.Settings.VulnerabilitiesPerRequest}";
+                }
+
+                _routeVulnerabilityStatsDirty = true;
+                if (_requestVulnerabilityStats[index] > _routeVulnerabilityStats[index] || _routeVulnerabilityStats[index] == 0)
+                {
+                    Log.Debug("Vulnerability Sampler ACCEPTED: {Txt}", debugTxt);
+                    return true;
+                }
+
+                Log.Debug("Vulnerability Sampler SKIPPED: {Txt}", debugTxt);
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     internal void AddVulnerability(Vulnerability vulnerability)
@@ -82,7 +159,7 @@ internal class IastRequestContext
     {
         try
         {
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestBody);
+            _executedTelemetryHelper?.AddExecutedSource(IastSourceType.RequestBody);
 
             if (bodyExtracted is null)
             {
@@ -165,7 +242,7 @@ internal class IastRequestContext
     {
         if (!_routedParametersAdded)
         {
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RoutedParameterValue);
+            _executedTelemetryHelper?.AddExecutedSource(IastSourceType.RoutedParameterValue);
             if (routeData != null)
             {
                 foreach (var item in routeData)
@@ -186,6 +263,11 @@ internal class IastRequestContext
         return _taintedObjects;
     }
 
+    internal void AddDbValue(string? column, string value)
+    {
+        _taintedObjects.TaintInputString(value, new Source(SourceType.SqlRowValue, column, value));
+    }
+
     internal TaintedObject? GetTainted(object objectToFind)
     {
         return _taintedObjects.Get(objectToFind);
@@ -199,18 +281,18 @@ internal class IastRequestContext
         {
             if (_executedTelemetryHelper is { } helper)
             {
-                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
-                helper.AddExecutedSource(IastInstrumentedSources.CookieName);
-                helper.AddExecutedSource(IastInstrumentedSources.CookieValue);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestPath);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestQuery);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestUri);
+                helper.AddExecutedSource(IastSourceType.RequestParameterName);
+                helper.AddExecutedSource(IastSourceType.RequestParameterValue);
+                helper.AddExecutedSource(IastSourceType.RequestHeaderName);
+                helper.AddExecutedSource(IastSourceType.RequestHeaderValue);
+                helper.AddExecutedSource(IastSourceType.CookieName);
+                helper.AddExecutedSource(IastSourceType.CookieValue);
+                helper.AddExecutedSource(IastSourceType.RequestPath);
+                helper.AddExecutedSource(IastSourceType.RequestQuery);
+                helper.AddExecutedSource(IastSourceType.RequestUri);
             }
 
-            var queryString = QueryStringHelper.GetQueryString(request);
+            var queryString = RequestDataHelper.GetQueryString(request);
 
             if (queryString != null)
             {
@@ -222,10 +304,21 @@ internal class IastRequestContext
                 AddQueryStringRaw(queryString.ToString());
             }
 
-            AddRequestHeaders(request.Headers);
-            AddQueryPath(request.Path);
-            AddQueryUrl(request.Url.ToString());
-            AddRequestCookies(request.Cookies);
+            AddRequestHeaders(RequestDataHelper.GetHeaders(request));
+
+            var path = RequestDataHelper.GetPath(request);
+            if (path is not null)
+            {
+                AddQueryPath(path);
+            }
+
+            var url = RequestDataHelper.GetUrl(request)?.ToString();
+            if (url is not null)
+            {
+                AddQueryUrl(url);
+            }
+
+            AddRequestCookies(RequestDataHelper.GetCookies(request));
             _querySourcesAdded = true;
         }
     }
@@ -277,14 +370,14 @@ internal class IastRequestContext
         {
             if (_executedTelemetryHelper is { } helper)
             {
-                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
-                helper.AddExecutedSource(IastInstrumentedSources.CookieName);
-                helper.AddExecutedSource(IastInstrumentedSources.CookieValue);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestPath);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+                helper.AddExecutedSource(IastSourceType.RequestParameterName);
+                helper.AddExecutedSource(IastSourceType.RequestParameterValue);
+                helper.AddExecutedSource(IastSourceType.RequestHeaderName);
+                helper.AddExecutedSource(IastSourceType.RequestHeaderValue);
+                helper.AddExecutedSource(IastSourceType.CookieName);
+                helper.AddExecutedSource(IastSourceType.CookieValue);
+                helper.AddExecutedSource(IastSourceType.RequestPath);
+                helper.AddExecutedSource(IastSourceType.RequestQuery);
             }
 
             if (request.Query != null)
@@ -296,9 +389,9 @@ internal class IastRequestContext
             }
 
             AddQueryPath(request.Path);
-            AddQueryStringRaw(QueryStringHelper.GetQueryString(request).Value);
-            AddRequestHeaders(request.Headers);
-            AddRequestCookies(request.Cookies);
+            AddQueryStringRaw(RequestDataHelper.GetQueryString(request).Value);
+            AddRequestHeaders(RequestDataHelper.GetHeaders(request));
+            AddRequestCookies(RequestDataHelper.GetCookies(request));
             _querySourcesAdded = true;
         }
     }
@@ -349,18 +442,28 @@ internal class IastRequestContext
         _taintedObjects.TaintInputString(name, new Source(SourceType.RequestHeaderName, name, name));
     }
 
-    internal void OnExecutedSinkTelemetry(IastInstrumentedSinks sink)
+    internal void OnExecutedSinkTelemetry(IastVulnerabilityType sink)
     {
         _executedTelemetryHelper?.AddExecutedSink(sink);
     }
 
-    internal void OnExecutedSourceTelemetry(IastInstrumentedSources source)
+    internal void OnExecutedSourceTelemetry(IastSourceType source)
     {
         _executedTelemetryHelper?.AddExecutedSource(source);
+    }
+
+    internal void OnSupressedVulnerabilityTelemetry(IastVulnerabilityType sink)
+    {
+        _executedTelemetryHelper?.AddSupressedVulnerability(sink);
     }
 
     internal void OnExecutedPropagationTelemetry()
     {
         _executedTelemetryHelper?.AddExecutedPropagation();
+    }
+
+    internal string GetNextVulnerabilityStackId()
+    {
+        return Interlocked.Increment(ref _lastVulnerabilityStackId).ToString(CultureInfo.InvariantCulture);
     }
 }

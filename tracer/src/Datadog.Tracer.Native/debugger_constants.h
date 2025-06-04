@@ -48,12 +48,19 @@ inline WSTRING GetGenericErrorMessageWithErrorCode(short errorCode)
     return general_error_message + WStr(" [Error Code: ") + shared::ToWSTRING(errorCode) + WStr("]");
 }
 
+inline WSTRING GetGenericErrorMessageWithHr(HRESULT hr)
+{
+    return general_error_message + WStr(" [hr: ") + shared::ToWSTRING(Hex(hr)) + WStr("]");
+}
+
 const WSTRING invalid_probe_method_already_instrumented =
     WStr("Dynamic Instrumentation failed to install the probe because the corresponding method is already instrumented by another product.");
 const WSTRING invalid_method_probe_probe_is_not_supported =
     WStr("The method where the probe should have been placed is not supported.");
 const WSTRING line_probe_il_offset_lookup_failure =
     WStr("There was a failure in determining the exact location where the line probe was supposed to be placed.");
+const WSTRING line_probe_il_offset_lookup_failure_2 =
+    WStr("There was a failure in determining the exact location where the line probe was supposed to be placed. [2]");
 const WSTRING line_probe_in_async_generic_method_in_optimized_code =
     WStr("Placing line probes in async generic methods in Release builds is currently not supported.");
 const WSTRING invalid_probe_probe_cctor_ctor_not_supported =
@@ -67,7 +74,7 @@ const WSTRING non_supported_compiled_bytecode =
 const WSTRING type_contains_invalid_symbol = 
     WStr("The type is not supported.");
 const WSTRING async_method_could_not_load_this = WStr("Instrumentation of async method in a generic class is not yet supported.");
-const WSTRING invalid_probe_failed_to_instrument_method_probe = 
+const WSTRING invalid_probe_failed_to_instrument_method_probe =
     GetGenericErrorMessageWithErrorCode(1);
 const WSTRING invalid_probe_failed_to_instrument_line_probe = 
     GetGenericErrorMessageWithErrorCode(2);

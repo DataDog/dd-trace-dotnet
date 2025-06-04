@@ -7,11 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
+using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -65,12 +64,6 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.rule-set.json");
         }
 
-        private static Stream? GetSchemaExtractionConfigStream()
-        {
-            var assembly = typeof(Waf).Assembly;
-            return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.apisecurity-config.json");
-        }
-
         private static Stream? GetRulesFileStream(string rulesFile)
         {
             if (!File.Exists(rulesFile))
@@ -82,6 +75,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return File.OpenRead(rulesFile);
         }
 
+        /// <summary>
+        /// Deserialize rules for the waf as Jtoken
+        /// If null is passed, will deserialize embedded rule file in the app
+        /// If a path is given but file isn't found, it won't fallback on the embedded rule file
+        /// </summary>
+        /// <param name="rulesFilePath">if null, will fallback on embedded rules file</param>
+        /// <returns>the rules, might be null if file not found</returns>
         internal static JToken? DeserializeEmbeddedOrStaticRules(string? rulesFilePath)
         {
             JToken root;
@@ -116,38 +116,108 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
-        internal InitResult Configure(ref DdwafObjectStruct rulesObj, IEncoder encoder, DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
+        internal UpdateResult Configure(ConfigurationState configurationState, IEncoder encoder, ref DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
         {
-            var wafHandle = _wafLibraryInvoker.Init(ref rulesObj, ref configStruct, ref diagnostics);
-            if (wafHandle == IntPtr.Zero)
-            {
-                Log.Warning("DDAS-0005-00: WAF initialization failed.");
-            }
+            return Update(_wafLibraryInvoker.InitBuilder(ref configStruct), configurationState, encoder, ref diagnostics, rulesFile, false);
+        }
 
-            var initResult = InitResult.From(diagnostics, wafHandle, _wafLibraryInvoker, encoder);
-            if (initResult.HasErrors)
+        internal UpdateResult Update(IntPtr wafBuilderHandle, ConfigurationState configurationState, IEncoder encoder, ref DdwafObjectStruct diagnostics, string? rulesFile = null, bool updating = true)
+        {
+            var wafHandle = IntPtr.Zero;
+            if (wafBuilderHandle == IntPtr.Zero)
             {
-                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                foreach (var item in initResult.Errors)
-                {
-                    sb.Append($"{item.Key}: [{string.Join(", ", item.Value)}] ");
-                }
-
-                var errorMess = StringBuilderCache.GetStringAndRelease(sb);
-                Log.Warning("Some rules are invalid in rule file {RulesFile}: {ErroringRules}", rulesFile, errorMess);
-            }
-
-            // sometimes loaded rules will be 0 if other errors happen above, that's why it should be the fallback log
-            if (initResult.LoadedRules == 0)
-            {
-                Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
+                Log.Error("DDAS-0005-00: WAF builder initialization failed."); // Check were all these error codes are defined
             }
             else
             {
-                Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", initResult.LoadedRules, rulesFile);
+                // Apply the stored configuration
+                var configs = configurationState.GetWafConfigurations(updating);
+
+                if (configs.HasData)
+                {
+                    if (configs.Removes != null)
+                    {
+                        foreach (var path in configs.Removes)
+                        {
+                            Log.Debug("WAF: Removing config: {Path}", path);
+
+                            if (!_wafLibraryInvoker.BuilderRemoveConfig(wafBuilderHandle, path))
+                            {
+                                Log.Error("DDAS-0005-00: WAF builder: Config failed to be removed : {0}", path); // Check were all these error codes are defined
+                            }
+                        }
+                    }
+
+                    if (configs.Updates != null)
+                    {
+                        foreach (var config in configs.Updates)
+                        {
+                            Log.Debug("WAF: Applying config: {Path}", config.Key);
+
+                            using (var encoded = encoder.Encode(config.Value, applySafetyLimits: false))
+                            {
+                                var configObj = encoded.ResultDdwafObject;
+                                var path = config.Key;
+                                if (!_wafLibraryInvoker.BuilderAddOrUpdateConfig(wafBuilderHandle, path, ref configObj, ref diagnostics))
+                                {
+                                    Log.Error("DDAS-0005-00: WAF builder: Config failed to load : {0}", path); // Check were all these error codes are defined
+                                }
+                            }
+                        }
+                    }
+
+                    wafHandle = _wafLibraryInvoker.BuilderBuildInstance(wafBuilderHandle);
+                    if (wafHandle == IntPtr.Zero)
+                    {
+                        Log.Error("DDAS-0005-00: WAF initialization failed.");
+                    }
+                }
+                else if (!updating)
+                {
+                    Log.Error("DDAS-0005-00: WAF initialization failed. No valid rules found.");
+                    return UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.");
+                }
             }
 
-            return initResult;
+            var result = UpdateResult.FromSuccess(diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder);
+            if (result.ReportedDiagnostics.Rules.Errors is { Count: > 0 } ||
+                result.ReportedDiagnostics.Rules.Warnings is { Count: > 0 } ||
+                result.ReportedDiagnostics.Rest.Errors is { Count: > 0 } ||
+                result.ReportedDiagnostics.Rest.Warnings is { Count: > 0 })
+            {
+                var diags = result.ReportedDiagnostics;
+                var sb = StringBuilderCache.Acquire();
+                DumpStatsMessages(ref diags.Rules);
+                DumpStatsMessages(ref diags.Rest);
+
+                void DumpStatsMessages(ref WafStats stats)
+                {
+                    DumpMessages(stats.Errors, "ERR: ");
+                    DumpMessages(stats.Warnings, "WRN: ");
+                }
+
+                void DumpMessages(IReadOnlyDictionary<string, object>? messages, string prefix)
+                {
+                    if (messages is { Count: > 0 })
+                    {
+                        foreach (var item in messages)
+                        {
+                            sb.Append($"${prefix}{item.Key}: [{string.Join(", ", item.Value)}] ");
+                        }
+                    }
+                }
+
+                var errorMess = StringBuilderCache.GetStringAndRelease(sb);
+                Log.Warning("Some issues were found while applying waf configuration (RulesFile: {RulesFile}): {ErroringRules}", rulesFile, errorMess);
+            }
+
+            if (result.Success && !updating)
+            {
+                Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", result.ReportedDiagnostics.Rules.Loaded, rulesFile ?? "Embedded rules file");
+                Log.Debug("                          WAF config stats: {LoadedRules} loaded, {SkippedRules} skipped, {FailedRules} failed items", result.ReportedDiagnostics.Rest.Loaded, result.ReportedDiagnostics.Rest.Skipped, result.ReportedDiagnostics.Rest.Failed);
+            }
+
+            return result;
         }
     }
 }

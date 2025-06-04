@@ -4,17 +4,20 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Telemetry.Metrics;
+
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class BitbucketEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: Bitbucket detected");
 
         IsCI = true;
         Provider = "bitbucket";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.BitBucket;
         Repository = ValueProvider.GetValue(Constants.BitBucketGitSshOrigin);
         if (string.IsNullOrEmpty(Repository))
         {
@@ -34,5 +37,7 @@ internal sealed class BitbucketEnvironmentValues<TValueProvider>(TValueProvider 
             ValueProvider.GetValue(Constants.BitBucketRepoFullName),
             ValueProvider.GetValue(Constants.BitBucketBuildNumber));
         JobUrl = PipelineUrl;
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.BitBucketPullRequestDestinationBranch);
     }
 }

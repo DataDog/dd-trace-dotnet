@@ -183,7 +183,7 @@ namespace Datadog.Trace.Coverage.Collector
                         {
                             List<Exception>? exceptions = null;
                             var remain = 3;
-                            Retry:
+                        Retry:
                             if (--remain > 0)
                             {
                                 try
@@ -301,13 +301,15 @@ namespace Datadog.Trace.Coverage.Collector
             _logger?.Warning($"Processed {numAssemblies} assemblies in folder: {folder}");
 
             // The following is just a best effort approach to indicate in the test session that
-            // we sucessfully instrumented all assemblies to collect code coverage.
+            // we successfully instrumented all assemblies to collect code coverage.
             // Is not part of the spec but useful for support tickets.
             // We try to extract session variables (from out of process sessions)
             // and try to send a message to the IPC server for setting the test.code_coverage.injected tag.
-            if (SpanContextPropagator.Instance.Extract(
-                    EnvironmentHelpers.GetEnvironmentVariables(),
-                    new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is { } sessionContext)
+            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
+                            EnvironmentHelpers.GetEnvironmentVariables(),
+                            new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+            if (extractedContext.SpanContext is { } sessionContext)
             {
                 try
                 {
@@ -323,7 +325,7 @@ namespace Datadog.Trace.Coverage.Collector
             }
             else
             {
-                _logger?.Debug($"CoverageCollector.Test session context cannot be found, skipping IPC client and sending injection tags");
+                _logger?.Debug("CoverageCollector.Test session context cannot be found, skipping IPC client and sending injection tags");
             }
         }
 

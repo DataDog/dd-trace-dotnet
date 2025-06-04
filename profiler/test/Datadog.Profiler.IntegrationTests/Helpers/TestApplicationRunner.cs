@@ -18,7 +18,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private readonly string _appName;
         private readonly string _framework;
         private readonly string _appAssembly;
-        private readonly ITestOutputHelper _output;
+        private readonly XUnitFileLogger _output;
         private readonly string _commandLine;
         private readonly string _testBaseOutputDir;
 
@@ -26,7 +26,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         // take long time to start and to end.
         private readonly TimeSpan _maxTestRunDuration = TimeSpan.FromSeconds(600);
 
-        private readonly int _profilingExportsIntervalInSeconds = 3;
         private string _appListenerPort;
 
         public TestApplicationRunner(
@@ -35,14 +34,18 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             string appAssembly,
             ITestOutputHelper output,
             string commandLine = null,
-            bool enableTracer = false)
+            bool enableTracer = false,
+            bool enableProfiler = true)
         {
             _appName = appName;
             _framework = framework;
-            Environment = new EnvironmentHelper(framework, enableTracer);
+            Environment = new EnvironmentHelper(framework, enableTracer, enableProfiler);
             _testBaseOutputDir = Environment.GetTestOutputPath();
+            var logPath = Path.Combine(_testBaseOutputDir, "logs");
+            // create the log folder now instead of waiting for the profiler to create it
+            Directory.CreateDirectory(_testBaseOutputDir);
             _appAssembly = appAssembly;
-            _output = output;
+            _output = new XUnitFileLogger(output, Path.Combine(logPath, "xunit.txt"));
             _commandLine = commandLine ?? string.Empty;
             ServiceName = $"IntegrationTest-{_appName}";
         }
@@ -55,7 +58,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public double TotalTestDurationInMilliseconds { get; set; } = 0;
 
+        public int ProfilingExportsIntervalInSeconds { get; } = 3;
+
         public string ProcessOutput { get; set; }
+
+        public ITestOutputHelper XUnitLogger => _output;
+
+        public string AppListenerPort => _appListenerPort;
 
         public static string GetApplicationOutputFolderPath(string appName)
         {
@@ -179,6 +188,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             var ranToCompletion = process.WaitForExit((int)_maxTestRunDuration.TotalMilliseconds) && processHelper.Drain((int)_maxTestRunDuration.TotalMilliseconds / 2);
 
+            agent.ProfiledProcessId = process.Id;
+
             var standardOutput = processHelper.StandardOutput;
             var errorOutput = processHelper.ErrorOutput;
             ProcessOutput = standardOutput;
@@ -229,7 +240,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private void SetEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent)
         {
-            Environment.PopulateEnvironmentVariables(environmentVariables, agent, _profilingExportsIntervalInSeconds, ServiceName);
+            Environment.PopulateEnvironmentVariables(environmentVariables, agent, ProfilingExportsIntervalInSeconds, ServiceName);
         }
     }
 }

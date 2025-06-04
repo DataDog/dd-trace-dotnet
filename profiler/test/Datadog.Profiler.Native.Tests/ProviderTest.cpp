@@ -17,6 +17,7 @@
 #include "MemoryResourceManager.h"
 #include "ProfilerMockedInterface.h"
 #include "RawCpuSample.h"
+#include "RawSampleTransformer.h"
 #include "RawWallTimeSample.h"
 #include "RuntimeIdStoreHelper.h"
 #include "SampleValueTypeProvider.h"
@@ -30,8 +31,8 @@ using namespace std::chrono_literals;
 CallstackProvider callstackProvider(MemoryResourceManager::GetDefault());
 
 RawWallTimeSample GetWallTimeRawSample(
-    std::uint64_t timeStamp,
-    std::uint64_t duration,
+    std::chrono::nanoseconds timeStamp,
+    std::chrono::nanoseconds duration,
     AppDomainID appDomainId,
     std::uint64_t traceId,
     std::uint64_t spanId,
@@ -57,8 +58,8 @@ RawWallTimeSample GetWallTimeRawSample(
 }
 
 RawCpuSample GetRawCpuSample(
-    std::uint64_t timeStamp,
-    std::uint64_t duration,
+    std::chrono::nanoseconds timeStamp,
+    std::chrono::nanoseconds duration,
     AppDomainID appDomainId,
     std::uint64_t traceId,
     std::uint64_t spanId,
@@ -96,7 +97,8 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
+    RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -128,16 +130,17 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     std::string secondExpectedRuntimeId = "OtherRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(2))).WillRepeatedly(::testing::Return(secondExpectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
+    RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
     std::vector<size_t> expectedAppDomainId{1, 2, 2, 1};
     //                                                       V-- check the appdomains are correct
-    provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(expectedAppDomainId[0]), 0, 0, 1));
-    provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(expectedAppDomainId[1]), 0, 0, 2));
-    provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(expectedAppDomainId[2]), 0, 0, 3));
-    provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(expectedAppDomainId[3]), 0, 0, 4));
+    provider.Add(GetWallTimeRawSample(0ns, 0ns, static_cast<AppDomainID>(expectedAppDomainId[0]), 0, 0, 1));
+    provider.Add(GetWallTimeRawSample(0ns, 0ns, static_cast<AppDomainID>(expectedAppDomainId[1]), 0, 0, 2));
+    provider.Add(GetWallTimeRawSample(0ns, 0ns, static_cast<AppDomainID>(expectedAppDomainId[2]), 0, 0, 3));
+    provider.Add(GetWallTimeRawSample(0ns, 0ns, static_cast<AppDomainID>(expectedAppDomainId[3]), 0, 0, 4));
 
     // wait for the provider to collect raw samples
     std::this_thread::sleep_for(200ms);
@@ -146,7 +149,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     provider.Stop();
 
     size_t currentSample = 0;
-    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
+    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10);
 
     while (samples->MoveNext(sample))
     {
@@ -164,32 +167,42 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
         builder << "AD_" << expectedAppDomainId[currentSample];
         std::string expectedAppDomainName(builder.str());
 
-        std::stringstream builder2;
-        builder2 << expectedAppDomainId[currentSample];
-        std::string expectedPid(builder2.str());
+        auto expectedPid = expectedAppDomainId[currentSample];
 
         auto labels = sample->GetLabels();
-        for (const Label& label : labels)
+        for (auto const& label : labels)
         {
-            if (label.first == Sample::AppDomainNameLabel)
-            {
-                ASSERT_EQ(expectedAppDomainName, label.second);
-            }
-            else if (label.first == Sample::ProcessIdLabel)
-            {
-                ASSERT_EQ(expectedPid, label.second);
-            }
-            else if (
-                (label.first == Sample::ThreadIdLabel) ||
-                (label.first == Sample::ThreadNameLabel))
-            {
-                // can't test thread info
-            }
-            else
-            {
-                // unknown label
-                ASSERT_TRUE(false);
-            }
+            std::visit(LabelsVisitor{
+                [expectedPid](NumericLabel const& label){
+                    auto const& [name, value] = label;
+                    if(name == Sample::ProcessIdLabel)
+                    {
+                        ASSERT_EQ(expectedPid, value);
+                    }
+                    else
+                    {
+                        ASSERT_TRUE(false) << label.first;
+                    }
+                },
+                [expectedAppDomainName](StringLabel const& label) {
+                    auto const& [name, value] = label;
+                    if (name == Sample::AppDomainNameLabel)
+                    {
+                        ASSERT_EQ(expectedAppDomainName, value);
+                    }
+                    else if (
+                        (name == Sample::ThreadIdLabel) ||
+                        (name == Sample::ThreadNameLabel))
+                    {
+                        // can't test thread info
+                    }
+                    else
+                    {
+                        // unknown label
+                        ASSERT_TRUE(false);
+                    }
+                }, 
+            }, label);
         }
 
         currentSample++;
@@ -209,15 +222,16 @@ TEST(WallTimeProviderTest, CheckFrames)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
+    RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
     //                                                                 V-- check the frames are correct
-    provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(1), 0, 0, 1));
-    provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(1), 0, 0, 2));
-    provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(1), 0, 0, 3));
-    provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(1), 0, 0, 4));
+    provider.Add(GetWallTimeRawSample(0ns, 0ns, static_cast<AppDomainID>(1), 0, 0, 1));
+    provider.Add(GetWallTimeRawSample(0ns, 0ns, static_cast<AppDomainID>(1), 0, 0, 2));
+    provider.Add(GetWallTimeRawSample(0ns, 0ns, static_cast<AppDomainID>(1), 0, 0, 3));
+    provider.Add(GetWallTimeRawSample(0ns, 0ns, static_cast<AppDomainID>(1), 0, 0, 4));
 
     // wait for the provider to collect raw samples
     std::this_thread::sleep_for(200ms);
@@ -241,7 +255,7 @@ TEST(WallTimeProviderTest, CheckFrames)
             "module #4",
         };
 
-    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
+    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10);
 
     while (samples->MoveNext(sample))
     {
@@ -270,15 +284,16 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
+    RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
     //                                V-----V-- check these values are correct
-    provider.Add(GetWallTimeRawSample(1000, 10, static_cast<AppDomainID>(1), 0, 0, 1));
-    provider.Add(GetWallTimeRawSample(2000, 20, static_cast<AppDomainID>(1), 0, 0, 1));
-    provider.Add(GetWallTimeRawSample(3000, 30, static_cast<AppDomainID>(1), 0, 0, 1));
-    provider.Add(GetWallTimeRawSample(4000, 40, static_cast<AppDomainID>(1), 0, 0, 1));
+    provider.Add(GetWallTimeRawSample(1000ns, 10ns, static_cast<AppDomainID>(1), 0, 0, 1));
+    provider.Add(GetWallTimeRawSample(2000ns, 20ns, static_cast<AppDomainID>(1), 0, 0, 1));
+    provider.Add(GetWallTimeRawSample(3000ns, 30ns, static_cast<AppDomainID>(1), 0, 0, 1));
+    provider.Add(GetWallTimeRawSample(4000ns, 40ns, static_cast<AppDomainID>(1), 0, 0, 1));
 
     // wait for the provider to collect raw samples
     std::this_thread::sleep_for(200ms);
@@ -286,8 +301,8 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     auto samples = provider.GetSamples();
     provider.Stop();
 
-    size_t currentSample = 1;
-    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
+    auto currentSample = 1ns;
+    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10);
 
     while (samples->MoveNext(sample))
     {
@@ -297,7 +312,7 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
         ASSERT_EQ(values.size(), 1);
         for (size_t current = 0; current < values.size(); current++)
         {
-            ASSERT_EQ(currentSample * 10, values[current]);
+            ASSERT_EQ(currentSample * 10, std::chrono::nanoseconds(values[current]));
         }
 
         currentSample++;
@@ -314,15 +329,16 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     RuntimeIdStoreHelper runtimeIdStore;
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
-    CpuTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
-    Sample::ValuesCount = 1;
+    RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
+    CpuTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
+    Sample::ValuesCount = 2;
     provider.Start();
 
     //                           V-----V-- check these values are correct
-    provider.Add(GetRawCpuSample(1000, 10, static_cast<AppDomainID>(1), 0, 0, 1));
-    provider.Add(GetRawCpuSample(2000, 20, static_cast<AppDomainID>(1), 0, 0, 1));
-    provider.Add(GetRawCpuSample(3000, 30, static_cast<AppDomainID>(1), 0, 0, 1));
-    provider.Add(GetRawCpuSample(4000, 40, static_cast<AppDomainID>(1), 0, 0, 1));
+    provider.Add(GetRawCpuSample(1000ns, 10ns, static_cast<AppDomainID>(1), 0, 0, 1));
+    provider.Add(GetRawCpuSample(2000ns, 20ns, static_cast<AppDomainID>(1), 0, 0, 1));
+    provider.Add(GetRawCpuSample(3000ns, 30ns, static_cast<AppDomainID>(1), 0, 0, 1));
+    provider.Add(GetRawCpuSample(4000ns, 40ns, static_cast<AppDomainID>(1), 0, 0, 1));
 
     // wait for the provider to collect raw samples
     std::this_thread::sleep_for(200ms);
@@ -331,20 +347,17 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     ASSERT_EQ(4, samples->size());
     provider.Stop();
 
-    size_t currentSample = 1;
-    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
+    auto currentSample = 1ns;
+    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10);
 
     while (samples->MoveNext(sample))
     {
         ASSERT_EQ(currentSample * 1000, sample->GetTimeStamp());
 
         auto values = sample->GetValues();
-        ASSERT_EQ(values.size(), 1);
-        for (size_t current = 0; current < values.size(); current++)
-        {
-            //                             V-- in nanoseconds
-            ASSERT_EQ(currentSample * 10 * 1000000, values[current]);
-        }
+        ASSERT_EQ(values.size(), 2);
+        ASSERT_EQ(currentSample * 10, std::chrono::nanoseconds(values[0]));
+        ASSERT_GT(values[1], 0);
 
         currentSample++;
     }

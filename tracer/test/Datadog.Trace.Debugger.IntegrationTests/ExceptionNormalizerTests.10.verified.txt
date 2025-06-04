@@ -1,0 +1,3 @@
+System.FormatException
+   at MyApp.Utilities.StringExtensions.ToInt32(String input)
+Resulting Hash: -1884312476

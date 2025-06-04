@@ -12,7 +12,7 @@
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/Ldap?path=LDAP://fakeorg,DC=com&userName=BabsJensen,
+      http.url: http://localhost:00000/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
@@ -23,40 +23,17 @@
   "vulnerabilities": [
     {
       "type": "LDAP_INJECTION",
-      "hash": 941004385,
+      "hash": 9515978,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
-        "method": "Ldap"
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController+<>c__DisplayClass28_0",
+        "method": "<Ldap>g__PerformLdapQuery|0"
       },
       "evidence": {
         "valueParts": [
           {
-            "value": "LDAP://fakeorg,DC=com",
+            "value": "LDAP://ldap.forumsys.com:389/dc=example,dc=com",
             "source": 0
-          }
-        ]
-      }
-    },
-    {
-      "type": "LDAP_INJECTION",
-      "hash": 941004385,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
-        "method": "Ldap"
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "(uid="
-          },
-          {
-            "value": "BabsJensen",
-            "source": 1
-          },
-          {
-            "value": ")"
           }
         ]
       }
@@ -66,12 +43,7 @@
     {
       "origin": "http.request.parameter",
       "name": "path",
-      "value": "LDAP://fakeorg,DC=com"
-    },
-    {
-      "origin": "http.request.parameter",
-      "name": "userName",
-      "value": "BabsJensen"
+      "value": "LDAP://ldap.forumsys.com:389/dc=example,dc=com"
     }
   ]
 }
@@ -80,7 +52,10 @@
       process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      iast: 
     }
   },
   {
@@ -99,7 +74,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/Ldap?path=LDAP://fakeorg,DC=com&userName=BabsJensen,
+      http.url: http://localhost:00000/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server

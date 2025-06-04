@@ -37,6 +37,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 });
         }
 
+        public static string[] SampleType(this Perftools.Profiles.Profile profile)
+        {
+            return profile.SampleType.Select(
+                sampleType =>
+                {
+                    return profile.StringTable[(int)sampleType.Type];
+                }).ToArray();
+        }
+
         public static StackTrace StackTrace(this Perftools.Profiles.Sample sample, Profile profile)
         {
             return new StackTrace(
@@ -44,8 +53,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     .Select(id => profile.Location.First(l => l.Id == id))
                     .Select(l => (l.Line[0].FunctionId, Line: l.Line[0].Line_))
                     .Select(l => (Function: profile.Function.First(f => f.Id == l.FunctionId), l.Line))
-                    .Select(f => (Frame: profile.StringTable[(int)f.Function.Name], Filename: profile.StringTable[(int)f.Function.Filename], Startline: f.Function.StartLine, f.Line))
-                    .Select(f => new StackFrame(f.Frame, f.Filename, f.Startline, f.Line)));
+                    .Select(f => (Frame: profile.StringTable[(int)f.Function.Name], Filename: profile.StringTable[(int)f.Function.Filename], f.Line))
+                    .Select(f => new StackFrame(f.Frame, f.Filename, f.Line)));
         }
 
         internal struct Label

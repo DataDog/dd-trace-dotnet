@@ -68,11 +68,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 // Since it is possible for users to manually propagate headers (which we should
                 // overwrite), check our cache which will be populated with header objects
                 // that we have injected context into
-                SpanContext existingSpanContext = null;
+                PropagationContext existingContext = default;
                 if (HeadersInjectedCache.TryGetInjectedHeaders(request.Headers))
                 {
-                    existingSpanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
+                    var headers = request.Headers.Wrap();
+
+                    // We are intentionally not merging any extracted baggage here into Baggage.Current:
+                    // We've already propagated baggage through the HTTP headers at this point,
+                    // and when this method is called this is presumably the "bottom" of the call chain,
+                    // and it may have been called on an entirely different thread.
+                    existingContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headers);
                 }
+
+                var existingSpanContext = existingContext.SpanContext;
 
                 // If this operation creates the trace, then we need to re-apply the sampling priority
                 bool setSamplingPriority = existingSpanContext?.SamplingPriority != null && Tracer.Instance.ActiveScope == null;

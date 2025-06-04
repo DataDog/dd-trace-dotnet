@@ -56,10 +56,11 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext()
         return nullptr;
     }
 
+    profiler->TraceContextHasBeenSet();
+
     // Engine is active. Get info for current thread.
-    std::shared_ptr<ManagedThreadInfo> pCurrentThreadInfo;
-    HRESULT hr = profiler->GetManagedThreadList()->TryGetCurrentThreadInfo(pCurrentThreadInfo);
-    if (FAILED(hr))
+    auto pCurrentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (pCurrentThreadInfo == nullptr)
     {
         // There was an error looking up the current thread info:
         return nullptr;
@@ -86,7 +87,6 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
         return;
     }
 
-    // Engine is active. Get info for current thread.
     profiler->GetApplicationStore()->SetApplicationInfo(
         runtimeId ? runtimeId : std::string(),
         serviceName ? serviceName : std::string(),

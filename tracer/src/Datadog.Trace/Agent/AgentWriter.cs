@@ -44,6 +44,8 @@ namespace Datadog.Trace.Agent
 
         private readonly IStatsAggregator _statsAggregator;
 
+        private readonly bool _apmTracingEnabled;
+
         /// <summary>
         /// The currently active buffer.
         /// Note: Thread-safetiness in this class relies on the fact that only the serialization thread can change the active buffer
@@ -62,12 +64,12 @@ namespace Datadog.Trace.Agent
 
         private long _droppedTraces;
 
-        public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
-        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval)
+        public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true)
+        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, apmTracingEnabled)
         {
         }
 
-        internal AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval)
+        internal AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled)
         {
             _statsAggregator = statsAggregator;
 
@@ -91,6 +93,8 @@ namespace Datadog.Trace.Agent
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
+
+            _apmTracingEnabled = apmTracingEnabled;
         }
 
         internal event Action Flushed;
@@ -101,7 +105,7 @@ namespace Datadog.Trace.Agent
 
         internal SpanBuffer BackBuffer => _backBuffer;
 
-        public bool CanComputeStats => _statsAggregator?.CanComputeStats == true;
+        public bool CanComputeStats => _apmTracingEnabled && _statsAggregator?.CanComputeStats == true;
 
         public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
 
@@ -180,6 +184,11 @@ namespace Datadog.Trace.Agent
             if (_statsAggregator != null)
             {
                 await _statsAggregator.DisposeAsync().ConfigureAwait(false);
+            }
+
+            if (_api is IDisposable disposableApi)
+            {
+                disposableApi.Dispose();
             }
 
             if (!success)
@@ -329,7 +338,7 @@ namespace Datadog.Trace.Agent
                             Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
                         }
 
-                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans).ConfigureAwait(false);
+                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);
 
                         TelemetryFactory.Metrics.RecordCountTraceChunkSent(buffer.TraceCount);
                         if (success)

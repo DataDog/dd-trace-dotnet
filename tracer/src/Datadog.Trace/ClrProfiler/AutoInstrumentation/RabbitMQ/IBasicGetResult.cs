@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     /// <summary>
@@ -15,11 +17,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <summary>
         /// Gets the message body of the result
         /// </summary>
+        [DuckPropertyOrField]
         IBody? Body { get; }
 
         /// <summary>
         /// Gets the message properties
         /// </summary>
-        IBasicProperties BasicProperties { get; }
+        [DuckPropertyOrField]
+        IReadOnlyBasicProperties BasicProperties { get; }
     }
 }

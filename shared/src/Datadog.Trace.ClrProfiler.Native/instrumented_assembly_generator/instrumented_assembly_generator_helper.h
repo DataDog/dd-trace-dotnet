@@ -201,7 +201,7 @@ inline void WriteTextToFile(const shared::WSTRING& fileName, const shared::WSTRI
     {
         const auto instrumentedLogsDir = GetInstrumentedAssemblyGeneratorCurrentProcessFolder();
         const auto inputFolder = instrumentedLogsDir / InstrumentedAssemblyGeneratorInputFolder;
-#ifndef MACOS
+#if !defined(MACOS) && !defined(UNIVERSAL)
         std::basic_ofstream<WCHAR> outStream;
         outStream.exceptions(std::ofstream::badbit);
         outStream.open(inputFolder / fileName, std::ios::out | std::ios_base::app);
@@ -288,8 +288,13 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
     try
     {
         ComPtr<IUnknown> metadataInterfaces;
-        IfFailRet(corProfilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport,
-                                                     metadataInterfaces.GetAddressOf()));
+        hr = corProfilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport,
+                                                     metadataInterfaces.GetAddressOf());
+
+        if (hr != S_OK)
+        {
+            return hr;
+        }
 
         auto metadataImport = metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport);
 
@@ -309,7 +314,7 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
 
         shared::WSTRING headerFileString;
 
-#ifndef MACOS
+#if !defined(MACOS) && !defined(UNIVERSAL)
         shared::WSTRINGSTREAM headerFileStream;
         headerFileStream << mvid << FileNameSeparator << std::hex << methodAndTypeInfo.typeToken << FileNameSeparator
                          << std::hex << methodAndTypeInfo.token << FileNameSeparator << moduleName << FileNameSeparator
@@ -340,7 +345,7 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
 
         shared::WSTRING fileNameString;
 
-#ifndef MACOS
+#if !defined(MACOS) && !defined(UNIVERSAL)
         shared::WSTRINGSTREAM fileNameStream;
         fileNameStream << mvid << FileNameSeparator << std::hex << methodAndTypeInfo.typeToken << FileNameSeparator
                        << std::hex << methodAndTypeInfo.token << FileNameSeparator

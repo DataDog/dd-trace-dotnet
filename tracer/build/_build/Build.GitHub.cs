@@ -17,11 +17,11 @@ using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
+using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.Git;
 using Octokit;
 using Octokit.GraphQL;
 using Octokit.GraphQL.Model;
-using ThroughputComparison;
 using YamlDotNet.Serialization.NamingConventions;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -33,6 +33,7 @@ using Environment = System.Environment;
 using Milestone = Octokit.Milestone;
 using Release = Octokit.Release;
 using Logger = Serilog.Log;
+using Nuke.Common.Utilities;
 
 partial class Build
 {
@@ -423,6 +424,7 @@ partial class Build
         {
             var expectedFileChanges = new List<string>
             {
+                ".azure-pipelines/ultimate-pipeline.yml",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
@@ -445,22 +447,12 @@ partial class Build
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
                 "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
-                "tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
-                "tracer/src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
-                "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
                 "tracer/src/Datadog.Tracer.Native/CMakeLists.txt",
                 "tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h",
                 "tracer/src/Datadog.Tracer.Native/Resource.rc",
-                "tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
-                "tracer/src/Datadog.Trace.BenchmarkDotNet/Datadog.Trace.BenchmarkDotNet.csproj",
-                "tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
-                "tracer/src/Datadog.Trace.Tools.dd_dotnet/Datadog.Trace.Tools.dd_dotnet.csproj",
-                "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
-                "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
+                "tracer/src/Directory.Build.props",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
-                "tracer/src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj",
-                "tracer/tools/PipelineMonitor/PipelineMonitor.csproj",
             };
 
             if (ExpectChangelogUpdate)
@@ -867,14 +859,12 @@ partial class Build
               await ReplaceCommentInPullRequest(prNumber, "## Code Coverage Report", markdown);
           });
 
-    Target CompareBenchmarksResults => _ => _
+    Target CompareBenchmarksResultsBP => _ => _
          .Unlisted()
+         .Description("Runs the benchmark comparison against previous executions in the benchmarking platform")
          .DependsOn(CreateRequiredDirectories)
-         .Requires(() => AzureDevopsToken)
          .Requires(() => GitHubRepositoryName)
-         .Requires(() => GitHubToken)
-         .Requires(() => BenchmarkCategory)
-         .Executes(async () =>
+         .Executes(() =>
          {
              if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
              {
@@ -885,148 +875,10 @@ partial class Build
              var masterDir = BuildDataDirectory / "previous_benchmarks";
              var prDir = BuildDataDirectory / "benchmarks";
 
-             EnsureCleanDirectory(masterDir);
-
-             // Connect to Azure DevOps Services
-             var connection = new VssConnection(
-                 new Uri(AzureDevopsOrganisation),
-                 new VssBasicCredential(string.Empty, AzureDevopsToken));
-
-             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
-             var artifactName = string.Empty;
-             switch (BenchmarkCategory)
-             {
-                 case  "tracer": artifactName = "benchmarks_results"; break;
-                 case  "appsec": artifactName = "benchmarks_appsec_results"; break;
-                 default: Logger.Warning("Unknown benchmark category {BenchmarkCategory}. Skipping comparison", BenchmarkCategory); break;
-             }
-
-             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", _ => artifactName, masterDir, buildReason: null);
-
-             if (oldBuild is null)
-             {
-                    Logger.Warning("Old build is null");
-                    return;
-             }
-
-             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName, BenchmarkCategory);
-
-             await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for " + BenchmarkCategory, markdown);
-         });
-
-    Target CompareThroughputResults => _ => _
-         .Unlisted()
-         .DependsOn(CreateRequiredDirectories)
-         .Requires(() => AzureDevopsToken)
-         .Requires(() => GitHubRepositoryName)
-         .Requires(() => GitHubToken)
-         .Executes(async () =>
-         {
-             var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
-
-             var testedCommit = GetCommitDetails();
-
-             var throughputDir = BuildDataDirectory / "throughput";
-             var masterDir = throughputDir / "master";
-             var oldBenchmarksDir = throughputDir / "benchmarks_2_9_0";
-             var latestBenchmarksDir = throughputDir / "latest_benchmarks";
-             var commitDir = throughputDir / "current";
-
-             FileSystemTasks.EnsureCleanDirectory(masterDir);
-             FileSystemTasks.EnsureCleanDirectory(oldBenchmarksDir);
-             FileSystemTasks.EnsureCleanDirectory(latestBenchmarksDir);
-
-             // Connect to Azure DevOps Services
-             var connection = new VssConnection(
-                 new Uri(AzureDevopsOrganisation),
-                 new VssBasicCredential(string.Empty, AzureDevopsToken));
-
-             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
-
-             // Grab the comparison artifacts
-             var masterBuild = await GetCrankArtifacts(buildHttpClient, "refs/heads/master", masterDir);
-             var oldBenchmarkBuild = await GetCrankArtifacts(buildHttpClient, "refs/heads/benchmarks/2.9.0", oldBenchmarksDir);
-             var (newBenchmarkBuild, benchmarkVersion) = await GetCrankArtifactsForLatestBenchmarkBranch(buildHttpClient, latestBenchmarksDir);
-
-             var commitName = isPr ? $"This PR ({prNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
-             var sources = new List<CrankResultSource>
-             {
-                 new(commitName, testedCommit, CrankSourceType.CurrentCommit, commitDir),
-                 new("master", masterBuild.SourceVersion, CrankSourceType.Master, masterDir),
-                 new("benchmarks/2.9.0", oldBenchmarkBuild.SourceVersion, CrankSourceType.OldBenchmark, oldBenchmarksDir),
-             };
-
-             if (newBenchmarkBuild is not null && benchmarkVersion is not null)
-             {
-                 sources.Add(new($"benchmarks/{benchmarkVersion}", newBenchmarkBuild.SourceVersion, CrankSourceType.LatestBenchmark, latestBenchmarksDir));
-             }
-
-             var markdown = CompareThroughput.GetMarkdown(sources);
-
-             Logger.Information("Markdown build complete, writing report");
-
-             // save the report so we can upload it as an atefact for prosperity
-             await File.WriteAllTextAsync(throughputDir / "throughput_report.md", markdown);
-
-             if(isPr)
-             {
-                 Logger.Information("Updating PR comment on GitHub");
-                 await ReplaceCommentInPullRequest(prNumber, "## Throughput/Crank Report", markdown);
-             }
-
-             async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, string Version)> GetCrankArtifactsForLatestBenchmarkBranch(BuildHttpClient httpClient, AbsolutePath directory)
-             {
-                 // current (not released version)
-                 var version = new Version(Version);
-                 var versionsToCheck = 3;
-                 while (versionsToCheck > 0)
-                 {
-                     // only looking back across minor releases (ignoring patch etc)
-                     versionsToCheck--;
-                     version = new Version(version.Major, version.Minor - 1, 0);
-
-                     try
-                     {
-                         var thisVersion = $"{version.Major}.{version.Minor}.0";
-                         var build = await GetCrankArtifacts(httpClient, $"refs/heads/benchmarks/{thisVersion}", directory);
-                         return (build, thisVersion);
-                     }
-                     catch (Exception)
-                     {
-                         // if this fails, it's because we have no primary artifacts for that branch
-                         Console.WriteLine($"No artifacts found for version {version}, checking next branch");
-                     }
-                 }
-
-                 Console.WriteLine("No benchmarks found, skipping");
-                 return (null, null);
-             }
-
-             async Task<Microsoft.TeamFoundation.Build.WebApi.Build> GetCrankArtifacts(BuildHttpClient httpClient, string branch, AbsolutePath directory)
-             {
-                 // find the first build with the linux crank results
-                 var (build, _) = await FindAndDownloadAzureArtifact(httpClient, branch, build => "crank_linux_x64_1", directory, buildReason: null);
-
-                 // get all the other artifacts from the same build for consistency
-                 var artifacts = new[] { "crank_linux_arm64_1", "crank_linux_x64_asm_1", "crank_windows_x64_1" };
-                 foreach (var artifactName in artifacts)
-                 {
-                     try
-                     {
-                         var artifact = await httpClient.GetArtifactAsync(
-                                        project: AzureDevopsProjectId,
-                                        buildId: build.Id,
-                                        artifactName: artifactName);
-                         await DownloadAzureArtifact(directory, artifact, AzureDevopsToken);
-                     }
-                     catch (ArtifactNotFoundException)
-                     {
-                         Console.WriteLine($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
-                     }
-                 }
-
-                 return build;
-             }
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, "master", GitHubRepositoryName, "benchmark platform");
+             string filePath = Path.Combine(Path.GetTempPath(), "benchmarks_report.md");
+             Console.WriteLine($"The file was stored at: {filePath}");
+             File.WriteAllText(filePath, markdown);
          });
 
     Target CompareExecutionTimeBenchmarkResults => _ => _
@@ -1102,6 +954,78 @@ partial class Build
                  return build;
              }
          });
+
+    Target VerifyReleaseReadiness => _ => _
+            .Unlisted()
+            .Requires(() => GitHubToken)
+            .Requires(() => CommitSha)
+            .Executes(async () =>
+            {
+                Logger.Information("Verifying SSI artifact build succeeded for commit {Commit}...", CommitSha);
+                var client = GetGitHubClient();
+                var statuses = await client.Repository.Status.GetAll(
+                    owner: GitHubRepositoryOwner,
+                    name: GitHubRepositoryName,
+                    reference: CommitSha);
+
+                // find all the gitlab-related SSI statuses, they _all_ need to have passed
+                // (apart from the serverless one, we'll ignore that for now)
+                // This includes the _full_ list, so we just want to check that we have a success for each unique job
+                var ssiStatuses = statuses
+                    .Where(x => x.Context.StartsWith("dd-gitlab/") && x.Context != "dd-gitlab/benchmark-serverless")
+                    .ToLookup(x => x.Context, x => x);
+
+                // System.Diagnostics.Debugger.Launch();
+                if (ssiStatuses.Count == 0)
+                {
+                    throw new Exception("No GitLab builds for SSI artifacts found. Please check the commit and try again");
+                }
+
+                var failedSsi = ssiStatuses
+                    .Where(x => !x.Any(status => status.State == CommitState.Success))
+                    .ToList();
+
+                if (failedSsi.Any())
+                {
+                    Logger.Warning("The following gitlab jobs did not complete successfully. Please check the builds for details about why");
+                    foreach (var failed in failedSsi)
+                    {
+                        var build = failed.OrderBy(c => c.State.Value).First();
+                        Logger.Warning("- {Job} ({Status}) {Link}", failed.Key, build.State, build.TargetUrl);
+                    }
+                    
+                    throw new Exception("Some gitlab jobs did not build/test successfully. Please check the builds for details about why.");
+                }
+
+                var stages = string.Join(", ", ssiStatuses.Select(x => x.Key));
+                Logger.Information("All gitlab build stages ({Stages}) completed successfully", stages);
+                
+                // assert that the docker image for the commit is present
+                var image = $"ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:{CommitSha}";
+                VerifyDockerImageExists(image);
+                
+                if(new Version(Version).Major < 3)
+                {
+                    image = $"{image}-musl";
+                    VerifyDockerImageExists(image);
+                }
+
+                static void VerifyDockerImageExists(string image)
+                {
+                    try
+                    {
+                        Logger.Information("Checking for presence of SSI image '{Image}'", image);
+                        DockerTasks.DockerManifest(
+                            s => s.SetCommand($"inspect")
+                                .SetProcessArgumentConfigurator(c => c.Add(image)));
+                        Logger.Information("SSI image '{Image}' exists", image);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Error verifying SSI artifacts: '{image}' could not be found. Ensure GitLab has successfully built and pushed the image", ex);
+                    }
+                }
+            });
 
     async Task ReplaceCommentInPullRequest(int prNumber, string title, string markdown)
     {
@@ -1275,6 +1199,8 @@ partial class Build
         // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work due to 'Redirect' response status.
         // instead of downloading resources from https://dev.azure.com/ resource url starts with https://artprodcus3.artifacts.visualstudio.com
         var temporary = new HttpClient();
+        // some of these files are _huge_ so give a long time to download them
+        temporary.Timeout = TimeSpan.FromMinutes(10);
         temporary.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
 
         var resourceDownloadUrl = artifact.Resource.DownloadUrl;
@@ -1297,13 +1223,12 @@ partial class Build
         Console.WriteLine($"Artifact download complete");
     }
 
-    static async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
+    async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
     {
         var awsUri = $"https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/{commitSha}/";
         var artifactsFiles= new []
         {
             $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64.msi",
-            $"{awsUri}x86/en-us/datadog-dotnet-apm-{version}-x86.msi",
             $"{awsUri}windows-native-symbols.zip",
             $"{awsUri}windows-tracer-home.zip",
         };
@@ -1312,13 +1237,29 @@ partial class Build
         EnsureExistingDirectory(destination);
 
         using var client = new HttpClient();
+
+        // download all the required artifacts that are included in the release
         foreach (var fileToDownload in artifactsFiles)
         {
-            var fileName = Path.GetFileName(fileToDownload);
-            var destinationFile = destination / fileName;
+            await DownloadArtifact(client, destination, fileToDownload);
+        }
 
-            Console.WriteLine($"Downloading {fileToDownload} to {destinationFile}...");
-            var response = await client.GetAsync(fileToDownload);
+        // Ensure that the fleet-installer artifact is available for download, for later in the release
+        // We don't actually need the file now, we just need to make sure it's available, so that we can
+        // use it in GitLab later to build the OCI image.
+        var tempDir = TempDirectory / Path.GetRandomFileName();
+        Directory.CreateDirectory(tempDir);
+        await DownloadArtifact(client, tempDir, $"{awsUri}fleet-installer.zip");
+
+        return;
+
+        static async Task DownloadArtifact(HttpClient client, AbsolutePath outDir, string fileUrl)
+        {
+            var fileName = Path.GetFileName(fileUrl);
+            var destinationFile = outDir / fileName;
+
+            Console.WriteLine($"Downloading {fileUrl} to {destinationFile}...");
+            var response = await client.GetAsync(fileUrl);
 
             if (!response.IsSuccessStatusCode)
             {

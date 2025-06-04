@@ -82,9 +82,15 @@
 
     <div><a href="/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27">GET Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27</a></div>
 
-    <div><a href="/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1">GET /Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1</a></div>
+    <div><a href="/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=;process2&fromShell=true">GET /Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=;process2&fromShell=true</a></div>
+
+    <div><a href="/Iast/ExecuteCommand?file=/nonexisting.exe&argumentLine=;process2&fromShell=false">GET /Iast/ExecuteCommand?file=/nonexisting.exe&argumentLine=;process2&fromShell=false</a></div>
 
     <div><a href="/Iast/GetFileContent?file=/nonexisting.txt">GET /Iast/GetFileContent?file=/nonexisting.txt</a></div>
+
+    <div><a href="/Iast/GetFileContentEdgeConditions?file=/nonexisting.txt&uninitializeContext=true&setStatusCode=true&setContent=true&abortContext=true">GET /Iast/GetFileContentEdgeConditions?file=/nonexisting.txt&uninitializeContext=true&setStatusCode=true&setContent=true&abortContext=true</a></div>
+
+    <div><a href="/Iast/GetFileContentThread?file=/nonexisting.txt&numThreads=100&delayPerThread=50">GET /Iast/GetFileContentThread?file=/nonexisting.txt&numThreads=100&delayPerThread=50</a></div>
 
     <div><a href="javascript:post('/Iast/ExecuteQueryFromBodyText','&quot;SELECT Surname from Persons where name=\'Vicent\'&quot;')">POST /Iast/ExecuteQueryFromBodyText</a></div>
 
@@ -128,11 +134,17 @@
 
     <div><a href="javascript:getWithHeaders('/Iast/InsecureAuthProtocol', {'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})">GET /Iast/InsecureAuthProtocol [Basic Scheme]</a></div>
     
-	<div><a href="/Iast/ReflectedXss/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXss </a></div>
+	<div><a href="/Iast/ReflectedXss/?param=<script>alert('Reflected XSS Injection!')</script>">GET /Iast/ReflectedXss </a></div>
 
-	<div><a href="/Iast/ReflectedXssEscaped/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXssEscaped with INJECTION</a></div>
+	<div><a href="/Iast/ReflectedXssEscaped/?param=<script>alert('Reflected XSS Injection!')</script>">GET /Iast/ReflectedXssEscaped with INJECTION</a></div>
 
 	<div><a href="/Iast/ReflectedXssEscaped/?param=Normal Texxt">GET /Iast/ReflectedXssEscaped with normal text</a></div>
+
+	<div><a href="/Iast/StoredXss/">GET /Iast/StoredXss </a></div>
+
+	<div><a href="/Iast/StoredXssEscaped/">GET /Iast/StoredXssEscaped with INJECTION</a></div>
+
+	<div><a href="/Iast/StoredSqli/">GET /Iast/StoredSqli </a></div>
     
     <div><a href="/Iast/JsonParseTainting?json=%7B%22key%22%3A%20%22value%22%7D">GET /Iast/JsonParseTainting [Vuln CommandExecution]</a></div>
     
@@ -142,6 +154,7 @@
 	
 	<div><a href="/Iast/CustomManual?userName=test">GET /Iast/CustomManual [Custom Instrumentation with Manual Span Creation]</a></div>
 
+    <div><a href="/Iast/email">GET /Iast/email</a></div>
 
     <div>
         @Html.Raw(Context.Request.Query["q"])

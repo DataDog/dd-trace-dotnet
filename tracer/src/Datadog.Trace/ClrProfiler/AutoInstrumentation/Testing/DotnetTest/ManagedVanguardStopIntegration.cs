@@ -1,4 +1,4 @@
-﻿// <copyright file="ManagedVanguardStopIntegration.cs" company="Datadog">
+// <copyright file="ManagedVanguardStopIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -51,9 +51,11 @@ public class ManagedVanguardStopIntegration
                     DotnetCommon.Log.Information("MicrosoftCodeCoverage.Percentage: {Value}", percentage);
 
                     // Extract session variables (from out of process sessions)
-                    if (SpanContextPropagator.Instance.Extract(
-                            EnvironmentHelpers.GetEnvironmentVariables(),
-                            new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is { } sessionContext)
+                    var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
+                        EnvironmentHelpers.GetEnvironmentVariables(),
+                        new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+                    if (context.SpanContext is { } sessionContext)
                     {
                         try
                         {

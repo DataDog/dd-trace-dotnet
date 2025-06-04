@@ -138,14 +138,9 @@ public class ConfigurationBuilderTests
                 => new JsonConfigurationSource(JsonConvert.SerializeObject(collection, _jsonSettings), ConfigurationOrigins.Code);
         }
 
-        public class StringTests : StringTestsBase
+        public class StringTests
         {
             private const string Default = "some value";
-
-            public StringTests()
-                : base(new Factory())
-            {
-            }
 
             [Theory]
             [InlineData(123)]
@@ -176,7 +171,7 @@ public class ConfigurationBuilderTests
                     },
                     { } i => new List<Entry>
                     {
-                        Entry.String(Key, i.ToString(), ConfigurationOrigins.Code, error: null),
+                        Entry.String(Key, Convert.ToString(i, CultureInfo.InvariantCulture), ConfigurationOrigins.Code, error: null),
                     },
                 };
 
@@ -197,13 +192,8 @@ public class ConfigurationBuilderTests
             }
         }
 
-        public class BoolTests : BoolTestsBase
+        public class BoolTests
         {
-            public BoolTests()
-                : base(new Factory())
-            {
-            }
-
             [Theory]
             [InlineData(true)]
             [InlineData(false)]
@@ -247,14 +237,9 @@ public class ConfigurationBuilderTests
             }
         }
 
-        public class Int32Tests : Int32TestsBase
+        public class Int32Tests
         {
             private const int Default = 42;
-
-            public Int32Tests()
-                : base(new Factory())
-            {
-            }
 
             [Theory]
             [InlineData(123)]
@@ -313,14 +298,9 @@ public class ConfigurationBuilderTests
             }
         }
 
-        public class DoubleTests : DoubleTestsBase
+        public class DoubleTests
         {
             private const double Default = 42.0;
-
-            public DoubleTests()
-                : base(new Factory())
-            {
-            }
 
             [Theory]
             [InlineData(123)]
@@ -383,22 +363,83 @@ public class ConfigurationBuilderTests
                     (source, telemetry) => new ConfigurationBuilder(source, telemetry)
                                           .WithKeys(Key)
                                           .AsDouble(Default, x => x > 0));
+
+                static bool TryParse(string txt, out double value)
+                {
+                    return double.TryParse(txt, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
+                }
             }
         }
 
-        public class DictionaryTests : DictionaryTestsBase
+        public class DictionaryObjectTests
         {
-            public DictionaryTests()
-                : base(new Factory())
-            {
-            }
-        }
+            private readonly Dictionary<string, object> _collection;
+            private readonly IConfigurationSource _source;
+            private readonly NullConfigurationTelemetry _telemetry = new();
 
-        public class DictionaryObjectTests : DictionaryObjectTestsBase
-        {
             public DictionaryObjectTests()
-                : base(new Factory())
             {
+                _collection = new Dictionary<string, object>()
+                {
+                    { "key", new Dictionary<string, object> { { "key1", "value1" }, { "key2", "value2" }, { "key3", "value3" } } },
+                    { "single_value", new Dictionary<string, object> { { "key1", "value1" } } },
+                    { "empty", new Dictionary<string, object>() },
+                    { "missing_values", new Dictionary<string, object> { { "key1", null }, { "key2", string.Empty }, { "key3", "value3" } } },
+                    { "key_with_null_value", null },
+                };
+                _source = new Factory().GetSource(_collection);
+            }
+
+            [Theory]
+            [InlineData("key_no_spaces")]
+            [InlineData("key_with_spaces")]
+            [InlineData("trailing_semicolon")]
+            [InlineData("optional_mappings")]
+            [InlineData("single_value")]
+            [InlineData("key_with_null_value")]
+            [InlineData("key_with_empty_value")]
+            [InlineData("unknown")]
+            public void GetDictionary_HasExpectedValueWithAdditionalMappings(string key)
+            {
+                var allowOptionalMappings = true;
+                var expected = _collection.TryGetValue(key, out var e) ? (e ?? new Dictionary<string, object>()) : null;
+                var actual = new ConfigurationBuilder(_source, _telemetry)
+                            .WithKeys(key)
+                            .AsDictionary(allowOptionalMappings);
+                if (expected is null)
+                {
+                    actual.Should().BeNull();
+                }
+                else
+                {
+                    actual.Should().BeEquivalentTo(expected, $"using key '{key}'");
+                }
+            }
+
+            [Theory]
+            [InlineData("key_no_spaces")]
+            [InlineData("key_with_spaces")]
+            [InlineData("trailing_semicolon")]
+            [InlineData("optional_mappings")]
+            [InlineData("single_value")]
+            [InlineData("key_with_null_value")]
+            [InlineData("key_with_empty_value")]
+            [InlineData("unknown")]
+            public void GetDictionary_HasExpectedValueWithoutAdditionalMappings(string key)
+            {
+                var allowOptionalMappings = false;
+                var expected = _collection.TryGetValue(key, out var e) ? (e ?? new Dictionary<string, object>()) : null;
+                var actual = new ConfigurationBuilder(_source, _telemetry)
+                            .WithKeys(key)
+                            .AsDictionary(allowOptionalMappings);
+                if (expected is null)
+                {
+                    actual.Should().BeNull();
+                }
+                else
+                {
+                    actual.Should().BeEquivalentTo(expected, $"using key '{key}'");
+                }
             }
         }
     }
@@ -434,19 +475,18 @@ public class ConfigurationBuilderTests
             _source = factory.GetSource(_collection);
         }
 
-        [Fact]
-        public void GetString_WorksTheSameAsNaiveApproach()
+        [Theory]
+        [InlineData("key", "value")]
+        [InlineData("key_with_null_value", Default)]
+        [InlineData("key_with_empty_value", "")]
+        [InlineData("key_integer", "123")]
+        [InlineData("key_bool", "True")]
+        [InlineData("key_double", "-12.23")]
+        [InlineData("unknown", Default)]
+        public void GetString_HasExpectedValue(string key, string expected)
         {
-            var keys = _collection.Keys.Concat(new[] { "unknown" });
-
-            foreach (var key in keys)
-            {
-                var expected = Naive(key);
-                var actual = Builder(key);
-                actual.Should().Be(expected, $"using key '{key}'");
-            }
-
-            string Naive(string key) => _source.GetString(key) ?? Default;
+            var actual = Builder(key);
+            actual.Should().Be(expected, $"using key '{key}'");
 
             string Builder(string key)
                 => new ConfigurationBuilder(_source, _telemetry)
@@ -454,28 +494,18 @@ public class ConfigurationBuilderTests
                   .AsString(Default);
         }
 
-        [Fact]
-        public void GetString_WorksTheSameAsNaiveApproachWithValidation()
+        [Theory]
+        [InlineData("key", "value")]
+        [InlineData("key_with_null_value", Default)]
+        [InlineData("key_with_empty_value", Default)]
+        [InlineData("key_integer", "123")]
+        [InlineData("key_bool", "True")]
+        [InlineData("key_double", "-12.23")]
+        [InlineData("unknown", Default)]
+        public void GetString_HasExpectedValueWithValidation(string key, string expected)
         {
-            var keys = _collection.Keys.Concat(new[] { "unknown" });
-
-            foreach (var key in keys)
-            {
-                var expected = Naive(key);
-                var actual = Builder(key);
-                actual.Should().Be(expected, $"using key '{key}'");
-            }
-
-            string Naive(string key)
-            {
-                var value = _source.GetString(key);
-                if (!string.IsNullOrEmpty(value))
-                {
-                    return value;
-                }
-
-                return Default;
-            }
+            var actual = Builder(key);
+            actual.Should().Be(expected, $"using key '{key}'");
 
             string Builder(string key)
                 => new ConfigurationBuilder(_source, _telemetry)
@@ -684,48 +714,32 @@ public class ConfigurationBuilderTests
             _source = factory.GetSource(_collection);
         }
 
-        [Fact]
-        public void GetBool_WorksTheSameAsNaiveApproachWithDefault()
+        [Theory]
+        [InlineData("key_True", true)]
+        [InlineData("key_False", false)]
+        [InlineData("key_with_null_value", Default)]
+        [InlineData("key_with_empty_value", Default)]
+        [InlineData("unknown", Default)]
+        public void GetBool_HasExpectedValueWithDefault(string key, bool expected)
         {
-            var keys = _collection.Keys.Concat(new[] { "unknown" });
-
-            foreach (var key in keys)
-            {
-                var expected = Result<bool>.Try(() => Naive(key));
-                var actual = Result<bool>.Try(() => Builder(key));
-                actual.Should().Be(expected, $"using key '{key}'");
-            }
-
-            bool Naive(string key) => _source.GetBool(key) ?? Default;
+            var actual = Builder(key);
+            actual.Should().Be(expected, $"using key '{key}'");
 
             bool Builder(string key) => new ConfigurationBuilder(_source, _telemetry)
                                        .WithKeys(key)
                                        .AsBool(Default);
         }
 
-        [Fact]
-        public void GetBool_WorksTheSameAsNaiveApproachWithValidation()
+        [Theory]
+        [InlineData("key_True", true)]
+        [InlineData("key_False", Default)]
+        [InlineData("key_with_null_value", Default)]
+        [InlineData("key_with_empty_value", Default)]
+        [InlineData("unknown", Default)]
+        public void GetBool_HasExpectedValueWithValidation(string key, bool expected)
         {
-            var keys = _collection.Keys.Concat(new[] { "unknown" });
-
-            foreach (var key in keys)
-            {
-                var expected = Result<bool>.Try(() => Naive(key));
-                var actual = Result<bool>.Try(() => Builder(key));
-                actual.Should().Be(expected, $"using key '{key}'");
-            }
-
-            bool Naive(string key)
-            {
-                var value = _source.GetBool(key);
-                // not much validation we can do here!
-                if (value is true)
-                {
-                    return true;
-                }
-
-                return Default;
-            }
+            var actual = Builder(key);
+            actual.Should().Be(expected, $"using key '{key}'");
 
             bool Builder(string key)
             {
@@ -791,42 +805,48 @@ public class ConfigurationBuilderTests
             _source = factory.GetSource(_collection);
         }
 
-        [Fact]
-        public void GetInt32_WorksTheSameAsNaiveApproachWithDefault()
+        [Theory]
+        [InlineData("key", 123)]
+        [InlineData("negative", -123)]
+        [InlineData("key_double", Default)]
+        [InlineData("negative_double", Default)]
+        [InlineData("key_string", 123)]
+        [InlineData("negative_string", -123)]
+        [InlineData("key_string_double", Default)]
+        [InlineData("negative_string_double", Default)]
+        [InlineData("zero", 0)]
+        [InlineData("invalid", Default)]
+        [InlineData("key_with_null_value", Default)]
+        [InlineData("key_with_empty_value", Default)]
+        [InlineData("unknown", Default)]
+        public void GetInt32_HasExpectedValueWithDefault(string key, int expected)
         {
-            var keys = _collection.Keys.Concat(new[] { "unknown" });
-
-            foreach (var key in keys)
-            {
-                var expected = Result<int>.Try(() => Naive(key));
-                var actual = Result<int>.Try(() => Builder(key));
-                actual.Should().Be(expected, $"using key '{key}'");
-            }
-
-            int Naive(string key) => _source.GetInt32(key) ?? Default;
+            var actual = Builder(key);
+            actual.Should().Be(expected, $"using key '{key}'");
 
             int Builder(string key) => new ConfigurationBuilder(_source, _telemetry)
                                       .WithKeys(key)
                                       .AsInt32(Default);
         }
 
-        [Fact]
-        public void GetInt32_WorksTheSameAsNaiveApproachWithValidation()
+        [Theory]
+        [InlineData("key", 123)]
+        [InlineData("negative", Default)]
+        [InlineData("key_double", Default)]
+        [InlineData("negative_double", Default)]
+        [InlineData("key_string", 123)]
+        [InlineData("negative_string", Default)]
+        [InlineData("key_string_double", Default)]
+        [InlineData("negative_string_double", Default)]
+        [InlineData("zero", Default)]
+        [InlineData("invalid", Default)]
+        [InlineData("key_with_null_value", Default)]
+        [InlineData("key_with_empty_value", Default)]
+        [InlineData("unknown", Default)]
+        public void GetInt32_HasExpectedValueWithValidation(string key, int expected)
         {
-            var keys = _collection.Keys.Concat(new[] { "unknown" });
-
-            foreach (var key in keys)
-            {
-                var expected = Result<int>.Try(() => Naive(key));
-                var actual = Result<int>.Try(() => Builder(key).Value);
-                actual.Should().Be(expected, $"using key '{key}'");
-            }
-
-            int Naive(string key)
-            {
-                var value = _source.GetInt32(key);
-                return value is > 0 ? value.Value : Default;
-            }
+            var actual = Builder(key);
+            actual.Should().Be(expected, $"using key '{key}'");
 
             int? Builder(string key)
             {
@@ -899,19 +919,27 @@ public class ConfigurationBuilderTests
             _source = factory.GetSource(_collection);
         }
 
-        [Fact]
-        public void GetDouble_WorksTheSameAsNaiveApproachWithDefault()
+        [Theory]
+        [InlineData("key", 1.23)]
+        [InlineData("integer", 1)]
+        [InlineData("negative", -12.3)]
+        [InlineData("negative_integer", -12)]
+        [InlineData("zero", 0.0)]
+        [InlineData("zero_integer", 0)]
+        [InlineData("key_string", 1.23)]
+        [InlineData("integer_string", 1)]
+        [InlineData("negative_string", -12.3)]
+        [InlineData("negative_integer_string", -12)]
+        [InlineData("zero_string", 0.0)]
+        [InlineData("zero_integer_string", 0)]
+        [InlineData("invalid", Default)]
+        [InlineData("key_with_null_value", Default)]
+        [InlineData("key_with_empty_value", Default)]
+        [InlineData("unknown", Default)]
+        public void GetDouble_HasExpectedValueWithDefault(string key, double expected)
         {
-            var keys = _collection.Keys.Concat(new[] { "unknown" });
-
-            foreach (var key in keys)
-            {
-                var expected = Result<double>.Try(() => Naive(key));
-                var actual = Result<double>.Try(() => Builder(key));
-                actual.Should().Be(expected, $"using key '{key}'");
-            }
-
-            double Naive(string key) => _source.GetDouble(key) ?? Default;
+            var actual = Builder(key);
+            actual.Should().Be(expected, $"using key '{key}'");
 
             double Builder(string key)
             {
@@ -921,23 +949,27 @@ public class ConfigurationBuilderTests
             }
         }
 
-        [Fact]
-        public void GetDouble_WorksTheSameAsNaiveApproachWithValidation()
+        [Theory]
+        [InlineData("key", 1.23)]
+        [InlineData("integer", 1)]
+        [InlineData("negative", Default)]
+        [InlineData("negative_integer", Default)]
+        [InlineData("zero", Default)]
+        [InlineData("zero_integer", Default)]
+        [InlineData("key_string", 1.23)]
+        [InlineData("integer_string", 1)]
+        [InlineData("negative_string", Default)]
+        [InlineData("negative_integer_string", Default)]
+        [InlineData("zero_string", Default)]
+        [InlineData("zero_integer_string", Default)]
+        [InlineData("invalid", Default)]
+        [InlineData("key_with_null_value", Default)]
+        [InlineData("key_with_empty_value", Default)]
+        [InlineData("unknown", Default)]
+        public void GetDouble_HasExpectedValueWithValidation(string key, double expected)
         {
-            var keys = _collection.Keys.Concat(new[] { "unknown" });
-
-            foreach (var key in keys)
-            {
-                var expected = Result<double>.Try(() => Naive(key));
-                var actual = Result<double>.Try(() => Builder(key).Value);
-                actual.Should().Be(expected, $"using key '{key}'");
-            }
-
-            double Naive(string key)
-            {
-                var value = _source.GetDouble(key);
-                return value is > 0 ? value.Value : Default;
-            }
+            var actual = Builder(key);
+            actual.Should().Be(expected, $"using key '{key}'");
 
             double? Builder(string key)
             {
@@ -979,6 +1011,8 @@ public class ConfigurationBuilderTests
     public abstract class DictionaryTestsBase
     {
         private readonly Dictionary<string, object> _collection;
+        private readonly Dictionary<string, Dictionary<string, string>> _withOptional;
+        private readonly Dictionary<string, Dictionary<string, string>> _withoutOptional;
         private readonly IConfigurationSource _source;
         private readonly NullConfigurationTelemetry _telemetry = new();
 
@@ -994,74 +1028,78 @@ public class ConfigurationBuilderTests
                 { "key_with_null_value", null },
                 { "key_with_empty_value", string.Empty },
             };
-            _source = factory.GetSource(_collection);
-        }
-
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void GetDictionary_WorksTheSameAsNaiveApproachWithDefault(bool allowOptionalMappings)
-        {
-            var keys = _collection.Keys.Concat(new[] { "unknown" });
-
-            foreach (var key in keys)
+            _withOptional = new Dictionary<string, Dictionary<string, string>>()
             {
-                var expected = _source.GetDictionary(key, allowOptionalMappings);
-                var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
-                            .AsDictionary(allowOptionalMappings);
-                if (expected is null)
-                {
-                    actual.Should().BeNull();
-                }
-                else
-                {
-                    actual.Should().Equal(expected, $"using key '{key}'");
-                }
-            }
-        }
-    }
-
-    public abstract class DictionaryObjectTestsBase
-    {
-        private readonly Dictionary<string, object> _collection;
-        private readonly IConfigurationSource _source;
-        private readonly NullConfigurationTelemetry _telemetry = new();
-
-        public DictionaryObjectTestsBase(IConfigurationSourceFactory factory)
-        {
-            _collection = new Dictionary<string, object>()
-            {
-                { "key", new Dictionary<string, object> { { "key1", "value1" }, { "key2", "value2" }, { "key3", "value3" } } },
-                { "single_value", new Dictionary<string, object> { { "key1", "value1" } } },
-                { "empty", new Dictionary<string, object>() },
-                { "missing_values", new Dictionary<string, object> { { "key1", null }, { "key2", string.Empty }, { "key3", "value3" } } },
+                { "key_no_spaces", new() { { "key1", "value1" }, { "key2", "value2" }, { "key3", "value3" } } },
+                { "key_with_spaces", new() { { "key1", "value1" }, { "key2", "value2" }, { "key3", "value3" } } },
+                { "trailing_semicolon", new() { { "key1", "value1" }, { "key2", "value2" }, { "key3", "value3" } } },
+                { "optional_mappings", new() { { "key3", "value3" } } },
+                { "single_value", new() { { "key1", string.Empty } } },
                 { "key_with_null_value", null },
+                { "key_with_empty_value", new() },
+            };
+            _withoutOptional = new Dictionary<string, Dictionary<string, string>>()
+            {
+                { "key_no_spaces", new() { { "key1", "value1" }, { "key2", "value2" }, { "key3", "value3" } } },
+                { "key_with_spaces", new() { { "key1", "value1" }, { "key2", "value2" }, { "key3", "value3" } } },
+                { "trailing_semicolon", new() { { "key1", "value1" }, { "key2", "value2" }, { "key3", "value3" } } },
+                { "optional_mappings", new() { { "key1", string.Empty }, { "key2", string.Empty }, { "key3", "value3" } } },
+                { "single_value", new() },
+                { "key_with_null_value", null },
+                { "key_with_empty_value", new() },
             };
             _source = factory.GetSource(_collection);
         }
 
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void GetDictionary_WorksTheSameAsNaiveApproachWithDefault(bool allowOptionalMappings)
+        [InlineData("key_no_spaces")]
+        [InlineData("key_with_spaces")]
+        [InlineData("trailing_semicolon")]
+        [InlineData("optional_mappings")]
+        [InlineData("single_value")]
+        [InlineData("key_with_null_value")]
+        [InlineData("key_with_empty_value")]
+        [InlineData("unknown")]
+        public void GetDictionary_HasExpectedValueWithAdditionalMappings(string key)
         {
-            var keys = _collection.Keys.Concat(new[] { "unknown" });
-
-            foreach (var key in keys)
+            var allowOptionalMappings = true;
+            var expected = _withOptional.TryGetValue(key, out var e) ? e : null;
+            var actual = new ConfigurationBuilder(_source, _telemetry)
+                        .WithKeys(key)
+                        .AsDictionary(allowOptionalMappings);
+            if (expected is null)
             {
-                var expected = _source.GetDictionary(key, allowOptionalMappings);
-                var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
-                            .AsDictionary(allowOptionalMappings);
-                if (expected is null)
-                {
-                    actual.Should().BeNull();
-                }
-                else
-                {
-                    actual.Should().Equal(expected, $"using key '{key}'");
-                }
+                actual.Should().BeNull();
+            }
+            else
+            {
+                actual.Should().BeEquivalentTo(expected, $"using key '{key}'");
+            }
+        }
+
+        [Theory]
+        [InlineData("key_no_spaces")]
+        [InlineData("key_with_spaces")]
+        [InlineData("trailing_semicolon")]
+        [InlineData("optional_mappings")]
+        [InlineData("single_value")]
+        [InlineData("key_with_null_value")]
+        [InlineData("key_with_empty_value")]
+        [InlineData("unknown")]
+        public void GetDictionary_HasExpectedValueWithoutAdditionalMappings(string key)
+        {
+            var allowOptionalMappings = false;
+            var expected = _withoutOptional.TryGetValue(key, out var e) ? e : null;
+            var actual = new ConfigurationBuilder(_source, _telemetry)
+                        .WithKeys(key)
+                        .AsDictionary(allowOptionalMappings);
+            if (expected is null)
+            {
+                actual.Should().BeNull();
+            }
+            else
+            {
+                actual.Should().BeEquivalentTo(expected, $"using key '{key}'");
             }
         }
     }

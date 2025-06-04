@@ -68,8 +68,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             telemetry.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext");
-            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext");
+            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage");
+            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage");
 
             AssertService(telemetry, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(telemetry, enableDependencies);
@@ -100,8 +100,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext");
-            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext");
+            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage");
+            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage");
 
             AssertService(agent, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(agent, enableDependencies);
@@ -138,12 +138,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("Category", "LinuxUnsupported")]
         [MemberData(nameof(Data))]
         public async Task WhenUsingNamedPipesAgent_UsesNamedPipesTelemetry(bool? enableDependencies)
         {
             if (!EnvironmentTools.IsWindows())
             {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+                throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
             EnvironmentHelper.EnableWindowsNamedPipes();
@@ -191,7 +192,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
         [InlineData(null)]
         [InlineData(true)]
         [InlineData(false)]
@@ -228,6 +228,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task Telemetry_SendsMetrics()
         {
+            // telemetry metric events under test are sent only when using managed trace exporter
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, "false");
+
             using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 
@@ -309,8 +312,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             EnableAgentlessTelemetry(telemetry.Port, enableDependencies: true);
             SetEnvironmentVariable(ConfigurationKeys.Telemetry.TelemetryLogsEnabled, "1");
-            // Create invalid sampling rules (invalid JSON) to trigger parsing error
-            SetEnvironmentVariable(ConfigurationKeys.CustomSamplingRules, "[{\"sample_rate\":0.1");
+            SetEnvironmentVariable("SEND_ERROR_LOG", "1");
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
@@ -339,7 +341,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             allLogs.Should()
                    .ContainSingle()
                    .Which.Message.Should()
-                   .Be("Unable to parse the trace sampling rules.");
+                   .Be("Sending an error log using hacky reflection");
         }
 
         [SkippableFact]

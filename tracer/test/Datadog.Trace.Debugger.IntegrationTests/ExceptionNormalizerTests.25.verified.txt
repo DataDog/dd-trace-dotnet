@@ -1,0 +1,7 @@
+System.InvalidOperationException
+System.NullReferenceException
+   at MyApp.Services.UserService.GetUserById(Int32 id)
+   at MyApp.Controllers.UserController.GetUser(Int32 id)
+   at MyApp.Middleware.LoggingMiddleware.Invoke(HttpContext context)
+   at MyApp.Services.UserService.FindUser(String name)
+Resulting Hash: 1204061258

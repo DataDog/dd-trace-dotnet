@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -29,18 +30,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("GrpcLegacy", output, usesAspNetCore: false)
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            // the sample uses protobuf, but we are only interested in testing the grpc instrumentation,
+            // so we disable the proto one which would add unexpected tags to the spans.
+            SetEnvironmentVariable("DD_TRACE_PROTOBUF_ENABLED", "false");
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.GrpcLegacy
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitTraces(
+            [PackageVersionData(nameof(PackageVersions.GrpcLegacy))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             GuardAlpine();
             GuardArm64(packageVersion);
@@ -82,10 +83,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitTraces(string packageVersion, HttpClientIntegrationType httpClientType, string metadataSchemaVersion)
+        public async Task SubmitTraces(
+            [PackageVersionData(nameof(PackageVersions.Grpc))] string packageVersion,
+            HttpClientIntegrationType httpClientType,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             GuardAlpine();
             GuardArm64(packageVersion);
@@ -136,10 +140,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitTraces(string packageVersion, HttpClientIntegrationType httpClientType, string metadataSchemaVersion)
+        public async Task SubmitTraces(
+            [PackageVersionData(nameof(PackageVersions.Grpc))] string packageVersion,
+            HttpClientIntegrationType httpClientType,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             GuardAlpine();
             GuardLinux();
@@ -224,12 +231,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             /// </summary>
             Disabled
         }
-
-        public static IEnumerable<object[]> GetData()
-            => from packageVersionArray in PackageVersions.Grpc
-               from httpClientType in Enum.GetValues(typeof(HttpClientIntegrationType)).Cast<HttpClientIntegrationType>()
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], httpClientType, metadataSchemaVersion };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Tags["span.kind"] switch

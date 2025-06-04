@@ -50,6 +50,17 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
 
+    // Let's validate the vars before calling `EnumNgenModuleMethodsInliningThisMethod`
+    if (currentModuleId == NULL ||
+        moduleId == NULL ||
+        currentMethodDef == NULL ||
+        currentMethodDef == mdMethodDefNil)
+    {
+        // we just return true to avoid the retry by the handler.
+        Logger::Warn("NGEN:: EnumNgenModuleMethodsInliningThisMethod call skipped by invalid data.");
+        return true;
+    }
+
 #if DEBUG
     // We generate this log hundreds of times, and isn't typically useful in escalations
     Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule for ", "[ModuleInliner=", moduleId,
@@ -62,10 +73,10 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     {
         // Now we enumerate all methods that inline the current methodDef
         BOOL incompleteData = false;
-        ICorProfilerMethodEnum* methodEnum;
+        ComPtr<ICorProfilerMethodEnum> methodEnum;
 
         HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(moduleId, currentModuleId, currentMethodDef,
-                                                                    &incompleteData, &methodEnum);
+                                                                    &incompleteData, methodEnum.GetAddressOf());
         std::ostringstream hexValue;
         hexValue << std::hex << hr;
         if (SUCCEEDED(hr))
@@ -82,8 +93,7 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
                 methods.push_back(method.methodId);
                 total++;
             }
-            methodEnum->Release();
-            methodEnum = nullptr;
+
             if (total > 0)
             {
                 handler->EnqueueForRejit(modules, methods);
@@ -280,6 +290,15 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
         if (SUCCEEDED(hr))
         {
             Logger::Info("Request ReJIT done for ", modulesVector.size(), " methods");
+
+            if (enable_rejit_tracking)
+            {
+                WriteLock wlock(m_rejit_history_lock);
+                for (auto i = 0; i < modulesVector.size(); i++)
+                {
+                    m_rejit_history.push_back({modulesVector[i], modulesMethodDef[i]});
+                }
+            }
         }
         else
         {
@@ -414,11 +433,6 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
     return functionControl.ApplyChanges(pFunctionControl);
 }
 
-HRESULT RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId)
-{
-    return S_OK;
-}
-
 ICorProfilerInfo7* RejitHandler::GetCorProfilerInfo()
 {
     return m_profilerInfo;
@@ -496,6 +510,39 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
     {
         rejitter->AddNGenInlinerModule(moduleId);
     }
+}
+
+void RejitHandler::SetRejitTracking(bool enabled) {
+    if (IsShutdownRequested())
+    {
+        return;
+    }
+
+    enable_rejit_tracking = enabled;
+}
+
+bool RejitHandler::HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef) {
+    if (IsShutdownRequested())
+    {
+        return false;
+    }
+
+    if (!enable_rejit_tracking)
+    {
+        return false;
+    }
+
+    ReadLock rlock(m_rejit_history_lock);
+    for (auto i = 0; i < m_rejit_history.size(); i++)
+    {
+        const auto mod_met_pair = m_rejit_history[i];
+        if (get<0>(mod_met_pair) == moduleId && get<1>(mod_met_pair) == methodDef)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 } // namespace trace

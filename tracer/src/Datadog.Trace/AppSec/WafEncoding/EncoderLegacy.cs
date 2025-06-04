@@ -225,8 +225,7 @@ internal class EncoderLegacy : IEncoder
 
     public static string FormatArgs(object o)
     {
-        // zero capacity because we don't know the size in advance
-        var sb = StringBuilderCache.Acquire(0);
+        var sb = StringBuilderCache.Acquire();
         FormatArgsInternal(o, sb);
         return StringBuilderCache.GetStringAndRelease(sb);
     }
@@ -299,23 +298,16 @@ internal class EncoderLegacy : IEncoder
     private static StringBuilder FormatList<T>(IEnumerable<T> objs, StringBuilder sb)
     {
         sb.Append("[ ");
+
         using var enumerator = objs.GetEnumerator();
-        if (!enumerator.MoveNext())
+        var canMoveNext = enumerator.MoveNext();
+        while (canMoveNext)
         {
-            sb.Append(" ]");
-            return sb;
-        }
-
-        if (enumerator.Current != null)
-        {
-            FormatArgsInternal(enumerator.Current, sb);
-        }
-
-        while (enumerator.MoveNext())
-        {
-            if (enumerator.Current != null)
+            FormatArgsInternal(enumerator.Current as object ?? "null", sb);
+            canMoveNext = enumerator.MoveNext();
+            if (canMoveNext)
             {
-                FormatArgsInternal(enumerator.Current, sb);
+                sb.Append(", ");
             }
         }
 
@@ -334,7 +326,7 @@ internal class EncoderLegacy : IEncoder
             _wafLibraryInvoker = wafLibraryInvoker;
         }
 
-        public ref DdwafObjectStruct ResultDdwafObject => ref _resultDdwafObject;
+        public DdwafObjectStruct ResultDdwafObject => _resultDdwafObject;
 
         public void Dispose() => _wafLibraryInvoker.ObjectFree(ref _resultDdwafObject);
     }

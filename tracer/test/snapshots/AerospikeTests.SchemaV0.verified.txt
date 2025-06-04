@@ -11,8 +11,10 @@
       aerospike.namespace: test,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -33,8 +35,10 @@
       aerospike.namespace: test,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -55,8 +59,10 @@
       aerospike.namespace: test,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -77,8 +83,10 @@
       aerospike.namespace: test,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -101,8 +109,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -125,8 +135,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -149,8 +161,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -173,8 +187,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -196,8 +212,10 @@
       aerospike.setname: myset1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -220,8 +238,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -244,8 +264,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -268,8 +290,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -292,8 +316,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -316,8 +342,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -340,8 +368,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -364,8 +394,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -388,8 +420,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -412,8 +446,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -436,8 +472,10 @@
       aerospike.userkey: mykey1,
       component: aerospike,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,

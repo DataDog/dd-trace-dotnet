@@ -1,11 +1,18 @@
-cmake_minimum_required (VERSION 3.8..3.19)
+cmake_minimum_required (VERSION 3.13.4)
 cmake_policy(SET CMP0015 NEW)
+
+# macOS uses 3.30 which deprecates FetchContent_Populate in favor of FetchContent_MakeAvailable,
+# but we're using 3.13.4 on Linux, which doesn't have FetchContent_MakeAvailable
+
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
 
 # ******************************************************
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 2.55.0)
+project("Datadog.Tracer.Native" VERSION 3.19.0)
 
 # ******************************************************
 # Environment detection
@@ -112,7 +119,7 @@ add_compile_options(-std=c++20 -fPIC -fms-extensions -fvisibility=hidden -g)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 if (ISMACOS)
-    add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations)
+    add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations -Wno-deprecated-this-capture)
 elseif(ISLINUX)
     add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
 endif()
@@ -170,6 +177,7 @@ add_library("Datadog.Tracer.Native.static" STATIC
         environment_variables_util.cpp
         method_rewriter.cpp
         tracer_tokens.cpp
+        signature_builder.cpp
         debugger_environment_variables_util.cpp
         debugger_probes_tracker.cpp
         iast/aspect.cpp
@@ -200,6 +208,8 @@ add_library("Datadog.Tracer.Native.static" STATIC
         tracer_integration_definition.cpp
         tracer_method_rewriter.cpp
         tracer_rejit_preprocessor.cpp
+        Generated/generated_callsites.g.cpp
+        Generated/generated_calltargets.g.cpp
 )
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")

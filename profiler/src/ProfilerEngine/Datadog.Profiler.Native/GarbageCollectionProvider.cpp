@@ -3,20 +3,17 @@
 
 #include "GarbageCollectionProvider.h"
 
+#include "RawSampleTransformer.h"
 #include "SampleValueTypeProvider.h"
 #include "TimelineSampleType.h"
 
 GarbageCollectionProvider::GarbageCollectionProvider(
     SampleValueTypeProvider& valueTypeProvider,
-    IFrameStore* pFrameStore,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration,
+    RawSampleTransformer* rawSampleTransformer,
     MetricsRegistry& metricsRegistry,
     shared::pmr::memory_resource* memoryResource)
     :
-    CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource)
+    CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
 {
     _gen0CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen0");
     _gen1CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen1");
@@ -30,16 +27,16 @@ GarbageCollectionProvider::GarbageCollectionProvider(
     _lohSize = 0;
     _pohSize = 0;
     _gen2SizeMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_gc_gen2_size", [this]() {
-        return _gen2Size;
+        return static_cast<double>(_gen2Size);
     });
     _lohSizeMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_gc_loh_size", [this]() {
-        return _lohSize;
+        return static_cast<double>(_lohSize);
     });
 
     // TODO: see if we need to "hide" this metrics for versions of .NET before POH was introduced
     //       or if we can just ignore the metric if the value is 0
     _pohSizeMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_gc_poh_size", [this]() {
-        return _pohSize;
+        return static_cast<double>(_pohSize);
     });
 }
 
@@ -49,14 +46,14 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     GCReason reason,
     GCType type,
     bool isCompacting,
-    uint64_t pauseDuration,
-    uint64_t totalDuration, // from start to end (includes pauses)
-    uint64_t endTimestamp,  // end of GC
+    std::chrono::nanoseconds pauseDuration,
+    std::chrono::nanoseconds totalDuration, // from start to end (includes pauses)
+    std::chrono::nanoseconds endTimestamp,  // end of GC
     uint64_t gen2Size,
     uint64_t lohSize,
     uint64_t pohSize)
 {
-    _suspensionDurationMetric->Add((double_t)pauseDuration);
+    _suspensionDurationMetric->Add((double_t)pauseDuration.count());
     if (generation == 0)
     {
         _gen0CountMetric->Incr();
@@ -100,7 +97,7 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     _pohSize = pohSize;
 
     RawGarbageCollectionSample rawSample;
-    rawSample.Timestamp = endTimestamp;
+    rawSample.Timestamp = std::chrono::nanoseconds(endTimestamp);
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;
     rawSample.AppDomainId = (AppDomainID) nullptr;
@@ -118,7 +115,7 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
 }
 
 void GarbageCollectionProvider::OnGarbageCollectionStart(
-    uint64_t timestamp,
+    std::chrono::nanoseconds timestamp,
     int32_t number,
     uint32_t generation,
     GCReason reason,

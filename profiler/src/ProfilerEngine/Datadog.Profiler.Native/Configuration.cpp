@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "EnvironmentVariables.h"
+#include "Log.h"
 #include "OpSysTools.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
@@ -33,13 +34,13 @@ Configuration::Configuration()
     _pprofDirectory = ExtractPprofDirectory();
     _isOperationalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::OperationalMetricsEnabled, false);
     _isNativeFrameEnabled = GetEnvironmentValue(EnvironmentVariables::NativeFramesEnabled, false);
-    _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, true);
-    _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
-    _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, true);
-    _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false);
+    _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, true, true);
+    _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true, true);
+    _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, true, true);
+    _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false, true);
     _isContentionProfilingEnabled = GetContention();
-    _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, true);
-    _isHeapProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HeapProfilingEnabled, false);
+    _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, true, true);
+    _isHeapProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HeapProfilingEnabled, false, true);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
     _version = GetEnvironmentValue(EnvironmentVariables::Version, DefaultVersion);
@@ -50,7 +51,7 @@ Configuration::Configuration()
     _agentPort = GetEnvironmentValue(EnvironmentVariables::AgentPort, DefaultAgentPort);
     _site = ExtractSite();
     _apiKey = GetEnvironmentValue(EnvironmentVariables::ApiKey, DefaultEmptyString);
-    _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
+    _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName(), true);
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
     _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 500);
     _allocationSampleLimit = GetEnvironmentValue(EnvironmentVariables::AllocationSampleLimit, 2000);
@@ -90,11 +91,24 @@ Configuration::Configuration()
         _cpuProfilingInterval = ExtractCpuProfilingInterval(1ms);
     }
 
-    _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
+    _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, true, true);
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
+    _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();
+    _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
+    _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
+    _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
+    _isHttpProfilingEnabled =
+        GetEnvironmentValue(
+            EnvironmentVariables::HttpProfilingEnabled,
+            GetEnvironmentValue(EnvironmentVariables::HttpProfilingInternalEnabled, false // support previous internal env var
+            )
+        );
+    _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
+    _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
+    _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -510,11 +524,12 @@ bool Configuration::GetContention()
     // first look at the supported env var
     if (IsEnvironmentValueSet(EnvironmentVariables::LockContentionProfilingEnabled, lockContentionEnabled))
     {
+        Log::Info("Configuration: ", EnvironmentVariables::LockContentionProfilingEnabled, " env var is set - lock contention is enabled");
         return lockContentionEnabled;
     }
 
     // if not there, look at the deprecated one
-    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, lockContentionEnabled);
+    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, lockContentionEnabled, true);
 }
 
 bool Configuration::GetDefaultDebugLogEnabled()
@@ -562,6 +577,15 @@ bool Configuration::IsEtwLoggingEnabled() const
 #endif
 }
 
+std::string const& Configuration::GetEtwReplayEndpoint() const
+{
+#ifdef LINUX
+    return DefaultEmptyString;
+#else
+    return _etwReplayEndpoint;
+#endif
+}
+
 EnablementStatus Configuration::GetEnablementStatus() const
 {
     return _enablementStatus;
@@ -570,6 +594,11 @@ EnablementStatus Configuration::GetEnablementStatus() const
 DeploymentMode Configuration::GetDeploymentMode() const
 {
     return _deploymentMode;
+}
+
+std::chrono::milliseconds Configuration::GetSsiLongLivedThreshold() const
+{
+    return _ssiLongLivedThreshold;
 }
 
 CpuProfilerType Configuration::GetCpuProfilerType() const
@@ -645,14 +674,34 @@ static bool convert_to(shared::WSTRING const& s, DeploymentMode& result)
     return true;
 }
 
+
 template <typename T>
-T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue)
+T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue, bool shouldLog)
 {
-    if (!shared::EnvironmentExist(name)) return defaultValue;
+    if (!shared::EnvironmentExist(name))
+    {
+        if (shouldLog)
+        {
+            Log::Info("Configuration: ", name, " env var is not set - '", defaultValue, "' is used as default value");
+        }
+        return defaultValue;
+    }
 
     T result{};
     auto r = shared::GetEnvironmentValue(name);
-    if (!convert_to(r, result)) return defaultValue;
+    if (!convert_to(r, result))
+    {
+        if (shouldLog)
+        {
+            Log::Info("Configuration: ", name, " env var is set to '", r,"' that cannot be converted - '", defaultValue, "' is used as default value");
+        }
+        return defaultValue;
+    }
+
+    if (shouldLog)
+    {
+        Log::Info("Configuration: ", name, " env var is set to '", r, "'");
+    }
     return result;
 }
 
@@ -690,7 +739,7 @@ EnablementStatus Configuration::ExtractEnablementStatus()
         // This should be replaced by adding "profiler" in EnvironmentVariables::SsiDeployed
         // later that will take into account heuristics
         return !enabled.empty() && enabled == WStr("auto")
-            ? EnablementStatus::ManuallyEnabled
+            ? EnablementStatus::Auto
             : EnablementStatus::ManuallyDisabled;
     }
 
@@ -706,4 +755,55 @@ EnablementStatus Configuration::ExtractEnablementStatus()
     {
         return EnablementStatus::NotSet;
     }
+}
+
+std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
+{
+    auto const defaultValue = 30'000ms;
+    auto value = GetEnvironmentValue(EnvironmentVariables::SsiLongLivedThreshold, defaultValue);
+
+    if (value < 0ms)
+        return defaultValue;
+    return std::chrono::milliseconds(value);
+}
+
+bool Configuration::IsTelemetryToDiskEnabled() const
+{
+    return _isTelemetryToDiskEnabled;
+}
+
+bool Configuration::IsSsiTelemetryEnabled() const
+{
+    return _isSsiTelemetryEnabled;
+}
+
+bool Configuration::IsHttpProfilingEnabled() const
+{
+    return _isHttpProfilingEnabled;
+}
+
+bool Configuration::ForceHttpSampling() const
+{
+    return _forceHttpSampling;
+}
+
+bool Configuration::IsWaitHandleProfilingEnabled() const
+{
+    return _isWaitHandleProfilingEnabled;
+}
+
+
+std::chrono::milliseconds Configuration::ExtractHttpRequestDurationThreshold() const
+{
+    auto const defaultValue = 50ms;
+    auto value = GetEnvironmentValue(EnvironmentVariables::HttpRequestDurationThreshold, defaultValue);
+    if (value < 0ms)
+        return defaultValue;
+
+    return std::chrono::milliseconds(value);
+}
+
+std::chrono::milliseconds Configuration::GetHttpRequestDurationThreshold() const
+{
+    return _httpRequestDurationThreshold;
 }

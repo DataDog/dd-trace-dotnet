@@ -15,7 +15,7 @@ namespace Datadog.Trace.Debugger.Snapshots
     {
         public static string FormatMessage(Snapshot snapshot)
         {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
             sb.Append(FormatMethod(snapshot.Debugger.Snapshot.Stack, snapshot.Debugger.Snapshot.Probe.Location));
             sb.Append('(')
               .Append(FormatCapturedValues(GetArguments(snapshot)) ?? string.Empty)

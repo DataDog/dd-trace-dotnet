@@ -122,11 +122,13 @@ bool StackSamplerLoop::StartImpl()
 bool StackSamplerLoop::StopImpl()
 {
     _shutdownRequested = true;
+
     if (_pLoopThread != nullptr)
     {
         try
         {
             _pLoopThread->join();
+            _pLoopThread.reset();
         }
         catch (const std::exception&)
         {
@@ -175,8 +177,8 @@ void StackSamplerLoop::MainLoop()
 
 void StackSamplerLoop::MainLoopIteration()
 {
-    int64_t timestampNanosecs1 = 0;
-    int64_t timestampNanosecs2 = 0;
+    auto timestampNanosecs1 = 0ns;
+    auto timestampNanosecs2 = 0ns;
 
     // In each iteration, a few threads are sampled to compute wall time.
     if (_isWalltimeEnabled)
@@ -194,7 +196,8 @@ void StackSamplerLoop::MainLoopIteration()
         if (_areInternalMetricsEnabled)
         {
             timestampNanosecs2 = OpSysTools::GetHighPrecisionTimestamp();
-            _walltimeDurationMetric->Add(static_cast<double>(timestampNanosecs2 - timestampNanosecs1));
+            auto duration = (timestampNanosecs2 - timestampNanosecs1).count();
+            _walltimeDurationMetric->Add(static_cast<double>(duration));
         }
     }
 
@@ -204,8 +207,8 @@ void StackSamplerLoop::MainLoopIteration()
     {
         if (_areInternalMetricsEnabled)
         {
-            // avoid an unnecessary call to OpSysTools::GetHighPrecisionTimestamp() if possible
-            if (timestampNanosecs2 == 0)
+            // avoid an unnecessary call to OpSysTools::GetHighPrecisionTimestamp().count() if possible
+            if (timestampNanosecs2 == 0ns)
             {
                 timestampNanosecs2 = OpSysTools::GetHighPrecisionTimestamp();
             }
@@ -216,7 +219,8 @@ void StackSamplerLoop::MainLoopIteration()
         if (_areInternalMetricsEnabled)
         {
             timestampNanosecs1 = OpSysTools::GetHighPrecisionTimestamp();
-            _cpuDurationMetric->Add(static_cast<double>(timestampNanosecs1 - timestampNanosecs2));
+            auto duration = (timestampNanosecs1 - timestampNanosecs2).count();
+            _cpuDurationMetric->Add(static_cast<double>(duration));
         }
     }
 }
@@ -252,18 +256,24 @@ void StackSamplerLoop::WalltimeProfilingIteration()
             firstThread = _targetThread.get();
         }
 
-        // skip thread if it has a trace context
-        if (_targetThread->HasTraceContext() || !_targetThread->CanBeInterrupted())
+        auto mustSkip =
+#ifdef LINUX
+            !_targetThread->CanBeInterrupted() ||
+#endif
+            // skip thread if it has a trace context
+            _targetThread->HasTraceContext();
+
+        if (mustSkip)
         {
             _targetThread.reset();
             continue;
         }
 
-        int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
-        int64_t prevSampleTimestampNanosecs = _targetThread->SetLastSampleHighPrecisionTimestampNanoseconds(thisSampleTimestampNanosecs);
-        int64_t duration = ComputeWallTime(thisSampleTimestampNanosecs, prevSampleTimestampNanosecs);
+        auto thisSampleTimestamp = OpSysTools::GetHighPrecisionTimestamp();
+        auto prevSampleTimestamp = _targetThread->SetLastSampleTimestamp(thisSampleTimestamp);
+        auto duration = ComputeWallTime(thisSampleTimestamp, prevSampleTimestamp);
 
-        CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, duration, PROFILING_TYPE::WallTime);
+        CollectOneThreadStackSample(_targetThread, thisSampleTimestamp, duration, PROFILING_TYPE::WallTime);
 
         _targetThread.reset();
         i++;
@@ -283,16 +293,14 @@ void StackSamplerLoop::CpuProfilingIteration()
         _targetThread = _pManagedThreadList->LoopNext(_iteratorCpuTime);
         if (_targetThread != nullptr)
         {
-            // detect Windows API call failure
-            bool failure = false;
-
             // sample only if the thread is currently running on a core
-            uint64_t currentConsumption = 0;
-            uint64_t lastConsumption = _targetThread->GetCpuConsumptionMilliseconds();
-            bool isRunning = OsSpecificApi::IsRunning(_targetThread.get(), currentConsumption, failure);
+            auto lastConsumption = _targetThread->GetCpuConsumption();
+            auto [isRunning, currentConsumption, failure] = OsSpecificApi::IsRunning(_targetThread.get());
+
             // Note: it is not possible to get this information on Windows 32-bit or in some cases in 64-bit
             //       so isRunning should be true if this thread consumed some CPU since the last iteration
 #if _WINDOWS
+            // detect Windows API call failure
     #if BIT64  // Windows 64-bit
             if (failure)
             {
@@ -306,28 +314,31 @@ void StackSamplerLoop::CpuProfilingIteration()
 
             if (isRunning)
             {
-                uint64_t cpuForSample = currentConsumption - lastConsumption;
+                auto cpuForSample = currentConsumption - lastConsumption;
 
                 // we don't collect a sample for this thread is no CPU was consumed since the last check
-                if (cpuForSample > 0)
+                if (cpuForSample > 0ms)
                 {
-                    int64_t lastCpuTimestamp = _targetThread->GetCpuTimestamp();
-                    int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
+                    auto lastCpuTimestamp = _targetThread->GetCpuTimestamp();
+                    auto thisSampleTimestamp = OpSysTools::GetHighPrecisionTimestamp();
 
                     // detect overlapping CPU usage
-                    if ((int64_t)(lastCpuTimestamp + cpuForSample * 1000000) > thisSampleTimestampNanosecs)
+                    auto threshold =  lastCpuTimestamp + cpuForSample;
+                    if (threshold > thisSampleTimestamp)
                     {
 #ifndef NDEBUG
-                        int64_t cpuOverlap = (lastCpuTimestamp + cpuForSample * 1000000 - thisSampleTimestampNanosecs) / 1000000;
+                        // auto cpuOverlap = std::chrono::duraction_cast<std::chrono::milliseconds>(lastCpuTimestamp + cpuForSample  - thisSampleTimestamp);
                         // TODO: uncomment when debugging this issue
                         // Log::Warn("Overlapping CPU samples off ", cpuOverlap, " ms (", currentConsumption, " - ", lastConsumption, ")");
 #endif
                         // ensure that we don't overlap
                         // -> only the largest possibly CPU consumption is accounted = diff between the 2 timestamps
-                        cpuForSample = (thisSampleTimestampNanosecs - lastCpuTimestamp - 1000) / 1000000; // removing 1 microsecond to be sure
+
+                        cpuForSample = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            thisSampleTimestamp - lastCpuTimestamp - 1us); // removing 1 microsecond to be sure;
                     }
-                    _targetThread->SetCpuConsumptionMilliseconds(currentConsumption, thisSampleTimestampNanosecs);
-                    CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, cpuForSample, PROFILING_TYPE::CpuTime);
+                    _targetThread->SetCpuConsumption(currentConsumption, thisSampleTimestamp);
+                    CollectOneThreadStackSample(_targetThread, thisSampleTimestamp, cpuForSample, PROFILING_TYPE::CpuTime);
 
                     // don't scan more threads than nb logical cores
                     sampledThreads++;
@@ -373,18 +384,24 @@ void StackSamplerLoop::CodeHotspotIteration()
             firstThread = _targetThread.get();
         }
 
-        // skip if it has no trace context
-        if (!_targetThread->HasTraceContext() || !_targetThread->CanBeInterrupted())
+        auto mustSkip =
+#ifdef LINUX
+            !_targetThread->CanBeInterrupted() ||
+#endif
+            // skip if it has no trace context
+            !_targetThread->HasTraceContext();
+
+        if (mustSkip)
         {
             _targetThread.reset();
             continue;
         }
 
-        int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
-        int64_t prevSampleTimestampNanosecs = _targetThread->SetLastSampleHighPrecisionTimestampNanoseconds(thisSampleTimestampNanosecs);
-        int64_t duration = ComputeWallTime(thisSampleTimestampNanosecs, prevSampleTimestampNanosecs);
+        auto thisSampleTimestamp = OpSysTools::GetHighPrecisionTimestamp();
+        auto prevSampleTimestamp = _targetThread->SetLastSampleTimestamp(thisSampleTimestamp);
+        auto duration = ComputeWallTime(thisSampleTimestamp, prevSampleTimestamp);
 
-        CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, duration, PROFILING_TYPE::WallTime);
+        CollectOneThreadStackSample(_targetThread, thisSampleTimestamp, duration, PROFILING_TYPE::WallTime);
 
         _targetThread.reset();
         i++;
@@ -393,8 +410,8 @@ void StackSamplerLoop::CodeHotspotIteration()
 
 void StackSamplerLoop::CollectOneThreadStackSample(
     std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
-    int64_t thisSampleTimestampNanosecs,
-    int64_t duration,
+    std::chrono::nanoseconds thisSampleTimestampNanosecs,
+    std::chrono::nanoseconds duration,
     PROFILING_TYPE profilingType)
 {
     HANDLE osThreadHandle = pThreadInfo->GetOsThreadHandle();
@@ -431,14 +448,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
 
         // block used to ensure that NotifyIterationFinished gets called
         {
-            // Get the timestamp of the current collection
-            // /!\ Must not be called while the thread is suspended:
-            // current implementation uses time function which allocates
-            time_t currentUnixTimestamp = GetCurrentTimestamp();
-
-            // Get the high-precision timestamp for this sample (this is a time-unit counter, not a real time value).
-            pThreadInfo->SetLastKnownSampleUnixTimestamp(currentUnixTimestamp, thisSampleTimestampNanosecs);
-
             // Notify the loop manager that we are starting a stack collection, and set up a finalizer to notify the manager when we finsih it.
             // This will enable the manager to monitor if this collection freezes due to a deadlock.
 
@@ -480,9 +489,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             countCollectedStackFrames = pStackSnapshotResult->GetFramesCount();
             bool isStackSnapshotSuccessful = (countCollectedStackFrames > 0);
 
-            // Keep track of how many times we sampled this thread:
-            pThreadInfo->IncSnapshotsPerformedCount(isStackSnapshotSuccessful);
-
             if (isStackSnapshotSuccessful)
             {
                 UpdateSnapshotInfos(pStackSnapshotResult, duration, thisSampleTimestampNanosecs);
@@ -510,52 +516,37 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // ----------- ----------- ----------- ----------- ----------- -----------
         } // _pManager->AllowStackWalk(..)
 
-    } // SemaphoreScope guardedLock(pThreadInfo->GetStackWalkLock())
+    }
 
     // Store stack-walk results into the results buffer:
     PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo, profilingType);
 }
 
-void StackSamplerLoop::UpdateSnapshotInfos(StackSnapshotResultBuffer* const pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp)
+void StackSamplerLoop::UpdateSnapshotInfos(StackSnapshotResultBuffer* const pStackSnapshotResult, std::chrono::nanoseconds representedDuration, std::chrono::nanoseconds currentUnixTimestamp)
 {
-    pStackSnapshotResult->SetRepresentedDurationNanoseconds(representedDurationNanosecs);
-    pStackSnapshotResult->SetUnixTimeUtc(static_cast<int64_t>(currentUnixTimestamp));
+    pStackSnapshotResult->SetRepresentedDuration(representedDuration);
+    pStackSnapshotResult->SetUnixTimeUtc(currentUnixTimestamp);
 }
 
-time_t StackSamplerLoop::GetCurrentTimestamp()
+std::chrono::nanoseconds StackSamplerLoop::ComputeWallTime(std::chrono::nanoseconds currentTimestampNs, std::chrono::nanoseconds prevTimestampNs)
 {
-    // /!\ time function allocates so we *MUST* not call it while the thread is suspended
-
-    time_t currentUnixTimestamp;
-    time(&currentUnixTimestamp);
-
-    if (currentUnixTimestamp == static_cast<time_t>(-1))
-    {
-        currentUnixTimestamp = 0;
-    }
-
-    return currentUnixTimestamp;
-}
-
-int64_t StackSamplerLoop::ComputeWallTime(int64_t currentTimestampNs, int64_t prevTimestampNs)
-{
-    if (prevTimestampNs == 0)
+    if (prevTimestampNs == 0ns)
     {
         // prevTimestampNs = 0 means that it is the first time the wall time is computed for a given thread
         // --> at least one sampling period has elapsed
-        return static_cast<int64_t>(_samplingPeriod.count());
+        return _samplingPeriod;
     }
 
-    if (prevTimestampNs > 0)
+    if (prevTimestampNs > 0ns)
     {
         auto durationNs = currentTimestampNs - prevTimestampNs;
-        return (std::max)(static_cast<int64_t>(0), durationNs);
+        return (std::max)(0ns, durationNs);
     }
     else
     {
         // this should never happen
         // count at least one sampling period
-        return static_cast<int64_t>(_samplingPeriod.count());
+        return _samplingPeriod;
     }
 }
 
@@ -580,7 +571,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawSample.AppDomainId = pThreadInfo->GetAppDomainId();
         rawSample.Stack = std::move(callstack);
         rawSample.ThreadInfo = pThreadInfo;
-        rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
+        rawSample.Duration = pSnapshotResult->GetRepresentedDuration();
         _pWallTimeCollector->Add(std::move(rawSample));
     }
     else
@@ -594,7 +585,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawCpuSample.AppDomainId = pThreadInfo->GetAppDomainId();
         rawCpuSample.Stack = std::move(callstack);
         rawCpuSample.ThreadInfo = pThreadInfo;
-        rawCpuSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
+        rawCpuSample.Duration = pSnapshotResult->GetRepresentedDuration();
         _pCpuTimeCollector->Add(std::move(rawCpuSample));
     }
 }

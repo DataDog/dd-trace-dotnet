@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Globalization;
@@ -16,102 +17,117 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
     public TestSessionSpanTags()
     {
         LibraryVersion = TracerConstants.AssemblyVersion;
+
+        // https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/6.0/environment-processorcount-on-windows#change-description
+        LogicalCpuCount = Environment.ProcessorCount;
     }
 
     public ulong SessionId { get; set; }
 
     [Tag(TestTags.Command)]
-    public string Command { get; set; }
+    public string? Command { get; set; }
 
     [Tag(TestTags.CommandWorkingDirectory)]
-    public string WorkingDirectory { get; set; }
+    public string? WorkingDirectory { get; set; }
 
     [Tag(TestTags.CommandExitCode)]
-    public string CommandExitCode { get; set; }
+    public string? CommandExitCode { get; set; }
 
     [Tag(TestTags.Status)]
-    public string Status { get; set; }
+    public string? Status { get; set; }
 
     [Tag(CommonTags.LibraryVersion)]
-    public string LibraryVersion { get; }
+    public string? LibraryVersion { get; }
 
     [Tag(CommonTags.CIProvider)]
-    public string CIProvider { get; set; }
+    public string? CIProvider { get; set; }
 
     [Tag(CommonTags.CIPipelineId)]
-    public string CIPipelineId { get; set; }
+    public string? CIPipelineId { get; set; }
 
     [Tag(CommonTags.CIPipelineName)]
-    public string CIPipelineName { get; set; }
+    public string? CIPipelineName { get; set; }
 
     [Tag(CommonTags.CIPipelineNumber)]
-    public string CIPipelineNumber { get; set; }
+    public string? CIPipelineNumber { get; set; }
 
     [Tag(CommonTags.CIPipelineUrl)]
-    public string CIPipelineUrl { get; set; }
+    public string? CIPipelineUrl { get; set; }
 
     [Tag(CommonTags.CIJobUrl)]
-    public string CIJobUrl { get; set; }
+    public string? CIJobUrl { get; set; }
 
     [Tag(CommonTags.CIJobName)]
-    public string CIJobName { get; set; }
+    public string? CIJobName { get; set; }
 
     [Tag(CommonTags.StageName)]
-    public string StageName { get; set; }
+    public string? StageName { get; set; }
 
     [Tag(CommonTags.CIWorkspacePath)]
-    public string CIWorkspacePath { get; set; }
+    public string? CIWorkspacePath { get; set; }
 
     [Tag(CommonTags.GitRepository)]
-    public string GitRepository { get; set; }
+    public string? GitRepository { get; set; }
 
     [Tag(CommonTags.GitCommit)]
-    public string GitCommit { get; set; }
+    public string? GitCommit { get; set; }
 
     [Tag(CommonTags.GitBranch)]
-    public string GitBranch { get; set; }
+    public string? GitBranch { get; set; }
 
     [Tag(CommonTags.GitTag)]
-    public string GitTag { get; set; }
+    public string? GitTag { get; set; }
 
     [Tag(CommonTags.GitCommitAuthorName)]
-    public string GitCommitAuthorName { get; set; }
+    public string? GitCommitAuthorName { get; set; }
 
     [Tag(CommonTags.GitCommitAuthorEmail)]
-    public string GitCommitAuthorEmail { get; set; }
+    public string? GitCommitAuthorEmail { get; set; }
 
     [Tag(CommonTags.GitCommitCommitterName)]
-    public string GitCommitCommitterName { get; set; }
+    public string? GitCommitCommitterName { get; set; }
 
     [Tag(CommonTags.GitCommitCommitterEmail)]
-    public string GitCommitCommitterEmail { get; set; }
+    public string? GitCommitCommitterEmail { get; set; }
 
     [Tag(CommonTags.GitCommitMessage)]
-    public string GitCommitMessage { get; set; }
+    public string? GitCommitMessage { get; set; }
 
     [Tag(CommonTags.BuildSourceRoot)]
-    public string BuildSourceRoot { get; set; }
+    public string? BuildSourceRoot { get; set; }
 
     [Tag(CommonTags.GitCommitAuthorDate)]
-    public string GitCommitAuthorDate { get; set; }
+    public string? GitCommitAuthorDate { get; set; }
 
     [Tag(CommonTags.GitCommitCommitterDate)]
-    public string GitCommitCommitterDate { get; set; }
+    public string? GitCommitCommitterDate { get; set; }
 
     [Tag(CommonTags.CiEnvVars)]
-    public string CiEnvVars { get; set; }
+    public string? CiEnvVars { get; set; }
 
     [Tag(IntelligentTestRunnerTags.TestsSkipped)]
-    public string TestsSkipped { get; set; }
+    public string? TestsSkipped { get; set; }
 
     [Tag(IntelligentTestRunnerTags.SkippingType)]
-    public string IntelligentTestRunnerSkippingType { get; set; }
+    public string? IntelligentTestRunnerSkippingType { get; set; }
 
     [Tag(EarlyFlakeDetectionTags.Enabled)]
-    public string EarlyFlakeDetectionTestEnabled { get; set; }
+    public string? EarlyFlakeDetectionTestEnabled { get; set; }
 
     [Tag(EarlyFlakeDetectionTags.AbortReason)]
-    public string EarlyFlakeDetectionTestAbortReason { get; set; }
+    public string? EarlyFlakeDetectionTestAbortReason { get; set; }
+
+    [Metric(CommonTags.LogicalCpuCount)]
+    public double? LogicalCpuCount { get; }
+
+    [Tag(CommonTags.GitHeadCommit)]
+    public string? GitHeadCommit { get; set; }
+
+    [Tag(CommonTags.GitPrBaseCommit)]
+    public string? GitPrBaseCommit { get; set; }
+
+    [Tag(CommonTags.GitPrBaseBranch)]
+    public string? GitPrBaseBranch { get; set; }
 
     public void SetCIEnvironmentValues(CIEnvironmentValues environmentValues)
     {
@@ -138,6 +154,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
             GitCommitCommitterEmail = environmentValues.CommitterEmail;
             GitCommitMessage = environmentValues.Message;
             BuildSourceRoot = environmentValues.SourceRoot;
+            GitHeadCommit = environmentValues.HeadCommit;
+            GitPrBaseCommit = environmentValues.PrBaseCommit;
+            GitPrBaseBranch = environmentValues.PrBaseBranch;
 
             if (environmentValues.VariablesToBypass is { } variablesToBypass)
             {

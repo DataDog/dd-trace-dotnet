@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -233,14 +232,17 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ActivityHelpers.h" />
     <ClInclude Include="AdaptiveSampler.h" />
     <ClInclude Include="AllocationsRecorder.h" />
+    <ClInclude Include="BclEventsParser.h" />
     <ClInclude Include="Callstack.h" />
     <ClInclude Include="CallstackProvider.h" />
     <ClInclude Include="CounterMetric.h" />
     <ClInclude Include="CrashReporting.h" />
     <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="DeploymentMode.h" />
+    <ClInclude Include="DotnetEventsProvider.h" />
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EnablementStatus.h" />
     <ClInclude Include="EncodedProfile.hpp" />
@@ -248,14 +250,24 @@
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="EventPipeEventsManager.h" />
+    <ClInclude Include="EventsParserHelper.h" />
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
+    <ClInclude Include="INetworkListener.h" />
+    <ClInclude Include="ISsiLifetime.h" />
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="MemoryResourceManager.h" />
+    <ClInclude Include="ISsiManager.h" />
+    <ClInclude Include="NetworkActivity.h" />
+    <ClInclude Include="NetworkProvider.h" />
+    <ClInclude Include="NetworkRequestInfo.h" />
+    <ClInclude Include="RawNetworkSample.h" />
     <ClInclude Include="RawSamples.hpp" />
+    <ClInclude Include="RawSampleTransformer.h" />
     <ClInclude Include="SamplesEnumerator.h" />
     <ClInclude Include="ServiceBase.h" />
+    <ClInclude Include="SsiManager.h" />
     <ClInclude Include="Success.h" />
     <ClInclude Include="Exception.h" />
     <ClInclude Include="Exporter.h" />
@@ -352,7 +364,6 @@
     <ClInclude Include="SamplesCollector.h" />
     <ClInclude Include="ProviderBase.h" />
     <ClInclude Include="ScopeFinalizer.h" />
-    <ClInclude Include="Semaphore.h" />
     <ClInclude Include="StackFramesCollectorBase.h" />
     <ClInclude Include="StackSamplerLoop.h" />
     <ClInclude Include="StackSamplerLoopManager.h" />
@@ -360,6 +371,7 @@
     <ClInclude Include="SumMetric.h" />
     <ClInclude Include="Tags.h" />
     <ClInclude Include="TagsHelper.h" />
+    <ClInclude Include="TelemetryMetricsWorker.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadLifetimeProvider.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
@@ -371,11 +383,13 @@
     <ClInclude Include="dd_profiler_version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ActivityHelpers.cpp" />
     <ClCompile Include="AdaptiveSampler.cpp" />
     <ClCompile Include="AllocationsProvider.cpp" />
     <ClCompile Include="AllocationsRecorder.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
+    <ClCompile Include="BclEventsParser.cpp" />
     <ClCompile Include="Callstack.cpp" />
     <ClCompile Include="CallstackProvider.cpp" />
     <ClCompile Include="ClrEventsParser.cpp" />
@@ -396,7 +410,13 @@
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
+    <ClCompile Include="NetworkActivity.cpp" />
+    <ClCompile Include="NetworkProvider.cpp" />
+    <ClCompile Include="NetworkRequestInfo.cpp" />
+    <ClCompile Include="RawSampleTransformer.cpp" />
     <ClCompile Include="ServiceBase.cpp" />
+    <ClCompile Include="SkipProfileHeuristicType.h" />
+    <ClCompile Include="SsiManager.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
@@ -440,6 +460,7 @@
     <ClCompile Include="SumMetric.cpp" />
     <ClCompile Include="Tags.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
+    <ClCompile Include="TelemetryMetricsWorker.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadLifetimeProvider.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
@@ -453,15 +474,6 @@
       <Project>{4b18a9ec-94fa-4098-a48d-83ed25e076d7}</Project>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props'))" />
-  </Target>
 </Project>

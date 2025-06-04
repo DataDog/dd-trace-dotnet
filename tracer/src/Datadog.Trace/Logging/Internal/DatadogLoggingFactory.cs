@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using System.IO;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -18,6 +19,8 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Vendors.Serilog.Filters;
 
 namespace Datadog.Trace.Logging;
 
@@ -95,20 +98,20 @@ internal static class DatadogLoggingFactory
                .WriteTo.Logger(
                     lc => lc
                          .MinimumLevel.Error()
-                         .Filter.ByExcluding(log => IsExcludedMessage(log.MessageTemplate.Text))
+                         .Filter.ByExcluding(Matching.WithProperty(DatadogSerilogLogger.SkipTelemetryProperty))
                          .WriteTo.Sink(new RedactedErrorLogSink(telemetry.Collector)));
         }
 
         if (config.File is { } fileConfig)
         {
-            // Ends in a dash because of the date postfix
-            var managedLogPath = Path.Combine(fileConfig.LogDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-.log");
+            var managedLogPath = Path.Combine(fileConfig.LogDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-{domainMetadata.ProcessId.ToString(CultureInfo.InvariantCulture)}.log");
 
             loggerConfiguration
+               .Enrich.With(new RemovePropertyEnricher(LogEventLevel.Error, DatadogSerilogLogger.SkipTelemetryProperty))
                .WriteTo.File(
                     managedLogPath,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
-                    rollingInterval: RollingInterval.Day,
+                    rollingInterval: RollingInterval.Infinite, // don't do daily rolling, rely on the file size limit for rolling instead
                     rollOnFileSizeLimit: true,
                     fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
                     shared: true);
@@ -146,13 +149,6 @@ internal static class DatadogLoggingFactory
 
         return new DatadogSerilogLogger(internalLogger, rateLimiter, config.File?.LogDirectory);
     }
-
-    private static bool IsExcludedMessage(string messageTemplateText)
-        => ReferenceEquals(messageTemplateText, Api.FailedToSendMessageTemplate)
-#if NETFRAMEWORK
-        || ReferenceEquals(messageTemplateText, PerformanceCountersListener.InsufficientPermissionsMessageTemplate)
-#endif
-    ;
 
     // Internal for testing
     internal static string GetLogDirectory(IConfigurationTelemetry telemetry)
@@ -275,5 +271,19 @@ internal static class DatadogLoggingFactory
 
         // If telemetry is disabled
         return null;
+    }
+
+    private class RemovePropertyEnricher(LogEventLevel minLevel, string propertyName) : ILogEventEnricher
+    {
+        private readonly LogEventLevel _minLevel = minLevel;
+        private readonly string _propertyName = propertyName;
+
+        public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+        {
+            if (logEvent.Level >= _minLevel)
+            {
+                logEvent.RemovePropertyIfPresent(_propertyName);
+            }
+        }
     }
 }

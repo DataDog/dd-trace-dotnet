@@ -1,11 +1,12 @@
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Routing;
 #if NET7_0_OR_GREATER
 using Microsoft.EntityFrameworkCore;
 #endif
@@ -62,6 +63,17 @@ namespace Samples.Security.AspNetCore5
                     o.Password.RequireUppercase = false;
                     o.Password.RequireNonAlphanumeric = false;
                 });
+            services.AddAuthentication();
+            services.AddAuthorization();
+            services.ConfigureApplicationCookie(options =>  
+            {  
+                // Cookie settings  
+                options.Cookie.HttpOnly = true;  
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(5);  
+  
+                options.LoginPath = "/Account";     //set the login path.  
+                options.SlidingExpiration = true;  
+            });  
             // sql lite provider doesnt seem to work on linux (even with EF libs) so use in memory store 
             if (Configuration.ShouldUseSqlLite())
             {
@@ -127,8 +139,9 @@ namespace Samples.Security.AspNetCore5
             app.UseSession();
             app.UseRouting();
 
-            app.UseAuthorization();
             app.UseAuthentication();
+            app.UseAuthorization();
+            
             app.Map(
                 "/alive-check",
                 builder =>
@@ -137,6 +150,22 @@ namespace Samples.Security.AspNetCore5
                         async context =>
                         {
                             await context.Response.WriteAsync("Yes");
+                        });
+                });
+            
+            app.Map(
+                "/map_endpoint",
+                builder =>
+                {
+                    builder.Map(
+                        "/sub_level",
+                        builder =>
+                        {
+                            builder.Run(
+                                async context =>
+                                {
+                                    await context.Response.WriteAsync("on /map_endpoint/sub_level");
+                                });
                         });
                 });
 
@@ -159,7 +188,6 @@ namespace Samples.Security.AspNetCore5
                     // await context.Response.WriteAsync("do smth before all");
                     await next.Invoke();
                 });
-
 
             app.UseEndpoints(
                 endpoints =>

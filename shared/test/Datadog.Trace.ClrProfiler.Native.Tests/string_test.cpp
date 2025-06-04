@@ -15,6 +15,8 @@ TEST(string, ToString)
     EXPECT_TRUE("Wide String" == ToString(WStr("Wide String")));
     EXPECT_TRUE("\tWide String\0" == ToString(WStr("\tWide String\0")));
 
+    EXPECT_TRUE(std::string(1000, 'a') == ToString(WSTRING(1000, L'a')));
+    
     EXPECT_TRUE("42" == ToString(42));
 
 #ifndef LINUX
@@ -32,6 +34,7 @@ TEST(string, ToWSTRING)
 {
     EXPECT_TRUE(WStr("Normal String") == ToWSTRING(std::string("Normal String")));
     EXPECT_TRUE(WStr("\tNormal String\0") == ToWSTRING(std::string("\tNormal String\0")));
+    EXPECT_TRUE(WSTRING(1000, 'a') == ToWSTRING(std::string(1000, 'a')));
 
     EXPECT_EQ(WStr("42"), ToWSTRING(42));
 }

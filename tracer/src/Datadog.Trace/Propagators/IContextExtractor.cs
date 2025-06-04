@@ -7,16 +7,19 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Propagators
-{
-    internal interface IContextExtractor
-    {
-        bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
-            where TCarrierGetter : struct, ICarrierGetter<TCarrier>;
-    }
+namespace Datadog.Trace.Propagators;
 
-    internal interface ICarrierGetter<in TCarrier>
-    {
-        IEnumerable<string?> Get(TCarrier carrier, string key);
-    }
+internal interface IContextExtractor
+{
+    PropagatorType PropagatorType { get; }
+
+    string DisplayName { get; }
+
+    bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out PropagationContext context)
+        where TCarrierGetter : struct, ICarrierGetter<TCarrier>;
+}
+
+internal interface ICarrierGetter<in TCarrier>
+{
+    IEnumerable<string?> Get(TCarrier carrier, string key);
 }

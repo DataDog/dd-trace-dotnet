@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.IO;
 using System.Net;
@@ -24,11 +26,11 @@ namespace Datadog.Trace.Agent.Transports
 
         public long ContentLength => _response.ContentLength;
 
-        public string ContentTypeHeader => _response.ContentType;
+        public string? ContentTypeHeader => _response.ContentType;
 
-        public string ContentEncodingHeader => _response.ContentEncoding;
+        public string? ContentEncodingHeader => _response.ContentEncoding;
 
-        public string GetHeader(string headerName) => _response.Headers[headerName];
+        public string? GetHeader(string headerName) => _response.Headers[headerName];
 
         public Encoding GetCharsetEncoding() => ApiResponseExtensions.GetCharsetEncoding(ContentTypeHeader);
 

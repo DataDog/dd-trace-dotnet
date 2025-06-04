@@ -6,8 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -27,70 +29,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetMySql8Data()
-        {
-            var propagation = new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" };
-
-            foreach (object[] item in PackageVersions.MySqlData)
-            {
-                if (!((string)item[0]).StartsWith("8") && !string.IsNullOrEmpty((string)item[0]))
-                {
-                    continue;
-                }
-
-                var result = propagation.SelectMany(prop => new[]
-                {
-                    new[] { item[0], "v0", prop },
-                    new[] { item[0], "v1", prop }
-                });
-
-                foreach (var row in result)
-                {
-                    yield return row;
-                }
-            }
-        }
-
-        public static IEnumerable<object[]> GetOldMySqlData()
-        {
-            var propagation = new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" };
-
-            foreach (object[] item in PackageVersions.MySqlData)
-            {
-                if (((string)item[0]).StartsWith("8"))
-                {
-                    continue;
-                }
-
-                var result = propagation.SelectMany(prop => new[]
-                {
-                    new[] { item[0], "v0", prop },
-                    new[] { item[0], "v1", prop }
-                });
-
-                foreach (var row in result)
-                {
-                    yield return row;
-                }
-            }
-        }
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetMySql8Data))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTracesInMySql8(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
+        public async Task SubmitsTracesInMySql8(
+            [PackageVersionData(nameof(PackageVersions.MySqlData), minInclusive: "8.0.0")] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [DbmPropagationModesData] string dbmPropagation)
         {
             await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetOldMySqlData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task SubmitsTracesInOldMySql(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
+        public async Task SubmitsTracesInOldMySql(
+            [PackageVersionData(nameof(PackageVersions.MySqlData), maxInclusive: "7.*.*")] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [DbmPropagationModesData] string dbmPropagation)
         {
+            // FIXME: When running these tests locally with the default sample application this will fail
+            //        This is "expected" in the sense that the Samples.MySql references the v8+ NuGet
+            //        package and we should consider handling this in a different way.
             await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
 
@@ -165,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
 #if NET5_0_OR_GREATER
             fileName = fileName + ".Net";
-#elif NET462
+#elif NETFRAMEWORK
             fileName = fileName + ".Net462";
 #else
             fileName = fileName + ".NetCore";

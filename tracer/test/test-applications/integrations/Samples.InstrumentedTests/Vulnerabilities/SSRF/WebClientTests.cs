@@ -22,7 +22,7 @@ public class WebClientTests : SSRFTests
     [Fact]
     public void GivenAWebClient_WhenDownloadData_Exception()
     {
-        Assert.Throws<NullReferenceException>(() => webclient.DownloadData((Uri) null));
+        Assert.Throws<ArgumentNullException>(() => webclient.DownloadData((Uri) null));
     }
 
     // Testing [AspectMethodInsertBefore("System.Net.WebClient::DownloadDataAsync(System.Uri)")]

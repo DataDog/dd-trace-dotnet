@@ -9,8 +9,14 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Microsoft.AspNetCore.Builder;
@@ -41,7 +47,9 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var testServer = new TestServer(builder);
             var client = testServer.CreateClient();
             var tracer = GetTracer();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security: null) };
+            var (security, iast) = GetSecurity();
+            var liveDebugger = GetLiveDebugger();
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null) };
             string retValue = null;
 
             using (var diagnosticManager = new DiagnosticManager(observers))
@@ -64,8 +72,10 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         public void HttpRequestIn_PopulateSpan()
         {
             var tracer = GetTracer();
+            var (security, iast) = GetSecurity();
+            var liveDebugger = GetLiveDebugger();
 
-            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, null);
+            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null);
 
             var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
 
@@ -99,6 +109,26 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var samplerMock = new Mock<ITraceSampler>();
 
             return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+        }
+
+        private static (Security Security, Iast.Iast Iast) GetSecurity()
+        {
+            var settings = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.AppSec.Enabled, "0" },
+                { ConfigurationKeys.Iast.Enabled, "0" },
+            });
+            // This still uses a _bunch_ of shared state. Ideally we should pass that in instead of accessing statics
+            var security = new Security(
+                new SecuritySettings(settings, NullConfigurationTelemetry.Instance),
+                rcmSubscriptionManager: Mock.Of<IRcmSubscriptionManager>());
+            var iast = new Iast.Iast(new IastSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
+            return (security, iast);
+        }
+
+        private static LiveDebugger GetLiveDebugger()
+        {
+            return LiveDebuggerFactory.Create(null, null, new TracerSettings(), null, null, DebuggerSettings.FromDefaultSource(), null);
         }
 
         private static HttpContext GetHttpContext()

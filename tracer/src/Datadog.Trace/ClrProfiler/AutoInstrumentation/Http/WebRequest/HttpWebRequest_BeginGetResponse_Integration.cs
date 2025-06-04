@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
@@ -60,16 +59,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         startTime: null,
                         addToTraceContext: false);
 
-                    if (span?.Context != null)
-                    {
-                        // Add distributed tracing headers to the HTTP request.
-                        // We don't want to set an active scope now, because it's possible that EndGetResponse will never be called.
-                        // Instead, we generate a spancontext and inject it in the headers. EndGetResponse will fetch them and create an active scope with the right id.
-                        // Additionally, add the request headers to a cache to indicate that distributed tracing headers were
-                        // added by us, not the application
-                        SpanContextPropagator.Instance.Inject(span.Context, request.Headers.Wrap());
-                        HeadersInjectedCache.SetInjectedHeaders(request.Headers);
-                    }
+                    // Add distributed tracing headers to the HTTP request.
+                    // We don't want to set an active scope now, because it's possible that EndGetResponse will never be called.
+                    // Instead, we generate a spancontext and inject it in the headers. EndGetResponse will fetch them and create an active scope with the right id.
+                    // Additionally, add the request headers to a cache to indicate that distributed tracing headers were
+                    // added by us, not the application
+                    var context = new PropagationContext(span?.Context, Baggage.Current);
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, request.Headers.Wrap());
+                    HeadersInjectedCache.SetInjectedHeaders(request.Headers);
                 }
             }
 

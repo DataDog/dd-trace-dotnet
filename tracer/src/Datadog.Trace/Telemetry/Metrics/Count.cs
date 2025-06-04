@@ -102,6 +102,11 @@ internal enum Count
     [TelemetryMetric<MetricTags.ContextHeaderStyle>("context_header_style.extracted")] ContextHeaderStyleExtracted,
 
     /// <summary>
+    /// The number of times a context propagation header is truncated, tagged by the reason for truncation (`truncation_reason:baggage_item_count_exceeded`, `truncation_reason:baggage_byte_count_exceeded`)
+    /// </summary>
+    [TelemetryMetric<MetricTags.ContextHeaderTruncationReason>("context_header.truncated")] ContextHeaderTruncated,
+
+    /// <summary>
     /// The number of requests sent to the stats endopint in the agent, regardless of success
     /// </summary>
     [TelemetryMetric("stats_api.requests")] StatsApiRequests,
@@ -115,6 +120,16 @@ internal enum Count
     /// The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`)
     /// </summary>
     [TelemetryMetric<MetricTags.ApiError>("stats_api.errors")] StatsApiErrors,
+
+    /// <summary>
+    /// The number of times a Datadog configuration is set while a corresponding OpenTelemetry configuration is set.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DatadogConfiguration, MetricTags.OpenTelemetryConfiguration>("otel.env.hiding", isCommon: true, NS.Tracer)] OpenTelemetryConfigHiddenByDatadogConfig,
+
+    /// <summary>
+    /// The number of times an OpenTelemetry configuration has a mapping to a Datadog configuration but it cannot be mapped correctly.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DatadogConfiguration, MetricTags.OpenTelemetryConfiguration>("otel.env.invalid", isCommon: true, NS.Tracer)] OpenTelemetryConfigInvalid,
 #endregion
 #region Telemetry Namespace
 
@@ -139,6 +154,11 @@ internal enum Count
     /// The number of version-conflict tracers created
     /// </summary>
     [TelemetryMetric("version_conflict_tracers_created", isCommon: false)] VersionConflictTracerCreated,
+
+    /// <summary>
+    /// The number of services in which the customer has installed manual instrumentation that is greater than the automatic instrumentation (and so won't work)
+    /// </summary>
+    [TelemetryMetric("unsupported_custom_instrumentation_services", isCommon: false)] UnsupportedCustomInstrumentationServices,
 
     /// <summary>
     /// The number of logs sent to the direct log submission sink, tagged by IntegrationName. Includes only logs that were sent, not filtered logs
@@ -166,12 +186,12 @@ internal enum Count
     /// <summary>
     /// The number of times the waf is initialized
     /// </summary>
-    [TelemetryMetric("waf.init", isCommon: true, NS.ASM)] WafInit,
+    [TelemetryMetric<MetricTags.WafStatus>("waf.init", isCommon: true, NS.ASM)] WafInit,
 
     /// <summary>
     /// The number of times we reload the rules (startup + Remote Configuration)
     /// </summary>
-    [TelemetryMetric("waf.updates", isCommon: true, NS.ASM)] WafUpdates,
+    [TelemetryMetric<MetricTags.WafStatus>("waf.updates", isCommon: true, NS.ASM)] WafUpdates,
 
     /// <summary>
     /// Requests analyzed by ddwaf
@@ -191,12 +211,27 @@ internal enum Count
     /// <summary>
     /// Counts the number of times a rule type has a match. Note that this can be inferred through the events sent to the backend.
     /// </summary>
-    [TelemetryMetric<RaspRuleType>("rasp.rule.match", isCommon: true, NS.ASM)] RaspRuleMatch,
+    [TelemetryMetric<RaspRuleTypeMatch>("rasp.rule.match", isCommon: true, NS.ASM)] RaspRuleMatch,
 
     /// <summary>
     /// Counts the number of times a timeout was hit when evaluating a specific rule type.
     /// </summary>
     [TelemetryMetric<RaspRuleType>("rasp.timeout", isCommon: true, NS.ASM)] RaspTimeout,
+
+    /// <summary>
+    /// Counts the number of times a user id hasn't been found  as part of the login success, login failure or signup event
+    /// </summary>
+    [TelemetryMetric<AuthenticationFrameworkWithEventType>("instrum.user_auth.missing_user_id", isCommon: true, NS.ASM)] MissingUserId,
+
+    /// <summary>
+    /// Counts the number of times a user login (username or email in our case) hasn't been found as part of the login success, login failure or signup event
+    /// </summary>
+    [TelemetryMetric<AuthenticationFrameworkWithEventType>("instrum.user_auth.missing_user_login", isCommon: true, NS.ASM)] MissingUserLogin,
+
+    /// <summary>
+    /// Counts the number of times a user login (username or email in our case) hasn't been found as part of the login success, login failure or signup event
+    /// </summary>
+    [TelemetryMetric<UserEventSdk>("sdk.event", isCommon: true, NS.ASM)] UserEventSdk,
 
 #endregion
 #region Iast Namespace
@@ -204,7 +239,7 @@ internal enum Count
     /// <summary>
     /// Counts the number of source methods that have been called
     /// </summary>
-    [TelemetryMetric<MetricTags.IastInstrumentedSources>("executed.source", isCommon: true, NS.Iast)] IastExecutedSources,
+    [TelemetryMetric<MetricTags.IastSourceType>("executed.source", isCommon: true, NS.Iast)] IastExecutedSources,
 
     /// <summary>
     /// Counts the number of proopagation methods that have been called
@@ -214,11 +249,16 @@ internal enum Count
     /// <summary>
     /// Counts the number of sinks that have been called
     /// </summary>
-    [TelemetryMetric<MetricTags.IastInstrumentedSinks>("executed.sink", isCommon: true, NS.Iast)] IastExecutedSinks,
+    [TelemetryMetric<MetricTags.IastVulnerabilityType>("executed.sink", isCommon: true, NS.Iast)] IastExecutedSinks,
 
     /// <summary>
     /// Counts the number of tainted objects after a request
     /// </summary>
     [TelemetryMetric("request.tainted", isCommon: true, NS.Iast)] IastRequestTainted,
-#endregion
+
+    /// <summary>
+    /// Counts the number of suppressed vulnerabilities by type
+    /// </summary>
+    [TelemetryMetric<MetricTags.IastVulnerabilityType>("suppressed.vulnerabilities", isCommon: true, NS.Iast)] IastSuppressedVulnerabilities,
+    #endregion
 }

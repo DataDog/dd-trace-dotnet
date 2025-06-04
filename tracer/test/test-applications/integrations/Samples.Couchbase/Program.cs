@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Authentication;
 using System.Threading.Tasks;
 using Couchbase;
 using Couchbase.Configuration.Client;
+using Couchbase.Configuration.Server.Serialization;
 using Couchbase.Core;
 using Couchbase.IO;
 
@@ -13,10 +15,29 @@ namespace Samples.Couchbase
         ICluster _cluster;
         IBucket _bucket;
 
-        private static async Task Main()
+        private static async Task<int> Main()
         {
             Program p = new Program();
-            await p.RunAllExamples();
+
+            try
+            {
+                await p.RunAllExamples();
+            }
+            catch (AggregateException ex)
+            {
+                Console.WriteLine("Exception during execution " + ex);
+
+                foreach (var exception in ex.InnerExceptions)
+                {
+                    if (exception is AuthenticationException)
+                    {
+                        Console.WriteLine("Exiting with skip code (13)");
+                        return 13;
+                    }
+                }
+            }
+
+            return 0;
         }
 
         private async Task RunAllExamples()

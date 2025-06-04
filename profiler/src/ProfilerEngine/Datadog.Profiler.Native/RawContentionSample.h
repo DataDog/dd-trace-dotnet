@@ -5,13 +5,18 @@
 
 #include "RawSample.h"
 #include "Sample.h"
+#include "ManagedThreadInfo.h"
 
 class RawContentionSample : public RawSample
 {
 public:
     inline static const std::string BucketLabelName = "Duration bucket";
+    inline static const std::string WaitBucketLabelName = "Wait duration bucket";
     inline static const std::string RawCountLabelName = "raw count";
     inline static const std::string RawDurationLabelName = "raw duration";
+    inline static const std::string BlockingThreadIdLabelName = "blocking thread id";
+    inline static const std::string BlockingThreadNameLabelName = "blocking thread name";
+    inline static const std::string ContentionTypeLabelName = "contention type";
 
 public:
     RawContentionSample() = default;
@@ -20,7 +25,10 @@ public:
         :
         RawSample(std::move(other)),
         ContentionDuration(other.ContentionDuration),
-        Bucket(std::move(other.Bucket))
+        Bucket(std::move(other.Bucket)),
+        BlockingThreadId(other.BlockingThreadId),
+        BlockingThreadName(std::move(other.BlockingThreadName)),
+        Type(other.Type)
     {
     }
 
@@ -31,6 +39,9 @@ public:
             RawSample::operator=(std::move(other));
             ContentionDuration = other.ContentionDuration;
             Bucket = std::move(other.Bucket);
+            BlockingThreadId = other.BlockingThreadId;
+            BlockingThreadName = std::move(other.BlockingThreadName);
+            Type = other.Type;
         }
         return *this;
     }
@@ -41,13 +52,38 @@ public:
         auto contentionCountIndex = valueOffsets[0];
         auto contentionDurationIndex = valueOffsets[1];
 
-        sample->AddLabel(Label{BucketLabelName, std::move(Bucket)});
+        // To avoid breaking the backend, always set the bucket label, but provide the wait bucket label if needed
+        // This is needed to allow an upscaling different between wait and lock contentions
+        sample->AddLabel(StringLabel{BucketLabelName, Bucket});
+        if (Type == ContentionType::Wait)
+        {
+            sample->AddLabel(StringLabel{WaitBucketLabelName, std::move(Bucket)});
+        }
+
         sample->AddValue(1, contentionCountIndex);
-        sample->AddNumericLabel(NumericLabel{RawCountLabelName, 1});
-        sample->AddNumericLabel(NumericLabel{RawDurationLabelName, static_cast<uint64_t>(ContentionDuration)});
-        sample->AddValue(static_cast<std::int64_t>(ContentionDuration), contentionDurationIndex);
+        sample->AddLabel(NumericLabel{RawCountLabelName, 1});
+        sample->AddLabel(NumericLabel{RawDurationLabelName, ContentionDuration.count()});
+        sample->AddValue(ContentionDuration.count(), contentionDurationIndex);
+        if (BlockingThreadId != 0)
+        {
+            sample->AddLabel(NumericLabel{BlockingThreadIdLabelName, BlockingThreadId});
+            sample->AddLabel(StringLabel{BlockingThreadNameLabelName, shared::ToString(BlockingThreadName)});
+        }
+        sample->AddLabel(StringLabel{ContentionTypeLabelName, ContentionTypes[static_cast<int>(Type)]});
     }
 
-    double ContentionDuration;
+    std::chrono::nanoseconds ContentionDuration;
     std::string Bucket;
+    uint64_t BlockingThreadId;
+    shared::WSTRING BlockingThreadName;
+    ContentionType Type;
+
+    static std::string ContentionTypes[static_cast<int>(ContentionType::ContentionTypeCount)];
+};
+
+inline std::string RawContentionSample::ContentionTypes[static_cast<int>(ContentionType::ContentionTypeCount)] =
+{
+    "Unknown",
+    "Lock",
+    "Wait",
 };

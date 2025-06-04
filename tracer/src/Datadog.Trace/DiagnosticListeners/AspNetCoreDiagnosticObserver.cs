@@ -15,6 +15,8 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -58,6 +60,9 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
         private readonly Tracer _tracer;
         private readonly Security _security;
+        private readonly Iast.Iast _iast;
+        private readonly LiveDebugger _liveDebugger;
+        private readonly SpanCodeOriginManager _spanOriginManager;
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
         private string _mvcAfterActionEventKey;
@@ -67,14 +72,17 @@ namespace Datadog.Trace.DiagnosticListeners
         private string _routingEndpointMatchedKey;
 
         public AspNetCoreDiagnosticObserver()
-            : this(null, null)
+            : this(null, null, null, null, null)
         {
         }
 
-        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security)
+        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, LiveDebugger liveDebugger, SpanCodeOriginManager spanOriginManager)
         {
             _tracer = tracer;
             _security = security;
+            _iast = iast;
+            _liveDebugger = liveDebugger;
+            _spanOriginManager = spanOriginManager;
         }
 
         protected override string ListenerName => DiagnosticListenerName;
@@ -82,6 +90,12 @@ namespace Datadog.Trace.DiagnosticListeners
         private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
 
         private Security CurrentSecurity => _security ?? Security.Instance;
+
+        private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
+
+        private LiveDebugger CurrentLiveDebugger => _liveDebugger ?? LiveDebugger.Instance;
+
+        private SpanCodeOriginManager CurrentCodeOriginManager => _spanOriginManager ?? SpanCodeOriginManager.Instance;
 
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
@@ -413,9 +427,8 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
-
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Enabled;
+            var shouldSecure = security.AppsecEnabled;
 
             if (!shouldTrace && !shouldSecure)
             {
@@ -424,7 +437,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
-                HttpContext httpContext = requestStruct.HttpContext;
+                var httpContext = requestStruct.HttpContext;
                 if (shouldTrace)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
@@ -433,7 +446,8 @@ namespace Datadog.Trace.DiagnosticListeners
                     if (shouldSecure)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
-                        SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
+                        var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
+                        securityReporter.ReportWafInitInfoOnce(security.WafInitResult);
                     }
                 }
             }
@@ -511,12 +525,26 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
+                var isCodeOriginEnabled = CurrentLiveDebugger?.Settings.CodeOriginForSpansEnabled ?? false;
+                if (isCodeOriginEnabled)
+                {
+                    var method = routeEndpoint?.RequestDelegate?.Method;
+                    if (method != null)
+                    {
+                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
+                    }
+                    else if (routeEndpoint?.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
+                    {
+                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                    }
+                }
+
                 if (isFirstExecution)
                 {
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                 }
 
-                var routePattern = routeEndpoint.Value.RoutePattern;
+                var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
 
                 // Have to pass this value through to the MVC span, as not available there
                 var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
@@ -560,9 +588,9 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.HttpRoute = normalizedRoute;
                 }
 
-                CurrentSecurity.CheckPathParams(httpContext, rootSpan, routeValues);
+                CurrentSecurity.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
 
-                if (Iast.Iast.Instance.Settings.Enabled)
+                if (CurrentIast.Settings.Enabled)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
@@ -573,12 +601,13 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
-
+            var liveDebugger = CurrentLiveDebugger;
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Enabled;
-            var shouldUseIast = Iast.Iast.Instance.Settings.Enabled;
+            var shouldSecure = security.AppsecEnabled;
+            var shouldUseIast = CurrentIast.Settings.Enabled;
+            var isCodeOriginEnabled = liveDebugger?.Settings.CodeOriginForSpansEnabled ?? false;
 
-            if (!shouldTrace && !shouldSecure && !shouldUseIast)
+            if (!shouldTrace && !shouldSecure && !shouldUseIast && !isCodeOriginEnabled)
             {
                 return;
             }
@@ -607,6 +636,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (span is not null)
                 {
+                    if (isCodeOriginEnabled && TryGetTypeAndMethod(typedArg, out var type, out var method))
+                    {
+                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                    }
+
                     CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
                 }
 
@@ -615,6 +649,41 @@ namespace Datadog.Trace.DiagnosticListeners
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
+        }
+
+        private bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, out Type type, out MethodInfo method)
+        {
+            try
+            {
+                if (beforeAction.ActionDescriptor.TryDuckCast<ControllerActionDescriptorStruct>(out var controllerActionDescriptor))
+                {
+                    type = controllerActionDescriptor.ControllerTypeInfo;
+                    method = controllerActionDescriptor.MethodInfo;
+                    return true;
+                }
+
+                if (beforeAction.ActionDescriptor.TryDuckCast<CompiledPageActionDescriptorStruct>(out var compiledPageActionDescriptor))
+                {
+                    foreach (var part in compiledPageActionDescriptor.HandlerMethods)
+                    {
+                        if (part.TryDuckCast(out HandlerMethodDescriptorStruct methodDesc)
+                         && string.Equals(methodDesc.HttpMethod, beforeAction.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
+                        {
+                            type = compiledPageActionDescriptor.HandlerTypeInfo;
+                            method = methodDesc.MethodInfo;
+                            return true;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Fail to extract type and method from ActionDescriptor");
+            }
+
+            type = null;
+            method = null;
+            return false;
         }
 
         private void OnMvcAfterAction(object arg)
@@ -672,6 +741,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
             }
 
+            CoreHttpContextStore.Instance.Remove();
             // If we don't have a scope, no need to call Stop pipeline
         }
 
@@ -729,6 +799,45 @@ namespace Datadog.Trace.DiagnosticListeners
 
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public RouteData RouteData;
+        }
+
+        /// <summary>
+        /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.Core/src/Controllers/ControllerActionDescriptor.cs
+        /// </summary>
+        [DuckCopy]
+        internal struct ControllerActionDescriptorStruct
+        {
+            [Duck]
+            public MethodInfo MethodInfo;
+
+            [Duck]
+            public TypeInfo ControllerTypeInfo;
+        }
+
+        /// <summary>
+        /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/CompiledPageActionDescriptor.cs
+        /// </summary>
+        [DuckCopy]
+        internal struct CompiledPageActionDescriptorStruct
+        {
+            [Duck]
+            public IEnumerable HandlerMethods;
+
+            [Duck]
+            public TypeInfo HandlerTypeInfo;
+        }
+
+        /// <summary>
+        /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/Infrastructure/HandlerMethodDescriptor.cs
+        /// </summary>
+        [DuckCopy]
+        internal struct HandlerMethodDescriptorStruct
+        {
+            [Duck]
+            public MethodInfo MethodInfo;
+
+            [Duck]
+            public string HttpMethod;
         }
 
         [DuckCopy]

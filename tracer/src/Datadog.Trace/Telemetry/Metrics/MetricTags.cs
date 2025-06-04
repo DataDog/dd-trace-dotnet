@@ -116,6 +116,33 @@ internal static class MetricTags
         [Description("type:status_code")] StatusCode,
     }
 
+    internal enum DatadogConfiguration
+    {
+        [Description("config_datadog:dd_trace_debug")] DebugEnabled,
+        [Description("config_datadog:dd_runtime_metrics_enabled")] RuntimeMetricsEnabled,
+        [Description("config_datadog:dd_service")] Service,
+        [Description("config_datadog:dd_tags")] Tags,
+        [Description("config_datadog:dd_trace_enabled")] TraceEnabled,
+        [Description("config_datadog:dd_trace_propagation_style")] PropagationStyle,
+        [Description("config_datadog:dd_trace_sample_rate")] SampleRate,
+        [Description("config_datadog:dd_trace_otel_enabled")] OpenTelemetryEnabled,
+        [Description("config_datadog:unknown")] Unknown,
+    }
+
+    internal enum OpenTelemetryConfiguration
+    {
+        [Description("config_opentelemetry:otel_log_level")] LogLevel,
+        [Description("config_opentelemetry:otel_metrics_exporter")] MetricsExporter,
+        [Description("config_opentelemetry:otel_propagators")] Propagators,
+        [Description("config_opentelemetry:otel_resource_attributes")] ResourceAttributes,
+        [Description("config_opentelemetry:otel_sdk_disabled")] SdkDisabled,
+        [Description("config_opentelemetry:otel_service_name")] ServiceName,
+        [Description("config_opentelemetry:otel_traces_exporter")] TracesExporter,
+        [Description("config_opentelemetry:otel_traces_sampler")] TracesSampler,
+        [Description("config_opentelemetry:otel_traces_sampler_arg")] TracesSamplerArg,
+        [Description("config_opentelemetry:unknown")] Unknown,
+    }
+
     internal enum PartialFlushReason
     {
         [Description("reason:large_trace")] LargeTrace,
@@ -128,6 +155,13 @@ internal static class MetricTags
         [Description("header_style:datadog")] Datadog,
         [Description("header_style:b3multi")] B3Multi,
         [Description("header_style:b3single")] B3SingleHeader,
+        [Description("header_style:baggage")] Baggage,
+    }
+
+    public enum ContextHeaderTruncationReason
+    {
+        [Description("truncation_reason:baggage_item_count_exceeded")]BaggageItemCountExceeded,
+        [Description("truncation_reason:baggage_byte_count_exceeded")]BaggageByteCountExceeded,
     }
 
     internal enum TelemetryEndpoint
@@ -184,9 +218,12 @@ internal static class MetricTags
         [Description("integration_name:msmq")]Msmq,
         [Description("integration_name:kafka")]Kafka,
         [Description("integration_name:cosmosdb")]CosmosDb,
+        [Description("integration_name:awss3")]AwsS3,
         [Description("integration_name:awssdk")]AwsSdk,
         [Description("integration_name:awssqs")]AwsSqs,
         [Description("integration_name:awssns")]AwsSns,
+        [Description("integration_name:awseventbridge")]AwsEventBridge,
+        [Description("integration_name:awsstepfunctions")]AwsStepFunctions,
         [Description("integration_name:ilogger")]ILogger,
         [Description("integration_name:aerospike")]Aerospike,
         [Description("integration_name:azurefunctions")]AzureFunctions,
@@ -204,7 +241,7 @@ internal static class MetricTags
         [Description("integration_name:process")]Process,
         [Description("integration_name:hashalgorithm")]HashAlgorithm,
         [Description("integration_name:symmetricalgorithm")]SymmetricAlgorithm,
-        [Description("integration_name:opentelemetry")]OpenTelemetry,
+        [Description("integration_name:otel")]OpenTelemetry, // Note: The naming of this tag value breaks the convention of using the integration name to use a standardized value
         [Description("integration_name:pathtraversal")]PathTraversal,
         [Description("integration_name:ssrf")]Ssrf,
         [Description("integration_name:ldap")]Ldap,
@@ -227,6 +264,9 @@ internal static class MetricTags
         [Description("integration_name:selenium")] Selenium,
         [Description("integration_name:directorylistingleak")] DirectoryListingLeak,
         [Description("integration_name:sessiontimeout")] SessionTimeout,
+        [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
+        [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
+        [Description("integration_name:protobuf")] Protobuf
     }
 
     public enum InstrumentationError
@@ -234,6 +274,7 @@ internal static class MetricTags
         [Description("error_type:duck_typing")]DuckTyping,
         [Description("error_type:invoker")]Invoker,
         [Description("error_type:execution")]Execution,
+        [Description("error_type:missing_member")]MissingMember,
     }
 
     public enum WafAnalysis
@@ -242,19 +283,56 @@ internal static class MetricTags
         // Note the initial 'waf_version'. This is an optimisation to avoid multiple array allocations
         // It is replaced with the "real" waf_version at runtime
         // CAUTION: waf_version should aways be placed in first position
-        [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:false")]Normal,
-        [Description("waf_version;rule_triggered:true;request_blocked:false;waf_timeout:false;request_excluded:false")]RuleTriggered,
-        [Description("waf_version;rule_triggered:true;request_blocked:true;waf_timeout:false;request_excluded:false")]RuleTriggeredAndBlocked,
-        [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
-        [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:false")]Normal,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;request_excluded:false")]RuleTriggered,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;request_excluded:false")]RuleTriggeredAndBlocked,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
+    }
+
+    public enum WafStatus
+    {
+        [Description("waf_version;event_rules_version;success:true")] Success,
+        [Description("waf_version;event_rules_version;success:false")] Error
+    }
+
+    public enum UserEventSdk
+    {
+        [Description("event_type:login_success;sdk_version:v1")] UserEventLoginSuccessSdkV1,
+        [Description("event_type:login_success;sdk_version:v2")] UserEventLoginSuccessSdkV2,
+        [Description("event_type:login_failure;sdk_version:v1")] UserEventFailureSdkV1,
+        [Description("event_type:login_failure;sdk_version:v2")] UserEventFailureSdkV2,
+        [Description("event_type:custom;sdk_version:v1")] UserEventCustomSdkV1,
     }
 
     [EnumExtensions]
     public enum RaspRuleType
     {
-        [Description("waf_version;rule_type:lfi")] Lfi = 0,
-        [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
-        [Description("waf_version;rule_type:sql_injection")] SQlI = 2,
+        [Description("waf_version;event_rules_version;rule_type:lfi")] Lfi = 0,
+        [Description("waf_version;event_rules_version;rule_type:ssrf")] Ssrf = 1,
+        [Description("waf_version;event_rules_version;rule_type:sql_injection")] SQlI = 2,
+        [Description("waf_version;event_rules_version;rule_type:command_injection;rule_variant:shell")] CommandInjectionShell = 3,
+        [Description("waf_version;event_rules_version;rule_type:command_injection;rule_variant:exec")] CommandInjectionExec = 4,
+    }
+
+    [EnumExtensions]
+    public enum RaspRuleTypeMatch
+    {
+        [Description("waf_version;event_rules_version;block:success;rule_type:lfi")] LfiSuccess = 0,
+        [Description("waf_version;event_rules_version;block:success;rule_type:ssrf")] SsrfSuccess = 1,
+        [Description("waf_version;event_rules_version;block:success;rule_type:sql_injection")] SQlISuccess = 2,
+        [Description("waf_version;event_rules_version;block:success;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellSuccess = 3,
+        [Description("waf_version;event_rules_version;block:success;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecSuccess = 4,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:lfi")] LfiFailure = 5,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:ssrf")] SsrfFailure = 6,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:sql_injection")] SQlIFailure = 7,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellFailure = 8,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecFailure = 9,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:lfi")] LfiIrrelevant = 10,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:ssrf")] SsrfIrrelevant = 11,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:sql_injection")] SQlIIrrelevant = 12,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellIrrelevant = 13,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecIrrelevant = 14,
     }
 
     public enum TruncationReason
@@ -265,7 +343,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum IastInstrumentedSources
+    public enum IastSourceType
     {
         [Description("source_type:http.request.body")] RequestBody = 0,
         [Description("source_type:http.request.path")] RequestPath = 1,
@@ -280,10 +358,11 @@ internal static class MetricTags
         [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
         [Description("source_type:http.request.uri")] RequestUri = 11,
         [Description("source_type:grpc.request.body")] GrpcRequestBody = 12,
+        [Description("source_type:sql.row.value")] SqlRowValue = 13,
     }
 
     [EnumExtensions]
-    public enum IastInstrumentedSinks
+    public enum IastVulnerabilityType
     {
         [Description("vulnerability_type:none")] None = 0,
         [Description("vulnerability_type:weak_cipher")] WeakCipher = 1,
@@ -311,6 +390,15 @@ internal static class MetricTags
         [Description("vulnerability_type:xss")] Xss = 23,
         [Description("vulnerability_type:directory_listing_leak")] DirectoryListingLeak = 24,
         [Description("vulnerability_type:session_timeout")] SessionTimeout = 25,
+        [Description("vulnerability_type:email_html_injection")] EmailHtmlInjection = 26,
+    }
+
+    public enum AuthenticationFrameworkWithEventType
+    {
+        [Description("framework:aspnetcore_identity;event_type:login_success")] AspNetCoreIdentityLoginSuccess,
+        [Description("framework:aspnetcore_identity;event_type:login_failure")] AspNetCoreIdentityLoginFailure,
+        [Description("framework:aspnetcore_identity;event_type:signup")] AspNetCoreIdentitySignup,
+        [Description("framework:unknown;event_type:signup")] Unknown,
     }
 
     public enum CIVisibilityTestFramework
@@ -340,10 +428,17 @@ internal static class MetricTags
         [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
         [Description("event_type:suite")] Suite,
         [Description("event_type:module")] Module,
-        [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi,
-        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi,
-        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi,
-        [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
+        // ...
+        [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi_WithoutAgentlessLog,
+        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi_WithoutAgentlessLog,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi_WithoutAgentlessLog,
+        [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi_WithoutAgentlessLog,
+        // ...
+        [Description("event_type:session;agentless_log_submission_enabled")] Session_NoCodeOwner_IsSupportedCi_WithAgentlessLog,
+        [Description("event_type:session;is_unsupported_ci;agentless_log_submission_enabled")] Session_NoCodeOwner_UnsupportedCi_WithAgentlessLog,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci;agentless_log_submission_enabled")] Session_HasCodeOwner_UnsupportedCi_WithAgentlessLog,
+        [Description("event_type:session;has_codeowner;agentless_log_submission_enabled")] Session_HasCodeOwner_IsSupportedCi_WithAgentlessLog,
+        // ...
         [Description("event_type:test;is_new:true")] Test_EFDTestIsNew,
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow")] Test_EFDTestIsNew_EFDTestAbortSlow,
         [Description("event_type:test;browser_driver:selenium")] Test_BrowserDriverSelenium,
@@ -352,6 +447,27 @@ internal static class MetricTags
         [Description("event_type:test;browser_driver:selenium;is_rum:true")] Test_BrowserDriverSelenium_IsRum,
         [Description("event_type:test;is_new:true;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_BrowserDriverSelenium_IsRum,
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium_IsRum,
+    }
+
+    public enum CIVisibilityTestingEventTypeRetryReason
+    {
+        [Description("")] None,
+        [Description("retry_reason:efd")] EarlyFlakeDetection,
+        [Description("retry_reason:atr")] AutomaticTestRetry,
+    }
+
+    public enum CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled
+    {
+        [Description("")] None,
+        [Description("is_quarantined:true")] IsQuarantined,
+        [Description("is_disabled:true")] IsDisabled,
+    }
+
+    public enum CIVisibilityTestingEventTypeTestManagementAttemptToFix
+    {
+        [Description("")] None,
+        [Description("is_attempt_to_fix:true")] IsAttemptToFix,
+        [Description("is_attempt_to_fix:true;has_failed_all_retries:true")] AttemptToFixHasFailedAllRetries,
     }
 
     public enum CIVisibilityCoverageLibrary
@@ -408,6 +524,7 @@ internal static class MetricTags
         [Description("command:get_local_commits")] GetLocalCommits,
         [Description("command:get_objects")] GetObjects,
         [Description("command:pack_objects")] PackObjects,
+        [Description("command:diff")] Diff,
     }
 
     public enum CIVisibilityExitCodes
@@ -422,16 +539,40 @@ internal static class MetricTags
         [Description("exit_code:129")] EC129,
     }
 
-    public enum CIVisibilityITRSettingsResponse
+    public enum CIVisibilitySettingsResponse_CoverageFeature
     {
-        [Description("")] CoverageDisabled_ItrSkipDisabled,
-        [Description("coverage_enabled")] CoverageEnabled_ItrSkipDisabled,
-        [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled,
-        [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled,
-        [Description("early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipDisabled_EFDEnabled,
-        [Description("coverage_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled,
-        [Description("itrskip_enabled;early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled,
-        [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled,
+        [Description("coverage_enabled:true")] Enabled,
+        [Description("coverage_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_ItrSkippingFeature
+    {
+        [Description("itrskip_enabled:true")] Enabled,
+        [Description("itrskip_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature
+    {
+        [Description("early_flake_detection_enabled:true")] Enabled,
+        [Description("early_flake_detection_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_FlakyTestRetriesFeature
+    {
+        [Description("flaky_test_retries_enabled:true")] Enabled,
+        [Description("flaky_test_retries_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_KnownTestsFeature
+    {
+        [Description("known_tests_enabled:true")] Enabled,
+        [Description("known_tests_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_TestManagementFeature
+    {
+        [Description("test_management_enabled:true")] Enabled,
+        [Description("test_management_enabled:false")] Disabled,
     }
 
     public enum CIVisibilityRequestCompressed
@@ -444,5 +585,36 @@ internal static class MetricTags
     {
         [Description("")] Uncompressed,
         [Description("rs_compressed:true")] Compressed,
+    }
+
+    public enum CIVisibilityTestSessionProvider
+    {
+        [Description("provider:unsupported")] Unsupported,
+        [Description("provider:appveyor")] AppVeyor,
+        [Description("provider:azp")] AzurePipelines,
+        [Description("provider:bitbucket")] BitBucket,
+        [Description("provider:bitrise")] Bitrise,
+        [Description("provider:buildkite")] BuildKite,
+        [Description("provider:circleci")] CircleCI,
+        [Description("provider:codefresh")] Codefresh,
+        [Description("provider:githubactions")] GithubActions,
+        [Description("provider:gitlab")] Gitlab,
+        [Description("provider:jenkins")] Jenkins,
+        [Description("provider:teamcity")] Teamcity,
+        [Description("provider:travisci")] TravisCi,
+        [Description("provider:buddyci")] BuddyCi,
+        [Description("provider:aws")] AwsCodePipeline,
+    }
+
+    public enum CIVisibilityTestSessionType
+    {
+        [Description("")] NotAutoInjected,
+        [Description("auto_injected:true")] AutoInjected,
+    }
+
+    public enum CIVisibilityTestSessionAgentlessLogSubmission
+    {
+        [Description("")] NotEnabled,
+        [Description("agentless_log_submission_enabled:true")] Enabled,
     }
 }

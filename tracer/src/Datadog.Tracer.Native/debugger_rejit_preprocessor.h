@@ -38,6 +38,10 @@ protected:
     const bool GetIsExactSignatureMatch(const std::shared_ptr<MethodProbeDefinition>& definition) final;
     const bool GetIsEnabled(const std::shared_ptr<MethodProbeDefinition>& definition) final;
     const bool SupportsSelectiveEnablement() final;
+
+    bool CheckExactSignatureMatch(ComPtr<IMetaDataImport2>& metadataImport, const FunctionInfo& functionInfo,
+                                          const MethodReference& targetMethod) override;
+
     const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
                  const std::shared_ptr<MethodProbeDefinition>& methodProbe) final;

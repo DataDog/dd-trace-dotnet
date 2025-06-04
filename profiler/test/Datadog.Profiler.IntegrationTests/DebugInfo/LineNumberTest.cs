@@ -32,7 +32,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
             runner.Environment.CustomEnvironmentVariables[EnvironmentVariables.DebugInfoEnabled] = "1";
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
             var expectedStack = new StackTrace(
@@ -70,17 +70,14 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
                 // forced line info
                 first.Filename.Should().EndWith("LineNumber.cs");
-                first.StartLine.Should().Be(103);
                 first.Line.Should().Be(103);
 
                 // "normal" line info
                 second.Filename.Should().EndWith("LineNumber.cs");
-                second.StartLine.Should().Be(41);
                 second.Line.Should().Be(41);
 
                 // hidden debug info
                 third.Filename.Should().BeEmpty();
-                third.StartLine.Should().Be(0);
                 third.Line.Should().Be(0);
             }
         }
@@ -91,7 +88,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
             runner.Environment.CustomEnvironmentVariables[EnvironmentVariables.DebugInfoEnabled] = "0";
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -103,7 +100,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
                     for (var i = 0; i < stackTrace.FramesCount; i++)
                     {
                         stackTrace[i].Filename.Should().BeEmpty();
-                        stackTrace[i].StartLine.Should().Be(0);
+                        stackTrace[i].Line.Should().Be(0);
                     }
                 }
             }
@@ -114,7 +111,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -126,7 +123,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
                     for (var i = 0; i < stackTrace.FramesCount; i++)
                     {
                         stackTrace[i].Filename.Should().BeEmpty();
-                        stackTrace[i].StartLine.Should().Be(0);
+                        stackTrace[i].Line.Should().Be(0);
                     }
                 }
             }

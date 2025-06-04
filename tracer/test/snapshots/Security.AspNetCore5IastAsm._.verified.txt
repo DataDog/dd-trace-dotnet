@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -30,7 +30,8 @@
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
-        "method": "ExecuteQuery"
+        "method": "ExecuteQuery",
+        "stackId": "1"
       },
       "evidence": {
         "valueParts": [
@@ -55,12 +56,13 @@
     Metrics: {
       process_id: 0,
       _dd.appsec.enabled: 1.0,
-      _dd.appsec.rasp.duration: 0.0,
-      _dd.appsec.rasp.duration_ext: 0.0,
-      _dd.appsec.rasp.rule.eval: 9.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      iast: ,
+      _dd.stack: 
     }
   }
 ]

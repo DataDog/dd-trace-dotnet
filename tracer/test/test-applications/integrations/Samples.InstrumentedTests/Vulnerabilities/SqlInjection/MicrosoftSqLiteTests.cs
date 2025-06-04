@@ -6,6 +6,9 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
+#if !NET6_0_OR_GREATER
+[Trait("Category", "AlpineArmUnsupported")] // sqlite isn't supported in .NET 5 on Alpine
+#endif
 public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
 {
     protected static string ScalarCommandUnsafe;

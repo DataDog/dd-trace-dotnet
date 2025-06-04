@@ -39,12 +39,14 @@ namespace Datadog.Profiler.SmokeTests
             ITestOutputHelper output,
             TransportType transportType = TransportType.Http)
         {
-            _output = output;
             _transportType = transportType;
             _testApplicationRunner = new TestApplicationRunner(appName, framework, appAssembly, output, commandLine);
+            _output = _testApplicationRunner.XUnitLogger;
         }
 
         public int MinimumExpectedNbPprofFiles { get; set; } = 2;
+
+        public ITestOutputHelper XUnitLogger => _output;
 
         internal EnvironmentHelper EnvironmentHelper
         {
@@ -114,14 +116,14 @@ namespace Datadog.Profiler.SmokeTests
 
         private void RunChecks(MockDatadogAgent agent, string[] errorExceptions)
         {
-            CheckLogFiles(errorExceptions);
+            CheckLogFiles(agent.ProfiledProcessId, errorExceptions);
             CheckPprofFiles();
             CheckAgent(agent);
         }
 
-        private void CheckLogFiles(string[] errorExceptions)
+        private void CheckLogFiles(int profiledProcessId, string[] errorExceptions)
         {
-            CheckLogFiles("DD-DotNet-Profiler-Native*.*", errorExceptions);
+            CheckLogFiles($"DD-DotNet-Profiler-Native*-{profiledProcessId}.log", errorExceptions);
             CheckNoLogFiles("DD-DotNet-Profiler-Managed*.*");
             CheckNoLogFiles("DD-DotNet-Common-ManagedLoader*.*");
         }

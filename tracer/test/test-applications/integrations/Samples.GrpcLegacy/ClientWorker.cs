@@ -63,7 +63,7 @@ public class ClientWorker
             var client = new Greeter.GreeterClient(callInvoker);
 
             await SendVerySlowRequestAsync(client);
-            delay = Task.Delay(6_000); // longer than the slow request duration
+            delay = Task.Delay(1_000); // longer than the slow request duration
 
             await SendUnaryRequestAsync(client);
             await SendServerStreamingRequest(client, stoppingToken);
@@ -218,7 +218,7 @@ public class ClientWorker
         try
         {
             _logger.LogInformation("Sending very slow request to self");
-            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddSeconds(2));
+            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(600));
 
             throw new Exception("Received reply, when should have exceeded deadline");
         }

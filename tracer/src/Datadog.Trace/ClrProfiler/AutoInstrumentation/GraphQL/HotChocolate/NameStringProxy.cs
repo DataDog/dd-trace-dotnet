@@ -13,9 +13,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     [DuckCopy]
     internal struct NameStringProxy
     {
-        ///// <summary>
-        ///// Get the value of the NameString
-        ///// </summary>
-        public object Value;
+        public string Value;
+    }
+
+    /// <summary>
+    /// nullable structs need an explicit proxy
+    /// </summary>
+    [DuckCopy]
+    internal struct NullableNameStringProxy
+    {
+        public NameStringProxy Value;
+        public bool HasValue;
     }
 }

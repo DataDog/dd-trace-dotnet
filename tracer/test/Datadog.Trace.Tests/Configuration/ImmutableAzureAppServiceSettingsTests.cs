@@ -196,14 +196,14 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void GetIsAzureConsumptionPlanFunctionFalseWhenNoFunctionsEnvVars()
+        public void GetIsRunningMiniAgentInAzureFunctionsFalseWhenNoFunctionsEnvVars()
         {
             var settings = new ImmutableAzureAppServiceSettings(CreateConfigurationSource(), NullConfigurationTelemetry.Instance);
-            settings.IsFunctionsAppConsumptionPlan.Should().BeFalse();
+            settings.IsRunningMiniAgentInAzureFunctions.Should().BeFalse();
         }
 
         [Fact]
-        public void GetIsAzureConsumptionPlanFunctionFalseWhenNotConsumptionPlan()
+        public void GetIsRunningMiniAgentInAzureFunctionsFalseWhenNotConsumptionPlan()
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
@@ -211,22 +211,23 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.AzureAppService.WebsiteSKU, "basic"));
 
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            settings.IsFunctionsAppConsumptionPlan.Should().BeFalse();
+            var usesMiniAgent = Environment.OSVersion.Platform == PlatformID.Unix;
+            settings.IsRunningMiniAgentInAzureFunctions.Should().Be(usesMiniAgent);
         }
 
         [Fact]
-        public void GetIsAzureConsumptionPlanFunctionTrueWhenConsumptionPlanWithNoSKU()
+        public void GetIsRunningMiniAgentInAzureFunctionsTrueWhenConsumptionPlanWithNoSKU()
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
                 (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"));
 
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            settings.IsFunctionsAppConsumptionPlan.Should().BeTrue();
+            settings.IsRunningMiniAgentInAzureFunctions.Should().BeTrue();
         }
 
         [Fact]
-        public void GetIsAzureConsumptionPlanFunctionTrueWhenConsumptionPlanWithDynamicSKU()
+        public void GetIsRunningMiniAgentInAzureFunctionsTrueWhenConsumptionPlanWithDynamicSKU()
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
@@ -234,7 +235,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic"));
 
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            settings.IsFunctionsAppConsumptionPlan.Should().BeTrue();
+            settings.IsRunningMiniAgentInAzureFunctions.Should().BeTrue();
         }
     }
 }

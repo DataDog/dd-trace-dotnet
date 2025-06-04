@@ -57,7 +57,6 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetMvc5 : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
-        private readonly string _testName;
         private readonly bool _classicMode;
 
         public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
@@ -65,7 +64,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "0");
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
 
             _classicMode = classicMode;
             _iisFixture = iisFixture;
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-            return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
+            return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json", scrubCookiesFingerprint: true);
         }
 
         [Trait("Category", "EndToEnd")]

@@ -1,4 +1,4 @@
-﻿// <copyright file="MockLambdaExtension.cs" company="Datadog">
+// <copyright file="MockLambdaExtension.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Specialized;
 using System.IO;
 using System.Net;
-using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Util;
 using Xunit.Abstractions;
 
@@ -19,7 +19,7 @@ namespace Datadog.Trace.TestHelpers;
 public class MockLambdaExtension : IDisposable
 {
     private readonly HttpListener _listener;
-    private readonly Thread _listenerThread;
+    private readonly Task _listenerTask;
 
     public MockLambdaExtension(bool shouldSendContext, int port = 9004, ITestOutputHelper? output = null)
     {
@@ -44,8 +44,7 @@ public class MockLambdaExtension : IDisposable
                 Port = port;
                 _listener = listener;
 
-                _listenerThread = new Thread(HandleHttpRequests);
-                _listenerThread.Start();
+                _listenerTask = HandleHttpRequests();
 
                 return;
             }
@@ -133,6 +132,11 @@ public class MockLambdaExtension : IDisposable
             string? errorMsg = headers.Get("x-datadog-invocation-error-msg") ?? null;
             string? errorType = headers.Get("x-datadog-invocation-error-type") ?? null;
             string? errorStack = headers.Get("x-datadog-invocation-error-stack") ?? null;
+
+            errorMsg = DecodeBase64(errorMsg);
+            errorType = DecodeBase64(errorType);
+            errorStack = DecodeBase64(errorStack);
+
             var invocation = new EndExtensionRequest(headers, body,  traceId, spanId, samplingPriority, isError, errorMsg, errorType, errorStack);
 
             EndInvocations.Push(invocation);
@@ -147,13 +151,33 @@ public class MockLambdaExtension : IDisposable
         ctx.Response.Close();
     }
 
-    private void HandleHttpRequests()
+    private static string? DecodeBase64(string? input)
+    {
+        if (input == null)
+        {
+            return input;
+        }
+
+        try
+        {
+            // Try to decode the string as base64
+            byte[] decodedBytes = Convert.FromBase64String(input);
+            return System.Text.Encoding.UTF8.GetString(decodedBytes);
+        }
+        catch (FormatException)
+        {
+            // If it is not a valid base64 string, return original input
+            return input;
+        }
+    }
+
+    private async Task HandleHttpRequests()
     {
         while (_listener.IsListening)
         {
             try
             {
-                var ctx = _listener.GetContext();
+                var ctx = await _listener.GetContextAsync();
                 try
                 {
                     HandleHttpRequest(ctx);

@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <memory>
+#include "stdio.h"
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -19,9 +20,9 @@ class EtwEventsHandler : public INamedPipeHandler
 {
 public:
     EtwEventsHandler();
-    EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver);
+    EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver, FILE* pEventsFile);
     ~EtwEventsHandler();
-    void Stop();
+    void Cleanup();
 
 public:
 // Inherited via INamedPipeHandler
@@ -38,4 +39,5 @@ private:
     bool _showMessages;
     IEtwEventsReceiver* _pReceiver;
     IIpcLogger* _logger;
+    FILE* _pEventsFile;
 };

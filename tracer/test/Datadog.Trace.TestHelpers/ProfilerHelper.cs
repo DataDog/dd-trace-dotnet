@@ -125,7 +125,7 @@ namespace Datadog.Trace.TestHelpers
             }
 
             output?.WriteLine($"Updating {Path.GetFileName(executable)} using {setBit}");
-            var opts = new ProcessStartInfo(corFlagsExe, $"\"{executable}\" {setBit}")
+            var opts = new ProcessStartInfo(corFlagsExe, $"\"{executable}\" {setBit} /force")
             {
                 CreateNoWindow = true,
                 UseShellExecute = false

@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Dataflow;
 
 #nullable enable
@@ -12,7 +13,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.System.Net;
 
 /// <summary> WebClient class aspects </summary>
-[AspectClass("System.Net.WebClient,System", AspectType.RaspIastSink, VulnerabilityType.Ssrf)]
+[AspectClass("System.Net.WebClient,System", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class WebClientAspect
@@ -51,10 +52,22 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.String,System.Collections.Specialized.NameValueCollection)", 1)]
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.String,System.String,System.Collections.Specialized.NameValueCollection)", 2)]
     [AspectMethodInsertBefore("System.Net.WebClient::set_BaseAddress(System.String)")]
-    public static object Review(string parameter)
+    public static string Review(string parameter)
     {
-        VulnerabilitiesModule.OnSSRF(parameter);
-        return parameter;
+        try
+        {
+            if (parameter is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter);
+            }
+
+            return parameter!;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return parameter;
+        }
     }
 
     /// <summary>
@@ -113,9 +126,21 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesAsync(System.Uri,System.String,System.Collections.Specialized.NameValueCollection,System.Object)", 3)]
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.Uri,System.Collections.Specialized.NameValueCollection)", 1)]
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.Uri,System.String,System.Collections.Specialized.NameValueCollection)", 2)]
-    public static object ReviewUri(Uri parameter)
+    public static Uri ReviewUri(Uri parameter)
     {
-        VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
-        return parameter;
+        try
+        {
+            if (parameter is not null && parameter.OriginalString is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
+            }
+
+            return parameter!;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return parameter;
+        }
     }
 }

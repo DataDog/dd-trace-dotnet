@@ -9,6 +9,7 @@
 #include "IConfiguration.h"
 #include "LiveObjectsProvider.h"
 #include "OpSysTools.h"
+#include "RawSampleTransformer.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
@@ -25,32 +26,15 @@ const std::string LiveObjectsProvider::Gen1("1");
 const std::string LiveObjectsProvider::Gen2("2");
 
 LiveObjectsProvider::LiveObjectsProvider(
-    SampleValueTypeProvider& valueTypeProvider,
     ICorProfilerInfo13* pCorProfilerInfo,
-    IManagedThreadList* pManagedThreadList,
-    IFrameStore* pFrameStore,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration,
-    MetricsRegistry& metricsRegistry)
+    SampleValueTypeProvider& valueTypeProvider,
+    RawSampleTransformer* rawSampleTransformer,
+    IConfiguration* pConfiguration)
     :
     _pCorProfilerInfo(pCorProfilerInfo),
-    _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled())
+    _rawSampleTransformer{rawSampleTransformer},
+    _valueOffsets{valueTypeProvider.GetOrRegister(LiveObjectsProvider::SampleTypeDefinitions)}
 {
-    _pAllocationsProvider = std::make_unique<AllocationsProvider>(
-        valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
-        pCorProfilerInfo,
-        pManagedThreadList,
-        pFrameStore,
-        pThreadsCpuManager,
-        pAppDomainStore,
-        pRuntimeIdStore,
-        pConfiguration,
-        nullptr,
-        metricsRegistry,
-        CallstackProvider(shared::pmr::null_memory_resource()), // safe to pass the null memory resource for the provider. This provider does not collect callstack
-        shared::pmr::null_memory_resource()); // safe to pass null memory resource for the provider. This provider is only used to transform RawSamples
 }
 
 const char* LiveObjectsProvider::GetName()
@@ -59,7 +43,7 @@ const char* LiveObjectsProvider::GetName()
 }
 
 void LiveObjectsProvider::OnGarbageCollectionStart(
-    uint64_t timestamp,
+    std::chrono::nanoseconds timestamp,
     int32_t number,
     uint32_t generation,
     GCReason reason,
@@ -78,9 +62,9 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
     GCReason reason,
     GCType type,
     bool isCompacting,
-    uint64_t pauseDuration,
-    uint64_t totalDuration,
-    uint64_t endTimestamp,
+    std::chrono::nanoseconds pauseDuration,
+    std::chrono::nanoseconds totalDuration,
+    std::chrono::nanoseconds endTimestamp,
     uint64_t gen2Size,
     uint64_t lohSize,
     uint64_t pohSize)
@@ -139,7 +123,7 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
-    int64_t currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
+    auto currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
     std::size_t nbSamples = 0;
 
     // OPTIM maybe use an allocator
@@ -152,8 +136,8 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
         auto sample = info.GetSample();
 
         // update samples lifetime
-        sample->ReplaceLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(sample->GetTimeStamp() - currentTimestamp)});
-        sample->ReplaceLabel(Label{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
+        sample->ReplaceLabel(StringLabel{Sample::ObjectLifetimeLabel, std::to_string((sample->GetTimeStamp() - currentTimestamp).count())});
+        sample->ReplaceLabel(StringLabel{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
 
         samples->Add(sample);
     }
@@ -177,7 +161,7 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
         if (handle != nullptr)
         {
             LiveObjectInfo info(
-                _pAllocationsProvider->TransformRawSample(rawSample),
+                _rawSampleTransformer->Transform(rawSample, _valueOffsets),
                 rawSample.Address,
                 rawSample.Timestamp);
             info.SetHandle(handle);

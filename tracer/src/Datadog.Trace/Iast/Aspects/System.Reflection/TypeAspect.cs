@@ -30,6 +30,7 @@ public class TypeAspect
     [AspectMethodInsertBefore("System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])", 6)]
     [AspectMethodInsertBefore("System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])", 5)]
     [AspectMethodInsertBefore("System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Reflection.Binder,System.Type[],System.Reflection.ParameterModifier[])", 5)]
+    [AspectMethodInsertBefore("System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Type[])", 3)]
     [AspectMethodInsertBefore("System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Reflection.Binder,System.Type[],System.Reflection.ParameterModifier[])", 4)]
     [AspectMethodInsertBefore("System.Type::GetMethod(System.String,System.Int32,System.Type[],System.Reflection.ParameterModifier[])", 3)]
     [AspectMethodInsertBefore("System.Type::GetMethod(System.String)", 0)]
@@ -43,7 +44,15 @@ public class TypeAspect
     [AspectMethodInsertBefore("System.Type::InvokeMember(System.String,System.Reflection.BindingFlags,System.Reflection.Binder,System.Object,System.Object[],System.Reflection.ParameterModifier[],System.Globalization.CultureInfo,System.String[])", 7)]
     public static string ReflectionInjectionParam(string param)
     {
-        IastModule.OnReflectionInjection(param, IntegrationId.ReflectionInjection);
-        return param;
+        try
+        {
+            IastModule.OnReflectionInjection(param, IntegrationId.ReflectionInjection);
+            return param;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+            return param;
+        }
     }
 }

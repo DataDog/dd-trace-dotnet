@@ -42,7 +42,7 @@ public:
 
         sample->AddValue(GetValue(), durationIndex);
 
-        sample->AddNumericLabel(NumericLabel(Sample::GarbageCollectionNumberLabel, Number));
+        sample->AddLabel(NumericLabel(Sample::GarbageCollectionNumberLabel, Number));
         AddGenerationLabel(sample, Generation);
 
         BuildCallStack(sample, Generation);
@@ -55,7 +55,7 @@ public:
     // By default, use the Duration field
     virtual int64_t GetValue() const
     {
-        return Duration;
+        return Duration.count();
     }
 
     // Derived classes are expected to set the event type + any additional field as label
@@ -64,7 +64,7 @@ public:
 public:
     int32_t Number;
     uint32_t Generation;
-    int64_t Duration;
+    std::chrono::nanoseconds Duration;
 
 private:
     inline static void AddGenerationLabel(std::shared_ptr<Sample>& sample, uint32_t generation)
@@ -74,19 +74,19 @@ private:
         switch (generation)
         {
             case 0:
-                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen0Value));
+                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, Gen0Value));
                 break;
 
             case 1:
-                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen1Value));
+                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, Gen1Value));
                 break;
 
             case 2:
-                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen2Value));
+                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, Gen2Value));
                 break;
 
             default: // this should never happen (only gen0, gen1 or gen2 collections)
-                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, std::to_string(generation)));
+                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, std::to_string(generation)));
                 break;
         }
     }

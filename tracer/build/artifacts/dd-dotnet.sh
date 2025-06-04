@@ -1,6 +1,6 @@
 #!/bin/sh
 
-TRACER_VERSION="2.55.0"
+TRACER_VERSION="3.19.0"
 
 # Get the directory of the script
 DIR=$(dirname "$(readlink -f "$0")")
@@ -50,8 +50,8 @@ if contains_word "$DISTRO_ID" "alpine"; then
         DD_DOTNET_PATH="$DIR/linux-musl-x64/dd-dotnet"
         EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}-musl.tar.gz"
     elif [ "$ARCH" = "aarch64" ]; then
-        echo "Alpine ARM64 is not supported."
-        exit 1
+	      DD_DOTNET_PATH="$DIR/linux-musl-arm64/dd-dotnet"
+        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}.arm64.tar.gz"
     else
         echo "Unsupported architecture: $ARCH"
         exit 1

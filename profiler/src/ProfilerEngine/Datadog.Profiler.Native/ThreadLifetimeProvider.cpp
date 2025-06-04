@@ -3,23 +3,17 @@
 
 #include "ThreadLifetimeProvider.h"
 #include "SampleValueTypeProvider.h"
-#include "GarbageCollectionProvider.h"
 #include "OpSysTools.h"
+#include "RawSampleTransformer.h"
 #include "TimelineSampleType.h"
 
 ThreadLifetimeProvider::ThreadLifetimeProvider(
     SampleValueTypeProvider& valueTypeProvider,
-    IFrameStore* pFrameStore,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration,
+    RawSampleTransformer* rawSampleTransformer,
     shared::pmr::memory_resource* memoryResource)
     :
     CollectorBase<RawThreadLifetimeSample>(
-        "ThreadLifetimeProvider",
-        valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions),
-        pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource)
+        "ThreadLifetimeProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
 {
 }
 
@@ -36,7 +30,7 @@ void ThreadLifetimeProvider::OnThreadStop(std::shared_ptr<ManagedThreadInfo> pTh
 RawThreadLifetimeSample ThreadLifetimeProvider::CreateSample(std::shared_ptr<ManagedThreadInfo> pThreadInfo, ThreadEventKind kind)
 {
     RawThreadLifetimeSample rawSample;
-    rawSample.Timestamp = GetCurrentTimestamp();
+    rawSample.Timestamp = OpSysTools::GetHighPrecisionTimestamp();
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;
     rawSample.AppDomainId = pThreadInfo->GetAppDomainId();
@@ -44,9 +38,4 @@ RawThreadLifetimeSample ThreadLifetimeProvider::CreateSample(std::shared_ptr<Man
     rawSample.Kind = kind;
 
     return rawSample;
-}
-
-uint64_t ThreadLifetimeProvider::GetCurrentTimestamp()
-{
-    return OpSysTools::GetHighPrecisionTimestamp();
 }

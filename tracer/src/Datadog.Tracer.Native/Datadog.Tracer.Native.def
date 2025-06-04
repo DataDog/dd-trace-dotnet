@@ -14,13 +14,15 @@ EXPORTS
     AddTraceAttributeInstrumentation
     InitializeTraceMethods
     InstrumentProbes
-    GetProbesStatuses
     DisableTracerCLRProfiler
+    GetProbesStatuses
     RegisterIastAspects
-    RegisterCallTargetDefinitions
+    RegisterCallTargetDefinitions3
     EnableCallTargetDefinitions
     DisableCallTargetDefinitions
     UpdateSettings
     ShouldHeal
     ReportSuccessfulInstrumentation
     GetUserStrings
+    InitEmbeddedCallSiteDefinitions
+    InitEmbeddedCallTargetDefinitions

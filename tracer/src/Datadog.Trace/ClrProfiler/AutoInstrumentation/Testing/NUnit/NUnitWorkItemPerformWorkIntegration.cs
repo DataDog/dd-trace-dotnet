@@ -3,9 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -51,7 +54,7 @@ public static class NUnitWorkItemPerformWorkIntegration
             case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is null && item.Instance.TryDuckCast<TestAssemblyStruct>(out var itemAssembly):
                 var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                 var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-                CIVisibility.WaitForSkippableTaskToFinish();
+                TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
                 var newModule = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion);
                 newModule.EnableIpcClient();
                 NUnitIntegration.SetTestModuleTo(item, newModule);
@@ -62,10 +65,31 @@ public static class NUnitWorkItemPerformWorkIntegration
             case "TestMethod":
                 if (NUnitIntegration.ShouldSkip(item, out _, out _))
                 {
-                    var testMethod = item.Method.MethodInfo;
-                    Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", testMethod.DeclaringType?.FullName, testMethod.Name);
+                    var testMethod = item.Method?.MethodInfo;
+                    Common.Log.Debug("NUnitWorkItemPerformWorkIntegration: Test skipped by test skipping feature: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);
                     item.RunState = RunState.Ignored;
                     item.Properties.Set(NUnitIntegration.SkipReasonKey, IntelligentTestRunnerTags.SkippedByReason);
+                }
+
+                // Getting test management properties
+                var testOptimization = TestOptimization.Instance;
+                TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties = null;
+                if (testOptimization.TestManagementFeature?.Enabled == true)
+                {
+                    if (NUnitIntegration.GetTestModuleFrom(item) is { } module &&
+                        NUnitIntegration.GetTestSuiteFrom(item) is { } suite &&
+                        item.Method?.MethodInfo?.Name is { } testMethodName)
+                    {
+                        testManagementProperties = testOptimization.TestManagementFeature?.GetTestProperties(module.Name, suite.Name, testMethodName);
+
+                        // If test is disabled we mark it as skipped and don't run it
+                        if (testManagementProperties is { Disabled: true, AttemptToFix: false })
+                        {
+                            Common.Log.Debug("NUnitWorkItemPerformWorkIntegration: Test is disabled by Datadog: {Class}.{Name}", item.Method.MethodInfo?.DeclaringType?.FullName, item.Method.MethodInfo?.Name);
+                            item.RunState = RunState.Ignored;
+                            item.Properties.Set(NUnitIntegration.SkipReasonKey, "Flaky test is disabled by Datadog.");
+                        }
+                    }
                 }
 
                 break;

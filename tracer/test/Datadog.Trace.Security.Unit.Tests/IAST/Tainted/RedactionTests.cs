@@ -53,6 +53,7 @@ public class RedactionTests
     [InlineData("auth")]
     [InlineData("authorization")]
     [InlineData("authentication")]
+    [InlineData("user")]
     public void GivenASensitiveString_WhenProcessedAsKey_ItIsRedacted(string key)
     {
         var redactor = Utils.GetDefaultRedactor(_regexTimeout);
@@ -60,7 +61,6 @@ public class RedactionTests
     }
 
     [Theory]
-    [InlineData("user")]
     [InlineData("table")]
     [InlineData("name")]
     [InlineData("count")]

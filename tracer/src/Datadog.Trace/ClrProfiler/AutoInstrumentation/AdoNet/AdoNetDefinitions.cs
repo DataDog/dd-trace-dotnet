@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
 using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
@@ -31,7 +33,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     AssemblyName = "System.Data.Common",
     TypeName = "System.Data.Common.DbCommand",
     MinimumVersion = "4.0.0",
-    MaximumVersion = "8.*.*",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AdoNet),
     DataReaderType = TypeNames.DbDataReaderType,
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
@@ -85,4 +87,76 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
         typeof(CommandExecuteScalarDerivedAttribute),
         // DbDataReader System.Data.Common.DbCommand.ExecuteDbDataReader(CommandBehavior)
         typeof(CommandExecuteDbDataReaderWithBehaviorDerivedAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "System.Data",
+    TypeName = "System.Data.Common.DbDataReader",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "System.Data.Common",
+    TypeName = "System.Data.Common.DbDataReader",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = SupportedVersions.LatestDotNet,
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "System.Data",
+    TypeName = "System.Data.Common.DbDataReader",
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "netstandard",
+    TypeName = "System.Data.Common.DbDataReader",
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "2.*.*",
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
     })]

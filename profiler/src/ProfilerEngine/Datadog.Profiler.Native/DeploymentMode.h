@@ -3,7 +3,9 @@
 
 #pragma once
 
-enum class DeploymentMode
+#include <string>
+
+enum DeploymentMode : int
 {
     Manual,
     SingleStepInstrumentation

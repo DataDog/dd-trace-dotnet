@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
@@ -30,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestAssemblyInfoRunAssemblyInitializeIntegration
 {
-    private static readonly MethodInfo EmptyCleanUpMethodInfo = typeof(TestAssemblyInfoRunAssemblyInitializeIntegration).GetMethod("EmptyCleanUpMethod", BindingFlags.NonPublic | BindingFlags.Static);
+    private static readonly MethodInfo EmptyCleanUpMethodInfo = typeof(TestAssemblyInfoRunAssemblyInitializeIntegration).GetMethod(nameof(EmptyCleanUpMethod), BindingFlags.NonPublic | BindingFlags.Static)!;
 
     /// <summary>
     /// OnMethodBegin callback
@@ -40,15 +41,10 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
     /// <param name="testContext">Test context instance</param>
     /// <returns>Calltarget state value</returns>
-    internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext testContext)
+    internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext? testContext)
         where TTarget : ITestAssemblyInfo
     {
         if (!MsTestIntegration.IsEnabled)
-        {
-            return CallTargetState.GetDefault();
-        }
-
-        if (!testContext.TryDuckCast<TestContextStruct>(out var context))
         {
             return CallTargetState.GetDefault();
         }
@@ -58,7 +54,24 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
             instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
         }
 
-        return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, context.TestMethod.AssemblyName));
+        string? assemblyName = null;
+        if (testContext.TryDuckCast<TestContextStruct>(out var context) && context.TestMethod is { AssemblyName: { } contextAssemblyName })
+        {
+            assemblyName = contextAssemblyName;
+        }
+
+        if (string.IsNullOrEmpty(assemblyName) && instance.Instance?.TryDuckCast<ITestAssemblyInfoWithAssembly>(out var instanceWithAssembly) == true)
+        {
+            assemblyName = instanceWithAssembly.Assembly.GetName().Name;
+        }
+
+        if (string.IsNullOrEmpty(assemblyName))
+        {
+            Common.Log.Warning("Module name cannot be extracted!");
+            return CallTargetState.GetDefault();
+        }
+
+        return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, assemblyName));
     }
 
     /// <summary>
@@ -69,7 +82,7 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
     {
         if (state.State is TestModule module && exception is not null)
         {
@@ -81,5 +94,12 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
 
     private static void EmptyCleanUpMethod()
     {
+    }
+
+#pragma warning disable SA1201
+    internal interface ITestAssemblyInfoWithAssembly
+#pragma warning restore SA1201
+    {
+        Assembly Assembly { get; }
     }
 }

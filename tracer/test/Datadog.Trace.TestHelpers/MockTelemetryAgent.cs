@@ -1,4 +1,4 @@
-﻿// <copyright file="MockTelemetryAgent.cs" company="Datadog">
+// <copyright file="MockTelemetryAgent.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,7 +28,7 @@ namespace Datadog.Trace.TestHelpers
     internal class MockTelemetryAgent : IDisposable
     {
         private readonly HttpListener _listener;
-        private readonly Thread _listenerThread;
+        private readonly Task _listenerTask;
 
         public MockTelemetryAgent(int port = 8524, int retries = 5)
         {
@@ -49,8 +49,7 @@ namespace Datadog.Trace.TestHelpers
                     Port = port;
                     _listener = listener;
 
-                    _listenerThread = new Thread(HandleHttpRequests);
-                    _listenerThread.Start();
+                    _listenerTask = HandleHttpRequests();
 
                     return;
                 }
@@ -188,13 +187,13 @@ namespace Datadog.Trace.TestHelpers
             ctx.Response.Close();
         }
 
-        private void HandleHttpRequests()
+        private async Task HandleHttpRequests()
         {
             while (_listener.IsListening)
             {
                 try
                 {
-                    var ctx = _listener.GetContext();
+                    var ctx = await _listener.GetContextAsync();
                     HandleHttpRequest(ctx);
                 }
                 catch (HttpListenerException)
@@ -238,6 +237,7 @@ namespace Datadog.Trace.TestHelpers
                     { TelemetryRequestTypes.AppExtendedHeartbeat, CreateSerializer<AppExtendedHeartbeatPayload>() },
                     { TelemetryRequestTypes.AppClosing, CreateNullPayloadSerializer() },
                     { TelemetryRequestTypes.AppHeartbeat, CreateNullPayloadSerializer() },
+                    { TelemetryRequestTypes.AppEndpoints, CreateSerializer<AppEndpointsPayload>() }
                 };
             }
 

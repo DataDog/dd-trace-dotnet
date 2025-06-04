@@ -5,18 +5,20 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class CircleCiEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: CircleCI detected");
 
         IsCI = true;
         Provider = "circleci";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.CircleCI;
         Repository = ValueProvider.GetValue(Constants.CircleCIRepositoryUrl);
         Commit = ValueProvider.GetValue(Constants.CircleCISha);
         Tag = ValueProvider.GetValue(Constants.CircleCITag);

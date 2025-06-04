@@ -1,6 +1,13 @@
 cmake_minimum_required (VERSION 3.13.4)
 cmake_policy(SET CMP0015 NEW)
 
+# macOS uses 3.30 which deprecates FetchContent_Populate in favor of FetchContent_MakeAvailable,
+# but we're using 3.13.4 on Linux, which doesn't have FetchContent_MakeAvailable
+
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
+
 # ******************************************************
 # Environment detection
 # ******************************************************
@@ -118,8 +125,14 @@ add_subdirectory(src/ProfilerEngine/Datadog.Linux.ApiWrapper)
 enable_testing()
 add_subdirectory(test)
 
-add_custom_target(profiler-wrapper)
-add_dependencies(profiler-wrapper Datadog.Profiler.Native Datadog.Linux.ApiWrapper.x64)
+add_custom_target(profiler)
+add_dependencies(profiler Datadog.Profiler.Native)
 
 add_custom_target(all-profiler)
-add_dependencies(all-profiler profiler-wrapper profiler-native-tests)
+add_dependencies(all-profiler profiler profiler-native-tests)
+
+add_custom_target(wrapper)
+add_dependencies(wrapper Datadog.Linux.ApiWrapper.x64)
+
+add_custom_target(all-wrapper)
+add_dependencies(all-wrapper wrapper wrapper-native-tests)

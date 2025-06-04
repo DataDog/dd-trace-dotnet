@@ -25,6 +25,7 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
@@ -35,7 +36,6 @@ namespace Datadog.Trace.Debugger
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
         private static readonly object GlobalLock = new();
 
-        private readonly DebuggerSettings _settings;
         private readonly IDiscoveryService _discoveryService;
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
@@ -48,7 +48,6 @@ namespace Datadog.Trace.Debugger
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly IDogStatsd _dogStats;
         private readonly object _instanceLock = new();
-        private bool _isInitialized;
         private bool _isRcmAvailable;
 
         private LiveDebugger(
@@ -64,7 +63,7 @@ namespace Datadog.Trace.Debugger
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
         {
-            _settings = settings;
+            Settings = settings;
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _snapshotUploader = snapshotUploader;
@@ -89,7 +88,11 @@ namespace Datadog.Trace.Debugger
 
         public static LiveDebugger Instance { get; private set; }
 
+        public bool IsInitialized { get; private set; }
+
         public string ServiceName { get; }
+
+        internal DebuggerSettings Settings { get; }
 
         public static LiveDebugger Create(
             DebuggerSettings settings,
@@ -131,7 +134,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                _isInitialized = true;
+                IsInitialized = true;
             }
 
             try
@@ -139,8 +142,8 @@ namespace Datadog.Trace.Debugger
                 Log.Information("Live Debugger initialization started");
                 _subscriptionManager.SubscribeToChanges(_subscription);
 
-                DebuggerSnapshotSerializer.SetConfig(_settings);
-                Redaction.SetConfig(_settings);
+                DebuggerSnapshotSerializer.SetConfig(Settings);
+                Redaction.Instance.SetConfig(Settings.RedactedIdentifiers, Settings.RedactedExcludedIdentifiers, Settings.RedactedTypes);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
 
                 await StartAsync().ConfigureAwait(false);
@@ -152,12 +155,12 @@ namespace Datadog.Trace.Debugger
 
             bool CanInitialize()
             {
-                if (_isInitialized)
+                if (IsInitialized)
                 {
                     return false;
                 }
 
-                if (!_settings.Enabled)
+                if (!Settings.Enabled)
                 {
                     Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
                     return false;
@@ -236,6 +239,7 @@ namespace Datadog.Trace.Debugger
                                     fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
                                     break;
                                 case LiveProbeResolveStatus.Error:
+                                    Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", probe.Id, message);
                                     fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
                                     break;
                             }
@@ -245,15 +249,17 @@ namespace Datadog.Trace.Debugger
 
                         case ProbeLocationType.Method:
                         {
+                            SignatureParser.TryParse(probe.Where.Signature, out var signature);
+
                             fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0));
                             if (probe is SpanProbe)
                             {
-                                var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                                var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, signature);
                                 spanProbes.Add(spanDefinition);
                             }
                             else
                             {
-                                var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                                var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, signature);
                                 methodProbes.Add(nativeDefinition);
                                 ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
                                 SetRateLimit(probe);
@@ -282,18 +288,17 @@ namespace Datadog.Trace.Debugger
 
         private static void SetRateLimit(ProbeDefinition probe)
         {
-            if (probe is not LogProbe logProbe)
+            switch (probe)
             {
-                return;
-            }
-
-            if (logProbe.Sampling is { } sampling)
-            {
-                ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
-            }
-            else
-            {
-                ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot ? 1 : 5000);
+                case LogProbe { Sampling: { } sampling }:
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
+                    break;
+                case LogProbe logProbe:
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot ? 1 : 5000);
+                    break;
+                case SpanDecorationProbe or MetricProbe:
+                    ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
+                    break;
             }
         }
 
@@ -512,6 +517,11 @@ namespace Datadog.Trace.Debugger
                     throw new ArgumentOutOfRangeException(
                         nameof(metricKind),
                         $"{metricKind} is not a valid value");
+            }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Successfully sent metric {Metric}. ProbeId={ProbeId}", metricName, probeId);
             }
 
             SetProbeStatusToEmitting(probe);

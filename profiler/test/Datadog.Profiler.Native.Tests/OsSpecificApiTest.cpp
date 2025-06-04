@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 
 #include "OsSpecificApi.h"
+#include "OpSysTools.h"
 
 #include <regex>
 
@@ -49,4 +50,14 @@ TEST(OsSpecificApiTest, CheckProcessStartTimeFormat)
     std::regex dateFormatRegex("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z");
 
     ASSERT_TRUE(std::regex_match(processStartTime, dateFormatRegex));
+}
+
+TEST(OsSpecificApiTest, CheckProcessLifetime)
+{
+    const int seconds = 2;
+    std::chrono::nanoseconds ns = std::chrono::seconds(seconds);
+    OpSysTools::Sleep(ns);
+    auto lifetime = OsSpecificApi::GetProcessLifetime();
+
+    ASSERT_TRUE(lifetime >= seconds);
 }

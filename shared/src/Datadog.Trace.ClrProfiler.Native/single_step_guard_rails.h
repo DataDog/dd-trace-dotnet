@@ -11,7 +11,7 @@ private:
     bool m_isRunningInSingleStep;
     bool m_isForcedExecution = false;
 
-    bool ShouldForceInstrumentationOverride(const std::string& eolDescription);
+    bool ShouldForceInstrumentationOverride(const std::string& eolDescription, bool isEol);
     HRESULT HandleUnsupportedNetCoreVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion, const bool isEol);
     HRESULT HandleUnsupportedNetFrameworkVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion, const bool isEol);
 

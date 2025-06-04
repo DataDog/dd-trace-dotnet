@@ -3,30 +3,42 @@
 
 #include "CrashReporting.h"
 
-#include "unknwn.h"
 #include "FfiHelper.h"
+#include "ScopeFinalizer.h"
+#include "unknwn.h"
+#include <shared/src/native-src/string.h>
 #include <shared/src/native-src/util.h>
 #include <thread>
 
+#ifdef _WIN32
+#include "Windows.h"
+#endif
+
 extern "C"
 {
+#ifdef LINUX
+#include "datadog/blazesym.h"
+#endif
 #include "datadog/common.h"
+#include "datadog/crashtracker.h"
 #include "datadog/profiling.h"
 }
 
-extern "C" IUnknown * STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
+#include "CrashReportingHelper.hpp"
+
+extern "C" IUnknown* STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
 {
-#ifdef _WIN32
-    return nullptr;
-#else
     auto instance = CrashReporting::Create(pid);
     instance->AddRef();
     return (IUnknown*)instance;
-#endif
 }
 
-CrashReporting::CrashReporting(int32_t pid)
-    : _pid(pid)
+CrashReporting::CrashReporting(int32_t pid) :
+    _pid(pid),
+    _signal(0),
+    _error{std::nullopt},
+    _builder{nullptr},
+    _refCount(0)
 {
 }
 
@@ -36,31 +48,70 @@ CrashReporting::~CrashReporting()
     {
         ddog_Error_drop(&_error.value());
     }
+}
 
-    ddog_crashinfo_drop(&_crashInfo);
+ddog_crasht_OsInfo GetOsInfo()
+{
+    auto osType = libdatadog::to_char_slice(
+#ifdef _WINDOWS
+                "Windows"
+#elif MACOS
+                "macOS"
+#else
+                "Linux"
+#endif
+    );
+
+    auto architecture = libdatadog::to_char_slice(
+#ifdef _WINDOWS
+#ifdef BIT64
+                "x86_64"
+#else
+                "x86"
+#endif
+#elif AMD64
+                "x86_64"
+#elif X86
+                "x86"
+#elif ARM64
+                "arm64"
+#elif ARM
+                "arm"
+#endif
+    );
+
+    auto osInfo = ddog_crasht_OsInfo {
+        .architecture = architecture,
+        .bitness = {},
+        .os_type = osType,
+        .version = {}
+    };
+
+    return osInfo;
 }
 
 int32_t CrashReporting::Initialize()
 {
-    auto crashInfoResult = ddog_crashinfo_new();
-
-    if (crashInfoResult.tag == DDOG_PROF_CRASH_INFO_NEW_RESULT_ERR)
+    bool succeeded = false;
+    std::tie(_builder, succeeded) = ExtractResult(ddog_crasht_CrashInfoBuilder_new());
+    if (!succeeded)
     {
-        SetLastError(crashInfoResult.err);
         return 1;
     }
 
-    _crashInfo = crashInfoResult.ok;
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_timestamp_now(&_builder));
 
-    auto result = ddog_crashinfo_set_timestamp_to_now(&_crashInfo);
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_proc_info(&_builder, {_pid}));
 
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
-    {
-        SetLastError(result.err);
-        return 1;
-    }
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_os_info(&_builder, GetOsInfo()));
 
-    return AddTag("severity", "crash");
+#ifdef _WINDOWS
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_kind(&_builder, DDOG_CRASHT_ERROR_KIND_UNHANDLED_EXCEPTION));
+#else
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_kind(&_builder, DDOG_CRASHT_ERROR_KIND_UNIX_SIGNAL));
+#endif
+
+    return 0;
 }
 
 void CrashReporting::SetLastError(ddog_Error error)
@@ -109,23 +160,32 @@ ULONG CrashReporting::Release()
 
     if (newCount == 0)
     {
-        delete(this);
+        delete (this);
     }
 
     return newCount;
 }
 
-int32_t CrashReporting::AddTag(const char* key, const char* value)
+// Used only to crash in tests
+int32_t CrashReporting::Panic()
 {
-    auto result = ddog_crashinfo_add_tag(&_crashInfo, libdatadog::FfiHelper::StringToCharSlice(std::string_view(key)), libdatadog::FfiHelper::StringToCharSlice(std::string_view(value)));
+    // The goal here (like with CrashProcess), is to crash the app in the test
+    // Here we want the crash to happen in Rust (panic)
+    auto faultySlice = ddog_CharSlice{ .ptr = (const char*)0x1, .len = 10 };
+    ddog_Vec_Tag_push((ddog_Vec_Tag*)0x1, faultySlice, faultySlice);
 
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
-    {
-        SetLastError(result.err);
-        return 1;
+    return 1;
+}
+
+ddog_crasht_SignalNames GetSignal(int signal){
+    switch (signal) {
+        case 6: return DDOG_CRASHT_SIGNAL_NAMES_SIGABRT;
+        case 7: return DDOG_CRASHT_SIGNAL_NAMES_SIGBUS;
+        case 11: return DDOG_CRASHT_SIGNAL_NAMES_SIGSEGV;
+        case 31: return DDOG_CRASHT_SIGNAL_NAMES_SIGSYS;
+        default:
+            return DDOG_CRASHT_SIGNAL_NAMES_UNKNOWN;
     }
-
-    return 0;
 }
 
 int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
@@ -142,7 +202,14 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
         signalInfo = std::string(description);
     }
 
-    ddog_crashinfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::FfiHelper::StringToCharSlice(signalInfo) });
+    auto siginfo = ddog_crasht_SigInfo {
+        .addr = {nullptr, 0},
+        .code = 0,
+        .code_human_readable = DDOG_CRASHT_SI_CODES_UNKNOWN,
+        .signo = signal,
+        .signo_human_readable = GetSignal(signal),
+    };
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_sig_info(&_builder, siginfo));
 
     return 0;
 }
@@ -155,85 +222,74 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
     *isSuspicious = false;
 
-    for (auto thread : threads)
+    for (auto const& [threadId, threadName] : threads)
     {
-        auto frames = GetThreadFrames(thread.first, resolveCallback, context);
+        auto frames = GetThreadFrames(threadId, resolveCallback, context);
 
-        ddog_prof_Slice_StackFrame stackTrace;
+        auto [stackTrace, succeeded] = ExtractResult(ddog_crasht_StackTrace_new());
 
-        auto count = frames.size();
-
-        stackTrace.len = count;
-
-        auto stackFrames = std::make_unique<ddog_prof_StackFrame[]>(count);
-        auto stackFrameNames = std::make_unique<ddog_prof_StackFrameNames[]>(count);
-        auto strings = std::make_unique<std::string[]>(count);
-
-        stackTrace.ptr = stackFrames.get();
-
-        for (int i = 0; i < count; i++)
+        if (!succeeded)
         {
-            auto frame = frames.at(i);
+            return 1;
+        }
 
-            if (thread.first == crashingThreadId)
+        auto currentIsCrashingThread = threadId == crashingThreadId;
+        for (int i = 0; i < frames.size(); i++)
+        {
+            auto [frame, succeeded] = ExtractResult(ddog_crasht_StackFrame_new());
+
+            if (!succeeded)
+            {
+                return 1;
+            }
+
+            auto const& currentFrame = frames[i];
+
+            if (currentIsCrashingThread)
             {
                 // Mark the callstack as suspicious if one of the frames is suspicious
                 // or the thread name begins with DD_
-                if (frame.isSuspicious || thread.second.rfind("DD_", 0) == 0)
+                if (currentFrame.isSuspicious || threadName.rfind("DD_", 0) == 0)
                 {
                     *isSuspicious = true;
                 }
             }
 
-            strings[i] = frame.method;
+            auto relativeAddress = currentFrame.ip - currentFrame.moduleAddress;
+            CHECK_RESULT(ddog_crasht_StackFrame_with_ip(&frame, currentFrame.ip));
+            CHECK_RESULT(ddog_crasht_StackFrame_with_sp(&frame, currentFrame.sp));
+            CHECK_RESULT(ddog_crasht_StackFrame_with_module_base_address(&frame, currentFrame.moduleAddress));
+            CHECK_RESULT(ddog_crasht_StackFrame_with_relative_address(&frame, relativeAddress));
 
-            stackFrameNames[i] = ddog_prof_StackFrameNames{
-                .colno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
-                .filename = {nullptr, 0},
-                .lineno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
-                .name = libdatadog::FfiHelper::StringToCharSlice(strings[i])
-            };
+            CHECK_RESULT(ddog_crasht_StackFrame_with_symbol_address(&frame, currentFrame.symbolAddress));
 
-            auto ip = static_cast<uintptr_t>(frame.ip);
-            auto sp = static_cast<uintptr_t>(frame.sp);
-            auto moduleAddress = static_cast<uintptr_t>(frame.moduleAddress);
-            auto symbolAddress = static_cast<uintptr_t>(frame.symbolAddress);
-
-            stackFrames[i] = ddog_prof_StackFrame{
-                .ip = ip,
-                .module_base_address = moduleAddress,
-                .names{
-                    .ptr = &stackFrameNames[i],
-                    .len = 1,
-                },
-                .sp = sp,
-                .symbol_address = symbolAddress,
-            };
-        }
-
-        auto threadIdStr = std::to_string(thread.first);
-
-        auto result = ddog_crashinfo_set_stacktrace(&_crashInfo, { threadIdStr.c_str(), threadIdStr.length() }, stackTrace);
-
-        if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
-        {
-            SetLastError(result.err);
-            continue;
-        }
-
-        successfulThreads++;
-
-        if (thread.first == crashingThreadId)
-        {
-            // Setting the default stacktrace
-            result = ddog_crashinfo_set_stacktrace(&_crashInfo, { nullptr, 0 }, stackTrace);
-
-            if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+            auto buildId = currentFrame.buildId;
+            if (buildId.size() != 0)
             {
-                SetLastError(result.err);
-                continue;
+                CHECK_RESULT(ddog_crasht_StackFrame_with_build_id(&frame, {buildId.data(), buildId.size()}));
+#ifdef _WINDOWS
+                CHECK_RESULT(ddog_crasht_StackFrame_with_build_id_type(&frame, DDOG_CRASHT_BUILD_ID_TYPE_PDB));
+#else
+                CHECK_RESULT(ddog_crasht_StackFrame_with_build_id_type(&frame, DDOG_CRASHT_BUILD_ID_TYPE_GNU));
+#endif
             }
+            CHECK_RESULT(ddog_crasht_StackFrame_with_function(&frame, libdatadog::to_char_slice(currentFrame.method)));
+            CHECK_RESULT(ddog_crasht_StackTrace_push_frame(&stackTrace, &frame, /*is incomplete*/ true));
         }
+
+        CHECK_RESULT(ddog_crasht_StackTrace_set_complete(&stackTrace));
+
+        auto threadIdStr = std::to_string(threadId);
+        // stackTrace is consumed by the API, meaning that we *MUST* not use this handle
+        auto thread = ddog_crasht_ThreadData{
+            .crashed = currentIsCrashingThread,
+            .name = {threadIdStr.data(), threadIdStr.size()},
+            .stack = stackTrace,
+            .state = {nullptr, 0}
+        };
+
+        CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_thread(&_builder, thread));
+        successfulThreads++;
     }
 
     if (successfulThreads != threads.size())
@@ -248,74 +304,137 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
 {
     auto vecTags = ddog_Vec_Tag_new();
 
-    const ddog_prof_CrashtrackerMetadata metadata = {
-        .profiling_library_name = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryName)) ,
-        .profiling_library_version = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryVersion)),
-        .family = libdatadog::FfiHelper::StringToCharSlice(std::string_view(family)),
-        .tags = &vecTags
-    };
+    const ddog_crasht_Metadata metadata = {
+        .library_name = libdatadog::to_char_slice(libraryName),
+        .library_version = libdatadog::to_char_slice(libraryVersion),
+        .family = libdatadog::to_char_slice(family),
+        .tags = &vecTags};
 
     for (int32_t i = 0; i < tagCount; i++)
     {
-        auto tag = tags[i];
-        ddog_Vec_Tag_push(&vecTags, libdatadog::FfiHelper::StringToCharSlice(std::string_view(tag.key)), libdatadog::FfiHelper::StringToCharSlice(std::string_view(tag.value)));
+        auto const& tag = tags[i];
+        CHECK_RESULT(ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice(tag.key), libdatadog::to_char_slice(tag.value)));
     }
 
-    auto result = ddog_crashinfo_set_metadata(&_crashInfo, metadata);
+    CHECK_RESULT(ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice("severity"), libdatadog::to_char_slice("crash")));
+
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_metadata(&_builder, metadata));
 
     ddog_Vec_Tag_drop(vecTags);
-
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
-    {
-        SetLastError(result.err);
-        return 1;
-    }
 
     return 0;
 }
 
 int32_t CrashReporting::Send()
 {
-    ddog_prof_CrashtrackerConfiguration config{};
-
-    config.timeout_secs = 10;
-
-    auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, config);
-
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
-    {
-        SetLastError(result.err);
-        return 1;
-    }
-
-    return 0;
+    return ExportImpl(nullptr);
 }
 
 int32_t CrashReporting::WriteToFile(const char* url)
 {
-    ddog_prof_CrashtrackerConfiguration config{};
+    auto endpoint = ddog_endpoint_from_url(libdatadog::to_char_slice(url));
+    on_leave { if (endpoint != nullptr) ddog_endpoint_drop(endpoint); };
+    return ExportImpl(endpoint);
+}
 
-    config.endpoint = ddog_Endpoint_file(libdatadog::FfiHelper::StringToCharSlice(std::string_view(url)));
-    config.timeout_secs = 10;
+int32_t CrashReporting::ExportImpl(ddog_Endpoint* endpoint)
+{
+    // _builder.inner will be claimed by the Rust API. No need to call XX_drop.
+    auto [crashInfo, succeeded] = ExtractResult(ddog_crasht_CrashInfoBuilder_build(&_builder));
 
-    auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, config);
-
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    if (!succeeded)
     {
-        SetLastError(result.err);
         return 1;
     }
+
+    CHECK_RESULT(ddog_crasht_CrashInfo_upload_to_endpoint(&crashInfo, endpoint));
 
     return 0;
 }
 
+std::vector<StackFrame> CrashReporting::MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames)
+{
+    std::vector<StackFrame> result;
+    result.reserve(std::max(nativeFrames.size(), managedFrames.size()));
+
+    size_t i = 0, j = 0;
+    while (i < nativeFrames.size() && j < managedFrames.size())
+    {
+        if (nativeFrames[i].sp < managedFrames[j].sp)
+        {
+            result.push_back(nativeFrames[i]);
+            ++i;
+        }
+        else if (managedFrames[j].sp < nativeFrames[i].sp)
+        {
+            result.push_back(managedFrames[j]);
+            ++j;
+        }
+        else
+        { // frames[i].sp == managedFrames[j].sp
+            // Prefer managedFrame when sp values are the same
+            result.push_back(managedFrames[j]);
+            ++i;
+            ++j;
+        }
+    }
+
+    // Add any remaining frames that are left in either vector
+    while (i < nativeFrames.size())
+    {
+        result.push_back(nativeFrames[i]);
+        ++i;
+    }
+
+    while (j < managedFrames.size())
+    {
+        result.push_back(managedFrames[j]);
+        ++j;
+    }
+
+    return result;
+}
+
 int32_t CrashReporting::CrashProcess()
 {
-    std::thread crashThread([]()
-    {
+    std::thread crashThread([]() {
         throw 42;
     });
 
     crashThread.join();
-    return 0;  // If we get there, somehow we failed to crash. Are we even able to do *anything* properly? ;_;
+    return 0; // If we get there, somehow we failed to crash. Are we even able to do *anything* properly? ;_;
 }
+
+#ifdef LINUX
+BuildId BuildId::From(const char* path)
+{
+    std::size_t size = 0;
+    auto ptr = std::unique_ptr<uint8_t[], decltype(&::free)>(blaze_read_elf_build_id(path, &size), ::free);
+    if (ptr == nullptr)
+    {
+        return {};
+    }
+
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0');
+
+    for (size_t i = 0; i < size; ++i)
+    {
+        oss << std::setw(2) << static_cast<int>(ptr[i]);
+    }
+    return BuildId(oss.str());
+}
+#else
+BuildId BuildId::From(GUID sig, DWORD age)
+{
+    std::ostringstream oss;
+    oss << shared::Hex(sig.Data1, 8, "")
+        << shared::Hex(sig.Data2, 4, "")
+        << shared::Hex(sig.Data3, 4, "")
+        << shared::Hex(sig.Data4[0], 2, "") << shared::Hex(sig.Data4[1], 2, "")
+        << shared::Hex(sig.Data4[2], 2, "") << shared::Hex(sig.Data4[3], 2, "") << shared::Hex(sig.Data4[4], 2, "")
+        << shared::Hex(sig.Data4[5], 2, "") << shared::Hex(sig.Data4[6], 2, "") << shared::Hex(sig.Data4[7], 2, "");
+    oss << std::hex << age; // age should be in hex too ?
+    return BuildId(oss.str());
+}
+#endif

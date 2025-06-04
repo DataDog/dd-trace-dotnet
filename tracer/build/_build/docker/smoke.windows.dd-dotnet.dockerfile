@@ -19,7 +19,7 @@ WORKDIR /app
 ARG CHANNEL_32_BIT
 RUN if($env:CHANNEL_32_BIT){ \
     echo 'Installing x86 dotnet runtime ' + $env:CHANNEL_32_BIT; \
-    curl 'https://dot.net/v1/dotnet-install.ps1' -o dotnet-install.ps1; \
+    curl 'https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1' -o dotnet-install.ps1; \
     ./dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel $env:CHANNEL_32_BIT -InstallDir c:\cli; \
     [Environment]::SetEnvironmentVariable('Path',  'c:\cli;' + $env:Path, [EnvironmentVariableTarget]::Machine); \
     rm ./dotnet-install.ps1; }
@@ -35,6 +35,7 @@ RUN mkdir /logs; \
 
 # Set the additional env vars
 ENV DD_TRACE_LOG_DIRECTORY="C:\logs" \
+    DD_REMOTE_CONFIGURATION_ENABLED=0 \
     ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore

@@ -6,22 +6,29 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Logging;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using Xunit;
-
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
 public class RaspWafTests : WafLibraryRequiredTest
 {
+    private static bool enableDebug = false;
+
     [Theory]
     [InlineData(1, 1000000, false)]
     [InlineData(1000, 1, true)]
@@ -48,12 +55,14 @@ public class RaspWafTests : WafLibraryRequiredTest
     }
 
     [Theory]
-    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "customblock", BlockingAction.BlockRequestType)]
+    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "customblock1", BlockingAction.BlockRequestType)]
     public void GivenALfiRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string value, string paramValue, string rule, string ruleFile, string action, string actionType)
     {
         var args = CreateArgs(paramValue);
-        var context = InitWaf(true, ruleFile, args, out var waf);
+        var configurationState = CreateConfigurationState(ruleFile);
+        var context = InitWaf(configurationState, true, args, out var waf);
 
+        // Default config does not block
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
         var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
         resultEph.BlockInfo["status_code"].Should().Be("403");
@@ -62,28 +71,31 @@ public class RaspWafTests : WafLibraryRequiredTest
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
         resultData.Rule.Id.Should().Be(rule);
 
-        ConfigurationStatus configurationStatus = new(string.Empty);
-        var newAction = CreateNewStatusAction(action, actionType, 500);
-        configurationStatus.Actions[action] = newAction;
-        configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
-        var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
-        res.Success.Should().BeTrue();
-
-        context = waf.CreateContext();
+        // New action bloking with 500 (and remove previous one)
+        var newAction1 = CreateNewStatusAction(action, actionType, 500);
+        var ruleOverride = new RuleOverride { OnMatch = new[] { action }, Id = rule };
+        AddAsmRemoteConfig(configurationState, new Payload { Actions = [newAction1], RuleOverrides = [ruleOverride] }, "update1");
+        var updateRes1 = UpdateWaf(configurationState, waf, ref context);
+        updateRes1.Success.Should().BeTrue();
         context.Run(args, TimeoutMicroSeconds);
-        var resultEphNew = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
-        resultEphNew.Timeout.Should().BeFalse("Timeout should be false");
-        resultEphNew.BlockInfo["status_code"].Should().Be("500");
-        resultEphNew.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
-        resultEphNew.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0);
+        var resultEph1 = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
+        resultEph1.Timeout.Should().BeFalse("Timeout should be false");
+        resultEph1.BlockInfo["status_code"].Should().Be("500");
+        resultEph1.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
+        resultEph1.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0);
     }
 
     [Theory]
     [InlineData("select * from employees where name = 'John' or '1' = '1'", "John' or '1' = '1", "rasp-942-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.DBStatement)]
     [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "customBlock", BlockingAction.BlockRequestType, AddressesConstants.FileAccess)]
     [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
-    public void GivenARaspRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string action, string actionType, string address)
+    [InlineData("ls; echo hello", "echo hello", "rasp-932-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.ShellInjection)]
+    [InlineData("ls &> file; echo hello", "&> file", "rasp-932-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.ShellInjection)]
+    [InlineData(new string[] { "/usr/bin/reboot" }, "/usr/bin/reboot", "rasp-932-110", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.CommandInjection)]
+    public void GivenARaspRule_WhenInsecureAccess_ThenBlock(object value, string paramValue, string rule, string action, string actionType, string address)
     {
+        EnableDebugInfo(enableDebug);
+
         ExecuteRule(
             address,
             value,
@@ -92,6 +104,28 @@ public class RaspWafTests : WafLibraryRequiredTest
             "rasp-rule-set.json",
             action,
             actionType);
+    }
+
+    [Fact]
+    public void GivenWafInstance_WhenGetKnownAddressesInParallel_ThenResultIsOk()
+    {
+        var args = CreateArgs("paramValue");
+        var context = InitWaf(true, "rasp-rule-set.json", args, out var waf);
+
+        Parallel.For(0, 100, i =>
+        {
+            var addresses = waf.GetKnownAddresses();
+            addresses.Should().NotBeNull();
+            addresses.Count().Should().BeGreaterThan(0);
+        });
+    }
+
+    private void EnableDebugInfo(bool enable)
+    {
+        if (enable)
+        {
+            DatadogLogging.SetLogLevel(LogEventLevel.Debug);
+        }
     }
 
     private void ExecuteRule(string address, object value, string paramValue, string rule, string ruleFile, string expectedAction, string actionType)
@@ -123,14 +157,14 @@ public class RaspWafTests : WafLibraryRequiredTest
 
     private IContext InitWaf(bool newEncoder, string ruleFile, Dictionary<string, object> args, out Waf waf)
     {
-        var initResult = Waf.Create(
-            WafLibraryInvoker,
-            string.Empty,
-            string.Empty,
-            useUnsafeEncoder: newEncoder,
-            embeddedRulesetPath: ruleFile);
+        var configurationState = CreateConfigurationState(ruleFile);
+        return InitWaf(configurationState, newEncoder, args, out waf);
+    }
+
+    private IContext InitWaf(ConfigurationState configurationState, bool newEncoder, Dictionary<string, object> args, out Waf waf)
+    {
+        var initResult = CreateWaf(configurationState, newEncoder, wafDebugEnabled: enableDebug);
         waf = initResult.Waf;
-        waf.Should().NotBeNull();
         var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");
@@ -165,6 +199,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         newAction.Parameters = new AppSec.Rcm.Models.Asm.Parameter();
         newAction.Parameters.StatusCode = newStatus;
         newAction.Parameters.Type = "auto";
+        newAction.Parameters.Location = string.Empty;
 
         if (newAction.Type == BlockingAction.RedirectRequestType)
         {

@@ -47,19 +47,24 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
             request.Headers.Set(HttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));
             request.Headers.Set(HttpHeaderNames.SpanId, span.SpanId.ToString(CultureInfo.InvariantCulture));
 
-            var samplingPriority = span.Context.TraceContext?.GetOrMakeSamplingDecision();
-            request.Headers.Set(HttpHeaderNames.SamplingPriority, SamplingPriorityValues.ToString(samplingPriority));
+            if (span.Context.TraceContext is { } traceContext)
+            {
+                var samplingPriority = traceContext.GetOrMakeSamplingDecision(span);
+                request.Headers.Set(HttpHeaderNames.SamplingPriority, SamplingPriorityValues.ToString(samplingPriority));
+            }
 
             var errorMessage = span.GetTag("error.msg");
             if (errorMessage != null)
             {
-                request.Headers.Set(HttpHeaderNames.InvocationErrorMsg, errorMessage);
+                var encodedErrMessage = System.Text.Encoding.UTF8.GetBytes(errorMessage);
+                request.Headers.Set(HttpHeaderNames.InvocationErrorMsg, Convert.ToBase64String(encodedErrMessage));
             }
 
             var errorType = span.GetTag("error.type");
             if (errorType != null)
             {
-                request.Headers.Set(HttpHeaderNames.InvocationErrorType, errorType);
+                var encodedErrType = System.Text.Encoding.UTF8.GetBytes(errorType);
+                request.Headers.Set(HttpHeaderNames.InvocationErrorType, Convert.ToBase64String(encodedErrType));
             }
 
             var errorStack = span.GetTag("error.stack");

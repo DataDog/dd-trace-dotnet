@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -33,23 +34,25 @@ public sealed class TestSession
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
     private static readonly HashSet<TestSession> OpenedTestSessions = new();
 
+    private readonly ITestOptimization _testOptimization;
     private readonly Span _span;
-    private readonly Dictionary<string, string?>? _environmentVariablesToRestore = null;
-    private IpcServer? _ipcServer = null;
+    private readonly Dictionary<string, string?>? _environmentVariablesToRestore;
+    private IpcServer? _ipcServer;
     private int _finished;
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {
         // First we make sure that CI Visibility is initialized.
-        CIVisibility.InitializeFromManualInstrumentation();
+        _testOptimization = TestOptimization.Instance;
+        _testOptimization.InitializeFromManualInstrumentation();
 
-        var environment = CIEnvironmentValues.Instance;
+        var ciValues = _testOptimization.CIValues;
 
         Command = command;
         WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory;
         Framework = framework;
 
-        WorkingDirectory = environment.MakeRelativePathFromSourceRoot(WorkingDirectory, false);
+        WorkingDirectory = ciValues.MakeRelativePathFromSourceRoot(WorkingDirectory, false);
 
         var tags = new TestSessionSpanTags
         {
@@ -58,7 +61,7 @@ public sealed class TestSession
             IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
         };
 
-        tags.SetCIEnvironmentValues(environment);
+        tags.SetCIEnvironmentValues(ciValues);
 
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",
@@ -74,6 +77,12 @@ public sealed class TestSession
         tags.SessionId = span.SpanId;
 
         _span = span;
+
+        // Check if the Test Management feature is enabled and set the flag accordingly
+        if (_testOptimization.TestManagementFeature?.Enabled == true)
+        {
+            span.SetTag(TestTags.TestManagementEnabled, "true");
+        }
 
         // Inject context to environment variables
         if (propagateEnvironmentVariables)
@@ -93,20 +102,29 @@ public sealed class TestSession
             OpenedTestSessions.Add(this);
         }
 
-        CIVisibility.Log.Debug("### Test Session Created: {Command}", command);
-
-        if (startDate is null)
-        {
-            // If a module doesn't have a fixed start time we reset it before running code
-            span.ResetStartTime();
-        }
-
         // Record EventCreate telemetry metric
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
                 MetricTags.CIVisibilityTestingEventType.Session,
                 framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(framework), eventTypeWithMetadata);
+        }
+
+        var sessionTypeTag = EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionAutoInjectedEnvironmentVariable)?.ToBoolean() is true ?
+                                 MetricTags.CIVisibilityTestSessionType.AutoInjected :
+                                 MetricTags.CIVisibilityTestSessionType.NotAutoInjected;
+
+        TelemetryFactory.Metrics.RecordCountCIVisibilityTestSession(
+            _testOptimization.CIValues.MetricTag,
+            sessionTypeTag,
+            _testOptimization.Settings.Logs ? MetricTags.CIVisibilityTestSessionAgentlessLogSubmission.Enabled : MetricTags.CIVisibilityTestSessionAgentlessLogSubmission.NotEnabled);
+
+        _testOptimization.Log.Debug("### Test Session Created: {Command}", command);
+
+        if (startDate is null)
+        {
+            // If a module doesn't have a fixed start time we reset it before running code
+            span.ResetStartTime();
         }
     }
 
@@ -164,22 +182,7 @@ public sealed class TestSession
     public static TestSession GetOrCreate(string command)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Session);
-        return InternalGetOrCreate(command);
-    }
-
-    /// <summary>
-    /// Get or create a new Test Session
-    /// </summary>
-    /// <param name="command">Test session command</param>
-    /// <returns>New test session instance</returns>
-    internal static TestSession InternalGetOrCreate(string command)
-    {
-        if (Current is { } current)
-        {
-            return current;
-        }
-
-        return new TestSession(command, null, null, null, false);
+        return InternalGetOrCreate(command, workingDirectory: null, framework: null, startDate: null);
     }
 
     /// <summary>
@@ -192,23 +195,7 @@ public sealed class TestSession
     public static TestSession GetOrCreate(string command, string workingDirectory)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Session);
-        return InternalGetOrCreate(command, workingDirectory);
-    }
-
-    /// <summary>
-    /// Get or create a new Test Session
-    /// </summary>
-    /// <param name="command">Test session command</param>
-    /// <param name="workingDirectory">Test session working directory</param>
-    /// <returns>New test session instance</returns>
-    internal static TestSession InternalGetOrCreate(string command, string workingDirectory)
-    {
-        if (Current is { } current)
-        {
-            return current;
-        }
-
-        return new TestSession(command, workingDirectory, null, null, false);
+        return InternalGetOrCreate(command, workingDirectory, framework: null, startDate: null);
     }
 
     /// <summary>
@@ -222,24 +209,7 @@ public sealed class TestSession
     public static TestSession GetOrCreate(string command, string workingDirectory, string framework)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Session);
-        return InternalGetOrCreate(command, workingDirectory, framework);
-    }
-
-    /// <summary>
-    /// Get or create a new Test Session
-    /// </summary>
-    /// <param name="command">Test session command</param>
-    /// <param name="workingDirectory">Test session working directory</param>
-    /// <param name="framework">Testing framework name</param>
-    /// <returns>New test session instance</returns>
-    internal static TestSession InternalGetOrCreate(string command, string workingDirectory, string framework)
-    {
-        if (Current is { } current)
-        {
-            return current;
-        }
-
-        return new TestSession(command, workingDirectory, framework, null, false);
+        return InternalGetOrCreate(command, workingDirectory, framework, startDate: null);
     }
 
     /// <summary>
@@ -255,24 +225,6 @@ public sealed class TestSession
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Session);
         return InternalGetOrCreate(command, workingDirectory, framework, startDate);
-    }
-
-    /// <summary>
-    /// Get or create a new Test Session
-    /// </summary>
-    /// <param name="command">Test session command</param>
-    /// <param name="workingDirectory">Test session working directory</param>
-    /// <param name="framework">Testing framework name</param>
-    /// <param name="startDate">Test session start date</param>
-    /// <returns>New test session instance</returns>
-    internal static TestSession InternalGetOrCreate(string command, string workingDirectory, string framework, DateTimeOffset startDate)
-    {
-        if (Current is { } current)
-        {
-            return current;
-        }
-
-        return new TestSession(command, workingDirectory, framework, startDate, false);
     }
 
     /// <summary>
@@ -300,7 +252,7 @@ public sealed class TestSession
     /// <param name="startDate">Test session start date</param>
     /// <param name="propagateEnvironmentVariables">Propagate session data through environment variables (out of proc session)</param>
     /// <returns>New test session instance</returns>
-    internal static TestSession InternalGetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
+    internal static TestSession InternalGetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables = false)
     {
         if (Current is { } current)
         {
@@ -375,8 +327,8 @@ public sealed class TestSession
     {
         if (InternalClose(status, duration))
         {
-            CIVisibility.Log.Debug("### Test Session Flushing after close: {Command}", Command);
-            CIVisibility.Flush();
+            _testOptimization.Log.Debug("### Test Session Flushing after close: {Command}", Command);
+            _testOptimization.Flush();
         }
     }
 
@@ -400,8 +352,8 @@ public sealed class TestSession
     {
         if (InternalClose(status, duration))
         {
-            CIVisibility.Log.Debug("### Test Session Flushing after close: {Command}", Command);
-            return CIVisibility.FlushAsync();
+            _testOptimization.Log.Debug("### Test Session Flushing after close: {Command}", Command);
+            return _testOptimization.FlushAsync();
         }
 
         return Task.CompletedTask;
@@ -451,7 +403,12 @@ public sealed class TestSession
                 MetricTags.CIVisibilityTestingEventType.Session,
                 Framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), eventTypeWithMetadata);
+            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
+                TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework),
+                eventTypeWithMetadata,
+                MetricTags.CIVisibilityTestingEventTypeRetryReason.None,
+                MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None,
+                MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
         }
 
         if (_environmentVariablesToRestore is { } envVars)
@@ -468,7 +425,7 @@ public sealed class TestSession
             OpenedTestSessions.Remove(this);
         }
 
-        CIVisibility.Log.Debug("### Test Session Closed: {Command} | {Status}", Command, Tags.Status);
+        _testOptimization.Log.Debug("### Test Session Closed: {Command} | {Status}", Command, Tags.Status);
         return true;
     }
 
@@ -558,21 +515,21 @@ public sealed class TestSession
         try
         {
             var name = $"session_{Tags.SessionId}";
-            CIVisibility.Log.Debug("TestSession.Enabling IPC server: {Name}", name);
+            _testOptimization.Log.Debug("TestSession.Enabling IPC server: {Name}", name);
             _ipcServer = new IpcServer(name);
             _ipcServer.SetMessageReceivedCallback(OnIpcMessageReceived);
             return true;
         }
         catch (Exception ex)
         {
-            CIVisibility.Log.Error(ex, "Error enabling IPC server");
+            _testOptimization.Log.Error(ex, "Error enabling IPC server");
             return false;
         }
     }
 
     private void OnIpcMessageReceived(object message)
     {
-        CIVisibility.Log.Debug("TestSession.OnIpcMessageReceived: {Message}", message);
+        _testOptimization.Log.Debug("TestSession.OnIpcMessageReceived: {Message}", message);
 
         // If the session is already finished, we ignore the message
         if (Interlocked.CompareExchange(ref _finished, 1, 1) == 1)
@@ -585,38 +542,37 @@ public sealed class TestSession
         {
             if (tagMessage.Value is not null)
             {
-                CIVisibility.Log.Information("TestSession.ReceiveMessage (meta): {Name}={Value}", tagMessage.Name, tagMessage.Value);
+                _testOptimization.Log.Information("TestSession.ReceiveMessage (meta): {Name}={Value}", tagMessage.Name, tagMessage.Value);
                 SetTag(tagMessage.Name, tagMessage.Value);
             }
             else if (tagMessage.NumberValue is not null)
             {
-                CIVisibility.Log.Information("TestSession.ReceiveMessage (metric): {Name}={Value}", tagMessage.Name, tagMessage.NumberValue);
+                _testOptimization.Log.Information("TestSession.ReceiveMessage (metric): {Name}={Value}", tagMessage.Name, tagMessage.NumberValue);
                 SetTag(tagMessage.Name, tagMessage.NumberValue);
             }
         }
         else if (message is SessionCodeCoverageMessage { Value: >= 0.0 } codeCoverageMessage)
         {
-            CIVisibility.Log.Information("TestSession.ReceiveMessage (code coverage): {Value}", codeCoverageMessage.Value);
+            _testOptimization.Log.Information("TestSession.ReceiveMessage (code coverage): {Value}", codeCoverageMessage.Value);
 
             // Adds the global code coverage percentage to the session
-            SetTag(CodeCoverageTags.Enabled, "true");
             SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoverageMessage.Value);
         }
     }
 
-    private Dictionary<string, string> GetPropagateEnvironmentVariables()
+    private Dictionary<string, string?> GetPropagateEnvironmentVariables()
     {
         var span = _span;
         var tags = Tags;
 
-        var environmentVariables = new Dictionary<string, string>
+        var environmentVariables = new Dictionary<string, string?>
         {
             [TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable] = tags.Command,
             [TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable] = tags.WorkingDirectory,
         };
 
-        SpanContextPropagator.Instance.Inject(
-            span.Context,
+        Tracer.Instance.TracerManager.SpanContextPropagator.Inject(
+            new PropagationContext(span.Context, Baggage.Current),
             (IDictionary)environmentVariables,
             new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 

@@ -10,6 +10,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
@@ -38,6 +39,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal void AddProbeProcessor(ProbeDefinition probe)
         {
+            if (LiveDebugger.Instance?.IsInitialized == false)
+            {
+                Log.Error("Failed to create probe processor for probe: {Id}", probe.Id);
+                throw new Exception("AddProbeProcessor can be called only when LiveDebugger is initialized");
+            }
+
             try
             {
                 _processors.AddOrUpdate(
@@ -48,6 +55,11 @@ namespace Datadog.Trace.Debugger.Expressions
             catch (Exception e)
             {
                 Log.Error(e, "Failed to create probe processor for probe: {Id}", probe.Id);
+            }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Successfully created probe processor for probe: {Id}", probe.Id);
                 Log.Debug("Probe definition is {Probe}", JsonConvert.SerializeObject(probe));
             }
         }

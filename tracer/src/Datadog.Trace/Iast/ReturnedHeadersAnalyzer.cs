@@ -33,13 +33,17 @@ internal static class ReturnedHeadersAnalyzer
     // is not present, report a vulnerability. When getting the headers, make sure that keys are searched taking
     // int account that can be case insensitive. Exclude vulnerability when return code is one of the ignorable.
 #if NETFRAMEWORK
-    internal static void Analyze(NameValueCollection responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
+    internal static void Analyze(NameValueCollection responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string? protocol)
 #else
-    internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
+    internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string? protocol)
 #endif
     {
         AnalyzeXContentTypeOptionsVulnerability(responseHeaders, integrationId, serviceName, responseCode);
-        AnalyzeStrictTransportSecurity(responseHeaders, integrationId, serviceName, responseCode, protocol);
+        if (protocol is not null)
+        {
+            AnalyzeStrictTransportSecurity(responseHeaders, integrationId, serviceName, responseCode, protocol);
+        }
+
         AnalyzeUnvalidatedRedirect(responseHeaders, integrationId);
         AnalyzeHeaderInjectionVulnerability(responseHeaders, integrationId);
     }
@@ -65,7 +69,7 @@ internal static class ReturnedHeadersAnalyzer
     {
         try
         {
-            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HeaderInjection);
+            IastModule.OnExecutedSinkTelemetry(IastVulnerabilityType.HeaderInjection);
             var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
             var iastRequestContext = currentSpan?.Context?.TraceContext?.IastRequestContext;
 
@@ -192,7 +196,7 @@ internal static class ReturnedHeadersAnalyzer
     {
         try
         {
-            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
+            IastModule.OnExecutedSinkTelemetry(IastVulnerabilityType.XContentTypeHeaderMissing);
 
             if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
             {
@@ -223,7 +227,7 @@ internal static class ReturnedHeadersAnalyzer
     {
         try
         {
-            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HstsHeaderMissing);
+            IastModule.OnExecutedSinkTelemetry(IastVulnerabilityType.HstsHeaderMissing);
 
             if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
             {
@@ -331,7 +335,7 @@ internal static class ReturnedHeadersAnalyzer
     {
         try
         {
-            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.UnvalidatedRedirect);
+            IastModule.OnExecutedSinkTelemetry(IastVulnerabilityType.UnvalidatedRedirect);
 
             var location = responseHeaders[Location];
             if (!string.IsNullOrEmpty(location))

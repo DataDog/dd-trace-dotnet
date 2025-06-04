@@ -3,13 +3,12 @@
 
 #include "GCThreadsCpuProvider.h"
 
-#include "CpuTimeProvider.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
-#include "RawCpuSample.h"
+#include "RawSampleTransformer.h"
 
-GCThreadsCpuProvider::GCThreadsCpuProvider(CpuTimeProvider* cpuTimeProvider, MetricsRegistry& metricsRegistry) :
-    NativeThreadsCpuProviderBase(cpuTimeProvider)
+GCThreadsCpuProvider::GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry) :
+    NativeThreadsCpuProviderBase(valueTypeProvider, cpuSampleTransformer)
 {
     _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_gc_cpu_duration");
 }
@@ -40,12 +39,7 @@ std::vector<std::shared_ptr<IThreadInfo>> const& GCThreadsCpuProvider::GetThread
     // we may want to allow checking for process time or if managed thread have been created
     if (_number_of_attempts > 2)
     {
-        static bool alreadyLogged = false;
-        if (!alreadyLogged)
-        {
-            alreadyLogged = true;
-            Log::Debug("Failed at retrieving GC threads after ", _number_of_attempts, " of attempts");
-        }
+        LogOnce(Debug, "Failed at retrieving GC threads after ", _number_of_attempts, " of attempts");
         return _gcThreads;
     }
 
@@ -64,6 +58,11 @@ std::vector<std::shared_ptr<IThreadInfo>> const& GCThreadsCpuProvider::GetThread
     return _gcThreads;
 }
 
+Labels GCThreadsCpuProvider::GetLabels()
+{
+    return Labels{StringLabel{"gc_cpu_sample", "true"}};
+}
+
 std::vector<FrameInfoView> GCThreadsCpuProvider::GetFrames()
 {
     return
@@ -73,7 +72,7 @@ std::vector<FrameInfoView> GCThreadsCpuProvider::GetFrames()
     };
 }
 
-void GCThreadsCpuProvider::OnCpuDuration(std::uint64_t cpuTime)
+void GCThreadsCpuProvider::OnCpuDuration(std::chrono::milliseconds cpuTime)
 {
-    _cpuDurationMetric->Add(static_cast<double>(cpuTime));
+    _cpuDurationMetric->Add(static_cast<double>(cpuTime.count()));
 }

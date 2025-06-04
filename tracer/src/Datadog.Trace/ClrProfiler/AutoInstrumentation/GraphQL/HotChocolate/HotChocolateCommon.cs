@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HotChocolateCommon));
 
-        internal static Scope CreateScopeFromExecuteAsync<T>(Tracer tracer, in T request)
+        internal static Scope CreateScopeFromQueryRequest<T>(Tracer tracer, in T request)
             where T : IQueryRequest
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
@@ -34,6 +34,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             {
                 var queryOperationName = request.OperationName;
                 var source = request.Query?.ToString();
+                var operationType = "Uncompleted";
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(IntegrationName), ServiceName, queryOperationName, source, operationType);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            return scope;
+        }
+
+        internal static Scope CreateScopeFromOperationRequest<T>(Tracer tracer, in T request)
+            where T : IOperationRequest
+        {
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope scope = null;
+            try
+            {
+                var queryOperationName = request.OperationName;
+                var source = request.Document?.ToString();
                 var operationType = "Uncompleted";
                 scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(HotChocolateCommon.IntegrationName), ServiceName, queryOperationName, source, operationType);
             }
@@ -100,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 return string.Empty;
             }
 
-            var builder = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
+            var builder = Util.StringBuilderCache.Acquire();
 
             try
             {

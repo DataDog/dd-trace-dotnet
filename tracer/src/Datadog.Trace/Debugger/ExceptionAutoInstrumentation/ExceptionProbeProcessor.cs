@@ -101,12 +101,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            if (instrumentedProbes.Any(p => p.ProbeStatus is Status.RECEIVED))
-            {
-                // Not all probes have been confirmed as installed, instrumented or errored out yet
-                return null;
-            }
-
             if (instrumentedProbes.Any(p => !p.MayBeOmittedFromCallStack && p.ProbeStatus == Status.INSTALLED))
             {
                 // Not all request rejit carried out yet.
@@ -122,19 +116,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 Array.Reverse(installedProbes);
             }
 
-            if (!installedProbes.Any())
-            {
-                return Fnv1aHash.FnvOffsetBias;
-            }
-
             var hash = Fnv1aHash.FnvOffsetBias;
 
-            foreach (var probe in installedProbes)
+            if (installedProbes.Any())
             {
-                hash = Fnv1aHash.Combine(probe.Method.MethodToken, hash);
+                foreach (var probe in installedProbes)
+                {
+                    hash = Fnv1aHash.Combine(probe.Method.Method.MetadataToken, hash);
+                }
             }
 
-            return hash;
+            return Fnv1aHash.Combine(ExceptionDebuggingProcessor.Method.Method.MetadataToken, hash);
         }
 
         internal void InvalidateEnterLeave()

@@ -77,7 +77,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedTracerFlareEndpoint,
             };
 
-        public static DiscoveryService Create(ImmutableExporterSettings exporterSettings)
+        public static DiscoveryService Create(ExporterSettings exporterSettings)
             => Create(
                 exporterSettings,
                 tcpTimeout: TimeSpan.FromSeconds(15),
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 recheckIntervalMs: 30_000);
 
         public static DiscoveryService Create(
-            ImmutableExporterSettings exporterSettings,
+            ExporterSettings exporterSettings,
             TimeSpan tcpTimeout,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
@@ -217,6 +217,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
             var agentVersion = jObject["version"]?.Value<string>();
             var clientDropP0 = jObject["client_drop_p0s"]?.Value<bool>() ?? false;
+            var spanMetaStructs = jObject["span_meta_structs"]?.Value<bool>() ?? false;
+            var spanEvents = jObject["span_events"]?.Value<bool>() ?? false;
 
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
             string? configurationEndpoint = null;
@@ -296,7 +298,9 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
                 telemetryProxyEndpoint: telemetryProxyEndpoint,
                 tracerFlareEndpoint: tracerFlareEndpoint,
-                clientDropP0: clientDropP0);
+                clientDropP0: clientDropP0,
+                spanMetaStructs: spanMetaStructs,
+                spanEvents: spanEvents);
 
             // AgentConfiguration is a record, so this compares by value
             if (existingConfiguration is null || !newConfig.Equals(existingConfiguration))

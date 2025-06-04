@@ -86,37 +86,34 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
             }
 
-            var tracerModules = FindTracerModules(process).ToArray();
+            var tracerVersions = FindTracerModules(process)
+                .Select(FileVersionInfo.GetVersionInfo)
+                .DistinctBy(v => v.FileVersion)
+                .ToArray();
 
-            if (tracerModules.Length == 0)
+            if (tracerVersions.Length == 0)
             {
                 Utils.WriteWarning(TracerNotLoaded);
                 ok = false;
             }
-            else if (tracerModules.Length == 1)
+            else if (tracerVersions.Length == 1)
             {
-                var version = FileVersionInfo.GetVersionInfo(tracerModules[0]);
-                Utils.WriteSuccess(TracerVersion(version.FileVersion ?? "{empty}"));
+                Utils.WriteSuccess(TracerVersion(tracerVersions[0].FileVersion ?? "{empty}"));
             }
-            else if (tracerModules.Length > 1)
+            else if (tracerVersions.Length > 1)
             {
                 // There are too many tracers in there. Find out if it's bad or very bad
                 bool areAllVersion2 = true;
-                var versions = new HashSet<string>();
 
-                foreach (var tracer in tracerModules)
+                foreach (var version in tracerVersions)
                 {
-                    var version = FileVersionInfo.GetVersionInfo(tracer);
-
-                    versions.Add(version.FileVersion ?? "{empty}");
-
                     if (version.FileMajorPart < 2)
                     {
                         areAllVersion2 = false;
                     }
                 }
 
-                Utils.WriteWarning(MultipleTracers(versions));
+                Utils.WriteWarning(MultipleTracers(tracerVersions.Select(v => v.FileVersion ?? "{empty}")));
 
                 if (!areAllVersion2)
                 {
@@ -243,7 +240,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
                 AnsiConsole.WriteLine(ContinuousProfilerCheck());
 
+                // check if loaded in case of SSI (could be enabled but with a delay)
                 bool isContinuousProfilerEnabled = false;
+
                 var hasValue = process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled);
                 if (hasValue)
                 {
@@ -256,7 +255,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                     {
                         if (profilingEnabled == "auto")
                         {
-                            Utils.WriteInfo(ContinuousProfilerSsiDeployed);
+                            Utils.WriteInfo(ContinuousProfilerEnabledWithHeuristics);
                             isContinuousProfilerEnabled = true;
                         }
                         else
@@ -268,7 +267,21 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
                 else
                 {
-                    Utils.WriteInfo(ContinuousProfilerNotSet);
+                    if (process.EnvironmentVariables.TryGetValue("DD_INJECTION_ENABLED", out var injectionEnabled))
+                    {
+                        if (injectionEnabled.Contains("profiler", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Utils.WriteInfo(ContinuousProfilerSsiEnabledWithHeuristics);
+                        }
+                        else
+                        {
+                            Utils.WriteInfo(ContinuousProfilerSsiMonitoring);
+                        }
+                    }
+                    else
+                    {
+                        Utils.WriteInfo(ContinuousProfilerNotSet);
+                    }
                 }
 
                 if (isContinuousProfilerEnabled)
@@ -438,7 +451,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             }
             else if (osArchitecture == Architecture.Arm64)
             {
-                archFolder = "linux-arm64";
+                archFolder = Utils.IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
             }
             else
             {
@@ -626,6 +639,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             {
                 "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
                 "/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                "/datadog/linux-musl-arm64/Datadog.Trace.ClrProfiler.Native.so",
                 "/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
                 "\\datadog\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
                 "\\datadog\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll"

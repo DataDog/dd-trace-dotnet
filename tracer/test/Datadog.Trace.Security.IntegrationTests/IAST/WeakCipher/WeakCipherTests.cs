@@ -26,6 +26,7 @@ public class WeakCipherTests : TestHelper
         : base("WeakCipher", output)
     {
         SetServiceVersion("1.0.0");
+        SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
     }
 
 #if !NET7_0_OR_GREATER
@@ -39,7 +40,12 @@ public class WeakCipherTests : TestHelper
 
         const int expectedSpanCount = 6;
         var filename = "WeakCipherTests.SubmitsTraces";
+
         using var agent = EnvironmentHelper.GetMockAgent();
+        // Disable meta struct for this test because if the sample run faster than the service discovery,
+        // the config from the mock agent is not fetched
+        agent.Configuration.SpanMetaStructs = false;
+
         using var process = await RunSampleAndWaitForExit(agent);
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 

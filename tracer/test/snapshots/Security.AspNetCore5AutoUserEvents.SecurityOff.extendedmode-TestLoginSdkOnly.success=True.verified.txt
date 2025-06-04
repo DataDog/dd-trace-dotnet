@@ -1,0 +1,36 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet_core.request,
+    Resource: GET /user/trackloginsdk,
+    Service: Samples.Security.AspNetCore5,
+    Type: web,
+    Tags: {
+      appsec.events.users.login.success.some-key: some-value,
+      appsec.events.users.login.success.track: true,
+      appsec.events.users.login.success.usr.login: user-dog,
+      aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.UserController.TrackLoginSdk (Samples.Security.AspNetCore5),
+      aspnet_core.route: {controller=home}/{action=index}/{id?},
+      component: aspnet_core,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: {controller=home}/{action=index}/{id?},
+      http.status_code: 200,
+      http.url: http://localhost:00000/User/TrackLoginSdk?success=True,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      usr.id: user-dog,
+      _dd.appsec.events.users.login.success.sdk: true
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

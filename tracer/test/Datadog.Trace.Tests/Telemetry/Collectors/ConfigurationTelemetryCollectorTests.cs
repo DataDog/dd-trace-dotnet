@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Telemetry;
@@ -38,7 +39,8 @@ public class ConfigurationTelemetryCollectorTests
         var settings1 = new TracerSettings(
             new NameValueConfigurationSource(
                 new NameValueCollection { { ConfigurationKeys.ServiceVersion, "1.2.3" } }),
-            collector);
+            collector,
+            new OverrideErrorLog());
 
         collector.HasChanges().Should().BeTrue();
         GetLatestValueFromConfig(collector.GetData(), ConfigurationKeys.ServiceVersion).Should().Be("1.2.3");
@@ -47,7 +49,8 @@ public class ConfigurationTelemetryCollectorTests
         var settings2 = new TracerSettings(
             new NameValueConfigurationSource(
                 new NameValueCollection { { ConfigurationKeys.ServiceVersion, "2.0.0" } }),
-            collector);
+            collector,
+            new OverrideErrorLog());
 
         collector.HasChanges().Should().BeTrue();
         GetLatestValueFromConfig(collector.GetData(), ConfigurationKeys.ServiceVersion).Should().Be("2.0.0");
@@ -64,7 +67,8 @@ public class ConfigurationTelemetryCollectorTests
         var settings1 = new TracerSettings(
             new NameValueConfigurationSource(
                 new NameValueCollection { { ConfigurationKeys.ServiceVersion, "1.2.3" } }),
-            secondary);
+            secondary,
+            new OverrideErrorLog());
 
         secondary.HasChanges().Should().BeTrue();
         collector.HasChanges().Should().BeFalse();
@@ -73,7 +77,8 @@ public class ConfigurationTelemetryCollectorTests
         var settings2 = new TracerSettings(
             new NameValueConfigurationSource(
                 new NameValueCollection { { ConfigurationKeys.ServiceVersion, "2.0.0" } }),
-            collector);
+            collector,
+            new OverrideErrorLog());
 
         collector.HasChanges().Should().BeTrue();
 
@@ -137,7 +142,7 @@ public class ConfigurationTelemetryCollectorTests
             config.Add(ConfigurationKeys.ApiKey, "SomeValue");
         }
 
-        var settings = new ImmutableTracerSettings(new TracerSettings(new NameValueConfigurationSource(config), collector));
+        var settings = new TracerSettings(new NameValueConfigurationSource(config), collector, new OverrideErrorLog());
 
         var data = collector.GetData();
 
@@ -163,7 +168,7 @@ public class ConfigurationTelemetryCollectorTests
     {
         var collector = new ConfigurationTelemetry();
 
-        _ = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.ServiceVersion, "1.2.3" } }), collector);
+        _ = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.ServiceVersion, "1.2.3" } }), collector, new OverrideErrorLog());
 
         collector.Clear();
         collector.GetData().Should().BeNull();
@@ -174,7 +179,7 @@ public class ConfigurationTelemetryCollectorTests
     {
         var collector = new ConfigurationTelemetry();
 
-        var s = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, collector));
+        var s = new TracerSettings(NullConfigurationSource.Instance, collector, new OverrideErrorLog());
 
         GetLatestValueFromConfig(collector.GetData(), ConfigTelemetryData.NativeTracerVersion).Should().Be("None");
     }
@@ -192,7 +197,7 @@ public class ConfigurationTelemetryCollectorTests
             { ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, activityListenerEnabled },
         };
 
-        _ = new ImmutableTracerSettings(new TracerSettings(new NameValueConfigurationSource(config), collector));
+        _ = new TracerSettings(new NameValueConfigurationSource(config), collector, new OverrideErrorLog());
 
         var data = collector.GetData();
 
@@ -201,14 +206,14 @@ public class ConfigurationTelemetryCollectorTests
         {
             (not null, _) => (ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract),
             (null, not null) => (ConfigurationKeys.PropagationStyle, propagationStyle),
-            (null, null) => (ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext"),
+            (null, null) => (ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage"),
         };
 
         var (injectKey, injectValue) = (propagationStyleInject, propagationStyle) switch
         {
             (not null, _) => (ConfigurationKeys.PropagationStyleInject, propagationStyleInject),
             (null, not null) => (ConfigurationKeys.PropagationStyle, propagationStyle),
-            (null, null) => (ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext"),
+            (null, null) => (ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage"),
         };
 
         GetLatestValueFromConfig(data, extractKey).Should().Be(extractValue);
@@ -221,7 +226,7 @@ public class ConfigurationTelemetryCollectorTests
         var collector = new ConfigurationTelemetry();
         var source = new NameValueConfigurationSource(new NameValueCollection());
 
-        _ = new ImmutableTracerSettings(new TracerSettings(source, collector));
+        _ = new TracerSettings(source, collector, new OverrideErrorLog());
         _ = new SecuritySettings(source, collector);
 
         var data = collector.GetData();
@@ -294,12 +299,13 @@ public class ConfigurationTelemetryCollectorTests
             const string serviceName = "my-tests";
             const string serviceVersion = "1.2.3";
             var collector = new ConfigurationTelemetry();
-            var s = new TracerSettings(NullConfigurationSource.Instance, collector)
+            var source = new NameValueConfigurationSource(new()
             {
-                ServiceName = serviceName,
-                Environment = env,
-                ServiceVersion = serviceVersion
-            };
+                { ConfigurationKeys.ServiceName, serviceName },
+                { ConfigurationKeys.Environment, env },
+                { ConfigurationKeys.ServiceVersion, serviceVersion },
+            });
+            var s = new TracerSettings(source, collector, new OverrideErrorLog());
 
             return GetLatestValueFromConfig(collector.GetData(), ConfigTelemetryData.FullTrustAppDomain);
         }

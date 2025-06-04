@@ -30,7 +30,7 @@ public class AspNetCore5AsmActionsConfiguration : RcmBase
         : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmActionsConfiguration))
     {
         SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
     }
 
     [SkippableTheory]
@@ -45,13 +45,19 @@ public class AspNetCore5AsmActionsConfiguration : RcmBase
         await TryStartApp();
         var agent = Fixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode, argument, actionName);
+        var id1 = "TestBlockingAction1";
+        var id2 = "TestBlockingAction2";
 
         // Restore the default values
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = actionName, Type = BlockingAction.BlockRequestType, Parameters = new Parameter { StatusCode = 404, Type = "auto" } } } }, AsmProduct, nameof(TestBlockingAction)) });
+        await agent.SetupRcmAndWait(
+            Output,
+            [(new Payload { Actions = [new Action { Id = actionName, Type = BlockingAction.BlockRequestType, Parameters = new Parameter { StatusCode = 404, Type = "auto" } }] }, AsmProduct, id1)]);
         var spans1 = await SendRequestsAsync(agent, url);
 
         // New values
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = actionName, Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, AsmProduct, nameof(TestBlockingAction)) });
+        await agent.SetupRcmAndWait(
+            Output,
+            [(new Payload { Actions = [new Action { Id = actionName, Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } }] }, AsmProduct, id2)]);
 
         var spans2 = await SendRequestsAsync(agent, url);
         var spans = new List<MockSpan>();

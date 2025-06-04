@@ -8,7 +8,7 @@
 class EnvironmentVariables final
 {
 public:
-    inline static const shared::WSTRING ProfilerEnabled            = WStr("DD_PROFILING_ENABLED");
+    inline static const shared::WSTRING ProfilerEnabled             = WStr("DD_PROFILING_ENABLED");
     inline static const shared::WSTRING DebugLogEnabled             = WStr("DD_TRACE_DEBUG");
     inline static const shared::WSTRING LogPath                     = WStr("DD_PROFILING_LOG_PATH");
     inline static const shared::WSTRING LogDirectory                = WStr("DD_TRACE_LOG_DIRECTORY");
@@ -63,9 +63,20 @@ public:
     inline static const shared::WSTRING EtwEnabled                  = WStr("DD_INTERNAL_PROFILING_ETW_ENABLED");
     inline static const shared::WSTRING SsiDeployed                 = WStr("DD_INJECTION_ENABLED");
     inline static const shared::WSTRING EtwLoggingEnabled           = WStr("DD_INTERNAL_ETW_LOGGING_ENABLED");
+    inline static const shared::WSTRING EtwReplayEndpoint           = WStr("DD_INTERNAL_ETW_REPLAY_ENDPOINT");
     inline static const shared::WSTRING CpuProfilerType             = WStr("DD_INTERNAL_CPU_PROFILER_TYPE");
     inline static const shared::WSTRING CpuProfilingInterval        = WStr("DD_INTERNAL_CPU_PROFILING_INTERVAL");
+    inline static const shared::WSTRING SsiLongLivedThreshold       = WStr("DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD");
+    inline static const shared::WSTRING TelemetryToDiskEnabled      = WStr("DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED");
+    inline static const shared::WSTRING SsiTelemetryEnabled         = WStr("DD_INTERNAL_PROFILING_SSI_TELEMETRY_ENABLED");
+    inline static const shared::WSTRING HttpProfilingInternalEnabled = WStr("DD_INTERNAL_PROFILING_HTTP_ENABLED");
+    inline static const shared::WSTRING HttpProfilingEnabled        = WStr("DD_PROFILING_HTTP_ENABLED");
+    inline static const shared::WSTRING HttpRequestDurationThreshold = WStr("DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD");
+
+    // used for tests only
+    inline static const shared::WSTRING ForceHttpSampling           = WStr("DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING");
 
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");
+    inline static const shared::WSTRING WaitHandleProfilingEnabled = WStr("DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED");
 };

@@ -127,6 +127,17 @@ namespace environment
     // Enables the workaround for dotnet issue 77973 (https://github.com/dotnet/runtime/issues/77973)
     const shared::WSTRING internal_workaround_77973_enabled = WStr("DD_INTERNAL_WORKAROUND_77973_ENABLED");
 
+    // IDE Edit and Continue. If enabled, profiler behavior is modified slightly
+    const shared::WSTRING ide_edit_and_continue_core = WStr("COMPLUS_ForceEnc");
+
+    // IDE Edit and Continue. If enabled, profiler behavior is modified slightly
+    const shared::WSTRING ide_edit_and_continue_netfx = WStr("DOTNET_ForceEnc");
+
+    // Security Controls config.
+    const shared::WSTRING security_controls_configuration = WStr("DD_IAST_SECURITY_CONTROLS_CONFIGURATION");
+
+    // Enables or disables the skip method body feature
+    const shared::WSTRING internal_skip_method_body_enabled = WStr("DD_INTERNAL_SKIP_METHOD_BODY_ENABLED");
 } // namespace environment
 } // namespace trace
 

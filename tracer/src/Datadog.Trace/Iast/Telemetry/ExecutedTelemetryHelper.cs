@@ -14,16 +14,75 @@ namespace Datadog.Trace.Iast.Telemetry;
 
 internal class ExecutedTelemetryHelper
 {
-    private const string BasicExecutedTag = "_dd.iast.telemetry.";
-    private const string SourceExecutedTag = "executed.source.";
-    private const string SinkExecutedTag = "executed.sink.";
-    private const string PropagationExecutedTag = BasicExecutedTag + "executed.propagation";
-    private const string RequestTaintedTag = BasicExecutedTag + "request.tainted";
+    private const string BasicExecutedTag = "_dd.iast.telemetry";
+    private const string PropagationExecutedTag = BasicExecutedTag + ".executed.propagation";
+    private const string RequestTaintedTag = BasicExecutedTag + ".request.tainted";
+    private static string[] _executedSinkTags = new string[Trace.Telemetry.Metrics.IastVulnerabilityTypeExtensions.Length];
+    private static string[] _executedSourceTags = new string[Trace.Telemetry.Metrics.IastSourceTypeExtensions.Length];
+    private static string[] _supressedVulnerabilityTags = new string[Trace.Telemetry.Metrics.IastVulnerabilityTypeExtensions.Length];
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.TelemetryVerbosity;
-    private int[] _executedSinks = new int[Trace.Telemetry.Metrics.IastInstrumentedSinksExtensions.Length];
-    private int[] _executedSources = new int[Trace.Telemetry.Metrics.IastInstrumentedSourcesExtensions.Length];
+    private int[] _executedSinks = new int[Trace.Telemetry.Metrics.IastVulnerabilityTypeExtensions.Length];
+    private int[] _executedSources = new int[Trace.Telemetry.Metrics.IastSourceTypeExtensions.Length];
+    private int[] _supressedVulnerabilities = new int[Trace.Telemetry.Metrics.IastVulnerabilityTypeExtensions.Length];
     private int _executedPropagations = 0;
     private object _metricsLock = new();
+
+    static ExecutedTelemetryHelper()
+    {
+        // Initialize the tags
+        for (int i = 0; i < _executedSinkTags.Length; i++)
+        {
+            _executedSinkTags[i] = $"{BasicExecutedTag}.executed.sink.{GetTag((IastVulnerabilityType)i, false)}";
+        }
+
+        for (int i = 0; i < _executedSourceTags.Length; i++)
+        {
+            _executedSourceTags[i] = $"{BasicExecutedTag}.executed.source.{GetTag((IastSourceType)i)}";
+        }
+
+        for (int i = 0; i < _supressedVulnerabilityTags.Length; i++)
+        {
+            _supressedVulnerabilityTags[i] = $"{BasicExecutedTag}.suppressed.vulnerabilities.{GetTag((IastVulnerabilityType)i, false)}";
+        }
+    }
+
+    private static string GetTag(IastVulnerabilityType vulnerability, bool raiseException = true)
+        => vulnerability switch
+        {
+            IastVulnerabilityType.WeakCipher => "weak_cipher",
+            IastVulnerabilityType.WeakHash => "weak_hash",
+            IastVulnerabilityType.SqlInjection => "sql_injection",
+            IastVulnerabilityType.CommandInjection => "command_injection",
+            IastVulnerabilityType.PathTraversal => "path_traversal",
+            IastVulnerabilityType.LdapInjection => "ldap_injection",
+            IastVulnerabilityType.Ssrf => "ssrf",
+            IastVulnerabilityType.UnvalidatedRedirect => "unvalidated_redirect",
+            IastVulnerabilityType.InsecureCookie => "insecure_cookie",
+            IastVulnerabilityType.NoHttpOnlyCookie => "no_http_only_cookie",
+            IastVulnerabilityType.NoSameSiteCookie => "no_samesite_cookie",
+            IastVulnerabilityType.WeakRandomness => "weak_randomness",
+            IastVulnerabilityType.HardcodedSecret => "hardcoded_secret",
+            IastVulnerabilityType.XContentTypeHeaderMissing => "xcontenttype_header_missing",
+            IastVulnerabilityType.TrustBoundaryViolation => "trust_boundary_violation",
+            IastVulnerabilityType.HstsHeaderMissing => "hsts_header_missing",
+            IastVulnerabilityType.HeaderInjection => "header_injection",
+            IastVulnerabilityType.StackTraceLeak => "stacktrace_leak",
+            IastVulnerabilityType.NoSqlMongoDbInjection => "nosql_mongodb_injection",
+            IastVulnerabilityType.XPathInjection => "xpath_injection",
+            IastVulnerabilityType.ReflectionInjection => "reflection_injection",
+            IastVulnerabilityType.InsecureAuthProtocol => "insecure_auth_protocol",
+            IastVulnerabilityType.Xss => "xss",
+            IastVulnerabilityType.DirectoryListingLeak => "directory_listing_leak",
+            IastVulnerabilityType.SessionTimeout => "session_timeout",
+            IastVulnerabilityType.EmailHtmlInjection => "email_html_injection",
+            IastVulnerabilityType.None => raiseException ? throw new System.Exception($"Undefined vulnerability name for value {vulnerability}.") : "none",
+            _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
+        };
+
+    private static string? GetTag(IastSourceType source)
+    {
+        return SourceTypeUtils.GetAsTag((SourceType)source);
+    }
 
     public static bool Enabled()
         => _verbosityLevel >= IastMetricsVerbosityLevel.Information;
@@ -31,7 +90,7 @@ internal class ExecutedTelemetryHelper
     public static bool EnabledDebug()
         => _verbosityLevel == IastMetricsVerbosityLevel.Debug;
 
-    public void AddExecutedSink(IastInstrumentedSinks type)
+    public void AddExecutedSink(IastVulnerabilityType type)
     {
         if (_verbosityLevel >= IastMetricsVerbosityLevel.Information)
         {
@@ -57,7 +116,7 @@ internal class ExecutedTelemetryHelper
         }
     }
 
-    public void AddExecutedSource(IastInstrumentedSources type)
+    public void AddExecutedSource(IastSourceType type)
     {
         if (_verbosityLevel >= IastMetricsVerbosityLevel.Information)
         {
@@ -67,6 +126,19 @@ internal class ExecutedTelemetryHelper
             }
 
             TelemetryFactory.Metrics.RecordCountIastExecutedSources(type);
+        }
+    }
+
+    public void AddSupressedVulnerability(IastVulnerabilityType type)
+    {
+        if (_verbosityLevel >= IastMetricsVerbosityLevel.Information)
+        {
+            lock (_metricsLock)
+            {
+                _supressedVulnerabilities[(int)type]++;
+            }
+
+            TelemetryFactory.Metrics.RecordCountIastSuppressedVulnerabilities(type);
         }
     }
 
@@ -83,7 +155,7 @@ internal class ExecutedTelemetryHelper
             {
                 if (_executedSources[i] > 0)
                 {
-                    tags.SetMetric(GetExecutedSourceTag((IastInstrumentedSources)i), _executedSources[i]);
+                    tags.SetMetric(_executedSourceTags[i], _executedSources[i]);
                 }
             }
 
@@ -91,7 +163,15 @@ internal class ExecutedTelemetryHelper
             {
                 if (_executedSinks[i] > 0)
                 {
-                    tags.SetMetric(GetExecutedSinkTag((IastInstrumentedSinks)i), _executedSinks[i]);
+                    tags.SetMetric(_executedSinkTags[i], _executedSinks[i]);
+                }
+            }
+
+            for (int i = 0; i < _supressedVulnerabilities.Length; i++)
+            {
+                if (_supressedVulnerabilities[i] > 0)
+                {
+                    tags.SetMetric(_supressedVulnerabilityTags[i], _executedSinks[i]);
                 }
             }
 
@@ -109,6 +189,11 @@ internal class ExecutedTelemetryHelper
     {
         _executedPropagations = 0;
 
+#if NETCOREAPP3_0_OR_GREATER
+        Array.Fill(_executedSources, 0);
+        Array.Fill(_executedSinks, 0);
+        Array.Fill(_supressedVulnerabilities, 0);
+#else
         for (int i = 0; i < _executedSources.Length; i++)
         {
             _executedSources[i] = 0;
@@ -118,47 +203,11 @@ internal class ExecutedTelemetryHelper
         {
             _executedSinks[i] = 0;
         }
-    }
 
-    private string GetExecutedSourceTag(IastInstrumentedSources source)
-    {
-        return BasicExecutedTag + SourceExecutedTag + GetSourceTag(source);
-    }
-
-    private string GetExecutedSinkTag(IastInstrumentedSinks vulnerability)
-        => vulnerability switch
+        for (int i = 0; i < _supressedVulnerabilities.Length; i++)
         {
-            IastInstrumentedSinks.WeakCipher => BasicExecutedTag + SinkExecutedTag + "weak_cipher",
-            IastInstrumentedSinks.WeakHash => BasicExecutedTag + SinkExecutedTag + "weak_hash",
-            IastInstrumentedSinks.SqlInjection => BasicExecutedTag + SinkExecutedTag + "sql_injection",
-            IastInstrumentedSinks.CommandInjection => BasicExecutedTag + SinkExecutedTag + "command_injection",
-            IastInstrumentedSinks.PathTraversal => BasicExecutedTag + SinkExecutedTag + "path_traversal",
-            IastInstrumentedSinks.LdapInjection => BasicExecutedTag + SinkExecutedTag + "ldap_injection",
-            IastInstrumentedSinks.Ssrf => BasicExecutedTag + SinkExecutedTag + "ssrf",
-            IastInstrumentedSinks.UnvalidatedRedirect => BasicExecutedTag + SinkExecutedTag + "unvalidated_redirect",
-            IastInstrumentedSinks.InsecureCookie => BasicExecutedTag + SinkExecutedTag + "insecure_cookie",
-            IastInstrumentedSinks.NoHttpOnlyCookie=> BasicExecutedTag + SinkExecutedTag + "no_http_only_cookie",
-            IastInstrumentedSinks.NoSameSiteCookie => BasicExecutedTag + SinkExecutedTag + "no_samesite_cookie",
-            IastInstrumentedSinks.WeakRandomness => BasicExecutedTag + SinkExecutedTag + "weak_randomness",
-            IastInstrumentedSinks.HardcodedSecret => BasicExecutedTag + SinkExecutedTag + "hardcoded_secret",
-            IastInstrumentedSinks.XContentTypeHeaderMissing => BasicExecutedTag + SinkExecutedTag + "xcontenttype_header_missing",
-            IastInstrumentedSinks.TrustBoundaryViolation => BasicExecutedTag + SinkExecutedTag + "trust_boundary_violation",
-            IastInstrumentedSinks.HstsHeaderMissing => BasicExecutedTag + SinkExecutedTag + "hsts_header_missing",
-            IastInstrumentedSinks.HeaderInjection => BasicExecutedTag + SinkExecutedTag + "header_injection",
-            IastInstrumentedSinks.StackTraceLeak => BasicExecutedTag + SinkExecutedTag + "stacktrace_leak",
-            IastInstrumentedSinks.NoSqlMongoDbInjection => BasicExecutedTag + SinkExecutedTag + "nosql_mongodb_injection",
-            IastInstrumentedSinks.XPathInjection => BasicExecutedTag + SinkExecutedTag + "xpath_injection",
-            IastInstrumentedSinks.ReflectionInjection => BasicExecutedTag + SinkExecutedTag + "reflection_injection",
-            IastInstrumentedSinks.InsecureAuthProtocol => BasicExecutedTag + SinkExecutedTag + "insecure_auth_protocol",
-            IastInstrumentedSinks.Xss => BasicExecutedTag + SinkExecutedTag + "xss",
-            IastInstrumentedSinks.DirectoryListingLeak => BasicExecutedTag + SinkExecutedTag + "directory_listing_leak",
-            IastInstrumentedSinks.SessionTimeout => BasicExecutedTag + SinkExecutedTag + "session_timeout",
-            IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
-            _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
-        };
-
-    private string? GetSourceTag(IastInstrumentedSources source)
-    {
-        return SourceTypeUtils.GetAsTag((SourceType)source);
+            _supressedVulnerabilities[i] = 0;
+        }
+#endif
     }
 }

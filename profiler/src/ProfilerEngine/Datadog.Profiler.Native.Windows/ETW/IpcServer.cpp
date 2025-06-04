@@ -16,6 +16,7 @@ IpcServer::IpcServer()
     _pHandler = nullptr;
     _stopRequested.store(false);
     _pLogger = nullptr;
+    _hNamedPipe = nullptr;
 
     _hInitializedEvent = ::CreateEvent(nullptr, true, false, nullptr);
 }
@@ -30,7 +31,12 @@ IpcServer::~IpcServer()
 
 void IpcServer::Stop()
 {
-    _stopRequested.store(true);
+    // Stop could be called when error and in the destructor
+    auto alreadyStopped = _stopRequested.exchange(true);
+    if (alreadyStopped)
+    {
+        return;
+    }
 
     // we also need to close the handle to the named pipe the server is listing to in order to unblock the ConnectNamedPipe() call
     // and allow the server to really stop
@@ -43,17 +49,20 @@ void IpcServer::Stop()
             0,
             nullptr,
             OPEN_EXISTING,
-            0,
+            FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
             nullptr);
         if (hPipe != INVALID_HANDLE_VALUE)
         {
             ::CloseHandle(hPipe);
         }
 
-        // cleanup the server pipe
-        ::DisconnectNamedPipe(_hNamedPipe);
-        ::CloseHandle(_hNamedPipe);
-        _hNamedPipe = nullptr;
+        // cleanup the server pipe if needed (could be already closed in StartCallback())
+        if (_hNamedPipe != nullptr)
+        {
+            ::DisconnectNamedPipe(_hNamedPipe);
+            ::CloseHandle(_hNamedPipe);
+            _hNamedPipe = nullptr;
+        }
     }
 }
 
@@ -90,7 +99,7 @@ IpcServer::IpcServer(IIpcLogger* pLogger,
     _hInitializedEvent = ::CreateEvent(nullptr, true, false, nullptr);
 }
 
-std::unique_ptr<IpcServer> IpcServer::StartAsync(
+IpcServer* IpcServer::StartAsync(
     IIpcLogger* pLogger,
     const std::string& portName,
     INamedPipeHandler* pHandler,
@@ -105,12 +114,13 @@ std::unique_ptr<IpcServer> IpcServer::StartAsync(
         return nullptr;
     }
 
-    auto server = std::make_unique<IpcServer>(
+    // the lifetime of this instance is the lifetime of the application (i.e. it won't be deleted to avoid random crashes)
+    auto server = new IpcServer(
         pLogger, portName, pHandler, inBufferSize, outBufferSize, maxInstances, timeoutMS
         );
 
     // let a threadpool thread process the command because there is a blocking call to ConnectNamedPipe()
-    if (!::TrySubmitThreadpoolCallback(StartCallback, (PVOID)server.get(), nullptr))
+    if (!::TrySubmitThreadpoolCallback(StartCallback, server, nullptr))
     {
         server->ShowLastError("Impossible to add the Start callback into the threadpool...");
         return nullptr;
@@ -126,7 +136,9 @@ std::unique_ptr<IpcServer> IpcServer::StartAsync(
  }
 
 
-void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID context)
+// We've seen crashes that might indicate that the profiler was shut down and this callback was still running.
+ // So we need to check if the IpcServer has not been stopped before trying to use it.
+ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID context)
 {
     IpcServer* pThis = reinterpret_cast<IpcServer*>(context);
 
@@ -139,6 +151,15 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
     {
         pThis->ShowLastError("Failed to create the empty Dacl...");
         pThis->_pHandler->OnStartError();
+        return;
+    }
+
+
+    // It is possible that an error occurred when trying to connect to the Agent
+    // in that case, no need to start to listen to the pipe
+    // The pipe will be cleaned up in Stop()
+    if (pThis->_stopRequested.load())
+    {
         return;
     }
 
@@ -176,6 +197,15 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
     // the Agent can connect to the named pipe
     ::SetEvent(pThis->_hInitializedEvent);
 
+
+    // It is possible that an error occurred when trying to connect to the Agent
+    // in that case, no need to start to listen to the pipe
+    // The pipe will be cleaned up in Stop()
+    if (pThis->_stopRequested.load())
+    {
+        return;
+    }
+
     // this is a blocking call waiting for the Agent to connect
     // if the agent is not running, it is going to block until the pipe is closed
     // --> the ETW manager should detect the agent is not running and close the pipe
@@ -190,13 +220,11 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
         return;
     }
 
-    // it is possible that an error occured when trying to connect to the Agent
-    // in that case, the server should stop
+    // It is possible that an error occurred when trying to connect to the Agent
+    // in that case, no need to start to listen to the pipe
+    // The pipe will be cleaned up in Stop()
     if (pThis->_stopRequested.load())
     {
-        ::CloseHandle(pThis->_hNamedPipe);
-        pThis->_hNamedPipe = nullptr;
-        pThis->_pHandler->OnConnectError();
         return;
     }
 

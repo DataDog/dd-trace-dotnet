@@ -8,6 +8,7 @@ using System.Net.Http;
 #endif
 using System;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler;
 
 #if NETFRAMEWORK
 using Datadog.Trace.DuckTyping;
@@ -19,7 +20,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.System.Net;
 
 /// <summary> HttpClient class aspects </summary>
-[AspectClass("System.Net.Http", AspectType.RaspIastSink, VulnerabilityType.Ssrf)]
+[AspectClass("System.Net.Http", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class HttpClientAspect
@@ -54,8 +55,16 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String,System.Threading.CancellationToken)", 1)]
     public static string Review(string parameter)
     {
-        VulnerabilitiesModule.OnSSRF(parameter);
-        return parameter;
+        try
+        {
+            VulnerabilitiesModule.OnSSRF(parameter);
+            return parameter;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return parameter;
+        }
     }
 
     /// <summary>
@@ -88,8 +97,20 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::set_BaseAddress(System.Uri)")]
     public static Uri ReviewUri(Uri parameter)
     {
-        VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
-        return parameter;
+        try
+        {
+            if (parameter is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
+            }
+
+            return parameter!;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return parameter;
+        }
     }
 
     /// <summary>
@@ -109,28 +130,45 @@ public class HttpClientAspect
 #endif
     [AspectMethodInsertBefore("System.Net.Http.HttpMessageInvoker::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", 1)]
 #if !NETFRAMEWORK
-    public static object ReviewHttpRequestMessage(HttpRequestMessage parameter)
+    public static HttpRequestMessage ReviewHttpRequestMessage(HttpRequestMessage parameter)
     {
-        var uri = parameter.RequestUri;
-
-        if (uri is not null)
+        try
         {
-            VulnerabilitiesModule.OnSSRF(uri.OriginalString);
-        }
+            if (parameter is not null && parameter.RequestUri is not null && parameter.RequestUri.OriginalString is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter.RequestUri.OriginalString);
+            }
 
-        return parameter;
+            return parameter!;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return parameter;
+        }
     }
 #else
     public static object ReviewHttpRequestMessage(object parameter)
     {
-        var uri = parameter.DuckCast<ClrProfiler.AutoInstrumentation.AspNet.IHttpRequestMessage>()?.RequestUri;
-
-        if (uri is not null)
+        try
         {
-            VulnerabilitiesModule.OnSSRF(uri.OriginalString);
-        }
+            if (parameter is not null)
+            {
+                var uri = parameter.DuckCast<ClrProfiler.AutoInstrumentation.AspNet.IHttpRequestMessage>()?.RequestUri;
 
-        return parameter;
+                if (uri is not null)
+                {
+                    VulnerabilitiesModule.OnSSRF(uri.OriginalString);
+                }
+            }
+
+            return parameter!;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return parameter;
+        }
     }
 #endif
 }

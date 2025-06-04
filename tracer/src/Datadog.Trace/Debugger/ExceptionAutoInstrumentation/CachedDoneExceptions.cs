@@ -20,17 +20,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private static readonly CachedItems _cachedDoneExceptions = new CachedItems();
 
-        internal static void Add(string item)
+        internal static void Add(int item)
         {
             _cachedDoneExceptions.Add(item);
         }
 
-        internal static bool Remove(string item)
+        internal static bool Remove(int item)
         {
             return _cachedDoneExceptions.Remove(item);
         }
 
-        internal static bool Contains(string item)
+        internal static bool Contains(int item)
         {
             return _cachedDoneExceptions.Contains(item);
         }

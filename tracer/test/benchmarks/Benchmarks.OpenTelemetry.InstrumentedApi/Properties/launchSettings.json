@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "Benchmarks.OpenTelemetry.InstrumentedApi": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_SERVICE": "dd-trace-dotnet",
+        "DD_ENV": "DEV",
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
+        "DD_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
+        "DD_TRACE_OTEL_ENABLED": "true",
+        "DD_INSTRUMENTATION_TELEMETRY_ENABLED": "false",
+        "DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED": "true",
+        "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY": "V4"
+      }
+    }
+  }
+}

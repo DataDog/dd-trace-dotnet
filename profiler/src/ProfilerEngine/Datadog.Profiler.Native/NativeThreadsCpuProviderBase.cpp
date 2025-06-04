@@ -3,15 +3,22 @@
 
 #include "NativeThreadsCpuProviderBase.h"
 
+#include <chrono>
+
 #include "CpuTimeProvider.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "RawCpuSample.h"
+#include "RawSampleTransformer.h"
 #include "SamplesEnumerator.h"
+#include "SampleValueTypeProvider.h"
 
-NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(CpuTimeProvider* cpuTimeProvider) :
-    _cpuTimeProvider{cpuTimeProvider},
-    _previousTotalCpuTime{0}
+using namespace std::chrono_literals;
+
+NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* sampleTransformer) :
+    _sampleTransformer{sampleTransformer},
+    _previousTotalCpuTime{0},
+    _valueOffsets{valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions)}
 {
 }
 
@@ -55,7 +62,7 @@ public:
 
 std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
 {
-    std::uint64_t cpuTime = 0;
+    auto cpuTime = 0ms;
     for (auto const& thread : GetThreads())
     {
         cpuTime += OsSpecificApi::GetThreadCpuTime(thread.get());
@@ -64,14 +71,14 @@ std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
     auto currentTotalCpuTime = cpuTime;
     // There is a case where it's possible to have currentTotalCpuTime < _previousTotalCpuTime: native threads died in the meantime
     // To avoid sending negative values, just check and returns 0 instead.
-    cpuTime = currentTotalCpuTime >= _previousTotalCpuTime ? currentTotalCpuTime - _previousTotalCpuTime : 0;
+    cpuTime = currentTotalCpuTime >= _previousTotalCpuTime ? currentTotalCpuTime - _previousTotalCpuTime : 0ms;
     OnCpuDuration(cpuTime);
 
     // For native threads, we need to keep the last cpu time
     _previousTotalCpuTime = currentTotalCpuTime;
 
     auto enumerator = std::make_unique<CpuSampleEnumerator>();
-    if (cpuTime == 0)
+    if (cpuTime == 0ms)
     {
         Log::Debug(GetName(), " CPU time sums up to 0. No sample will be created.");
         return enumerator;
@@ -82,7 +89,7 @@ std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
 
     // Cpu Time provider knows the offset of the Cpu value
     // So leave the transformation to it
-    auto sample = _cpuTimeProvider->TransformRawSample(rawSample);
+    auto sample = _sampleTransformer->Transform(rawSample, _valueOffsets);
 
     // The resulting callstack of the transformation is empty
     // Add a fake "GC" frame to the sample
@@ -92,11 +99,16 @@ std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
         sample->AddFrame(frame);
     }
 
+    for (auto&& label : GetLabels())
+    {
+        sample->AddLabel(std::move(label));
+    }
+
     enumerator->Set(sample);
 
     return enumerator;
 }
 
-void NativeThreadsCpuProviderBase::OnCpuDuration(std::uint64_t cpuTime)
+void NativeThreadsCpuProviderBase::OnCpuDuration(std::chrono::milliseconds cpuTime)
 {
 }

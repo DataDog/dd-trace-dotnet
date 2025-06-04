@@ -2,6 +2,9 @@
 
 This package contains the Datadog .NET APM tracer for configuring custom instrumentation.
 
+⚠ Starting with version 3.0.0, this package requires that you also configure automatic instrumentation.
+Using this package without automatic instrumentation is no longer supported  
+
 > If you are only using automatic instrumentation, **you do not need this package**. Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for details on how to install the tracer for automatic instrumentation.
 
 > If you are using automatic instrumentation and would like to interact with APM only through C# attributes, see the [Datadog.Trace.Annotations](https://www.nuget.org/packages/Datadog.Trace.Annotations/) NuGet package.
@@ -11,7 +14,7 @@ Please note that Datadog does not support tracing (manual or automatic) in parti
 ## Getting Started
 
 1. Configure the Datadog agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm).
-2. For automatic instrumentation, install and enable the tracer [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/?tab=windows#install-the-tracer).
+2. Configure automatic instrumentation [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/?tab=windows#install-the-tracer).
 3. Configure custom instrumentation, as shown below
 4. [View your live data on Datadog](https://app.datadoghq.com/apm/traces).
 
@@ -59,257 +62,29 @@ using (var scope = Tracer.Instance.StartActive("custom-operation"))
 
 You can view the [notes for the latest release on GitHub](https://github.com/DataDog/dd-trace-dotnet/releases).
 
-## Upgrading from 1.x to 2.0
-
-.NET Tracer 2.0 introduces several breaking changes to the API which allow various performance improvements, add new features, and deprecate problematic ways of using the package. Most of these changes do not require any changes to your code, but some patterns are no longer supported or recommended.
-
-This section describes some of the most important breaking changes. For full details see [the release notes on GitHub](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.0.0).
-
-### Supported .NET versions
-
-.NET Tracer 2.0 adds support for .NET 6.0 and raises the minimum supported version of .NET Framework from .NET Framework 4.5 to .NET Framework 4.6.1. If you are currently targeting version < 4.6.1, we suggest you upgrade [in line with Microsoft's guidance](https://docs.microsoft.com/en-us/lifecycle/products/microsoft-net-framework).
-
-For full details of supported versions, see [our documentation on .NET Framework compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-framework) and [.NET/.NET Core compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core).
-
-> Note that Datadog does not support tracing (manual or automatic) in partial-trust environments.
-
-### Singleton `Tracer` instances
-
-In .NET Tracer 1.x, you could create new `Tracer` instances with different settings for each instance, using the `Tracer` constructor. In .NET Tracer 2.0 this constructor is marked `[Obsolete]` and it is no longer possible to create `Tracer` instances with different settings. This was done to avoid multiple problematic patterns that were hard for users to detect.
-
-To update your code:
-
-```csharp
-using Datadog.Trace;
-
-// Create your settings as before
-var settings = new TracerSettings();
-
-// var tracer = new Tracer(settings) // <- Delete this line
-Tracer.Configure(settings);          // <- Add this line
-```
-
-### Immutable `Tracer.Settings`
-
-In .NET Tracer 1.x the `TracerSettings` object passed into a `Tracer` instance could be modified later. Depending on the changes, the tracer may or may not respect the changes. In .NET Tracer 2.0, an `ImmutableTracerSettings` object is created when the `Tracer` instance is configured. The property `Tracer.Settings` now returns `ImmutableTracerSettings`, not `TracerSettings`. Subsequent changes to the original `TracerSettings` instance will not be observed by `Tracer`.
-
-To update your code:
-
-```csharp
-using Datadog.Trace;
-
-var settings = TracerSettings.FromDefaultSources();
-settings.TraceEnabled = false;   // TracerSettings are mutable
-
-Tracer.Configure(settings);
-
-// All properties on Tracer.Settings are now read-only
-// Tracer.Instance.Settings.TraceEnabled = false; // <- DOES NOT COMPILE
-```
-
-### Exporter settings
-
-Exporter-related settings were grouped into the `TracerSettings.Exporter` property.
-
-To update your code:
-
-```csharp
-using Datadog.Trace;
-
-var settings = TracerSettings.FromDefaultSources();
-
-// settings.AgentUri = "http://localhost:8126";        // <- Delete this line
-settings.Exporter.AgentUri = "http://localhost:8126";  // <- Add this line
-
-Tracer.Configure(settings);
-```
-
-### Configure ADO.NET integrations individually
-
-In .NET Tracer 1.x, you could configure automatic instrumentation of all ADO.NET integrations using the `AdoNet` integration ID. In .NET Tracer 2.0, you can now configure specific integrations using the following integration IDs:
-
-* `MySql`
-* `Npgsql` (PostgreSQL)
-* `Oracle`
-* `SqlClient` (SQL Server)
-* `Sqlite`
-
-See our documentation for a [complete list of supported integration IDs](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core/#integrations). Note that you can still disable _all_ ADO.NET integrations using the `AdoNet` integration ID.
-
-This change also removes the now-obsolete `TracerSettings.AdoNetExcludedTypes` setting and the corresponding environment variable `DD_TRACE_ADONET_EXCLUDED_TYPES`. Replace usages of these with `TracerSettings.Integrations["<INTEGRATION_NAME>"].Enabled` and `DD_TRACE_<INTEGRATION_NAME>_ENABLED`, respectively:
-
-```csharp
-using Datadog.Trace;
-
-var settings = TracerSettings.FromDefaultSources();
-
-// settings.AdoNetExcludedTypes.Add("MySql");    // <- Delete this line
-settings.Integrations["MySql"].Enabled = false;  // <- Add this line
-```
-
-### `ElasticsearchNet5` integration ID removed
-
-In .NET Tracer 1.x, the integration ID for version 5.x of `Elasticsearch.Net` was `ElasticsearchNet5`, and the integration ID for versions 6 and above was `ElasticsearchNet`. In .NET Tracer 2.0, `ElasticsearchNet5` was removed. Use `ElasticsearchNet` for all versions of `Elasticsearch.Net`.
-
-To update your code:
-
-```csharp
-using Datadog.Trace;
-
-var settings = TracerSettings.FromDefaultSources();
-
-settings.Integrations["ElasticsearchNet5"].Enabled = false; // <- Delete this line
-settings.Integrations["ElasticsearchNet"].Enabled = false;  // <- Add this line
-```
-
-### Obsolete APIs have been removed
-
-The following deprecated APIs were removed.
-
-* `TracerSettings.DebugEnabled` was removed. Set the `DD_TRACE_DEBUG` environment variable to `1` to enable debug mode.
-* `Tags.ForceDrop` and `Tags.ForceKeep` were removed. Use `Tags.ManualDrop` and `Tags.ManualKeep` respectively instead.
-* `SpanTypes` associated with automatic instrumentation spans, such as `MongoDb` and `Redis`, were removed.
-* `Tags` associated with automatic instrumentation spans, such as `AmqpCommand` and `CosmosDbContainer`, were removed.
-* `Tracer.Create()` was removed. Use `Tracer.Configure()` instead.
-* `TracerSettings.AdoNetExcludedTypes` was removed. Use `TracerSettings.Integrations` to configure ADO.NET automatic instrumentation.
-* Various internal APIs not intended for public consumption were removed.
-
-In addition, some settings were marked obsolete in 2.0:
-
-* Environment variables `DD_TRACE_ANALYTICS_ENABLED`, `DD_TRACE_{0}_ANALYTICS_ENABLED`, and `DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE` for controlling App Analytics are obsolete. App Analytics has been replaced with Tracing Without Limits. See [our documentation for details](https://docs.datadoghq.com/tracing/legacy_app_analytics/).
-* `TracerSettings.AnalyticsEnabled`, `IntegrationSettings.AnalyticsEnabled`, and `IntegrationSettings.AnalyticsSampleRate` were marked obsolete.
-* Environment variable `DD_TRACE_LOG_PATH` is deprecated. Use `DD_TRACE_LOG_DIRECTORY` instead.
-
-### Introduction of interfaces `ISpan`, `IScope`, and `ITracer`
-
-.NET Tracer 2.0 makes the public `Scope` and `Span` classes internal. Instead, we now expose public `IScope` and `ISpan` interfaces and the tracer API was updated accordingly. If you are currently using explicit types (instead of inferring types with `var`), replace usages of `Scope` with `IScope` and `Span` with `ISpan`.
-
-This Tracer release also adds the new `ITracer` interface, implemented by the `Tracer` class. The type of static property `Tracer.Instance` is still `Tracer`, so use of `ITracer` is not required, but the new interface can be useful for testing with mocks and dependency injection.
-
-To update your `Scope/Span` code:
-
-```csharp
-using Datadog.Trace;
-
-// No changes required here (using var)
-using (var scope = Tracer.Instance.StartActive("my-operation"))
-{
-    var span = scope.Span;
-    // ...
-}
-
-// No longer compiles (Scope and Span are no longer public)
-using (Scope scope = Tracer.Instance.StartActive("my-operation"))
-{
-    Span span = scope.Span;
-    // ...
-}
-
-// Correct usage with explicit types (using IScope and ISpan)
-using (IScope scope = Tracer.Instance.StartActive("my-operation"))
-{
-    ISpan span = scope.Span;
-    // ...
-}
-```
-
-### Simplification of the tracer interface
-
-In addition to returning `IScope`, several parameters parameters in the `Tracer.StartActive` method signature were replaced with a single `SpanCreationSettings`. The span's service name can no longer be set from `Tracer.StartActive`. Instead, set `Span.ServiceName` after creating the span.
-
-To update your `Scope/Span` code:
-
-```csharp
-using Datadog.Trace;
-
-// No changes required here (using only operation name)
-using (var scope = Tracer.Instance.StartActive("my-operation"))
-{
-    // ...
-}
-
-// No longer compiles (most parameters removed)
-using (var scope = Tracer.Instance.StartActive("my-operation", parent: spanContext, serviceName: "my-service", ...))
-{
-    // ...
-}
-
-// Correct usage
-var spanCreationSettings = new SpanCreationSettings() { Parent = spanContext };
-using (var scope = Tracer.Instance.StartActive("my-operation", spanCreationSettings))
-{
-    scope.Span.ServiceName = "my-service";
-    // ...
-}
-
-```
-
-### Incorrect integration names are ignored
-
-In .NET Tracer 2.0, any changes made to an `IntegrationSettings` object for an unknown `IntegrationId` will not be persisted. Instead, a warning will be logged describing the invalid access.
-
-```csharp
-using Datadog.Trace;
-
-var tracerSettings = TracerSettings.FromDefaultSources();
-
-// Accessing settings for an unknown integration will log a warning
-var settings = tracerSettings.Integrations["MyRandomIntegration"];
-
-// changes are not persisted
-settings.Enabled = false;
-
-// isEnabled is null, not false
-bool? isEnabled = tracerSettings.Integrations["MyRandomIntegration"].Enabled;
-```
-
-### Automatic instrumentation changes
-
-#### `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` enabled by default
-
-.NET Tracer 1.26.0 added the `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` feature flag, which enables improved span names for ASP.NET and ASP.NET Core automatic instrumentation spans, an additional span for ASP.NET Core requests, and additional tags.
-
-In .NET Tracer 2.0, `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is **enabled** by default. Due to the change in span names, you may need to update your monitors and dashboards to use the new resource names.
-
-If you do not wish to take advantage of the improved route names, you can disable the feature by setting the `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` environment variable to `0`.
-
-#### Call-site instrumentation removed
-
-Call-site automatic instrumentation was removed in .NET Tracer 2.0 and replaced with call-target instrumentation. This was the default mode [since version 1.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.0) on .NET Framework 4.6 or above and .NET Core / .NET 5. Call-target instrumentation provides performance and reliability improvements over call-site instrumentation.
-
-Note: Call-target instrumentation does not support instrumenting custom implementations of `DbCommand` yet. If you find ADO.NET spans are missing from your traces after upgrading, please raise an issue on GitHub, or contact [support](https://docs.datadoghq.com/help).
-
-#### `DD_INTEGRATIONS` environment variable no longer needed
-
-The `integrations.json` file is no longer required for instrumentation. You can remove references to this file, for example by deleting the `DD_INTEGRATIONS` environment variable.
-
-### User Identification
-
-The tracer provides a convenient method to link an actor to a trace. You have to pass a `UserDetails` object with at least its Id property set to a non-null value.
-
-To correlate users to web requests, you would need to use the following code snippet within each web request, after user authorization has been performed:
-
-```csharp
-using Datadog.Trace;
-
-// ...
-
-    var userDetails = new UserDetails()
-    {
-        // the systems internal identifier for the users
-        Id = "d41452f2-483d-4082-8728-171a3570e930",
-        // the email address of the user
-        Email = "test@adventure-works.com",
-        // the user's name, as displayed by the system
-        Name = "Jane Doh",
-        // the user's session id
-        SessionId = "d0632156-132b-4baa-95b2-a492c5f9cb16",
-        // the role the user is making the request under
-        Role = "standard",
-    };
-    Tracer.Instance.ActiveScope?.Span.SetUser(userDetails);
-
-```
+## Upgrading from 2.x to 3.0
+
+The .NET tracer v3.0.0 includes breaking changes that you must be aware of before upgrading your applications. The most important high-level changes are listed below, and described in more detail later in this document
+
+- Breaking changes
+    - **Custom-only tracing (using the _Datadog.Trace_ NuGet package), _without_ any automatic tracing, is no longer supported**. Custom instrumentation with the  _Datadog.Trace_ NuGet where you have _also_ configured [automatic-instrumentation](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/) is still supported as it was in v2.x.x.
+    - **The public API surface has changed** in the *Datadog.Trace* NuGet package. A number of previously obsolete APIs have been removed, and some other APIs have been marked obsolete. Most changes are related to how you create `TracerSettings`  and `Tracer` instances.
+    - **Changes to default settings**. The default values of some settings have changed, and others have been removed. See below for more details.
+    - **Changes in behavior**. The semantic requirements and meaning of some settings have changed, as have some of the tags added to traces.  See below for more details.
+    - **The 32-bit MSI installer will no longer be available**. The 64-bit MSI installer already includes support for tracing 32-bit processes, so you should use this installer instead.
+    - **The client library will still be injected when `DD_TRACE_ENABLED=0`**. In v2.x.x, setting `DD_TRACE_ENABLED=0` would prevent the client library from being injected into the application completely. In v3.0.0+, the client library will still be injected, but tracing will be disabled.
+    - **Referencing the `Datadog.Trace.AspNet` module is no longer supported**. In v1.x.x and 2.x.x ASP.NET support allowed adding a reference to the `Datadog.Trace.AspNet` module in your web.config. This is no longer supported in v3.x.x.
+- Deprecation notices
+    - **.NET Core 2.1 is marked EOL** in v3.0.0+ of the tracer. That means versions 2.0, 2.1, 2.2 and 3.0 of .NET Core are now EOL. These versions may still work with v3.0.0+, but they will no longer receive significant testing and you will receive limited support for issues arising with EOL versions.
+    - **Datadog.Trace.OpenTracing is now obsolete**. OpenTracing is considered deprecated, and so _Datadog.Trace.OpenTracing_ is considered deprecated. See the following details on future deprecation.
+    - **macOS 11 is no longer supported for CI Visibility** in v3.0.0+. Only macOS 12 and above are supported.
+- Major version policy and future deprecation
+    - **Announcing a major version roadmap**. We intend to make yearly major releases, starting from v3.0.0 in 2024, and v4.0.0 in 2025. We clearly will aim for minimal breaking changes, with the primary focus being on maintaining support for new versions of .NET and removal of EOL frameworks and operating systems.
+    - **Planned removal of support for .NET Core 2.x and .NET Core 3.0** in version v4.0.0+. We intend to completely remove support for .NET Core 2.x and .NET Core 3.0 in v4.0.0. .NET Framework 4.6.1+ will continue to be supported.
+    - **Planned removal of support for some linux distributions**. In version v4.0.0, we intend to drop support for CentOS 7, RHEL 7, and CentOS Stream 8.
+    - **Planned remove of support for App Analytics**. In version v4.0.0, we intend to drop support for App Analytics and associated settings.
+
+For a full list of changes and a guide to migrating your application, please see [the migration guide](https://github.com/DataDog/dd-trace-dotnet/blob/master/docs/MIGRATING.md).
 
 ## Get in touch
 

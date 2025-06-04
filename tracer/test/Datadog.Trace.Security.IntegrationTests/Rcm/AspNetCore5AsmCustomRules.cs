@@ -76,9 +76,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await TryStartApp();
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
+            var id = nameof(TestCustomRules);
 
             var spans1 = await SendRequestsAsync(agent, url);
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { CustomRules = (JArray)JToken.Parse(CustomRuleExample) }, AsmProduct, nameof(TestCustomRules)) });
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { CustomRules = (JArray)JToken.Parse(CustomRuleExample) }, AsmProduct, id) });
 
             var spans2 = await SendRequestsAsync(agent, url);
             var spans = new List<MockSpan>();
@@ -86,7 +87,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans2);
             await VerifySpans(spans.ToImmutableList(), settings);
             // need to reset if the process is going to be reused
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { CustomRules = new JArray() }, AsmProduct, nameof(TestCustomRules)) });
+            await agent.SetupRcmAndWait(Output, []);
         }
 
         protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmCustomRules);

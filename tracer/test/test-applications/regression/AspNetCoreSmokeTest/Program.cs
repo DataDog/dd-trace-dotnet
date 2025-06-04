@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -15,9 +16,11 @@ namespace AspNetCoreSmokeTest
         public static volatile int ExitCode = 0;
         public static async Task<int> Main(string[] args)
         {
-            if (!IsProfilerAttached())
+            var profilerNotRequired = Environment.GetEnvironmentVariable("PROFILER_IS_NOT_REQUIRED");
+
+            if (!IsProfilerAttached() &&  profilerNotRequired != "True")
             {
-                Console.WriteLine("Error: Profiler is required and is not loaded.");
+                Console.WriteLine($"Error: Profiler is required and is not loaded. PROFILER_IS_NOT_REQUIRED={profilerNotRequired}.");
                 return 1;
             }
 
@@ -34,6 +37,23 @@ namespace AspNetCoreSmokeTest
 
             await CreateHostBuilder(args).Build().RunAsync();
 
+            var completedPath = Path.Combine(
+                Environment.GetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY") ?? ".",
+                "completed.txt");
+
+            File.WriteAllText(completedPath, DateTimeOffset.UtcNow.ToString());
+
+#if PUBLISH_TRIMMED
+            // this is a hacky way of simply making sure the controller isn't trimmed
+            try
+            {
+                _ = new ValuesController(null).Get();
+            }
+            catch
+            {
+                // this will throw, but we don't care
+            }
+#endif
             return ExitCode;
         }
 

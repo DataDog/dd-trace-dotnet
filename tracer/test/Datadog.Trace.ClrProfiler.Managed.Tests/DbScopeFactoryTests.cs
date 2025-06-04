@@ -7,10 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
+using System.Data.Common;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
+using Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -19,6 +23,8 @@ using DbType = Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.DbType;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
+    [Collection("DbScopeFactoryTests")]
+    [TracerRestorer]
     public class DbScopeFactoryTests
     {
         private const string DbmCommandText = "SELECT 1";
@@ -54,7 +60,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public static IEnumerable<object[]> GetEnabledDbmData()
             => from command in GetDbmCommands()
                from dbm in new[] { "service", "full" }
-               select new[] { command[0], dbm };
+               from storedProcInject in new[] { false, true }
+               select new[] { command[0], dbm, storedProcInject };
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
@@ -92,9 +99,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // HACK: avoid analyzer warning about not using arguments
             _ = dbType;
 
-            var tracerSettings = new TracerSettings();
-            tracerSettings.Integrations[integrationName].Enabled = true;
-            tracerSettings.Integrations[nameof(IntegrationId.AdoNet)].Enabled = false;
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { string.Format(ConfigurationKeys.Integrations.Enabled, integrationName), "true" },
+                { string.Format(ConfigurationKeys.Integrations.Enabled, nameof(IntegrationId.AdoNet)), "false" },
+            });
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             // Create scope
@@ -143,17 +152,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public async Task CreateDbCommandScope_InjectsDbmWhenEnabled(Type commandType, string dbmMode)
+        public async Task CreateDbCommandScope_InjectsDbmWhenEnabled(Type commandType, string dbmMode, bool storedProcInject)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
 
             var collection = new NameValueCollection
             {
-                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+                {
+                    ConfigurationKeys.DbmPropagationMode, dbmMode
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, storedProcInject.ToString()
+                }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
@@ -165,17 +180,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public async Task CreateDbCommandScope_OnlyInjectsDbmOnceWhenCommandIsReused(Type commandType, string dbmMode)
+        public async Task CreateDbCommandScope_OnlyInjectsDbmOnceWhenCommandIsReused(Type commandType, string dbmMode, bool storedProcInject)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
 
             var collection = new NameValueCollection
             {
-                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+                {
+                    ConfigurationKeys.DbmPropagationMode, dbmMode
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, storedProcInject.ToString()
+                }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using (var scope = CreateDbCommandScope(tracer, command))
@@ -198,9 +219,41 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             command.CommandText.Should().Be(injectedTest);
         }
 
+        [Fact]
+        public async Task CreateDbCommandScope_DetectsCommandIsReusedOnAppend()
+        {
+            var command = (IDbCommand)Activator.CreateInstance(typeof(Npgsql.NpgsqlCommand))!;
+            // adding a query plan hint to trigger
+            command.CommandText = "/*+ IndexScan(a) */ " + DbmCommandText;
+
+            IConfigurationSource source = new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } });
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+            }
+
+            // Should have injected the data once, not prepended
+            var injectedTest = command.CommandText.Should()
+                                      .NotBe(DbmCommandText)
+                                      .And.NotEndWith(DbmCommandText)
+                                      .And.Contain(DbmCommandText)
+                                      .And.Subject;
+
+            // second attempt should still have the same data
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+            }
+
+            command.CommandText.Should().Be(injectedTest);
+        }
+
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public async Task CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures(Type commandType, string dbmMode)
+        public async Task CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures_ExceptForSqlCommand(Type commandType, string dbmMode, bool storedProcInject)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
@@ -208,17 +261,33 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var collection = new NameValueCollection
             {
-                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+                {
+                    ConfigurationKeys.DbmPropagationMode, dbmMode
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, storedProcInject.ToString()
+                }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
             scope.Should().NotBeNull();
 
-            // Should not have injected the data
-            command.CommandText.Should().Be(DbmCommandText);
+            if (storedProcInject && (commandType == typeof(System.Data.SqlClient.SqlCommand) || commandType == typeof(Microsoft.Data.SqlClient.SqlCommand)))
+            {
+                // should have injected data
+                // command text should be exec
+                command.CommandText.Should().NotBe(DbmCommandText).And.Contain($"EXEC [{DbmCommandText}]");
+                command.CommandText.Should().Contain("/*dddbs"); // check for the dbm comment this isn't all of it but good enough
+            }
+            else
+            {
+                // should not have injected data - command text should not change
+                command.CommandText.Should().Be(DbmCommandText);
+            }
         }
 
         [Theory]
@@ -233,14 +302,383 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmPropagationMode, "disabled" }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
             scope.Should().NotBeNull();
 
-            // Should not have injected the data
+            // should not have injected data - command text should not change
             command.CommandText.Should().Be(DbmCommandText);
+        }
+
+        // TODO; can probably clean these Stored Procedures up at some point, I just copy pasted
+        // TODO: can't get [InlineData(typeof(System.Data.SqlClient.SqlCommand))] to work with the MockParameters
+        [Theory]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_Parameterless_CorrectlyTransformedIntoExec(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "dbo.Parameterless";
+            command.CommandType = CommandType.StoredProcedure;
+
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            command.CommandType.Should().Be(CommandType.Text);
+            command.CommandText.Should().StartWith("EXEC [dbo].[Parameterless] ");
+            command.CommandText.Should().Contain("/*dddbs=");
+        }
+
+        [Theory]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_SingleInputParameter_CorrectlyTransformedIntoExec(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "dbo.SingleParameter";
+            command.CommandType = CommandType.StoredProcedure;
+
+#if NETFRAMEWORK
+            var parameter = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+#else
+            var parameter = new MockDbParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+#endif
+            command.Parameters.Add(parameter);
+
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            command.CommandType.Should().Be(CommandType.Text);
+            command.CommandText.Should().StartWith("EXEC [dbo].[SingleParameter] @Id=@Id ");
+            command.CommandText.Should().Contain("/*dddbs=");
+        }
+
+        [Theory]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_MultipleInputParameters_IsNotModified(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "dbo.MultiParameter";
+            command.CommandType = CommandType.StoredProcedure;
+
+#if NETFRAMEWORK
+            var parameter = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@SomeOtherId",
+                Value = 55
+            };
+#else
+            var parameter = new MockDbParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new MockDbParameter
+            {
+                ParameterName = "@SomeOtherId",
+                Value = 55
+            };
+#endif
+            command.Parameters.Add(parameter2);
+
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            command.CommandType.Should().Be(CommandType.Text);
+            command.CommandText.Should().StartWith("EXEC [dbo].[MultiParameter] @Id=@Id, @SomeOtherId=@SomeOtherId ");
+            command.CommandText.Should().Contain("/*dddbs=");
+        }
+
+        [Theory]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_OutputParameter_IsNotModified(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "dbo.OutputParameter";
+            command.CommandType = CommandType.StoredProcedure;
+
+#if NETFRAMEWORK
+            var parameter = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@SomeOtherId",
+                Direction = ParameterDirection.Output
+            };
+            command.Parameters.Add(parameter2);
+
+            var parameter3 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@SomeOtherIdFoo",
+                Direction = ParameterDirection.InputOutput,
+                Value = 10
+            };
+            command.Parameters.Add(parameter3);
+#else
+            var parameter = new MockDbParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new MockDbParameter
+            {
+                ParameterName = "@SomeOtherId",
+                Direction = ParameterDirection.Output
+            };
+            command.Parameters.Add(parameter2);
+
+            var parameter3 = new MockDbParameter
+            {
+                ParameterName = "@SomeOtherIdFoo",
+                Direction = ParameterDirection.InputOutput,
+                Value = 10
+            };
+            command.Parameters.Add(parameter3);
+#endif
+
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+            command.CommandText.Should().Be("dbo.OutputParameter");
+        }
+
+        [Theory]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_ReturnParameter_IsNotModified(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "dbo.ReturnParam";
+            command.CommandType = CommandType.StoredProcedure;
+
+#if NETFRAMEWORK
+            var parameter = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@ReturnValue",
+                Direction = ParameterDirection.ReturnValue
+            };
+            command.Parameters.Add(parameter2);
+#else
+            var parameter = new MockDbParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new MockDbParameter
+            {
+                ParameterName = "@ReturnValue",
+                Direction = ParameterDirection.ReturnValue
+            };
+            command.Parameters.Add(parameter2);
+#endif
+
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+            command.CommandText.Should().Be("dbo.ReturnParam");
+        }
+
+        [Theory]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_ComplexCase_MultipleParamsOfVariousTypes_IsNotModified(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
+            command.CommandText = "dbo.ComplexProcedure";
+            command.CommandType = CommandType.StoredProcedure;
+
+#if NETFRAMEWORK
+            // Add various parameters
+            var parameter1 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@InputParam",
+                Value = "Input Value"
+            };
+            command.Parameters.Add(parameter1);
+
+            var parameter2 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@OutputParam",
+                Direction = ParameterDirection.Output,
+                Size = 100
+            };
+            command.Parameters.Add(parameter2);
+
+            var parameter3 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@InOutParam",
+                Direction = ParameterDirection.InputOutput,
+                Value = "Initial Value",
+                Size = 100
+            };
+            command.Parameters.Add(parameter3);
+
+            var parameter4 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@RetVal",
+                Direction = ParameterDirection.ReturnValue
+            };
+            command.Parameters.Add(parameter4);
+#else
+            // Add various parameters
+            var parameter1 = new MockDbParameter
+            {
+                ParameterName = "@InputParam",
+                Value = "Input Value"
+            };
+            command.Parameters.Add(parameter1);
+
+            var parameter2 = new MockDbParameter
+            {
+                ParameterName = "@OutputParam",
+                Direction = ParameterDirection.Output,
+                Size = 100
+            };
+            command.Parameters.Add(parameter2);
+
+            var parameter3 = new MockDbParameter
+            {
+                ParameterName = "@InOutParam",
+                Direction = ParameterDirection.InputOutput,
+                Value = "Initial Value",
+                Size = 100
+            };
+            command.Parameters.Add(parameter3);
+
+            var parameter4 = new MockDbParameter
+            {
+                ParameterName = "@RetVal",
+                Direction = ParameterDirection.ReturnValue
+            };
+            command.Parameters.Add(parameter4);
+#endif
+
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            // Should transform correctly with all appropriate parameters in correct format
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+            command.CommandText.Should().Be("dbo.ComplexProcedure");
         }
 
         [Theory]
@@ -270,6 +708,26 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Null(actualDbType2);
         }
 
+        [Fact]
+        internal void TryGetIntegrationDetails_FailsForKnownCommandTypes_AndUserDefined()
+        {
+            Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DisabledAdoNetCommandTypes, "SomeFakeDbCommand" } }));
+            bool result = DbScopeFactory.TryGetIntegrationDetails("InterceptableDbCommand", out var actualIntegrationId, out var actualDbType);
+            Assert.False(result);
+            Assert.False(actualIntegrationId.HasValue);
+            Assert.Null(actualDbType);
+
+            bool result2 = DbScopeFactory.TryGetIntegrationDetails("ProfiledDbCommand", out var actualIntegrationId2, out var actualDbType2);
+            Assert.False(result2);
+            Assert.False(actualIntegrationId2.HasValue);
+            Assert.Null(actualDbType2);
+
+            bool result3 = DbScopeFactory.TryGetIntegrationDetails("SomeFakeDbCommand", out var actualIntegrationId3, out var actualDbType3);
+            Assert.False(result3);
+            Assert.False(actualIntegrationId3.HasValue);
+            Assert.Null(actualDbType3);
+        }
+
         [Theory]
         [InlineData("System.Data.SqlClient.SqlCommand", "SqlClient", "sql-server")]
         [InlineData("MySql.Data.MySqlClient.MySqlCommand", "MySql", "mysql")]
@@ -289,8 +747,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         private static TracerHelper.ScopedTracer CreateTracerWithIntegrationEnabled(string integrationName, bool enabled)
         {
             // Set up tracer
-            var tracerSettings = new TracerSettings();
-            tracerSettings.Integrations[integrationName].Enabled = enabled;
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { string.Format(ConfigurationKeys.Integrations.Enabled, integrationName), enabled },
+            });
             return TracerHelper.Create(tracerSettings);
         }
 

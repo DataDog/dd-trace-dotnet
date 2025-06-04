@@ -1,13 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.55.0</Version>
     <Title>Datadog APM Auto-instrumentation Runner</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet global tool for Datadog APM</Description>
     <OutputType>Exe</OutputType>
     <!-- When building standalone (see below) we have to exclude <netcoreapp3.1 from the targets otherwise the SDK has a fit -->
-    <TargetFrameworks>net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
+    <TargetFrameworks>net9.0;net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <!-- NU190* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>NU5100;NU1901;NU1902;NU1903;NU1904</NoWarn>
@@ -23,17 +22,18 @@
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <BuildInParallel>false</BuildInParallel>
   </PropertyGroup>
 
   <Choose>
     <When Condition="'$(BuildStandalone)' == 'true'">
       <PropertyGroup>
         <!-- When building standalone we have to exclude <netcoreapp3.1 from the targets otherwise the SDK has a fit -->
-        <TargetFrameworks>net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;</TargetFrameworks>
+        <TargetFrameworks>net9.0;net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;</TargetFrameworks>
         <OutputPath>bin\$(Configuration)\Console</OutputPath>
         <PublishDir Condition="'$(PublishDir)' == '' ">bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
         <AssemblyName>dd-trace</AssemblyName>
-        <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
+        <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64;linux-musl-arm64</RuntimeIdentifiers>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <PublishTrimmed>true</PublishTrimmed>
         <SelfContained>true</SelfContained>
@@ -61,8 +61,8 @@
       </ItemGroup>
       <ItemGroup>
         <Content Include="..\Datadog.Trace.Bundle\home\**\*.*" LinkBase="home">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-          <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+          <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
         </Content>
 
         <Content Update="..\Datadog.Trace.Bundle\home\**\readme.txt">
@@ -105,6 +105,11 @@
         </Content>
 
         <Content Condition="'$(RuntimeIdentifier)' != 'linux-arm64'" Update="..\Datadog.Trace.Bundle\home\linux-arm64\*.*">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+          <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+        </Content>
+
+        <Content Condition="'$(RuntimeIdentifier)' != 'linux-musl-arm64'" Update="..\Datadog.Trace.Bundle\home\linux-musl-arm64\*.*">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>

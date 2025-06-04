@@ -21,8 +21,6 @@ namespace Datadog.Trace.Iast.Aspects.System;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class StringAspects
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringAspects));
-
     /// <summary>
     /// String.Trim aspect
     /// </summary>
@@ -31,7 +29,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Trim()", AspectFilter.StringLiteral_0)]
     public static string Trim(string target)
     {
-        return StringModuleImpl.OnStringTrim(target, target.Trim(), null, true, true);
+        var result = target.Trim();
+        try
+        {
+            return StringModuleImpl.OnStringTrim(target, result, null, true, true);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -43,14 +51,24 @@ public class StringAspects
     [AspectMethodReplace("System.String::Trim(System.Char[])", AspectFilter.StringLiteral_0)]
     public static string Trim(string target, char[] trimChars)
     {
-        if (trimChars != null && trimChars.Length > 0)
+        var result = target.Trim(trimChars);
+        try
         {
-            return StringModuleImpl.OnStringTrimArray(target, target.Trim(trimChars), trimChars, true, true);
+            if (trimChars != null && trimChars.Length > 0)
+            {
+                return StringModuleImpl.OnStringTrimArray(target, result, trimChars, true, true);
+            }
+            else
+            {
+                return StringModuleImpl.OnStringTrim(target, result, null, true, true);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            return StringModuleImpl.OnStringTrim(target, target.Trim(trimChars), null, true, true);
+            IastModule.LogAspectException(ex);
         }
+
+        return result;
     }
 
 #if !NETFRAMEWORK
@@ -63,7 +81,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Trim(System.Char)", AspectFilter.StringLiteral_0)]
     public static string Trim(string target, char trimChar)
     {
-        return StringModuleImpl.OnStringTrim(target, target.Trim(trimChar), trimChar, true, true);
+        var result = target.Trim(trimChar);
+        try
+        {
+            return StringModuleImpl.OnStringTrim(target, result, trimChar, true, true);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 #endif
 
@@ -76,14 +104,24 @@ public class StringAspects
     [AspectMethodReplace("System.String::TrimStart(System.Char[])", AspectFilter.StringLiteral_0)]
     public static string TrimStart(string target, char[] trimChars)
     {
-        if (trimChars != null && trimChars.Length > 0)
+        var result = target.TrimStart(trimChars);
+        try
         {
-            return StringModuleImpl.OnStringTrimArray(target, target.TrimStart(trimChars), trimChars, true, false);
+            if (trimChars != null && trimChars.Length > 0)
+            {
+                return StringModuleImpl.OnStringTrimArray(target, result, trimChars, true, false);
+            }
+            else
+            {
+                return StringModuleImpl.OnStringTrim(target, result, null, true, false);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            return StringModuleImpl.OnStringTrim(target, target.TrimStart(trimChars), null, true, false);
+            IastModule.LogAspectException(ex);
         }
+
+        return result;
     }
 
 #if !NETFRAMEWORK
@@ -96,7 +134,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::TrimStart(System.Char)", AspectFilter.StringLiteral_0)]
     public static string TrimStart(string target, char trimChar)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimStart(trimChar), trimChar, true, false);
+        var result = target.TrimStart(trimChar);
+        try
+        {
+            return StringModuleImpl.OnStringTrim(target, result, trimChar, true, false);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -107,7 +155,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::TrimStart()", AspectFilter.StringLiteral_0)]
     public static string TrimStart(string target)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimStart(), null, true, false);
+        var result = target.TrimStart();
+        try
+        {
+            return StringModuleImpl.OnStringTrim(target, result, null, true, false);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 #endif
 
@@ -120,14 +178,24 @@ public class StringAspects
     [AspectMethodReplace("System.String::TrimEnd(System.Char[])", AspectFilter.StringLiteral_0)]
     public static string TrimEnd(string target, char[] trimChars)
     {
-        if (trimChars != null && trimChars.Length > 0)
+        var result = target.TrimEnd(trimChars);
+        try
         {
-            return StringModuleImpl.OnStringTrimArray(target, target.TrimEnd(trimChars), trimChars, false, true);
+            if (trimChars != null && trimChars.Length > 0)
+            {
+                return StringModuleImpl.OnStringTrimArray(target, result, trimChars, false, true);
+            }
+            else
+            {
+                return StringModuleImpl.OnStringTrim(target, result, null, false, true);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChars), null, false, true);
+            IastModule.LogAspectException(ex);
         }
+
+        return result;
     }
 
 #if !NETFRAMEWORK
@@ -140,7 +208,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::TrimEnd(System.Char)", AspectFilter.StringLiteral_0)]
     public static string TrimEnd(string target, char trimChar)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChar), trimChar, false, true);
+        var result = target.TrimEnd(trimChar);
+        try
+        {
+            return StringModuleImpl.OnStringTrim(target, result, trimChar, false, true);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -151,7 +229,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::TrimEnd()", AspectFilter.StringLiteral_0)]
     public static string TrimEnd(string target)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(), null, false, true);
+        var result = target.TrimEnd();
+        try
+        {
+            return StringModuleImpl.OnStringTrim(target, result, null, false, true);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 #endif
 
@@ -164,7 +252,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Concat(System.String,System.String)", AspectFilter.StringLiterals_Any)]
     public static string Concat(string param1, string param2)
     {
-        return StringModuleImpl.OnStringConcat(param1, param2, string.Concat(param1, param2));
+        var result = string.Concat(param1, param2);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(param1, param2, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -176,7 +274,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Concat(System.String,System.String)", AspectFilter.StringLiteral_0)]
     public static string Concat_0(string param1, string param2)
     {
-        return StringModuleImpl.OnStringConcat(param1, param2, string.Concat(param1, param2), AspectFilter.StringLiteral_0);
+        var result = string.Concat(param1, param2);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(param1, param2, result, AspectFilter.StringLiteral_0);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -188,7 +296,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Concat(System.String,System.String)", AspectFilter.StringLiteral_1)]
     public static string Concat_1(string param1, string param2)
     {
-        return StringModuleImpl.OnStringConcat(param1, param2, string.Concat(param1, param2), AspectFilter.StringLiteral_1);
+        var result = string.Concat(param1, param2);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(param1, param2, result, AspectFilter.StringLiteral_1);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -200,7 +318,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Concat(System.Object,System.Object)")]
     public static string Concat(object param1, object param2)
     {
-        return StringModuleImpl.OnStringConcat(param1?.ToString(), param2?.ToString(), string.Concat(param1, param2));
+        var result = string.Concat(param1, param2);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(param1?.ToString(), param2?.ToString(), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -213,7 +341,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Concat(System.String,System.String,System.String)", AspectFilter.StringLiterals)]
     public static string Concat(string param1, string param2, string param3)
     {
-        return StringModuleImpl.OnStringConcat(new StringConcatParams(param1, param2, param3), string.Concat(param1, param2, param3));
+        var result = string.Concat(param1, param2, param3);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(new StringConcatParams(param1, param2, param3), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -226,7 +364,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Concat(System.Object,System.Object,System.Object)")]
     public static string Concat(object param1, object param2, object param3)
     {
-        return StringModuleImpl.OnStringConcat(new StringConcatParams(param1?.ToString(), param2?.ToString(), param3?.ToString()), string.Concat(param1, param2, param3));
+        var result = string.Concat(param1, param2, param3);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(new StringConcatParams(param1?.ToString(), param2?.ToString(), param3?.ToString()), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -240,7 +388,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Concat(System.String,System.String,System.String,System.String)", AspectFilter.StringLiterals)]
     public static string Concat(string param1, string param2, string param3, string param4)
     {
-        return StringModuleImpl.OnStringConcat(new StringConcatParams(param1, param2, param3, param4), string.Concat(param1, param2, param3, param4));
+        var result = string.Concat(param1, param2, param3, param4);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(new StringConcatParams(param1, param2, param3, param4), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
 #if NETFRAMEWORK
@@ -255,7 +413,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Concat(System.Object,System.Object,System.Object,System.Object)")]
     public static string Concat(object param1, object param2, object param3, object param4)
     {
-        return StringModuleImpl.OnStringConcat(new StringConcatParams(param1?.ToString(), param2?.ToString(), param3?.ToString(), param4?.ToString()), string.Concat(param1, param2, param3, param4));
+        var result = string.Concat(param1, param2, param3, param4);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(new StringConcatParams(param1?.ToString(), param2?.ToString(), param3?.ToString(), param4?.ToString()), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 #endif
 
@@ -267,7 +435,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Concat(System.String[])")]
     public static string Concat(string[] values)
     {
-        return StringModuleImpl.OnStringConcat(values, string.Concat(values));
+        var result = string.Concat(values);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(values, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -278,7 +456,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Concat(System.Object[])")]
     public static string Concat(object[] values)
     {
-        return StringModuleImpl.OnStringConcat(values, string.Concat(values));
+        var result = string.Concat(values);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(values, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -287,46 +475,140 @@ public class StringAspects
     /// <param name="values"> Parameters </param>
     /// <returns> String.Concat(values) </returns>
     [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<System.String>)")]
-    public static string Concat(IEnumerable values)
+    public static string Concat(IEnumerable<string> values)
     {
-        var valuesConverted = values as IEnumerable<string>;
-        return StringModuleImpl.OnStringConcat(valuesConverted, string.Concat(valuesConverted));
+        var result = string.Concat(values);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(values, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
     /// String.Concat aspect
     /// </summary>
+    /// <typeparam name="T"> Collection element type </typeparam>
     /// <param name="values"> Parameters </param>
     /// <returns> String.Concat(values) </returns>
-    [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static string Concat2(IEnumerable values)
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Concat<T>(IEnumerable<T> values)
     {
-        if (values is null)
-        {
-            return string.Concat(values);
-        }
-
-        var valuesConverted = values as IEnumerable<object>;
-        if (valuesConverted != null)
-        {
-            return StringModuleImpl.OnStringConcat(valuesConverted, string.Concat(valuesConverted));
-        }
-
-        // We have a IEnumerable of structs or basic types. This is a corner case.
-
+        var result = string.Concat(values);
         try
         {
-            valuesConverted = values.Cast<object>();
+            return StringModuleImpl.OnStringConcat(values, result);
         }
-        catch
+        catch (Exception ex)
         {
-            // This sould never happen.
-            Log.Warning("Cannot process values in System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)");
-            return string.Concat(values);
+            IastModule.LogAspectException(ex);
         }
 
-        return StringModuleImpl.OnStringConcat(values, string.Concat(valuesConverted));
+        return result;
     }
+
+#if NET6_0_OR_GREATER
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="param1"> First param </param>
+    /// <param name="param2"> Second param </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>)")]
+    public static string Concat(ReadOnlySpan<char> param1, ReadOnlySpan<char> param2)
+    {
+        var result = string.Concat(param1, param2);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(TaintedObjects.GetString(ref param1), TaintedObjects.GetString(ref param2), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="param1"> First param </param>
+    /// <param name="param2"> Second param </param>
+    /// <param name="param3"> Third param </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>)")]
+    public static string Concat(ReadOnlySpan<char> param1, ReadOnlySpan<char> param2, ReadOnlySpan<char> param3)
+    {
+        var result = string.Concat(param1, param2, param3);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(new StringConcatParams(TaintedObjects.GetString(ref param1), TaintedObjects.GetString(ref param2), TaintedObjects.GetString(ref param3)), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="param1"> First param </param>
+    /// <param name="param2"> Second param </param>
+    /// <param name="param3"> Third param </param>
+    /// <param name="param4"> Fourth param </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>)")]
+    public static string Concat(ReadOnlySpan<char> param1, ReadOnlySpan<char> param2, ReadOnlySpan<char> param3, ReadOnlySpan<char> param4)
+    {
+        var result = string.Concat(param1, param2, param3, param4);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(new StringConcatParams(TaintedObjects.GetString(ref param1), TaintedObjects.GetString(ref param2), TaintedObjects.GetString(ref param3), TaintedObjects.GetString(ref param4)), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="param"> Strings to concat </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Concat(System.ReadOnlySpan`1<System.String>)")]
+    public static string Concat(ReadOnlySpan<string> param)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        // TODO: use propper overload when dotnet 9 or later target is available
+        var values = param.ToArray();
+        var result = string.Concat(values);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(values, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+#endif
 
     /// <summary>
     /// String.Substring aspect
@@ -337,7 +619,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Substring(System.Int32)", AspectFilter.StringLiteral_0)]
     public static string Substring(string target, int startIndex)
     {
-        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.Substring(startIndex));
+        var result = target.Substring(startIndex);
+        try
+        {
+            return StringModuleImpl.OnStringSubSequence(target, startIndex, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -350,7 +642,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Substring(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
     public static string Substring(string target, int startIndex, int length)
     {
-        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.Substring(startIndex, length));
+        var result = target.Substring(startIndex, length);
+        try
+        {
+            return StringModuleImpl.OnStringSubSequence(target, startIndex, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -362,7 +664,15 @@ public class StringAspects
     public static char[] ToCharArray(string target)
     {
         var result = target.ToCharArray();
-        PropagationModuleImpl.PropagateTaint(target, result);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -376,7 +686,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::ToCharArray(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
     public static char[] ToCharArray(string target, int startIndex, int length)
     {
-        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.ToCharArray(startIndex, length));
+        var result = target.ToCharArray(startIndex, length);
+        try
+        {
+            return StringModuleImpl.OnStringSubSequence(target, startIndex, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -390,10 +710,20 @@ public class StringAspects
     [AspectMethodReplace("System.String::Join(System.String,System.String[],System.Int32,System.Int32)")]
     public static string Join(string separator, string[] values, int startIndex, int count)
     {
-        return OnStringJoin(string.Join(separator, values, startIndex, count), separator, values, startIndex, count);
+        var result = string.Join(separator, values, startIndex, count);
+        try
+        {
+            return OnStringJoin(result, separator, values, startIndex, count);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
-#if NETSTANDARD || NETCOREAPP
+#if NETCOREAPP
     /// <summary>
     /// String.Join aspect
     /// </summary>
@@ -403,7 +733,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Join(System.Char,System.String[])")]
     public static string Join(char separator, string[] values)
     {
-        return OnStringJoin(string.Join(separator.ToString(), values), values);
+        var result = string.Join(separator, values);
+        try
+        {
+            return OnStringJoin(result, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -415,7 +755,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Join(System.Char,System.Object[])")]
     public static string Join(char separator, object[] values)
     {
-        return Join(separator.ToString(), values);
+        var result = string.Join(separator, values);
+        try
+        {
+            return OnStringJoin(result, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -429,21 +779,65 @@ public class StringAspects
     [AspectMethodReplace("System.String::Join(System.Char,System.String[],System.Int32,System.Int32)")]
     public static string Join(char separator, string[] values, int startIndex, int count)
     {
-        return OnStringJoin(string.Join(separator.ToString(), values, startIndex, count), values, startIndex, count);
+        var result = string.Join(separator, values, startIndex, count);
+        try
+        {
+            return OnStringJoin(result, values, startIndex, count);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
     /// String.Join aspect
     /// </summary>
+    /// <typeparam name="T"> Joined element type </typeparam>
     /// <param name="separator"> sparator </param>
     /// <param name="values"> values to join </param>
     /// <returns> Join result </returns>
-    [AspectMethodReplace("System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static string Join(char separator, IEnumerable values)
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Join<T>(char separator, IEnumerable<T> values)
     {
-        return Join(separator.ToString(), values);
+        var result = string.Join(separator, values);
+        try
+        {
+            return OnStringJoin(result, separator, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 #endif
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <typeparam name="T"> Joined element type </typeparam>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Join<T>(string separator, IEnumerable<T> values)
+    {
+        var result = string.Join(separator, values);
+        try
+        {
+            return OnStringJoin(result, separator, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// String.Join aspect
@@ -454,7 +848,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Join(System.String,System.Object[])")]
     public static string Join(string separator, object[] values)
     {
-        return OnStringJoin(string.Join(separator, values), separator, values);
+        var result = string.Join(separator, values);
+        try
+        {
+            return OnStringJoin(result, separator, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -466,7 +870,17 @@ public class StringAspects
     [AspectMethodReplace("System.String::Join(System.String,System.String[])")]
     public static string Join(string separator, string[] values)
     {
-        return OnStringJoin(string.Join(separator, values), separator, values);
+        var result = string.Join(separator, values);
+        try
+        {
+            return OnStringJoin(result, separator, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -476,25 +890,22 @@ public class StringAspects
     /// <param name="values"> values to join </param>
     /// <returns> Join result </returns>
     [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)")]
-    public static string JoinString(string separator, IEnumerable values)
+    public static string JoinString(string separator, IEnumerable<string> values)
     {
-        if (values is null)
+        var result = string.Join(separator, values);
+        try
         {
-            return OnStringJoin(string.Join(separator, values), separator, null);
+            return OnStringJoin(result, separator, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
         }
 
-        var valuesConverted = values as IEnumerable<string>;
-        if (valuesConverted != null)
-        {
-            return OnStringJoin(string.Join(separator, valuesConverted), separator, valuesConverted);
-        }
-        else
-        {
-            // This should never happen
-            Log.Warning("Could not taint the string.join call in System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)");
-            return string.Join(separator, values);
-        }
+        return result;
     }
+
+#if NET6_0_OR_GREATER
 
     /// <summary>
     /// String.Join aspect
@@ -502,34 +913,57 @@ public class StringAspects
     /// <param name="separator"> sparator </param>
     /// <param name="values"> values to join </param>
     /// <returns> Join result </returns>
-    [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static string Join(string separator, IEnumerable values)
+    [AspectMethodReplace("System.String::Join(System.String,System.ReadOnlySpan`1<System.String>)")]
+    public static string Join(string separator, ReadOnlySpan<string> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
     {
-        if (values is null)
-        {
-            return OnStringJoin(string.Join(separator, values), separator, null);
-        }
-
-        var valuesConverted = values as IEnumerable<object>;
-        if (valuesConverted != null)
-        {
-            return OnStringJoin(string.Join(separator, valuesConverted), separator, valuesConverted);
-        }
-
-        // We have a IEnumerable of structs or basic types. This is a corner case.
-        try
-        {
-            valuesConverted = values.Cast<object>();
-        }
-        catch
-        {
-            // This sould never happen, but just in case, we return the join...
-            Log.Warning("Could not taint the string.join call in System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)");
-            return string.Join(separator, values);
-        }
-
-        return OnStringJoin(string.Join(separator, valuesConverted), separator, valuesConverted);
+        return Join(separator, values.ToArray());
     }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.ReadOnlySpan`1<System.String>)")]
+    public static string Join(char separator, ReadOnlySpan<string> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Join(separator, values.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Join(string separator, ReadOnlySpan<object> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Join(separator, values.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Join(char separator, ReadOnlySpan<object> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Join(separator, values.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+#endif
 
     /// <summary>
     /// String.ToUpper aspect
@@ -540,7 +974,15 @@ public class StringAspects
     public static string ToUpper(string target)
     {
         var result = target.ToUpper();
-        PropagationModuleImpl.PropagateTaint(target, result);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -554,7 +996,15 @@ public class StringAspects
     public static string ToUpper(string target, global::System.Globalization.CultureInfo culture)
     {
         var result = target.ToUpper(culture);
-        PropagationModuleImpl.PropagateTaint(target, result);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -567,7 +1017,15 @@ public class StringAspects
     public static string ToUpperInvariant(string target)
     {
         var result = target.ToUpperInvariant();
-        PropagationModuleImpl.PropagateTaint(target, result);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -580,7 +1038,15 @@ public class StringAspects
     public static string ToLower(string target)
     {
         var result = target.ToLower();
-        PropagationModuleImpl.PropagateTaint(target, result);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -594,7 +1060,15 @@ public class StringAspects
     public static string ToLower(string target, global::System.Globalization.CultureInfo culture)
     {
         var result = target.ToLower(culture);
-        PropagationModuleImpl.PropagateTaint(target, result);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -607,7 +1081,15 @@ public class StringAspects
     public static string ToLowerInvariant(string target)
     {
         var result = target.ToLowerInvariant();
-        PropagationModuleImpl.PropagateTaint(target, result);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -621,7 +1103,15 @@ public class StringAspects
     public static string Remove(string target, int startIndex)
     {
         string result = target.Remove(startIndex);
-        PropagationModuleImpl.OnStringRemove(target, result, startIndex, target.Length);
+        try
+        {
+            PropagationModuleImpl.OnStringRemove(target, result, startIndex, target.Length);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -636,7 +1126,15 @@ public class StringAspects
     public static string Remove(string target, int startIndex, int count)
     {
         string result = target.Remove(startIndex, count);
-        PropagationModuleImpl.OnStringRemove(target, result, startIndex, startIndex + count);
+        try
+        {
+            PropagationModuleImpl.OnStringRemove(target, result, startIndex, startIndex + count);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -651,7 +1149,15 @@ public class StringAspects
     public static string Insert(string target, int startIndex, string value)
     {
         var result = target.Insert(startIndex, value);
-        OnStringInsert(target, startIndex, value, result);
+        try
+        {
+            OnStringInsert(target, startIndex, value, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -665,7 +1171,15 @@ public class StringAspects
     public static string PadLeft(string target, int totalWidth)
     {
         var result = target.PadLeft(totalWidth);
-        PropagationModuleImpl.PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -680,7 +1194,15 @@ public class StringAspects
     public static string PadLeft(string target, int totalWidth, char paddingChar)
     {
         var result = target.PadLeft(totalWidth, paddingChar);
-        PropagationModuleImpl.PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -694,7 +1216,15 @@ public class StringAspects
     public static string PadRight(string target, int totalWidth)
     {
         var result = target.PadRight(totalWidth);
-        PropagationModuleImpl.PropagateTaint(target, result);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -709,7 +1239,15 @@ public class StringAspects
     public static string PadRight(string target, int totalWidth, char paddingChar)
     {
         var result = target.PadRight(totalWidth, paddingChar);
-        PropagationModuleImpl.PropagateTaint(target, result);
+        try
+        {
+            PropagationModuleImpl.PropagateTaint(target, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -723,7 +1261,15 @@ public class StringAspects
     public static string Format(string format, object arg0)
     {
         var result = string.Format(format, arg0);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -738,7 +1284,15 @@ public class StringAspects
     public static string Format(string format, object arg0, object arg1)
     {
         var result = string.Format(format, arg0, arg1);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0, arg1);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -754,7 +1308,15 @@ public class StringAspects
     public static string Format(string format, object arg0, object arg1, object arg2)
     {
         var result = string.Format(format, arg0, arg1, arg2);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1, arg2);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0, arg1, arg2);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -768,7 +1330,15 @@ public class StringAspects
     public static string Format(string format, object[] args)
     {
         var result = string.Format(format, args);
-        PropagationModuleImpl.PropagateResultWhenInputArrayTainted(result, format, args);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputArrayTainted(result, format, args);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -783,7 +1353,15 @@ public class StringAspects
     public static string Format(IFormatProvider provider, string format, object arg0)
     {
         var result = string.Format(provider, format, arg0);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -799,7 +1377,15 @@ public class StringAspects
     public static string Format(IFormatProvider provider, string format, object arg0, object arg1)
     {
         var result = string.Format(provider, format, arg0, arg1);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0, arg1);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -816,7 +1402,15 @@ public class StringAspects
     public static string Format(IFormatProvider provider, string format, object arg0, object arg1, object arg2)
     {
         var result = string.Format(provider, format, arg0, arg1, arg2);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1, arg2);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0, arg1, arg2);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -831,9 +1425,49 @@ public class StringAspects
     public static string Format(IFormatProvider provider, string format, object[] args)
     {
         var result = string.Format(provider, format, args);
-        PropagationModuleImpl.PropagateResultWhenInputArrayTainted(result, format, args);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputArrayTainted(result, format, args);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
+
+#if NET6_0_OR_GREATER
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="args"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Format(string format, ReadOnlySpan<object> args)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Format(format, args.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="args"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Format(IFormatProvider provider, string format, ReadOnlySpan<object> args)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Format(provider, format, args.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+#endif
 
 #if NETCOREAPP3_1_OR_GREATER
     /// <summary>
@@ -849,7 +1483,15 @@ public class StringAspects
     public static string Replace(string target, string oldValue, string newValue, bool ignore, CultureInfo culture)
     {
         var result = target.Replace(oldValue, newValue, ignore, culture);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, target, oldValue, newValue);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -865,7 +1507,15 @@ public class StringAspects
     public static string Replace(string target, string oldValue, string newValue, StringComparison comparison)
     {
         var result = target.Replace(oldValue, newValue, comparison);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, target, oldValue, newValue);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 #endif
@@ -881,7 +1531,15 @@ public class StringAspects
     public static string Replace(string target, char oldChar, char newChar)
     {
         var result = target.Replace(oldChar, newChar);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -896,7 +1554,15 @@ public class StringAspects
     public static string Replace(string target, string oldValue, string newValue)
     {
         var result = target.Replace(oldValue, newValue);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, target, oldValue, newValue);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -910,7 +1576,15 @@ public class StringAspects
     public static string[] Split(string target, char[] separator)
     {
         var result = target.Split(separator);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -925,7 +1599,15 @@ public class StringAspects
     public static string[] Split(string target, char[] separator, int count)
     {
         var result = target.Split(separator, count);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -940,7 +1622,15 @@ public class StringAspects
     public static string[] Split(string target, char[] separator, StringSplitOptions options)
     {
         var result = target.Split(separator, options);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -956,7 +1646,15 @@ public class StringAspects
     public static string[] Split(string target, char[] separator, int count, StringSplitOptions options)
     {
         var result = target.Split(separator, count, options);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -971,7 +1669,15 @@ public class StringAspects
     public static string[] Split(string target, string[] separator, StringSplitOptions options)
     {
         var result = target.Split(separator, options);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -987,11 +1693,20 @@ public class StringAspects
     public static string[] Split(string target, string[] separator, int count, StringSplitOptions options)
     {
         var result = target.Split(separator, count, options);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
-#if !NETFRAMEWORK
+#if NETCOREAPP2_1_OR_GREATER
+
     /// <summary>
     /// String.Split aspect
     /// </summary>
@@ -1003,12 +1718,16 @@ public class StringAspects
     [AspectMethodReplace("System.String::Split(System.String,System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
     public static string[] Split(string target, string separator, int count, StringSplitOptions options)
     {
-#if NETSTANDARD
-        var result = target.Split(new string[] { separator }, count, options);
-#else
         var result = target.Split(separator, count, options);
-#endif
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -1022,12 +1741,16 @@ public class StringAspects
     [AspectMethodReplace("System.String::Split(System.String,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
     public static string[] Split(string target, string separator, StringSplitOptions options)
     {
-#if NETSTANDARD
-        var result = target.Split(new string[] { separator }, options);
-#else
         var result = target.Split(separator, options);
-#endif
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -1041,12 +1764,16 @@ public class StringAspects
     [AspectMethodReplace("System.String::Split(System.Char,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
     public static string[] Split(string target, char separator, StringSplitOptions options)
     {
-#if NETSTANDARD
-        var result = target.Split(new char[] { separator }, options);
-#else
         var result = target.Split(separator, options);
-#endif
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 
@@ -1061,14 +1788,36 @@ public class StringAspects
     [AspectMethodReplace("System.String::Split(System.Char,System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
     public static string[] Split(string target, char separator, int count, StringSplitOptions options)
     {
-#if NETSTANDARD
-        var result = target.Split(new char[] { separator }, count, options);
-#else
         var result = target.Split(separator, count, options);
-#endif
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
+#endif
+
+#if NET6_0_OR_GREATER
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.ReadOnlySpan`1<System.Char>)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, ReadOnlySpan<char> separator)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Split(target, separator.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
 #endif
 
 #pragma warning disable CS0618 // Obsolete
@@ -1081,7 +1830,15 @@ public class StringAspects
     public static string Copy(string target)
     {
         var result = string.Copy(target);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return result;
     }
 #pragma warning restore CS0618 // Obsolete

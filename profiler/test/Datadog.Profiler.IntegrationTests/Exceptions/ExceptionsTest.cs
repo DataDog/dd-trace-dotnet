@@ -34,7 +34,98 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         {
             StackTrace expectedStack;
 
-            if (framework == "net462")
+            if (framework == "net48")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
+            }
+            else if (framework == "net6.0")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+            }
+            else if (framework == "net7.0" || framework == "net8.0")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+            }
+            else if (framework == "net9.0")
+            {
+                if (IntPtr.Size == 4)
+                {
+                    // 32-bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+                }
+                else
+                {
+                    // 64 bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object exceptionObj, ExInfo& exInfo)"),
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                }
+            }
+            else
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
+            }
+
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+
+            long total = 0;
+
+            foreach (var sample in exceptionSamples)
+            {
+                total += sample.Count;
+                sample.Type.Should().Be("System.Exception");
+                sample.Message.Should().BeEmpty();
+                Assert.True(sample.Stacktrace.EndWith(expectedStack));
+            }
+
+            foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
+            {
+                runner.XUnitLogger.WriteLine($"Log file: {file}");
+            }
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            // Stackwalk will fail if the walltime profiler tries to inspect the thread at the same time as the exception profiler
+            // This is expected so we remove those from the expected count
+            var missedExceptions = File.ReadLines(logFile)
+                .Count(l => l.Contains("Failed to walk stack for thrown exception: CORPROF_E_STACKSNAPSHOT_UNSAFE (80131360)"));
+
+            int expectedExceptionCount = (4 * 1000) - missedExceptions;
+
+            expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
+
+            total.Should().Be(expectedExceptionCount);
+        }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
+        public void ThrowExceptionsInParallelWithNewCpuProfiler(string appName, string framework, string appAssembly)
+        {
+            StackTrace expectedStack;
+
+            if (framework == "net48")
             {
                 expectedStack = new StackTrace(
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
@@ -62,6 +153,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -69,16 +162,15 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = SamplesHelper.GetSamples(runner.Environment.PprofDir, "exception").ToArray();
 
-            long total = 0;
+            long total = exceptionSamples.Length;
 
-            foreach (var sample in exceptionSamples)
+            foreach (var (stackTrace, labels, _) in exceptionSamples)
             {
-                total += sample.Count;
-                sample.Type.Should().Be("System.Exception");
-                sample.Message.Should().BeEmpty();
-                Assert.True(sample.Stacktrace.EndWith(expectedStack));
+                labels.Should().ContainSingle(x => x.Name == "exception type" && x.Value == "System.Exception");
+                labels.Should().ContainSingle(x => x.Name == "exception message" && string.IsNullOrWhiteSpace(x.Value));
+                Assert.True(stackTrace.EndWith(expectedStack));
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
@@ -109,7 +201,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "100");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
 
             agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
@@ -130,7 +222,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             exceptionCounts.Should().ContainKey("System.InvalidOperationException").WhoseValue.Should().Be(1);
         }
 
-        [TestAppFact("Samples.ExceptionGenerator")]
+        [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void GetExceptionSamplesWithTimestamp(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
@@ -141,7 +233,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             CheckExceptionProfiles(runner, true);
         }
 
-        [TestAppFact("Samples.ExceptionGenerator")]
+        [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void GetExceptionSamplesWithoutTimestamp(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
@@ -163,7 +255,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -186,7 +278,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -209,7 +301,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -222,10 +314,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             Dictionary<string, int> profiledExceptions = GetProfiledExceptions(exceptionSamples);
             Dictionary<string, int> realExceptions = GetRealExceptions(runner.ProcessOutput);
 
-            _output.WriteLine("Comparing exceptions");
-            _output.WriteLine("-------------------------------------------------------");
-            _output.WriteLine("      Count          Type");
-            _output.WriteLine("-------------------------------------------------------");
+            var logger = runner.XUnitLogger;
+            logger.WriteLine("Comparing exceptions");
+            logger.WriteLine("-------------------------------------------------------");
+            logger.WriteLine("      Count          Type");
+            logger.WriteLine("-------------------------------------------------------");
             foreach (var exception in profiledExceptions)
             {
                 var exceptionCount = exception.Value;
@@ -245,7 +338,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine($"{exceptionCount,11} {type}");
                 builder.AppendLine($"{stats,11}");
-                _output.WriteLine(builder.ToString());
+                logger.WriteLine(builder.ToString());
             }
         }
 
@@ -404,6 +497,16 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
         private void CheckExceptionProfiles(TestApplicationRunner runner, bool withTimestamps)
         {
+            // in .NET 9 these stacks are different in the 64-bit case
+            // Stack 1
+            // |lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)
+            // |lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object exceptionObj, ExInfo& exInfo)
+            // |lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1_2 |fg: |sg:(System.Exception ex)
+            // |lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1_1 |fg: |sg:(System.Exception ex)
+            // |lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1 |fg: |sg:(System.Exception ex)
+            // |lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Run |fg: |sg:()
+            // |lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |cg: |fn:Main |fg: |sg:(string[] args).
+
             var stack1 = new StackTrace(
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1_2 |fg: |sg:(System.Exception ex)"),
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1_1 |fg: |sg:(System.Exception ex)"),
@@ -419,7 +522,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Run |fg: |sg:()"),
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |cg: |fn:Main |fg: |sg:(string[] args)"));
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 

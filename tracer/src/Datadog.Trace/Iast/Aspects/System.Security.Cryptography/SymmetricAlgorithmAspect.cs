@@ -21,18 +21,15 @@ namespace Datadog.Trace.Iast.Aspects;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class SymmetricAlgorithmAspect
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymmetricAlgorithmAspect));
-
     private static void ProcessCipherClassCreation(SymmetricAlgorithm target)
     {
         try
         {
             var scope = SymmetricAlgorithmIntegrationCommon.CreateScope(target);
-            scope?.Dispose();
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error in SymmetricAlgorithmAspect.");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -44,7 +41,15 @@ public class SymmetricAlgorithmAspect
     public static DESCryptoServiceProvider InitDES()
     {
         var target = new DESCryptoServiceProvider();
-        ProcessCipherClassCreation(target);
+        try
+        {
+            ProcessCipherClassCreation(target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return target;
     }
 
@@ -56,7 +61,15 @@ public class SymmetricAlgorithmAspect
     public static RC2CryptoServiceProvider InitRC2()
     {
         var target = new RC2CryptoServiceProvider();
-        ProcessCipherClassCreation(target);
+        try
+        {
+            ProcessCipherClassCreation(target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return target;
     }
 
@@ -68,7 +81,15 @@ public class SymmetricAlgorithmAspect
     public static TripleDESCryptoServiceProvider InitTripleDES()
     {
         var target = new TripleDESCryptoServiceProvider();
-        ProcessCipherClassCreation(target);
+        try
+        {
+            ProcessCipherClassCreation(target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return target;
     }
 
@@ -80,7 +101,15 @@ public class SymmetricAlgorithmAspect
     public static RijndaelManaged InitRijndaelManaged()
     {
         var target = new RijndaelManaged();
-        ProcessCipherClassCreation(target);
+        try
+        {
+            ProcessCipherClassCreation(target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return target;
     }
 
@@ -92,7 +121,15 @@ public class SymmetricAlgorithmAspect
     public static AesCryptoServiceProvider InitAesCryptoServiceProvider()
     {
         var target = new AesCryptoServiceProvider();
-        ProcessCipherClassCreation(target);
+        try
+        {
+            ProcessCipherClassCreation(target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+        }
+
         return target;
     }
 
@@ -113,8 +150,16 @@ public class SymmetricAlgorithmAspect
     [AspectMethodInsertAfter($"System.Security.Cryptography.Aes::Create({ClrNames.String})")]
     public static SymmetricAlgorithm Create(SymmetricAlgorithm target)
     {
-        ProcessCipherClassCreation(target);
-        return target;
+        try
+        {
+            ProcessCipherClassCreation(target);
+            return target;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+            return target;
+        }
     }
 }
 #endif

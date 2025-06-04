@@ -4,17 +4,20 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Telemetry.Metrics;
+
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class AppveyorEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: Appveyor detected");
 
         IsCI = true;
         Provider = "appveyor";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.AppVeyor;
         var repoProvider = ValueProvider.GetValue(Constants.AppveyorRepoProvider);
         if (repoProvider == "github")
         {
@@ -49,5 +52,7 @@ internal sealed class AppveyorEnvironmentValues<TValueProvider>(TValueProvider v
 
         AuthorName = ValueProvider.GetValue(Constants.AppveyorRepoCommitAuthor);
         AuthorEmail = ValueProvider.GetValue(Constants.AppveyorRepoCommitAuthorEmail);
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.AppveyorPullRequestBaseRepoBranch);
     }
 }

@@ -20,20 +20,20 @@ namespace Datadog.Trace
     /// </summary>
     public static partial class SpanExtensions
     {
-        private static void RunBlockingCheck(Span span, string userId)
+        private static void RunBlockingCheck(Span span, string userId, string userSessionId)
         {
             var security = Security.Instance;
 
-            if (security.Enabled)
+            if (security.AppsecEnabled)
             {
-                var securityCoordinator = new SecurityCoordinator(Security.Instance, span);
-
-                var wafArgs = new Dictionary<string, object>
+                var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, span);
+                if (securityCoordinator is null)
                 {
-                    { AddressesConstants.UserId, userId },
-                };
+                    return;
+                }
 
-                securityCoordinator.BlockAndReport(wafArgs);
+                var result = securityCoordinator.Value.RunWafForUser(userId, userSessionId, fromSdk: true);
+                securityCoordinator.Value.BlockAndReport(result);
             }
         }
     }

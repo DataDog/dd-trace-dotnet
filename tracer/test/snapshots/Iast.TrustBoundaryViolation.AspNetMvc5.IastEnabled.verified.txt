@@ -91,14 +91,14 @@
     },
     {
       "type": "NO_SAMESITE_COOKIE",
-      "hash": 264671858,
+      "hash": -636226626,
       "evidence": {
         "value": "ASP.NET_SessionId"
       }
     },
     {
       "type": "INSECURE_COOKIE",
-      "hash": -974040902,
+      "hash": 990913114,
       "evidence": {
         "value": "ASP.NET_SessionId"
       }
@@ -122,7 +122,10 @@
       process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      iast: 
     }
   },
   {

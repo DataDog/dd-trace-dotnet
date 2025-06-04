@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         MethodName = "Build",
         ReturnTypeName = "Microsoft.AspNetCore.Http.RequestDelegate",
         MinimumVersion = Major3,
-        MaximumVersion = "8",
+        MaximumVersion = SupportedVersions.LatestDotNet,
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [InstrumentMethod(
         AssemblyName = AssemblyName,

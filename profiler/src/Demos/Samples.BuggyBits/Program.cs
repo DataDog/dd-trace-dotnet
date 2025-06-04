@@ -10,6 +10,7 @@ using Datadog.Demos.Util;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 // Those attributes are required to validate the git repository url and commit sha propagation from
 // the tracer to the profiler.
@@ -30,11 +31,17 @@ namespace BuggyBits
         ParallelLock = 32,     // using parallel code with lock
         MemoryLeak = 64, // keep a controller in memory due to instance callback passed to a cache
         EndpointsCount = 128, // Specific test with '.' in endpoint name
-        Spin = 256 // Requests that take a long time
+        Spin = 256, // Requests that take a long time
+        Redirect = 512, // triggers HTTP redirect
+        GetAwaiterGetResult = 1024, // using GetAwaiter().GetResult() instead of await
+        UseResultProperty = 2048, // using Result property instead of GetAwaiter().GetResult()
+        ShortLived = 4096,      // short lived threads
     }
 
     public class Program
     {
+        private static bool _disableLogs = false;
+
         public static async Task Main(string[] args)
         {
             var sw = new Stopwatch();
@@ -43,7 +50,7 @@ namespace BuggyBits
 
             EnvironmentInfo.PrintDescriptionToConsole();
 
-            ParseCommandLine(args, out var timeout, out var iterations, out var scenario, out var nbIdleThreads);
+            ParseCommandLine(args, out _disableLogs, out var timeout, out var iterations, out var scenario, out var nbIdleThreads);
 
             using (var host = CreateHostBuilder(args).Build())
             {
@@ -62,12 +69,16 @@ namespace BuggyBits
                 WriteLine($"Listening to {rootUrl}");
 
                 var cts = new CancellationTokenSource();
-                using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads))
+                using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads, _disableLogs))
                 {
                     await host.StartAsync();
 
                     WriteLine();
                     WriteLine($"Started at {DateTime.UtcNow}.");
+
+                    // uncomment when needed to attach an event listener before the scenarios run
+                    Console.WriteLine($"pid = {Process.GetCurrentProcess().Id}");
+                    // Console.ReadLine();
 
                     sw.Start();
 
@@ -128,20 +139,33 @@ namespace BuggyBits
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+                })
+                .ConfigureLogging((context, logging) =>
+                {
+                    if (_disableLogs)
+                    {
+                        logging.ClearProviders();
+                    }
                 });
 
-        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
+        private static void ParseCommandLine(string[] args, out bool disableLogs, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
         {
             // by default, need interactive action to exit and string.Concat scenario
             timeout = TimeSpan.MinValue;
             iterations = 0;
             scenario = Scenario.StringConcat;
             nbIdleThreads = 0;
+            disableLogs = false;
 
             for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
 
+                if ("--disableLogs".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    disableLogs = true;
+                }
+                else
                 if ("--scenario".Equals(arg, StringComparison.OrdinalIgnoreCase))
                 {
                     int iterationsArgument = i + 1;

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Activity.Handlers;
@@ -12,6 +13,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
@@ -26,7 +28,7 @@ namespace Datadog.Trace
     /// <summary>
     /// The tracer is responsible for creating spans and flushing them to the Datadog agent
     /// </summary>
-    public class Tracer : ITracer, IDatadogTracer, IDatadogOpenTracingTracer
+    public class Tracer : IDatadogTracer, IDatadogOpenTracingTracer
     {
         private static readonly object GlobalInstanceLock = new();
 
@@ -77,7 +79,7 @@ namespace Datadog.Trace
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
             // Don't call Configure because it will call Start on the TracerManager
             // before this new instance of Tracer is assigned to Tracer.Instance
-            TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings, true), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(settings is null ? null : settings, TracerManagerFactory.Instance);
 
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -90,7 +92,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings is null ? null : new ImmutableTracerSettings(settings, true), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null, spanEventsManager: null))
         {
         }
 
@@ -148,6 +150,10 @@ namespace Datadog.Trace
                     instance = new Tracer(tracerManager: null); // don't replace settings, use existing
                     _instance = instance;
                     _globalInstanceInitialized = true;
+
+                    // ensure Baggage's AsyncLocal<T> has a value as soon as we can,
+                    // since it can only flow down the async call chain, not up
+                    _ = Baggage.Current;
                 }
 
                 instance.TracerManager.Start();
@@ -197,6 +203,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active span context dictionary by consulting DistributedTracer.Instance
         /// </summary>
+        [MaybeNull]
         internal IReadOnlyDictionary<string, string> DistributedSpanContext => DistributedTracer.Instance.GetSpanContextRaw() ?? InternalActiveScope?.Span?.Context;
 
         /// <summary>
@@ -222,22 +229,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        public ImmutableTracerSettings Settings => TracerManager.Settings;
+        public TracerSettings Settings => TracerManager.Settings;
 
         /// <summary>
         /// Gets the tracer's settings for the current trace.
         /// </summary>
         PerTraceSettings IDatadogTracer.PerTraceSettings => TracerManager.PerTraceSettings;
-
-        /// <summary>
-        /// Gets the active scope
-        /// </summary>
-        IScope ITracer.ActiveScope => ActiveScope;
-
-        /// <summary>
-        /// Gets this tracer's settings.
-        /// </summary>
-        ImmutableTracerSettings ITracer.Settings => Settings;
 
         internal static string RuntimeId => DistributedTracer.Instance.GetRuntimeId();
 
@@ -268,10 +265,10 @@ namespace Datadog.Trace
         public static void Configure(TracerSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
-            ConfigureInternal(settings is null ? null : new ImmutableTracerSettings(settings, true));
+            ConfigureInternal(settings);
         }
 
-        internal static void ConfigureInternal(ImmutableTracerSettings settings)
+        internal static void ConfigureInternal(TracerSettings settings)
         {
             TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
             Tracer.Instance.TracerManager.Start();
@@ -291,25 +288,6 @@ namespace Datadog.Trace
             }
 
             instance?.TracerManager.Start();
-        }
-
-        /// <inheritdoc cref="ITracer" />
-        [PublicApi]
-        IScope ITracer.StartActive(string operationName)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive);
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
-            return StartActiveInternal(operationName);
-        }
-
-        /// <inheritdoc cref="ITracer" />
-        [PublicApi]
-        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive_Settings);
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
-            var finishOnClose = settings.FinishOnClose ?? true;
-            return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
 
         /// <summary>
@@ -351,6 +329,7 @@ namespace Datadog.Trace
         /// <returns>The newly created span</returns>
         ISpan IDatadogOpenTracingTracer.StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
         {
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.OpenTracing);
             if (ignoreActiveScope && parent == null)
             {
                 // don't set the span's parent,
@@ -387,7 +366,7 @@ namespace Datadog.Trace
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
         void IDatadogTracer.Write(ArraySegment<Span> trace)
         {
-            if (Settings.TraceEnabledInternal || Settings.AzureAppServiceMetadata?.CustomTracingEnabled is true)
+            if (Settings.TraceEnabled || Settings.AzureAppServiceMetadata?.CustomTracingEnabled is true)
             {
                 TracerManager.WriteTrace(trace);
             }
@@ -419,13 +398,25 @@ namespace Datadog.Trace
 
                 if (traceContext == null)
                 {
-                    // If parent is SpanContext but its TraceContext is null, then it was extracted from
-                    // propagation headers. Create a new TraceContext (this will start a new trace) and initialize
+                    var propagatedTags = parentSpanContext.PropagatedTags;
+                    var samplingPriority = parentSpanContext.SamplingPriority;
+
+                    // When apm tracing is disabled, only distributed traces with the `_dd.p.ts` tag (with a trace source)
+                    // are propagated downstream, however we need 1 trace per minute sent to the backend, so
+                    // we unset sampling priority so the rate limiter decides.
+                    if (Settings?.ApmTracingEnabled == false)
+                    {
+                        // If the trace has appsec propagation tag, the default priority is user keep
+                        samplingPriority = propagatedTags.HasTraceSources(TraceSources.Asm) ? SamplingPriorityValues.UserKeep : null;
+                    }
+
+                    // If parent is SpanContext but its TraceContext is null, then it was extracted from propagation headers.
+                    // Create a new TraceContext (this will start a new trace) and initialize
                     // it with the propagated values (sampling priority, origin, tags, W3C trace state, etc).
-                    traceContext = new TraceContext(this, parentSpanContext.PropagatedTags);
+                    traceContext = new TraceContext(this, propagatedTags);
                     TelemetryFactory.Metrics.RecordCountTraceSegmentCreated(MetricTags.TraceContinuation.Continued);
 
-                    var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
+                    samplingPriority ??= DistributedTracer.Instance.GetSamplingPriority();
                     traceContext.SetSamplingPriority(samplingPriority);
                     traceContext.Origin = parentSpanContext.Origin;
                     traceContext.AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
@@ -493,9 +484,10 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
         /// </remarks>
-        internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
+        internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null, IEnumerable<SpanLink> links = null)
         {
-            var span = StartSpan(operationName, tags, parent, serviceName, startTime);
+            var span = StartSpan(operationName, tags, parent, serviceName, startTime, links: links);
+
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
@@ -505,22 +497,22 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
         /// </remarks>
-        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
+        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true, IEnumerable<SpanLink> links = null)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 
-            var span = new Span(spanContext, startTime, tags)
+            var span = new Span(spanContext, startTime, tags, links)
             {
                 OperationName = operationName,
             };
 
             // Apply any global tags
-            if (Settings.GlobalTagsInternal.Count > 0)
+            if (Settings.GlobalTags.Count > 0)
             {
                 // if DD_TAGS contained "env", "version", "git.commit.sha", or "git.repository.url",  they were used to set
                 // ImmutableTracerSettings.Environment, ImmutableTracerSettings.ServiceVersion, ImmutableTracerSettings.GitCommitSha, and ImmutableTracerSettings.GitRepositoryUrl
                 // and removed from Settings.GlobalTags
-                foreach (var entry in Settings.GlobalTagsInternal)
+                foreach (var entry in Settings.GlobalTags)
                 {
                     span.SetTag(entry.Key, entry.Value);
                 }
@@ -535,6 +527,8 @@ namespace Datadog.Trace
             // However, to reduce memory consumption, we don't actually add the result as tags on the span, and instead
             // write them directly to the <see cref="TraceChunkModel"/>.
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
+
+            SpanCodeOriginManager.Instance.SetCodeOriginForExitSpan(span);
 
             return span;
         }

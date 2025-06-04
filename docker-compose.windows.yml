@@ -18,12 +18,101 @@ services:
     image: dd-trace-dotnet/ddapm-test-agent-windows
     volumes:
     - ./tracer/build/smoke_test_snapshots:c:/snapshots
-    - ./tracer/build_data/snapshots:c:/debug_snapshots
+    - ./artifacts/build_data/snapshots:c:/debug_snapshots
     ports:
-    - "8126:8126"
+    - "8126"
     environment:
     - SNAPSHOT_CI=1
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers #api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
+
+  # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
+  # and only after switching to run Windows containers
+  IntegrationTests.IIS.LoaderOptimizationStartup:
+    build:
+      context: ./
+      args:
+        - ENABLE_32_BIT
+        - DOTNET_TRACER_MSI
+      dockerfile: ./tracer/build/_build/docker/iis.loaderoptimization.dockerfile
+    image: datadog-iis-loaderoptimizationregkey
+    volumes:
+    - ./artifacts/build_data/logs/LoaderOptimizationStartup:c:/ProgramData/Datadog .NET Tracer/logs
+    ports:
+    - "8080:80"
+    depends_on:
+    - test-agent.windows
+    environment:
+      - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
+      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_SERVICE
+      - DD_LOGGER_DD_ENV
+      - DD_LOGGER_ENABLED
+      - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
+      - DD_LOGGER_BUILD_BUILDID
+      - DD_LOGGER_BUILD_DEFINITIONNAME
+      - DD_LOGGER_BUILD_SOURCESDIRECTORY
+      - DD_LOGGER_BUILD_REPOSITORY_URI
+      - DD_LOGGER_BUILD_SOURCEVERSION
+      - DD_LOGGER_BUILD_SOURCEBRANCH
+      - DD_LOGGER_BUILD_SOURCEBRANCHNAME
+      - DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE
+      - DD_LOGGER_BUILD_REQUESTEDFORID
+      - DD_LOGGER_BUILD_REQUESTEDFOREMAIL
+      - DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI
+      - DD_LOGGER_SYSTEM_TEAMPROJECTID
+      - DD_LOGGER_SYSTEM_STAGEDISPLAYNAME
+      - DD_LOGGER_SYSTEM_JOBDISPLAYNAME
+      - DD_LOGGER_SYSTEM_JOBID
+      - DD_LOGGER_SYSTEM_TASKINSTANCEID=${SYSTEM_TASKINSTANCEID:-}
+      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
+      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
+      - DD_LOGGER_DD_TAGS
+
+  IntegrationTests.IIS.MultipleAppsInDomain:
+    build:
+      context: ./
+      args:
+        - ENABLE_32_BIT
+        - DOTNET_TRACER_MSI
+      dockerfile: ./tracer/build/_build/docker/iis.multipleappsindomain.dockerfile
+    image: datadog-iis-multipleappsindomain
+    volumes:
+    - ./artifacts/build_data/logs/MultipleAppsInDomain:c:/ProgramData/Datadog .NET Tracer/logs
+    ports:
+    - "8081:8081"
+    - "8082:8082"
+    depends_on:
+    - test-agent.windows
+    environment:
+      - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
+      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_SERVICE
+      - DD_LOGGER_DD_ENV
+      - DD_LOGGER_ENABLED
+      - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
+      - DD_LOGGER_BUILD_BUILDID
+      - DD_LOGGER_BUILD_DEFINITIONNAME
+      - DD_LOGGER_BUILD_SOURCESDIRECTORY
+      - DD_LOGGER_BUILD_REPOSITORY_URI
+      - DD_LOGGER_BUILD_SOURCEVERSION
+      - DD_LOGGER_BUILD_SOURCEBRANCH
+      - DD_LOGGER_BUILD_SOURCEBRANCHNAME
+      - DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE
+      - DD_LOGGER_BUILD_REQUESTEDFORID
+      - DD_LOGGER_BUILD_REQUESTEDFOREMAIL
+      - DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI
+      - DD_LOGGER_SYSTEM_TEAMPROJECTID
+      - DD_LOGGER_SYSTEM_STAGEDISPLAYNAME
+      - DD_LOGGER_SYSTEM_JOBDISPLAYNAME
+      - DD_LOGGER_SYSTEM_JOBID
+      - DD_LOGGER_SYSTEM_TASKINSTANCEID=${SYSTEM_TASKINSTANCEID:-}
+      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
+      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
+      - DD_LOGGER_DD_TAGS
 
   smoke-tests.windows:
     build:
@@ -38,7 +127,7 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-tester
     volumes:
     - ./:c:/project
-    - ./tracer/build_data/logs:c:/logs
+    - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
@@ -59,7 +148,28 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-tracer-home-tester
     volumes:
     - ./:c:/project
-    - ./tracer/build_data/logs:c:/logs
+    - ./artifacts/build_data/logs:c:/logs
+    environment:
+    - dockerTag=${dockerTag:-unset}
+    - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
+    depends_on:
+    - test-agent.windows
+
+  fleet-installer-smoke-tests.windows:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.windows.fleet-installer.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - CHANNEL=
+        # - TARGET_PLATFORM=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-windows-fleet-installer-tester
+    volumes:
+    - ./:c:/project
+    - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
@@ -79,7 +189,7 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-dotnet-tool-tester
     volumes:
     - ./:c:/project
-    - ./tracer/build_data/logs:c:/logs
+    - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
@@ -99,7 +209,7 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-tester
     volumes:
       - ./:c:/project
-      - ./tracer/build_data/logs:c:/logs
+      - ./artifacts/build_data/logs:c:/logs
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
@@ -115,11 +225,12 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
       # - RELATIVE_PROFILER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-nuget-tester
     volumes:
     - ./:c:/project
-    - ./tracer/build_data/logs:c:/logs
+    - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
@@ -135,11 +246,12 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
       # - RELATIVE_PROFILER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-nuget-tester
     volumes:
     - ./:c:/project
-    - ./tracer/build_data/logs:c:/logs
+    - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent.windows:8126

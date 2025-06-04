@@ -44,7 +44,7 @@ public class SymbolUploaderTest
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" }, { ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes, "10000" } }),
             NullConfigurationTelemetry.Instance);
         EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
-        _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, settings, ImmutableTracerSettings.FromDefaultSources(), "test");
+        _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, settings, TracerSettings.FromDefaultSourcesInternal(), "test");
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class SymbolUploaderTest
         Assert.True(result.Scopes.Count == root.Scopes.Count);
         Assert.True(classesScope?.Length == 1);
         Assert.True(!string.IsNullOrEmpty(classesScope[0].Name));
-        Assert.True(classesScope[0].ScopeType == SymbolType.Class);
+        Assert.True(classesScope[0].ScopeType == ScopeType.Class);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class SymbolUploaderTest
             Assert.NotNull(classesScope);
             Assert.True(root1.Scopes.Count == root.Scopes.Count);
             Assert.True(!string.IsNullOrEmpty(classesScope[0].Name));
-            Assert.True(classesScope.All(cls => cls.ScopeType == SymbolType.Class));
+            Assert.True(classesScope.All(cls => cls.ScopeType == ScopeType.Class));
         }
     }
 
@@ -101,10 +101,10 @@ public class SymbolUploaderTest
         using var jsonWriter = new JsonTextWriter(streamReader);
         JsonSerializer.CreateDefault().Serialize(jsonWriter, symDbEnablement);
         var content = stream.ToArray();
-        _enablementService.Update(new Dictionary<string, List<RemoteConfiguration>> { { RcmProducts.LiveDebuggingSymbolDb, new List<RemoteConfiguration> { new(null, content, 1, null, 1) } } }, new());
+        _enablementService.Update(new Dictionary<string, List<RemoteConfiguration>> { { RcmProducts.LiveDebuggingSymbolDb, [new(null, content, 1, null, 1)] } }, new());
     }
 
-    private async Task<bool> UploadClasses(Root root, IEnumerable<Trace.Debugger.Symbols.Model.Scope?> classes)
+    private async Task<bool> UploadClasses(Root root, IEnumerable<Trace.Debugger.Symbols.Model.Scope> classes)
     {
         var uploadClassesMethod = ((SymbolsUploader)_uploader).GetType().GetMethod("UploadClasses", BindingFlags.Instance | BindingFlags.NonPublic);
         if (uploadClassesMethod == null)
@@ -112,7 +112,7 @@ public class SymbolUploaderTest
             return false;
         }
 
-        await ((Task)uploadClassesMethod.Invoke(_uploader, new object?[] { root, classes })!).ConfigureAwait(false);
+        await ((Task)uploadClassesMethod.Invoke(_uploader, [root, classes])!).ConfigureAwait(false);
         return true;
     }
 
@@ -126,7 +126,7 @@ public class SymbolUploaderTest
                Select(JsonConvert.DeserializeObject<Root>).ToArray();
     }
 
-    private (Root Root, IEnumerable<Trace.Debugger.Symbols.Model.Scope?> Classes) GenerateSymbolString(int numberOfTypes)
+    private (Root Root, IEnumerable<Trace.Debugger.Symbols.Model.Scope> Classes) GenerateSymbolString(int numberOfTypes)
     {
         var root = new Root
         {
@@ -134,16 +134,16 @@ public class SymbolUploaderTest
             Language = "dotnet",
             Service = nameof(SymbolUploaderTest),
             Version = "0",
-            Scopes = new List<Trace.Debugger.Symbols.Model.Scope> { new() { ScopeType = SymbolType.Assembly, Scopes = null } }
+            Scopes = new List<Trace.Debugger.Symbols.Model.Scope> { new() { ScopeType = ScopeType.Assembly, Scopes = null } }
         };
 
-        var scopes = new List<Trace.Debugger.Symbols.Model.Scope?>();
+        var scopes = new List<Trace.Debugger.Symbols.Model.Scope>();
         for (var i = 0; i < numberOfTypes; i++)
         {
             scopes.Add(new Trace.Debugger.Symbols.Model.Scope
             {
                 Name = $"type: {i}",
-                ScopeType = SymbolType.Class,
+                ScopeType = ScopeType.Class,
             });
         }
 

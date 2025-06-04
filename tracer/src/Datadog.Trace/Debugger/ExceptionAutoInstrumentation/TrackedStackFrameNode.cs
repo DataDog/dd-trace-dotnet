@@ -18,7 +18,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     internal class TrackedStackFrameNode
     {
         private TrackedStackFrameNode? _parent;
-        private List<TrackedStackFrameNode>? _activeChildNodes;
         private bool _disposed;
         private int? _enterSequenceHash;
         private int? _leaveSequenceHash;
@@ -59,6 +58,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
+        protected List<TrackedStackFrameNode>? ActiveChildNodes { get; private set; }
+
         public TrackedStackFrameNode? Parent => _parent;
 
         public Exception? LeavingException { get; set; }
@@ -89,7 +90,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public bool IsInvalidPath { get; }
 
-        public IEnumerable<TrackedStackFrameNode> ChildNodes => _activeChildNodes?.ToList() ?? Enumerable.Empty<TrackedStackFrameNode>();
+        public IEnumerable<TrackedStackFrameNode> ChildNodes => ActiveChildNodes?.ToList() ?? Enumerable.Empty<TrackedStackFrameNode>();
 
         public MethodBase Method { get; }
 
@@ -124,7 +125,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (members == null)
             {
-                members = new MethodScopeMembers(0, 0);
+                members = new MethodScopeMembers(new MethodScopeMembersParameters(0, 0));
             }
 
             var limitInfo = new CaptureLimitInfo(
@@ -133,7 +134,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
                 MaxLength: DebuggerSettings.DefaultMaxStringLength);
 
-            using var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>(), members, limitInfo: limitInfo);
+            using var snapshotCreator = new ExceptionReplaySnapshotCreator(isFullSnapshot: true, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>(), members, limitInfo: limitInfo);
 
             _snapshotId = snapshotCreator.SnapshotId;
 
@@ -164,7 +165,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             if (Members == null)
             {
-                Members = new MethodScopeMembers(0, 0);
+                Members = new MethodScopeMembers(new MethodScopeMembersParameters(0, 0));
             }
 
             type = (type.IsGenericTypeDefinition ? value?.GetType() : type) ?? type;
@@ -219,7 +220,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private int ComputeEnterSequenceHash()
+        protected virtual int ComputeEnterSequenceHash()
         {
             return Fnv1aHash.Combine(Method.MetadataToken, _parent?.EnterSequenceHash ?? Fnv1aHash.FnvOffsetBias);
         }
@@ -227,19 +228,19 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         /// <summary>
         /// TODO take not only first child.
         /// </summary>
-        private int ComputeLeaveSequenceHash()
+        protected virtual int ComputeLeaveSequenceHash()
         {
             lock (this)
             {
                 ClearNonRelevantChildNodes();
 
-                if (_activeChildNodes?.Any() == true)
+                if (ActiveChildNodes?.Any() == true)
                 {
-                    var firstChild = _activeChildNodes.First();
-                    return Fnv1aHash.Combine(firstChild.Method.MetadataToken, firstChild.LeaveSequenceHash);
+                    var firstChild = ActiveChildNodes.First();
+                    return Fnv1aHash.Combine(Method.MetadataToken, firstChild.LeaveSequenceHash);
                 }
 
-                return Fnv1aHash.FnvOffsetBias;
+                return Fnv1aHash.Combine(Method.MetadataToken, Fnv1aHash.FnvOffsetBias);
             }
         }
 
@@ -260,14 +261,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             lock (_parent)
             {
-                _parent._activeChildNodes ??= new List<TrackedStackFrameNode>();
-                _parent._activeChildNodes.Add(this);
+                _parent.ActiveChildNodes ??= new List<TrackedStackFrameNode>();
+                _parent.ActiveChildNodes.Add(this);
             }
 
             lock (this)
             {
                 // TODO For AggregateException, first/default might no be the most suitable way to tackle it.
-                var childCapturingCount = _activeChildNodes?.FirstOrDefault()?.NumOfChildren ?? 0;
+                var childCapturingCount = ActiveChildNodes?.FirstOrDefault()?.NumOfChildren ?? 0;
                 NumOfChildren = childCapturingCount + 1;
             }
 
@@ -289,23 +290,23 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             _parent = null;
-            if (_activeChildNodes != null)
+            if (ActiveChildNodes != null)
             {
-                foreach (var node in _activeChildNodes)
+                foreach (var node in ActiveChildNodes)
                 {
                     node.Dispose();
                 }
             }
 
-            _activeChildNodes = null;
+            ActiveChildNodes = null;
             MarkAsUnwound();
             _disposed = true;
         }
 
-        private void ClearNonRelevantChildNodes()
+        protected void ClearNonRelevantChildNodes()
         {
             // ReSharper disable once InconsistentlySynchronizedField
-            if (_activeChildNodes == null || _childNodesAlreadyCleansed)
+            if (ActiveChildNodes == null || _childNodesAlreadyCleansed)
             {
                 return;
             }
@@ -317,18 +318,18 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     return;
                 }
 
-                if (!_activeChildNodes.Any())
+                if (!ActiveChildNodes.Any())
                 {
-                    _activeChildNodes = null;
+                    ActiveChildNodes = null;
                     return;
                 }
 
-                for (var i = _activeChildNodes.Count - 1; i >= 0; i--)
+                for (var i = ActiveChildNodes.Count - 1; i >= 0; i--)
                 {
-                    var frame = _activeChildNodes[i];
+                    var frame = ActiveChildNodes[i];
                     if (frame.LeavingException == null || !HasChildException(frame.LeavingException))
                     {
-                        _activeChildNodes.RemoveAt(i);
+                        ActiveChildNodes.RemoveAt(i);
                         frame.Dispose();
                     }
                 }
@@ -355,7 +356,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public override string ToString()
         {
-            return $"{nameof(TrackedStackFrameNode)}(Child Count = {_activeChildNodes?.Count})";
+            return $"{nameof(TrackedStackFrameNode)}(Child Count = {ActiveChildNodes?.Count})";
         }
     }
 }

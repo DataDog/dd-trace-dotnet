@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerFlareApiTests.cs" company="Datadog">
+// <copyright file="TracerFlareApiTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -32,7 +32,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
-        var settings = new ImmutableExporterSettings(new ExporterSettings { AgentUri = agentPath });
+        var settings = ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
 
         await RunTest(settings, agent);
     }
@@ -45,9 +45,8 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
         var agentPath = agent.TracesUdsPath;
-        var settings = new ImmutableExporterSettings(
-            new ExporterSettings(
-                new NameValueConfigurationSource(new() { { "DD_APM_RECEIVER_SOCKET", agentPath } })));
+        var settings = new ExporterSettings(
+                new NameValueConfigurationSource(new() { { "DD_APM_RECEIVER_SOCKET", agentPath } }));
 
         await RunTest(settings, agent);
     }
@@ -56,11 +55,12 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
     public async Task CanSendToAgent_NamedPipes()
     {
         if (!EnvironmentTools.IsWindows())
         {
-            throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+            throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
         }
 
         // named pipes is notoriously flaky
@@ -82,9 +82,8 @@ public class TracerFlareApiTests(ITestOutputHelper output)
         {
             using var agent = MockTracerAgent.Create(output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", null));
             var pipeName = agent.TracesWindowsPipeName;
-            var settings = new ImmutableExporterSettings(
-                new ExporterSettings(
-                    new NameValueConfigurationSource(new() { { "DD_TRACE_PIPE_NAME", pipeName } })));
+            var settings = new ExporterSettings(
+                    new NameValueConfigurationSource(new() { { "DD_TRACE_PIPE_NAME", pipeName } }));
 
             await RunTest(settings, agent);
         }
@@ -97,7 +96,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
-        var settings = new ImmutableExporterSettings(new ExporterSettings { AgentUri = agentPath });
+        var settings = ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
 
         var invalidJson = "{meep";
         agent.CustomResponses[MockTracerResponseType.TracerFlare] = new MockTracerResponse(invalidJson, 500);
@@ -119,7 +118,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
-        var settings = new ImmutableExporterSettings(new ExporterSettings { AgentUri = agentPath });
+        var settings = ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
 
         var somethingWentWrong = "Something went wrong";
         agent.CustomResponses[MockTracerResponseType.TracerFlare] = new MockTracerResponse($$"""{ "error": "{{somethingWentWrong}}" }""", 500);
@@ -134,7 +133,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
         result.Value.Should().Be(somethingWentWrong);
     }
 
-    private async Task RunTest(ImmutableExporterSettings settings, MockTracerAgent agent)
+    private async Task RunTest(ExporterSettings settings, MockTracerAgent agent)
     {
         var api = TracerFlareApi.Create(settings);
 

@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Dataflow;
 
 #nullable enable
@@ -12,7 +13,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.System.Net;
 
 /// <summary> HttpWebRequest class aspects </summary>
-[AspectClass("System.Net.Requests,System,netstandard", AspectType.RaspIastSink, VulnerabilityType.Ssrf)]
+[AspectClass("System.Net.Requests,System,netstandard", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class WebRequestAspect
@@ -24,10 +25,18 @@ public class WebRequestAspect
     /// <returns>the parameter</returns>
     [AspectMethodInsertBefore("System.Net.WebRequest::Create(System.String)")]
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.String)")]
-    public static object Review(string parameter)
+    public static string Review(string parameter)
     {
-        VulnerabilitiesModule.OnSSRF(parameter);
-        return parameter;
+        try
+        {
+            VulnerabilitiesModule.OnSSRF(parameter);
+            return parameter;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return parameter;
+        }
     }
 
     /// <summary>
@@ -38,9 +47,17 @@ public class WebRequestAspect
     [AspectMethodInsertBefore("System.Net.WebRequest::Create(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateDefault(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.Uri)")]
-    public static object Review(Uri parameter)
+    public static Uri Review(Uri parameter)
     {
-        VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
-        return parameter;
+        try
+        {
+            VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
+            return parameter;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return parameter;
+        }
     }
 }

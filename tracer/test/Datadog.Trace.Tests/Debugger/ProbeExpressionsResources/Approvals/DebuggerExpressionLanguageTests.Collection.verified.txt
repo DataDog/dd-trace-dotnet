@@ -1,4 +1,4 @@
-﻿Template:
+Template:
 Segments: 
 
 {
@@ -14,6 +14,8 @@ Expressions:
 {
     string loopItem;
     IEnumerator<string> enumerator;
+    int index;
+    StringBuilder itemValues;
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
     var @return = (string)scopeMember.Value;
     var @duration = (TimeSpan)scopeMember.Value;
@@ -22,57 +24,66 @@ Expressions:
     var DoubleLocal = (double)scopeMemberArray[1].Value;
     var StringLocal = (string)scopeMemberArray[2].Value;
     var CollectionLocal = (List<string>)scopeMemberArray[3].Value;
-    var DictionaryLocal = (Dictionary<string, string>)scopeMemberArray[4].Value;
-    var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[5].Value;
-    var NullLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[6].Value;
-    var BooleanValue = (bool)scopeMemberArray[7].Value;
-    var IntArg = (int)scopeMemberArray[8].Value;
-    var DoubleArg = (double)scopeMemberArray[9].Value;
-    var StringArg = (string)scopeMemberArray[10].Value;
-    var CollectionArg = (List<string>)scopeMemberArray[11].Value;
-    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[12].Value;
-    var $dd_el_result =
-    {
-        enumerator = this.Collection.GetEnumerator();
-        var index = 0;
-        var itemValues = new StringBuilder();
-        itemValues.Append("[");
-        while (true)
-        {
-            if (enumerator.MoveNext())
+    var CollectionIntLocal = (List<int>)scopeMemberArray[4].Value;
+    var HashIntLocal = (HashSet<int>)scopeMemberArray[5].Value;
+    var ArrayLocal = (string[])scopeMemberArray[6].Value;
+    var CustomArrayLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject[])scopeMemberArray[7].Value;
+    var DictionaryLocal = (Dictionary<string, string>)scopeMemberArray[8].Value;
+    var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
+    var NullLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[10].Value;
+    var BooleanValue = (bool)scopeMemberArray[11].Value;
+    var Char = (char)scopeMemberArray[12].Value;
+    var AnotherChar = (char)scopeMemberArray[13].Value;
+    var NullableNotNullValueLocal = (Guid?)scopeMemberArray[14].Value;
+    var NullableNullValueLocal = (Guid?)scopeMemberArray[15].Value;
+    var IntArg = (int)scopeMemberArray[16].Value;
+    var DoubleArg = (double)scopeMemberArray[17].Value;
+    var StringArg = (string)scopeMemberArray[18].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[19].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
+    var $dd_el_result = (this.Collection == null)
+        ? "null"
+        : {
+            enumerator = this.Collection.GetEnumerator();
+            index = 0;
+            itemValues = new StringBuilder();
+            itemValues.Append("[");
+            while (true)
             {
-                string loopItem;
-
-                if (index < 3)
+                if (enumerator.MoveNext())
                 {
-                    if (index > 0)
-                    {
-                        return itemValues.Append(", ");
-                    }
+                    string loopItem;
 
-                    loopItem = enumerator.Current;
-                    itemValues.Append(ProbeExpressionParser<string>.DumpObject(
-                        loopItem,
-                        typeof(string),
-                        "",
-                        1));
-                    index++;
+                    if (index < 3)
+                    {
+                        if (index > 0)
+                        {
+                            return itemValues.Append(", ");
+                        }
+
+                        loopItem = enumerator.Current;
+                        itemValues.Append(ProbeExpressionParser<string>.DumpObject(
+                            loopItem,
+                            typeof(string),
+                            "",
+                            1));
+                        index++;
+                    }
+                    else
+                    {
+                        itemValues.Append(", ...");
+                        break;
+                    }
                 }
                 else
                 {
-                    itemValues.Append(", ...");
                     break;
                 }
             }
-            else
-            {
-                break;
-            }
-        }
-        itemValues.Append("]");
+            itemValues.Append("]");
 
-        return itemValues.ToString();
-    };
+            return itemValues.ToString();
+        };
 
     return $dd_el_result;
 }

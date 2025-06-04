@@ -124,7 +124,7 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.AgentUri, agentUri },
                 { ConfigurationKeys.AgentHost, agentHost },
                 { ConfigurationKeys.DogStatsdPort, port },
-            })).Build();
+            }));
 
             settings.Exporter.MetricsTransport.Should().Be(TransportType.UDP);
             var expectedPort = settings.Exporter.DogStatsdPort;
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Tests
             var settings = new TracerSettings(new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.MetricsPipeName, agent.StatsWindowsPipeName },
-            })).Build();
+            }));
 
             settings.Exporter.MetricsTransport.Should().Be(TransportType.NamedPipe);
 
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tests
             {
                 { ConfigurationKeys.AgentUri, $"unix://{tracesPath}" },
                 { ConfigurationKeys.MetricsUnixDomainSocketPath, $"unix://{metricsPath}" },
-            })).Build();
+            }));
 
             settings.Exporter.MetricsTransport.Should().Be(TransportType.UDS);
 
@@ -208,7 +208,7 @@ namespace Datadog.Trace.Tests
             var settings = new TracerSettings(new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.AgentUri, $"unix://{tracesPath}" },
-            })).Build();
+            }));
 
             // If we're not using the "default" UDS path, then we fallback to UDP for stats
             // Should fallback to the "default" stats location
@@ -232,15 +232,13 @@ namespace Datadog.Trace.Tests
 
             using (var agent = MockTracerAgent.Create(null, agentPort))
             {
-                var settings = new TracerSettings
+                var settings = TracerSettings.Create(new()
                 {
-                    Exporter = new ExporterSettings()
-                    {
-                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
-                    },
-                    TracerMetricsEnabled = tracerMetricsEnabled,
-                    StartupDiagnosticLogEnabled = false,
-                };
+                    { ConfigurationKeys.AgentUri, $"http://127.0.0.1:{agent.Port}" },
+                    { ConfigurationKeys.TracerMetricsEnabled, tracerMetricsEnabled },
+                    { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                    { ConfigurationKeys.TraceDataPipelineEnabled, false },
+                });
 
                 await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);
 

@@ -68,12 +68,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
+        [Trait("Category", "LinuxUnsupported")]
         [Trait("RunOnWindows", "True")]
         public async Task NamedPipesSubmitsMetrics()
         {
             if (!EnvironmentTools.IsWindows())
             {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+                throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
             EnvironmentHelper.EnableWindowsNamedPipes();

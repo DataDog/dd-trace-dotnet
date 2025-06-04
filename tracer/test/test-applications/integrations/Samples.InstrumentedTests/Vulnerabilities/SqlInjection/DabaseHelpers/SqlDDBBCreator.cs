@@ -12,7 +12,7 @@ internal static class SqlDDBBCreator
         // Linux does not support localDB
         if (!InstrumentationTestsBase.IsWindows())
         {
-            return new SqlConnection("Data Source=.\\DUMMY;Initial Catalog=Dummy");
+            return new SqlConnection("Data Source=.\\DUMMY;Initial Catalog=Dummy;MultipleActiveResultSets=true");
         }
 
         var connection = OpenConnection();
@@ -36,21 +36,18 @@ internal static class SqlDDBBCreator
         return connection;
     }
 
-    private static void ExecuteCommand(SqlConnection connection, string booksCommand)
+    private static void ExecuteCommand(SqlConnection connection, string sql)
     {
-        using (var command1 = new SqlCommand(booksCommand, connection))
+        using (var command1 = new SqlCommand(sql, connection))
         {
-            using (var reader1 = command1.ExecuteReader())
-            {
-                reader1.Close();
-            }
+            command1.ExecuteNonQuery();
         }
     }
 
     private static SqlConnection OpenConnection()
     {
         int numAttempts = 3;
-        var connectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
+        var connectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60;MultipleActiveResultSets=true";
 
         for (int i = 0; i < numAttempts; i++)
         {

@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
@@ -11,16 +12,33 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
-        public Result(DdwafResultStruct returnStruct, WafReturnCode returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false)
+        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false)
         {
             ReturnCode = returnCode;
-            Actions = returnStruct.Actions.DecodeMap();
-            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
-            Derivatives = returnStruct.Derivatives.DecodeMap();
-            ShouldReportSchema = Derivatives is { Count: > 0 };
-            if (ShouldReportSecurityResult)
+
+            var returnValues = returnStruct.DecodeMap();
+            returnValues.TryGetValue("timeout", out var timeoutObj);
+            returnValues.TryGetValue("keep", out var keepObj);
+            returnValues.TryGetValue("duration", out var durationObj);
+            returnValues.TryGetValue("events", out var eventsObj);
+            returnValues.TryGetValue("actions", out var actionsObj);
+            returnValues.TryGetValue("attributes", out var attributesObj);
+
+            if (durationObj is ulong durationNanos and > 0)
             {
-                Data = returnStruct.Events.DecodeObjectArray();
+                aggregatedTotalRuntime += durationNanos / 1000; // Convert from nanoseconds to microseconds
+            }
+
+            Actions = (Dictionary<string, object?>?)actionsObj;
+            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
+            if (attributesObj is Dictionary<string, object?> attributesValue)
+            {
+                BuildDerivatives(attributesValue);
+            }
+
+            if (ShouldReportSecurityResult && eventsObj is IReadOnlyCollection<object> eventsValue)
+            {
+                Data = eventsValue;
             }
 
             if (Actions is { Count: > 0 })
@@ -54,18 +72,21 @@ namespace Datadog.Trace.AppSec.Waf
                 AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
             }
 
-            Timeout = returnStruct.Timeout > 0;
+            if (timeoutObj is bool timeoutValue and true)
+            {
+                Timeout = timeoutValue;
+            }
         }
 
         public WafReturnCode ReturnCode { get; }
-
-        public bool ShouldReportSchema { get; }
 
         public IReadOnlyCollection<object>? Data { get; }
 
         public Dictionary<string, object?>? Actions { get; }
 
-        public Dictionary<string, object?> Derivatives { get; }
+        public Dictionary<string, object?>? ExtractSchemaDerivatives { get; private set; }
+
+        public Dictionary<string, object?>? FingerprintDerivatives { get; private set; }
 
         /// <summary>
         /// Gets the total runtime in nanoseconds
@@ -103,5 +124,30 @@ namespace Datadog.Trace.AppSec.Waf
         public bool ShouldReportSecurityResult { get; }
 
         public bool Timeout { get; }
+
+        private void BuildDerivatives(Dictionary<string, object?> derivatives)
+        {
+            foreach (var derivative in derivatives)
+            {
+                if ((derivative.Key == Tags.AppSecFpEndpoint) || (derivative.Key == Tags.AppSecFpHeader) || (derivative.Key == Tags.AppSecFpHttpNetwork) || (derivative.Key == Tags.AppSecFpSession))
+                {
+                    if (FingerprintDerivatives is null)
+                    {
+                        FingerprintDerivatives = new Dictionary<string, object?>();
+                    }
+
+                    FingerprintDerivatives.Add(derivative.Key, derivative.Value);
+                }
+                else
+                {
+                    if (ExtractSchemaDerivatives is null)
+                    {
+                        ExtractSchemaDerivatives = new Dictionary<string, object?>();
+                    }
+
+                    ExtractSchemaDerivatives.Add(derivative.Key, derivative.Value);
+                }
+            }
+        }
     }
 }

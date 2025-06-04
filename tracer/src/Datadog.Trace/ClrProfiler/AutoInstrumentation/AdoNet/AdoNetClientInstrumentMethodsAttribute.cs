@@ -1,9 +1,10 @@
-﻿// <copyright file="AdoNetClientInstrumentMethodsAttribute.cs" company="Datadog">
+// <copyright file="AdoNetClientInstrumentMethodsAttribute.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
@@ -102,6 +103,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public string[] ParameterTypeNames { get; set; }
 
             /// <summary>
+            /// Gets or sets the return type to use with this signature
+            /// </summary>
+            public AdoNetTargetSignatureReturnType ReturnType { get; set; } = AdoNetTargetSignatureReturnType.Default;
+
+            /// <summary>
             /// Gets or sets the CallTarget Class used to instrument the method
             /// </summary>
             public Type CallTargetType { get; set; }
@@ -112,9 +118,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CallTargetKind CallTargetIntegrationKind { get; set; } = CallTargetKind.Default;
 
             /// <summary>
-            /// Gets or sets the return type to use with this signature
+            /// Gets or sets the call target instrumentation category
             /// </summary>
-            public AdoNetTargetSignatureReturnType ReturnType { get; set; } = AdoNetTargetSignatureReturnType.Default;
+            public InstrumentationCategory InstrumentationCategory { get; set; } = InstrumentationCategory.Tracing;
         }
 
         [AdoNetTargetSignature(
@@ -282,6 +288,59 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(CommandExecuteScalarWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class CommandExecuteScalarWithBehaviorAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.Read,
+            ReturnTypeName = ClrNames.Bool,
+            CallTargetType = typeof(ReaderReadIntegration),
+            InstrumentationCategory = InstrumentationCategory.Iast)]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class IastReaderReadAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ReadAsync,
+            ReturnTypeName = AdoNetConstants.TypeNames.ObjectTaskType,
+            ParameterTypeNames = new[] { ClrNames.CancellationToken },
+            CallTargetType = typeof(ReaderReadAsyncIntegration),
+            InstrumentationCategory = InstrumentationCategory.Iast)]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class IastReaderReadAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.Close,
+            ReturnTypeName = ClrNames.Void,
+            CallTargetType = typeof(ReaderCloseIntegration),
+            InstrumentationCategory = InstrumentationCategory.Iast)]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class IastReaderCloseAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.GetString,
+            ReturnTypeName = ClrNames.String,
+            ParameterTypeNames = new[] { ClrNames.Int32 },
+            CallTargetType = typeof(ReaderGetStringIntegration),
+            InstrumentationCategory = InstrumentationCategory.Iast)]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class IastReaderGetStringAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.GetValue,
+            ReturnTypeName = ClrNames.Object,
+            ParameterTypeNames = new[] { ClrNames.Int32 },
+            CallTargetType = typeof(ReaderGetStringIntegration),
+            InstrumentationCategory = InstrumentationCategory.Iast)]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class IastReaderGetValueAttribute : Attribute
         {
         }
     }

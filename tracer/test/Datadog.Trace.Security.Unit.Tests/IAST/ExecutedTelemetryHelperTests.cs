@@ -22,18 +22,18 @@ public class ExecutedTelemetryHelperTests
 
         helper.AddExecutedPropagation();
 
-        var sources = Enum.GetValues(typeof(IastInstrumentedSources)).Length;
+        var sources = Enum.GetValues(typeof(IastSourceType)).Length;
 
         for (int i = 1; i < sources; i++)
         {
-            helper.AddExecutedSource((IastInstrumentedSources)i);
+            helper.AddExecutedSource((IastSourceType)i);
         }
 
-        var sinks = Enum.GetValues(typeof(IastInstrumentedSinks)).Length;
+        var sinks = Enum.GetValues(typeof(IastVulnerabilityType)).Length;
 
         for (int i = 1; i < sinks; i++)
         {
-            helper.AddExecutedSink((IastInstrumentedSinks)i);
+            helper.AddExecutedSink((IastVulnerabilityType)i);
         }
 
         var tags = new TestTags();

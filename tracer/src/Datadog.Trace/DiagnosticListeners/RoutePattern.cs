@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections;
 using Datadog.Trace.DuckTyping;
 
@@ -22,6 +24,6 @@ namespace Datadog.Trace.DiagnosticListeners
         /// <summary>
         /// Gets the RoutePattern.RawText
         /// </summary>
-        public string RawText;
+        public string? RawText;
     }
 }

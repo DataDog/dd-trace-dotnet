@@ -5,7 +5,6 @@
 
 using System;
 using System.IO.Compression;
-using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.TracerFlare;
@@ -34,9 +33,11 @@ public class TracerFlareTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "5");
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [InlineData(true)]
+    [InlineData(false)]
     [Trait("RunOnWindows", "True")]
-    public async Task SendTracerFlare()
+    public async Task SendTracerFlare(bool logLevelInFileName)
     {
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
         var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
@@ -47,7 +48,7 @@ public class TracerFlareTests : TestHelper
         {
             _ = await logEntryWatcher.WaitForLogEntry(DiagnosticLog);
 
-            await InitializeFlare(agent, logEntryWatcher);
+            await InitializeFlare(agent, logEntryWatcher, logLevelInFileName);
             await TriggerFlareCollection(agent, logEntryWatcher);
         }
         finally
@@ -76,11 +77,23 @@ public class TracerFlareTests : TestHelper
            .And.Contain(x => x.Name.StartsWith("dotnet-tracer-telemetry-"));
     }
 
-    private async Task InitializeFlare(MockTracerAgent agent, LogEntryWatcher logEntryWatcher)
+    private async Task InitializeFlare(MockTracerAgent agent, LogEntryWatcher logEntryWatcher, bool logLevelInFileName)
     {
-        var fileId = "flare-log-level.debug";
+        string fileId;
+        object payload;
 
-        var request = await agent.SetupRcmAndWait(Output, new[] { ((object)new { }, RcmProducts.TracerFlareInitiated, fileId) });
+        if (logLevelInFileName)
+        {
+            fileId = "flare-log-level.debug";
+            payload = new { };
+        }
+        else
+        {
+            fileId = Guid.NewGuid().ToString();
+            payload = new { config = new { log_level = "debug" } };
+        }
+
+        var request = await agent.SetupRcmAndWait(Output, new[] { (payload, RcmProducts.TracerFlareInitiated, fileId) });
 
         request.Should().NotBeNull();
         request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)

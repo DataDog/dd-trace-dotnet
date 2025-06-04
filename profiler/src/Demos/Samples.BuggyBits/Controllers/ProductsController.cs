@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
@@ -21,6 +22,49 @@ namespace BuggyBits.Controllers
         public ProductsController(DataLayer dataLayer)
         {
             this.dataLayer = dataLayer;
+        }
+
+        public async Task<IActionResult> GetSyncOverAsync(bool withResultProperty)
+        {
+            var sw = new Stopwatch();
+            sw.Start();
+            IEnumerable<Product> products = null;
+            if (withResultProperty)
+            {
+                products = await dataLayer.GetAllProductWithResult($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}");
+            }
+            else
+            {
+                products = await dataLayer.GetAllProductGetAwaiterGetResult($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}");
+            }
+
+            var productsTable = new StringBuilder(1024 * 100);
+            productsTable.Append("<table><tr><th>Product Name</th><th>Description</th><th>Price</th></tr>");
+            foreach (var product in products)
+            {
+                productsTable.Append($"<tr><td>{product.ProductName}</td><td>{product.Description}</td><td>${product.Price}</td></tr>");
+            }
+
+            productsTable.Append("</table>");
+            sw.Stop();
+
+            ViewData["ElapsedTimeInMs"] = sw.ElapsedMilliseconds;
+            ViewData["ProductsTable"] = productsTable;
+            return View("Index");
+        }
+
+        // GET: Products with Result property - bad practice
+        [Route("Products/WithResult")]
+        public async Task<IActionResult> WithResult()
+        {
+            return await GetSyncOverAsync(true);
+        }
+
+        // GET: Products with GetAwaiter().GetResult() - bad practice
+        [Route("Products/GetAwaiterGetResult")]
+        public async Task<IActionResult> GetAwaiterGetResult()
+        {
+            return await GetSyncOverAsync(false);
         }
 
         // GET: Products asynchronously

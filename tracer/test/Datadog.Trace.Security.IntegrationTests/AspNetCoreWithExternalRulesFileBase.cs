@@ -28,7 +28,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetCoreSecurityEnabledWithExternalRulesFileIIS : AspNetCoreWithExternalRulesFileBaseIIS
     {
         public AspNetCoreSecurityEnabledWithExternalRulesFileIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, IisAppType appType, string ruleFile = null, string testName = null)
-            : base(sampleName, fixture, outputHelper, shutdownPath, appType, enableSecurity: true, ruleFile: ruleFile, testName: testName)
+            : base(sampleName, fixture, outputHelper, shutdownPath, appType, enableSecurity: true, ruleFile: ruleFile, testName: testName, clearMetaStruct: true)
         {
         }
 
@@ -41,6 +41,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var agent = Fixture.Agent;
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
+            ScrubFingerprintHeaders(settings);
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
     }
@@ -48,7 +49,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetCoreSecurityEnabledWithExternalRulesFile : AspNetCoreWithExternalRulesFileBase
     {
         public AspNetCoreSecurityEnabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string ruleFile = null, string testName = null)
-            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: true, ruleFile: ruleFile, testName: testName)
+            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: true, ruleFile: ruleFile, testName: testName, clearMetaStruct: true)
         {
         }
 
@@ -86,19 +87,37 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
+            ScrubFingerprintHeaders(settings);
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
     }
 
     public abstract class AspNetCoreWithExternalRulesFileBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCoreWithExternalRulesFileBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string ruleFile = null, string testName = null)
-            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName)
+        public AspNetCoreWithExternalRulesFileBase(
+            string sampleName,
+            AspNetCoreTestFixture fixture,
+            ITestOutputHelper outputHelper,
+            string shutdownPath,
+            bool enableSecurity = true,
+            string ruleFile = null,
+            string blockingJsonTemplate = null,
+            string blockingHtmlTemplate = null,
+            string testName = null,
+            bool clearMetaStruct = false)
+            : base(
+                sampleName,
+                outputHelper,
+                shutdownPath ?? "/shutdown",
+                testName: testName,
+                clearMetaStruct: clearMetaStruct)
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
             Fixture.SetOutput(outputHelper);
             RuleFile = ruleFile;
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.HtmlBlockedTemplate, blockingHtmlTemplate);
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.JsonBlockedTemplate, blockingJsonTemplate);
         }
 
         protected AspNetCoreTestFixture Fixture { get; }
@@ -135,8 +154,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 
     public abstract class AspNetCoreWithExternalRulesFileBaseIIS : AspNetBase, IClassFixture<IisFixture>
     {
-        public AspNetCoreWithExternalRulesFileBaseIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, IisAppType appType, bool enableSecurity = true, string ruleFile = null, string testName = null)
-            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName, samplesDir: "test\\test-applications\\security")
+        public AspNetCoreWithExternalRulesFileBaseIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, IisAppType appType, bool enableSecurity = true, string ruleFile = null, string testName = null, bool clearMetaStruct = false)
+            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName, samplesDir: "test\\test-applications\\security", clearMetaStruct: clearMetaStruct)
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
