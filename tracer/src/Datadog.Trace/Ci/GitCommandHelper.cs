@@ -262,20 +262,7 @@ internal static class GitCommandHelper
                 return null;
             }
 
-            // Check if the target branch is already a main-like branch
-            var shortTargetName = targetBranch;
-            if (shortTargetName is { Length: > 0 } && shortTargetName.StartsWith($"{remoteName}/"))
-            {
-                shortTargetName = shortTargetName.Substring(remoteName.Length + 1);
-            }
-
-            if (BranchFilterRegex.IsMatch(shortTargetName))
-            {
-                Log.Debug("GitCommandHelper: Branch '{Branch}' already matches branch filter → no parent needed", targetBranch);
-                return null;
-            }
-
-            // Step 2 - Build candidate branches list and fetch them from remote
+            // Step 2 - Build the candidate branches list and fetch them from remote
             var candidateBranches = new List<string>();
 
             if (pullRequestBaseBranch is { Length: > 0 })
@@ -300,10 +287,10 @@ internal static class GitCommandHelper
                     }
                 }
 
-                // Build candidate list
+                // Build the candidate list
                 var branchesOutput = RunGitCommand(
                     workingDirectory,
-                    $"for-each-ref --format='%(refname:short)' refs/heads refs/remotes/{remoteName}",
+                    $"for-each-ref --format='%(refname:short)' refs/remotes/{remoteName}",
                     MetricTags.CIVisibilityCommands.BuildCandidateList);
 
                 if (branchesOutput?.ExitCode != 0 || string.IsNullOrWhiteSpace(branchesOutput.Output))
@@ -469,7 +456,7 @@ internal static class GitCommandHelper
             // Fetch the latest commit for this branch from remote
             var fetchOutput = RunGitCommand(
                 workingDirectory,
-                $"fetch --depth 1 {remoteName} {branch}:{branch}",
+                $"fetch --depth 1 {remoteName} {branch}",
                 MetricTags.CIVisibilityCommands.Fetch);
 
             if (fetchOutput?.ExitCode != 0)
