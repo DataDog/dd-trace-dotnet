@@ -256,7 +256,7 @@ public class ConfigurationTelemetryCollectorTests
 
             var collector = new ConfigurationTelemetry();
             var source = new NameValueConfigurationSource(new NameValueCollection());
-            _ = new ImmutableTracerSettings(new TracerSettings(source, collector));
+            _ = new TracerSettings(source, collector, new OverrideErrorLog());
             _ = new SecuritySettings(source, collector);
             var data = collector.GetData();
             GetLatestValueFromConfig(data, "ssi_injection_enabled", ConfigurationOrigins.Default).Should().Be("tracer");
