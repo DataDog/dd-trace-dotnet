@@ -155,10 +155,10 @@ services:
     depends_on:
     - test-agent.windows
 
-  fleet-installer-smoke-tests.windows:
+  fleet-installer-smoke-tests-iis.windows:
     build:
       context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.windows.fleet-installer.dockerfile
+      dockerfile: build/_build/docker/smoke.windows.iis.fleet-installer.dockerfile
         # args:
         # Note that the following build arguments must be provided
         # - DOTNETSDK_VERSION=
@@ -166,7 +166,7 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - CHANNEL=
         # - TARGET_PLATFORM=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-windows-fleet-installer-tester
+    image: dd-trace-dotnet/${dockerTag:-not-set}-windows-iis-fleet-installer-tester
     volumes:
     - ./:c:/project
     - ./artifacts/build_data/logs:c:/logs
