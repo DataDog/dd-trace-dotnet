@@ -3,18 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Profiler.IntegrationTests.Exceptions
+namespace Datadog.Profiler.IntegrationTests.Configuration
 {
     public class ConfigurationTest
     {
@@ -34,7 +30,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         public void CheckEnvVarsInLogWithDefaultProfilers(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
-            // EnvironmentHelper.DisableDefaultProfilers(runner);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -48,6 +43,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             bool heapIsLogged = false;
             bool serviceIsLogged = false;
             bool etwIsLogged = false;
+            bool gcCpuIsLogged = false;
+            bool threadLifetimeIsLogged = false;
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
                                    .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
@@ -98,6 +95,14 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 {
                     etwIsLogged = true;
                 }
+                else if (line.Contains("DD_GC_THREADS_CPUTIME_ENABLED"))
+                {
+                    gcCpuIsLogged = true;
+                }
+                else if (line.Contains("DD_THREAD_LIFETIME_ENABLED"))
+                {
+                    threadLifetimeIsLogged = true;
+                }
                 else if (line.Contains("] Configuration: DD_"))
                 {
                     // This is the default value
@@ -114,6 +119,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             heapIsLogged.Should().BeTrue();
             serviceIsLogged.Should().BeTrue();
             etwIsLogged.Should().BeTrue();
+            gcCpuIsLogged.Should().BeTrue();
+            threadLifetimeIsLogged.Should().BeTrue();
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net9.0" })]
@@ -134,6 +141,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             bool heapIsLogged = false;
             bool serviceIsLogged = false;
             bool etwIsLogged = false;
+            bool gcCpuIsLogged = false;
+            bool threadLifetimeIsLogged = false;
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
                                    .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
@@ -184,6 +193,14 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 {
                     etwIsLogged = true;
                 }
+                else if (line.Contains("DD_GC_THREADS_CPUTIME_ENABLED"))
+                {
+                    gcCpuIsLogged = true;
+                }
+                else if (line.Contains("DD_THREAD_LIFETIME_ENABLED"))
+                {
+                    threadLifetimeIsLogged = true;
+                }
                 else if (line.Contains("] Configuration: DD_"))
                 {
                     // This is the default value
@@ -200,6 +217,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             heapIsLogged.Should().BeTrue();
             serviceIsLogged.Should().BeTrue();
             etwIsLogged.Should().BeTrue();
+            gcCpuIsLogged.Should().BeTrue();
+            threadLifetimeIsLogged.Should().BeTrue();
         }
     }
 }
