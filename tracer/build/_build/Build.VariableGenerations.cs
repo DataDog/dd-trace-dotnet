@@ -1495,7 +1495,9 @@ partial class Build : NukeBuild
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
-                                     let dockerTag = $"{image.PublishFramework}_{platform}_{image.RuntimeTag}".Replace('.', '_')
+                                     from globalInstall in new[] { false, true }
+                                     let installCommand = globalInstall ? "enable-global-instrumentation" : "enable-iis-instrumentation"
+                                     let dockerTag = $"{image.PublishFramework}_{platform}_{image.RuntimeTag}_{(globalInstall ? "global" : "iis")}".Replace('.', '_')
                                      select new
                                      {
                                          dockerTag = dockerTag,
@@ -1503,6 +1505,7 @@ partial class Build : NukeBuild
                                          runtimeImage = $"{dockerName}:{image.RuntimeTag}",
                                          targetPlatform = platform,
                                          channel = GetInstallerChannel(image.PublishFramework),
+                                         installCommand = installCommand,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 
                     Logger.Information($"Installer smoke tests fleet-installer iis matrix Windows");
