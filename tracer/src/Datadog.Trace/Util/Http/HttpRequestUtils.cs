@@ -17,7 +17,20 @@ namespace Datadog.Trace.Util.Http
         {
             if (!uri.IsAbsoluteUri)
             {
-                return uri.ToString();
+                var relativeUrl = uri.ToString();
+
+                if (queryStringManager != null)
+                {
+                    var queryStringIndex = relativeUrl.IndexOf('?');
+
+                    if (queryStringIndex >= 0)
+                    {
+                        var queryString = relativeUrl.Substring(queryStringIndex);
+                        relativeUrl = relativeUrl.Substring(0, queryStringIndex) + queryStringManager.TruncateAndObfuscate(queryString);
+                    }
+                }
+
+                return relativeUrl;
             }
 
             return GetUrl(

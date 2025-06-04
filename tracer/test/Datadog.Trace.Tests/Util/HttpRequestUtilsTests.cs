@@ -51,4 +51,18 @@ public class HttpRequestUtilsTests
         // Assert
         Assert.Equal("/relative/path?query=123", result);
     }
+
+    [Fact]
+    public void GetUrl_WithRelativeUriAndQueryStringManager_ReturnsProcessedUrl()
+    {
+        // Arrange
+        var uri = new Uri("/relative/path?secret=ee123", UriKind.Relative);
+        var queryStringManager = new QueryStringManager(true, 1000, 1000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+
+        // Act
+        var result = HttpRequestUtils.GetUrl(uri, queryStringManager);
+
+        // Assert
+        Assert.Equal("/relative/path?<redacted>", result);
+    }
 }
