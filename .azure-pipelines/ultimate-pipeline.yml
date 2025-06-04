@@ -4488,7 +4488,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     scenarioGroups: "appsec"
-    additionalScenarios: '[\"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"+S PROFILING +S TRACE_PROPAGATION_STYLE_W3C +S LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
+    additionalScenarios: '[\"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"PROFILING,TRACE_PROPAGATION_STYLE_W3C,LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -4538,7 +4538,7 @@ stages:
               (
                 $main | map({
                   ("APPSEC (" + .weblog + ") " + (.weblog_instance|tostring)): {
-                    SCENARIO: (.scenarios | map("+S " + .) | join(" ")), N: 1, I: 1,
+                    SCENARIO: (.scenarios | join(",")), N: 1, I: 1,
                     WEBLOG_VARIANT: .weblog
                   }
                 })
@@ -4553,7 +4553,7 @@ stages:
                 }}
               ]
               ) | add
-            ' > matrix.json            
+            ' > matrix.json
             echo "##vso[task.setvariable variable=matrixJson;isOutput=true]$(cat matrix.json)"
             echo "Json: $(cat matrix.json)"
           displayName: Generate scenarios matrix JSON
@@ -4643,7 +4643,24 @@ stages:
         displayName: Install runner
         workingDirectory: system-tests
 
-      - script: ./run.sh $(SCENARIO) --splits=$(N) --group=$(I)
+      - script: |
+          set -e
+
+          source venv/bin/activate
+          python utils/scripts/get-image-list.py "$(SCENARIO)" -l=dotnet -w=$(WEBLOG_VARIANT) > compose.yaml
+          cat compose.yaml
+        workingDirectory: system-tests
+        displayName: Generate docker-compose file
+
+      - script: docker compose pull
+        workingDirectory: system-tests
+        displayName: Pull docker images
+        retryCountOnTaskFailure: 3
+
+      - script: |
+          # Replace ',' with ' +S ' and add initial +S prefix
+          SCENARIOS_TO_RUN="+S $(SCENARIO)//,/ +S }"
+          ./run.sh $(SCENARIOS_TO_RUN) --splits=$(N) --group=$(I)
         workingDirectory: system-tests
         displayName: Run tests
         env:

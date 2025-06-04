@@ -84,7 +84,7 @@ partial class Build
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
 
-    readonly string[] WafWindowsArchitectureFolders = { "win-x86", "win-x64" };
+    readonly string[] WindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
     Project NativeTracerTestsProject => Solution.GetProject(Projects.NativeTracerNativeTests);
     Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
@@ -546,7 +546,7 @@ partial class Build
         {
             if (IsWin)
             {
-                foreach (var architecture in WafWindowsArchitectureFolders)
+                foreach (var architecture in WindowsArchitectureFolders)
                 {
                     var source = LibDdwafDirectory() / "runtimes" / architecture / "native" / "ddwaf.dll";
                     var dest = MonitoringHomeDirectory / architecture;
@@ -642,6 +642,41 @@ partial class Build
                     }
                 });
 
+    Target CopyNativeFilesForTests => _ => _
+        .Unlisted()
+        .After(Clean)
+        .After(BuildTracerHome)
+        .Executes(() =>
+        {
+            foreach(var projectName in Projects.NativeFilesDependentTests)
+            {
+                var project = Solution.GetProject(projectName);
+                var testDir = project.Directory;
+                var frameworks = project.GetTargetFrameworks();
+                var testBinFolder = testDir / "bin" / BuildConfiguration;
+
+                if (IsWin)
+                {
+                    foreach (var framework in frameworks)
+                    {
+                        var source = MonitoringHomeDirectory / $"win-{TargetPlatform}" / "datadog_profiling_ffi.dll";
+                        var dest = testBinFolder / framework / "LibDatadog.dll";
+                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    }
+                }
+                else
+                {
+                    var (arch, ext) = GetUnixArchitectureAndExtension();
+                    var source = MonitoringHomeDirectory / arch / $"libdatadog_profiling.{ext}";
+                    foreach (var framework in frameworks)
+                    {
+                        var dest = testBinFolder / framework / $"LibDatadog.{ext}";
+                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    }
+                }
+            }
+        });
+
     Target CopyNativeFilesForAppSecUnitTests => _ => _
                 .Unlisted()
                 .After(Clean)
@@ -662,13 +697,13 @@ partial class Build
                         {
                             var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
                             await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
-                            foreach (var arch in WafWindowsArchitectureFolders)
+                            foreach (var arch in WindowsArchitectureFolders)
                             {
                                 var oldVersionPath = oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
                                 var source = MonitoringHomeDirectory / arch;
-                                foreach (var fmk in frameworks)
+                                foreach (var framework in frameworks)
                                 {
-                                    var dest = testBinFolder / fmk / arch;
+                                    var dest = testBinFolder / framework / arch;
                                     CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                                     CopyFile(oldVersionPath, dest / $"ddwaf-{olderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
                                 }
@@ -687,7 +722,7 @@ partial class Build
                             var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
                             await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
                             {
-                                foreach (var fmk in frameworks)
+                                foreach (var framework in frameworks)
                                 {
                                     // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
                                     // This is because these tests try to load the WAF.
@@ -696,7 +731,7 @@ partial class Build
                                     // - The native tracer must be side-by-side with the running dll
                                     // As this is a managed-only unit test, the native tracer _must_ be in the root folder
                                     // For simplicity, we just copy all the native dlls there
-                                    var dest = testBinFolder / fmk;
+                                    var dest = testBinFolder / framework;
 
                                     // use the files from the monitoring native folder
                                     CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
@@ -938,7 +973,9 @@ partial class Build
         .Executes(() =>
         {
             // extract debug info from everything in monitoring home and copy it to the linux symbols directory
-            var files = MonitoringHomeDirectory.GlobFiles("linux-*/*.so");
+            // except libdatadog since debug symbols are already stripped as part of libdatadog release.
+            var files = MonitoringHomeDirectory.GlobFiles("linux-*/*.so")
+                .Where(file => !Path.GetFileName(file).Contains("libdatadog_profiling.so"));
 
             foreach (var file in files)
             {
@@ -1263,6 +1300,7 @@ partial class Build
         .After(CompileManagedSrc)
         .After(BuildRunnerTool)
         .DependsOn(CopyNativeFilesForAppSecUnitTests)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CompileManagedTestHelpers)
         .Executes(() =>
         {
@@ -2841,7 +2879,7 @@ partial class Build
             .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));
     }
 
-    
+
     private async Task<string> GetVcpkg()
     {
         var vcpkgFilePath = string.Empty;
