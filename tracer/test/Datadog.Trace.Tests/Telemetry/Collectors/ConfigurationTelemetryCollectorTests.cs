@@ -255,7 +255,7 @@ public class ConfigurationTelemetryCollectorTests
             Environment.SetEnvironmentVariable("DD_INJECT_FORCE", "true");
 
             var collector = new ConfigurationTelemetry();
-            var source = new NameValueConfigurationSource(new NameValueCollection{});
+            var source = new NameValueConfigurationSource(new NameValueCollection());
             _ = new ImmutableTracerSettings(new TracerSettings(source, collector));
             _ = new SecuritySettings(source, collector);
             var data = collector.GetData();
