@@ -84,21 +84,15 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         var ciValues = testOptimization.CIValues;
         _repositoryUrl = ciValues.Repository ?? string.Empty;
         _commitSha = ciValues.Commit ?? string.Empty;
-        if (ciValues.Branch is { Length: > 0 } branch)
+        _branchName = ciValues switch
         {
             // we try to get the branch name
-            _branchName = branch;
-        }
-        else if (ciValues.Tag is { Length: > 0 } tag)
-        {
+            { Branch: { Length: > 0 } branch } => branch,
             // if not we try to use the tag (checkout over a tag)
-            _branchName = tag;
-        }
-        else
-        {
+            { Tag: { Length: > 0 } tag } => tag,
             // if is still empty we assume the customer just used a detached HEAD
-            _branchName = "auto:git-detached-head";
-        }
+            _ => "auto:git-detached-head"
+        };
     }
 
     public static ITestOptimizationClient Create(string workingDirectory, ITestOptimization testOptimization)
