@@ -260,8 +260,8 @@ public class ConfigurationTelemetryCollectorTests
             _ = new SecuritySettings(source, collector);
             var data = collector.GetData();
             GetLatestValueFromConfig(data, "ssi_injection_enabled", ConfigurationOrigins.Default).Should().Be("tracer");
-            GetLatestValueFromConfig(data, "instrumentation_source", ConfigurationOrigins.Default).Should().Be("ssi");
             GetLatestValueFromConfig(data, "ssi_forced_injection_enabled", ConfigurationOrigins.Default).Should().Be("true");
+            GetLatestValueFromConfig(data, "instrumentation_source", ConfigurationOrigins.Default).Should().Be("ssi");
         }
         finally
         {
