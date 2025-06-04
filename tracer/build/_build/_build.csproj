@@ -57,6 +57,7 @@
   <ItemGroup>
     <Content Include="..\..\..\.azure-pipelines\steps\*" Link="ci\steps\%(Filename)%(Extension)" />
     <Content Include="..\..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
+    <Content Include="..\..\..\.azure-pipelines\noop-pipeline.yml" Link="ci\noop-pipeline.yml" />
     <Content Include="..\..\..\.gitlab\*" Link="ci\.gitlab\%(Filename)%(Extension)" />
     <Content Include="..\..\..\.gitlab\benchmarks\*" Link="ci\.gitlab\benchmarks\%(Filename)%(Extension)" />
     <Content Include="..\..\build_in_docker.sh" Link="boot\build_in_docker.sh" />
