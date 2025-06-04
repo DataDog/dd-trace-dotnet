@@ -80,7 +80,16 @@ internal class TraceExporter : SafeHandle, IApi
 
     protected override bool ReleaseHandle()
     {
-        NativeInterop.Exporter.Free(handle);
+        try
+        {
+            NativeInterop.Exporter.Free(handle);
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "An error occurred while releasing the handle for TraceExporter.");
+            return false;
+        }
+
         return true;
     }
 }
