@@ -7,6 +7,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -15,6 +16,8 @@ namespace Datadog.Trace.LibDatadog;
 /// </summary>
 internal class TraceExporterConfiguration : SafeHandle
 {
+    private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<TraceExporterConfiguration>();
+
     private IntPtr _telemetryConfigPtr;
 
     public TraceExporterConfiguration()
@@ -156,7 +159,15 @@ internal class TraceExporterConfiguration : SafeHandle
             _telemetryConfigPtr = IntPtr.Zero;
         }
 
-        NativeInterop.Config.Free(handle);
+        try
+        {
+            NativeInterop.Config.Free(handle);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "An error occurred while releasing the handle for TraceExporterConfiguration.");
+        }
+
         return true;
     }
 }
