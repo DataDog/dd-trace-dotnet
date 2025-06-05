@@ -34,13 +34,13 @@ namespace Datadog.Trace.Util
             return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
         }
 
-        public static string? GetCleanUriPath(Uri uri)
+        public static string GetCleanUriPath(Uri uri)
             => GetCleanUriPath(uri.AbsolutePath);
 
-        public static string? GetCleanUriPath(Uri uri, string virtualPathToRemove)
+        public static string GetCleanUriPath(Uri uri, string virtualPathToRemove)
             => GetCleanUriPath(uri.AbsolutePath, virtualPathToRemove);
 
-        public static string? GetCleanUriPath(string? absolutePath)
+        public static string GetCleanUriPath(string? absolutePath)
             => GetCleanUriPath(absolutePath, null);
 
         /// <summary>
@@ -49,11 +49,11 @@ namespace Datadog.Trace.Util
         /// <param name="absolutePath">The path to clean</param>
         /// <param name="virtualPathToRemove">The optional virtual path to remove from the front of the path</param>
         /// <returns>The cleaned path</returns>
-        public static string? GetCleanUriPath(string? absolutePath, string? virtualPathToRemove)
+        public static string GetCleanUriPath(string? absolutePath, string? virtualPathToRemove)
         {
             if (absolutePath is null || absolutePath == string.Empty || (absolutePath.Length == 1 && absolutePath[0] == '/'))
             {
-                return absolutePath;
+                return absolutePath ?? string.Empty;
             }
 
             if (!string.IsNullOrEmpty(virtualPathToRemove) && string.Equals(absolutePath, virtualPathToRemove))
@@ -231,9 +231,6 @@ namespace Datadog.Trace.Util
                 return baseUri ?? string.Empty;
             }
 
-            // If the baseUri ends with a slash, we can just append the relativePath
-            // If the relativePath starts with a slash, we can just append it to the baseUri
-            // Otherwise, we need to add a slash between them
             return relativePath.StartsWith("/")
                 ? $"{baseUri.TrimEnd('/')}{relativePath}"
                 : $"{baseUri.TrimEnd('/')}/{relativePath.TrimStart('/')}";
