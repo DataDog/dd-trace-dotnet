@@ -920,8 +920,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.8.3",
-        "maxVersionAvailableInclusive": "3.8.3",
+        "maxVersionSupportedInclusive": "3.9.1",
+        "maxVersionAvailableInclusive": "3.9.1",
         "maxVersionTestedInclusive": null
       }
     ]
