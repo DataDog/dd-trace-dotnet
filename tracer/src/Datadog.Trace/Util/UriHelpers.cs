@@ -5,6 +5,8 @@
 
 using System;
 
+#nullable enable
+
 namespace Datadog.Trace.Util
 {
     internal static class UriHelpers
@@ -32,13 +34,13 @@ namespace Datadog.Trace.Util
             return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
         }
 
-        public static string GetCleanUriPath(Uri uri)
+        public static string? GetCleanUriPath(Uri uri)
             => GetCleanUriPath(uri.AbsolutePath);
 
-        public static string GetCleanUriPath(Uri uri, string virtualPathToRemove)
+        public static string? GetCleanUriPath(Uri uri, string virtualPathToRemove)
             => GetCleanUriPath(uri.AbsolutePath, virtualPathToRemove);
 
-        public static string GetCleanUriPath(string absolutePath)
+        public static string? GetCleanUriPath(string? absolutePath)
             => GetCleanUriPath(absolutePath, null);
 
         /// <summary>
@@ -47,9 +49,9 @@ namespace Datadog.Trace.Util
         /// <param name="absolutePath">The path to clean</param>
         /// <param name="virtualPathToRemove">The optional virtual path to remove from the front of the path</param>
         /// <returns>The cleaned path</returns>
-        public static string GetCleanUriPath(string absolutePath, string virtualPathToRemove)
+        public static string? GetCleanUriPath(string? absolutePath, string? virtualPathToRemove)
         {
-            if (string.IsNullOrWhiteSpace(absolutePath) || (absolutePath.Length == 1 && absolutePath[0] == '/'))
+            if (absolutePath is null || absolutePath == string.Empty || (absolutePath.Length == 1 && absolutePath[0] == '/'))
             {
                 return absolutePath;
             }
@@ -62,7 +64,8 @@ namespace Datadog.Trace.Util
             // If the virtual path is "/" then we're hosted at the root, so nothing to remove
             // If not, it will be of the form "/myapp", so remove whole thing
             // Make sure we only remove _whole_ segment i.e. /myapp/controller, but not /myappcontroller
-            var hasPrefix = !string.IsNullOrEmpty(virtualPathToRemove)
+            var hasPrefix = virtualPathToRemove is not null
+                         && virtualPathToRemove != string.Empty
                          && virtualPathToRemove != "/"
                          && virtualPathToRemove[0] == '/'
                          && absolutePath.StartsWith(virtualPathToRemove, StringComparison.OrdinalIgnoreCase)
@@ -70,10 +73,10 @@ namespace Datadog.Trace.Util
                          && absolutePath[virtualPathToRemove.Length] == '/';
 
             // Sanitized url will be at worse as long as the original, minus a removed virtual path
-            var maxLength = absolutePath.Length - (hasPrefix ? virtualPathToRemove.Length : 0);
+            var maxLength = absolutePath.Length - (hasPrefix ? virtualPathToRemove?.Length ?? 0 : 0);
             var sb = StringBuilderCache.Acquire(maxLength);
 
-            int previousIndex = hasPrefix ? virtualPathToRemove.Length : 0;
+            int previousIndex = hasPrefix ? virtualPathToRemove?.Length ?? 0 : 0;
             int index;
             int segmentLength;
             int indexOfFileExtension = 0;
@@ -216,13 +219,24 @@ namespace Datadog.Trace.Util
         /// <param name="baseUri">The base <see cref="string"/>, which may or may not end with a <c>/</c>. </param>
         /// <param name="relativePath">The relative path, which may or may not start with a <c>/</c>.</param>
         /// <returns>The combined <see cref="Uri"/></returns>
-        public static string Combine(string baseUri, string relativePath)
-            => baseUri.EndsWith("/")
-                ? (relativePath.StartsWith("/")
-                    ? $"{baseUri.Substring(0, baseUri.Length - 1)}{relativePath}"
-                    : $"{baseUri}{relativePath}")
-                : (relativePath.StartsWith("/")
-                    ? $"{baseUri}{relativePath}"
-                    : $"{baseUri}/{relativePath}");
+        public static string Combine(string? baseUri, string? relativePath)
+        {
+            if (baseUri is null || baseUri == string.Empty)
+            {
+                return relativePath ?? string.Empty;
+            }
+
+            if (relativePath is null || relativePath == string.Empty)
+            {
+                return baseUri ?? string.Empty;
+            }
+
+            // If the baseUri ends with a slash, we can just append the relativePath
+            // If the relativePath starts with a slash, we can just append it to the baseUri
+            // Otherwise, we need to add a slash between them
+            return relativePath.StartsWith("/")
+                ? $"{baseUri.TrimEnd('/')}{relativePath}"
+                : $"{baseUri.TrimEnd('/')}/{relativePath.TrimStart('/')}";
+        }
     }
 }

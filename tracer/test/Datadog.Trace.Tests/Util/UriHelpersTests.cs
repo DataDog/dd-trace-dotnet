@@ -102,9 +102,12 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("http://localhost/some/", "path")]
         [InlineData("http://localhost/some", "/path")]
         [InlineData("http://localhost/some/", "/path")]
-        public void CombineString_ShouldMergeCorrectly(string baseUri, string relativePath)
+        [InlineData(null, "some/path", "some/path")]
+        [InlineData("http://localhost/some/path", null)]
+        [InlineData(null, null, "")]
+        public void CombineString_ShouldMergeCorrectly(string baseUri, string relativePath, string result = "http://localhost/some/path")
         {
-            Trace.Util.UriHelpers.Combine(baseUri, relativePath).Should().Be("http://localhost/some/path");
+            Trace.Util.UriHelpers.Combine(baseUri, relativePath).Should().Be(result);
         }
 
         [Theory]
@@ -116,9 +119,10 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("http://localhost/some/", "path")]
         [InlineData("http://localhost/some", "/path")]
         [InlineData("http://localhost/some/", "/path")]
-        public void CombineString_ShouldMergeAbsolutePathCorrectly(string baseUri, string relativePath)
+        [InlineData("http://localhost/some/path", null)]
+        public void CombineString_ShouldMergeAbsolutePathCorrectly(string baseUri, string relativePath, string result = "/some/path")
         {
-            Trace.Util.UriHelpers.Combine(new Uri(baseUri).AbsolutePath, relativePath).Should().Be("/some/path");
+            Trace.Util.UriHelpers.Combine(new Uri(baseUri).AbsolutePath, relativePath).Should().Be(result);
         }
     }
 }

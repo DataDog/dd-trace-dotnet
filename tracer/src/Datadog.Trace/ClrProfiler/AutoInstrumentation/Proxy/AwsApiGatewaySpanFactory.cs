@@ -24,7 +24,7 @@ internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
     {
         try
         {
-            var resourceUrl = UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
+            var resourceUrl = UriHelpers.GetCleanUriPath(data.Path)?.ToLowerInvariant();
 
             var tags = new InferredProxyTags
             {
