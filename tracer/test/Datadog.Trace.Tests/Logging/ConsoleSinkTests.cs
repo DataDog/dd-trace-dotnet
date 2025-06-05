@@ -32,7 +32,8 @@ public class ConsoleSinkTests
 
         logger.Dispose();
 
-        var strings = sw.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+        var strings = sw.ToString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+
         strings.Should()
                .HaveCount(100)
                .And.OnlyHaveUniqueItems()
