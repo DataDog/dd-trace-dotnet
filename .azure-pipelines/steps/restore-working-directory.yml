@@ -4,10 +4,9 @@ parameters:
     default: 'build-windows-working-directory'
 
 steps:
-- task: DownloadPipelineArtifact@2
-  displayName: Download working dir
-  inputs:
+- template: download-artifact.yml
+  parameters:
     artifact: ${{ parameters.artifact }}
     patterns: "**/@(bin|obj|packages)/**"
     path: $(System.DefaultWorkingDirectory)
-  retryCountOnTaskFailure: 5
+    retryCountOnTaskFailure: 5

@@ -34,8 +34,13 @@ public class SpanContextExtractorExtractIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TCarrier, TAction>(TTarget instance, in TCarrier carrier, in TAction getter)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Extract);
+
+        // we can't trust that the customer honours the nullable reference types here,
+        // so we wrap the method in a try/catch and ensure we always return non-null
         var extract = (Func<TCarrier, string, IEnumerable<string?>>)(object)getter!;
-        var extracted = SpanContextExtractor.ExtractInternal(carrier, extract);
+        var extractor = new SafeExtractor<TCarrier>(extract);
+
+        var extracted = SpanContextExtractor.ExtractInternal(carrier, extractor.SafeExtract);
         return new CallTargetState(scope: null, state: extracted);
     }
 

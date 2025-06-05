@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             if (!EnvironmentTools.IsWindows())
             {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+                throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
             EnvironmentHelper.EnableWindowsNamedPipes();
@@ -228,6 +228,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task Telemetry_SendsMetrics()
         {
+            // telemetry metric events under test are sent only when using managed trace exporter
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, "false");
+
             using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 

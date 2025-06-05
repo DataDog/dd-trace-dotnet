@@ -3,9 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Diagnostics.Runtime;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Debugger.IntegrationTests.Assertions;
 
@@ -16,7 +20,15 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Assertions;
 /// </summary>
 internal static class DumpHeapLive
 {
-    public static Dictionary<string, (int Live, int Disposed)> GetLiveObjectsByTypes(Process process)
+    public static async Task<Dictionary<string, (int Live, int Disposed)>> GetLiveObjectsByTypes(Process process, ITestOutputHelper output, TimeSpan timeout)
+    {
+        using var cts = new CancellationTokenSource(timeout);
+
+        // Run the task in a backgroun thread, and wait for it to complete or timeout.
+        return await Task.Run(() => GetLiveObjectsByTypes(process, output, cts.Token), cts.Token);
+    }
+
+    private static Dictionary<string, (int Live, int Disposed)> GetLiveObjectsByTypes(Process process, ITestOutputHelper output, CancellationToken ct)
     {
         var objCountByType = new Dictionary<string, (int Live, int Disposed)>();
         if (process.HasExited)
@@ -24,18 +36,39 @@ internal static class DumpHeapLive
             throw new MemoryAssertionException("Process has exited", string.Empty);
         }
 
+        output?.WriteLine($"Creating snapshot of process ID {process.Id}");
         using var target = DataTarget.CreateSnapshotAndAttach(process.Id);
+        if (ct.IsCancellationRequested)
+        {
+            throw new OperationCanceledException();
+        }
+
+        output?.WriteLine("Snapshot complete, analyzing heap...");
         var heap = target.ClrVersions[0].CreateRuntime().Heap;
         var considered = new ObjectSet(heap);
         var eval = new Stack<ulong>();
 
+        var rootCount = 0;
         foreach (var root in heap.EnumerateRoots())
         {
+            rootCount++;
             eval.Push(root.Object);
         }
 
+        output?.WriteLine($"Found {rootCount} roots in the heap");
+        var evalsComplete = 0;
         while (eval.Count > 0)
         {
+            if (ct.IsCancellationRequested)
+            {
+                throw new OperationCanceledException();
+            }
+
+            if (evalsComplete % 100 == 0)
+            {
+                output?.WriteLine($"Evaluated {evalsComplete} objects so far, {eval.Count} remaining.");
+            }
+
             var obj = eval.Pop();
             if (considered.Contains(obj))
             {
@@ -71,6 +104,7 @@ internal static class DumpHeapLive
             }
         }
 
+        output?.WriteLine($"Analysis complete, found {objCountByType.Count} object types in the heap");
         return objCountByType;
     }
 

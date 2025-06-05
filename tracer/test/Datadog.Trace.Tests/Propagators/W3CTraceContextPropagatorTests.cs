@@ -118,6 +118,8 @@ namespace Datadog.Trace.Tests.Propagators
                 },
                 false                                                               // Multiple headers should fail
             };
+
+            yield return new object[] { null, false };                              // null values - regression test
         }
 
         public static IEnumerable<string> GetYieldValues(params string[] values)
@@ -1091,6 +1093,12 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
+        public void TryGetSingleRare_ShouldReturnFalse_ForNullValues()
+        {
+            W3CTraceContextPropagator.TryGetSingleRare(null, out _).Should().BeFalse();
+        }
+
+        [Fact]
         public void TryGetSingleRare_ShouldReturnFalse_ForEmptyValues()
         {
             W3CTraceContextPropagator.TryGetSingleRare(Array.Empty<string>(), out _).Should().BeFalse();
@@ -1110,9 +1118,15 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
-        public void TryGetSingle_ShouoldReturnFalse_ForEmptyValeus()
+        public void TryGetSingle_ShouldReturnFalse_ForEmptyValeus()
         {
             W3CTraceContextPropagator.TryGetSingle(Array.Empty<string>(), out _).Should().BeFalse();
+        }
+
+        [Fact]
+        public void TryGetSingle_ShouldReturnFalse_ForNullValeus()
+        {
+            W3CTraceContextPropagator.TryGetSingle(null, out _).Should().BeFalse();
         }
 
         [Theory]

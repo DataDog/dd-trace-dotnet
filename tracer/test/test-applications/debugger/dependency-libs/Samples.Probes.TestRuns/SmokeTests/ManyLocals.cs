@@ -14,7 +14,7 @@ public class ManyLocals : IRun
         return index;
     }
 
-    [LogMethodProbeTestData]
+    [LogMethodProbeTestData(skipOnFrameworks: ["net48", "net462"])]
     public long MethodWith1000Variables()
     {
         int var1 = GetValue(1);

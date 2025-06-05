@@ -7,7 +7,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "70": {
+            "73": {
               "arguments": {
                 "arg": {
                   "type": "Double",
@@ -53,7 +53,7 @@
           "location": {
             "file": "ConditionAndTemplateChangeTest.cs",
             "lines": [
-              "70"
+              "73"
             ]
           },
           "version": 0

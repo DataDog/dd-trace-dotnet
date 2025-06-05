@@ -72,7 +72,7 @@ namespace datadog::shared::nativeloader
         return res;
     }
 
-    HRESULT DynamicInstanceImpl::LoadInstance()
+    HRESULT DynamicInstanceImpl::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
         Log::Debug("DynamicInstanceImpl::LoadInstance");
 

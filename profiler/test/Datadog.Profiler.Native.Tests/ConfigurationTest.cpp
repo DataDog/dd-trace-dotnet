@@ -1228,6 +1228,32 @@ TEST_F(ConfigurationTest, CheckHttpProfilingIsEnabledIfEnvVarIsEnabled)
     ASSERT_THAT(configuration.IsHttpProfilingEnabled(), expectedValue);
 }
 
+TEST_F(ConfigurationTest, CheckHttpProfilingEnabledTakesOverInternal)
+{
+    EnvironmentHelper::EnvironmentVariable ev1(EnvironmentVariables::HttpProfilingEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ev2(EnvironmentVariables::HttpProfilingInternalEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsHttpProfilingEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckHttpProfilingdisabledTakesOverInternal)
+{
+    EnvironmentHelper::EnvironmentVariable ev1(EnvironmentVariables::HttpProfilingEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ev2(EnvironmentVariables::HttpProfilingInternalEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsHttpProfilingEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckInternalHttpProfilingIsTakenIntoAccount)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HttpProfilingInternalEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsHttpProfilingEnabled(), expectedValue);
+}
+
 TEST_F(ConfigurationTest, CheckForceHttpSamplingIsDisabledByDefault)
 {
     auto configuration = Configuration{};

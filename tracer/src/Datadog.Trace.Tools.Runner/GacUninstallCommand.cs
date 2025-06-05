@@ -39,34 +39,52 @@ internal class GacUninstallCommand : CommandWithExamples
             return;
         }
 
-        using var container = NativeMethods.CreateAssemblyCache();
-        var hr = container.AssemblyCache.UninstallAssembly(UninstallAssemblyFlags.None, assemblyName!, IntPtr.Zero, out var position);
+        using var gacMethods = GacNativeMethods.Create();
+        var assemblyCache = gacMethods.CreateAssemblyCache();
 
-        switch (position)
+        var result = Hresult.S_OK;
+        var installedAssemblyNames = gacMethods.GetAssemblyNames(assemblyName!);
+        if (installedAssemblyNames.Count == 0)
         {
-            case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_ALREADY_UNINSTALLED:
-                Utils.WriteWarning($"Assembly '{assemblyName}' was already uninstalled from the GAC.");
-                context.ExitCode = hr;
-                break;
-            case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_REFERENCE_NOT_FOUND:
-                Utils.WriteWarning($"Assembly '{assemblyName}' not found in the GAC.");
-                context.ExitCode = hr;
-                break;
-            case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_STILL_IN_USE:
-                Utils.WriteWarning($"Assembly '{assemblyName}' is still in use.");
-                context.ExitCode = hr;
-                break;
+            Utils.WriteSuccess($"Assembly '{assemblyName}' is not installed in the GAC.");
+            context.ExitCode = 0;
+            return;
         }
 
-        if (hr == 0)
+        foreach (var installedAssemblyName in installedAssemblyNames)
+        {
+            var hr = assemblyCache.UninstallAssembly(UninstallAssemblyFlags.None, installedAssemblyName.Name, IntPtr.Zero, out var position);
+            switch (position)
+            {
+                case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_ALREADY_UNINSTALLED:
+                    Utils.WriteWarning($"Assembly '{installedAssemblyName.FullName}' was already uninstalled from the GAC.");
+                    break;
+                case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_REFERENCE_NOT_FOUND:
+                    Utils.WriteWarning($"Assembly '{installedAssemblyName.FullName}' not found in the GAC.");
+                    break;
+                case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_STILL_IN_USE:
+                    Utils.WriteWarning($"Assembly '{installedAssemblyName.FullName}' is still in use.");
+                    break;
+                case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_HAS_INSTALL_REFERENCES:
+                    Utils.WriteWarning($"Assembly '{installedAssemblyName.FullName}' have not been removed because the side-by-side store contains a reference to the assembly by another application.");
+                    break;
+            }
+
+            if (hr != Hresult.S_OK)
+            {
+                result = hr;
+            }
+        }
+
+        if (result == Hresult.S_OK)
         {
             Utils.WriteSuccess($"Assembly '{assemblyName}' was uninstalled from the GAC successfully.");
         }
         else
         {
-            Utils.WriteError($"Error uninstalling '{assemblyName}' from the GAC. HRESULT={hr}");
+            Utils.WriteError($"Error uninstalling '{assemblyName}' from the GAC. HRESULT={result.ToStringOrHex()}");
         }
 
-        context.ExitCode = hr;
+        context.ExitCode = (int)result;
     }
 }
