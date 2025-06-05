@@ -243,32 +243,20 @@ public class ConfigurationTelemetryCollectorTests
     }
 
     [Fact]
+    [EnvironmentRestorer("DD_INJECTION_ENABLED", "DD_INJECT_FORCE")]
     public void ConfigurationDataShouldReportSSIValues()
     {
-        // Store original variable
-        var originalInjectionEnabled = Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED");
-        var originalInjectionForce = Environment.GetEnvironmentVariable("DD_INJECT_FORCE");
-        // Set environment variable to override
-        try
-        {
-            Environment.SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
-            Environment.SetEnvironmentVariable("DD_INJECT_FORCE", "true");
+        Environment.SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+        Environment.SetEnvironmentVariable("DD_INJECT_FORCE", "true");
 
-            var collector = new ConfigurationTelemetry();
-            var source = new NameValueConfigurationSource(new NameValueCollection());
-            _ = new TracerSettings(source, collector, new OverrideErrorLog());
-            _ = new SecuritySettings(source, collector);
-            var data = collector.GetData();
-            GetLatestValueFromConfig(data, ConfigTelemetryData.SsiInjectionEnabled).Should().Be("tracer");
-            GetLatestValueFromConfig(data, ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled).Should().Be("true");
-            GetLatestValueFromConfig(data, ConfigTelemetryData.InstrumentationSource).Should().Be("ssi");
-        }
-        finally
-        {
-            // Restore original variable
-            Environment.SetEnvironmentVariable("DD_INJECTION_ENABLED", originalInjectionEnabled);
-            Environment.SetEnvironmentVariable("DD_INJECT_FORCE", originalInjectionForce);
-        }
+        var collector = new ConfigurationTelemetry();
+        var source = new NameValueConfigurationSource(new NameValueCollection());
+        _ = new TracerSettings(source, collector, new OverrideErrorLog());
+        _ = new SecuritySettings(source, collector);
+        var data = collector.GetData();
+        GetLatestValueFromConfig(data, ConfigTelemetryData.SsiInjectionEnabled).Should().Be("tracer");
+        GetLatestValueFromConfig(data, ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled).Should().Be("true");
+        GetLatestValueFromConfig(data, ConfigTelemetryData.InstrumentationSource).Should().Be("ssi");
     }
 
 #if NETFRAMEWORK
