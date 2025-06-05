@@ -227,17 +227,18 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            if (!_completionSource.Task.IsCompleted)
-            {
-                try
-                {
-                    await _completionSource.Task.WaitAsync(_waitTimeSpan).ConfigureAwait(false);
-                }
-                catch
-                {
-                    // ignore the exception, it's expected
-                }
-            }
+            await Task.Delay(+_waitTimeSpan).ConfigureAwait(false);
+            // if (!_completionSource.Task.IsCompleted)
+            // {
+            //     try
+            //     {
+            //         await _completionSource.Task.WaitAsync(_waitTimeSpan).ConfigureAwait(false);
+            //     }
+            //     catch
+            //     {
+            //         // ignore the exception, it's expected
+            //     }
+            // }
         }
     }
 
