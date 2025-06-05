@@ -537,7 +537,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
             var samplerMock = new Mock<ITraceSampler>();
 
-            return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: new NoOpStatsd());
+            return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         private static LiveDebugger GetLiveDebugger()
