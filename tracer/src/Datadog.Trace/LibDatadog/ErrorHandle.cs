@@ -7,11 +7,14 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.LibDatadog;
 
 internal class ErrorHandle : SafeHandle
 {
+    private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<ErrorHandle>();
+
     public ErrorHandle()
         : base(IntPtr.Zero, true)
     {
@@ -27,7 +30,15 @@ internal class ErrorHandle : SafeHandle
 
     protected override bool ReleaseHandle()
     {
-        NativeInterop.Exporter.FreeError(handle);
+        try
+        {
+            NativeInterop.Exporter.FreeError(handle);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "An error occurred while releasing the handle for ErrorHandle.");
+        }
+
         return true;
     }
 
