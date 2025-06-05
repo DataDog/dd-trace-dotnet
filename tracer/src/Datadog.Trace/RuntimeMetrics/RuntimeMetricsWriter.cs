@@ -142,8 +142,8 @@ namespace Datadog.Trace.RuntimeMetrics
             // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
 #if NETFRAMEWORK
             _listener?.Dispose();
-            _exceptionCounts.Clear();
 #endif
+            _exceptionCounts.Clear();
             _statsd.Dispose();
         }
 
