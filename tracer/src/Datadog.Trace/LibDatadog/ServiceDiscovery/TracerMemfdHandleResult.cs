@@ -49,45 +49,6 @@ internal struct Error
 }
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct CharSlice
-{
-    public IntPtr Ptr; // const char*
-
-    public nuint Length; // size_t
-
-    public static CharSlice CreateCharSlice(string? str)
-    {
-        if (string.IsNullOrEmpty(str))
-        {
-            return new CharSlice
-            {
-                Ptr = IntPtr.Zero,
-                Length = 0
-            };
-        }
-
-        // Allocate with extra space for alignment
-        var utf8Bytes = Encoding.UTF8.GetBytes(str); // No null-terminator
-        var unmanagedPtr = Marshal.AllocHGlobal(utf8Bytes.Length);
-        Marshal.Copy(utf8Bytes, 0, unmanagedPtr, utf8Bytes.Length);
-
-        return new CharSlice
-        {
-            Ptr = unmanagedPtr,
-            Length = (nuint)utf8Bytes.Length
-        };
-    }
-
-    public static void FreeCharSlice(CharSlice slice)
-    {
-        if (slice.Ptr != IntPtr.Zero)
-        {
-            Marshal.FreeHGlobal(slice.Ptr);
-        }
-    }
-}
-
-[StructLayout(LayoutKind.Sequential)]
 internal struct VecU8
 {
     public IntPtr Ptr; // const uint8_t*

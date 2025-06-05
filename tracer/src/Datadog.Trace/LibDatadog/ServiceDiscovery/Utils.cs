@@ -18,21 +18,22 @@ internal class Utils
         string? serviceEnv,
         string? serviceVersion)
     {
-        var runtimeIdCharSlice = CharSlice.CreateCharSlice(runtimeId);
-        var tracerLanguageCharSlice = CharSlice.CreateCharSlice(tracerLanguage);
-        var tracerVersionCharSlice = CharSlice.CreateCharSlice(tracerVersion);
-        var hostnameCharSlice = CharSlice.CreateCharSlice(hostname);
-        var serviceNameCharSlice = CharSlice.CreateCharSlice(serviceName);
-        var serviceEnvCharSlice = CharSlice.CreateCharSlice(serviceEnv);
-        var serviceVersionCharSlice = CharSlice.CreateCharSlice(serviceVersion);
+        var runtimeIdCharSlice = new CharSlice(runtimeId);
+        var tracerLanguageCharSlice = new CharSlice(tracerLanguage);
+        var tracerVersionCharSlice = new CharSlice(tracerVersion);
+        var hostnameCharSlice = new CharSlice(hostname);
+        var serviceNameCharSlice = new CharSlice(serviceName);
+        var serviceEnvCharSlice = new CharSlice(serviceEnv);
+        var serviceVersionCharSlice = new CharSlice(serviceVersion);
 
         var result = NativeInterop.Common.StoreTracerMetadata(1, runtimeIdCharSlice, tracerLanguageCharSlice, tracerVersionCharSlice, hostnameCharSlice, serviceNameCharSlice, serviceEnvCharSlice, serviceVersionCharSlice);
-        CharSlice.FreeCharSlice(tracerLanguageCharSlice);
-        CharSlice.FreeCharSlice(tracerVersionCharSlice);
-        CharSlice.FreeCharSlice(hostnameCharSlice);
-        CharSlice.FreeCharSlice(serviceNameCharSlice);
-        CharSlice.FreeCharSlice(serviceEnvCharSlice);
-        CharSlice.FreeCharSlice(serviceVersionCharSlice);
+        runtimeIdCharSlice.Dispose();
+        tracerLanguageCharSlice.Dispose();
+        tracerVersionCharSlice.Dispose();
+        hostnameCharSlice.Dispose();
+        serviceNameCharSlice.Dispose();
+        serviceEnvCharSlice.Dispose();
+        serviceVersionCharSlice.Dispose();
         return result;
     }
 }
