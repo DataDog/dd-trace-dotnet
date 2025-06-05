@@ -3,12 +3,13 @@
 
 #include "TimerCreateCpuProfiler.h"
 
-#include "CpuTimeProvider.h"
+#include "RentBasedCpuTimeProvider.h"
 #include "DiscardMetrics.h"
 #include "IManagedThreadList.h"
 #include "Log.h"
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
+#include "IConfiguration.h"
 
 #include <libunwind.h>
 #include <sys/syscall.h> /* Definition of SYS_* constants */
@@ -22,14 +23,12 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IConfiguration* pConfiguration,
     ProfilerSignalManager* pSignalManager,
     IManagedThreadList* pManagedThreadsList,
-    CpuTimeProvider* pProvider,
-    CallstackProvider callstackProvider,
+    RentBasedCpuTimeProvider* pProvider,
     MetricsRegistry& metricsRegistry) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
-    _callstackProvider{std::move(callstackProvider)},
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
@@ -215,38 +214,35 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
     ErrnoSaveAndRestore errnoScope;
 
-    auto callstack = _callstackProvider.Get();
-
-    if (callstack.Capacity() <= 0)
+    auto rawCpuSample = _pProvider->GetRawSample();
+    if (!rawCpuSample)
     {
+        // maybe timedout, maybe space :shrugge: 
+        // keep it for now for a reminder to add a metric
         _discardMetrics->Incr<DiscardReason::UnsufficientSpace>();
         return false;
     }
 
-    auto buffer = callstack.Data();
+    auto buffer = rawCpuSample->Stack.AsView();
     auto* context = reinterpret_cast<unw_context_t*>(ctx);
     auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
-    callstack.SetCount(count);
+    rawCpuSample->Stack.SetCount(count);
 
     if (count == 0)
     {
+        rawCpuSample.Discard();
         _discardMetrics->Incr<DiscardReason::EmptyBacktrace>();
         return false;
     }
 
-    RawCpuSample rawCpuSample;
-
     // TO FIX this breaks the CI Visibility.
     // No Cpu samples will have the predefined span id, root local span id
-    std::tie(rawCpuSample.LocalRootSpanId, rawCpuSample.SpanId) = threadInfo->GetTracingContext();
+    std::tie(rawCpuSample->LocalRootSpanId, rawCpuSample->SpanId) = threadInfo->GetTracingContext();
 
-    rawCpuSample.Timestamp = OpSysTools::GetTimestampSafe();
-    rawCpuSample.AppDomainId = threadInfo->GetAppDomainId();
-    rawCpuSample.Stack = std::move(callstack);
-    rawCpuSample.ThreadInfo = std::move(threadInfo);
-    rawCpuSample.Duration = _samplingInterval;
-    _pProvider->Add(std::move(rawCpuSample));
-
+    rawCpuSample->Timestamp = OpSysTools::GetTimestampSafe();
+    rawCpuSample->AppDomainId = threadInfo->GetAppDomainId();
+    rawCpuSample->ThreadInfo = std::move(threadInfo);
+    rawCpuSample->Duration = _samplingInterval;
     return true;
 }
 
