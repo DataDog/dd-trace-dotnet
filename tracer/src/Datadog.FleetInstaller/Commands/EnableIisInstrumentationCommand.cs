@@ -50,6 +50,19 @@ internal class EnableIisInstrumentationCommand : CommandBase
     {
         log.WriteInfo("Enabling IIS instrumentation for .NET tracer");
 
+        // We can't use the IIS app-host based instrumentation if IIS is not available or is to low a version
+        if (HasValidIIsVersion(out var errorMessage))
+        {
+            return SetVariablesInIisAppHost(log, tracerValues);
+        }
+
+        // As a fallback, we set the environment variables in the registry for IIS, in case it's enabled later
+        log.WriteWarning(errorMessage);
+        return SetFallbackVariables(log, tracerValues);
+    }
+
+    private static ReturnCode SetVariablesInIisAppHost(ILogger log, TracerValues tracerValues)
+    {
         bool tryIisRollback;
 
         try
@@ -98,17 +111,33 @@ internal class EnableIisInstrumentationCommand : CommandBase
         return ReturnCode.Success;
     }
 
+    private static ReturnCode SetFallbackVariables(ILogger log, TracerValues tracerValues)
+    {
+        try
+        {
+            log.WriteInfo("Setting fallback environment variables in the registry for IIS instrumentation");
+            // We _could_ do the whole "retrieve existing env vars and reinstall if this fails" dance
+            // but given this should be very unlikely, we'll just set the values directly for now.
+            if (RegistryHelper.SetIisRegistrySettings(log, tracerValues, Defaults.IisW3SvcRegistryKey, Defaults.IisWasRegistryKey))
+            {
+                log.WriteInfo("Successfully set fallback environment variables in the registry for IIS instrumentation");
+                return ReturnCode.Success;
+            }
+
+            log.WriteError("Failed to set fallback environment variables in the registry for IIS instrumentation");
+            return ReturnCode.ErrorSettingIisFallbackVariables;
+        }
+        catch (Exception ex)
+        {
+            log.WriteError(ex, "Error reading IIS app pools, installation failed");
+            return ReturnCode.ErrorReadingIisConfiguration;
+        }
+    }
+
     private void Validate(CommandResult commandResult)
     {
         if (!IsValidEnvironment(commandResult))
         {
-            return;
-        }
-
-        // We can't enable iis instrumentation if IIS is not available or is to low a version
-        if (!HasValidIIsVersion(out var errorMessage))
-        {
-            commandResult.ErrorMessage = errorMessage;
             return;
         }
 

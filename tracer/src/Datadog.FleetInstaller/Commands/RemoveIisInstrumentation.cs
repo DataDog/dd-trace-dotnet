@@ -40,14 +40,7 @@ internal class RemoveIisInstrumentation : CommandBase
     {
         log.WriteInfo("Removing IIS instrumentation for .NET tracer");
 
-        if (!HasValidIIsVersion(out var errorMessage))
-        {
-            // IIS isn't available, weird because it means they removed it _after_ successfully installing the product
-            // but whatever, there's no variables there if that's the case!
-            Log.Instance.WriteInfo(errorMessage);
-            Log.Instance.WriteInfo("Unable to uninstall from IIS, skipping IIS removal and continuing");
-        }
-        else
+        if (HasValidIIsVersion(out var errorMessage))
         {
             // Remove the tracer references
             if (!AppHostHelper.RemoveAllEnvironmentVariables(log))
@@ -56,6 +49,18 @@ internal class RemoveIisInstrumentation : CommandBase
                 // but probably don't want to do anything else if we couldn't remove the variables,
                 // as apps may fail
                 return ReturnCode.ErrorRemovingAppPoolVariables;
+            }
+        }
+        else
+        {
+            Log.Instance.WriteInfo(errorMessage);
+            log.WriteInfo("Removing fallback environment variables in the registry for IIS instrumentation");
+
+            // We probably did a fallback install into the IIS registry keys, so lets remove those
+            if (!RegistryHelper.RemoveIisRegistrySettings(log, Defaults.IisW3SvcRegistryKey, Defaults.IisWasRegistryKey))
+            {
+                log.WriteError("Failed to remove fallback environment variables in the registry for IIS instrumentation");
+                return ReturnCode.ErrorRemovingIisFallbackVariables;
             }
         }
 

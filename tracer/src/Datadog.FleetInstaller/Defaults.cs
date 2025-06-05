@@ -11,6 +11,8 @@ namespace Datadog.FleetInstaller;
 internal class Defaults
 {
     public const string CrashTrackingRegistryKey = @"Software\Microsoft\Windows\Windows Error Reporting\RuntimeExceptionHelperModules";
+    public const string IisW3SvcRegistryKey = @"System\CurrentControlSet\Services\W3SVC";
+    public const string IisWasRegistryKey = @"System\CurrentControlSet\Services\WAS";
     public const string InstrumentationInstallTypeKey = "DD_INSTRUMENTATION_INSTALL_TYPE";
     public const string InstrumentationInstallTypeValue = "windows_fleet_installer";
 
