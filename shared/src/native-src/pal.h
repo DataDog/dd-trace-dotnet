@@ -135,7 +135,6 @@ inline WSTRING GetCurrentProcessName()
     else
     {
         // If readlink fails, fallback to /proc/self/cmdline
-        // Fallback to cmdline if readlink fails
         std::ifstream cmdline("/proc/self/cmdline");
         if (cmdline)
         {
