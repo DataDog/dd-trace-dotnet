@@ -237,6 +237,7 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.AgentUri, $"http://127.0.0.1:{agent.Port}" },
                     { ConfigurationKeys.TracerMetricsEnabled, tracerMetricsEnabled },
                     { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                    { ConfigurationKeys.TraceDataPipelineEnabled, false },
                 });
 
                 await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);

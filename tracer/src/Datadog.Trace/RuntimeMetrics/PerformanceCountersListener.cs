@@ -135,7 +135,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 // Catching error UnauthorizedAccessException: Access to the registry key 'Global' is denied.
                 // The 'Global' part seems consistent across localizations
 
-                Log.Error(ex, InsufficientPermissionsMessageTemplate);
+                Log.ErrorSkipTelemetry(ex, InsufficientPermissionsMessageTemplate);
                 throw;
             }
             catch (Exception ex)

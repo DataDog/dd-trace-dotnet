@@ -4,17 +4,14 @@ parameters:
     default: ''
 
 steps:
-- task: DownloadPipelineArtifact@2
-  displayName: Download standalone samples
-  inputs:
+- template: download-artifact.yml
+  parameters:
     artifact: samples-standalone
     path: $(outputDir)/bin
-  retryCountOnTaskFailure: 5
 
 - ${{ if ne(parameters.framework, '') }}:
-  - task: DownloadPipelineArtifact@2
-    displayName: Download multi-version samples
-    inputs:
+  - template: download-artifact.yml
+    parameters:
       artifact: samples-multi-version-${{ parameters.framework }}
       path: $(outputDir)/publish
-    retryCountOnTaskFailure: 5
+      retryCountOnTaskFailure: 5

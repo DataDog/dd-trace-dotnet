@@ -30,7 +30,6 @@ public class LogEntryWatcher : IDisposable
         var logPath = logDirectory ?? DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance);
         _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
         _readers = new();
-
         var dir = new DirectoryInfo(logPath);
         var lastFile = dir
                       .GetFiles(logFilePattern)
@@ -41,7 +40,6 @@ public class LogEntryWatcher : IDisposable
         {
             var reader = OpenStream(lastFile.FullName);
             reader.ReadToEnd();
-
             _readers.Enqueue(reader);
         }
 

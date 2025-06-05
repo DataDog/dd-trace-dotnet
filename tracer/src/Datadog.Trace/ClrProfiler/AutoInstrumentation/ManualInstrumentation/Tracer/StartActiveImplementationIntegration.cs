@@ -40,9 +40,7 @@ public class StartActiveImplementationIntegration
 
         if (instance.AutomaticTracer is not Datadog.Trace.Tracer tracer)
         {
-            Log.Error(
-                "Error: instance.AutomaticTracer is not a Datadog.Trace.Tracer: {TracerType}. This should never happen, and indicates a problem with automatic instrumentation.",
-                instance.AutomaticTracer?.GetType());
+            LogInvalidAutomaticTracer(instance.AutomaticTracer);
             return CallTargetState.GetDefault();
         }
 
@@ -64,5 +62,28 @@ public class StartActiveImplementationIntegration
                             ? scope.DuckCast<TReturn>()
                             : returnValue;
         return new CallTargetReturn<TReturn>(duckScope);
+    }
+
+    internal static void LogInvalidAutomaticTracer(object? autoTracer)
+    {
+        try
+        {
+            // Throwing and catching to grab to call stack and redact it for telemetry
+            throw new Exception("instance.AutomaticTracer was not a Datadog.Trace.Tracer");
+        }
+        catch (Exception ex)
+        {
+            if (autoTracer is null)
+            {
+                Log.Error(ex, "Error: instance.AutomaticTracer is null. This should never happen, and indicates a problem with automatic instrumentation.");
+            }
+            else
+            {
+                Log.Error(
+                    ex,
+                    "Error: instance.AutomaticTracer is not a Datadog.Trace.Tracer: {TracerType}. This should never happen, and indicates a problem with automatic instrumentation.",
+                    autoTracer.GetType());
+            }
+        }
     }
 }

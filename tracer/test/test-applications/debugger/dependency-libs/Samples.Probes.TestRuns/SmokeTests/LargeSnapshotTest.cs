@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogLineProbeTestData(lineNumber: 20, skipOnFrameworks: new[] { "net5.0", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"})]
+    [LogLineProbeTestData(lineNumber: 20, skipOnFrameworks: new[] { "net7.0", "net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"})]
     public class LargeSnapshotTest : IRun
     {
         public void Run()

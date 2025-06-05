@@ -19,6 +19,8 @@
     <tags>Datadog APM tracing profiling instrumentation trimming</tags>
     <repository type="git" url="https://github.com/DataDog/dd-trace-dotnet.git" />
     <dependencies>
+      <group targetFramework="net9.0" />
+      <group targetFramework="net8.0" />
       <group targetFramework="net7.0" />
       <group targetFramework="net6.0" />
       <group targetFramework="net5.0" />

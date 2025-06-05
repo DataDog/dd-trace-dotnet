@@ -54,6 +54,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.ServiceVersion, "v1" },
                 { ConfigurationKeys.Environment, "test" },
                 { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+                { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
             });
 
             var discovery = DiscoveryService.Create(settings.Exporter);
@@ -198,6 +199,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.ServiceVersion, "v1" },
                 { ConfigurationKeys.Environment, "test" },
                 { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+                { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
             });
 
             var discovery = DiscoveryService.Create(settings.Exporter);
@@ -356,6 +358,7 @@ namespace Datadog.Trace.IntegrationTests
                         { ConfigurationKeys.ServiceVersion, "V" },
                         { ConfigurationKeys.Environment, "Test" },
                         { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+                        { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
                     }));
 
             var discovery = DiscoveryService.Create(settings.Exporter);

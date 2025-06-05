@@ -200,10 +200,38 @@ internal static class DebuggerTestHelper
 
     private static ProbeDefinition WithLineProbeWhere(this ProbeDefinition snapshot, Type type, LineProbeTestDataAttribute line)
     {
+        DatadogMetadataReader.DatadogSequencePoint[] sequencePoints = null;
         using var reader = DatadogMetadataReader.CreatePdbReader(type.Assembly);
-        var sequencePoints = reader?.GetMethodSequencePoints(type.GetMethods().First().MetadataToken);
-        var filePath = sequencePoints?.First().URL;
-        var where = new Where { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
+        if (reader is not { IsPdbExist: true })
+        {
+            throw new Exception($"Can't find pdb file for type: {type.FullName}");
+        }
+
+        foreach (var method in type.GetMethods())
+        {
+            sequencePoints = reader.GetMethodSequencePoints(method.MetadataToken);
+            if (sequencePoints != null && sequencePoints.Any(sp => !string.IsNullOrEmpty(sp.URL)))
+            {
+                break;
+            }
+        }
+
+        var sourceFile = sequencePoints?.FirstOrDefault(sp => !string.IsNullOrEmpty(sp.URL)).URL;
+        if (sequencePoints == null || string.IsNullOrEmpty(sourceFile))
+        {
+            var pdbReaderType = reader.PdbReader != null ? "System.Reflection.Metadata" : "dnlib";
+            var foundedSequencePoints = sequencePoints?
+                                      .Where(sp => !sp.IsHidden)
+                                      .Select(sp => new { sp.StartLine, sp.EndLine, sp.StartColumn, sp.EndColumn })
+                                       .ToList();
+            var foundedSequencePointsMessage = foundedSequencePoints is { Count: > 0 }
+                                                   ? $"Sequence points found for type:{Environment.NewLine}{string.Join(Environment.NewLine, foundedSequencePoints)}"
+                                                   : "No sequence points for type.";
+
+            throw new Exception($"Can't find source file of type {type.FullName} for line probe using {pdbReaderType} PDB reader, reading {reader.PdbFullPath} file.{Environment.NewLine}{foundedSequencePointsMessage}");
+        }
+
+        var where = new Where { SourceFile = sourceFile, Lines = [line.LineNumber.ToString()] };
         snapshot.Where = where;
         return snapshot;
     }

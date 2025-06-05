@@ -215,8 +215,8 @@
 
     <!-- Integration: Microsoft.Extensions.Telemetry -->
     <!--    Assembly: Microsoft.Extensions.Telemetry -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/9.4.0 -->
-    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="9.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/9.5.0 -->
+    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="9.5.0" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.TestFramework -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.TestFramework -->

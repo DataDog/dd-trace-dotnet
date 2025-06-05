@@ -255,6 +255,64 @@ internal class Program
             {
                 s1.Span.ServiceName = Tracer.Instance.DefaultServiceName;
                 await SendHttpRequest("CustomContext");
+
+                // Test injection
+                Dictionary<string, List<string>> headers = new();
+                new SpanContextInjector().Inject(
+                    headers,
+                    setter: (dict, key, value) => headers[key] = new List<string> { value },
+                    s1.Span.Context);
+                var context = new SpanContextExtractor().Extract(
+                    headers,
+                    getter: (dict, key) => dict.TryGetValue(key, out var values) ? values : Enumerable.Empty<string>());
+
+                Expect(context is not null, "Extracted context should not be null");
+                Expect(s1.Span.Context.SpanId == context?.SpanId, "SpanId should be extracted");
+                Expect(s1.Span.Context.TraceId == context?.TraceId, "TraceId should be extracted");
+
+                // Test DSM injection
+                Dictionary<string, List<string>> dsmHeaders = new();
+                new SpanContextInjector().InjectIncludingDsm(
+                    dsmHeaders,
+                    setter: (dict, key, value) => dsmHeaders[key] = new List<string> { value },
+                    s1.Span.Context,
+                    "messageType",
+                    "messageId");
+                var dsmContext = new SpanContextExtractor().ExtractIncludingDsm(
+                    dsmHeaders,
+                    getter: (dict, key) => dict.TryGetValue(key, out var values) ? values : Enumerable.Empty<string>(),
+                    "messageType",
+                    "messageId");
+                Expect(dsmContext is not null, "Extracted context should not be null");
+                Expect(s1.Span.Context.SpanId == dsmContext?.SpanId, "SpanId should be extracted");
+                Expect(s1.Span.Context.TraceId == dsmContext?.TraceId, "TraceId should be extracted");
+
+                // Test that we handle incorrect (null returning) implementations
+                var nullContext1 = new SpanContextExtractor().Extract(
+                    headers,
+                    getter: (dict, key) => null); // Always return null
+                Expect(nullContext1 is null, "Extracted context should be null");
+
+                var nullContext2 = new SpanContextExtractor().ExtractIncludingDsm(
+                    dsmHeaders,
+                    getter: (dict, key) => null, // Always return null
+                    "messageType",
+                    "messageId");
+                Expect(nullContext2 is null, "Extracted context should be null");
+
+                // Exceptions thrown in the faulty injector/extractor will not bubble up
+                // as they're caught in the integration, but they will write error logs if we don't handle them
+                // so will be caught in the CheckLogsForErrors stage in CI.
+                new SpanContextInjector().Inject(
+                    headers,
+                    setter: (dict, key, value) => throw new Exception("Throwing exception that should be ignored"),
+                    s1.Span.Context);
+                new SpanContextInjector().InjectIncludingDsm(
+                    headers,
+                    setter: (dict, key, value) => throw new Exception("Throwing exception that should be ignored"),
+                    s1.Span.Context,
+                    "messageType",
+                    "messageId");
             }
 
             // Manually disable debug logs

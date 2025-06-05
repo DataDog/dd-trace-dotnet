@@ -82,7 +82,9 @@ namespace Datadog.Trace.Security.Unit.Tests
             var securityCoordinator = TryGet(AppSec.Security.Instance, rootTestScope.Span);
             securityCoordinator.HasValue.Should().BeTrue();
 
-            var result = new Result(new DdwafResultStruct(), WafReturnCode.Match, 0, 0);
+            var nativeResult = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
+            ulong duration = 0;
+            var result = new Result(ref nativeResult, WafReturnCode.Match, ref duration, 0);
             securityCoordinator.Value.Reporter.TryReport(result, true);
 
             rootTestScope.Span.Tags.GetTag(Tags.AppSecBlocked).Should().Be("true");

@@ -16,7 +16,9 @@ ENUM_FLAGS(RuntimeProfiler, size_t)
     LockContention = 16,
     GC = 32,
     Heap = 64,
-    Network = 128 // TODO: should it be renamed "Http"?
+    Network = 128, // TODO: should it be renamed "Http"?
+    CpuGc = 256,
+    ThreadsLifetime = 512,
 };
 
 class IEnabledProfilers

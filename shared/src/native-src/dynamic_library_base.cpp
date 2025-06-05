@@ -93,7 +93,7 @@ bool DynamicLibraryBase::Load()
 
 bool DynamicLibraryBase::Unload()
 {
-    _logger->Debug("Unloading ", _filePath);
+    _logger->Debug("Unload");
     if (_instance == nullptr)
     {
         _logger->Warn("Unload: Unable to unload dynamic library '", _filePath,

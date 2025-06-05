@@ -121,6 +121,8 @@ namespace datadog::shared::nativeloader
         const auto process_name = ::shared::GetCurrentProcessName();
         Log::Debug("ProcessName: ", process_name);
 
+        Log::Debug("CorProfiler::Initialize");
+
         const auto& include_process_names = GetEnvironmentValues(EnvironmentVariables::IncludeProcessNames);
 
         // if there is a process inclusion list, attach clrprofiler only if this
@@ -254,35 +256,24 @@ namespace datadog::shared::nativeloader
             return E_FAIL;
         }
 
-        if (m_dispatcher == nullptr)
-        {
-            Log::Error("Dispatcher is not set.");
-            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
-            return E_FAIL;
-        }
-
-        if (FAILED(m_dispatcher->Initialize()))
-        {
-            Log::Error("Error initializing the dispatcher.");
-            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
-            return E_FAIL;
-        }
-
         //
         // Get and set profiler pointers
         //
+        if (m_dispatcher == nullptr)
+        {
+            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
+            return E_FAIL;
+        }
         IDynamicInstance* cpInstance = m_dispatcher->GetContinuousProfilerInstance();
         if (cpInstance != nullptr)
         {
             m_cpProfiler = cpInstance->GetProfilerCallback();
         }
-
         IDynamicInstance* tracerInstance = m_dispatcher->GetTracerInstance();
         if (tracerInstance != nullptr)
         {
             m_tracerProfiler = tracerInstance->GetProfilerCallback();
         }
-
         IDynamicInstance* customInstance = m_dispatcher->GetCustomInstance();
         if (customInstance != nullptr)
         {
@@ -338,12 +329,14 @@ namespace datadog::shared::nativeloader
             return E_FAIL;
         }
 
-        Log::Debug("CorProfiler::Initialize: MaskLow: ", mask_low, ", MaskHi: ", mask_hi);
+        Log::Debug("CorProfiler::Initialize: MaskLow: ", mask_low);
+        Log::Debug("CorProfiler::Initialize: MaskHi : ", mask_hi);
 
         if (instrumented_assembly_generator::IsInstrumentedAssemblyGeneratorEnabled())
         {
             m_writeToDiskCorProfilerInfo = std::make_shared<instrumented_assembly_generator::CorProfilerInfo>(
                 pICorProfilerInfoUnk);
+
         }
         else
         {

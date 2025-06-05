@@ -181,11 +181,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, and the Git repository could not be automatically extracted");
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an empty value, and the Git repository could not be automatically extracted");
                         }
                         else
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{Default}'", defaultValue);
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{Default}'", defaultValue);
                         }
 
                         return false;
@@ -195,11 +195,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), and the Git repository could not be automatically extracted", value);
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), and the Git repository could not be automatically extracted", value);
                         }
                         else
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), defaulting to '{Default}'", value, defaultValue);
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), defaulting to '{Default}'", value, defaultValue);
                         }
 
                         return false;

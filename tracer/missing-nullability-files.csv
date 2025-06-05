@@ -361,7 +361,6 @@ src/Datadog.Trace/Util/Http/HttpRequestUtils.cs
 src/Datadog.Trace/Util/Http/QueryStringManager.cs
 src/Datadog.Trace/AppSec/Waf/Initialization/LibraryLocationHelper.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/DdwafConfigStruct.cs
-src/Datadog.Trace/AppSec/Waf/NativeBindings/DdwafResultStruct.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/DDWAF_OBJ_TYPE.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/NativeLibrary.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/ReducedRegistryAccess.cs

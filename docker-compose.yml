@@ -372,7 +372,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
       - LDAP_SERVER=openldap-server:389
     hostname: integrationtests
     depends_on:
@@ -451,7 +450,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
       - RANDOM_SEED
     hostname: integrationtests
     depends_on:
@@ -522,7 +520,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
       - RANDOM_SEED
     hostname: integrationtests
 
@@ -579,7 +576,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
       - RANDOM_SEED
     hostname: integrationtests
 
@@ -630,7 +626,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
 
   StartDependencies:
     image: andrewlock/wait-for-dependencies
@@ -722,7 +717,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
       - RANDOM_SEED
     depends_on:
       - servicestackredis_arm64
@@ -801,7 +795,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
       - RANDOM_SEED
 
   start-test-agent:
