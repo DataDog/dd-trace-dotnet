@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     {
         /// <summary>
         /// Gets the ARN of the Stream. This may be null if StreamName is set instead.
+        /// Only available in Kinesis client v3.7+
         /// </summary>
         string? StreamARN { get; }
     }

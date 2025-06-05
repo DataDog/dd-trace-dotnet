@@ -20,15 +20,14 @@ public class AwsKinesisCommonTests
     public static IEnumerable<object[]> GetStreamNameTestData
         => new List<object[]>
         {
-            new object[] { "mystream", string.Empty, "mystream" },                    // Only StreamName set
-            new object[] { string.Empty, "arn:aws:kinesis:us-east-2:123456789012:stream/mystream2", "mystream2" }, // Only StreamARN set
-            new object[] { "mystream", "arn:aws:kinesis:us-east-2:123456789012:stream/otherstream", "mystream" }, // Both set, StreamName takes precedence
+            new object[] { "mystream", string.Empty, "mystream" },
+            new object[] { string.Empty, "arn:aws:kinesis:us-east-2:123456789012:stream/mystream2", "mystream2" },
+            new object[] { "mystream", "arn:aws:kinesis:us-east-2:123456789012:stream/otherstream", "mystream" },
         };
 
     [Fact]
     public void StreamNameFromARN()
     {
-        // It is guaranteed that the last element is going to be the `StreamName`
         const string streamArn = "arn:aws:kinesis:us-east-2:123456789012:stream/mystream";
 
         AwsKinesisCommon.StreamNameFromARN(streamArn).Should().Be("mystream");
@@ -42,10 +41,19 @@ public class AwsKinesisCommonTests
     [MemberData(nameof(GetStreamNameTestData))]
     public void GetStreamName(string streamName, string streamArn, string expected)
     {
-        var request = new Mock<IAmazonKinesisRequest>();
+        var request = new Mock<IAmazonKinesisRequestWithStreamARN>();
         request.Setup(x => x.StreamName).Returns(streamName);
         request.Setup(x => x.StreamARN).Returns(streamArn);
 
         AwsKinesisCommon.GetStreamName(request.Object).Should().Be(expected);
+    }
+
+    [Fact]
+    public void GetStreamName_WithBaseInterfaceOnly()
+    {
+        var request = new Mock<IAmazonKinesisRequest>();
+        request.Setup(x => x.StreamName).Returns("streamname");
+
+        AwsKinesisCommon.GetStreamName(request.Object).Should().Be("streamname");
     }
 }
