@@ -35,6 +35,7 @@
 #include "IAllocationsRecorder.h"
 #include "IMetadataProvider.h"
 #include "ThreadLifetimeProvider.h"
+#include "RentBasedCpuTimeProvider.h"
 #include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
@@ -255,6 +256,8 @@ private :
     SystemCallsShield* _systemCallsShield = nullptr;
     TimerCreateCpuProfiler* _pCpuProfiler = nullptr;
 #endif
+// TODO make it available only for linux
+    RentBasedCpuTimeProvider* _pRentBasedCpuTimeProvider = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
 

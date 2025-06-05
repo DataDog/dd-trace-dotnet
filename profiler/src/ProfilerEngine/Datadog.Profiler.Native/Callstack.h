@@ -22,12 +22,19 @@ public:
 
     ~Callstack();
 
-#ifdef DD_TEST
-    Callstack(shared::span<std::uintptr_t> buffer)
+    explicit Callstack(shared::span<std::uintptr_t> buffer)
     {
         _memoryResource = nullptr;
         _buffer = buffer;
-        _count = buffer.size();
+        _count = 0;
+    }
+
+#ifdef DD_TEST
+    Callstack(shared::span<std::uintptr_t> buffer, std::size_t count)
+    {
+        _memoryResource = nullptr;
+        _buffer = buffer;
+        _count = count;
     }
 
     bool operator==(Callstack const& other) const
@@ -69,6 +76,11 @@ public:
     std::uintptr_t* end() const;
 
     void CopyFrom(Callstack const& other);
+
+    shared::span<std::uintptr_t> AsView()
+    {
+        return _buffer;
+    }
 
 private:
     shared::pmr::memory_resource* _memoryResource;

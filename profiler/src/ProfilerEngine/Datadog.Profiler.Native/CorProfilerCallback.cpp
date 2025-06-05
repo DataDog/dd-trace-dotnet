@@ -59,7 +59,9 @@
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
 #include "LibrariesInfoCache.h"
+#include "RingBuffer.h"
 #endif
+#include "RentBasedCpuTimeProvider.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
@@ -196,17 +198,19 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        shared::pmr::memory_resource* memoryResource = MemoryResourceManager::GetDefault();
-
-#ifdef LINUX
-        if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
+        if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime)
         {
-            auto const useMmap = true;
-            memoryResource = _memoryResourceManager.GetSynchronizedPool(100, 4096, useMmap);
+            _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
+                valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
         }
-#endif
-        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
-            valueTypeProvider, _rawSampleTransformer.get(), memoryResource);
+        else
+        {
+            auto nbSamplesCollectorTick = std::max(60ms / _pConfiguration->GetCpuProfilingInterval(), 1l);
+            auto rbSize = nbSamplesCollectorTick * OsSpecificApi::GetProcessorCount() * (sizeof(RawCpuSample) + Callstack::MaxSize);
+            Log::Info("RingBuffer size estimate: ", rbSize);
+            auto ringBuffer = std::make_unique<RingBuffer>(rbSize);
+            _pRentBasedCpuTimeProvider = RegisterService<RentBasedCpuTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer));
+        }
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -497,13 +501,11 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
-        auto const useMmap = true;
         _pCpuProfiler = RegisterService<TimerCreateCpuProfiler>(
             _pConfiguration.get(),
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
-            _pCpuTimeProvider,
-            CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize, useMmap)),
+            _pRentBasedCpuTimeProvider,
             _metricsRegistry);
     }
 #endif
@@ -525,7 +527,6 @@ void CorProfilerCallback::InitializeServices()
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
-        _pCpuTimeProvider != nullptr &&
         _pRuntimeInfo->GetMajorVersion() >= 5)
     {
         _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(valueTypeProvider, _rawSampleTransformer.get(), _metricsRegistry);
@@ -560,7 +561,14 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        _pSamplesCollector->Register(_pCpuTimeProvider);
+        if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime)
+        {
+            _pSamplesCollector->Register(_pCpuTimeProvider);
+        }
+        else
+        {
+            _pSamplesCollector->Register(_pRentBasedCpuTimeProvider);
+        }
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -1504,6 +1512,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     if (_pCpuTimeProvider != nullptr)
     {
         _pCpuTimeProvider->Stop();
+    }
+    if (_pRentBasedCpuTimeProvider != nullptr)
+    {
+        _pRentBasedCpuTimeProvider->Stop();
     }
     if (_pExceptionsProvider != nullptr)
     {

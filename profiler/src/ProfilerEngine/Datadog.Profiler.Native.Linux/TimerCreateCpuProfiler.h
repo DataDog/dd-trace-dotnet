@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "CallstackProvider.h"
 #include "CounterMetric.h"
 #include "ManagedThreadInfo.h"
 #include "MetricsRegistry.h"
@@ -22,8 +21,7 @@ class IConfiguration;
 class IThreadInfo;
 class IManagedThreadList;
 class ProfilerSignalManager;
-class CpuTimeProvider;
-class CallstackProvider;
+class RentBasedCpuTimeProvider;
 
 class TimerCreateCpuProfiler : public ServiceBase
 {
@@ -32,8 +30,7 @@ public:
         IConfiguration* pConfiguration,
         ProfilerSignalManager* pSignalManager,
         IManagedThreadList* pManagedThreadsList,
-        CpuTimeProvider* pProvider,
-        CallstackProvider calstackProvider,
+        RentBasedCpuTimeProvider* pProvider,
         MetricsRegistry& metricsRegistry) noexcept;
 
     ~TimerCreateCpuProfiler();
@@ -57,8 +54,7 @@ private:
 
     ProfilerSignalManager* _pSignalManager;
     IManagedThreadList* _pManagedThreadsList;
-    CpuTimeProvider* _pProvider;
-    CallstackProvider _callstackProvider;
+    RentBasedCpuTimeProvider* _pProvider;
     std::chrono::milliseconds _samplingInterval;
     std::shared_mutex _registerLock;
     std::shared_ptr<CounterMetric> _totalSampling;
