@@ -18,6 +18,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
@@ -536,7 +537,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
             var samplerMock = new Mock<ITraceSampler>();
 
-            return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
+            return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: new NoOpStatsd());
         }
 
         private static LiveDebugger GetLiveDebugger()
