@@ -36,7 +36,7 @@ internal static class DatadogLoggingFactory
         var logSinkOptions = new ConfigurationBuilder(source, telemetry)
                             .WithKeys(ConfigurationKeys.LogSinks)
                             .AsString()
-                           ?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                           ?.Split([','], StringSplitOptions.RemoveEmptyEntries);
 
         FileLoggingConfiguration? fileConfig = null;
         if (logSinkOptions is null || Contains(logSinkOptions, LogSinkOptions.File))
