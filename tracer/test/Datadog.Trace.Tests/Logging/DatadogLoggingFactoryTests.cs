@@ -181,7 +181,7 @@ public class DatadogLoggingFactoryTests
         {
             var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
 
-            var config = DatadogLoggingFactory.GetConfiguration(source);
+            var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
             config.Console.HasValue.Should().BeTrue();
         }
     }
