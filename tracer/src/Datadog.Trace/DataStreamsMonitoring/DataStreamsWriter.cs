@@ -229,7 +229,14 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
             if (!_completionSource.Task.IsCompleted)
             {
-                await _completionSource.Task.WaitAsync(_waitTimeSpan).ConfigureAwait(false);
+                try
+                {
+                    await _completionSource.Task.WaitAsync(_waitTimeSpan).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // ignore the exception, it's expected
+                }
             }
         }
     }
