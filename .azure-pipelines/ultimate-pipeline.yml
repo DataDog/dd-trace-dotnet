@@ -4659,7 +4659,8 @@ stages:
 
       - script: |
           # Replace ',' with ' +S ' and add initial +S prefix
-          SCENARIOS_TO_RUN="+S $(SCENARIO)//,/ +S }"
+          SCENARIOS=$(SCENARIO)
+          SCENARIOS_TO_RUN="+S ${SCENARIOS//,/ +S }"
           ./run.sh $SCENARIOS_TO_RUN --splits=$(N) --group=$(I)
         workingDirectory: system-tests
         displayName: Run tests
