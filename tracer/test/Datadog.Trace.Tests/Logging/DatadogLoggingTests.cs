@@ -432,7 +432,7 @@ namespace Datadog.Trace.Tests.Logging
                 errorLogging: new RedactedErrorLoggingConfiguration(collector),
                 console: null);
 
-            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
 
             logger.Should().NotBeNull();
 
