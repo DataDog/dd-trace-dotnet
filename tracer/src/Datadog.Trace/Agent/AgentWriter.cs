@@ -186,6 +186,11 @@ namespace Datadog.Trace.Agent
                 await _statsAggregator.DisposeAsync().ConfigureAwait(false);
             }
 
+            if (_api is IDisposable disposableApi)
+            {
+                disposableApi.Dispose();
+            }
+
             if (!success)
             {
                 Log.Warning("Could not flush all traces before process exit");
