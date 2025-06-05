@@ -64,7 +64,7 @@ namespace Samples.GraphQL4
             services.AddGraphQL(_ =>
             {
                 _.EnableMetrics = true;
-                _.ExposeExceptions = true;
+                // _.ExposeExceptions = true;
             })
             .AddWebSockets()
             .AddNewtonsoftJson(_ => { }, _ => { })
