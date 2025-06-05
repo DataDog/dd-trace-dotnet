@@ -4547,9 +4547,9 @@ stages:
                   { ($scenario + " (" + $weblog + ") 1"): { SCENARIO: $scenario, WEBLOG_VARIANT: $weblog, N: 1, I: 1 } }
                 ]
               ) + (
-              [ $webs[] as $weblog | range(1; 4) as $i |
-                { ("PARAMETRIC (" + $weblog + ") \($i)"): {
-                  SCENARIO: "PARAMETRIC", WEBLOG_VARIANT: $weblog, N: 3, I: $i
+              [ range(1; 4) as $i |
+                { ("PARAMETRIC \($i)"): {
+                  SCENARIO: "PARAMETRIC", WEBLOG_VARIANT: $webs[0], N: 3, I: $i
                 }}
               ]
               ) | add
