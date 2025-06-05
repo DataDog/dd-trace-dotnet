@@ -65,42 +65,44 @@ const shared::WSTRING include_assemblies[]{
 
 // Note that this list should be kept in sync with the values in shared/src/Datadog.Trace.ClrProfiler.Native/util.h
 // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
+// FIXME: this should also take into account case insensitivity, but that is not yet supported
+// https://devblogs.microsoft.com/oldnewthing/20241007-00/?p=110345
 const shared::WSTRING default_exclude_assemblies[]{
     WStr("aspnet_compiler.exe"),
     WStr("aspnet_state.exe"),
-    WStr("collectguestlogs.exe"), // https://github.com/Azure/WindowsVMAgent
+    WStr("CollectGuestLogs.exe"), // https://github.com/Azure/WindowsVMAgent
     WStr("csc.exe"),
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
     WStr("devenv.exe"),
     WStr("iisexpresstray.exe"),
-    WStr("inetmgr.exe"),
-    WStr("microsoft.servicehub.controller.exe"),
-    WStr("msbuild.exe"),
-    WStr("msdtssrvr.exe"),
+    WStr("InetMgr.exe"),
+    WStr("Microsoft.ServiceHub.Controller.exe"),
+    WStr("MSBuild.exe"),
+    WStr("MsDtsSrvr.exe"),
     WStr("msvsmon.exe"),
-    WStr("perfwatson2.exe"),
+    WStr("PerfWatson2.exe"),
     WStr("powershell.exe"),
     WStr("pwsh.exe"),
     WStr("pwsh"),
-    WStr("servicehub.datawarehousehost.exe"),
-    WStr("servicehub.host.clr.exe"),
-    WStr("servicehub.host.clr.x86.exe"),
-    WStr("servicehub.identityhost.exe"),
-    WStr("servicehub.roslyncodeanalysisservice32.exe"),
-    WStr("servicehub.settingshost.exe"),
-    WStr("servicehub.testwindowstorehost.exe"),
-    WStr("servicehub.threadedwaitdialog.exe"),
-    WStr("servicehub.vsdetouredhost.exe"),
+    WStr("ServiceHub.DataWarehouseHost.exe"),
+    WStr("ServiceHub.Host.CLR.exe"),
+    WStr("ServiceHub.Host.CLR.x86.exe"),
+    WStr("ServiceHub.IdentityHost.exe"),
+    WStr("ServiceHub.RoslynCodeAnalysisService32.exe"),
+    WStr("ServiceHub.SettingsHost.exe"),
+    WStr("ServiceHub.TestWindowStoreHost.exe"),
+    WStr("ServiceHub.ThreadedWaitDialog.exe"),
+    WStr("ServiceHub.VSDetouredHost.exe"),
     WStr("sqlagent.exe"),
     WStr("sqlbrowser.exe"),
     WStr("sqlservr.exe"),
-    WStr("vbcscompiler.exe"),
+    WStr("VBCSCompiler.exe"),
     WStr("vsdbg"),
     WStr("vsdbg.exe"),
-    WStr("waappagent.exe"),            // https://github.com/Azure/WindowsVMAgent
-    WStr("werfault.exe"),              // WER = Windows Error Reporting - can kick in when a process crashes
-    WStr("windowsazureguestagent.exe") // https://github.com/Azure/WindowsVMAgent
+    WStr("WaAppAgent.exe"),            // https://github.com/Azure/WindowsVMAgent
+    WStr("WerFault.exe"),              // WER = Windows Error Reporting - can kick in when a process crashes
+    WStr("WindowsAzureGuestAgent.exe") // https://github.com/Azure/WindowsVMAgent
 };
 
 const shared::WSTRING skip_traceattribute_assembly_prefixes[]{

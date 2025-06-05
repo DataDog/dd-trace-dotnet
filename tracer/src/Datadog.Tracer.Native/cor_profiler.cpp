@@ -152,11 +152,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
         }
 
-        WSTRING process_name_lower = shared::to_lower(process_name);
-
         for (auto&& exclude_assembly : default_exclude_assemblies)
         {
-            if (process_name_lower == exclude_assembly)
+            if (process_name == exclude_assembly)
             {
                 Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name," found in default exclude list");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
