@@ -173,10 +173,10 @@ public class DatadogLoggingFactoryTests
         }
 
         [Theory]
-        [InlineData("console")]
-        [InlineData("file,console")]
-        [InlineData("console, file")]
-        [InlineData("unknown,console")]
+        [InlineData("console-experimental")]
+        [InlineData("file,console-experimental")]
+        [InlineData("console-experimental, file")]
+        [InlineData("unknown,console-experimental")]
         public void WhenConsoleSinkIsIncluded_UsesConsoleSink(string sinks)
         {
             var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
