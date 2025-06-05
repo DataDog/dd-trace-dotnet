@@ -359,7 +359,8 @@ namespace Datadog.Trace.Tests.Logging
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
                 file: null,
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                console: null);
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
 
@@ -428,7 +429,8 @@ namespace Datadog.Trace.Tests.Logging
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
                 file: null,
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                console: null);
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
 
@@ -461,7 +463,8 @@ namespace Datadog.Trace.Tests.Logging
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
                 file: new FileLoggingConfiguration(10 * 1024 * 1024, tempLogsDir, 1),
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                console: null);
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
 
