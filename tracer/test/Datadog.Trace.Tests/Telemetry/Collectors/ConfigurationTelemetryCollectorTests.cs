@@ -23,6 +23,7 @@ using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 namespace Datadog.Trace.Tests.Telemetry;
 
 [Collection(nameof(EnvironmentVariablesTestCollection))]
+[EnvironmentRestorer("DD_INJECTION_ENABLED", "DD_INJECT_FORCE")]
 public class ConfigurationTelemetryCollectorTests
 {
     public static IEnumerable<object[]> GetPropagatorConfigurations()
@@ -244,7 +245,6 @@ public class ConfigurationTelemetryCollectorTests
     }
 
     [Fact]
-    [EnvironmentRestorer("DD_INJECTION_ENABLED", "DD_INJECT_FORCE")]
     public void ConfigurationDataShouldReportSSIValues()
     {
         Environment.SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
