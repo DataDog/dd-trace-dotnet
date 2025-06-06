@@ -11,7 +11,7 @@ namespace Datadog.Trace.Tagging
     internal partial class ProcessCommandStartTags : InstrumentationTags
     {
         [Tag(Trace.Tags.InstrumentationName)]
-        public static string Component => "process";
+        public override string InstrumentationName { get; set; } = "process";
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Internal;

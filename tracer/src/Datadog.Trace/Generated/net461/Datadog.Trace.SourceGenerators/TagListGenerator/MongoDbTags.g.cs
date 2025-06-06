@@ -48,6 +48,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "db.name": 
                     DbName = value;
                     break;
@@ -64,7 +67,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                     Port = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(MongoDbTags));
                     break;
                 default: 

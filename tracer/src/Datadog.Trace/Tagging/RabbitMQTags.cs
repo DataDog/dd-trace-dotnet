@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -32,7 +33,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind { get; }
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; }
+        public override string InstrumentationName { get; set; } = nameof(IntegrationId.RabbitMQ);
 
         [Tag(Trace.Tags.AmqpCommand)]
         public string Command { get; set; }

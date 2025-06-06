@@ -15,7 +15,7 @@ internal partial class InferredProxyTags : InstrumentationTags, IHasStatusCode
     public override string SpanKind => SpanKinds.Internal;
 
     [Tag(Trace.Tags.InstrumentationName)]
-    public string? InstrumentationName { get; set; }
+    public override string? InstrumentationName { get; set; }
 
     [Tag(Trace.Tags.HttpMethod)]
     public string? HttpMethod { get; set; }

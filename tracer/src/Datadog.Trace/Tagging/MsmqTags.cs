@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind { get; }
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => "msmq";
+        public override string InstrumentationName { get; set; } = "msmq";
 
         [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }

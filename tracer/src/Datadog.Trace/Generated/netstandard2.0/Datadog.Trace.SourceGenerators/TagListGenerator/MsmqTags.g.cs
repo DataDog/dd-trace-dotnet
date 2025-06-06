@@ -51,6 +51,9 @@ namespace Datadog.Trace.Tagging
                 case "msmq.command": 
                     Command = value;
                     break;
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "out.host": 
                     Host = value;
                     break;
@@ -64,7 +67,6 @@ namespace Datadog.Trace.Tagging
                     IsTransactionalQueue = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(MsmqTags));
                     break;
                 default: 

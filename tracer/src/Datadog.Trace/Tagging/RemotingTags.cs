@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind { get; }
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => nameof(IntegrationId.Remoting);
+        public override string InstrumentationName { get; set; } = nameof(IntegrationId.Remoting);
 
         [Tag(Trace.Tags.RpcMethod)]
         public string MethodName { get; set; }

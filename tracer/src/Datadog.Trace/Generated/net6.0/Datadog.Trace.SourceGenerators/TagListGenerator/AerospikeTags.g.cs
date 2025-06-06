@@ -45,6 +45,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "aerospike.key": 
                     Key = value;
                     break;
@@ -58,7 +61,6 @@ namespace Datadog.Trace.Tagging
                     UserKey = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AerospikeTags));
                     break;
                 default: 

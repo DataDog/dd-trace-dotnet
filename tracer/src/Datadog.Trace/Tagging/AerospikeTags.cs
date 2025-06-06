@@ -14,7 +14,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind => SpanKinds.Client;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => "aerospike";
+        public override string InstrumentationName { get; set; } = "aerospike";
 
         [Tag(Trace.Tags.AerospikeKey)]
         public string Key { get; set; }

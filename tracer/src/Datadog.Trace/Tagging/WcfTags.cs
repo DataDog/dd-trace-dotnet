@@ -11,6 +11,6 @@ namespace Datadog.Trace.Tagging
     internal partial class WcfTags : WebTags
     {
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => nameof(IntegrationId.Wcf);
+        public override string InstrumentationName { get; set; } = nameof(IntegrationId.Wcf);
     }
 }

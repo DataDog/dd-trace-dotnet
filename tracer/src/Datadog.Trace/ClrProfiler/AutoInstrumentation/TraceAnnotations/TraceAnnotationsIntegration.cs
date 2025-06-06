@@ -43,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
             var tags = new TraceAnnotationTags();
             var scope = Tracer.Instance.StartActiveInternal(info.OperationName, tags: tags);
             scope.Span.ResourceName = info.ResourceName;
+            scope.Span.DdComponent = "opentracing";
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             return new CallTargetState(scope);
         }

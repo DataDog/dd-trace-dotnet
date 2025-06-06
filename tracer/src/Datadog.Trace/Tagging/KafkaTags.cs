@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind { get; }
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => ComponentName;
+        public override string InstrumentationName { get; set; } = ComponentName;
 
         [Tag(Trace.Tags.KafkaBootstrapServers)]
         public string BootstrapServers { get; set; }

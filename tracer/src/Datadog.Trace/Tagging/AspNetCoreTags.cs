@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tagging
 
         // Read/write instead of readonly as AzureFunctions updates the component name
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; } = ComponentName;
+        public override string InstrumentationName { get; set; } = ComponentName;
 
         [Tag(Trace.Tags.AspNetCoreRoute)]
         public string AspNetCoreRoute { get; set; }

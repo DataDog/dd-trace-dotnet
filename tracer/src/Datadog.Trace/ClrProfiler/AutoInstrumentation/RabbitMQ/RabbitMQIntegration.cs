@@ -25,8 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     /// </summary>
     internal static class RabbitMQIntegration
     {
-        internal const string IntegrationName = nameof(Configuration.IntegrationId.RabbitMQ);
-
         private const string MessagingType = "rabbitmq";
         private const string MessagingSystem = "amqp";
 
@@ -80,7 +78,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
                 tags.OutHost = host;
 
-                tags.InstrumentationName = IntegrationName;
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }

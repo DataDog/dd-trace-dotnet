@@ -45,6 +45,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "elasticsearch.action": 
                     Action = value;
                     break;
@@ -58,7 +61,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                     Host = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(ElasticsearchTags));
                     break;
                 default: 
