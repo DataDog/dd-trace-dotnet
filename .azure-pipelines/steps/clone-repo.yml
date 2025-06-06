@@ -9,6 +9,10 @@ steps:
 - ${{ if endsWith(variables['build.sourceBranch'], '/merge') }}:
   - checkout: none
   - bash: |
+      # Constants
+      RETRY_INTERVAL=10
+      MAX_ATTEMPTS=3
+      
       # Azure devops _doesn't_ clean up the contents of the repo after the pipeline has finished
       # So we do it manually
       echo "Cleaning $BUILD_REPOSITORY_LOCALPATH/ directory"
@@ -31,10 +35,22 @@ steps:
       git config --get-regexp .*extraheader
       git config --get-all http.proxy
       git config http.version HTTP/1.1
-      echo "Force fetching ${{ parameters.targetBranch }} and $prBranch ..."
-      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/$prBranch:refs/remotes/origin/$prBranch
-      echo "Checking out $prBranch..."
-      git checkout --force $prBranch
+
+      # Attempt fetching and checking out
+      for attempt in $(seq 1 $MAX_ATTEMPTS)
+      do
+        echo "Attempt $attempt/$MAX_ATTEMPTS: Fetching and checking out: ${{ parameters.targetBranch }} and $prBranch"
+        git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/$prBranch:refs/remotes/origin/$prBranch && git checkout --force $prBranch && break
+
+        if [ $attempt -lt $MAX_ATTEMPTS ]; then
+          echo "Fetch and checkout failed, retrying in $RETRY_INTERVAL seconds"
+          sleep $RETRY_INTERVAL
+        else
+          echo "All attempts to fetch and checkout failed"
+          exit 1
+        fi
+      done
+      
       echo "Resetting $prBranch to origin/$prBranch ..."
       git reset origin/$prBranch --hard
       echo "Running git clean -ffdx ..."
