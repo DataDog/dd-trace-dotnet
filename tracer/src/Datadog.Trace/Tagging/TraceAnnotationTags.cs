@@ -7,7 +7,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal partial class TraceAnnotationTags : CommonTags
+    internal partial class TraceAnnotationTags : TagsList
     {
         private const string ComponentName = "trace";
 

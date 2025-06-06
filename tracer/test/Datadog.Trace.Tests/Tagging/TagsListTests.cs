@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.Tagging
         [Fact]
         public void GetTag_GetMetric_ReturnUpdatedValues()
         {
-            var tags = new CommonTags();
+            var tags = new TagsList();
             var scope = _tracer.StartActiveInternal("root", tags: tags);
             var span = scope.Span;
 
@@ -300,7 +300,7 @@ namespace Datadog.Trace.Tests.Tagging
                                      })
                                     .ToArray();
 
-            if (isTag && type != typeof(CommonTags))
+            if (isTag && type != typeof(TagsList))
             {
                 // skip this for CommonTags because it is the only type without any string tags
                 propertyAndTagName

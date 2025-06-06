@@ -7,7 +7,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal partial class OpenTelemetryTags : CommonTags
+    internal partial class OpenTelemetryTags : TagsList
     {
         [Tag(Tags.SpanKind)]
         public virtual string SpanKind { get; set; }
