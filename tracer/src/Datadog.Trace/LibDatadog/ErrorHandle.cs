@@ -11,47 +11,26 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.LibDatadog;
 
-internal class ErrorHandle : SafeHandle
+internal sealed class ErrorHandle() : SafeHandle(IntPtr.Zero, true)
 {
     private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<ErrorHandle>();
-
-    public ErrorHandle()
-        : base(IntPtr.Zero, true)
-    {
-    }
-
-    public ErrorHandle(IntPtr handle)
-        : base(handle, true)
-    {
-        SetHandle(handle);
-    }
 
     public override bool IsInvalid => handle == IntPtr.Zero;
 
     protected override bool ReleaseHandle()
     {
-        try
+        if (!IsInvalid)
         {
-            NativeInterop.Exporter.FreeError(handle);
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "An error occurred while releasing the handle for ErrorHandle.");
+            try
+            {
+                NativeInterop.Common.Drop(this);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to drop error handle");
+            }
         }
 
         return true;
-    }
-
-    public TraceExporterException ToException()
-    {
-        return new TraceExporterException(Marshal.PtrToStructure<TraceExporterError>(handle));
-    }
-
-    public void ThrowIfError()
-    {
-        if (!IsInvalid)
-        {
-            throw ToException();
-        }
     }
 }

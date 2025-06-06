@@ -1,0 +1,26 @@
+// <copyright file="LogEventLevelExtension.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System;
+
+namespace Datadog.Trace.LibDatadog;
+
+internal static class LogEventLevelExtension
+{
+    public static LogEventLevel ToLogEventLevel(this Vendors.Serilog.Events.LogEventLevel level)
+    {
+        return level switch
+        {
+            Vendors.Serilog.Events.LogEventLevel.Verbose => LogEventLevel.Trace,
+            Vendors.Serilog.Events.LogEventLevel.Debug => LogEventLevel.Debug,
+            Vendors.Serilog.Events.LogEventLevel.Information => LogEventLevel.Info,
+            Vendors.Serilog.Events.LogEventLevel.Warning => LogEventLevel.Warn,
+            Vendors.Serilog.Events.LogEventLevel.Error or Vendors.Serilog.Events.LogEventLevel.Fatal => LogEventLevel.Error,
+            _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
+        };
+    }
+}
