@@ -116,20 +116,24 @@ internal readonly partial struct SecurityCoordinator
         var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);
         var cookiesDic = ExtractCookiesFromRequest(request);
-        var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);
+        var queryStringDic = new Dictionary<string, List<string>>(request.Query?.Count ?? 0);
         // a query string like ?test&[$slice} only fills the key part in dotnetcore and in IIS it only fills the value part, it's been decided to make it a key always
-        foreach (var kvp in request.Query)
-        {
-            var value = kvp.Value;
-            var currentKey = kvp.Key ?? string.Empty; // sometimes key can be null
 
-            if (!queryStringDic.TryGetValue(currentKey, out var list))
+        if (request.Query is not null)
+        {
+            foreach (var kvp in request.Query)
             {
-                queryStringDic.Add(currentKey, [value]);
-            }
-            else
-            {
-                list.Add(value);
+                var value = kvp.Value;
+                var currentKey = kvp.Key ?? string.Empty; // sometimes key can be null
+
+                if (!queryStringDic.TryGetValue(currentKey, out var list))
+                {
+                    queryStringDic.Add(currentKey, [value]);
+                }
+                else
+                {
+                    list.Add(value);
+                }
             }
         }
 

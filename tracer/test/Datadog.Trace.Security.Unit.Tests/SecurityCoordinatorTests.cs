@@ -35,6 +35,31 @@ namespace Datadog.Trace.Security.Unit.Tests
             secCoord.Should().BeNull();
         }
 
+#if !NETFRAMEWORK
+        [Fact]
+        public void GivenSecurityCoordinatorInstance_WhenScan_NoException()
+        {
+            var contextMoq = new Mock<HttpContext>();
+            var requestMock = new Mock<HttpRequest>();
+            contextMoq.Setup(x => x.Response).Returns(new Mock<HttpResponse>().Object);
+            var context = contextMoq.Object;
+            requestMock.Setup(x => x.Query).Returns((IQueryCollection)null); // The class DefaultHttpRequest allows setting Query to null
+            var headerMock = new Mock<IHeaderDictionary>(); // The class DefaultHttpRequest creates headers in the getter when they are null
+            headerMock.Setup(x => x.Keys).Returns(new string[0]);
+            requestMock.Setup(x => x.Headers).Returns(headerMock.Object); // The class DefaultHttpRequest creates hedars in the getter when they are null
+            requestMock.Setup(x => x.HttpContext).Returns(context);
+            contextMoq.Setup(x => x.Request).Returns(requestMock.Object);
+            CoreHttpContextStore.Instance.Set(context);
+            var traceContext = new TraceContext(new EmptyDatadogTracer());
+            traceContext.AppSecRequestContext.DisposeAdditiveContext();
+            var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
+            var span = new Span(spanContext, DateTimeOffset.Now);
+            var security = new AppSec.Security();
+            var securityCoordinator = TryGet(security, span);
+            securityCoordinator.Value.Scan();
+        }
+    #endif
+
 #if NETCOREAPP
 
         [Fact]
