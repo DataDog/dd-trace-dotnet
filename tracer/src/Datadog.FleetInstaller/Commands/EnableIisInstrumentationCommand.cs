@@ -50,6 +50,19 @@ internal class EnableIisInstrumentationCommand : CommandBase
     {
         log.WriteInfo("Enabling IIS instrumentation for .NET tracer");
 
+        // We can't use the IIS app-host based instrumentation if IIS is not available or is too low a version
+        if (HasValidIIsVersion(out var errorMessage))
+        {
+            return SetVariablesInIisAppHost(log, tracerValues);
+        }
+
+        // We treat this as a success even if we can't enable IIS instrumentation
+        log.WriteWarning(errorMessage);
+        return ReturnCode.Success;
+    }
+
+    private static ReturnCode SetVariablesInIisAppHost(ILogger log, TracerValues tracerValues)
+    {
         bool tryIisRollback;
 
         try
@@ -102,13 +115,6 @@ internal class EnableIisInstrumentationCommand : CommandBase
     {
         if (!IsValidEnvironment(commandResult))
         {
-            return;
-        }
-
-        // We can't enable iis instrumentation if IIS is not available or is to low a version
-        if (!HasValidIIsVersion(out var errorMessage))
-        {
-            commandResult.ErrorMessage = errorMessage;
             return;
         }
 
