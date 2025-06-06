@@ -458,6 +458,8 @@ void CorProfilerCallback::InitializeServices()
 
         // http profiling is not supported in .NET Framework
         _pEnabledProfilers->Disable(RuntimeProfiler::Network);
+
+        _pEnabledProfilers->Disable(RuntimeProfiler::CpuGc); // GC threads CPU consumption is not supported in .NET Framework
     }
     else
     {
@@ -465,6 +467,12 @@ void CorProfilerCallback::InitializeServices()
         if (_pRuntimeInfo->GetMajorVersion() < 7)
         {
             _pEnabledProfilers->Disable(RuntimeProfiler::Network);
+        }
+
+        // GC threads CPU consumption is not supported in .NET 5 and earlier
+        if (_pRuntimeInfo->GetMajorVersion() < 5)
+        {
+            _pEnabledProfilers->Disable(RuntimeProfiler::CpuGc);
         }
     }
 
@@ -1723,8 +1731,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
 
     if (_pThreadLifetimeProvider != nullptr)
     {
-        std::shared_ptr<ManagedThreadInfo> pThreadInfo = _pManagedThreadList->GetOrCreate(threadId);
-        _pThreadLifetimeProvider->OnThreadStart(pThreadInfo);
+        if (_pSsiManager->IsProfilerStarted())
+        {
+            std::shared_ptr<ManagedThreadInfo> pThreadInfo = _pManagedThreadList->GetOrCreate(threadId);
+            _pThreadLifetimeProvider->OnThreadStart(pThreadInfo);
+        }
     }
     return S_OK;
 }
@@ -1783,7 +1794,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
         pThreadInfo->SetThreadDestroyed();
 
-        if (_pThreadLifetimeProvider != nullptr)
+        if ((_pThreadLifetimeProvider != nullptr) && _pSsiManager->IsProfilerStarted())
         {
             _pThreadLifetimeProvider->OnThreadStop(pThreadInfo);
         }

@@ -36,11 +36,11 @@ internal class RemoveIisInstrumentation : CommandBase
     }
 
     // Internal for testing
-    internal ReturnCode Execute(ILogger log)
+    internal static ReturnCode Execute(ILogger log)
     {
         log.WriteInfo("Removing IIS instrumentation for .NET tracer");
 
-        if (!HasValidIIsVersion(log, out var errorMessage))
+        if (!HasValidIIsVersion(out var errorMessage))
         {
             // IIS isn't available, weird because it means they removed it _after_ successfully installing the product
             // but whatever, there's no variables there if that's the case!

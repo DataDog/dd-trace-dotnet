@@ -421,7 +421,7 @@ namespace Datadog.Trace.Tests.Logging
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet(bool withException)
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithoutFile(bool withException)
         {
             var collector = new RedactedErrorLogCollector();
 
@@ -445,6 +445,48 @@ namespace Datadog.Trace.Tests.Logging
             }
 
             collector.GetLogs().Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithFile(bool withException)
+        {
+            var collector = new RedactedErrorLogCollector();
+
+            var tempLogsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            _output.WriteLine($"Using temporary logs directory: {tempLogsDir}");
+            Directory.CreateDirectory(tempLogsDir);
+
+            var config = new DatadogLoggingConfiguration(
+                rateLimit: 0,
+                file: new FileLoggingConfiguration(10 * 1024 * 1024, tempLogsDir, 1),
+                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
+
+            logger.Should().NotBeNull();
+
+            // These errors should not be written to error log
+            if (withException)
+            {
+                logger.ErrorSkipTelemetry(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+            else
+            {
+                logger.ErrorSkipTelemetry(Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+
+            collector.GetLogs().Should().BeNull();
+
+            try
+            {
+                Directory.Delete(tempLogsDir, true);
+            }
+            catch
+            {
+                // cleanup isn't required, just avoiding clutter when the test passes
+            }
         }
 
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)
