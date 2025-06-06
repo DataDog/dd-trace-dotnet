@@ -24,12 +24,14 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
-    private readonly Thread _processThread;
+    private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
+    private readonly Task _processTask;
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
     private readonly Timer _flushTimer;
+    private readonly TaskCompletionSource<bool> _completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
@@ -46,9 +48,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
         _discoveryService = discoveryService;
         _discoveryService.SubscribeToChanges(HandleConfigUpdate);
 
-        _processThread = new Thread(ProcessQueueLoopAsync);
-        _processThread.Start();
-        // _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
+        _processTask = Task.Run(ProcessQueueLoopAsync);
+        _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
 
         _flushTimer = new Timer(
             x => ((DataStreamsWriter)x!).RequestFlush(),
@@ -119,7 +120,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task FlushAndCloseAsync()
     {
-        if (!_processExit.TrySetResult(true))
+        if (!_processExit.TrySetResult(true) || !_completionSource.TrySetResult(true))
         {
             return;
         }
@@ -130,13 +131,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
         RequestFlush();
 
         // wait for the processing loop to complete
-        var waitTasks = Task.Run(() => _processThread.Join());
         var completedTask = await Task.WhenAny(
-                                           waitTasks,
+                                           _processTask,
                                            Task.Delay(TimeSpan.FromSeconds(20)))
                                       .ConfigureAwait(false);
 
-        if (completedTask != waitTasks)
+        if (completedTask != _processTask)
         {
             Log.Error("Could not flush all data streams stats before process exit");
         }
@@ -149,7 +149,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task WriteToApiAsync()
     {
-        // This method blocks ingestion of new stats points into the aggregator
+        // This method blocks ingestion of new stats points into the aggregator,
         // but they will continue to be added to the queue, and will be processed later
         // Default buffer capacity matches Java implementation:
         // https://cs.github.com/DataDog/dd-trace-java/blob/3386bd137e58ed7450d1704e269d3567aeadf4c0/dd-trace-core/src/main/java/datadog/trace/core/datastreams/MsgPackDatastreamsPayloadWriter.java?q=MsgPackDatastreamsPayloadWriter#L28
@@ -185,7 +185,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
-    private void ProcessQueueLoopAsync()
+    private async Task ProcessQueueLoopAsync()
     {
         var isFinalFlush = false;
         while (true)
@@ -205,8 +205,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
                 if (flushRequested == 1)
                 {
-                    // fire and forget
-                    WriteToApiAsync().ConfigureAwait(false);
+                    await WriteToApiAsync().ConfigureAwait(false);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
             }
@@ -228,7 +227,16 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            Thread.SpinWait(10);
+            if (!_completionSource.Task.IsCompleted)
+            {
+                // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
+                // and modified to avoid dealing with exceptions
+                var tcs = new TaskCompletionSource<bool>();
+                using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
+                {
+                    await (await Task.WhenAny(_completionSource.Task, tcs.Task).ConfigureAwait(false)).ConfigureAwait(false);
+                }
+            }
         }
     }
 
