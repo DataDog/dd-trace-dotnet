@@ -21,7 +21,9 @@ public class TraceExporterTests
 {
     [SkippableTheory]
     [InlineData(TestTransports.Tcp)]
+#if NETCOREAPP3_1_OR_GREATER
     [InlineData(TestTransports.Uds)]
+#endif
     [InlineData(TestTransports.WindowsNamedPipe)]
     public async Task SendsTracesUsingDataPipeline(TestTransports transport)
     {

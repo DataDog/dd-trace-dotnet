@@ -17,7 +17,7 @@ using Datadog.FleetInstaller.Commands;
 // args = ["uninstall-product"];
 // args = [];
 
-var rootCommand = new CommandWithExamples(CommandWithExamples.Command);
+var rootCommand = new CommandWithExamples(CommandWithExamples.Command, "Windows SSI fleet-installer command line tool");
 
 var builder = new CommandLineBuilder(rootCommand)
     .UseHelp()
