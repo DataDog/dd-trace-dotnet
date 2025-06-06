@@ -679,6 +679,7 @@
       <type fullname="System.PlatformNotSupportedException" />
       <type fullname="System.Predicate`1" />
       <type fullname="System.Random" />
+      <type fullname="System.ReadOnlyMemory`1" />
       <type fullname="System.ReadOnlySpan`1" />
       <type fullname="System.Reflection.AmbiguousMatchException" />
       <type fullname="System.Reflection.Assembly" />
@@ -822,6 +823,7 @@
       <type fullname="System.Text.Encoding" />
       <type fullname="System.Text.StringBuilder" />
       <type fullname="System.Text.StringBuilder/AppendInterpolatedStringHandler" />
+      <type fullname="System.Text.StringBuilder/ChunkEnumerator" />
       <type fullname="System.Threading.CancellationToken" />
       <type fullname="System.Threading.CancellationTokenRegistration" />
       <type fullname="System.Threading.CancellationTokenSource" />
