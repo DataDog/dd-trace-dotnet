@@ -389,6 +389,9 @@ datadog-coverage-*
 # nuke
 .nuke/build.schema.json
 
+# dotnet tool config file
+.config/dotnet-tools.json
+
 # tools/dumps
 tools/dumps/
 !tools/dumps/README_ALPINE_ARM64.md
