@@ -229,7 +229,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            Thread.Sleep(_waitTimeSpan);
+            Thread.SpinWait(_waitTimeSpan);
         }
     }
 
