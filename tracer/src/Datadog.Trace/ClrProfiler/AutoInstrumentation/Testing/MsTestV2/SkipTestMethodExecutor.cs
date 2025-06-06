@@ -46,7 +46,7 @@ internal class SkipTestMethodExecutor
     }
 }
 
-#pragma warning disable SA1402
+#pragma warning disable SA1402 // File May Only Contain A Single Type
 internal class SkipTestMethodExecutorAsync
 #pragma warning restore SA1402
 {
