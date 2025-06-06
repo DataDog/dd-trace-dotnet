@@ -25,12 +25,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
     private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
-    private readonly Thread _processThread;
+    private readonly Task _processTask;
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
     private readonly Timer _flushTimer;
+    private readonly TaskCompletionSource<bool> _completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
@@ -47,9 +48,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
         _discoveryService = discoveryService;
         _discoveryService.SubscribeToChanges(HandleConfigUpdate);
 
-        _processThread = new Thread(ProcessQueueLoopAsync);
-        _processThread.Start();
-        // _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
+        _processTask = Task.Run(ProcessQueueLoopAsync);
+        _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
 
         _flushTimer = new Timer(
             x => ((DataStreamsWriter)x!).RequestFlush(),
@@ -120,7 +120,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task FlushAndCloseAsync()
     {
-        if (!_processExit.TrySetResult(true))
+        if (!_processExit.TrySetResult(true) || !_completionSource.TrySetResult(true))
         {
             return;
         }
@@ -131,13 +131,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
         RequestFlush();
 
         // wait for the processing loop to complete
-        var waitTasks = Task.Run(() => _processThread.Join());
         var completedTask = await Task.WhenAny(
-                                           waitTasks,
+                                           _processTask,
                                            Task.Delay(TimeSpan.FromSeconds(20)))
                                       .ConfigureAwait(false);
 
-        if (completedTask != waitTasks)
+        if (completedTask != _processTask)
         {
             Log.Error("Could not flush all data streams stats before process exit");
         }
@@ -186,7 +185,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
-    private void ProcessQueueLoopAsync()
+    private async Task ProcessQueueLoopAsync()
     {
         var isFinalFlush = false;
         while (true)
@@ -206,8 +205,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
                 if (flushRequested == 1)
                 {
-                    // fire and forget
-                    WriteToApiAsync().ConfigureAwait(false);
+                    await WriteToApiAsync().ConfigureAwait(false);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
             }
@@ -229,7 +227,17 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            Thread.SpinWait(_waitTimeSpan);
+            if (!_completionSource.Task.IsCompleted)
+            {
+                try
+                {
+                    await _completionSource.Task.WaitAsync(_waitTimeSpan).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // ignore the exception, it's expected
+                }
+            }
         }
     }
 
