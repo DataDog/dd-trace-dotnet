@@ -352,7 +352,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // iast stuff
-    
+
     bool isRaspEnabled = IsRaspEnabled();
     bool isIastEnabled = IsIastEnabled();
 
@@ -648,7 +648,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
     auto modules = module_ids.Get();
-    
+
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_ || rejit_handler == nullptr)
     {
@@ -692,13 +692,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(rejitModuleIds, integration_definitions_,
                                                                                 promise);
 
-            // wait and get the value from the future<ULONG>            
+            // wait and get the value from the future<ULONG>
             const auto status = future.wait_for(100ms);
 
             if (status != std::future_status::timeout)
             {
                 const auto& numReJITs = future.get();
-                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);    
+                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
             }
             else
             {
@@ -965,9 +965,10 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         if (fs::exists(libdatadog_library_path, ec))
         {
             auto libdatadog_filepath = shared::ToWSTRING(libdatadog_library_path);
+            RewritingPInvokeMaps(module_metadata, libdatadog_common_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, libdatadog_exporter_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, libdatadog_config_nativemethods_type, libdatadog_filepath);
-            RewritingPInvokeMaps(module_metadata, libdatadog_common_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, libdatadog_logger_nativemethods_type, libdatadog_filepath);
         }
         else
         {
@@ -1038,7 +1039,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         // also rewrite to support version mismatch via IDistributedTracer
         if (module_info.assembly.name == manual_instrumentation_name)
         {
-            // Rewrite key methods for version mismatch + 
+            // Rewrite key methods for version mismatch +
             ComPtr<IUnknown> metadata_interfaces;
             auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                      metadata_interfaces.GetAddressOf());
@@ -1056,7 +1057,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             const auto& assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
             // NOTE: I'm not entirely comfortable that we're passing corAssemblyProperty in here...
-            // but I don't know if I _should_ worry, or if we can avoid it 
+            // but I don't know if I _should_ worry, or if we can avoid it
             const auto& module_metadata =
                 ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit, module_info.assembly.name,
                                module_info.assembly.app_domain_id, &corAssemblyProperty, false, false);
@@ -1680,7 +1681,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                 Logger::Debug("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
                 return S_OK;
             }
-                
+
             pType = pType->parent_type;
         }
 
@@ -3484,7 +3485,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
                                                     ELEMENT_TYPE_U1};
     ULONG start_length = sizeof(appdomain_load_signature_start);
     ULONG end_length = sizeof(appdomain_load_signature_end);
-    
+
     BYTE system_reflection_assembly_type_ref_compressed_token[4];
     ULONG token_length =
         CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
@@ -3865,7 +3866,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         // {
         //      var message = "An error occured in the managed loader: " + ex.ToString();
         //      var chars = message.ToCharArray();
-        // 
+        //
         //      fixed (char* p = chars)
         //      {
         //          var nativeLog = (delegate* unmanaged<int, IntPtr, int, void>)0xFFFFFFFF; // Replaced with the actual address
@@ -4297,7 +4298,7 @@ extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_p
 #endif
 
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
-                                             int* symbolsSize) 
+                                             int* symbolsSize)
 {
 #ifdef _WIN32
     HINSTANCE hInstance = DllHandle;
@@ -4578,7 +4579,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
                 Logger::Debug("JITCachedFunctionSearchStarted: Rejected (because rejitted) for Module: ", module_info.assembly.name,
                               ", Function: ", HexStr(function_token),
                               " previous value = ", *pbUseCachedFunction ? "true" : "false");
-            }          
+            }
         }
     }
 
