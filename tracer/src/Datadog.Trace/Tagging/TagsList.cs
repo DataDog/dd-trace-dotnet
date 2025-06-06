@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging
 {
-    internal abstract class TagsList : ITags
+    internal class TagsList : ITags
     {
         protected static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor<TagsList>());
         private List<KeyValuePair<string, string>> _tags;
