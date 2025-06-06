@@ -12,10 +12,17 @@ jobs:
       actions: read # read secrets
 
     steps:
+      - name: Generate GitHub App Token
+        id: generate-token
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: Trigger AAS release
         run: |
           curl -X POST \
           -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: Bearer ${{ secrets.GH_EXTERNAL_TOKEN }}" \
+          -H "Authorization: Bearer ${{ steps.generate-token.outputs.token }}" \
           https://api.github.com/repos/DataDog/datadog-aas-extension/dispatches \
           -d '{"event_type": "dd-trace-dotnet-release", "client_payload": {"is_prerelease":"${{github.event.release.prerelease}}", "version":"${{github.event.release.tag_name}}" } }'
