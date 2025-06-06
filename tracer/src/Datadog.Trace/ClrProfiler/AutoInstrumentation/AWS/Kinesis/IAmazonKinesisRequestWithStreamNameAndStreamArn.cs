@@ -1,22 +1,22 @@
-// <copyright file="IPutRecordsRequest.cs" company="Datadog">
+// <copyright file="IAmazonKinesisRequestWithStreamNameAndStreamArn.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
-using System.Collections;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
-    /// PutRecordsRequest interface for duck typing.
+    /// Interface for Kinesis requests that have both StreamName and StreamARN properties
     /// </summary>
-    internal interface IPutRecordsRequest : IAmazonKinesisRequestWithStreamName
+    internal interface IAmazonKinesisRequestWithStreamNameAndStreamArn : IAmazonKinesisRequestWithStreamName
     {
         /// <summary>
-        /// Gets or sets the Kinesis Records.
+        /// Gets or sets the stream ARN
         /// </summary>
-        IList? Records { get; set; }
+        string? StreamARN { get; set; }
     }
 }

@@ -119,9 +119,13 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.GetRecordsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.GetRecordsAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordV3_7Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordAsyncV3_7Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsV3_7Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsAsyncV3_7Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsKinesis,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.CompleteMultipartUploadIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.CompleteMultipartUploadAsyncIntegration"
