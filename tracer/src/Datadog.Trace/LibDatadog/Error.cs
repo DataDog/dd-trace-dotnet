@@ -13,8 +13,11 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.LibDatadog;
 
 /// <summary>
+/// Represents a generic error with message returned by the libdatadog library.
 /// Do not change the values of this enum unless you really need to update the interop mapping.
 /// Libdatadog interop mapping of https://github.com/DataDog/libdatadog/blob/60583218a8de6768f67d04fcd5bc6443f67f516b/ddcommon-ffi/src/error.rs#L14
+/// </summary>
+/// <summary>
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
 internal readonly struct Error

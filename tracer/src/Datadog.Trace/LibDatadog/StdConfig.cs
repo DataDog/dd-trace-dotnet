@@ -9,6 +9,9 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.LibDatadog;
 
+/// <summary>
+/// Represents a configuration for a standard output/error logger.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 internal struct StdConfig
 {

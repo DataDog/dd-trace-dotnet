@@ -8,51 +8,80 @@
 using System;
 using System.Globalization;
 using System.IO;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.LibDatadog;
 
-internal class Logger
+internal sealed class Logger
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Logger>();
+    private static readonly Lazy<Logger> _instance = new(() => new Logger());
 
-    public static void Enable(DatadogLoggingConfiguration config, DomainMetadata domainMetadata)
+    private readonly TracerSettings _tracerSettings;
+
+    private Logger()
     {
-        if (config.File is { } fileConfig)
+        _tracerSettings = TracerSettings.FromDefaultSourcesInternal();
+    }
+
+    public static Logger Instance => _instance.Value;
+
+    public void Enable(DatadogLoggingConfiguration config, DomainMetadata domainMetadata)
+    {
+        if (!_tracerSettings.DataPipelineEnabled)
         {
-            var libdatadogLogPath = Path.Combine(fileConfig.LogDirectory, $"dotnet-libdatadog-{domainMetadata.ProcessName}-{domainMetadata.ProcessId.ToString(CultureInfo.InvariantCulture)}.log");
-            using var path = new CharSlice(libdatadogLogPath);
-            var cfg = new FileConfig
-            {
-                Path = path
-            };
-            try
-            {
-                NativeInterop.Logger.ConfigureFile(cfg);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to configure file logger");
-            }
+            return;
+        }
+
+        if (config.File is not { } fileConfig)
+        {
+            return;
+        }
+
+        var filePath = Path.Combine(
+            fileConfig.LogDirectory,
+            $"dotnet-libdatadog-{domainMetadata.ProcessName}-{domainMetadata.ProcessId.ToString(CultureInfo.InvariantCulture)}.log");
+
+        using var path = new CharSlice(filePath);
+        var cfg = new FileConfig { Path = path };
+
+        try
+        {
+            NativeInterop.Logger.ConfigureFile(cfg);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to configure libdatadog logger");
         }
     }
 
-    public static void Disable()
+    public void Disable()
     {
+        if (!_tracerSettings.DataPipelineEnabled)
+        {
+            return;
+        }
+
         try
         {
             NativeInterop.Logger.DisableFile();
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to disable logger");
+            Log.Error(ex, "Failed to disable libdatadog logger");
         }
     }
 
-    public static void SetLogLevel(Vendors.Serilog.Events.LogEventLevel logLevel)
+    public void SetLogLevel(Vendors.Serilog.Events.LogEventLevel logLevel)
     {
+        if (!_tracerSettings.DataPipelineEnabled)
+        {
+            return;
+        }
+
         var level = logLevel.ToLogEventLevel();
         try
         {
@@ -60,7 +89,7 @@ internal class Logger
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to set log level");
+            Log.Error(ex, "Failed to set libdatadog log level");
         }
     }
 }
