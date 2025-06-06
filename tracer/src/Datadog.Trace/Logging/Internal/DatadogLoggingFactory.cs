@@ -138,7 +138,10 @@ internal static class DatadogLoggingFactory
         if (config.Console is { } consoleConfig)
         {
             loggerConfiguration
-               .WriteTo.Sink(new ConsoleSink(consoleConfig.MessageTemplate, consoleConfig.BufferSize));
+               .WriteTo.Logger(
+                   lc => lc
+                         .Enrich.With(new RemovePropertyEnricher(LogEventLevel.Error, DatadogSerilogLogger.SkipTelemetryProperty))
+                         .WriteTo.Sink(new ConsoleSink(consoleConfig.MessageTemplate, consoleConfig.BufferSize));
         }
 
         try
