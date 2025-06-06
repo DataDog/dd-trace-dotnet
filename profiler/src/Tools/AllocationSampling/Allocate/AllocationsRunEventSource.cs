@@ -1,0 +1,39 @@
+// <copyright file="AllocationsRunEventSource.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
+using System.Diagnostics.Tracing;
+
+namespace Allocate
+{
+    [EventSource(Name = "Allocations-Run")]
+    public class AllocationsRunEventSource : EventSource
+    {
+        public static readonly AllocationsRunEventSource Log = new AllocationsRunEventSource();
+
+        [Event(600, Level = EventLevel.Informational)]
+        public void StartRun(int iterationsCount, int allocationCount, string listOfTypes)
+        {
+            WriteEvent(eventId: 600, iterationsCount, allocationCount, listOfTypes);
+        }
+
+        [Event(601, Level = EventLevel.Informational)]
+        public void StopRun()
+        {
+            WriteEvent(eventId: 601);
+        }
+
+        [Event(602, Level = EventLevel.Informational)]
+        public void StartIteration(int iteration)
+        {
+            WriteEvent(eventId: 602, iteration);
+        }
+
+        [Event(603, Level = EventLevel.Informational)]
+        public void StopIteration(int iteration)
+        {
+            WriteEvent(eventId: 603, iteration);
+        }
+    }
+}
