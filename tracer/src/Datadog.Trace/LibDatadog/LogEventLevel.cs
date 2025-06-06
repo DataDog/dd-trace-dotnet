@@ -7,6 +7,13 @@
 
 namespace Datadog.Trace.LibDatadog;
 
+/// <summary>
+/// Represents the level of a log event.
+/// <remarks>
+/// The levels are mapped to the levels defined in the libdatadog library.
+/// In case of a missing direct mapping, the closest level should be used.
+/// </remarks>
+/// </summary>
 internal enum LogEventLevel
 {
     Trace = 0,

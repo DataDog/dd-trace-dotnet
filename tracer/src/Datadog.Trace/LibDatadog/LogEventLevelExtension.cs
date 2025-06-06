@@ -19,6 +19,7 @@ internal static class LogEventLevelExtension
             Vendors.Serilog.Events.LogEventLevel.Debug => LogEventLevel.Debug,
             Vendors.Serilog.Events.LogEventLevel.Information => LogEventLevel.Info,
             Vendors.Serilog.Events.LogEventLevel.Warning => LogEventLevel.Warn,
+            // We don't have a "Fatal" level in libdatadog, so we map it to Error since this is closed mapping
             Vendors.Serilog.Events.LogEventLevel.Error or Vendors.Serilog.Events.LogEventLevel.Fatal => LogEventLevel.Error,
             _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
         };
