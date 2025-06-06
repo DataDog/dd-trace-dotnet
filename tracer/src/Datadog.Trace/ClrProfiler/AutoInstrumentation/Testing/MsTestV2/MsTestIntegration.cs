@@ -80,6 +80,7 @@ internal static class MsTestIntegration
         ["b754cc51-34ed-419c-8582-bff04c3db05f"] = "3.8.0",
         ["2b3d62e3-5607-4ebd-840e-ee80475cc0bc"] = "3.8.1",
         ["3fe23123-93a2-4c44-8219-0a5f27a10316"] = "3.8.2",
+        ["102f7a9d-d61b-4864-b3c7-0a097a85f47b"] = "3.9.0",
         ["e7bba6ac-32f6-4e62-9a3a-cf259c9e7448"] = "3.9.1",
     };
 

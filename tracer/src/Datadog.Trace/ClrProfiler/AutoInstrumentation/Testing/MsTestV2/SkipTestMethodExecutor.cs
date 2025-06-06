@@ -12,12 +12,12 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
-internal class SkipTestMethodExecutor
+internal abstract class SkipTestMethodExecutor
 {
     private readonly object _arrayInstance;
     private readonly string _skipReason;
 
-    public SkipTestMethodExecutor(Assembly assembly, string skipReason)
+    protected SkipTestMethodExecutor(Assembly assembly, string skipReason)
     {
         var testResultType = assembly.GetType("Microsoft.VisualStudio.TestTools.UnitTesting.TestResult", throwOnError: true)!;
         var array = Array.CreateInstance(testResultType, 1);
@@ -32,8 +32,7 @@ internal class SkipTestMethodExecutor
         _skipReason = skipReason;
     }
 
-    [DuckReverseMethod(Name = "Execute", ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"])]
-    public object Execute(object testMethod)
+    protected void ProcessTestMethod(object testMethod)
     {
         if (testMethod.TryDuckCast<ITestMethod>(out var testMethodInfo))
         {
@@ -41,53 +40,38 @@ internal class SkipTestMethodExecutor
             MsTestIntegration.OnMethodBegin(testMethodInfo, testMethod.GetType(), isRetry: false)?
                .Close(TestStatus.Skip, TimeSpan.Zero, _skipReason);
         }
-
-        return _arrayInstance;
     }
-}
 
-#pragma warning disable SA1402 // File May Only Contain A Single Type
-internal class SkipTestMethodExecutorAsync
-#pragma warning restore SA1402
-{
-    private readonly object _resultInstance;
-    private readonly string _skipReason;
-
-    public SkipTestMethodExecutorAsync(Assembly assembly, string skipReason)
+    internal class SyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
     {
-        var testResultType = assembly.GetType("Microsoft.VisualStudio.TestTools.UnitTesting.TestResult", throwOnError: true)!;
-        var array = Array.CreateInstance(testResultType, 1);
-        var result = Activator.CreateInstance(testResultType);
-        if (DuckType.Create<ITestResult>(result) is { } iResult)
+        [DuckReverseMethod(Name = "Execute", ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"])]
+        public object Execute(object testMethod)
         {
-            iResult.Outcome = UnitTestOutcome.Inconclusive; // Inconclusive is reported as Skipped in the CLI
+            ProcessTestMethod(testMethod);
+            return _arrayInstance;
+        }
+    }
+
+    internal class AsyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
+    {
+        private object? _resultInstance;
+
+        [DuckReverseMethod(Name = "ExecuteAsync", ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"])]
+        public object Execute(object testMethod)
+        {
+            ProcessTestMethod(testMethod);
+            _resultInstance ??= ((TaskTestResultArray?)Activator.CreateInstance(typeof(TaskTestResultArray<>).MakeGenericType([_arrayInstance.GetType()]), _arrayInstance))!.Result;
+            return _resultInstance;
         }
 
-        array.SetValue(result, 0);
-        _skipReason = skipReason;
-        _resultInstance = ((TaskTestResultArray?)Activator.CreateInstance(typeof(TaskTestResultArray<>).MakeGenericType([array.GetType()]), array))!.Result;
-    }
-
-    [DuckReverseMethod(Name = "ExecuteAsync", ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"])]
-    public object Execute(object testMethod)
-    {
-        if (testMethod.TryDuckCast<ITestMethod>(out var testMethodInfo))
+        private abstract class TaskTestResultArray
         {
-            // Create the skip span
-            MsTestIntegration.OnMethodBegin(testMethodInfo, testMethod.GetType(), isRetry: false)?
-               .Close(TestStatus.Skip, TimeSpan.Zero, _skipReason);
+            public abstract object Result { get; }
         }
 
-        return _resultInstance;
-    }
-
-    private abstract class TaskTestResultArray
-    {
-        public abstract object Result { get; }
-    }
-
-    private class TaskTestResultArray<T>(T value) : TaskTestResultArray
-    {
-        public override object Result { get; } = Task.FromResult(value);
+        private class TaskTestResultArray<T>(T value) : TaskTestResultArray
+        {
+            public override object Result { get; } = Task.FromResult(value);
+        }
     }
 }

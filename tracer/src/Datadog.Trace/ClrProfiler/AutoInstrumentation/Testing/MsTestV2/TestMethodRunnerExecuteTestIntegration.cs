@@ -43,12 +43,12 @@ public static class TestMethodRunnerExecuteTestIntegration
 
             if (MsTestIntegration.ShouldSkip(testMethod, out _, out _))
             {
-                _itrSkipTestMethodExecutor ??= new SkipTestMethodExecutor(executor.GetType().Assembly, IntelligentTestRunnerTags.SkippedByReason);
+                _itrSkipTestMethodExecutor ??= new SkipTestMethodExecutor.SyncImpl(executor.GetType().Assembly, IntelligentTestRunnerTags.SkippedByReason);
                 newExecutor = _itrSkipTestMethodExecutor;
             }
             else if (MsTestIntegration.GetTestProperties(testMethod) is { Disabled: true, AttemptToFix: false })
             {
-                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor(executor.GetType().Assembly, "Flaky test is disabled by Datadog.");
+                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor.SyncImpl(executor.GetType().Assembly, "Flaky test is disabled by Datadog.");
                 newExecutor = _disabledSkipTestMethodExecutor;
             }
 
@@ -80,8 +80,8 @@ public static class TestMethodRunnerExecuteTestIntegration
 public static class TestMethodRunnerExecuteTestIntegrationV3_9
 #pragma warning restore SA1402
 {
-    private static SkipTestMethodExecutorAsync? _itrSkipTestMethodExecutor;
-    private static SkipTestMethodExecutorAsync? _disabledSkipTestMethodExecutor;
+    private static SkipTestMethodExecutor? _itrSkipTestMethodExecutor;
+    private static SkipTestMethodExecutor? _disabledSkipTestMethodExecutor;
 
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
         where TTarget : ITestMethodRunnerV3_9
@@ -92,16 +92,16 @@ public static class TestMethodRunnerExecuteTestIntegrationV3_9
         if (MsTestIntegration.IsEnabled &&
             instance.TestMethodInfo is { Executor: { } executor } testMethodInfo)
         {
-            SkipTestMethodExecutorAsync? newExecutor = null;
+            SkipTestMethodExecutor? newExecutor = null;
 
             if (MsTestIntegration.ShouldSkip(testMethod, out _, out _))
             {
-                _itrSkipTestMethodExecutor ??= new SkipTestMethodExecutorAsync(executor.GetType().Assembly, IntelligentTestRunnerTags.SkippedByReason);
+                _itrSkipTestMethodExecutor ??= new SkipTestMethodExecutor.AsyncImpl(executor.GetType().Assembly, IntelligentTestRunnerTags.SkippedByReason);
                 newExecutor = _itrSkipTestMethodExecutor;
             }
             else if (MsTestIntegration.GetTestProperties(testMethod) is { Disabled: true, AttemptToFix: false })
             {
-                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutorAsync(executor.GetType().Assembly, "Flaky test is disabled by Datadog.");
+                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor.AsyncImpl(executor.GetType().Assembly, "Flaky test is disabled by Datadog.");
                 newExecutor = _disabledSkipTestMethodExecutor;
             }
 
