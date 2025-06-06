@@ -46,7 +46,8 @@ public static class Projects
         AppSecUnitTests,
         ClrProfilerManagedTests,
         TraceIntegrationTests,
-        TraceTests
+        TraceTests,
+        DdTraceIntegrationTests
     };
 }
 
