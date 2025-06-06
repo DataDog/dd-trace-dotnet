@@ -66,7 +66,14 @@ jobs:
           page_number: 5
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate GitHub App Token
+        id: generate-token
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - uses: ./.github/actions/deploy-aas-dev-apps
         name: 'Trigger AAS deploy'
         with:
-          aas_github_token: ${{ secrets.GH_EXTERNAL_TOKEN }}
+          aas_github_token: ${{ steps.generate-token.outputs.token }}
