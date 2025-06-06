@@ -11,6 +11,9 @@ using System.Text;
 
 namespace Datadog.Trace.LibDatadog;
 
+/// <summary>
+/// Represents a generic error with message returned by the libdatadog library.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 internal readonly struct Error
 {
