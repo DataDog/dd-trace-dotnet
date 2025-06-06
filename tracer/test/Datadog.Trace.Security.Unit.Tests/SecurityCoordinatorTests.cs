@@ -46,7 +46,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             requestMock.Setup(x => x.Query).Returns((IQueryCollection)null); // The class DefaultHttpRequest allows setting Query to null.
             var headerMock = new Mock<IHeaderDictionary>();
             headerMock.Setup(x => x.Keys).Returns(new string[0]);
-            requestMock.Setup(x => x.Headers).Returns(headerMock.Object); // The class DefaultHttpRequest creates empty header list in the getter if headers are null
+            requestMock.Setup(x => x.Headers).Returns(headerMock.Object); // The class DefaultHttpRequest creates empty header list in the getter if headers are null.
             requestMock.Setup(x => x.HttpContext).Returns(context);
             contextMoq.Setup(x => x.Request).Returns(requestMock.Object);
             CoreHttpContextStore.Instance.Set(context);
