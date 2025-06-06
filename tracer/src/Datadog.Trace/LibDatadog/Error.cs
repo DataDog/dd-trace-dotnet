@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.Logging;
@@ -24,10 +23,10 @@ internal readonly struct Error
 {
     internal readonly FFIVec Message;
 
-    public Exception ToException()
+    public LibDatadogException ToException()
     {
         var messageBytes = Message.ToByteArray();
         var message = Encoding.UTF8.GetString(messageBytes);
-        return new Exception(message);
+        return new LibDatadogException(message);
     }
 }
