@@ -20,10 +20,6 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
 /// </summary>
 internal class DataStreamsAggregator
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsAggregator>();
-    private readonly ReaderWriterLockSlim _lock = new();
-    private readonly int _lockTimeoutMs = 500;
-
     // The inner dictionary is constrained in size by the number of unique hashes seen by the app
     // Unique hashes are unique paths from origin to here, which could be unbounded if there are loops
     // The outer dictionary is constrained by FlushInterval/BucketDuration + 1
@@ -40,7 +36,6 @@ internal class DataStreamsAggregator
     private readonly long _bucketDurationInNs;
     private List<SerializableStatsBucket>? _statsToWrite;
     private List<SerializableBacklogBucket>? _backlogsToWrite;
-    private long _pointsDropped;
 
     public DataStreamsAggregator(DataStreamsMessagePackFormatter formatter, int bucketDurationMs)
     {
@@ -53,56 +48,26 @@ internal class DataStreamsAggregator
     /// </summary>
     public void Add(in StatsPoint point)
     {
-        try
-        {
-            _lock.TryEnterReadLock(_lockTimeoutMs);
-            try
-            {
-                var currentBucketStartTime = BucketStartTimeForTimestamp(point.TimestampNs);
-                AddToBuckets(point, currentBucketStartTime, _currentBuckets);
+        var currentBucketStartTime = BucketStartTimeForTimestamp(point.TimestampNs);
+        AddToBuckets(point, currentBucketStartTime, _currentBuckets);
 
-                var originTimestamp = point.TimestampNs - point.PathwayLatencyNs;
-                var originBucketStartTime = BucketStartTimeForTimestamp(originTimestamp);
-                AddToBuckets(point, originBucketStartTime, _originBuckets);
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
-        }
-        catch
-        {
-            Interlocked.Increment(ref _pointsDropped);
-        }
+        var originTimestamp = point.TimestampNs - point.PathwayLatencyNs;
+        var originBucketStartTime = BucketStartTimeForTimestamp(originTimestamp);
+        AddToBuckets(point, originBucketStartTime, _originBuckets);
     }
 
     public void AddBacklog(in BacklogPoint point)
     {
-        try
+        var currentBucketStartTime = BucketStartTimeForTimestamp(point.TimestampNs);
+        if (!_backlogBuckets.TryGetValue(currentBucketStartTime, out var bucket))
         {
-            _lock.TryEnterReadLock(_lockTimeoutMs);
-            try
-            {
-                var currentBucketStartTime = BucketStartTimeForTimestamp(point.TimestampNs);
-                if (!_backlogBuckets.TryGetValue(currentBucketStartTime, out var bucket))
-                {
-                    bucket = new Dictionary<string, BacklogBucket>();
-                    _backlogBuckets[currentBucketStartTime] = bucket;
-                }
-
-                if (!bucket.TryGetValue(point.Tags, out var group) || group.Value < point.Value)
-                {
-                    bucket[point.Tags] = new BacklogBucket(point.Tags, point.Value);
-                }
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
+            bucket = new Dictionary<string, BacklogBucket>();
+            _backlogBuckets[currentBucketStartTime] = bucket;
         }
-        catch
+
+        if (!bucket.TryGetValue(point.Tags, out var group) || group.Value < point.Value)
         {
-            Interlocked.Increment(ref _pointsDropped);
+            bucket[point.Tags] = new BacklogBucket(point.Tags, point.Value);
         }
     }
 
@@ -114,40 +79,17 @@ internal class DataStreamsAggregator
     /// <returns>True if data was serialized to the stream</returns>
     public bool Serialize(Stream stream, long maxBucketFlushTimeNs)
     {
-        Interlocked.Exchange(ref _pointsDropped, 0);
-        try
+        var statsToAdd = Export(maxBucketFlushTimeNs) ?? new();
+        var backlogsToAdd = ExportBacklogs(maxBucketFlushTimeNs) ?? new();
+        if (statsToAdd.Count > 0 || backlogsToAdd.Count > 0)
         {
-            _lock.TryEnterWriteLock(_lockTimeoutMs);
-            try
-            {
-                var statsToAdd = Export(maxBucketFlushTimeNs) ?? new();
-                var backlogsToAdd = ExportBacklogs(maxBucketFlushTimeNs) ?? new();
-                if (statsToAdd.Count > 0 || backlogsToAdd.Count > 0)
-                {
-                    _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd, backlogsToAdd);
-                    Clear(statsToAdd, backlogsToAdd);
+            _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd, backlogsToAdd);
+            Clear(statsToAdd, backlogsToAdd);
 
-                    return true;
-                }
-
-                return false;
-            }
-            finally
-            {
-                var dropped = Interlocked.Read(ref _pointsDropped);
-                _lock.ExitWriteLock();
-
-                if (dropped > 0)
-                {
-                    Log.Debug("Dropped {Dropped} data points during serialization", dropped);
-                }
-            }
+            return true;
         }
-        catch
-        {
-            Log.Debug("Failed to serialize data streams data.");
-            return false;
-        }
+
+        return false;
     }
 
     internal List<SerializableBacklogBucket> ExportBacklogs(long maxBucketFlushTimeNs)
