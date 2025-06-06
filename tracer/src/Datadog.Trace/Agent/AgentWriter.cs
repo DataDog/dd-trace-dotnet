@@ -236,9 +236,12 @@ namespace Datadog.Trace.Agent
 
             while (true)
             {
-                tasks[2] = Task.Delay(TimeSpan.FromSeconds(1));
-                await Task.WhenAny(tasks).ConfigureAwait(false);
-                tasks[2] = null;
+                var tcs = new TaskCompletionSource<bool>();
+                using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, TimeSpan.FromSeconds(1), Timeout.InfiniteTimeSpan))
+                {
+                    await (await Task.WhenAny(tasks).ConfigureAwait(false)).ConfigureAwait(false);
+                    tasks[2] = null;
+                }
 
                 if (_forceFlush.Task.IsCompleted)
                 {
