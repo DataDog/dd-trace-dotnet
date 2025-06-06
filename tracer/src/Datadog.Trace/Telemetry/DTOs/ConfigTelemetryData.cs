@@ -24,6 +24,7 @@ namespace Datadog.Trace.Telemetry
         public const string CodeHotspotsEnabled = "code_hotspots_enabled";
 
         public const string SsiInjectionEnabled = "ssi_injection_enabled";
+        public const string InstrumentationSource = "instrumentation_source";
         public const string SsiAllowUnsupportedRuntimesEnabled = "ssi_forced_injection_enabled";
 
         // We intentionally are using specific values here, not OR_GREATER_THAN
