@@ -33,6 +33,14 @@ internal readonly struct TraceChunkModel
 
     public readonly int? SamplingPriority = null;
 
+    public readonly string? SamplingMechanism = null;
+
+    public readonly double? AppliedSamplingRate = null;
+
+    public readonly double? RateLimiterRate = null;
+
+    public readonly double? TracesKeepRate = null;
+
     public readonly string? Environment = null;
 
     public readonly string? ServiceVersion = null;
@@ -83,6 +91,10 @@ internal readonly struct TraceChunkModel
             // only use TraceContext.SamplingPriority if there was  no override value
             SamplingPriority ??= traceContext.SamplingPriority;
 
+            AppliedSamplingRate = traceContext.AppliedSamplingRate;
+            SamplingMechanism = traceContext.SamplingMechanism;
+            RateLimiterRate = traceContext.RateLimiterRate;
+            TracesKeepRate = traceContext.TracesKeepRate;
             Environment = traceContext.Environment;
             ServiceVersion = traceContext.ServiceVersion;
             Origin = traceContext.Origin;
