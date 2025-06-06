@@ -37,7 +37,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
 #if !NETFRAMEWORK
         [Fact]
-        public void GivenSecurityCoordinatorInstance_WhenScan_NoException()
+        public void GivenSecurityCoordinatorInstance_WhenScanNullQuery_NoException()
         {
             var contextMoq = new Mock<HttpContext>();
             var requestMock = new Mock<HttpRequest>();
