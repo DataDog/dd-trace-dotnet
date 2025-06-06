@@ -21,7 +21,7 @@ internal static class LogSinkOptions
     /// The console log sink.
     /// </summary>
     /// <remarks>
-    /// The console log sink is experimental and unsupported.
+    /// The console log sink is experimental and unsupported. It may be removed or replaced at any time.
     /// </remarks>
     public const string Console = "console-experimental";
 }
