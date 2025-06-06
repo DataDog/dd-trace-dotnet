@@ -234,7 +234,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 var tcs = new TaskCompletionSource<bool>();
                 using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
                 {
-                    await (await Task.WhenAny(_completionSource.Task, tcs.Task).ConfigureAwait(false)).ConfigureAwait(false);
+                    await Task.WhenAny(_completionSource.Task, tcs.Task).ConfigureAwait(false);
                 }
             }
         }

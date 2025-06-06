@@ -239,7 +239,8 @@ namespace Datadog.Trace.Agent
                 var tcs = new TaskCompletionSource<bool>();
                 using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, TimeSpan.FromSeconds(1), Timeout.InfiniteTimeSpan))
                 {
-                    await (await Task.WhenAny(tasks).ConfigureAwait(false)).ConfigureAwait(false);
+                    tasks[2] = tcs.Task;
+                    await Task.WhenAny(tasks).ConfigureAwait(false);
                     tasks[2] = null;
                 }
 
