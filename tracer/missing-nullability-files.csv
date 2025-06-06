@@ -195,7 +195,6 @@ src/Datadog.Trace/Tagging/AwsSnsTags.cs
 src/Datadog.Trace/Tagging/AwsSqsTags.cs
 src/Datadog.Trace/Tagging/AzureFunctionsTags.cs
 src/Datadog.Trace/Tagging/AzureServiceBusTags.cs
-src/Datadog.Trace/Tagging/CommonTags.cs
 src/Datadog.Trace/Tagging/CosmosDbTags.cs
 src/Datadog.Trace/Tagging/CouchbaseTags.cs
 src/Datadog.Trace/Tagging/GrpcTags.cs
