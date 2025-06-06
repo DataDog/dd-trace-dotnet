@@ -7,8 +7,18 @@
 
 namespace Datadog.Trace.LibDatadog;
 
+/// <summary>
+/// Represents the target stream for a standard output/error logger.
+/// </summary>
 internal enum StdTarget
 {
+    /// <summary>
+    /// The standard output stream.
+    /// </summary>
     Stdout = 0,
+
+    /// <summary>
+    /// The standard error stream.
+    /// </summary>
     Stderr = 1,
 }

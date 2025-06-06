@@ -9,8 +9,15 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.LibDatadog;
 
+/// <summary>
+/// Represents a configuration for a file logger.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 internal struct FileConfig
 {
+    /// <summary>
+    /// The path to the log file.
+    /// If the intermediate directory does not exist, it will be created while configuring the logger.
+    /// </summary>
     public CharSlice Path;
 }
