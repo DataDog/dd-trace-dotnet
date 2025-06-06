@@ -65,7 +65,7 @@ internal class SkipTestMethodExecutorAsync
 
         array.SetValue(result, 0);
         _skipReason = skipReason;
-        _resultInstance = ((TaskTestResultArray?)Activator.CreateInstance(typeof(TaskTestResultArray<>).MakeGenericType([array.GetType()])))!.Result;
+        _resultInstance = ((TaskTestResultArray?)Activator.CreateInstance(typeof(TaskTestResultArray<>).MakeGenericType([array.GetType()]), array))!.Result;
     }
 
     [DuckReverseMethod(Name = "ExecuteAsync", ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"])]
