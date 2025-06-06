@@ -50,9 +50,10 @@ internal sealed class Logger
 
         try
         {
-            NativeInterop.Logger.ConfigureFile(cfg);
+            using var error = NativeInterop.Logger.ConfigureFile(cfg);
+            error.ThrowIfError();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not LibDatadogException)
         {
             Log.Error(ex, "Failed to configure libdatadog logger");
         }
@@ -67,9 +68,10 @@ internal sealed class Logger
 
         try
         {
-            NativeInterop.Logger.DisableFile();
+            using var error = NativeInterop.Logger.DisableFile();
+            error.ThrowIfError();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not LibDatadogException)
         {
             Log.Error(ex, "Failed to disable libdatadog logger");
         }
@@ -85,9 +87,10 @@ internal sealed class Logger
         var level = logLevel.ToLogEventLevel();
         try
         {
-            NativeInterop.Logger.SetLogLevel(level);
+            using var error = NativeInterop.Logger.SetLogLevel(level);
+            error.ThrowIfError();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not LibDatadogException)
         {
             Log.Error(ex, "Failed to set libdatadog log level");
         }
