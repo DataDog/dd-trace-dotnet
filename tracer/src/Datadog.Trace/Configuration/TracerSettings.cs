@@ -412,7 +412,7 @@ namespace Datadog.Trace.Configuration
             _runtimeMetricsEnabled = config
                                    .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
                                    .AsBoolResult()
-                                   .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
+                                   .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: !isRunningInCiVisibility);
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)

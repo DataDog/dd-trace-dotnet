@@ -490,13 +490,13 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "none", false)]
         [InlineData("false", "random", false)]
         [InlineData("false", null, false)]
-        [InlineData("A", "none", false)]
-        [InlineData("A", "random", false)]
-        [InlineData("", "none", false)]
-        [InlineData("", "random", false)]
+        [InlineData("A", "none", true)]
+        [InlineData("A", "random", true)]
+        [InlineData("", "none", true)]
+        [InlineData("", "random", true)]
         [InlineData(null, "none", false)]
-        [InlineData(null, "random", false)]
-        [InlineData(null, null, false)]
+        [InlineData(null, "random", true)]
+        [InlineData(null, null, true)]
         public void RuntimeMetricsEnabled(string value, string otelValue, bool expected)
         {
             var source = CreateConfigurationSource(
