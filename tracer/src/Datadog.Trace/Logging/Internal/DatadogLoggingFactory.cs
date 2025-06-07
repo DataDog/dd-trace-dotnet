@@ -29,18 +29,25 @@ internal static class DatadogLoggingFactory
     // By default, we don't rate limit log messages;
     private const int DefaultRateLimit = 0;
     private const int DefaultMaxLogFileSize = 10 * 1024 * 1024;
+    internal const string DefaultConsoleMessageTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception}{NewLine}";
 
     public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         var logSinkOptions = new ConfigurationBuilder(source, telemetry)
                             .WithKeys(ConfigurationKeys.LogSinks)
                             .AsString()
-                           ?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                           ?.Split([','], StringSplitOptions.RemoveEmptyEntries);
 
         FileLoggingConfiguration? fileConfig = null;
         if (logSinkOptions is null || Contains(logSinkOptions, LogSinkOptions.File))
         {
             fileConfig = GetFileLoggingConfiguration(source, telemetry);
+        }
+
+        ConsoleLoggingConfiguration? consoleConfig = null;
+        if (Contains(logSinkOptions, LogSinkOptions.Console))
+        {
+            consoleConfig = GetConsoleLoggingConfiguration(source);
         }
 
         var redactedErrorLogsConfig = GetRedactedErrorTelemetryConfiguration(source, telemetry);
@@ -50,7 +57,7 @@ internal static class DatadogLoggingFactory
                        .AsInt32(DefaultRateLimit, x => x >= 0)
                        .Value;
 
-        return new DatadogLoggingConfiguration(rateLimit, fileConfig, redactedErrorLogsConfig);
+        return new DatadogLoggingConfiguration(rateLimit, fileConfig, redactedErrorLogsConfig, consoleConfig);
 
         static bool Contains(string?[]? array, string toMatch)
         {
@@ -76,11 +83,20 @@ internal static class DatadogLoggingFactory
         }
     }
 
+    private static ConsoleLoggingConfiguration GetConsoleLoggingConfiguration(IConfigurationSource? source)
+    {
+        // TODO: allow users to set the message template? Use Json? Different/better message template?
+        // Yes, I chose this arbitrarily
+        var maxBufferSize = 1000;
+
+        return new ConsoleLoggingConfiguration(DefaultConsoleMessageTemplate, maxBufferSize);
+    }
+
     public static IDatadogLogger? CreateFromConfiguration(
         in DatadogLoggingConfiguration config,
         DomainMetadata domainMetadata)
     {
-        if (config is { File: null, ErrorLogging: null })
+        if (config is { File: null, ErrorLogging: null, Console: null })
         {
             // no enabled sinks
             return null;
@@ -117,6 +133,15 @@ internal static class DatadogLoggingFactory
                                rollOnFileSizeLimit: true,
                                fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
                                shared: true));
+        }
+
+        if (config.Console is { } consoleConfig)
+        {
+            loggerConfiguration
+               .WriteTo.Logger(
+                   lc => lc
+                         .Enrich.With(new RemovePropertyEnricher(LogEventLevel.Error, DatadogSerilogLogger.SkipTelemetryProperty))
+                         .WriteTo.Sink(new ConsoleSink(consoleConfig.MessageTemplate, consoleConfig.BufferSize)));
         }
 
         try

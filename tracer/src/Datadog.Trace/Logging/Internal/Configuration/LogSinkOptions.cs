@@ -7,7 +7,21 @@
 
 namespace Datadog.Trace.Logging.Internal.Configuration;
 
+/// <summary>
+/// Available log sinks for the Datadog logging system.
+/// </summary>
 internal static class LogSinkOptions
 {
+    /// <summary>
+    /// The file log sink.
+    /// </summary>
     public const string File = "file";
+
+    /// <summary>
+    /// The console log sink.
+    /// </summary>
+    /// <remarks>
+    /// The console log sink is experimental and unsupported. It may be removed or replaced at any time.
+    /// </remarks>
+    public const string Console = "console-experimental";
 }
