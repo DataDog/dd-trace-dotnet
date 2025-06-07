@@ -4508,7 +4508,9 @@ stages:
             versionSpec: '3.12'
           displayName: Install python 3.12
 
-        - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+        - script: git clone https://github.com/DataDog/system-tests.git --revision $SYSTEM_TESTS_REF
+          env:
+            SYSTEM_TESTS_REF: 0fb4a33cf727c23aa3f796ff3c9bc6499a9ea01e # Automated: This reference is automatically updated.
           displayName: Get system tests repo
           
         - script: |
@@ -4619,7 +4621,9 @@ stages:
           versionSpec: '3.12'
         displayName: Install python 3.12
 
-      - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+      - script: git clone https://github.com/DataDog/system-tests.git --revision $SYSTEM_TESTS_REF
+        env:
+          SYSTEM_TESTS_REF: 0fb4a33cf727c23aa3f796ff3c9bc6499a9ea01e # Automated: This reference is automatically updated.
         displayName: Get system tests repo
         
       - template: steps/download-artifact.yml
