@@ -60,6 +60,8 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> IsDisabledBytes => new byte[] { 217, 37, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 116, 101, 115, 116, 95, 100, 105, 115, 97, 98, 108, 101, 100 };
         // IsAttemptToFixBytes = MessagePack.Serialize("test.test_management.is_attempt_to_fix");
         private static ReadOnlySpan<byte> IsAttemptToFixBytes => new byte[] { 217, 38, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120 };
+        // AttemptToFixSourceBytes = MessagePack.Serialize("test.test_management.attempt_to_fix_source");
+        private static ReadOnlySpan<byte> AttemptToFixSourceBytes => new byte[] { 217, 42, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120, 95, 115, 111, 117, 114, 99, 101 };
         // HasFailedAllRetriesBytes = MessagePack.Serialize("test.has_failed_all_retries");
         private static ReadOnlySpan<byte> HasFailedAllRetriesBytes => new byte[] { 187, 116, 101, 115, 116, 46, 104, 97, 115, 95, 102, 97, 105, 108, 101, 100, 95, 97, 108, 108, 95, 114, 101, 116, 114, 105, 101, 115 };
         // AttemptToFixPassedBytes = MessagePack.Serialize("test.test_management.attempt_to_fix_passed");
@@ -102,6 +104,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.test_management.is_quarantined" => IsQuarantined,
                 "test.test_management.is_test_disabled" => IsDisabled,
                 "test.test_management.is_attempt_to_fix" => IsAttemptToFix,
+                "test.test_management.attempt_to_fix_source" => AttemptToFixSource,
                 "test.has_failed_all_retries" => HasFailedAllRetries,
                 "test.test_management.attempt_to_fix_passed" => AttemptToFixPassed,
                 "_dd.library_capabilities.test_impact_analysis" => CapabilitiesTestImpactAnalysis,
@@ -180,6 +183,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.test_management.is_attempt_to_fix": 
                     IsAttemptToFix = value;
+                    break;
+                case "test.test_management.attempt_to_fix_source": 
+                    AttemptToFixSource = value;
                     break;
                 case "test.has_failed_all_retries": 
                     HasFailedAllRetries = value;
@@ -316,6 +322,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (IsAttemptToFix is not null)
             {
                 processor.Process(new TagItem<string>("test.test_management.is_attempt_to_fix", IsAttemptToFix, IsAttemptToFixBytes));
+            }
+
+            if (AttemptToFixSource is not null)
+            {
+                processor.Process(new TagItem<string>("test.test_management.attempt_to_fix_source", AttemptToFixSource, AttemptToFixSourceBytes));
             }
 
             if (HasFailedAllRetries is not null)
@@ -507,6 +518,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.test_management.is_attempt_to_fix (tag):")
                   .Append(IsAttemptToFix)
+                  .Append(',');
+            }
+
+            if (AttemptToFixSource is not null)
+            {
+                sb.Append("test.test_management.attempt_to_fix_source (tag):")
+                  .Append(AttemptToFixSource)
                   .Append(',');
             }
 
