@@ -263,7 +263,35 @@ namespace Datadog.Trace.Security.IntegrationTests
             // So copy the meta struct appsec data to a fake tag to validate it in snapshots
             if (target.MetaStruct.TryGetValue("appsec", out var appsec))
             {
-                var appSecMetaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
+                object appSecMetaStruct = null;
+                try
+                {
+                    appSecMetaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
+                    throw new Exception("MetaStructByteArrayToObject is null, this is likely because the appsec meta struct is not available in the test application. " +
+                        "Please ensure that the test application is configured to use the AppSec meta struct.");
+                }
+                catch (Exception ex)
+                {
+                    string content = "Keys are ";
+
+                    foreach (var key in target.MetaStruct.Keys)
+                    {
+                        content += $"{key}, ";
+                    }
+
+                    content += Environment.NewLine + "Appsec Metastruct content is: ";
+
+                    foreach (var item in appsec)
+                    {
+                        content += item.ToString() + " ";
+                    }
+
+                    content += $"{Environment.NewLine} appsec.Count is {appsec.Count()} {Environment.NewLine}. {Environment.NewLine} Failed to convert appsec meta struct to object: {ex.Message}";
+                    Console.WriteLine(content);
+                    throw;
+                }
+
+#pragma warning disable CS0162 // Unreachable code detected
                 var json = JsonConvert.SerializeObject(appSecMetaStruct);
                 var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
                 var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
@@ -271,6 +299,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
                 // Let the snapshot know that the data comes from the meta struct
                 if (forceMetaStruct) { target.Tags[Tags.AppSecJson + ".metastruct.test"] = "true"; }
+#pragma warning restore CS0162 // Unreachable code detected
             }
         }
 
