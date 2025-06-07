@@ -18,8 +18,6 @@ internal interface ITestOptimizationClient
 
     Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync();
 
-    Task<TestOptimizationClient.ImpactedTestsDetectionResponse> GetImpactedTestsDetectionFilesAsync();
-
     Task<long> SendPackFilesAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude);
 
     Task<long> UploadRepositoryChangesAsync();
