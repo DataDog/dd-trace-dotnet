@@ -419,5 +419,42 @@ namespace Datadog.Trace.Propagators
                 return Enumerable.Empty<string?>();
             }
         }
+
+        internal void AddBaggageToSpanAsTags(ISpan span, Baggage? baggage)
+        {
+            if (baggage is null or { Count: 0 })
+            {
+                return;
+            }
+
+            var settings = Tracer.Instance.Settings;
+            var baggageTagKeys = settings.BaggageTagKeys;
+
+            if (string.IsNullOrWhiteSpace(baggageTagKeys))
+            {
+                // feature disabled
+                return;
+            }
+
+            if (baggageTagKeys == "*")
+            {
+                // add all baggage items as tags
+                foreach (var item in baggage)
+                {
+                    span.SetTag(item.Key, item.Value);
+                }
+                return;
+            }
+
+            // add only specified baggage items as tags
+            var allowedKeys = baggageTagKeys.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            foreach (var key in allowedKeys)
+            {
+                if (baggage.TryGetValue(key, out var value))
+                {
+                    span.SetTag(key, value);
+                }
+            }
+        }
     }
 }

@@ -623,6 +623,10 @@ namespace Datadog.Trace.Configuration
                                  .WithKeys(ConfigurationKeys.BaggageMaximumBytes)
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageBytes);
 
+            BaggageTagKeys = config
+                            .WithKeys(ConfigurationKeys.BaggageTagKeys)
+                            .AsString(defaultValue: "user.id,session.id,account.id");
+
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
 
             TraceMethods = config
@@ -1101,6 +1105,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.BaggageMaximumBytes"/>
         internal int BaggageMaximumBytes { get; }
+
+        /// <summary>
+        /// Gets the configuration for which baggage keys are converted into span tags.
+        /// Default value is "user.id,session.id,account.id".
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.BaggageTagKeys"/>
+        internal string BaggageTagKeys { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics
