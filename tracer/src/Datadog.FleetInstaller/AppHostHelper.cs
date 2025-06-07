@@ -82,53 +82,48 @@ internal static class AppHostHelper
         // If the IIS host config is being modified, this may fail
         // We retry multiple times, as the final update is atomic
         // We could consider adding backoff here, but it's not clear that it's necessary
-        var attempt = 0;
-        while (attempt < 3)
+        HashSet<string> appPoolsWeMustReenableRecycling = [];
+        if (!Retry(log, "disable app pool recycling", () => DisableRecycling(log, out appPoolsWeMustReenableRecycling)))
         {
-            attempt++;
-            if (attempt > 1)
-            {
-                log.WriteInfo($"Attempt {attempt} to update IIS failed, retrying.");
-            }
-
-            if (ModifyEnvironmentVariables(log, envVars, updateEnvVars))
-            {
-                return true;
-            }
-        }
-
-        log.WriteError($"Failed to update IIS after {attempt} attempts");
-        return false;
-    }
-
-    private static bool ModifyEnvironmentVariables(
-        ILogger log,
-        ReadOnlyDictionary<string, string> envVars,
-        Action<ILogger, ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars)
-    {
-        if (!SetEnvironmentVariables(log, envVars, updateEnvVars, out var appPoolsWeMustReenableRecycling))
-        {
-            // If we failed to set the environment variables, we don't need to re-enable recycling
-            // because by definition we can't have saved successfully
+            // We failed to disable recycling, so we can't do anything more
             return false;
         }
 
-        // We do this separately, because we have to do all the work again no matter what we do
-        return ReEnableRecycling(log, appPoolsWeMustReenableRecycling);
+        var success = Retry(log, "update app pool environment variables", () => SetEnvironmentVariables(log, envVars, updateEnvVars));
+
+        // We must try to re-enable recycling even if we failed to set the environment variables
+        return Retry(log, "re-enable app pool recycling", () => ReEnableRecycling(log, appPoolsWeMustReenableRecycling)) && success;
+
+        static bool Retry(ILogger log, string actionName, Func<bool> action)
+        {
+            var attempt = 0;
+            while (attempt < 3)
+            {
+                attempt++;
+                if (attempt > 1)
+                {
+                    log.WriteInfo($"Attempt {attempt} to {actionName} failed, retrying.");
+                }
+
+                if (action())
+                {
+                    return true;
+                }
+            }
+
+            log.WriteError($"Failed to {actionName} after {attempt} attempts");
+            return false;
+        }
     }
 
     private static bool SetEnvironmentVariables(
         ILogger log,
         ReadOnlyDictionary<string, string> envVars,
-        Action<ILogger, ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars,
-        out HashSet<string> appPoolsWeMustReenableRecycling)
+        Action<ILogger, ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars)
     {
-        appPoolsWeMustReenableRecycling = [];
-
         try
         {
             using var serverManager = new ServerManager();
-            appPoolsWeMustReenableRecycling = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             var appPoolsSection = GetApplicationPoolsSection(log, serverManager);
             if (appPoolsSection is null)
@@ -157,6 +152,46 @@ internal static class AppHostHelper
                     }
 
                     log.WriteInfo($"Updating app pool '{poolName}' environment variables");
+                    updateEnvVars(log, appPoolElement.GetCollection("environmentVariables"), envVars);
+                }
+            }
+
+            log.WriteInfo("Saving applicationHost.config");
+            serverManager.CommitChanges();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            log.WriteError(ex, "Error updating application pools");
+            return false;
+        }
+    }
+
+    private static bool DisableRecycling(ILogger log, out HashSet<string> appPoolsWeMustReenableRecycling)
+    {
+        try
+        {
+            log.WriteInfo("Temporarily disabling app pool recycling");
+            using var serverManager = new ServerManager();
+            appPoolsWeMustReenableRecycling = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            var appPoolsSection = GetApplicationPoolsSection(log, serverManager);
+            if (appPoolsSection is null)
+            {
+                return false;
+            }
+
+            foreach (var appPoolElement in appPoolsSection.Value.AppPools)
+            {
+                if (string.Equals(appPoolElement.ElementTagName, "add", StringComparison.OrdinalIgnoreCase))
+                {
+                    // An app pool element
+                    if (appPoolElement.GetAttributeValue("name") is not string poolName)
+                    {
+                        // poolName can never be null, if it is, weirdness is afoot, so bail out
+                        log.WriteInfo("Found app pool element without a name, skipping");
+                        continue;
+                    }
 
                     // disable recycling of the pool, so that we don't force a restart when we update the pool
                     // we can't distinguish between "not set" and "set to false", but we only really care about
@@ -171,9 +206,6 @@ internal static class AppHostHelper
                         appPoolsWeMustReenableRecycling.Add(poolName);
                         appPoolElement.GetChildElement("recycling")["disallowRotationOnConfigChange"] = true;
                     }
-
-                    // Set the pool-specific env variables
-                    updateEnvVars(log, appPoolElement.GetCollection("environmentVariables"), envVars);
                 }
             }
 
@@ -183,7 +215,8 @@ internal static class AppHostHelper
         }
         catch (Exception ex)
         {
-            log.WriteError(ex, $"Error updating application pools");
+            appPoolsWeMustReenableRecycling = [];
+            log.WriteError(ex, "Error updating application pools");
             return false;
         }
     }
