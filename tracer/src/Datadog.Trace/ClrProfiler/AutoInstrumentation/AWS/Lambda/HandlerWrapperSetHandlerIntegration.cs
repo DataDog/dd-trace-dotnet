@@ -68,6 +68,12 @@ public class HandlerWrapperSetHandlerIntegration
 
         public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg)
         {
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AwsLambda))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return CallTargetState.GetDefault();
+            }
+
             LambdaCommon.Log("DelegateWrapper Running OnDelegateBegin");
 
             Scope scope;
@@ -101,6 +107,14 @@ public class HandlerWrapperSetHandlerIntegration
         /// <inheritdoc/>
         public async Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object sender, TInnerReturn returnValue, Exception exception, object state)
         {
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AwsLambda))
+            {
+                // integration disabled, don't create a scope, skip this trace,
+                // but we still need to make sure we flush any traces
+                await LambdaCommon.FlushTracesAsync().ConfigureAwait(false);
+                return returnValue;
+            }
+
             LambdaCommon.Log("DelegateWrapper Running OnDelegateEndAsync");
             try
             {
