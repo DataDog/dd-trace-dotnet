@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Allocate": {
+      "commandName": "Project",
+      "commandLineArgs": "--scenario 5"
+    }
+  }
+}
