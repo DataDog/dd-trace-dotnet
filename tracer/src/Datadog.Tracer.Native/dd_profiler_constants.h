@@ -64,9 +64,13 @@ const shared::WSTRING include_assemblies[]{
 };
 
 // Note that this list should be kept in sync with the values in shared/src/Datadog.Trace.ClrProfiler.Native/util.h
-// Note that you also consider adding to the SSI tracer/build/artifacts/requirements.json file
+// Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
+// FIXME: this should also take into account case insensitivity, but that is not yet supported
+// https://devblogs.microsoft.com/oldnewthing/20241007-00/?p=110345
 const shared::WSTRING default_exclude_assemblies[]{
+    WStr("aspnet_compiler.exe"),
     WStr("aspnet_state.exe"),
+    WStr("CollectGuestLogs.exe"), // https://github.com/Azure/WindowsVMAgent
     WStr("csc.exe"),
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
@@ -78,6 +82,9 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("MsDtsSrvr.exe"),
     WStr("msvsmon.exe"),
     WStr("PerfWatson2.exe"),
+    WStr("powershell.exe"),
+    WStr("pwsh.exe"),
+    WStr("pwsh"),
     WStr("ServiceHub.DataWarehouseHost.exe"),
     WStr("ServiceHub.Host.CLR.exe"),
     WStr("ServiceHub.Host.CLR.x86.exe"),
@@ -93,6 +100,9 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("VBCSCompiler.exe"),
     WStr("vsdbg"),
     WStr("vsdbg.exe"),
+    WStr("WaAppAgent.exe"),            // https://github.com/Azure/WindowsVMAgent
+    WStr("WerFault.exe"),              // WER = Windows Error Reporting - can kick in when a process crashes
+    WStr("WindowsAzureGuestAgent.exe") // https://github.com/Azure/WindowsVMAgent
 };
 
 const shared::WSTRING skip_traceattribute_assembly_prefixes[]{
