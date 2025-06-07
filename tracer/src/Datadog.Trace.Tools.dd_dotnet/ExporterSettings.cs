@@ -18,22 +18,36 @@ namespace Datadog.Trace.Configuration;
 /// </summary>
 public partial class ExporterSettings
 {
-    private readonly Func<string, bool> _fileExists = File.Exists;
+    private readonly Func<string, bool> _fileExists;
     private readonly DummyTelemetry _telemetry = new();
+
+    // Internal for testing
+    internal ExporterSettings()
+        : this(source: null)
+    {
+    }
+
+    // Internal for testing
+    internal ExporterSettings(IConfigurationSource? source)
+        : this(source, File.Exists)
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExporterSettings"/> class.
     /// </summary>
     /// <param name="configuration">Configuration source</param>
-    public ExporterSettings(IConfigurationSource? configuration)
+    /// <param name="fileExists">Func for estabilishing whether a given file exists</param>
+    public ExporterSettings(IConfigurationSource? configuration, Func<string, bool> fileExists)
     {
+        _fileExists = fileExists;
         var agentUri = GetValue(configuration, ConfigurationKeys.AgentUri);
         var tracePipeName = GetValue(configuration, ConfigurationKeys.TracesPipeName);
         var agentHost = GetValue(configuration, ConfigurationKeys.AgentHost, "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME");
         var agentPortStr = GetValue(configuration, ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT");
         var unixDomainSocketPath = GetValue(configuration, ConfigurationKeys.TracesUnixDomainSocketPath);
 
-        int.TryParse(agentPortStr, out var agentPort);
+        int? agentPort = int.TryParse(agentPortStr, out var port) ? port : null;
 
         var traceSettings = GetTraceTransport(agentUri, tracePipeName, agentHost, agentPort, unixDomainSocketPath);
         TracesTransport = traceSettings.Transport;
@@ -48,6 +62,7 @@ public partial class ExporterSettings
     /// <param name="agentUri">Agent URI</param>
     public ExporterSettings(string agentUri)
     {
+        _fileExists = File.Exists;
         var traceSettings = GetTraceTransport(agentUri, null, null, null, null);
         TracesTransport = traceSettings.Transport;
         TracesPipeName = traceSettings.PipeName;
@@ -62,7 +77,7 @@ public partial class ExporterSettings
 
     internal Uri AgentUri { get; }
 
-    private List<string> ValidationWarnings { get; } = new();
+    internal List<string> ValidationWarnings { get; } = new();
 
     internal TracesTransportType TracesTransport { get;  }
 
