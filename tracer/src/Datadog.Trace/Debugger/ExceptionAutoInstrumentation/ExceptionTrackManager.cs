@@ -30,31 +30,56 @@ using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionTrackManager
+    internal class ExceptionTrackManager : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionTrackManager>();
-        private static readonly ConcurrentDictionary<ExceptionIdentifier, TrackedExceptionCase> TrackedExceptionCases = new();
-        private static readonly ConcurrentQueue<Exception> ExceptionProcessQueue = new();
-        private static readonly SemaphoreSlim WorkAvailable = new(0, int.MaxValue);
-        private static readonly CancellationTokenSource Cts = new();
-        private static readonly ExceptionCaseScheduler ExceptionsScheduler = new();
-        private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
-        private static readonly TimeSpan RateLimit = ExceptionDebugging.Settings.RateLimit;
-        private static readonly BasicCircuitBreaker ReportingCircuitBreaker = new(ExceptionDebugging.Settings.MaxExceptionAnalysisLimit, TimeSpan.FromSeconds(1));
-        private static readonly CachedItems EvaluateWithRootSpanCases = new();
-        private static readonly CachedItems CachedInvalidatedCases = new();
-        private static Task? _exceptionProcessorTask;
-        private static bool _isInitialized;
+        private readonly ConcurrentDictionary<ExceptionIdentifier, TrackedExceptionCase> _trackedExceptionCases;
+        private readonly ConcurrentQueue<Exception> _exceptionProcessQueue;
+        private readonly SemaphoreSlim _workAvailable;
+        private readonly CancellationTokenSource _cts;
+        private readonly ExceptionCaseScheduler _exceptionsScheduler;
+        private readonly int _maxFramesToCapture;
+        private readonly TimeSpan _rateLimit;
+        private readonly BasicCircuitBreaker _reportingCircuitBreaker;
+        private readonly CachedItems _evaluateWithRootSpanCases;
+        private readonly CachedItems _cachedInvalidatedCases;
+        private Task? _exceptionProcessorTask;
+        private bool _isInitialized;
+
+        private ExceptionTrackManager(ExceptionReplaySettings settings)
+        {
+            _trackedExceptionCases = new();
+            _exceptionProcessQueue = new();
+            _workAvailable = new(0, int.MaxValue);
+            _cts = new();
+            _exceptionsScheduler = new();
+            _maxFramesToCapture = settings.MaximumFramesToCapture;
+            _rateLimit = settings.RateLimit;
+            _reportingCircuitBreaker = new(settings.MaxExceptionAnalysisLimit, TimeSpan.FromSeconds(1));
+            _evaluateWithRootSpanCases = new();
+            _cachedInvalidatedCases = new();
+
+            _exceptionProcessorTask = Task.Factory.StartNew(
+                                               async () => await StartExceptionProcessingAsync(_cts.Token).ConfigureAwait(false), TaskCreationOptions.LongRunning)
+                                          .Unwrap();
+            IsEditAndContinueFeatureEnabled = IsEnCFeatureEnabled();
+            _isInitialized = true;
+        }
 
         internal static bool IsEditAndContinueFeatureEnabled { get; private set; }
 
-        private static async Task StartExceptionProcessingAsync(CancellationToken cancellationToken)
+        internal static ExceptionTrackManager Create(ExceptionReplaySettings settings)
+        {
+            return new ExceptionTrackManager(settings);
+        }
+
+        private async Task StartExceptionProcessingAsync(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                await WorkAvailable.WaitAsync(cancellationToken).ConfigureAwait(false);
+                await _workAvailable.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                while (ExceptionProcessQueue.TryDequeue(out var exception))
+                while (_exceptionProcessQueue.TryDequeue(out var exception))
                 {
                     try
                     {
@@ -70,7 +95,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public static void Report(Span span, Exception? exception)
+        public void Report(Span span, Exception? exception)
         {
             if (!_isInitialized)
             {
@@ -98,7 +123,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private static void ReportInternal(Exception exception, ErrorOriginKind errorOrigin, Span rootSpan)
+        private void ReportInternal(Exception exception, ErrorOriginKind errorOrigin, Span rootSpan)
         {
             var exToString = exception.ToString();
             var normalizedExHash = ExceptionNormalizer.Instance.NormalizeAndHashException(exToString, exception.GetType().Name, exception.InnerException?.GetType().Name);
@@ -110,7 +135,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
-            if (CachedInvalidatedCases.Contains(normalizedExHash))
+            if (_cachedInvalidatedCases.Contains(normalizedExHash))
             {
                 SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.CachedInvalidatedExceptionCase, normalizedExHash);
 
@@ -122,14 +147,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
-            if (EvaluateWithRootSpanCases.Contains(normalizedExHash))
+            if (_evaluateWithRootSpanCases.Contains(normalizedExHash))
             {
                 Log.Information("Encountered an exception that should be handled with root span, exception: {Exception}", exToString);
                 ProcessException(exception, normalizedExHash, errorOrigin, rootSpan);
                 return;
             }
 
-            if (ReportingCircuitBreaker.Trip() == CircuitBreakerState.Opened)
+            if (_reportingCircuitBreaker.Trip() == CircuitBreakerState.Opened)
             {
                 SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.CircuitBreakerIsOpen, normalizedExHash);
 
@@ -150,12 +175,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             else
             {
                 SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NotEligible, normalizedExHash);
-                ExceptionProcessQueue.Enqueue(exception);
-                WorkAvailable.Release();
+                _exceptionProcessQueue.Enqueue(exception);
+                _workAvailable.Release();
             }
         }
 
-        private static void ProcessException(Exception exception, int normalizedExHash, ErrorOriginKind errorOrigin, Span? rootSpan)
+        private void ProcessException(Exception exception, int normalizedExHash, ErrorOriginKind errorOrigin, Span? rootSpan)
         {
             var allParticipatingFrames = GetAllExceptionRelatedStackFrames(exception);
             var allParticipatingFramesFlattened = allParticipatingFrames.GetAllFlattenedFrames().Reverse().ToArray();
@@ -167,12 +192,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 if (rootSpan != null)
                 {
                     SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NoFramesToInstrument, normalizedExHash);
-                    CachedInvalidatedCases.Add(normalizedExHash);
-                    EvaluateWithRootSpanCases.Remove(normalizedExHash);
+                    _cachedInvalidatedCases.Add(normalizedExHash);
+                    _evaluateWithRootSpanCases.Remove(normalizedExHash);
                 }
                 else
                 {
-                    EvaluateWithRootSpanCases.Add(normalizedExHash);
+                    _evaluateWithRootSpanCases.Add(normalizedExHash);
                 }
 
                 return;
@@ -183,12 +208,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 if (rootSpan != null)
                 {
                     SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NoCustomerFrames, normalizedExHash);
-                    CachedInvalidatedCases.Add(normalizedExHash);
-                    EvaluateWithRootSpanCases.Remove(normalizedExHash);
+                    _cachedInvalidatedCases.Add(normalizedExHash);
+                    _evaluateWithRootSpanCases.Remove(normalizedExHash);
                 }
                 else
                 {
-                    EvaluateWithRootSpanCases.Add(normalizedExHash);
+                    _evaluateWithRootSpanCases.Add(normalizedExHash);
                 }
 
                 Log.Information(exception, "Skipping the processing of an exception by Exception Debugging. All frames are 3rd party.");
@@ -207,21 +232,21 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var exceptionId = new ExceptionIdentifier(exceptionTypes, allParticipatingFramesFlattened, errorOrigin);
 
-            var trackedExceptionCase = TrackedExceptionCases.GetOrAdd(exceptionId, _ => new TrackedExceptionCase(exceptionId, exception.ToString()));
+            var trackedExceptionCase = _trackedExceptionCases.GetOrAdd(exceptionId, _ => new TrackedExceptionCase(exceptionId, exception.ToString()));
 
             if (trackedExceptionCase.IsDone)
             {
                 if (rootSpan != null)
                 {
                     SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NonCachedDoneExceptionCase, normalizedExHash);
-                    EvaluateWithRootSpanCases.Remove(normalizedExHash);
+                    _evaluateWithRootSpanCases.Remove(normalizedExHash);
                 }
             }
             else if (trackedExceptionCase.IsInvalidated)
             {
                 if (rootSpan == null)
                 {
-                    EvaluateWithRootSpanCases.Add(normalizedExHash);
+                    _evaluateWithRootSpanCases.Add(normalizedExHash);
 
                     Log.Error("rootSpan is null while processing invalidated case. Should not happen. exception: {Exception}", exception.ToString());
                     return;
@@ -254,8 +279,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
 
                 _ = trackedExceptionCase.Revert(normalizedExHash);
-                CachedInvalidatedCases.Add(normalizedExHash);
-                EvaluateWithRootSpanCases.Remove(normalizedExHash);
+                _cachedInvalidatedCases.Add(normalizedExHash);
+                _evaluateWithRootSpanCases.Remove(normalizedExHash);
             }
             else if (trackedExceptionCase.IsCollecting)
             {
@@ -310,7 +335,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         Log.Information("Invalidating the exception case of the empty stack tree since none of the methods were instrumented, for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
                         trackedExceptionCase.InvalidateCase();
 
-                        EvaluateWithRootSpanCases.Add(normalizedExHash);
+                        _evaluateWithRootSpanCases.Add(normalizedExHash);
 
                         if (rootSpan != null)
                         {
@@ -319,7 +344,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     }
                     else
                     {
-                        EvaluateWithRootSpanCases.Add(normalizedExHash);
+                        _evaluateWithRootSpanCases.Add(normalizedExHash);
 
                         if (rootSpan != null)
                         {
@@ -385,7 +410,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     var capturedFrameIndex = capturedFrames.Count - 1;
                     var probeIndex = @case.Probes.Length - 1;
                     var capturedFrameIndexBound = uploadedHeadFrame ? 0 : -1;
-                    var uploadFramesBound = MaxFramesToCapture;
+                    var uploadFramesBound = _maxFramesToCapture;
                     var uploadedFrames = 0;
                     while (frameIndex < allFrames.Count && uploadedFrames < uploadFramesBound && probeIndex >= 0)
                     {
@@ -476,7 +501,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     if (trackedExceptionCase.Revert(normalizedExHash))
                     {
                         CachedDoneExceptions.Add(normalizedExHash);
-                        ExceptionsScheduler.Schedule(trackedExceptionCase, RateLimit);
+                        _exceptionsScheduler.Schedule(trackedExceptionCase, _rateLimit);
                     }
                 }
             }
@@ -492,7 +517,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private static string GetNoCaptureReason(string methodName, ExceptionDebuggingProbe? probe)
+        private string GetNoCaptureReason(string methodName, ExceptionDebuggingProbe? probe)
         {
             var noCaptureReason = string.Empty;
 
@@ -522,7 +547,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return noCaptureReason;
         }
 
-        private static string GetNoCaptureReasonForFrame(ParticipatingFrame frame)
+        private string GetNoCaptureReasonForFrame(ParticipatingFrame frame)
         {
             var noCaptureReason = string.Empty;
 
@@ -539,7 +564,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return noCaptureReason;
         }
 
-        private static void TagAndUpload(Span span, string tagPrefix, ExceptionStackNodeRecord record, string exceptionId, string exceptionHash, int frameIndex)
+        private void TagAndUpload(Span span, string tagPrefix, ExceptionStackNodeRecord record, string exceptionId, string exceptionHash, int frameIndex)
         {
             var method = record.MethodInfo.Method;
             var snapshotId = record.SnapshotId;
@@ -554,16 +579,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                       .Replace(ExceptionReplaySnapshotCreator.ExceptionCaptureId, exceptionId)
                       .Replace(ExceptionReplaySnapshotCreator.ExceptionHash, exceptionHash)
                       .Replace(ExceptionReplaySnapshotCreator.FrameIndex, frameIndex.ToString());
-            ExceptionDebugging.AddSnapshot(probeId, snapshot);
+            DebuggerManager.Instance.ExceptionReplay?.AddSnapshot(probeId, snapshot);
         }
 
-        private static void TagMissingFrame(Span span, string tagPrefix, string method, string reason)
+        private void TagMissingFrame(Span span, string tagPrefix, string method, string reason)
         {
             span.Tags.SetTag(tagPrefix + "frame_data.name", method);
             span.Tags.SetTag(tagPrefix + "no_capture_reason", reason);
         }
 
-        private static bool ShouldReportException(Exception ex, ParticipatingFrame[] framesToRejit)
+        private bool ShouldReportException(Exception ex, ParticipatingFrame[] framesToRejit)
         {
             try
             {
@@ -578,29 +603,20 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             bool AtLeastOneFrameBelongToUserCode() => framesToRejit.Any(f => FrameFilter.IsUserCode(f));
         }
 
-        private static bool IsSupportedExceptionType(Exception ex) =>
+        private bool IsSupportedExceptionType(Exception ex) =>
             IsSupportedExceptionType(ex.GetType());
-
-        public static void Initialize()
-        {
-            _exceptionProcessorTask = Task.Factory.StartNew(
-                                               async () => await StartExceptionProcessingAsync(Cts.Token).ConfigureAwait(false), TaskCreationOptions.LongRunning)
-                                          .Unwrap();
-            IsEditAndContinueFeatureEnabled = IsEnCFeatureEnabled();
-            _isInitialized = true;
-        }
 
         /// <summary>
         /// In .NET 6+ there's a bug that prevents Rejit-related APIs to work properly when Edit and Continue feature is turned on.
         /// See https://github.com/dotnet/runtime/issues/91963 for additional details.
         /// </summary>
-        private static bool IsEnCFeatureEnabled()
+        private bool IsEnCFeatureEnabled()
         {
             var encEnabled = EnvironmentHelpers.GetEnvironmentVariable("COMPLUS_ForceEnc");
             return !string.IsNullOrEmpty(encEnabled) && (encEnabled == "1" || encEnabled == "true");
         }
 
-        public static bool IsSupportedExceptionType(Type ex) =>
+        public bool IsSupportedExceptionType(Type ex) =>
             ex != typeof(BadImageFormatException) &&
             ex != typeof(InvalidProgramException) &&
             ex != typeof(TypeInitializationException) &&
@@ -612,10 +628,25 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             ex != typeof(OutOfMemoryException) &&
             ex != typeof(ThreadAbortException);
 
-        public static void Dispose()
+        public void Dispose()
         {
-            Cts.Cancel();
-            ReportingCircuitBreaker.Dispose();
+            _cts.Cancel();
+            _reportingCircuitBreaker.Dispose();
+
+            foreach (var trackedExceptionCase in _trackedExceptionCases.Values)
+            {
+                try
+                {
+                    if (!trackedExceptionCase.Revert(0))
+                    {
+                        ExceptionCaseInstrumentationManager.Revert(trackedExceptionCase.ExceptionCase); // Force revert
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "ExceptionTrackManager: An exception was thrown while calling Revert on given exception case {ExceptionIdentifier}.", trackedExceptionCase.ExceptionIdentifier);
+                }
+            }
 
             try
             {
@@ -631,12 +662,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
             finally
             {
-                WorkAvailable.Dispose();
-                Cts.Dispose();
+                _workAvailable.Dispose();
+                _cts.Dispose();
+                _trackedExceptionCases.Clear();
             }
         }
 
-        public static ExceptionRelatedFrames GetAllExceptionRelatedStackFrames(Exception exception)
+        public ExceptionRelatedFrames GetAllExceptionRelatedStackFrames(Exception exception)
         {
             return CreateExceptionPath(exception, true);
 
@@ -660,7 +692,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         /// <param name="isTopFrame">If it's a top frame, we should skip on the above method (e.g. ASP Net methods)</param>
         /// <param name="defaultState">Default state of all method that are not <see cref="ParticipatingFrameState.Blacklist"/> </param>
         /// <returns>All the frames of the exception.</returns>
-        public static IEnumerable<ParticipatingFrame> GetParticipatingFrames(StackTrace stackTrace, bool isTopFrame, ParticipatingFrameState defaultState)
+        public IEnumerable<ParticipatingFrame> GetParticipatingFrames(StackTrace stackTrace, bool isTopFrame, ParticipatingFrameState defaultState)
         {
             var frames = isTopFrame
                              ? stackTrace.GetFrames()?.
@@ -742,7 +774,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private static bool ShouldSkip(MethodBase method)
+        private bool ShouldSkip(MethodBase method)
         {
             try
             {
@@ -755,7 +787,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private static void SetDiagnosticTag(Span span, string exceptionPhase, int exceptionHash)
+        private void SetDiagnosticTag(Span span, string exceptionPhase, int exceptionHash)
         {
             if (exceptionPhase is ExceptionReplayDiagnosticTagNames.CachedInvalidatedExceptionCase or ExceptionReplayDiagnosticTagNames.CachedDoneExceptionCase or ExceptionReplayDiagnosticTagNames.NonCachedDoneExceptionCase)
             {
