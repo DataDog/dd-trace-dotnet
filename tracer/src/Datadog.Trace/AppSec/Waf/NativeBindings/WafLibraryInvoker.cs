@@ -312,7 +312,27 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr BuilderBuildInstance(IntPtr builder) => _builderBuildInstanceDelegate(builder);
 
-        internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
+        internal IntPtr InitContext(IntPtr wafHandle)
+        {
+            try
+            {
+                if (_initContextField is null)
+                {
+                    Log.Error("InitContext is null");
+                    return IntPtr.Zero;
+                }
+
+                Log.Debug("Calling InitContext with waf handle {Handle}", wafHandle);
+                var contextField = _initContextField(wafHandle);
+                Log.Debug("Received context handle {Handle}", contextField);
+                return contextField;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while initializing context");
+                return IntPtr.Zero;
+            }
+        }
 
         /// <summary>
         /// WARNING: do not dispose newArgs until the Context is discarded as well
@@ -444,8 +464,25 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 return null;
             }
 
-            Log.Debug("GetDelegateForNativeFunction {FunctionName} -  {FuncPtr}: ", functionName, funcPtr);
-            return (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
+            try
+            {
+                Log.Debug("GetDelegateForNativeFunction {FunctionName} -  {FuncPtr}: ", functionName, funcPtr);
+                var res = (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
+                if (res is null)
+                {
+                    Log.Error("GetDelegateForFunctionPointer for {FunctionName} returned null", functionName);
+                    ExportErrorHappened = true;
+                    return null;
+                }
+
+                return res;
+            }
+            catch (Exception err)
+            {
+                Log.Error(err, "GetDelegateForFunctionPointer for {FunctionName} threw an exception", functionName);
+                ExportErrorHappened = true;
+                return null;
+            }
         }
 
         private T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
