@@ -87,6 +87,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
             // without this, the developer exception page intercepts our blocking middleware and doesn't let us write the proper response
             SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
+#pragma warning disable CS0618 // Type or member is obsolete
+            EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
