@@ -1,11 +1,7 @@
 steps:
   - checkout: none
 
-    # Copied from https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-json-web-token-jwt-for-a-github-app#example-using-bash-to-generate-a-jwt
-    # With the following tweaks:
-    # - pass in client_id and pem directly
-    # - don't printf the JWT at the end
-    # - Make a curl request to retrieve the token
+    # Based on https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-json-web-token-jwt-for-a-github-app#example-using-bash-to-generate-a-jwt
   - bash: |
       #!/usr/bin/env bash
 
@@ -13,7 +9,9 @@ steps:
 
       client_id="$GITHUB_APP_INSTALLATION_ID"
       pem_file=$(mktemp)
-      echo "$GITHUB_APP_PRIVATE_KEY" > "$pem_file"
+      # Try to fix the line breaks
+      pem=$(echo "$GITHUB_APP_PRIVATE_KEY" | sed 's/\\n/\n/g')
+      printf "%s" "$pem" > "$pem_file"
 
       now=$(date +%s)
       iat=$((${now} - 60)) # Issues 60 seconds in the past
