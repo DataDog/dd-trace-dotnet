@@ -46,7 +46,12 @@ internal sealed class Logger
             $"dotnet-libdatadog-{domainMetadata.ProcessName}-{domainMetadata.ProcessId.ToString(CultureInfo.InvariantCulture)}.log");
 
         using var path = new CharSlice(filePath);
-        var cfg = new FileConfig { Path = path };
+        var cfg = new FileConfig
+        {
+            Path = path,
+            MaxFiles = 1,
+            MaxSizeBytes = (ulong)fileConfig.MaxLogFileSizeBytes,
+        };
 
         try
         {
