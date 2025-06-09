@@ -51,10 +51,10 @@ steps:
       JWT="${header_payload}"."${signature}"
       
       # Curl to get an installation token
+      INSTALLATION_ID="$GITHUB_APP_INSTALLATION_ID"
       url="https://api.github.com/app/installations/${INSTALLATION_ID}/access_tokens"
       echo "Sending request with JWT to $url"
 
-      INSTALLATION_ID="$GITHUB_APP_INSTALLATION_ID"
       response=$(curl --fail --silent --show-error \
         --request POST \
         --url $url \
