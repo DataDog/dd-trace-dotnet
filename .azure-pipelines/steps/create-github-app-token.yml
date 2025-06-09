@@ -1,0 +1,83 @@
+parameters:
+  - name: github-app-installation-id
+    type: string
+    required: true
+
+  - name: github-app-client-id
+    type: string
+    required: true
+
+  - name: github-app-private-key
+    type: string
+    required: true
+
+steps:
+  - checkout: none
+
+    # Copied from https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-json-web-token-jwt-for-a-github-app#example-using-bash-to-generate-a-jwt
+    # With the following tweaks:
+    # - pass in client_id and pem directly
+    # - don't printf the JWT at the end
+    # - Make a curl request to retrieve the token
+  - bash: |
+      #!/usr/bin/env bash
+
+      set -o pipefail
+
+      client_id="${{ parameters.github-app-client-id }}""
+      pem="${{ parameters.github-app-private-key }}"
+
+      now=$(date +%s)
+      iat=$((${now} - 60)) # Issues 60 seconds in the past
+      exp=$((${now} + 600)) # Expires 10 minutes in the future
+
+      b64enc() { openssl base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n'; }
+
+      header_json='{
+          "typ":"JWT",
+          "alg":"RS256"
+      }'
+      # Header encode
+      header=$( echo -n "${header_json}" | b64enc )
+
+      payload_json="{
+          \"iat\":${iat},
+          \"exp\":${exp},
+          \"iss\":\"${client_id}\"
+      }"
+      # Payload encode
+      payload=$( echo -n "${payload_json}" | b64enc )
+
+      # Signature
+      header_payload="${header}"."${payload}"
+      signature=$(
+          openssl dgst -sha256 -sign <(echo -n "${pem}") \
+          <(echo -n "${header_payload}") | b64enc
+      )
+
+      # Create JWT
+      JWT="${header_payload}"."${signature}"
+      
+      # Curl to get an installation token
+      INSTALLATION_ID="{{ parameters.github-app-installation-id }}"
+      response=$(curl --fail --silent --show-error \
+        --request POST \
+        --url "https://api.github.com/app/installations/${INSTALLATION_ID}/access_tokens" \
+        --header "Accept: application/vnd.github+json" \
+        --header "Authorization: Bearer $JWT" \
+        --header "X-GitHub-Api-Version: 2022-11-28") || {
+          echo "❌ curl failed"
+          exit 1
+      }
+
+      if ! token=$(echo "$response" | jq -er '.token'); then
+        echo "❌ Failed to extract token. Full response:"
+        echo "$response" | jq .
+        exit 1
+      fi
+
+      echo "Saving app token"
+      echo "##vso[task.setvariable variable=GITHUB_APP_TOKEN;issecret=true]${token}"
+
+    displayName: Retrieve Installation Token
+    #retryCountOnTaskFailure: 3
