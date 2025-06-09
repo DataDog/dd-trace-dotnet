@@ -62,27 +62,34 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 else()
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
         if(DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-            set(SHA256_LIBDATADOG "4b64b58162d215a4f16b6ced4d602667565ebe20015341219daa998e3cf4e0a8" CACHE STRING "libdatadog sha256")
-            set(FILE_TO_DOWNLOAD libdatadog-aarch64-alpine-linux-musl.tar.gz)
+            FetchContent_Declare(libdatadog-install
+                URL https://binaries-ddbuild-io-prod.s3.us-east-1.amazonaws.com/libddprof-build/libdatadog_67339337_8ee422a2_aarch64-alpine-linux-musl.tar.gz?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAXCNO3BXE6RQGGRKR%2F20250609%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250609T220029Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjENb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJIMEYCIQDXXLnQwtCTnqjh5sP7DOQo1HbnEq2cQoCuxecSu8iQ9wIhAOsSds1rCkIpHiL3pTH7zwA0ZFRlZ1%2FWaG7Br6Q2ANHJKp0DCK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQBBoMNDg2MjM0ODUyODA5IgwklQ6GUpZexfZ4BIkq8QJnAvCEoIVbQaq%2BVLa5ePrIVQ%2FNEDkagWGJUM5ApMvqLEQSHfTtY5vEWWzoOVSHNy8Bg7l9iFAaCpXBUR%2FVaGUvfNIRV8CrozdBYzOKY4ce9M2VvsXrL%2Bcjs2oFy19SkOoKp7SnvMkxYXBjrHLcXsV83YnJygr1MF%2Bldx3C6VJ3MTj4wlYTqKiA4PPngtw8nkbVrr1pK6v1zAI7gQ1Y8IYX4%2F8vpHwW3e6evWYm53oQfYpyEBvPa6UmNXcp6xhy%2BuwItODkXD90gGUyfyTFewdVQ%2FJRwac1%2FKfovUhnv64%2FHh0FwKU%2Fm07q5AmEWyUc9rbYZ2eNkgdnKGAvmRHRUXRqMueBeD20cRz7044Rswc5eg%2FwaJoGZmL%2FiUq1zBi2lwU6zKop9wNN%2FzwcdfoHUIqniBRT6v0PloKJoKLbsJS3MMrBhtdRLjGiJIP0xbBk8k0cBkexmdeX7GTyGh6l81yyma3fmhZhmXRFIM98x0WYjHIwhaadwgY6pQGOn8563Dh7RF2E0Z4ah8JQiMCyOGNBDu7rmgi0nMrgk8mmL61VFCou4XNPiPtAkIYmt3XdtGLyR3QmBWePsRfqMXbo0v6SoeHwuctKX35az5EAF%2FAH55Xm62P5Giw74WLs8cKZZQvAxbL9uWJCkl8VIgfomydZ%2FKKpG%2BS19kOaN4RZEpCKirkqwmwy76NrKte0MTOPyh5iRg9AgstKSNlY5gAvgOM%3D&X-Amz-Signature=bc265bb824e7e8a6883aa940ff3529e06eb697e9ee2a243fdf90802b94baba89
+                SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
+            )
+            set(FILE_TO_DOWNLOAD aarch64-alpine-linux-musl)
         else()
-            set(SHA256_LIBDATADOG "f544316a2b58476979a3b05f0236837790320c385a73f1e111f8736b95ca3a87" CACHE STRING "libdatadog sha256")
-            set(FILE_TO_DOWNLOAD libdatadog-aarch64-unknown-linux-gnu.tar.gz)
+            FetchContent_Declare(libdatadog-install
+                URL https://binaries-ddbuild-io-prod.s3.us-east-1.amazonaws.com/libddprof-build/libdatadog_67339337_8ee422a2_aarch64-unknown-linux-gnu.tar.gz?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAXCNO3BXE6RQGGRKR%2F20250609%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250609T213316Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjENb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJIMEYCIQDXXLnQwtCTnqjh5sP7DOQo1HbnEq2cQoCuxecSu8iQ9wIhAOsSds1rCkIpHiL3pTH7zwA0ZFRlZ1%2FWaG7Br6Q2ANHJKp0DCK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQBBoMNDg2MjM0ODUyODA5IgwklQ6GUpZexfZ4BIkq8QJnAvCEoIVbQaq%2BVLa5ePrIVQ%2FNEDkagWGJUM5ApMvqLEQSHfTtY5vEWWzoOVSHNy8Bg7l9iFAaCpXBUR%2FVaGUvfNIRV8CrozdBYzOKY4ce9M2VvsXrL%2Bcjs2oFy19SkOoKp7SnvMkxYXBjrHLcXsV83YnJygr1MF%2Bldx3C6VJ3MTj4wlYTqKiA4PPngtw8nkbVrr1pK6v1zAI7gQ1Y8IYX4%2F8vpHwW3e6evWYm53oQfYpyEBvPa6UmNXcp6xhy%2BuwItODkXD90gGUyfyTFewdVQ%2FJRwac1%2FKfovUhnv64%2FHh0FwKU%2Fm07q5AmEWyUc9rbYZ2eNkgdnKGAvmRHRUXRqMueBeD20cRz7044Rswc5eg%2FwaJoGZmL%2FiUq1zBi2lwU6zKop9wNN%2FzwcdfoHUIqniBRT6v0PloKJoKLbsJS3MMrBhtdRLjGiJIP0xbBk8k0cBkexmdeX7GTyGh6l81yyma3fmhZhmXRFIM98x0WYjHIwhaadwgY6pQGOn8563Dh7RF2E0Z4ah8JQiMCyOGNBDu7rmgi0nMrgk8mmL61VFCou4XNPiPtAkIYmt3XdtGLyR3QmBWePsRfqMXbo0v6SoeHwuctKX35az5EAF%2FAH55Xm62P5Giw74WLs8cKZZQvAxbL9uWJCkl8VIgfomydZ%2FKKpG%2BS19kOaN4RZEpCKirkqwmwy76NrKte0MTOPyh5iRg9AgstKSNlY5gAvgOM%3D&X-Amz-Signature=5c85aa57e9da4257ceb4559ff8392975636c89ff19640059917d481bfd4cf7c2
+                SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
+            )
+            set(FILE_TO_DOWNLOAD aarch64-unknown-linux-gnu)
         endif()
     else()
         if(DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-            set(SHA256_LIBDATADOG "8af91ff3f7d266a6acc55b3a12a927a3d1b6ab51845b3d54333965086453c1c6" CACHE STRING "libdatadog sha256")
-            set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musl.tar.gz)
+            FetchContent_Declare(libdatadog-install
+                URL https://binaries-ddbuild-io-prod.s3.us-east-1.amazonaws.com/libddprof-build/libdatadog_67339337_8ee422a2_x86_64-alpine-linux-musl.tar.gz?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAXCNO3BXE6RQGGRKR%2F20250609%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250609T220153Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjENb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJIMEYCIQDXXLnQwtCTnqjh5sP7DOQo1HbnEq2cQoCuxecSu8iQ9wIhAOsSds1rCkIpHiL3pTH7zwA0ZFRlZ1%2FWaG7Br6Q2ANHJKp0DCK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQBBoMNDg2MjM0ODUyODA5IgwklQ6GUpZexfZ4BIkq8QJnAvCEoIVbQaq%2BVLa5ePrIVQ%2FNEDkagWGJUM5ApMvqLEQSHfTtY5vEWWzoOVSHNy8Bg7l9iFAaCpXBUR%2FVaGUvfNIRV8CrozdBYzOKY4ce9M2VvsXrL%2Bcjs2oFy19SkOoKp7SnvMkxYXBjrHLcXsV83YnJygr1MF%2Bldx3C6VJ3MTj4wlYTqKiA4PPngtw8nkbVrr1pK6v1zAI7gQ1Y8IYX4%2F8vpHwW3e6evWYm53oQfYpyEBvPa6UmNXcp6xhy%2BuwItODkXD90gGUyfyTFewdVQ%2FJRwac1%2FKfovUhnv64%2FHh0FwKU%2Fm07q5AmEWyUc9rbYZ2eNkgdnKGAvmRHRUXRqMueBeD20cRz7044Rswc5eg%2FwaJoGZmL%2FiUq1zBi2lwU6zKop9wNN%2FzwcdfoHUIqniBRT6v0PloKJoKLbsJS3MMrBhtdRLjGiJIP0xbBk8k0cBkexmdeX7GTyGh6l81yyma3fmhZhmXRFIM98x0WYjHIwhaadwgY6pQGOn8563Dh7RF2E0Z4ah8JQiMCyOGNBDu7rmgi0nMrgk8mmL61VFCou4XNPiPtAkIYmt3XdtGLyR3QmBWePsRfqMXbo0v6SoeHwuctKX35az5EAF%2FAH55Xm62P5Giw74WLs8cKZZQvAxbL9uWJCkl8VIgfomydZ%2FKKpG%2BS19kOaN4RZEpCKirkqwmwy76NrKte0MTOPyh5iRg9AgstKSNlY5gAvgOM%3D&X-Amz-Signature=73b65bb67b2767e1034d3559b5c49a5c377d093b813805708a80c02ae85c7e94
+                SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
+            )
+            set(FILE_TO_DOWNLOAD x86_64-alpine-linux-musl)
         else()
-            set(SHA256_LIBDATADOG "c7c7f0ce597d515ce6aa8bcf3edd12a009c2c02dd5e715ea318a3bcf3221a65d" CACHE STRING "libdatadog sha256")
-            set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-unknown-linux-gnu.tar.gz)
+            FetchContent_Declare(libdatadog-install
+                URL https://binaries-ddbuild-io-prod.s3.us-east-1.amazonaws.com/libddprof-build/libdatadog_67339337_8ee422a2_x86_64-unknown-linux-gnu.tar.gz?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAXCNO3BXE6RQGGRKR%2F20250609%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250609T220247Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjENb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJIMEYCIQDXXLnQwtCTnqjh5sP7DOQo1HbnEq2cQoCuxecSu8iQ9wIhAOsSds1rCkIpHiL3pTH7zwA0ZFRlZ1%2FWaG7Br6Q2ANHJKp0DCK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQBBoMNDg2MjM0ODUyODA5IgwklQ6GUpZexfZ4BIkq8QJnAvCEoIVbQaq%2BVLa5ePrIVQ%2FNEDkagWGJUM5ApMvqLEQSHfTtY5vEWWzoOVSHNy8Bg7l9iFAaCpXBUR%2FVaGUvfNIRV8CrozdBYzOKY4ce9M2VvsXrL%2Bcjs2oFy19SkOoKp7SnvMkxYXBjrHLcXsV83YnJygr1MF%2Bldx3C6VJ3MTj4wlYTqKiA4PPngtw8nkbVrr1pK6v1zAI7gQ1Y8IYX4%2F8vpHwW3e6evWYm53oQfYpyEBvPa6UmNXcp6xhy%2BuwItODkXD90gGUyfyTFewdVQ%2FJRwac1%2FKfovUhnv64%2FHh0FwKU%2Fm07q5AmEWyUc9rbYZ2eNkgdnKGAvmRHRUXRqMueBeD20cRz7044Rswc5eg%2FwaJoGZmL%2FiUq1zBi2lwU6zKop9wNN%2FzwcdfoHUIqniBRT6v0PloKJoKLbsJS3MMrBhtdRLjGiJIP0xbBk8k0cBkexmdeX7GTyGh6l81yyma3fmhZhmXRFIM98x0WYjHIwhaadwgY6pQGOn8563Dh7RF2E0Z4ah8JQiMCyOGNBDu7rmgi0nMrgk8mmL61VFCou4XNPiPtAkIYmt3XdtGLyR3QmBWePsRfqMXbo0v6SoeHwuctKX35az5EAF%2FAH55Xm62P5Giw74WLs8cKZZQvAxbL9uWJCkl8VIgfomydZ%2FKKpG%2BS19kOaN4RZEpCKirkqwmwy76NrKte0MTOPyh5iRg9AgstKSNlY5gAvgOM%3D&X-Amz-Signature=4f5b6a99e378cec11a54dcaf2707ba78243ce7231163e449ff3e2df4430ad456
+                SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
+            )
+            set(FILE_TO_DOWNLOAD x86_64-unknown-linux-gnu)
         endif()
     endif()
 
-    FetchContent_Declare(libdatadog-install
-        URL https://github.com/DataDog/libdatadog/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD}
-        URL_HASH SHA256=${SHA256_LIBDATADOG}
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
-    )
     if(NOT libdatadog-install_POPULATED)
         FetchContent_Populate(libdatadog-install)
     endif()
@@ -92,7 +99,7 @@ else()
     add_library(libdatadog-lib SHARED IMPORTED)
 
     set_target_properties(libdatadog-lib PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES ${LIBDATADOG_BASE_DIR}/include
+        INTERFACE_INCLUDE_DIRECTORIES ${LIBDATADOG_BASE_DIR}/${FILE_TO_DOWNLOAD}/include
         IMPORTED_LOCATION ${LIBDATADOG_BASE_DIR}/lib/libdatadog_profiling.so
     )
 
