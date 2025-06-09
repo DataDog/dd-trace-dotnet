@@ -74,7 +74,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private static long GetProductsMask(TracerSettings tracerSettings)
         {
             var productsMask = (long)Products.Apm;
-            if (tracerSettings.IsDataStreamsMonitoringEnabled)
+            if (tracerSettings.IsDataStreamsMonitoringEnabled == true)
             {
                 productsMask |= (long)Products.Dsm;
             }

@@ -12,7 +12,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -28,37 +27,49 @@ internal class DataStreamsManager
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly NodeHashBase _nodeHashBase;
-    private bool _isEnabled;
     private IDataStreamsWriter? _writer;
+    private volatile DataStreamsState _state;
 
     public DataStreamsManager(
         string? env,
         string defaultServiceName,
-        IDataStreamsWriter? writer)
+        IDataStreamsWriter? writer,
+        DataStreamsState state)
     {
         // We don't yet support primary tag in .NET yet
         _nodeHashBase = HashHelper.CalculateNodeHashBase(defaultServiceName, env, primaryTag: null);
-        _isEnabled = writer is not null;
         _writer = writer;
+        _state = state;
     }
 
-    public bool IsEnabled => Volatile.Read(ref _isEnabled);
+    public enum DataStreamsState
+    {
+        Default = 0,
+        Enabled = 1,
+        Disabled = 2
+    }
+
+    public DataStreamsState State => _state;
+
+    public bool IsEnabled => _state == DataStreamsState.Enabled;
 
     public static DataStreamsManager Create(
         TracerSettings settings,
         IDiscoveryService discoveryService,
         string defaultServiceName)
     {
-        var writer = settings.IsDataStreamsMonitoringEnabled
-                         ? DataStreamsWriter.Create(settings, discoveryService, defaultServiceName)
-                         : null;
+        // the default behavior can be handled here, for now DSM will be disabled unless explicitly enabled by the user
+        var state = settings.IsDataStreamsMonitoringEnabled == true ? DataStreamsState.Enabled : DataStreamsState.Disabled;
+        var writer = state == DataStreamsState.Enabled
+                        ? DataStreamsWriter.Create(settings, discoveryService, defaultServiceName)
+                        : null;
 
-        return new DataStreamsManager(settings.Environment, defaultServiceName, writer);
+        return new DataStreamsManager(settings.Environment, defaultServiceName, writer, state);
     }
 
     public async Task DisposeAsync()
     {
-        Volatile.Write(ref _isEnabled, false);
+        _state = DataStreamsState.Disabled;
         var writer = Interlocked.Exchange(ref _writer, null);
 
         if (writer is null)
@@ -75,7 +86,7 @@ internal class DataStreamsManager
     /// </summary>
     public PathwayContext? ExtractPathwayContext<TCarrier>(TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
-        => IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
+        => State == DataStreamsState.Disabled ? null : DataStreamsContextPropagator.Instance.Extract(headers);
 
     /// <summary>
     /// Injects a <see cref="PathwayContext"/> into headers
@@ -85,7 +96,7 @@ internal class DataStreamsManager
     public void InjectPathwayContext<TCarrier>(PathwayContext? context, TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
     {
-        if (!IsEnabled || context is null)
+        if (State == DataStreamsState.Disabled || context is null)
         {
             return;
         }
@@ -95,7 +106,7 @@ internal class DataStreamsManager
 
     public void TrackBacklog(string tags, long value)
     {
-        if (!IsEnabled)
+        if (State == DataStreamsState.Disabled)
         {
             return;
         }
@@ -111,7 +122,7 @@ internal class DataStreamsManager
     /// </summary>
     public PathwayContext? ExtractPathwayContextAsBase64String<TCarrier>(TCarrier headers)
         where TCarrier : IHeadersCollection
-        => IsEnabled ? DataStreamsContextPropagator.Instance.ExtractAsBase64String(headers) : null;
+        => State == DataStreamsState.Disabled ? null : DataStreamsContextPropagator.Instance.ExtractAsBase64String(headers);
 
     /// <summary>
     /// Injects a <see cref="PathwayContext"/> into headers
@@ -121,7 +132,7 @@ internal class DataStreamsManager
     public void InjectPathwayContextAsBase64String<TCarrier>(PathwayContext? context, TCarrier headers)
         where TCarrier : IHeadersCollection
     {
-        if (!IsEnabled)
+        if (State == DataStreamsState.Disabled)
         {
             return;
         }
@@ -155,7 +166,7 @@ internal class DataStreamsManager
         long payloadSizeBytes,
         long timeInQueueMs)
     {
-        if (!IsEnabled)
+        if (State == DataStreamsState.Disabled)
         {
             return null;
         }
@@ -221,7 +232,7 @@ internal class DataStreamsManager
             // Set this to false out of an abundance of caution.
             // We will look at being less conservative in the future
             // if we see intermittent errors for some reason.
-            Volatile.Write(ref _isEnabled, false);
+            _state = DataStreamsState.Disabled;
             return null;
         }
     }
@@ -231,6 +242,12 @@ internal class DataStreamsManager
     /// </summary>
     public bool ShouldExtractSchema(Span span, string operation, out int weight)
     {
+        if (_state == DataStreamsState.Disabled)
+        {
+            weight = 0;
+            return false;
+        }
+
         var limiter = _schemaRateLimiters.GetOrAdd(operation, _ => new RateLimiter());
         if (limiter.PeekDecision())
         {
