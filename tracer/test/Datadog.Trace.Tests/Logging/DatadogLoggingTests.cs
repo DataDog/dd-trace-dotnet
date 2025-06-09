@@ -422,7 +422,7 @@ namespace Datadog.Trace.Tests.Logging
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithoutFile(bool withException)
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithoutSinks(bool withException)
         {
             var collector = new RedactedErrorLogCollector();
 
@@ -452,7 +452,7 @@ namespace Datadog.Trace.Tests.Logging
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithFile(bool withException)
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithFileSink(bool withException)
         {
             var collector = new RedactedErrorLogCollector();
 
