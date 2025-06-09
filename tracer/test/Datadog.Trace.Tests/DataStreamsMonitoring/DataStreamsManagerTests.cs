@@ -303,7 +303,8 @@ public class DataStreamsManagerTests
         return new DataStreamsManager(
             env: "foo",
             defaultServiceName: "bar",
-            writer);
+            writer,
+            enabled ? DataStreamsManager.DataStreamsState.Enabled : DataStreamsManager.DataStreamsState.Disabled);
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter
