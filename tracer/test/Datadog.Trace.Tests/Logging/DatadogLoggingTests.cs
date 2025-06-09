@@ -492,6 +492,49 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithConsoleSink(bool withException)
+        {
+            var collector = new RedactedErrorLogCollector();
+
+            var tempLogsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            _output.WriteLine($"Using temporary logs directory: {tempLogsDir}");
+            Directory.CreateDirectory(tempLogsDir);
+
+            var config = new DatadogLoggingConfiguration(
+                rateLimit: 0,
+                file: null,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                console: new ConsoleLoggingConfiguration(DatadogLoggingFactory.DefaultConsoleMessageTemplate, DatadogLoggingFactory.DefaultConsoleMaxBufferSize));
+
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
+
+            logger.Should().NotBeNull();
+
+            // These errors should not be written to error log
+            if (withException)
+            {
+                logger.ErrorSkipTelemetry(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+            else
+            {
+                logger.ErrorSkipTelemetry(Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+
+            collector.GetLogs().Should().BeNull();
+
+            try
+            {
+                Directory.Delete(tempLogsDir, true);
+            }
+            catch
+            {
+                // cleanup isn't required, just avoiding clutter when the test passes
+            }
+        }
+
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)
             => logger.Warning(message);
 
