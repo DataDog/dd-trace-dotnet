@@ -39,7 +39,7 @@
       "type": "web",
       "meta": {
 		"_dd.appsec.event_rules.version": "1.13.3",
-        "_dd.appsec.waf.version": "1.25.0",
+        "_dd.appsec.waf.version": "1.25.1",
         "_dd.runtime_family": "dotnet",
         "_dd.appsec.s.res.body": "H4sIAAAAAAAAA4u2iAUA8YntnQMAAAA=",
         "_dd.appsec.s.req.headers": "H4sIAAAAAAAAA4WOMQrAIBDA/uKsQ7fiVw6Ho4oVrIp3Q4v491JcLc4JJNAEVzwcMbITGgB2Y2QT0SWht27kwAWrSzzlt7LIaLNXjJ4WCuFVYkhelRpyDfws/NFVwa7S3+SfdmaarXfzAg6PMlH9AAAA",
