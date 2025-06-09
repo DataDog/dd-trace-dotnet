@@ -9,7 +9,9 @@ steps:
 
       client_id="$GITHUB_APP_INSTALLATION_ID"
       pem_file=$(mktemp)
-      # Try to fix the line breaks
+      
+      # The private key value stored contains _explicit_ '\n' characters instead of line breaks
+      # so fix those
       pem=$(echo "$GITHUB_APP_PRIVATE_KEY" | sed 's/\\n/\n/g')
       printf "%s" "$pem" > "$pem_file"
 
