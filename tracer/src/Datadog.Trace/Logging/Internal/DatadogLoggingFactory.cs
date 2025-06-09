@@ -8,13 +8,11 @@
 using System;
 using System.Globalization;
 using System.IO;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.Internal;
 using Datadog.Trace.Logging.Internal.Configuration;
-using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
