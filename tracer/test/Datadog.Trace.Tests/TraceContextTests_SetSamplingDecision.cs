@@ -18,7 +18,7 @@ public class TraceContextTests_SetSamplingDecision
         [InlineData(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule)]
         [InlineData(SamplingPriorityValues.UserReject, SamplingMechanism.Manual)]
         [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm)]
-        public void SetSamplingDecision(int samplingPriority, int samplingMechanism)
+        public void SetSamplingDecision(int samplingPriority, string samplingMechanism)
         {
             var tracer = new Mock<IDatadogTracer>();
             var traceContext = new TraceContext(tracer.Object);
@@ -28,7 +28,7 @@ public class TraceContextTests_SetSamplingDecision
 
             if (samplingPriority > 0)
             {
-                traceContext.Tags.GetTag("_dd.p.dm").Should().Be($"-{samplingMechanism}");
+                traceContext.Tags.GetTag("_dd.p.dm").Should().Be(samplingMechanism);
             }
             else
             {
@@ -44,11 +44,11 @@ public class TraceContextTests_SetSamplingDecision
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate);
             traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.AutoKeep);
-            traceContext.Tags.GetTag("_dd.p.dm").Should().Be($"-{SamplingMechanism.AgentRate}");
+            traceContext.Tags.GetTag("_dd.p.dm").Should().Be(SamplingMechanism.AgentRate);
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
             traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.UserKeep);
-            traceContext.Tags.GetTag("_dd.p.dm").Should().Be($"-{SamplingMechanism.AgentRate}");
+            traceContext.Tags.GetTag("_dd.p.dm").Should().Be(SamplingMechanism.AgentRate);
         }
 
         [Fact]
@@ -59,7 +59,7 @@ public class TraceContextTests_SetSamplingDecision
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate);
             traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.AutoKeep);
-            traceContext.Tags.GetTag("_dd.p.dm").Should().Be($"-{SamplingMechanism.AgentRate}");
+            traceContext.Tags.GetTag("_dd.p.dm").Should().Be(SamplingMechanism.AgentRate);
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
             traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.UserReject);
@@ -67,6 +67,6 @@ public class TraceContextTests_SetSamplingDecision
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.UserKeep);
-            traceContext.Tags.GetTag("_dd.p.dm").Should().Be($"-{SamplingMechanism.Asm}");
+            traceContext.Tags.GetTag("_dd.p.dm").Should().Be(SamplingMechanism.Asm);
         }
 }

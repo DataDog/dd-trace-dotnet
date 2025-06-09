@@ -644,6 +644,7 @@
   "dd_trace_writer_max_payload_size_bytes": "trace_agent_max_payload_size",
   "dd_trace_writer_reuse_connections": "trace_agent_reuse_connections",
   "tracing_enabled": "trace_enabled",
+  "instrumentation_source": "instrumentation_source",
   "ssi_injection_enabled": "ssi_injection_enabled",
   "DD_INJECTION_ENABLED": "ssi_injection_enabled",
   "ssi_forced_injection_enabled": "ssi_forced_injection_enabled",

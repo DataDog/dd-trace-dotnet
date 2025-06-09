@@ -751,6 +751,20 @@ namespace Datadog.Trace.Configuration
             telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
             telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
 
+            var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
+
+            var instrumentationSource = installType switch
+            {
+                "dd_dotnet_launcher" => "cmd_line",
+                "dd_trace_tool" => "cmd_line",
+                "dotnet_msi" => "env_var",
+                "windows_fleet_installer" => "ssi", // windows SSI on IIS
+                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")) => "ssi", // "normal" ssi
+                _ => "unknown" // everything else
+            };
+
+            telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
+
             if (AzureAppServiceMetadata is not null)
             {
                 telemetry.Record(ConfigTelemetryData.AasConfigurationError, AzureAppServiceMetadata.IsUnsafeToTrace, ConfigurationOrigins.Default);

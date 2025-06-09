@@ -4627,6 +4627,20 @@ stages:
           artifact: system-test-docker-images
           path: $(Build.SourcesDirectory)
 
+      - template: steps/download-artifact.yml
+        parameters:
+          artifact: linux-packages-linux-x64
+          patterns: '**/*tar.gz'
+          path: $(Build.ArtifactStagingDirectory)
+          condition: eq(variables['SCENARIO'], 'PARAMETRIC')
+
+      - script: |
+          PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
+          echo Moving $PACKAGE_NAME to system-tests/binaries
+          mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
+        displayName: Move dotnet binary to system test folder
+        condition: eq(variables['SCENARIO'], 'PARAMETRIC')
+
       - script: |
           echo "Loading images for variant: $(WEBLOG_VARIANT)"
           docker load -i "$(Build.SourcesDirectory)/$(WEBLOG_VARIANT).tar"
