@@ -18,6 +18,7 @@ jobs:
         with:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          repositories: datadog-aas-extension
 
       - name: Trigger AAS release
         run: |

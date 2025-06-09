@@ -18,6 +18,7 @@ runs:
       with:
         app-id: ${{ inputs.github_app_id }}
         private-key: ${{ inputs.github_app_private_key }}
+        repositories: datadog-aas-extension
 
     - name: Trigger AAS deploy
       shell: bash
