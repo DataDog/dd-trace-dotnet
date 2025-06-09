@@ -29,7 +29,9 @@ internal static class DatadogLoggingFactory
     // By default, we don't rate limit log messages;
     private const int DefaultRateLimit = 0;
     private const int DefaultMaxLogFileSize = 10 * 1024 * 1024;
+
     internal const string DefaultConsoleMessageTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception}{NewLine}";
+    internal const int DefaultConsoleMaxBufferSize = 1024;
 
     public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
@@ -86,10 +88,7 @@ internal static class DatadogLoggingFactory
     private static ConsoleLoggingConfiguration GetConsoleLoggingConfiguration(IConfigurationSource? source)
     {
         // TODO: allow users to set the message template? Use Json? Different/better message template?
-        // Yes, I chose this arbitrarily
-        var maxBufferSize = 1000;
-
-        return new ConsoleLoggingConfiguration(DefaultConsoleMessageTemplate, maxBufferSize);
+        return new ConsoleLoggingConfiguration(DefaultConsoleMessageTemplate, DefaultConsoleMaxBufferSize);
     }
 
     public static IDatadogLogger? CreateFromConfiguration(
