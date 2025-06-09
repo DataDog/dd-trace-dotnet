@@ -1,16 +1,3 @@
-parameters:
-  - name: github-app-installation-id
-    type: string
-    required: true
-
-  - name: github-app-client-id
-    type: string
-    required: true
-
-  - name: github-app-private-key
-    type: string
-    required: true
-
 steps:
   - checkout: none
 
@@ -24,8 +11,8 @@ steps:
 
       set -o pipefail
 
-      client_id="${{ parameters.github-app-client-id }}""
-      pem="${{ parameters.github-app-private-key }}"
+      client_id="$GITHUB_APP_INSTALLATION_ID"
+      pem="$GITHUB_APP_PRIVATE_KEY"
 
       now=$(date +%s)
       iat=$((${now} - 60)) # Issues 60 seconds in the past
@@ -59,7 +46,7 @@ steps:
       JWT="${header_payload}"."${signature}"
       
       # Curl to get an installation token
-      INSTALLATION_ID="{{ parameters.github-app-installation-id }}"
+      INSTALLATION_ID="$GITHUB_APP_INSTALLATION_ID"
       response=$(curl --fail --silent --show-error \
         --request POST \
         --url "https://api.github.com/app/installations/${INSTALLATION_ID}/access_tokens" \
@@ -81,3 +68,7 @@ steps:
 
     displayName: Retrieve Installation Token
     #retryCountOnTaskFailure: 3
+    env:
+      GITHUB_APP_INSTALLATION_ID: $(GITHUB_APP_INSTALLATION_ID)
+      GITHUB_APP_CLIENT_ID: $(GITHUB_APP_CLIENT_ID)
+      GITHUB_APP_PRIVATE_KEY: $(GITHUB_APP_PRIVATE_KEY)
