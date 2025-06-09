@@ -86,11 +86,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                                     ? new[] { "direction:in", "type:servicebus" }
                                     : new[] { "direction:in", $"topic:{namespaceString}", "type:servicebus" };
 
+                var msgSize = dataStreamsManager.State == DataStreamsManager.DataStreamsState.Default ? 0 : AzureServiceBusCommon.GetMessageSize(message);
                 span.SetDataStreamsCheckpoint(
                     dataStreamsManager,
                     CheckpointKind.Consume,
                     edgeTags,
-                    AzureServiceBusCommon.GetMessageSize(message),
+                    msgSize,
                     (long)messageQueueTimeMs,
                     pathwayContext);
             }
