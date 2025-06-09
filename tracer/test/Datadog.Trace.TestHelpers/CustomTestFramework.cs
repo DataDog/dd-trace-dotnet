@@ -25,6 +25,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public class CustomTestFramework : XunitTestFramework
     {
+        private static ConcurrentQueue<IXunitTestCase> _failedTests = new();
+
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
@@ -171,6 +173,13 @@ namespace Datadog.Trace.TestHelpers
                     summary.Aggregate(await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource));
                 }
 
+                // Run failed tests
+
+                if (summary.Failed > 0)
+                {
+                    await RunFailingTestsWithDebugInfo(messageBus, cancellationTokenSource, runner);
+                }
+
                 return summary;
             }
 
@@ -203,6 +212,49 @@ namespace Datadog.Trace.TestHelpers
                     var value = list[k];
                     list[k] = list[n];
                     list[n] = value;
+                }
+            }
+
+            private async Task RunFailingTestsWithDebugInfo(IMessageBus messageBus, CancellationTokenSource cancellationTokenSource, ConcurrentRunner runner)
+            {
+                // We will only run the first 5 failing tests. We don't want to slown down the CI if there are many failures
+                var failedFiltered = _failedTests.Take(5).ToList();
+
+                var collectionsFailed = OrderTestCollections().Select(
+                pair =>
+                new
+                {
+                    Collection = pair.Item1,
+                    TestCases = pair.Item2.Where(x => failedFiltered.Contains(x)),
+                    DisableParallelization = IsParallelizationDisabled(pair.Item1)
+                })
+                .ToList();
+
+                collectionsFailed.RemoveAll(c => !c.TestCases.Any());
+                Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+                List<Task<RunSummary>> tasks = new();
+
+                foreach (var test in collectionsFailed)
+                {
+                    tasks.Add(runner.RunAsync(async () => await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource)));
+                }
+
+                await Task.WhenAll(tasks);
+
+                Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "0");
+                var failedSummary = new RunSummary();
+                foreach (var task in tasks)
+                {
+                    failedSummary.Aggregate(task.Result);
+                }
+
+                if (failedSummary.Failed > 0)
+                {
+                    DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"{failedSummary.Failed} failing tests were re-run with debug enabled and failed again. Check logs with debug information."));
+                }
+                else
+                {
+                    DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"Failing tests were re-run with debug enabled and did not fail."));
                 }
             }
         }
@@ -289,6 +341,12 @@ namespace Datadog.Trace.TestHelpers
 
                         // If this throws, we just let it bubble up, regardless of whether there's a retry, as this indicates an xunit infra issue
                         var summary = await RunTest(messageBus);
+
+                        if (summary.Failed > 0)
+                        {
+                            _failedTests.Enqueue(testCase);
+                        }
+
                         if (summary.Failed == 0 || attemptsRemaining <= 0)
                         {
                             // No failures, or not allowed to retry
