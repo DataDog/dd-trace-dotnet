@@ -43,49 +43,77 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="type">Type to gain internals visibility</param>
         internal static void EnsureTypeVisibility(ModuleBuilder builder, Type type)
         {
-            EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name ?? string.Empty);
+            var processed = new HashSet<Type>();
+            var toProcess = new Queue<Type>();
+            var assemblyNames = new HashSet<string>();
+            AddTypeToProcess(processed, toProcess, type);
 
-            if (type.IsGenericType && !type.IsGenericTypeDefinition)
+            while (toProcess.Count > 0)
             {
-                foreach (Type t in type.GetGenericArguments())
+                var currentType = toProcess.Dequeue();
+                EnsureTypeVisibilityAndAppendToList(processed, toProcess, assemblyNames, currentType);
+            }
+
+            EnsureAssemblyNameVisibility(builder, assemblyNames);
+
+            static void EnsureTypeVisibilityAndAppendToList(HashSet<Type> processed, Queue<Type> toProcess, HashSet<string> assemblyNames, Type type)
+            {
+                assemblyNames.Add(type.Assembly.GetName().Name ?? string.Empty);
+
+                if (type.IsGenericType && !type.IsGenericTypeDefinition)
                 {
-                    if (!t.IsVisible)
+                    foreach (Type t in type.GetGenericArguments())
                     {
-                        EnsureTypeVisibility(builder, t);
+                        if (!t.IsVisible)
+                        {
+                            AddTypeToProcess(processed, toProcess, t);
+                        }
+                    }
+                }
+
+                while (type.IsNested)
+                {
+                    // this should be null for non-nested types.
+                    if (type.DeclaringType is { } declaringType)
+                    {
+                        type = declaringType;
+                        if (!type.IsNestedPublic)
+                        {
+                            AddTypeToProcess(processed, toProcess, type);
+                        }
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
             }
 
-            while (type.IsNested)
+            static void AddTypeToProcess(HashSet<Type> processed, Queue<Type> toProcess, Type type)
             {
-                // this should be null for non-nested types.
-                if (type.DeclaringType is { } declaringType)
+                if (processed.Add(type))
                 {
-                    type = declaringType;
-                    if (!type.IsNestedPublic)
-                    {
-                        EnsureTypeVisibility(builder, type);
-                    }
-                }
-                else
-                {
-                    break;
+                    // type wasn't processed yet, so we can add it to the queue
+                    toProcess.Enqueue(type);
                 }
             }
 
-            static void EnsureAssemblyNameVisibility(ModuleBuilder builder, string assemblyName)
+            static void EnsureAssemblyNameVisibility(ModuleBuilder builder, HashSet<string> assemblyNames)
             {
                 lock (IgnoresAccessChecksToAssembliesSetDictionary)
                 {
                     if (!IgnoresAccessChecksToAssembliesSetDictionary.TryGetValue(builder, out var hashSet))
                     {
-                        hashSet = new HashSet<string>();
+                        hashSet = [];
                         IgnoresAccessChecksToAssembliesSetDictionary[builder] = hashSet;
                     }
 
-                    if (hashSet.Add(assemblyName))
+                    foreach (var assemblyName in assemblyNames)
                     {
-                        ((AssemblyBuilder)builder.Assembly).SetCustomAttribute(new CustomAttributeBuilder(IgnoresAccessChecksToAttributeCtor, new object[] { assemblyName }));
+                        if (hashSet.Add(assemblyName))
+                        {
+                            ((AssemblyBuilder)builder.Assembly).SetCustomAttribute(new CustomAttributeBuilder(IgnoresAccessChecksToAttributeCtor, [assemblyName]));
+                        }
                     }
                 }
             }
