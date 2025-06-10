@@ -51,22 +51,21 @@ namespace Datadog.Trace.DuckTyping
                 {
                     if (!t.IsVisible)
                     {
-                        EnsureAssemblyNameVisibility(builder, t.Assembly.GetName().Name ?? string.Empty);
+                        EnsureTypeVisibility(builder, t);
                     }
                 }
             }
 
             while (type.IsNested)
             {
-                if (!type.IsNestedPublic)
-                {
-                    EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name ?? string.Empty);
-                }
-
                 // this should be null for non-nested types.
                 if (type.DeclaringType is { } declaringType)
                 {
                     type = declaringType;
+                    if (!type.IsNestedPublic)
+                    {
+                        EnsureTypeVisibility(builder, type);
+                    }
                 }
                 else
                 {
