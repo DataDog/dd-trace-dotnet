@@ -366,6 +366,19 @@ namespace Datadog.Trace
             {
                 try
                 {
+                    // If file logging is enabled, then enable logging in libdatadog
+                    // We assume that we can't go from pipeline enabled -> disabled, so we should never need to call logger.Disable()
+                    // Note that this _could_ fail if there's an issue in libdatadog, but we continue to _Try_ to initialize the exporter anyway
+                    // If this was previously initialized, it will be re-initialized with the new settings, which is fine
+                    if (Log.FileLoggingConfiguration is { } fileConfig)
+                    {
+                        var logger = LibDatadog.Logger.Instance;
+                        logger.Enable(fileConfig, DomainMetadata.Instance);
+
+                        // hacky to use the global setting, but about the only option we have atm
+                        logger.SetLogLevel(GlobalSettings.Instance.DebugEnabledInternal);
+                    }
+
                     // TODO: we should refactor this so that we're not re-building the telemetry settings, and instead using the existing ones
                     var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
                     TelemetryClientConfiguration? telemetryClientConfiguration = null;
@@ -404,20 +417,7 @@ namespace Datadog.Trace
                         ClientComputedStats = clientComputedStats
                     };
 
-                    var api = new TraceExporter(configuration);
-
-                    // If file logging is enabled, and we created the api, then enable logging in libdatadog
-                    // Otherwise, we assume that the api has _not_ previously been enabled, so never needs explicitly disabling.
-                    if (Log.FileLoggingConfiguration is { } fileConfig)
-                    {
-                        var logger = LibDatadog.Logger.Instance;
-                        logger.Enable(fileConfig, DomainMetadata.Instance);
-
-                        // hacky to use the global setting, but about the only option we have atm
-                        logger.SetLogLevel(GlobalSettings.Instance.DebugEnabledInternal);
-                    }
-
-                    return api;
+                    return new TraceExporter(configuration);
                 }
                 catch (Exception ex)
                 {
