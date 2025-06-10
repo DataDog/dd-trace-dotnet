@@ -361,10 +361,12 @@ namespace Datadog.Trace
 
         private IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory, bool partialFlushEnabled)
         {
+            // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             if (settings.DataPipelineEnabled)
             {
                 try
                 {
+                    // TODO: we should refactor this so that we're not re-building the telemetry settings, and instead using the existing ones
                     var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
                     TelemetryClientConfiguration? telemetryClientConfiguration = null;
 
@@ -385,6 +387,7 @@ namespace Datadog.Trace
                     // when APM is disabled but ASM is enabled.
                     var clientComputedStats = !settings.StatsComputationEnabled && !settings.ApmTracingEnabled;
 
+                    var frameworkDescription = FrameworkDescription.Instance;
                     using var configuration = new TraceExporterConfiguration
                     {
                         Url = GetUrl(settings),
@@ -394,14 +397,27 @@ namespace Datadog.Trace
                         Service = settings.ServiceName,
                         Hostname = HostMetadata.Instance.Hostname,
                         Language = ".NET",
-                        LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-                        LanguageInterpreter = FrameworkDescription.Instance.Name,
+                        LanguageVersion = frameworkDescription.ProductVersion,
+                        LanguageInterpreter = frameworkDescription.Name,
                         ComputeStats = settings.StatsComputationEnabled,
                         TelemetryClientConfiguration = telemetryClientConfiguration,
                         ClientComputedStats = clientComputedStats
                     };
 
-                    return new TraceExporter(configuration);
+                    var api = new TraceExporter(configuration);
+
+                    // If file logging is enabled, and we created the api, then enable logging in libdatadog
+                    // Otherwise, we assume that the api has _not_ previously been enabled, so never needs explicitly disabling.
+                    if (Log.FileLoggingConfiguration is { } fileConfig)
+                    {
+                        var logger = LibDatadog.Logger.Instance;
+                        logger.Enable(fileConfig, DomainMetadata.Instance);
+
+                        // hacky to use the global setting, but about the only option we have atm
+                        logger.SetLogLevel(GlobalSettings.Instance.DebugEnabledInternal);
+                    }
+
+                    return api;
                 }
                 catch (Exception ex)
                 {
