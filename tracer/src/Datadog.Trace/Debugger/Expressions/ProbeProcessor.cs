@@ -384,24 +384,35 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
-            Scope? scope = Tracer.Instance.ActiveScope as Scope;
-            if (scope == null)
-            {
-#if NETFRAMEWORK
-                var ctx = WcfCommon.GetCurrentOperationContext?.Invoke();
-                var ctxProxy = ctx.DuckCast<IOperationContextStruct>();
+            Scope? scope = null;
 
-                if (((IDuckType?)ctxProxy.RequestContext)?.Instance is not { } requestContextInstance
-                 || !WcfCommon.Scopes.TryGetValue(requestContextInstance, out scope))
+            if (Tracer.Instance.ActiveScope is Scope activeScope)
+            {
+                scope = activeScope;
+            }
+#if NETFRAMEWORK
+            else
+            {
+                var ctx = WcfCommon.GetCurrentOperationContext?.Invoke();
+                if (ctx?.DuckCast<IOperationContextStruct>() is { } ctxProxy
+                 && ((IDuckType?)ctxProxy.RequestContext)?.Instance is { } requestContextInstance
+                 && WcfCommon.Scopes.TryGetValue(requestContextInstance, out scope))
                 {
-                    Log.Warning("We can't find active scope. Probe ID: {ProbeId}", this.ProbeInfo.ProbeId);
+                    // Successfully retrieved scope
+                }
+                else
+                {
+                    Log.Warning("Unable to find active scope in WCF context. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
                     return;
                 }
-#else
-                Log.Warning("The tracer scope manager is null, so we can't set the tags. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
-                return;
-#endif
             }
+#else
+            else
+            {
+                Log.Warning("No active scope available for span decoration. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
+                return;
+            }
+#endif
 
             var attachedTags = false;
 
@@ -415,7 +426,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
-                        targetSpan = (scope as Scope)?.Root?.Span;
+                        targetSpan = scope?.Root?.Span;
                         break;
                     case TargetSpan.Active:
                         targetSpan = scope?.Span;
