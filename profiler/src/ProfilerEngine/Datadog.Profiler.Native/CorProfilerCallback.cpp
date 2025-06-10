@@ -1015,7 +1015,7 @@ void CorProfilerCallback::GetFullFrameworkVersion(ModuleID moduleId)
     if (FAILED(hr))
         return;
 
-    // look for .NET Framework main assembly
+    // look for the .NET Framework main assembly
     if (wcsstr(moduleName, L"mscorlib.dll") != nullptr)
     {
         uint16_t major = 0;
