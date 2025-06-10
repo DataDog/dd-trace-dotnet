@@ -7,6 +7,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -17,10 +18,16 @@ internal readonly struct FFIVec
     internal readonly nuint Length;
     internal readonly nuint Capacity;
 
-    public byte[] ToByteArray()
+    public string ToUtf8String()
     {
-        var bytes = new byte[Length];
-        Marshal.Copy(Data, bytes, 0, (int)Length);
-        return bytes;
+        unsafe
+        {
+#if NETCOREAPP
+            var messageBytes = new ReadOnlySpan<byte>(Data.ToPointer(), (int)Length);
+            return Encoding.UTF8.GetString(messageBytes);
+#else
+            return Encoding.UTF8.GetString((byte*)Data.ToPointer(), (int)Length);
+#endif
+        }
     }
 }
