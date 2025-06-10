@@ -467,7 +467,15 @@ namespace Datadog.Trace
         internal void Finish(TimeSpan duration)
         {
             ResourceName ??= OperationName;
-            DdComponent ??= Tags.GetTag(Trace.Tags.InstrumentationName); // todo : put InstrumentationName in CommonTags/TagsList and try to get it from there
+            if (Tags is InstrumentationTags itags)
+            {
+                DdComponent ??= itags.InstrumentationName;
+            }
+            else
+            {
+                DdComponent ??= Tags.GetTag(Trace.Tags.InstrumentationName);
+            }
+
             if (Interlocked.CompareExchange(ref _isFinished, 1, 0) == 0)
             {
                 if (IsRootSpan)
