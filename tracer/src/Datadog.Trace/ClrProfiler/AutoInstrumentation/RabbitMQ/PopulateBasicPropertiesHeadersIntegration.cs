@@ -80,6 +80,10 @@ public class PopulateBasicPropertiesHeadersIntegration
                 basicProperties = CachedBasicPropertiesHelper<TReturn>.CreateHeaders(state.State!);
             }
         }
+        else
+        {
+            basicProperties = returnValue;
+        }
 
         // duck cast so we can access the Headers property
         var duckType = basicProperties.DuckCast<IBasicProperties>()!;
