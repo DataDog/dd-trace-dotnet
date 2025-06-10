@@ -19,7 +19,7 @@ stages:
       - job: calculate_noop_stages
         dependsOn: []
         pool:
-          vmImage: windows-2019
+          vmImage: windows-2022
 
         steps:
           - template: steps/install-latest-dotnet-sdk.yml

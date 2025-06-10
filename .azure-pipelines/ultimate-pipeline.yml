@@ -4488,7 +4488,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     scenarioGroups: "appsec"
-    additionalScenarios: '[\"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"+S PROFILING +S TRACE_PROPAGATION_STYLE_W3C +S LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
+    additionalScenarios: '[\"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"PROFILING,TRACE_PROPAGATION_STYLE_W3C,LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -4538,7 +4538,7 @@ stages:
               (
                 $main | map({
                   ("APPSEC (" + .weblog + ") " + (.weblog_instance|tostring)): {
-                    SCENARIO: (.scenarios | map("+S " + .) | join(" ")), N: 1, I: 1,
+                    SCENARIO: (.scenarios | join(",")), N: 1, I: 1,
                     WEBLOG_VARIANT: .weblog
                   }
                 })
@@ -4547,13 +4547,13 @@ stages:
                   { ($scenario + " (" + $weblog + ") 1"): { SCENARIO: $scenario, WEBLOG_VARIANT: $weblog, N: 1, I: 1 } }
                 ]
               ) + (
-              [ $webs[] as $weblog | range(1; 4) as $i |
-                { ("PARAMETRIC (" + $weblog + ") \($i)"): {
-                  SCENARIO: "PARAMETRIC", WEBLOG_VARIANT: $weblog, N: 3, I: $i
+              [ range(1; 4) as $i |
+                { ("PARAMETRIC \($i)"): {
+                  SCENARIO: "PARAMETRIC", WEBLOG_VARIANT: $webs[0], N: 3, I: $i
                 }}
               ]
               ) | add
-            ' > matrix.json            
+            ' > matrix.json
             echo "##vso[task.setvariable variable=matrixJson;isOutput=true]$(cat matrix.json)"
             echo "Json: $(cat matrix.json)"
           displayName: Generate scenarios matrix JSON
@@ -4627,6 +4627,20 @@ stages:
           artifact: system-test-docker-images
           path: $(Build.SourcesDirectory)
 
+      - template: steps/download-artifact.yml
+        parameters:
+          artifact: linux-packages-linux-x64
+          patterns: '**/*tar.gz'
+          path: $(Build.ArtifactStagingDirectory)
+          condition: eq(variables['SCENARIO'], 'PARAMETRIC')
+
+      - script: |
+          PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
+          echo Moving $PACKAGE_NAME to system-tests/binaries
+          mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
+        displayName: Move dotnet binary to system test folder
+        condition: eq(variables['SCENARIO'], 'PARAMETRIC')
+
       - script: |
           echo "Loading images for variant: $(WEBLOG_VARIANT)"
           docker load -i "$(Build.SourcesDirectory)/$(WEBLOG_VARIANT).tar"
@@ -4643,7 +4657,25 @@ stages:
         displayName: Install runner
         workingDirectory: system-tests
 
-      - script: ./run.sh $(SCENARIO) --splits=$(N) --group=$(I)
+      - script: |
+          set -e
+
+          source venv/bin/activate
+          python utils/scripts/get-image-list.py "$(SCENARIO)" -l=dotnet -w=$(WEBLOG_VARIANT) > compose.yaml
+          cat compose.yaml
+        workingDirectory: system-tests
+        displayName: Generate docker-compose file
+
+      - script: docker compose pull
+        workingDirectory: system-tests
+        displayName: Pull docker images
+        retryCountOnTaskFailure: 3
+
+      - script: |
+          # Replace ',' with ' +S ' and add initial +S prefix
+          SCENARIOS=$(SCENARIO)
+          SCENARIOS_TO_RUN="+S ${SCENARIOS//,/ +S }"
+          ./run.sh $SCENARIOS_TO_RUN --splits=$(N) --group=$(I)
         workingDirectory: system-tests
         displayName: Run tests
         env:

@@ -186,7 +186,8 @@ namespace Datadog.Trace
                 }
             }
 
-            if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            if (span.ServiceName is not null &&
+                !string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
                 ExtraServicesProvider.Instance.AddService(span.ServiceName);
             }

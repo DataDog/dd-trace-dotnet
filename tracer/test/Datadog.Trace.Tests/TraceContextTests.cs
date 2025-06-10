@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -206,6 +208,20 @@ namespace Datadog.Trace.Tests
             spans.Should().NotBeNull("partial flush should have been triggered");
             spans!.Value.Should().NotBeNullOrEmpty("partial flush should have been triggered");
             spans!.Value.Should().OnlyContain(s => s.GetMetric(Metrics.SamplingPriority) == null, "because sampling priority is not added until serialization");
+        }
+
+        [Fact]
+        public void Null_Service_Names_Dont_Throw()
+        {
+            var settings = new TracerSettings();
+            var writerMock = new Mock<IAgentWriter>();
+            var samplerMock = new Mock<ITraceSampler>();
+
+            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+
+            var span = tracer.StartSpan("operation");
+            span.ServiceName = null;
+            span.Finish(); // should not throw
         }
     }
 }

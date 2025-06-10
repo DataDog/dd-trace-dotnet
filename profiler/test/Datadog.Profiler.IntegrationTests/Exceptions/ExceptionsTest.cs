@@ -254,6 +254,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 

@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             if (!EnvironmentTools.IsWindows())
             {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+                throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
             EnvironmentHelper.EnableWindowsNamedPipes();
