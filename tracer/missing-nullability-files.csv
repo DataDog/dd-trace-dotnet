@@ -429,7 +429,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSource.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSourceValueProvider.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/CompositeValueProvider.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/DefaultModelBindingContext.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/DefaultModelBindingContext_SetResult_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/ModelBindingResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/MvcOptionsIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/AwsConstants.cs
