@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -30,6 +31,32 @@ public class PrivateGenericTests
         // Where each type is defined in a different assembly, and the inner most one is a type that should not be accessible
 
         var instance = new TargetObject<IEnumerable<Span>>();
+        var duckType = instance.DuckCast<IDuckType>();
+        duckType.Method.Should().NotBeNull();
+        duckType.Method.Value.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public void CanDuckTypeInstanceReferencingPrivateTypesFromOtherAssembliesInDeepGenericReallyDeep()
+    {
+        // Setting up a scenario similar to this:
+        // PublicTypeFromAssembly1<PublicTypeFromAssembly2<PrivateTypeFromAssembly3>>>
+        // Where each type is defined in a different assembly, and the inner most one is a type that should not be accessible
+
+        var instance = new TargetObject<IEnumerable<System.Tuple<BoundedConcurrentQueue<MockHttpParser>, Span>>>();
+        var duckType = instance.DuckCast<IDuckType>();
+        duckType.Method.Should().NotBeNull();
+        duckType.Method.Value.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public void CanDuckTypeInstanceReferencingPrivateTypesFromOtherAssembliesInDeepGenericWithNestedTypes()
+    {
+        // Setting up a scenario similar to this:
+        // PublicTypeFromAssembly1<PublicTypeFromAssembly2<PrivateTypeFromAssembly3>>>
+        // Where each type is defined in a different assembly, and the inner most one is a type that should not be accessible
+
+        var instance = new TargetObject<IEnumerable<System.Tuple<BoundedConcurrentQueue<MockHttpParser.StreamReaderHelper>, Span>>>();
         var duckType = instance.DuckCast<IDuckType>();
         duckType.Method.Should().NotBeNull();
         duckType.Method.Value.Should().NotBeNullOrWhiteSpace();
