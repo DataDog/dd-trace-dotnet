@@ -187,6 +187,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly string _testName;
         private readonly string _metadataSchemaVersion;
         private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
+        private readonly Regex _stacktraceRegex = new(@"""stacktrace"":""   at Samples\.GraphQL4\.StarWarsExtensions\.StarWarsSubscription\.ThrowNotImplementedException\([^)]+\) in .*?:line \d+(\\r\\n   at .*?:line \d+)*""");
 
         protected GraphQLTests(string sampleAppName, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
@@ -233,6 +234,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             settings.AddSimpleScrubber("Could not resolve source stream for field", "Error trying to resolve field");
             // Added to scrub the SpanEvents time
             settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+            // .NET 6 and above have a different stack trace than .NET 5 and .NET Core 3.1
+            settings.AddRegexScrubber(_stacktraceRegex, @"""stacktrace"":""   at Samples.GraphQL4.StarWarsExtensions.StarWarsSubscription.ThrowNotImplementedException(IResolveFieldContext context) in StarWarsSubscription.cs:line 00""");
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
