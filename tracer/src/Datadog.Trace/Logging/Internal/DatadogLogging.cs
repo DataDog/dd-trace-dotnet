@@ -18,8 +18,8 @@ namespace Datadog.Trace.Logging
 {
     internal static class DatadogLogging
     {
+        internal const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new(DefaultLogLevel);
-        private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly IDatadogLogger SharedLogger;
 
         static DatadogLogging()
@@ -44,8 +44,6 @@ namespace Datadog.Trace.Logging
 
                 var domainMetadata = DomainMetadata.Instance;
                 SharedLogger = DatadogLoggingFactory.CreateFromConfiguration(in config, domainMetadata) ?? SharedLogger;
-
-                LibDatadog.Logger.Instance.Enable(config, domainMetadata);
             }
             catch
             {
@@ -73,13 +71,11 @@ namespace Datadog.Trace.Logging
         internal static void Reset()
         {
             LoggingLevelSwitch.MinimumLevel = DefaultLogLevel;
-            LibDatadog.Logger.Instance.SetLogLevel(DefaultLogLevel);
         }
 
         internal static void SetLogLevel(LogEventLevel logLevel)
         {
             LoggingLevelSwitch.MinimumLevel = logLevel;
-            LibDatadog.Logger.Instance.SetLogLevel(logLevel);
         }
 
         internal static void UseDefaultLevel()
@@ -94,7 +90,6 @@ namespace Datadog.Trace.Logging
               {
                 "dotnet-tracer-*.log",
                 "dotnet-native-loader-*.log",
-                "dotnet-libdatadog-*.log",
                 "DD-DotNet-Profiler-Native-*.log"
               };
 
