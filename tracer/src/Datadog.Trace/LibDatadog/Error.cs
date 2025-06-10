@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.Logging;
@@ -25,8 +26,6 @@ internal readonly struct Error
 
     public LibDatadogException ToException()
     {
-        var messageBytes = Message.ToByteArray();
-        var message = Encoding.UTF8.GetString(messageBytes);
-        return new LibDatadogException(message);
+        return new LibDatadogException(Message.ToUtf8String());
     }
 }
