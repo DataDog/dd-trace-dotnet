@@ -9,11 +9,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -382,10 +384,23 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
-            if (Tracer.Instance?.ScopeManager?.Active == null)
+            Scope? scope = Tracer.Instance.ActiveScope as Scope;
+            if (scope == null)
             {
+#if NETFRAMEWORK
+                var ctx = WcfCommon.GetCurrentOperationContext?.Invoke();
+                var ctxProxy = ctx.DuckCast<IOperationContextStruct>();
+
+                if (((IDuckType?)ctxProxy.RequestContext)?.Instance is not { } requestContextInstance
+                 || !WcfCommon.Scopes.TryGetValue(requestContextInstance, out scope))
+                {
+                    Log.Warning("We can't find active scope. Probe ID: {ProbeId}", this.ProbeInfo.ProbeId);
+                    return;
+                }
+#else
                 Log.Warning("The tracer scope manager is null, so we can't set the tags. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
                 return;
+#endif
             }
 
             var attachedTags = false;
@@ -395,15 +410,15 @@ namespace Datadog.Trace.Debugger.Expressions
                 var decoration = evaluationResult.Decorations[i];
                 var evaluationErrorTag = $"{DynamicPrefix}{decoration.TagName}.evaluation_error";
                 var probeIdTag = $"{DynamicPrefix}{decoration.TagName}.probe_id";
-                Span? targetSpan = null;
+                ISpan? targetSpan = null;
 
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
-                        targetSpan = Tracer.Instance.InternalActiveScope.Root?.Span;
+                        targetSpan = (scope as Scope)?.Root?.Span;
                         break;
                     case TargetSpan.Active:
-                        targetSpan = Tracer.Instance.InternalActiveScope.Span;
+                        targetSpan = scope?.Span;
                         break;
                     default:
                         Log.Error("Invalid target span. Probe: {ProbeId}", ProbeInfo.ProbeId);
