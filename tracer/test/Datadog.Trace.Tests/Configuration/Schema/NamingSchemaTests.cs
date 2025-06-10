@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, "DefaultServiceName", new Dictionary<string, string>(), _peerServiceMappings);
 
-            var tags = new CommonTags();
+            var tags = new TagsList();
             tags.SetTag(Tags.PeerService, "localhost");
             namingSchema.RemapPeerService(tags);
             if (schemaVersion == SchemaVersion.V1 || peerServiceTagsEnabled)
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         {
             var namingSchema = new NamingSchema(SchemaVersion.V1, true, false, "DefaultServiceName", new Dictionary<string, string>(), null);
 
-            var tags = new CommonTags();
+            var tags = new TagsList();
             tags.SetTag(Tags.PeerService, "localhost");
             namingSchema.RemapPeerService(tags);
             tags.GetTag(Tags.PeerService).Should().Be("localhost");
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         {
             var namingSchema = new NamingSchema(SchemaVersion.V1, true, false, "DefaultServiceName", new Dictionary<string, string>(), null);
 
-            var tags = new CommonTags();
+            var tags = new TagsList();
             namingSchema.RemapPeerService(tags);
             tags.GetTag(Tags.PeerService).Should().BeNull();
         }
