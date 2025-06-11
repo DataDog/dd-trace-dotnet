@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// </summary>
         private const string IntegrationName = nameof(IntegrationId.AspNetCore);
 
-        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, in CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception? exception, in CallTargetState state)
         {
             var iast = Iast.Iast.Instance;
             var security = Security.Instance;
