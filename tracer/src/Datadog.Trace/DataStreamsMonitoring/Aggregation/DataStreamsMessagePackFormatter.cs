@@ -69,24 +69,18 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private enum Products : long
         {
             None = 0,
-            Apm = 1,               // 00000001
-            Dsm = 1 << 1,          // 00000010, DSM is explicitly enabled or disabled
-            Djm = 1 << 2,          // 00000100, for compatibility with Java tracer
-            Profiling = 1 << 3,    // 00001000
-            DsmUndefined = 1 << 4, // 00010000, DSM flag is not set
+            Apm = 1,
+            Dsm = 1 << 1,
+            Djm = 1 << 2,
+            Profiling = 1 << 3
         }
 
         private static long GetProductsMask(TracerSettings tracerSettings)
         {
             var productsMask = (long)Products.Apm;
-            if (tracerSettings.IsDataStreamsMonitoringEnabled == true)
+            if (tracerSettings.IsDataStreamsMonitoringEnabled)
             {
                 productsMask |= (long)Products.Dsm;
-            }
-
-            if (tracerSettings.IsDataStreamsMonitoringEnabled == null)
-            {
-                productsMask |= (long)Products.DsmUndefined;
             }
 
             if (tracerSettings.ProfilingEnabledInternal)

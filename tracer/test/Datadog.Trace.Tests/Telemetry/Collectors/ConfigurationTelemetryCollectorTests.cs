@@ -236,7 +236,7 @@ public class ConfigurationTelemetryCollectorTests
         GetLatestValueFromConfig(data, "DD_TRACE_ENABLED", ConfigurationOrigins.Default).Should().Be(true);
         GetLatestValueFromConfig(data, "DD_PROFILING_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
         GetLatestValueFromConfig(data, "DD_APPSEC_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
-        GetLatestValueFromConfig(data, "DD_DATA_STREAMS_ENABLED", ConfigurationOrigins.Default).Should().Be(null);
+        GetLatestValueFromConfig(data, "DD_DATA_STREAMS_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
         GetLatestValueFromConfig(data, "DD_TAGS", ConfigurationOrigins.Default).Should().Be(string.Empty);
         GetLatestValueFromConfig(data, "DD_TRACE_HEADER_TAGS", ConfigurationOrigins.Default).Should().Be(string.Empty);
         GetLatestValueFromConfig(data, "DD_LOGS_INJECTION", ConfigurationOrigins.Default).Should().Be(false);

@@ -111,7 +111,7 @@ public class DataStreamsMessagePackFormatterTests
             Service = service,
             Lang = "dotnet",
             TracerVersion = TracerConstants.AssemblyVersion,
-            ProductMask = 17,
+            ProductMask = 1,
             Stats = new MockDataStreamsBucket[]
             {
                 new()
