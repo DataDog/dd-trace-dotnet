@@ -53,6 +53,7 @@ public class SpanMessagePackFormatterTests
         foreach (var span in spans)
         {
             span.SetDuration(TimeSpan.FromSeconds(1));
+            span.DdComponent = "saved-component";
         }
 
         var traceChunk = new TraceChunkModel(new(spans));
@@ -89,19 +90,30 @@ public class SpanMessagePackFormatterTests
             if (actual.ParentId == null)
             {
                 tagsProcessor.Remaining.Should()
-                    .HaveCount(2).And.Contain(new KeyValuePair<string, string>("runtime-id", RuntimeId.Get()), new KeyValuePair<string, string>("language", "dotnet"));
+                    .HaveCount(3)
+                    .And.Contain(
+                        new KeyValuePair<string, string>("runtime-id", RuntimeId.Get()),
+                        new KeyValuePair<string, string>("language", "dotnet"),
+                        new KeyValuePair<string, string>("_dd.integration", "saved-component"));
             }
             else
             {
                 if (!string.IsNullOrEmpty(expected.Context.LastParentId))
                 {
                     tagsProcessor.Remaining.Should()
-                                 .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.parent_id", "0123456789abcdef"));
+                        .HaveCount(3)
+                        .And.Contain(
+                            new KeyValuePair<string, string>("language", "dotnet"),
+                            new KeyValuePair<string, string>("_dd.parent_id", "0123456789abcdef"),
+                            new KeyValuePair<string, string>("_dd.integration", "saved-component"));
                 }
                 else
                 {
                     tagsProcessor.Remaining.Should()
-                                 .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+                        .HaveCount(2)
+                        .And.Contain(
+                            new KeyValuePair<string, string>("language", "dotnet"),
+                            new KeyValuePair<string, string>("_dd.integration", "saved-component"));
                 }
             }
 
