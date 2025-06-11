@@ -17,6 +17,7 @@ using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
@@ -384,35 +385,11 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
-            Scope? scope = null;
-
-            if (Tracer.Instance.ActiveScope is Scope activeScope)
+            if (!TryGetScope(out var scope))
             {
-                scope = activeScope;
-            }
-#if NETFRAMEWORK
-            else
-            {
-                var ctx = WcfCommon.GetCurrentOperationContext?.Invoke();
-                if (ctx?.DuckCast<IOperationContextStruct>() is { } ctxProxy
-                 && ((IDuckType?)ctxProxy.RequestContext)?.Instance is { } requestContextInstance
-                 && WcfCommon.Scopes.TryGetValue(requestContextInstance, out scope))
-                {
-                    // Successfully retrieved scope
-                }
-                else
-                {
-                    Log.Warning("Unable to find active scope in WCF context. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
-                    return;
-                }
-            }
-#else
-            else
-            {
-                Log.Warning("No active scope available for span decoration. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
+                Log.Debug("No active scope available, skipping span decoration. Probe: {ProbeId}", ProbeInfo.ProbeId);
                 return;
             }
-#endif
 
             var attachedTags = false;
 
@@ -471,6 +448,49 @@ namespace Datadog.Trace.Debugger.Expressions
             if (attachedTags)
             {
                 LiveDebugger.Instance.SetProbeStatusToEmitting(ProbeInfo);
+            }
+        }
+
+        private bool TryGetScope([NotNullWhen(true)] out Scope? scope)
+        {
+            try
+            {
+                if (Tracer.Instance.ActiveScope is Scope activeScope)
+                {
+                    scope = activeScope;
+                    return true;
+                }
+#if NETFRAMEWORK
+            else
+            {
+                var ctx = WcfCommon.GetCurrentOperationContext?.Invoke();
+                if (ctx?.DuckCast<IOperationContextStruct>() is { } ctxProxy
+                 && ((IDuckType?)ctxProxy.RequestContext)?.Instance is { } requestContextInstance
+                 && WcfCommon.Scopes.TryGetValue(requestContextInstance, out scope))
+                {
+                    return true;
+                }
+                else
+                {
+                    Log.Warning("Unable to find active scope in WCF context for span decoration. Probe ID: {ProbeId}", this.ProbeInfo.ProbeId);
+                    scope = null;
+                    return false;
+                }
+            }
+#else
+                else
+                {
+                    Log.Warning("No active scope available for span decoration. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
+                    scope = null;
+                    return false;
+                }
+#endif
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error while trying to get active scope for span decoration. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
+                scope = null;
+                return false;
             }
         }
 
