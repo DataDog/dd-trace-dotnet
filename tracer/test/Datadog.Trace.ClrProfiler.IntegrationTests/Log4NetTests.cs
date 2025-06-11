@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);
-                Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
+                Assert.True(spans.Count == 1, $"Expecting 1 span, received {spans.Count}");
 
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
