@@ -652,44 +652,39 @@ partial class Build
 
     Target CopyNativeFilesForTests => _ => _
         .Unlisted()
-        .After(Clean)
-        .After(BuildTracerHome)
+        .After(Clean, BuildTracerHome)
+        .Before(RunIntegrationTests, RunManagedUnitTests)
         .Executes(() =>
         {
-            foreach(var projectName in Projects.NativeFilesDependentTests)
+            // Copy the native files to all the test projects for simplicity.
+            var testProjects = Solution.GetProjects("*.Tests")
+                                       .Where(p => p.Path.ToString().EndsWith(".csproj")); // exclude native test projects
+            foreach(var projectName in testProjects)
             {
+                Logger.Information("Copying native files for project {ProjectName}", projectName);
                 var project = Solution.GetProject(projectName);
-                var testDir = project.Directory;
+                var testDir = project!.Directory;
                 var frameworks = project.GetTargetFrameworks();
+
+                if (Framework is not null)
+                {
+                    frameworks = frameworks.Where(x=> x == Framework).ToList();
+                }
+
                 var testBinFolder = testDir / "bin" / BuildConfiguration;
 
-                if (IsWin)
+                var (ext, source) = Platform switch
                 {
-                    foreach (var framework in frameworks)
-                    {
-                        var source = MonitoringHomeDirectory / $"win-{TargetPlatform}" / "datadog_profiling_ffi.dll";
-                        var dest = testBinFolder / framework / "LibDatadog.dll";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                    }
-                }
-                else if (IsLinux)
+                    PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}" / "datadog_profiling_ffi.dll"),
+                    PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch / "libdatadog_profiling.so"),
+                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx" / $"libdatadog_profiling.dylib"),
+                    _ => throw new NotSupportedException($"Unsupported platform: {Platform}")
+                };
+
+                foreach (var framework in frameworks)
                 {
-                    var (arch, ext) = GetUnixArchitectureAndExtension();
-                    var source = MonitoringHomeDirectory / arch / $"libdatadog_profiling.{ext}";
-                    foreach (var framework in frameworks)
-                    {
-                        var dest = testBinFolder / framework / $"LibDatadog.{ext}";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                    }
-                }
-                else if (IsOsx)
-                {
-                    var source = MonitoringHomeDirectory/ "osx" / $"libdatadog_profiling.dylib";
-                    foreach (var framework in frameworks)
-                    {
-                        var dest = testBinFolder / framework / $"LibDatadog.dylib";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                    }
+                    var dest = testBinFolder / framework / $"LibDatadog.{ext}";
+                    CopyFile(source, dest, FileExistsPolicy.Overwrite);
                 }
             }
         });
