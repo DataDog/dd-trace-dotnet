@@ -200,6 +200,7 @@ stages:
       pool:
         vmImage: ubuntu-latest
       steps:
+      - checkout: none
       - template: steps/create-github-app-token.yml
       - bash: |
           echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId) and is_release_version=False"
