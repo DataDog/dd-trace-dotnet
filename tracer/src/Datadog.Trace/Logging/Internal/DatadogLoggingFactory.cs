@@ -149,7 +149,7 @@ internal static class DatadogLoggingFactory
             rateLimiter = new NullLogRateLimiter();
         }
 
-        return new DatadogSerilogLogger(internalLogger, rateLimiter, config.File?.LogDirectory);
+        return new DatadogSerilogLogger(internalLogger, rateLimiter, config.File);
     }
 
     // Internal for testing
