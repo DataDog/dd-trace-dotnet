@@ -75,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            SetEnvironmentVariable("DD_TRACE_PROCESS_ENABLED", "false");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping)
