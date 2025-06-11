@@ -186,29 +186,44 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 result.ReportedDiagnostics.Rest.Warnings is { Count: > 0 })
             {
                 var diags = result.ReportedDiagnostics;
-                var sb = StringBuilderCache.Acquire();
                 DumpStatsMessages(ref diags.Rules);
                 DumpStatsMessages(ref diags.Rest);
 
-                void DumpStatsMessages(ref WafStats stats)
+                if (diags.HasErrors)
                 {
-                    DumpMessages(stats.Errors, "ERR: ");
-                    DumpMessages(stats.Warnings, "WRN: ");
+                    // This message should go to telemetry logs only, skipping the regular logs
+                    Log.Debug("Some errors were found while applying waf configuration (RulesFile: {RulesFile})", rulesFile);
+                }
+                else
+                {
+                    Log.Debug("Some warnings were found while applying waf configuration (RulesFile: {RulesFile})", rulesFile);
                 }
 
-                void DumpMessages(IReadOnlyDictionary<string, object>? messages, string prefix)
+                void DumpStatsMessages(ref WafStats stats)
+                {
+                    DumpMessages(stats.Errors, true);
+                    DumpMessages(stats.Warnings, false);
+                }
+
+                void DumpMessages(IReadOnlyDictionary<string, object>? messages, bool isError)
                 {
                     if (messages is { Count: > 0 })
                     {
                         foreach (var item in messages)
                         {
-                            sb.Append($"${prefix}{item.Key}: [{string.Join(", ", item.Value)}] ");
+                            var message = $"{item.Key}: [{string.Join(", ", item.Value)}]";
+                            if (isError)
+                            {
+                                // This message should go to telemetry logs only, skipping the regular logs
+                                Log.Debug("rc::asm_dd::diagnostic Error: {Err}", message);
+                            }
+                            else
+                            {
+                                Log.Debug("rc::asm_dd::diagnostic Warning: {Err}", message);
+                            }
                         }
                     }
                 }
-
-                var errorMess = StringBuilderCache.GetStringAndRelease(sb);
-                Log.Warning("Some issues were found while applying waf configuration (RulesFile: {RulesFile}): {ErroringRules}", rulesFile, errorMess);
             }
 
             if (result.Success && !updating)
