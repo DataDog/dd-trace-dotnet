@@ -20,6 +20,7 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -34,17 +35,17 @@ namespace Datadog.Trace.Tests.Telemetry
         // This test tests a lot at once because everything is heavily statically cached,
         // which makes tests brittle to order and concurrency etc
         [Fact]
-        public void RecordsRelevantTelemetry()
+        public async Task RecordsRelevantTelemetry()
         {
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, "DefaultService" } });
             var telemetry = new TestTelemetryController();
-            var tracer = new Tracer(
+            await using var tracer = TracerHelper.Create(
                 settings,
                 new Mock<IAgentWriter>().Object,
                 new Mock<ITraceSampler>().Object,
                 scopeManager: null,
                 statsd: null,
-                telemetry: telemetry);
+                telemetryController: telemetry);
 
             Tracer.UnsafeSetTracerInstance(tracer);
             telemetry.RunningInvocations.Should().BeEmpty();

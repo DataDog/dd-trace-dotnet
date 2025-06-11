@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 

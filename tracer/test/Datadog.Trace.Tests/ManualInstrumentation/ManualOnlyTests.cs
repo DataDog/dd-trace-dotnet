@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using DatadogTraceManual::Datadog.Trace.Ci;
 using FluentAssertions;
 using Xunit;

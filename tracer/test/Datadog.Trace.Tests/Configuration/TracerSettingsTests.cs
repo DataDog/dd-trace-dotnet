@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -17,6 +18,7 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Moq;
@@ -40,14 +42,14 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(ConfigurationKeys.Environment, Tags.Env, "custom-env")]
         [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version, null)]
         [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version, "custom-version")]
-        public void ConfiguredTracerSettings_DefaultTagsSetFromEnvironmentVariable(string environmentVariableKey, string tagKey, string value)
+        public async Task ConfiguredTracerSettings_DefaultTagsSetFromEnvironmentVariable(string environmentVariableKey, string tagKey, string value)
         {
             var collection = new NameValueCollection { { environmentVariableKey, value } };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(tagKey), value);
@@ -56,7 +58,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Theory]
         [InlineData(ConfigurationKeys.Environment, Tags.Env)]
         [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version)]
-        public void DDVarTakesPrecedenceOverDDTags(string envKey, string tagKey)
+        public async Task DDVarTakesPrecedenceOverDDTags(string envKey, string tagKey)
         {
             string envValue = $"ddenv-custom-{tagKey}";
             string tagsLine = $"{tagKey}:ddtags-custom-{tagKey}";
@@ -65,7 +67,7 @@ namespace Datadog.Trace.Tests.Configuration
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(tagKey), envValue);
@@ -74,7 +76,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Theory]
         [InlineData(Tags.Env, "deployment.environment")]
         [InlineData(Tags.Version, "service.version")]
-        public void OtelTagsSetsServiceInformation(string ddTagKey, string otelTagKey)
+        public async Task OtelTagsSetsServiceInformation(string ddTagKey, string otelTagKey)
         {
             string expectedValue = $"ddtags-custom-{otelTagKey}";
             string tagsLine = $"{otelTagKey}=ddtags-custom-{otelTagKey}";
@@ -84,7 +86,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
             settings.GlobalTags.Should().NotContainKey(otelTagKey);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(ddTagKey), expectedValue);
@@ -93,7 +95,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Theory]
         [InlineData(Tags.Env, "deployment.environment")]
         [InlineData(Tags.Version, "service.version")]
-        public void DDTagsTakesPrecedenceOverOtelTags(string ddTagKey, string otelTagKey)
+        public async Task DDTagsTakesPrecedenceOverOtelTags(string ddTagKey, string otelTagKey)
         {
             string expectedValue = $"ddtags-custom-{ddTagKey}";
             string ddTagsLine = $"{ddTagKey}:ddtags-custom-{ddTagKey}";
@@ -104,7 +106,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
             settings.GlobalTags.Should().NotContainKey(otelTagKey);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(ddTagKey), expectedValue);
@@ -120,7 +122,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("0", "none", false, (int)Count.OpenTelemetryConfigHiddenByDatadogConfig)]
         [InlineData(null, "random", true, (int)Count.OpenTelemetryConfigInvalid)]
         [InlineData(null, "none", false, null)]
-        public void TraceEnabled(string value, string otelValue, bool areTracesEnabled, int? metric)
+        public async Task TraceEnabled(string value, string otelValue, bool areTracesEnabled, int? metric)
         {
             var settings = new NameValueCollection
             {
@@ -136,7 +138,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             _writerMock.Invocations.Clear();
 
-            var tracer = new Tracer(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("TestTracerDisabled");
             span.Dispose();
 
@@ -490,13 +492,13 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "none", false)]
         [InlineData("false", "random", false)]
         [InlineData("false", null, false)]
-        [InlineData("A", "none", false)]
-        [InlineData("A", "random", false)]
-        [InlineData("", "none", false)]
-        [InlineData("", "random", false)]
+        [InlineData("A", "none", true)]
+        [InlineData("A", "random", true)]
+        [InlineData("", "none", true)]
+        [InlineData("", "random", true)]
         [InlineData(null, "none", false)]
-        [InlineData(null, "random", false)]
-        [InlineData(null, null, false)]
+        [InlineData(null, "random", true)]
+        [InlineData(null, null, true)]
         public void RuntimeMetricsEnabled(string value, string otelValue, bool expected)
         {
             var source = CreateConfigurationSource(
@@ -528,17 +530,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("glob", SamplingRulesFormat.Glob)]     // exact match
-        [InlineData("Glob", SamplingRulesFormat.Glob)]     // case-insensitive
-        [InlineData(" glob ", SamplingRulesFormat.Glob)]   // trim whitespace
-        [InlineData("regex", SamplingRulesFormat.Regex)]   // exact match
-        [InlineData("RegEx", SamplingRulesFormat.Regex)]   // case-insensitive
+        [InlineData("glob", SamplingRulesFormat.Glob)] // exact match
+        [InlineData("Glob", SamplingRulesFormat.Glob)] // case-insensitive
+        [InlineData(" glob ", SamplingRulesFormat.Glob)] // trim whitespace
+        [InlineData("regex", SamplingRulesFormat.Regex)] // exact match
+        [InlineData("RegEx", SamplingRulesFormat.Regex)] // case-insensitive
         [InlineData(" regex ", SamplingRulesFormat.Regex)] // trim whitespace
-        [InlineData("none", SamplingRulesFormat.Unknown)]  // invalid
-        [InlineData("1", SamplingRulesFormat.Unknown)]     // invalid
-        [InlineData("", SamplingRulesFormat.Unknown)]      // empty is invalid
-        [InlineData("  ", SamplingRulesFormat.Unknown)]    // whitespace is invalid
-        [InlineData(null, SamplingRulesFormat.Glob)]       // null defaults to glob
+        [InlineData("none", SamplingRulesFormat.Unknown)] // invalid
+        [InlineData("1", SamplingRulesFormat.Unknown)] // invalid
+        [InlineData("", SamplingRulesFormat.Unknown)] // empty is invalid
+        [InlineData("  ", SamplingRulesFormat.Unknown)] // whitespace is invalid
+        [InlineData(null, SamplingRulesFormat.Glob)] // null defaults to glob
         public void CustomSamplingRulesFormat(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRulesFormat, value));
@@ -1019,19 +1021,19 @@ namespace Datadog.Trace.Tests.Configuration
         // See TracerSettingsServerlessTests for tests which rely on environment variables
 
         [Theory]
-        [InlineData("", DbmPropagationLevel.Disabled)]              // empty string defaults to disabled
-        [InlineData(null, DbmPropagationLevel.Disabled)]            // null defaults to disabled
-        [InlineData("      ", DbmPropagationLevel.Disabled)]        // whitespace defaults to disabled
-        [InlineData("invalid", DbmPropagationLevel.Disabled)]       // invalid input
-        [InlineData("full", DbmPropagationLevel.Full)]              // exact match
-        [InlineData("service", DbmPropagationLevel.Service)]        // exact match
-        [InlineData("disabled", DbmPropagationLevel.Disabled)]      // exact match
-        [InlineData("Disabled", DbmPropagationLevel.Disabled)]      // case insenstive
-        [InlineData("SERVICE", DbmPropagationLevel.Service)]        // case insensitive
-        [InlineData("FuLl", DbmPropagationLevel.Full)]              // case insensitive
-        [InlineData(" service", DbmPropagationLevel.Service)]       // trim whitespace
-        [InlineData("service ", DbmPropagationLevel.Service)]       // trim whitespace
-        [InlineData("full   ", DbmPropagationLevel.Full)]           // trim whitespace
+        [InlineData("", DbmPropagationLevel.Disabled)] // empty string defaults to disabled
+        [InlineData(null, DbmPropagationLevel.Disabled)] // null defaults to disabled
+        [InlineData("      ", DbmPropagationLevel.Disabled)] // whitespace defaults to disabled
+        [InlineData("invalid", DbmPropagationLevel.Disabled)] // invalid input
+        [InlineData("full", DbmPropagationLevel.Full)] // exact match
+        [InlineData("service", DbmPropagationLevel.Service)] // exact match
+        [InlineData("disabled", DbmPropagationLevel.Disabled)] // exact match
+        [InlineData("Disabled", DbmPropagationLevel.Disabled)] // case insenstive
+        [InlineData("SERVICE", DbmPropagationLevel.Service)] // case insensitive
+        [InlineData("FuLl", DbmPropagationLevel.Full)] // case insensitive
+        [InlineData(" service", DbmPropagationLevel.Service)] // trim whitespace
+        [InlineData("service ", DbmPropagationLevel.Service)] // trim whitespace
+        [InlineData("full   ", DbmPropagationLevel.Full)] // trim whitespace
         [InlineData("     disabled", DbmPropagationLevel.Disabled)] // trim whitespace
         [InlineData("s e r v i c e", DbmPropagationLevel.Disabled)] // invalid input
         public void DbmPropagationMode(string value, object expected)
@@ -1253,28 +1255,29 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void RecordsDisabledSettingsInTelemetry()
         {
-            var source = new NameValueConfigurationSource(new()
-            {
-                { "DD_TRACE_FOO_ENABLED", "true" },
-                { "DD_TRACE_FOO_ANALYTICS_ENABLED", "true" },
-                { "DD_TRACE_FOO_ANALYTICS_SAMPLE_RATE", "0.2" },
-                { "DD_TRACE_BAR_ENABLED", "false" },
-                { "DD_TRACE_BAR_ANALYTICS_ENABLED", "false" },
-                { "DD_BAZ_ENABLED", "false" },
-                { "DD_BAZ_ANALYTICS_ENABLED", "false" },
-                { "DD_BAZ_ANALYTICS_SAMPLE_RATE", "0.6" },
-                { "DD_TRACE_Kafka_ENABLED", "true" },
-                { "DD_TRACE_Kafka_ANALYTICS_ENABLED", "true" },
-                { "DD_TRACE_Kafka_ANALYTICS_SAMPLE_RATE", "0.2" },
-                { "DD_TRACE_GraphQL_ENABLED", "false" },
-                { "DD_TRACE_GraphQL_ANALYTICS_ENABLED", "false" },
-                { "DD_Wcf_ENABLED", "false" },
-                { "DD_Wcf_ANALYTICS_ENABLED", "false" },
-                { "DD_Wcf_ANALYTICS_SAMPLE_RATE", "0.2" },
-                { "DD_Msmq_ENABLED", "true" },
-                { "DD_TRACE_stackexchangeredis_ENABLED", "false" },
-                { ConfigurationKeys.DisabledIntegrations, "foobar;MongoDb;Msmq" },
-            });
+            var source = new NameValueConfigurationSource(
+                new()
+                {
+                    { "DD_TRACE_FOO_ENABLED", "true" },
+                    { "DD_TRACE_FOO_ANALYTICS_ENABLED", "true" },
+                    { "DD_TRACE_FOO_ANALYTICS_SAMPLE_RATE", "0.2" },
+                    { "DD_TRACE_BAR_ENABLED", "false" },
+                    { "DD_TRACE_BAR_ANALYTICS_ENABLED", "false" },
+                    { "DD_BAZ_ENABLED", "false" },
+                    { "DD_BAZ_ANALYTICS_ENABLED", "false" },
+                    { "DD_BAZ_ANALYTICS_SAMPLE_RATE", "0.6" },
+                    { "DD_TRACE_Kafka_ENABLED", "true" },
+                    { "DD_TRACE_Kafka_ANALYTICS_ENABLED", "true" },
+                    { "DD_TRACE_Kafka_ANALYTICS_SAMPLE_RATE", "0.2" },
+                    { "DD_TRACE_GraphQL_ENABLED", "false" },
+                    { "DD_TRACE_GraphQL_ANALYTICS_ENABLED", "false" },
+                    { "DD_Wcf_ENABLED", "false" },
+                    { "DD_Wcf_ANALYTICS_ENABLED", "false" },
+                    { "DD_Wcf_ANALYTICS_SAMPLE_RATE", "0.2" },
+                    { "DD_Msmq_ENABLED", "true" },
+                    { "DD_TRACE_stackexchangeredis_ENABLED", "false" },
+                    { ConfigurationKeys.DisabledIntegrations, "foobar;MongoDb;Msmq" },
+                });
 
             var expected = new[] { "MongoDb", "Msmq", "GraphQL", "Wcf", "StackExchangeRedis" };
 
@@ -1297,17 +1300,18 @@ namespace Datadog.Trace.Tests.Configuration
             entry.Key.Should().Be(ConfigurationKeys.DisabledIntegrations);
             entry.StringValue.Should().NotBeNullOrEmpty();
             entry.StringValue!.Split(';')
-                  .Should()
-                  .Contain(expected);
+                 .Should()
+                 .Contain(expected);
         }
 
         [Fact]
         public void DDTagsSetsServiceInformation()
         {
-            var source = new NameValueConfigurationSource(new()
-            {
-                { "DD_TAGS", "env:datadog_env,service:datadog_service,version:datadog_version,git.repository_url:https://Myrepository,git.commit.sha:42" },
-            });
+            var source = new NameValueConfigurationSource(
+                new()
+                {
+                    { "DD_TAGS", "env:datadog_env,service:datadog_service,version:datadog_version,git.repository_url:https://Myrepository,git.commit.sha:42" },
+                });
 
             var tracerSettings = new TracerSettings(source);
 
@@ -1321,10 +1325,11 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void OTELTagsSetsServiceInformation()
         {
-            var source = new NameValueConfigurationSource(new()
-            {
-                { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
-            });
+            var source = new NameValueConfigurationSource(
+                new()
+                {
+                    { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
+                });
 
             var tracerSettings = new TracerSettings(source);
 
@@ -1336,11 +1341,12 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void DDTagsTakesPrecedenceOverOTELTags()
         {
-            var source = new NameValueConfigurationSource(new()
-            {
-                { "DD_TAGS", "env:datadog_env" },
-                { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
-            });
+            var source = new NameValueConfigurationSource(
+                new()
+                {
+                    { "DD_TAGS", "env:datadog_env" },
+                    { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
+                });
 
             var errorLog = new OverrideErrorLog();
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
