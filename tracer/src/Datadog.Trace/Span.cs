@@ -467,6 +467,9 @@ namespace Datadog.Trace
         internal void Finish(TimeSpan duration)
         {
             ResourceName ??= OperationName;
+
+            // We want DdComponent to take the value of component only for auto-instrumentation spans (not all of which have InstrumentationTags).
+            // For manually created spans, the value should be set earlier so that we don't use the user-set component.
             if (Tags is InstrumentationTags itags)
             {
                 DdComponent ??= itags.InstrumentationName;
