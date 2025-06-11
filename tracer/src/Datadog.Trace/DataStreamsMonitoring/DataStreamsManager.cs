@@ -151,7 +151,7 @@ internal class DataStreamsManager
     /// <param name="edgeTags">Edge tags to set for the new pathway. MUST be sorted in alphabetical order</param>
     /// <param name="payloadSizeBytes">Payload size in bytes</param>
     /// <param name="timeInQueueMs">Edge start time extracted from the message metadata. Used only if this is start of the pathway</param>
-    /// <returns>If disabled, returns <c>null</c>. Otherwise, returns a new <see cref="PathwayContext"/></returns>
+    /// <returns>If disabled, returns <c>null</c>. Otherwise returns a new <see cref="PathwayContext"/></returns>
     public PathwayContext? SetCheckpoint(
         in PathwayContext? parentPathway,
         CheckpointKind checkpointKind,

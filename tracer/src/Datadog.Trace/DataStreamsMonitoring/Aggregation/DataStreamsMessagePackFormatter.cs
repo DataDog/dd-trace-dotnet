@@ -69,10 +69,10 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private enum Products : long
         {
             None = 0,
-            Apm = 1,
-            Dsm = 1 << 1,
-            Djm = 1 << 2,
-            Profiling = 1 << 3
+            Apm = 1,            // 00000001
+            Dsm = 1 << 1,       // 00000010
+            Djm = 1 << 2,       // 00000100
+            Profiling = 1 << 3, // 00001000
         }
 
         private static long GetProductsMask(TracerSettings tracerSettings)
