@@ -143,7 +143,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                             if (!_wafLibraryInvoker.BuilderRemoveConfig(wafBuilderHandle, path))
                             {
-                                Log.Error("DDAS-0005-00: WAF builder: Config failed to be removed : {0}", path); // Check were all these error codes are defined
+                                Log.Debug("WAF builder: Config failed to be removed : {0}", path); // Check were all these error codes are defined
                             }
                         }
                     }
@@ -160,7 +160,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                                 var path = config.Key;
                                 if (!_wafLibraryInvoker.BuilderAddOrUpdateConfig(wafBuilderHandle, path, ref configObj, ref diagnostics))
                                 {
-                                    Log.Error("DDAS-0005-00: WAF builder: Config failed to load : {0}", path); // Check were all these error codes are defined
+                                    Log.Debug("WAF builder: Config failed to load : {0}", path); // Check were all these error codes are defined
                                 }
                             }
                         }
