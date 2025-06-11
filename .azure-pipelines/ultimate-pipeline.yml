@@ -4096,7 +4096,7 @@ stages:
         displayName: Start the generation of docker base images on GitHub Actions worfklow
         condition: eq(variables['isMainBranch'], true)
         env:
-          GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
+          GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['runCodeCoverage'], 'True'))
@@ -4118,7 +4118,19 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
+    # Create this token on the linux side (create_github_token doesn't work on Windows currently)
+    - job: create_github_token
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+      - checkout: none
+      - template: steps/create-github-app-token.yml
+
     - job: Windows
+      dependsOn: create_github_token
+      variables:
+        GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]  
+
       timeoutInMinutes: 30
 
       pool:
@@ -4149,7 +4161,6 @@ stages:
           summaryFileLocation: '$(Build.SourcesDirectory)/coveragereport/Cobertura.xml'
           pathToSources: '$(Build.SourcesDirectory)'
 
-      - template: steps/create-github-app-token.yml
       - script: tracer\build.cmd CompareCodeCoverageReports
         displayName: Compare code coverage
         condition: and(succeeded(), eq(variables.isPullRequest, true))
@@ -4166,7 +4177,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Windows, compare]
+      jobs: [Windows, compare, create_github_token]
 
   - job: Windows
     strategy:
@@ -4227,9 +4238,19 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+  # Create this token on the linux side (create_github_token doesn't work on Windows currently)
+  - job: create_github_token
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - checkout: none
+    - template: steps/create-github-app-token.yml
+
   - job: compare
     timeoutInMinutes: 60 #default value
-    dependsOn: [Windows]
+    dependsOn: [Windows, create_github_token]
+    variables:
+      GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]
     pool:
       vmImage: windows-2022
 
@@ -4257,7 +4278,7 @@ stages:
       env:
         PR_NUMBER: $(System.PullRequest.PullRequestNumber)
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
-        GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
+        GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
 
     - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/execution_time_report.md
       displayName: Upload report
