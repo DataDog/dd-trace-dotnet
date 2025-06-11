@@ -4,10 +4,12 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -19,7 +21,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
     public class ContextTrackerTests
     {
         [Fact]
-        public void SetEndpointOnRootWebSpans()
+        public async Task SetEndpointOnRootWebSpans()
         {
             const string expectedEndpoint = "My endpoint";
 
@@ -29,12 +31,12 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
 
             contextTracker.Setup(c => c.SetEndpoint(It.IsAny<ulong>(), It.IsAny<string>()))
                           .Callback<ulong, string>((i, e) => invocations.Add((i, e)));
-
+            ScopedTracer tracer = null;
             try
             {
                 Profiler.SetInstanceForTests(new Profiler(contextTracker.Object, new Mock<IProfilerStatus>().Object));
 
-                var tracer = CreateTracer();
+                tracer = TracerHelper.Create(new TracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>());
 
                 ulong expectedSpanId;
 
@@ -65,12 +67,11 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
             finally
             {
                 Profiler.SetInstanceForTests(null);
+                if (tracer is not null)
+                {
+                    await tracer.DisposeAsync();
+                }
             }
-        }
-
-        private static Tracer CreateTracer()
-        {
-            return new Tracer(new TracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), null, null);
         }
     }
 }

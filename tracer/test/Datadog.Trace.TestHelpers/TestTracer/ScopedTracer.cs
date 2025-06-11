@@ -25,6 +25,4 @@ internal class ScopedTracer(
     : Tracer(settings, agentWriter, sampler, scopeManager, statsd, telemetry: telemetryController, discoveryService: discoveryService), IAsyncDisposable
 {
     public ValueTask DisposeAsync() => new(TracerManager.ShutdownAsync());
-
-    public Task DisposeAsTaskAsync() => TracerManager.ShutdownAsync();
 }
