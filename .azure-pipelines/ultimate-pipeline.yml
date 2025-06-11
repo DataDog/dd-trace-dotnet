@@ -211,7 +211,6 @@ stages:
             https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml/dispatches \
             -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)"}}'
         displayName: Start the generation of docker base images on GitHub Actions worfklow
-        condition: eq(variables['isMainBranch'], true)
         env:
           GITHUB_APP_TOKEN: $(GITHUB_APP_TOKEN)
 
