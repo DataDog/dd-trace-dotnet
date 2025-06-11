@@ -4272,7 +4272,6 @@ stages:
         artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
         path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
 
-    - template: steps/create-github-app-token.yml
     - script: tracer\build.cmd CompareExecutionTimeBenchmarkResults
       displayName: Compare execution-time results
       env:
