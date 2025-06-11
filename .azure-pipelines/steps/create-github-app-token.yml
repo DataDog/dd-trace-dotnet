@@ -74,7 +74,7 @@ steps:
       echo "##vso[task.setvariable variable=GITHUB_APP_TOKEN;issecret=true]${token}"
 
     displayName: Retrieve Installation Token
-    #retryCountOnTaskFailure: 3
+    retryCountOnTaskFailure: 3
     env:
       GITHUB_APP_INSTALLATION_ID: $(GITHUB_APP_INSTALLATION_ID)
       GITHUB_APP_CLIENT_ID: $(GITHUB_APP_CLIENT_ID)
