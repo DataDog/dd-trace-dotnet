@@ -62,27 +62,38 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 else()
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
         if(DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-            set(SHA256_LIBDATADOG "4b64b58162d215a4f16b6ced4d602667565ebe20015341219daa998e3cf4e0a8" CACHE STRING "libdatadog sha256")
-            set(FILE_TO_DOWNLOAD libdatadog-aarch64-alpine-linux-musl.tar.gz)
+            FetchContent_Declare(libdatadog-install
+                URL https://filebin.net/8wilypkfnvmbyydi/libdatadog_67339337_8ee422a2_aarch64-alpine-linux-musl.tar.gz
+                SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
+                PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/aarch64-alpine-linux-musl <SOURCE_DIR> && ${CMAKE_COMMAND} -E remove_directory <SOURCE_DIR>/aarch64-alpine-linux-musl
+            )
+            set(FILE_TO_DOWNLOAD aarch64-alpine-linux-musl)
         else()
-            set(SHA256_LIBDATADOG "f544316a2b58476979a3b05f0236837790320c385a73f1e111f8736b95ca3a87" CACHE STRING "libdatadog sha256")
-            set(FILE_TO_DOWNLOAD libdatadog-aarch64-unknown-linux-gnu.tar.gz)
+            FetchContent_Declare(libdatadog-install
+                URL https://filebin.net/8wilypkfnvmbyydi/libdatadog_67339337_8ee422a2_aarch64-unknown-linux-gnu.tar.gz
+                SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
+                PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/aarch64-unknown-linux-gnu <SOURCE_DIR> && ${CMAKE_COMMAND} -E remove_directory <SOURCE_DIR>/aarch64-unknown-linux-gnu
+            )
+            set(FILE_TO_DOWNLOAD aarch64-unknown-linux-gnu)
         endif()
     else()
         if(DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-            set(SHA256_LIBDATADOG "8af91ff3f7d266a6acc55b3a12a927a3d1b6ab51845b3d54333965086453c1c6" CACHE STRING "libdatadog sha256")
-            set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musl.tar.gz)
+            FetchContent_Declare(libdatadog-install
+                URL https://filebin.net/8wilypkfnvmbyydi/libdatadog_67339337_8ee422a2_x86_64-alpine-linux-musl.tar.gz
+                SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
+                PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/x86_64-alpine-linux-musl <SOURCE_DIR> && ${CMAKE_COMMAND} -E remove_directory <SOURCE_DIR>/x86_64-alpine-linux-musl
+            )
+            set(FILE_TO_DOWNLOAD x86_64-alpine-linux-musl)
         else()
-            set(SHA256_LIBDATADOG "c7c7f0ce597d515ce6aa8bcf3edd12a009c2c02dd5e715ea318a3bcf3221a65d" CACHE STRING "libdatadog sha256")
-            set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-unknown-linux-gnu.tar.gz)
+            FetchContent_Declare(libdatadog-install
+                URL https://filebin.net/8wilypkfnvmbyydi/libdatadog_67339337_8ee422a2_x86_64-unknown-linux-gnu.tar.gz
+                SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
+                PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/x86_64-unknown-linux-gnu <SOURCE_DIR> && ${CMAKE_COMMAND} -E remove_directory <SOURCE_DIR>/x86_64-unknown-linux-gnu
+            )
+            set(FILE_TO_DOWNLOAD x86_64-unknown-linux-gnu)
         endif()
     endif()
 
-    FetchContent_Declare(libdatadog-install
-        URL https://github.com/DataDog/libdatadog/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD}
-        URL_HASH SHA256=${SHA256_LIBDATADOG}
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
-    )
     if(NOT libdatadog-install_POPULATED)
         FetchContent_Populate(libdatadog-install)
     endif()
