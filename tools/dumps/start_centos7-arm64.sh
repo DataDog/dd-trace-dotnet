@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOTNETSDK_VERSION=9.0.100
+DOTNETSDK_VERSION=7.0.410
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ROOT_DIR="$(dirname -- "$SCRIPT_DIR" )/.."

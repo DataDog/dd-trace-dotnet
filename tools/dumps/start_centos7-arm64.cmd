@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 rem --- 1. Setup ---
-set "DOTNETSDK_VERSION=9.0.100"
+set "DOTNETSDK_VERSION=7.0.410"
 
 rem --- 2. Dynamic Directories ---
 set "SCRIPT_DIR=%~dp0"

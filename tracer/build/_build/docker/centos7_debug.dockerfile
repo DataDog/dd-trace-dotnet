@@ -99,21 +99,21 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 ENV PATH="$PATH:/root/.dotnet/tools"
-RUN dotnet tool install --global dotnet-counters
-RUN dotnet tool install --global dotnet-coverage
-RUN dotnet tool install --global dotnet-dump
-RUN dotnet tool install --global dotnet-gcdump
-RUN dotnet tool install --global dotnet-monitor
-RUN dotnet tool install --global dotnet-trace
-RUN dotnet tool install --global dotnet-stack
-RUN dotnet tool install --global dotnet-symbol
-RUN dotnet tool install --global dotnet-debugger-extensions
-RUN dotnet tool install --global dotnet-sos
-RUN dotnet tool install --global dotnet-dsrouter
+RUN dotnet --version
+RUN dotnet tool install --global dotnet-counters --version 9.0.607501
+RUN dotnet tool install --global dotnet-coverage --version 17.3.1
+RUN dotnet tool install --global dotnet-dump --version 9.0.607501
+RUN dotnet tool install --global dotnet-gcdump --version 9.0.607501
+RUN dotnet tool install --global dotnet-monitor --version 7.3.4
+RUN dotnet tool install --global dotnet-trace --version 9.0.607501
+RUN dotnet tool install --global dotnet-stack --version 9.0.607501
+RUN dotnet tool install --global dotnet-symbol --version 9.0.607501
+RUN dotnet tool install --global dotnet-debugger-extensions --version 9.0.607601
+RUN dotnet tool install --global dotnet-sos --version 9.0.607501
+RUN dotnet tool install --global dotnet-dsrouter --version 9.0.607501
 RUN dotnet sos install &&\
     dotnet debugger-extensions install --accept-license-agreement
 
