@@ -64,8 +64,8 @@ namespace Datadog.Trace.Activity.Handlers
 
                     string namespaceString = span.Tags.GetTag("messaging.destination.name");
                     long? payloadSize = null;
-                    if (dataStreamsManager.State != DataStreamsManager.DataStreamsState.Default && AzureServiceBusCommon.TryGetMessage(applicationProperties, out var message)
-                     && message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage))
+                    if (!dataStreamsManager.IsInDefaultState && (AzureServiceBusCommon.TryGetMessage(applicationProperties, out var message)
+                        && message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage)))
                     {
                         payloadSize = AzureServiceBusCommon.GetMessageSize(serviceBusMessage);
                     }

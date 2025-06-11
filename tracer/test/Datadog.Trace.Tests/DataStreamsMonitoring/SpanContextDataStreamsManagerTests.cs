@@ -74,7 +74,7 @@ public class SpanContextDataStreamsManagerTests
             env: "env",
             defaultServiceName: "service",
             new Mock<IDataStreamsWriter>().Object,
-            DataStreamsManager.DataStreamsState.Enabled);
+            isInDefaultState: false);
         return dsm;
     }
 }

@@ -25,11 +25,13 @@ internal static class SpanExtensions
         }
 
         span.Context.SetCheckpoint(manager, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs, parent);
-        var hash = span.Context.PathwayContext?.Hash.Value ?? 0;
-        // only inject the tag if DSM is explicitly enabled (it's not default state and enabled == true)
-        if (manager.IsEnabled && manager.State != DataStreamsManager.DataStreamsState.Default && hash != 0)
+        if (!manager.IsInDefaultState)
         {
-            span.SetTag("pathway.hash", hash.ToString());
+            var hash = span.Context.PathwayContext?.Hash.Value ?? 0;
+            if (hash != 0)
+            {
+                span.SetTag("pathway.hash", hash.ToString());
+            }
         }
     }
 }

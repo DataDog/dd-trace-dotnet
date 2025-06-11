@@ -51,8 +51,8 @@ namespace Datadog.Trace.Configuration
         // These values can all be overwritten by dynamic config
         private readonly bool _traceEnabled;
         private readonly bool _apmTracingEnabled;
-        // 3 possible states - enabled, disabled or not set (default)
-        private readonly bool? _isDataStreamsMonitoringEnabled;
+        private readonly bool _isDataStreamsMonitoringEnabled;
+        private readonly bool _isDataStreamsMonitoringInDefaultState;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
         private readonly ReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly ReadOnlyDictionary<string, string> _globalTags;
@@ -417,7 +417,7 @@ namespace Datadog.Trace.Configuration
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: false);
+                                  .AsBool(defaultValue: true);
 
             if (DataPipelineEnabled)
             {
@@ -650,8 +650,11 @@ namespace Datadog.Trace.Configuration
                              .AsBool(false);
 
             _isDataStreamsMonitoringEnabled = config
-                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
-                                             .AsBool();
+                                            .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
+                                            .AsBool(false);
+            _isDataStreamsMonitoringInDefaultState = config
+                                                    .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
+                                                    .AsBool() == null;
 
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
@@ -1183,7 +1186,12 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
-        internal bool? IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
+        internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
+
+        /// <summary>
+        /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
+        /// </summary>
+        internal bool IsDataStreamsMonitoringInDefaultState => DynamicSettings.DataStreamsMonitoringEnabled == null && _isDataStreamsMonitoringInDefaultState;
 
         /// <summary>
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
