@@ -39,7 +39,6 @@ internal static partial class GaugeExtensions
         {
             Datadog.Trace.Telemetry.Metrics.Gauge.Instrumentations => false,
             Datadog.Trace.Telemetry.Metrics.Gauge.DirectLogQueue => false,
-            Datadog.Trace.Telemetry.Metrics.Gauge.AsmEnabled => false,
             _ => true,
         };
 

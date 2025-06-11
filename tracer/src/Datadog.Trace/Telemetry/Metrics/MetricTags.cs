@@ -280,6 +280,7 @@ internal static class MetricTags
     public enum AppSecEnabledOrigin
     {
         [Description("origin:app.default")] Default,
+
         [Description("origin:env_var")] EnvVar,
         [Description("origin:remote_config")] RemoteConfig,
     }

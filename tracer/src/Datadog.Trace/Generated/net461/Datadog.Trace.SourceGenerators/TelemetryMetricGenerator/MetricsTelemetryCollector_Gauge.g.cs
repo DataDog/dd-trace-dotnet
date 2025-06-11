@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int GaugeLength = 12;
+    private const int GaugeLength = 11;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Gauge" /> values.
@@ -32,7 +32,6 @@ internal partial class MetricsTelemetryCollector
             new(null),
             // enabled, index = 8
             new(new[] { "origin:app.default" }),
-            new(new[] { "origin:app.unknown" }),
             new(new[] { "origin:env_var" }),
             new(new[] { "origin:remote_config" }),
         };
@@ -43,7 +42,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] GaugeEntryCounts { get; }
-        = new int[]{ 1, 6, 1, 4, };
+        = new int[]{ 1, 6, 1, 3, };
 
     public void RecordGaugeStatsBuckets(int value)
     {

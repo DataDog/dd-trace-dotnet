@@ -32,5 +32,5 @@ internal enum Gauge
     /// <summary>
     /// Gauge to track enabled services, a service must emit this gauge with a value of 1 on every heartbeat (or a fixed interval).
     /// </summary>
-    [TelemetryMetric<MetricTags.AppSecEnabledOrigin>("enabled", isCommon: false, NS.ASM)] AsmEnabled,
+    [TelemetryMetric<MetricTags.AppSecEnabledOrigin>("enabled", isCommon: true, NS.ASM)] AsmEnabled,
 }
