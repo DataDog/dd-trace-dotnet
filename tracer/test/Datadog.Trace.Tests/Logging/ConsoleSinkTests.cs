@@ -19,7 +19,11 @@ public class ConsoleSinkTests
     public void CanWriteToConsoleSink()
     {
         var sw = new StringWriter();
-        var consoleSink = new ConsoleSink(DatadogLoggingFactory.DefaultConsoleMessageTemplate, queueLimit: 1000, sw);
+
+        var consoleSink = new ConsoleSink(
+            messageTemplate: DatadogLoggingFactory.DefaultConsoleMessageTemplate,
+            queueLimit: DatadogLoggingFactory.DefaultConsoleQueueLimit,
+            sw);
 
         var logger = new LoggerConfiguration()
                     .MinimumLevel.Debug()

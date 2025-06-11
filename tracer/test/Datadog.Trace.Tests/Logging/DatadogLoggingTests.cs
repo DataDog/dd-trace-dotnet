@@ -507,7 +507,7 @@ namespace Datadog.Trace.Tests.Logging
                 rateLimit: 0,
                 file: null,
                 errorLogging: new RedactedErrorLoggingConfiguration(collector),
-                console: new ConsoleLoggingConfiguration(DatadogLoggingFactory.DefaultConsoleMessageTemplate, DatadogLoggingFactory.DefaultConsoleMaxBufferSize));
+                console: new ConsoleLoggingConfiguration(DatadogLoggingFactory.DefaultConsoleMessageTemplate, DatadogLoggingFactory.DefaultConsoleQueueLimit));
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
 
