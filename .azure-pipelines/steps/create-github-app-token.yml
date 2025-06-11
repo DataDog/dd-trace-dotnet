@@ -7,7 +7,8 @@ steps:
 
       client_id="$GITHUB_APP_CLIENT_ID"
       pem_file=$(mktemp)
-      
+      trap 'rm -f "$pem_file"' EXIT
+
       # The private key value stored contains _explicit_ '\n' characters instead of line breaks
       # so fix those
       pem=$(echo "$GITHUB_APP_PRIVATE_KEY" | sed 's/\\n/\n/g')

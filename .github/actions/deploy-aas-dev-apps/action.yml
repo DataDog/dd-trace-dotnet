@@ -6,7 +6,7 @@ inputs:
     description: 'App ID for retrieving a token from a GitHub App'
     required: true
   github_app_private_key:
-    description: 'App ID for retrieving a token from a GitHub App'
+    description: 'Private key for retrieving a token from a GitHub App'
     required: true
 
 runs:
