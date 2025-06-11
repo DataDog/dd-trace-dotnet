@@ -62,44 +62,46 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                     {
                         var span = (state.Scope ?? state.PreviousScope)?.Span;
 
-                        if (span is not null)
+                        if (span is null)
                         {
-                            if (defaultModelBindingContext.BindingSource.Id == "Body")
+                            return CallTargetReturn.GetDefault();
+                        }
+
+                        if (defaultModelBindingContext.BindingSource.Id == "Body")
+                        {
+                            object? bodyExtracted = null;
+
+                            if (security.AppsecEnabled)
                             {
-                                object? bodyExtracted = null;
-
-                                if (security.AppsecEnabled)
-                                {
-                                    bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
-                                }
-
-                                if (iast.Settings.Enabled)
-                                {
-                                    span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
-                                }
+                                bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
                             }
-                            else
+
+                            if (iast.Settings.Enabled)
                             {
-                                for (var i = 0; i < defaultModelBindingContext.ValueProvider.Count; i++)
+                                span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
+                            }
+                        }
+                        else
+                        {
+                            for (var i = 0; i < defaultModelBindingContext.ValueProvider.Count; i++)
+                            {
+                                var provider = defaultModelBindingContext.ValueProvider[i];
+                                if (provider.TryDuckCast(out BindingSourceValueProvider prov))
                                 {
-                                    var provider = defaultModelBindingContext.ValueProvider[i];
-                                    if (provider.TryDuckCast(out BindingSourceValueProvider prov))
+                                    if (prov.BindingSource.Id is "Form" or "Body")
                                     {
-                                        if (prov.BindingSource.Id is "Form" or "Body")
+                                        object? bodyExtracted = null;
+                                        if (security.AppsecEnabled)
                                         {
-                                            object? bodyExtracted = null;
-                                            if (security.AppsecEnabled)
-                                            {
-                                                bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
-                                            }
-
-                                            if (iast.Settings.Enabled)
-                                            {
-                                                span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
-                                            }
-
-                                            break;
+                                            bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
                                         }
+
+                                        if (iast.Settings.Enabled)
+                                        {
+                                            span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
+                                        }
+
+                                        break;
                                     }
                                 }
                             }
