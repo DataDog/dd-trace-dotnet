@@ -14,6 +14,8 @@ using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Formatting.Display;
 
+namespace Datadog.Trace.Logging.Internal.Sinks;
+
 /// <summary>
 /// Loosely based on https://github.com/manigandham/serilog-sinks-fastconsole
 /// </summary>
