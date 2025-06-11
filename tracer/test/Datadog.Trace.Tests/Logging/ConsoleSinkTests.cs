@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.Internal.Sinks;
 using Datadog.Trace.Vendors.Serilog;
 using FluentAssertions;
 using Xunit;
