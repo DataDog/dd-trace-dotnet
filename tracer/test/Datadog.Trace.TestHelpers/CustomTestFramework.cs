@@ -231,6 +231,7 @@ namespace Datadog.Trace.TestHelpers
                 .ToList();
 
                 collectionsFailed.RemoveAll(c => !c.TestCases.Any());
+                var traceDebugOldValue = Environment.GetEnvironmentVariable("DD_TRACE_DEBUG");
                 Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
                 List<Task<RunSummary>> tasks = new();
 
@@ -241,7 +242,7 @@ namespace Datadog.Trace.TestHelpers
 
                 await Task.WhenAll(tasks);
 
-                Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "0");
+                Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", traceDebugOldValue);
                 var failedSummary = new RunSummary();
                 foreach (var task in tasks)
                 {
