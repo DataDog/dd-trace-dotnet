@@ -382,9 +382,9 @@ errors: [
       error.stack:
 errors: [
 {
-"message": "This API purposely throws a NotImplementedException",
+"message": "Error trying to resolve field 'throwNotImplementedException'.",
 "path": "System.Object[]",
-"code": "NOT_IMPLEMENTED",
+"code": "EXECUTION_ERROR",
 "locations": [
 {
 "line": 1,
@@ -395,7 +395,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.ExecutionError,
-      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"This API purposely throws a NotImplementedException","path":["throwNotImplementedException"],"code":"NOT_IMPLEMENTED","locations":["1:32"],"stacktrace":"   at Samples.GraphQL4.StarWarsExtensions.StarWarsSubscription.ThrowNotImplementedException(IResolveFieldContext context) in StarWarsSubscription.cs:line 00"}}],
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Error trying to resolve field 'throwNotImplementedException'.","path":["throwNotImplementedException"],"code":"EXECUTION_ERROR","locations":["1:32"]}}],
       graphql.operation.name: NotImplementedSub,
       graphql.operation.type: Subscription,
       graphql.source: subscription NotImplementedSub{throwNotImplementedException{name}},
