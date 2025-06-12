@@ -3,7 +3,7 @@
 
 #include "TimerCreateCpuProfiler.h"
 
-#include "RentBasedCpuTimeProvider.h"
+#include "CpuSampleProvider.h"
 #include "DiscardMetrics.h"
 #include "IManagedThreadList.h"
 #include "Log.h"
@@ -23,7 +23,7 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IConfiguration* pConfiguration,
     ProfilerSignalManager* pSignalManager,
     IManagedThreadList* pManagedThreadsList,
-    RentBasedCpuTimeProvider* pProvider,
+    CpuSampleProvider* pProvider,
     MetricsRegistry& metricsRegistry) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing

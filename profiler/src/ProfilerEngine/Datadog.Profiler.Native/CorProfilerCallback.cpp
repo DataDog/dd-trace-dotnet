@@ -61,8 +61,8 @@
 #include "TimerCreateCpuProfiler.h"
 #include "LibrariesInfoCache.h"
 #include "RingBuffer.h"
+#include "CpuSampleProvider.h"
 #endif
-#include "RentBasedCpuTimeProvider.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
@@ -206,6 +206,7 @@ void CorProfilerCallback::InitializeServices()
             _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
                 valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
         }
+#ifdef LINUX
         else
         {
             unsigned long long nbTicks = SamplesCollector::CollectingPeriod / _pConfiguration->GetCpuProfilingInterval();
@@ -220,11 +221,12 @@ void CorProfilerCallback::InitializeServices()
             // Reason:
             // We know that profiling interval is at most every 1 ms.
             // So, cpuAllocated will have to be over 37 trillion to have a value that cannot be represented by a std::size_t
-            std::size_t rbSize = std::ceil(nbSamplesCollectorTick * cpuAllocated * (sizeof(RawCpuSample) + Callstack::MaxSize));
+            std::size_t rbSize = std::ceil(nbSamplesCollectorTick * cpuAllocated * RawSampleCollectorBase<RawCpuSample>::SampleSize);
             Log::Info("RingBuffer size estimate (bytes): ", rbSize);
-            auto ringBuffer = std::make_unique<RingBuffer>(rbSize);
-            _pRentBasedCpuTimeProvider = RegisterService<RentBasedCpuTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer));
+            auto ringBuffer = std::make_unique<RingBuffer>(rbSize, CpuSampleProvider::SampleSize);
+            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer));
         }
+#endif
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -519,7 +521,7 @@ void CorProfilerCallback::InitializeServices()
             _pConfiguration.get(),
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
-            _pRentBasedCpuTimeProvider,
+            _pCpuSampleProvider,
             _metricsRegistry);
     }
 #endif
@@ -579,10 +581,12 @@ void CorProfilerCallback::InitializeServices()
         {
             _pSamplesCollector->Register(_pCpuTimeProvider);
         }
+#ifdef LINUX
         else
         {
-            _pSamplesCollector->Register(_pRentBasedCpuTimeProvider);
+            _pSamplesCollector->Register(_pCpuSampleProvider);
         }
+#endif
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -1527,10 +1531,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     {
         _pCpuTimeProvider->Stop();
     }
-    if (_pRentBasedCpuTimeProvider != nullptr)
+#ifdef LINUX
+    if (_pCpuSampleProvider != nullptr)
     {
-        _pRentBasedCpuTimeProvider->Stop();
+        _pCpuSampleProvider->Stop();
     }
+#endif
     if (_pExceptionsProvider != nullptr)
     {
         _pExceptionsProvider->Stop();
