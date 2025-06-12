@@ -6,6 +6,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Logging;
 
@@ -94,76 +95,76 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
         }
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr GetVersionDelegate();
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr BuilderInitDelegate(ref DdwafConfigStruct config);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate bool BuilderAddOrUpdateConfigDelegate(IntPtr builder, string path, uint pathLen, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate bool BuilderRemoveConfigDelegate(IntPtr builder, string path, uint pathLen);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr BuilderBuildInstanceDelegate(IntPtr builder);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private unsafe delegate WafReturnCode RunDelegate(IntPtr context, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafObjectStruct result, ulong timeLeftInUs);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate void DestroyDelegate(IntPtr handle);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate void ContextDestroyDelegate(IntPtr context);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr ObjectInvalidDelegate(ref DdwafObjectStruct emptyObjPtr);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr ObjectStringLengthDelegate(ref DdwafObjectStruct emptyObjPtr, string s, ulong length);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr ObjectBoolDelegate(ref DdwafObjectStruct emptyObjPtr, bool b);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr ObjectDoubleDelegate(ref DdwafObjectStruct emptyObjPtr, double value);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr ObjectNullDelegate(ref DdwafObjectStruct emptyObjPtr);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr ObjectUlongDelegate(ref DdwafObjectStruct emptyObjPtr, ulong value);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr ObjectLongDelegate(ref DdwafObjectStruct emptyObjPtr, long value);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr ObjectArrayDelegate(ref DdwafObjectStruct emptyObjPtr);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr ObjectMapDelegate(ref DdwafObjectStruct emptyObjPtr);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate bool ObjectArrayAddDelegate(ref DdwafObjectStruct array, ref DdwafObjectStruct entry);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr ObjectArrayGetAtIndexDelegate(ref DdwafObjectStruct array, long index);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate bool ObjectMapAddDelegateX64(ref DdwafObjectStruct map, string entryName, ulong entryNameLength, ref DdwafObjectStruct entry);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate bool ObjectMapAddDelegateX86(ref DdwafObjectStruct map, string entryName, uint entryNameLength, ref DdwafObjectStruct entry);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate void FreeObjectDelegate(ref DdwafObjectStruct input);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate IntPtr GetKnownAddressesDelegate(IntPtr wafHandle, ref uint size);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -175,7 +176,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             string message,
             ulong message_len);
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
         private delegate bool SetupLoggingDelegate(SetupLogCallbackDelegate cb, DDWAF_LOG_LEVEL min_level);
 
         private enum DDWAF_LOG_LEVEL
