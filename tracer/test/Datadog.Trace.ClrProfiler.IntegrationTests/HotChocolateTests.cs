@@ -67,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly string _testName;
         private readonly string _metadataSchemaVersion;
         private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
+        private readonly Regex _stacktraceRegex = new(@"""stacktrace"":""   at Samples\.HotChocolate\.Query\.ThrowException\([^""]*""");
 
         protected HotChocolateTestsBase(string sampleAppName, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
@@ -105,6 +106,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+            settings.AddRegexScrubber(_stacktraceRegex, @"""stacktrace"":""   at Samples.HotChocolate.Query.ThrowException() in Query.cs:line 00""");
 
             var versionSuffix = GetSuffix(packageVersion);
 

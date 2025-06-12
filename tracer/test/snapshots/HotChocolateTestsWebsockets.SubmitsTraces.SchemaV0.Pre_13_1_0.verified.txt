@@ -245,6 +245,7 @@ errors: [
 ]
 ,
       error.type: HotChocolate.Error,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"The field `boook` does not exist on the type `Query`.","locations":["1:2"]}}],
       graphql.operation.type: Uncompleted,
       graphql.source:
 {
