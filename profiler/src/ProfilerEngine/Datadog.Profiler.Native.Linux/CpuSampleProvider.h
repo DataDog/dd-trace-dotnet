@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "RentBasedCollector.h"
+#include "RawSampleCollectorBase.h"
 #include "RawCpuSample.h"
 #include "RingBuffer.h"
 
@@ -14,12 +14,12 @@
 class SampleValueTypeProvider;
 class RawSampleTransformer;
 
-class RentBasedCpuTimeProvider
+class CpuSampleProvider
     :
-    public RentBasedCollector<RawCpuSample>
+    public RawSampleCollectorBase<RawCpuSample>
 {
 public:
-    RentBasedCpuTimeProvider(
+    CpuSampleProvider(
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
         std::unique_ptr<RingBuffer> ringBuffer);
