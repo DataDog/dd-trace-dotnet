@@ -214,7 +214,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                             var message = $"{item.Key}: [{string.Join(", ", item.Value)}]";
                             if (isError)
                             {
-                                // This message should go to telemetry logs only, skipping the regular logs
+                                // TODO: This message should go to telemetry logs only, skipping the regular logs
                                 Log.Debug("rc::asm_dd::diagnostic Error: {Err}", message);
                             }
                             else
