@@ -283,7 +283,7 @@ Buffer RingBuffer::Writer::Reserve(bool* timeout) const
     }
 
     auto* rb = _rb;
-    // \fixme{nsavoire} Not sure if spinlock is the best option here
+    // \fixme{gleocadie} Not sure if spinlock is the best option here
     std::unique_lock const lock{*rb->spinlock, ReserveTimeout};
     if (!lock.owns_lock())
     {
@@ -343,18 +343,6 @@ void RingBuffer::Writer::Discard(Buffer buf)
     __atomic_store_n(&hdr->size, new_size, __ATOMIC_RELEASE);
 }
 
-void RingBuffer::Writer::Discard(Buffer buf)
-{
-    auto* hdr = reinterpret_cast<RingBufferHeader*>(buf.data()) - 1;
-
-    // Clear busy bit
-    std::uint64_t new_size = hdr->size ^ RingBufferHeader::k_busy_bit;
-    new_size |= RingBufferHeader::k_discard_bit;
-    // Needs release ordering to make sure that all previous writes are
-    // visible to the reader once reader acquires `hdr->size`.
-    __atomic_store_n(&hdr->size, new_size, __ATOMIC_RELEASE);
-}
-
 RingBuffer::Reader::Reader(RingBufferImpl* rb) :
     _rb(rb)
 {
@@ -372,7 +360,6 @@ RingBuffer::Reader::~Reader()
     }
 }
 
-// todo add a test with _sampleSize + BufferHeader size not aligned
 std::size_t RingBuffer::Reader::AvailableSamples() const
 {
     const auto n2 = align_up(sizeof(BufferHeader) + _rb->sample_size, RingBufferAlignment);
