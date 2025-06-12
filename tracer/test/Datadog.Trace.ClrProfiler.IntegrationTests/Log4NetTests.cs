@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -131,8 +131,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                IImmutableList<MockSpan> spans = null;
+                if (EnvironmentTools.IsWindows())
+                {
+                    spans = agent.WaitForSpans(1, 2500);
+                }
+                else if (!string.IsNullOrEmpty(packageVersion) && new Version("3.1.0") >= new Version(packageVersion))
+                {
+                    // if we are not on Windows and we are above 3.1.0, an additional span is made
+                    // from log4net to determine if we are on Android.
+                    // This is a Process span, we can ultimately just ignore it
+                    spans = agent.WaitForSpans(2, 2500);
+                }
+                else
+                {
+                    spans = agent.WaitForSpans(1, 2500);
+                }
+
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
+                // remove the Process span if it exists
+                spans = spans.Where(s => s.Name != "command_execution").ToImmutableList();
 
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
