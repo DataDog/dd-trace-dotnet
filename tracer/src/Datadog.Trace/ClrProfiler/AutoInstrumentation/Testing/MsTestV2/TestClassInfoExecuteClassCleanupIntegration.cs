@@ -26,12 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestClassInfoExecuteClassCleanupIntegration
 {
-    /// <summary>
-    /// OnMethodBegin callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         where TTarget : ITestClassInfo
     {
@@ -43,14 +37,6 @@ public static class TestClassInfoExecuteClassCleanupIntegration
         return CallTargetState.GetDefault();
     }
 
-    /// <summary>
-    /// OnMethodEnd callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-    /// <param name="state">Calltarget state value</param>
-    /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
     {
         if (state.State is TestSuite suite)
@@ -64,5 +50,34 @@ public static class TestClassInfoExecuteClassCleanupIntegration
         }
 
         return CallTargetReturn.GetDefault();
+    }
+}
+
+/// <summary>
+/// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo.ExecuteClassCleanup() calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    MethodName = "ExecuteClassCleanup",
+    ReturnTypeName = ClrNames.Ignore,
+    ParameterTypeNames = [ClrNames.Ignore, ClrNames.Ignore],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public static class TestClassInfoExecuteClassCleanupIntegrationV3_9
+#pragma warning restore SA1402
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TArg, TArg2>(TTarget instance, TArg? arg, ref TArg2? arg2)
+        where TTarget : ITestClassInfo
+        => TestClassInfoExecuteClassCleanupIntegration.OnMethodBegin(instance);
+
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        TestClassInfoExecuteClassCleanupIntegration.OnMethodEnd(instance, exception, state);
+        return new CallTargetReturn<TReturn?>(returnValue);
     }
 }

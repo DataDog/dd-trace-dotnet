@@ -10,7 +10,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal abstract partial class InstrumentationTags : CommonTags
+    internal abstract partial class InstrumentationTags : TagsList
     {
         public abstract string SpanKind { get; }
 

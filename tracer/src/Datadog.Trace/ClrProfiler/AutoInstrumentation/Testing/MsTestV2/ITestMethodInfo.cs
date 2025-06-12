@@ -9,13 +9,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 /// <summary>
 /// TestMethodInfo ducktype interface
 /// </summary>
-internal interface ITestMethodInfo : ITestMethod
+internal interface ITestMethodInfo : ITestMethodInfoWithParent
 {
     /// <summary>
     /// Gets the test method options
     /// </summary>
     ITestMethodOptions? TestMethodOptions { get; }
+}
 
+/// <summary>
+/// TestMethodInfo (v3_9) ducktype interface
+/// </summary>
+internal interface ITestMethodInfoV3_9 : ITestMethodInfoWithParent
+{
+    /// <summary>
+    /// Gets or sets the test executor.
+    /// </summary>
+    object? Executor { get; set; }
+}
+
+internal interface ITestMethodInfoWithParent : ITestMethod
+{
     /// <summary>
     /// Gets the parent class Info object.
     /// </summary>

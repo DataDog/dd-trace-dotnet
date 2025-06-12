@@ -18,7 +18,7 @@ namespace Datadog.Trace.Security.Unit.Tests.RASP
         public void GivenARaspTelemetryHelper_WhenGenerateRaspSpanMetricTagsIsCalledWithTimeout_ThenTagIsSet()
         {
             var raspTelemetryHelper = new RaspTelemetryHelper();
-            var tags = new CommonTags();
+            var tags = new TagsList();
             raspTelemetryHelper.AddRaspSpanMetrics(1000, 2000, true);
             raspTelemetryHelper.GenerateRaspSpanMetricTags(tags);
             tags.GetMetric(Metrics.RaspWafTimeout).Should().Be(1);

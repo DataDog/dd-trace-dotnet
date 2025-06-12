@@ -47,7 +47,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
                     unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult) &&
                     methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethod>(out var testMethod))
                 {
-                    Common.Log.Debug("UnitTestRunner.RunSingleTest() call target interception: {Class}.{Name} | {Outcome}", testMethod.TestClassName, testMethod.TestMethodName, unitTestResult.Outcome);
+                    Common.Log.Debug("[UnitTestRunnerRunSingleTestIntegration] UnitTestRunner.RunSingleTest() call target interception: {Class}.{Name} | {Outcome}", testMethod.TestClassName, testMethod.TestMethodName, unitTestResult.Outcome);
 
                     if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
                     {
@@ -62,7 +62,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
                     }
                     else if (unitTestResult.Outcome is UnitTestResultOutcome.Error or UnitTestResultOutcome.Failed)
                     {
-                        if (methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethodInfo>(out var testMethodInfo))
+                        if (methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethodInfoWithParent>(out var testMethodInfo))
                         {
                             // We need to check if the test is failing because a Class initialization error
                             if (testMethodInfo.Parent?.Instance.TryDuckCast<ClassInfoInitializationExceptionStruct>(out var classInfoInitializationExceptionStruct) == true)

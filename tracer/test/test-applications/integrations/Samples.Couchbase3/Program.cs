@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Authentication;
 using System.Threading.Tasks;
 using Couchbase;
 using Couchbase.Core;
@@ -8,6 +10,14 @@ namespace Samples.Couchbase3
 {
     internal class Program
     {
+        private static bool ContainsAuthenticationException(Exception ex) => ex switch
+        {
+            AuthenticationException => true,
+            AggregateException aggEx => aggEx.InnerExceptions.Any(ContainsAuthenticationException),
+            { InnerException: { } inner } => ContainsAuthenticationException(inner),
+            _ => false,
+        };
+
         private static async Task<int> Main()
         {
             var options = new ClusterOptions() 
@@ -22,11 +32,15 @@ namespace Samples.Couchbase3
             {
                 cluster = await Cluster.ConnectAsync(options);
             }
-            catch(AuthenticationFailureException ex)
+            catch (Exception ex)
             {
                 Console.WriteLine("Exception during execution " + ex);
-                Console.WriteLine("Exiting with skip code (13)");
-                return 13;
+
+                if (ContainsAuthenticationException(ex))
+                {
+                    Console.WriteLine("Exiting with skip code (13)");
+                    return 13;
+                }
             }
 
             // get a bucket reference

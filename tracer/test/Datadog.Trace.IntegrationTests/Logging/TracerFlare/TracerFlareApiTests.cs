@@ -60,7 +60,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         if (!EnvironmentTools.IsWindows())
         {
-            throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+            throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
         }
 
         // named pipes is notoriously flaky

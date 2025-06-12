@@ -11,7 +11,7 @@ namespace Datadog.Trace.Sampling
     /// Represents a <see cref="RateLimiter" /> specifically for single span ingestion.
     /// See <see cref="TracerRateLimiter" /> for trace-based rate limiting.
     /// </summary>
-    internal class SpanRateLimiter : RateLimiter
+    internal sealed class SpanRateLimiter : RateLimiter
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanRateLimiter>();
 
@@ -28,13 +28,9 @@ namespace Datadog.Trace.Sampling
         {
         }
 
-        public override void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval)
+        protected override void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval)
         {
             Log.Debug<ulong, int, int>("Dropping span id {SpanId} with count of {Count} for last {Interval}ms.", span.SpanId, count, intervalMs);
-        }
-
-        public override void OnFinally(Span span)
-        {
         }
     }
 }

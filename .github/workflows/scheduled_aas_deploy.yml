@@ -98,4 +98,5 @@ jobs:
         if: steps.check_skip.outputs.should_proceed == 'true'
         name: 'Trigger AAS deploy'
         with:
-          aas_github_token: ${{ secrets.GH_EXTERNAL_TOKEN }}
+          github_app_id: ${{ secrets.GH_APP_ID }}
+          github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}

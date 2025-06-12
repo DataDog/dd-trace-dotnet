@@ -189,8 +189,6 @@ namespace Datadog.Trace.AspNet
                 var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
-                // Leave resourceName blank for now - we'll update it in OnEndRequest
-
                 // Attempt to set Resource Name to something that will be close to what is expected
                 // Note: we will go and re-do it in OnEndRequest, but doing it here will allow for resource-based sampling
                 // this likely won't be perfect - but we need something to try and allow resource-based sampling to function

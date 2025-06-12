@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>3.19.0</Version>
     <Title>Datadog APM</Title>
     <Description>Instrumentation library for Datadog APM.</Description>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

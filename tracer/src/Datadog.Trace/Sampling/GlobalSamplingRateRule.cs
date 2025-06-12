@@ -16,13 +16,12 @@ namespace Datadog.Trace.Sampling
             _globalRate = rate;
         }
 
-        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.LocalTraceSamplingRule;
+        public string SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.LocalTraceSamplingRule;
 
         public bool IsMatch(Span span) => true;
 
         public float GetSamplingRate(Span span)
         {
-            span.SetMetric(Metrics.SamplingRuleDecision, _globalRate);
             return _globalRate;
         }
 

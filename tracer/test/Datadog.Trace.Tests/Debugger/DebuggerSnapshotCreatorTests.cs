@@ -12,12 +12,14 @@ using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
+using Xunit.Abstractions;
+
 #pragma warning disable CS0414
 
 namespace Datadog.Trace.Tests.Debugger
 {
     [UsesVerify]
-    public class DebuggerSnapshotCreatorTests
+    public class DebuggerSnapshotCreatorTests(ITestOutputHelper output)
     {
         [Fact]
         public async Task Limits_LargeCollection()
@@ -96,6 +98,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var snapshot = SnapshotHelper.GenerateSnapshot(local);
 
+            output.WriteLine("Snapshot: " + snapshot);
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals");

@@ -52,7 +52,7 @@ namespace Datadog.Trace.Sampling
 
         public abstract string Provenance { get; }
 
-        public abstract int SamplingMechanism { get; }
+        public abstract string SamplingMechanism { get; }
 
         public bool IsMatch(Span span)
         {
@@ -84,7 +84,6 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            span.SetMetric(Metrics.SamplingRuleDecision, _samplingRate);
             return _samplingRate;
         }
     }

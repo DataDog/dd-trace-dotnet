@@ -718,10 +718,36 @@ TEST_F(ConfigurationTest, CheckDebugInfoIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
 }
 
-TEST_F(ConfigurationTest, CheckGcThreadsCpuTimeIsDisabledByDefault)
+TEST_F(ConfigurationTest, CheckGcThreadsCpuTimeEnabledTakesOverInternal)
+{
+    EnvironmentHelper::EnvironmentVariable ev1(EnvironmentVariables::GcThreadsCpuTimeEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ev2(EnvironmentVariables::GcThreadsCpuTimeInternalEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckGcThreadsCpuTimeDisabledTakesOverInternal)
+{
+    EnvironmentHelper::EnvironmentVariable ev1(EnvironmentVariables::GcThreadsCpuTimeEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ev2(EnvironmentVariables::GcThreadsCpuTimeInternalEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckInternalGcThreadsCpuTimeProfilingIsTakenIntoAccount)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcThreadsCpuTimeInternalEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckGcThreadsCpuTimeIsEnabledByDefault)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), false);
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), true);
 }
 
 TEST_F(ConfigurationTest, CheckGcThreadsCpuTimeIfEnvVarSetToTrue)
@@ -738,10 +764,36 @@ TEST_F(ConfigurationTest, CheckGcThreadsCpuTimeIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), false);
 }
 
-TEST_F(ConfigurationTest, CheckThreadLifetimeIsDisabledByDefault)
+TEST_F(ConfigurationTest, CheckThreadLifetimeEnabledTakesOverInternal)
+{
+    EnvironmentHelper::EnvironmentVariable ev1(EnvironmentVariables::ThreadLifetimeEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ev2(EnvironmentVariables::ThreadLifetimeInternalEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckThreadLifetimeDisabledTakesOverInternal)
+{
+    EnvironmentHelper::EnvironmentVariable ev1(EnvironmentVariables::ThreadLifetimeEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ev2(EnvironmentVariables::ThreadLifetimeInternalEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckInternalThreadLifetimeProfilingIsTakenIntoAccount)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ThreadLifetimeInternalEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckThreadLifetimeIsEnabledByDefault)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), false);
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), true);
 }
 
 TEST_F(ConfigurationTest, CheckThreadLifetimeIfEnvVarSetToTrue)
