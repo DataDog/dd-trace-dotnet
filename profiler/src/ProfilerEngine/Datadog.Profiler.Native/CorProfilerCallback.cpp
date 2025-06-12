@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 // from dotnet coreclr includes
+
 #include "cor.h"
 #include "corprof.h"
 // end
@@ -68,6 +69,8 @@
 #include "shared/src/native-src/string.h"
 
 #include "dd_profiler_version.h"
+
+#include <cmath>
 
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
@@ -205,9 +208,20 @@ void CorProfilerCallback::InitializeServices()
         }
         else
         {
-            auto nbSamplesCollectorTick = std::max(60ms / _pConfiguration->GetCpuProfilingInterval(), 1l);
-            auto rbSize = nbSamplesCollectorTick * OsSpecificApi::GetProcessorCount() * (sizeof(RawCpuSample) + Callstack::MaxSize);
-            Log::Info("RingBuffer size estimate: ", rbSize);
+            unsigned long long nbTicks = SamplesCollector::CollectingPeriod / _pConfiguration->GetCpuProfilingInterval();
+            auto nbSamplesCollectorTick = std::max(nbTicks, 1ull);
+            double cpuAllocated = 0;
+            if (!CGroup::GetCpuLimit(&cpuAllocated))
+            {
+                cpuAllocated = OsSpecificApi::GetProcessorCount();
+            }
+
+            // It's safe to cast double to std::size_t. The value will always fit into a std::size_t
+            // Reason:
+            // We know that profiling interval is at most every 1 ms.
+            // So, cpuAllocated will have to be over 37 trillion to have a value that cannot be represented by a std::size_t
+            std::size_t rbSize = std::ceil(nbSamplesCollectorTick * cpuAllocated * (sizeof(RawCpuSample) + Callstack::MaxSize));
+            Log::Info("RingBuffer size estimate (bytes): ", rbSize);
             auto ringBuffer = std::make_unique<RingBuffer>(rbSize);
             _pRentBasedCpuTimeProvider = RegisterService<RentBasedCpuTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer));
         }
