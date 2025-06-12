@@ -21,7 +21,7 @@ class IConfiguration;
 class IThreadInfo;
 class IManagedThreadList;
 class ProfilerSignalManager;
-class RentBasedCpuTimeProvider;
+class CpuSampleProvider;
 
 class TimerCreateCpuProfiler : public ServiceBase
 {
@@ -30,7 +30,7 @@ public:
         IConfiguration* pConfiguration,
         ProfilerSignalManager* pSignalManager,
         IManagedThreadList* pManagedThreadsList,
-        RentBasedCpuTimeProvider* pProvider,
+        CpuSampleProvider* pProvider,
         MetricsRegistry& metricsRegistry) noexcept;
 
     ~TimerCreateCpuProfiler();
@@ -54,7 +54,7 @@ private:
 
     ProfilerSignalManager* _pSignalManager;
     IManagedThreadList* _pManagedThreadsList;
-    RentBasedCpuTimeProvider* _pProvider;
+    CpuSampleProvider* _pProvider;
     std::chrono::milliseconds _samplingInterval;
     std::shared_mutex _registerLock;
     std::shared_ptr<CounterMetric> _totalSampling;
