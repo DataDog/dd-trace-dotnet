@@ -60,6 +60,8 @@ ENV COMPlus_DbgMiniDumpType=4
 ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
 ENV DOTNET_EnableCrashReport=1
 ENV DD_REMOTE_CONFIGURATION_ENABLED=0
+ENV COMPlus_TieredCompilation=0
+ENV DD_CLR_ENABLE_INLINING=0
 
 ## SSI variables
 ENV DD_INJECTION_ENABLED=tracer
