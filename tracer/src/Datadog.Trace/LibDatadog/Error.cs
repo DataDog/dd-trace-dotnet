@@ -9,6 +9,10 @@ using System.Text;
 
 namespace Datadog.Trace.LibDatadog;
 
+/// <summary>
+/// Do not change the values of this enum unless you really need to update the interop mapping.
+/// Libdatadog interop mapping of https://github.com/DataDog/libdatadog/blob/60583218a8de6768f67d04fcd5bc6443f67f516b/ddcommon-ffi/src/error.rs#L14
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 internal struct Error
 {
