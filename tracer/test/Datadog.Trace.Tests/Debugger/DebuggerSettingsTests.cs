@@ -69,9 +69,8 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
-        [InlineData(null)]
-        [InlineData("")]
         [InlineData("false")]
+        [InlineData("0")]
         public void SymbolsDisabled(string enabled)
         {
             var settings = new DebuggerSettings(
@@ -79,6 +78,20 @@ namespace Datadog.Trace.Tests.Debugger
                 NullConfigurationTelemetry.Instance);
 
             settings.SymbolDatabaseUploadEnabled.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("1")]
+        [InlineData("true")]
+        public void SymbolsEnabled(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, enabled }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
         }
 
         [Fact]

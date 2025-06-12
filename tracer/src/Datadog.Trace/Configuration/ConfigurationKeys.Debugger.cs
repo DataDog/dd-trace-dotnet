@@ -50,7 +50,7 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for allowing upload of symbol data (such as method names, parameter names, etc) to Datadog.
-            /// Default value is false (disabled).
+            /// Default value is true (enabled).
             /// </summary>
             /// <seealso cref="DebuggerSettings.SymbolDatabaseUploadEnabled"/>
             public const string SymbolDatabaseUploadEnabled = "DD_SYMBOL_DATABASE_UPLOAD_ENABLED";
