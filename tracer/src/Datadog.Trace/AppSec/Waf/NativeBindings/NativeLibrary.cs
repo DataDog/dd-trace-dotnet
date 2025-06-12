@@ -142,6 +142,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private static IntPtr LoadPosixLibrary(string path)
         {
+            Log.Debug("Reading Posix Library {Path}", path);
             const int RTLD_NOW = 2;
             var addr = NonWindows.dddlopen(path, RTLD_NOW);
             ReadDlerror("dddlopen");
