@@ -191,7 +191,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                 if (diags.HasErrors)
                 {
-                    // This message should go to telemetry logs only, skipping the regular logs
+                    // TODO: This message should go to telemetry logs only, skipping the regular logs
                     Log.Debug("Some errors were found while applying waf configuration (RulesFile: {RulesFile})", rulesFile);
                 }
                 else
