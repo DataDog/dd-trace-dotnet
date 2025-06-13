@@ -107,6 +107,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
+                // remove the Process span if it exists
+                spans = spans.Where(s => s.Name != "command_execution").ToImmutableList();
 
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
