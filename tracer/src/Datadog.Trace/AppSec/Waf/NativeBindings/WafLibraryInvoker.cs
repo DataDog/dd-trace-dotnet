@@ -29,7 +29,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly BuilderRemoveConfigDelegate _builderRemoveConfigDelegate;
         private readonly BuilderBuildInstanceDelegate _builderBuildInstanceDelegate;
 
-        private readonly InitContextDelegate _initContextField;
+        private readonly unsafe delegate* unmanaged[Cdecl]<IntPtr, IntPtr> _initContextField;
         private readonly RunDelegate _runField;
         private readonly DestroyDelegate _destroyField;
         private readonly ContextDestroyDelegate _contextDestroyField;
@@ -62,7 +62,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _builderRemoveConfigDelegate = GetDelegateForNativeFunction<BuilderRemoveConfigDelegate>(libraryHandle, "ddwaf_builder_remove_config");
             _builderBuildInstanceDelegate = GetDelegateForNativeFunction<BuilderBuildInstanceDelegate>(libraryHandle, "ddwaf_builder_build_instance");
 
-            _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(libraryHandle, "ddwaf_context_init");
+            unsafe
+            {
+                _initContextField = LoadFunctionPointer(libraryHandle, "ddwaf_context_init");
+            }
+
             _runField = GetDelegateForNativeFunction<RunDelegate>(libraryHandle, "ddwaf_run");
             _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(libraryHandle, "ddwaf_destroy");
             _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(libraryHandle, "ddwaf_context_destroy");
@@ -364,7 +368,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr BuilderBuildInstance(IntPtr builder) => _builderBuildInstanceDelegate(builder);
 
-        internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
+        internal IntPtr InitContext(IntPtr powerwafHandle)
+        {
+            unsafe
+            {
+                return _initContextField(powerwafHandle);
+            }
+        }
 
         /// <summary>
         /// WARNING: do not dispose newArgs until the Context is discarded as well
@@ -502,5 +512,19 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
             where T : Delegate => GetDelegateForNativeFunction<T>(handle, functionName, out _);
+
+        private unsafe delegate* unmanaged[Cdecl]<IntPtr, IntPtr> LoadFunctionPointer(IntPtr libraryHandle, string functionName)
+        {
+            var funcPtr = NativeLibrary.GetExport(libraryHandle, functionName);
+            if (funcPtr == IntPtr.Zero)
+            {
+                Log.Error("No function of name {FunctionName} exists on waf object", functionName);
+                ExportErrorHappened = true;
+                return null;
+            }
+
+            Log.Debug("Loaded {FunctionName} function pointer at address {FuncPtr}", functionName, funcPtr);
+            return (delegate* unmanaged[Cdecl]<IntPtr, IntPtr>)funcPtr;
+        }
     }
 }
