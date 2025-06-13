@@ -682,6 +682,11 @@ namespace Datadog.Trace.Configuration
             public const string TotalFlakyRetryCount = "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT";
 
             /// <summary>
+            /// Configuration key for a kill-switch that allows to explicitly disable dynamic instrumentation even if the remote setting is enabled.
+            /// </summary>
+            public const string DynamicInstrumentationEnabled = "DD_CIVISIBILITY_DI_ENABLED";
+
+            /// <summary>
             /// Configuration key for enabling Impacted Tests Detection.
             /// </summary>
             public const string ImpactedTestsDetectionEnabled = "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED";
