@@ -11,7 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 

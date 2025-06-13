@@ -6,14 +6,11 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.VendoredMicrosoftCode.System;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata; // keep vendored versions for now because we access internal members
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Debugger.Symbols;
 
@@ -39,7 +36,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
             return true;
         }
 
-        VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints = memory.Memory.Span.Slice(0, count);
+        ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints = memory.Memory.Span.Slice(0, count);
         var sourcePdbInfo = GetSourceLocationInfo(sequencePoints);
         methodScope.StartLine = sourcePdbInfo.StartLine;
         methodScope.EndLine = sourcePdbInfo.EndLine;
@@ -63,7 +60,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return true;
     }
 
-    private SourceLocationInfo GetSourceLocationInfo(VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> span)
+    private SourceLocationInfo GetSourceLocationInfo(ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> span)
     {
         ref var firstSq = ref MemoryMarshal.GetReference(span);
         var startLine = firstSq.StartLine == 0 ? UnknownMethodStartLine : firstSq.StartLine;
@@ -120,7 +117,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 return false;
             }
 
-            var notGeneratedMethodName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(generatedMethodName, 1, generatedMethodName.IndexOf('>') - 1);
+            var notGeneratedMethodName = generatedMethodName.AsSpan(1, generatedMethodName.IndexOf('>') - 1);
             methodName = MetadataReader.GetString(method.Name);
             if (!methodName.Equals(notGeneratedMethodName.ToString()))
             {
@@ -143,10 +140,10 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return true;
     }
 
-    private Model.Scope[]? GetLocalSymbols(MethodDefinition methodDefinition, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
+    private Model.Scope[]? GetLocalSymbols(MethodDefinition methodDefinition, ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
     {
         List<Model.Scope>? scopes = null;
-        var generatedClassPrefix = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(GeneratedClassPrefix);
+        var generatedClassPrefix = GeneratedClassPrefix.AsSpan();
 
         var methodToken = MetadataTokens.GetToken(methodDefinition.Handle);
         if (DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(methodToken).StateMachineHoistedLocal
@@ -154,7 +151,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
         {
             scopes = new List<Model.Scope>();
             var scope = new Model.Scope();
-            using var localsMemory = ArrayMemoryPool<Model.Symbol>.Shared.Rent();
+            using var localsMemory = MemoryPool<Model.Symbol>.Shared.Rent();
             var localIndex = 0;
             var localSymbols = localsMemory.Memory.Span;
             var fields = MetadataReader.GetTypeDefinition(methodDefinition.GetDeclaringType()).GetFields();
@@ -167,8 +164,8 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 }
 
                 var fieldName = MetadataReader.GetString(field.Name);
-                var span = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
-                if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(span, generatedClassPrefix, StringComparison.Ordinal) == 0)
+                var span = fieldName.AsSpan();
+                if (span.IndexOf(generatedClassPrefix, StringComparison.Ordinal) == 0)
                 {
                     continue;
                 }
@@ -179,7 +176,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                     continue;
                 }
 
-                var localName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(field.Name));
+                var localName = MetadataReader.GetString(field.Name).AsSpan();
                 if (localName.IsEmpty || localName[0] != '<')
                 {
                     continue;
@@ -236,18 +233,18 @@ internal class SymbolPdbExtractor : SymbolExtractor
         foreach (var localScope in localScopes)
         {
             var scope = new Model.Scope();
-            using var localsMemory = ArrayMemoryPool<Model.Symbol>.Shared.Rent();
+            using var localsMemory = MemoryPool<Model.Symbol>.Shared.Rent();
             var localSymbols = localsMemory.Memory.Span;
             int localIndex = 0;
             foreach (var local in localScope.Locals)
             {
-                var nameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(local.Name);
+                var nameAsSpan = local.Name.AsSpan();
                 if (nameAsSpan.IsEmpty)
                 {
                     continue;
                 }
 
-                if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(nameAsSpan, generatedClassPrefix, StringComparison.Ordinal) > 0)
+                if (nameAsSpan.IndexOf(generatedClassPrefix, StringComparison.Ordinal) > 0)
                 {
                     var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(methodToken);
                     if (cdi.EncLambdaAndClosureMap || cdi.LocalSlot)
@@ -262,8 +259,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                             }
 
                             var name = nestedHandle.FullName(MetadataReader);
-                            if (!Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(local.Type).SequenceEqual(
-                                    Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(name)))
+                            if (local.Type != name)
                             {
                                 continue;
                             }
@@ -271,7 +267,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                             var nestedType = MetadataReader.GetTypeDefinition(nestedHandle);
                             var fields = nestedType.GetFields();
                             int addedIndex = 0;
-                            using var addedMemory = ArrayMemoryPool<string?>.Shared.Rent(fields.Count);
+                            using var addedMemory = MemoryPool<string?>.Shared.Rent(fields.Count);
                             var added = addedMemory.Memory.Span;
 
                             foreach (var fieldHandle in fields)
@@ -288,8 +284,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                                 }
 
                                 var fieldName = MetadataReader.GetString(field.Name);
-                                var fieldNameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
-                                if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(fieldNameAsSpan, generatedClassPrefix, StringComparison.Ordinal) == 0)
+                                if (fieldName.AsSpan().IndexOf(generatedClassPrefix, StringComparison.Ordinal) == 0)
                                 {
                                     continue;
                                 }
@@ -384,7 +379,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
             return null;
         }
 
-        using var memory = ArrayMemoryPool<Model.Scope>.Shared.Rent(scopesLength);
+        using var memory = MemoryPool<Model.Scope>.Shared.Rent(scopesLength);
         var scopes = memory.Memory.Span;
         oldScopes!.CopyTo(scopes);
         var localScopesSlice = scopes.Slice(oldScopesLength);
