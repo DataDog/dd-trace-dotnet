@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using HotChocolate;
+
 namespace Samples.HotChocolate
 {
     public class Book

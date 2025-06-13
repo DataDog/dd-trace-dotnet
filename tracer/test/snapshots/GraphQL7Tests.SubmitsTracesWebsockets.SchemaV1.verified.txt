@@ -172,7 +172,7 @@
       error.stack:
 errors: [
 {
-"message": "Error trying to resolve field 'throwNotImplementedException'.",
+"message": "This API purposely throws a NotImplementedException",
 "path": "System.Object[]",
 "code": "NOT_IMPLEMENTED",
 "locations": [
@@ -185,6 +185,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.ExecutionError,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"extensions.int":1,"extensions.float":1.1,"extensions.str":"1","extensions.bool":true,"extensions.other":"[1,foo]","extensions.sbyte":-42,"extensions.byte":42,"extensions.short":-1000,"extensions.ushort":1000,"extensions.uint":4294967295,"extensions.long":-9223372036854775808,"extensions.ulong":"18446744073709551615","extensions.decimal":"3.14159265358979","extensions.double":3.141592653589793,"extensions.char":"A","message":"This API purposely throws a NotImplementedException","path":["throwNotImplementedException"],"code":"NOT_IMPLEMENTED","locations":["1:32"],"stacktrace":"   at Samples.GraphQL4.StarWarsExtensions.StarWarsSubscription.ThrowNotImplementedException(IResolveFieldContext context) in StarWarsSubscription.cs:line 00"}}],
       graphql.operation.name: NotImplementedSub,
       graphql.operation.type: Subscription,
       graphql.source: subscription NotImplementedSub{throwNotImplementedException {name}},
@@ -231,6 +232,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Argument 'id' has invalid value. Expected type 'String', found 1.","code":"ARGUMENTS_OF_CORRECT_TYPE","locations":["1:24"]}},{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Cannot query field 'apearsIn' on type 'Human'. Did you mean 'appearsIn'?","code":"FIELDS_ON_CORRECT_TYPE","locations":["1:35"]}}],
       graphql.source: query HumanError{human(id:1){name apearsIn}},
       language: dotnet,
       span.kind: server,
