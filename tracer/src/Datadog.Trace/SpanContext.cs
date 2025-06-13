@@ -207,7 +207,7 @@ namespace Datadog.Trace
         public ulong? ParentId => Parent?.SpanId;
 
         /// <summary>
-        /// Gets the span id.
+        /// Gets or sets the span id.
         /// </summary>
         public ulong SpanId { get; internal set; }
 
