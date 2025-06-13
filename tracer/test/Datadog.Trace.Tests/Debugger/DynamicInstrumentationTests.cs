@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.Debugger;
 public class DynamicInstrumentationTests
 {
     [Fact]
-    public void DebuggerEnabled_ServicesCalled()
+    public async Task DebuggerEnabled_ServicesCalled()
     {
         var settings = DebuggerSettings.FromSource(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
@@ -37,12 +37,23 @@ public class DynamicInstrumentationTests
         var lineProbeResolver = new LineProbeResolverMock();
         var snapshotUploader = new SnapshotUploaderMock();
         var diagnosticsUploader = new UploaderMock();
-        var symbolsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
         var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         debugger.Initialize();
+        discoveryService.Called.Should().BeTrue();
+
+        // Wait for async initialization to complete
+        var timeout = TimeSpan.FromSeconds(5);
+        var startTime = DateTime.UtcNow;
+
+        while (!debugger.IsInitialized && DateTime.UtcNow - startTime < timeout)
+        {
+            await Task.Delay(50);
+        }
+
+        debugger.IsInitialized.Should().BeTrue("Dynamic instrumentation should be initialized");
 
         probeStatusPoller.Called.Should().BeTrue();
         snapshotUploader.Called.Should().BeTrue();
