@@ -46,6 +46,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static Task? _exceptionProcessorTask;
         private static bool _isInitialized;
 
+        internal static event Action<ExceptionIdentifier>? ExceptionCaseInstrumented;
+
         internal static bool IsEditAndContinueFeatureEnabled { get; private set; }
 
         private static async Task StartExceptionProcessingAsync(CancellationToken cancellationToken)
@@ -484,6 +486,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 Log.Information("New exception case occurred, initiating data collection for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
                 trackedExceptionCase.Instrument();
+                ExceptionCaseInstrumented?.Invoke(trackedExceptionCase.ExceptionIdentifier);
 
                 if (rootSpan != null)
                 {
