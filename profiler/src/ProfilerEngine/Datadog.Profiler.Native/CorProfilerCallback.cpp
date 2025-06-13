@@ -201,12 +201,12 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
+#ifdef LINUX
         if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime)
         {
             _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
                 valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
         }
-#ifdef LINUX
         else
         {
             unsigned long long nbTicks = SamplesCollector::CollectingPeriod / _pConfiguration->GetCpuProfilingInterval();
@@ -226,6 +226,9 @@ void CorProfilerCallback::InitializeServices()
             auto ringBuffer = std::make_unique<RingBuffer>(rbSize, CpuSampleProvider::SampleSize);
             _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer));
         }
+#else // WINDOWS
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
+            valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
 #endif
     }
 
@@ -543,6 +546,7 @@ void CorProfilerCallback::InitializeServices()
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
+        _pConfiguration->IsCpuProfilingEnabled() &&
         _pRuntimeInfo->GetMajorVersion() >= 5)
     {
         _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(valueTypeProvider, _rawSampleTransformer.get(), _metricsRegistry);
@@ -577,15 +581,17 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
+#ifdef LINUX
         if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime)
         {
             _pSamplesCollector->Register(_pCpuTimeProvider);
         }
-#ifdef LINUX
         else
         {
             _pSamplesCollector->Register(_pCpuSampleProvider);
         }
+#else // WINDOWS
+        _pSamplesCollector->Register(_pCpuTimeProvider);
 #endif
     }
 
