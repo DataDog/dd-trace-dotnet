@@ -114,7 +114,7 @@ namespace AllocSimulator
                 }
 
                 info.Size += size;
-                info.Count += 1;
+                info.Count += (int)sample.Value[countOffset];
             }
         }
 
