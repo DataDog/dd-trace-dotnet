@@ -141,11 +141,7 @@ benchmarks-dsm:
     - export ARTIFACTS_DIR="$(pwd)/artifacts" && (mkdir "${ARTIFACTS_DIR}" || :)
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/".insteadOf "https://github.com/DataDog/"
     - git clone --branch dd-trace-dotnet/data-streams-monitoring https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
-    - ./steps/capture-hardware-software-info.sh
-    - ./steps/run-benchmarks.sh
-    - ./steps/analyze-results.sh
-    - "./steps/upload-results-to-s3.sh || :"
-    - "./steps/post-pr-comment.sh || :"
+    - bp-runner bp-runner.yml --debug
   artifacts:
     name: "artifacts"
     when: always
@@ -153,7 +149,7 @@ benchmarks-dsm:
       - artifacts/
     expire_in: 3 months
   variables:
-    KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-js
+    KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-dotnet
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
 
 # calltarget_ngen:
