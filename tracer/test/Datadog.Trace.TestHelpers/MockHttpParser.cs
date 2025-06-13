@@ -91,7 +91,7 @@ namespace Datadog.Trace.TestHelpers
             };
         }
 
-        private class StreamReaderHelper(Stream stream)
+        internal class StreamReaderHelper(Stream stream)
         {
             // https://tools.ietf.org/html/rfc2616#section-4.2
             private const int BufferSize = 10;
