@@ -221,6 +221,15 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
                     if (doRetry)
                     {
+                        // check if is the first execution and the dynamic instrumentation feature is enabled
+                        if (isFirstExecution && testCaseMetadata.HasAnException && testOptimization.DynamicInstrumentationFeature?.Enabled == true)
+                        {
+                            // let's wait for the instrumentation of an exception has been done
+                            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: First execution with an exception detected. Waiting for the exception instrumentation.");
+                            await testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation().ConfigureAwait(false);
+                            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Exception instrumentation was set or timed out.");
+                        }
+
                         // Let's execute the retry
                         var retryNumber = testCaseMetadata.ExecutionIndex + 1;
 

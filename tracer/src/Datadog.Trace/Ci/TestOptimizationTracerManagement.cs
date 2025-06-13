@@ -38,6 +38,11 @@ internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagem
                 if (Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue))
                 {
                     EventPlatformProxySupport = parsedValue;
+                    if (settings.DynamicInstrumentationEnabled == true)
+                    {
+                        DiscoveryService = getDiscoveryServiceFunc?.Invoke(settings) ?? NullDiscoveryService.Instance;
+                        Log.Debug("TestOptimizationTracerManagement: Discovery service set to {DiscoveryServiceType}.", DiscoveryService.GetType().Name);
+                    }
                 }
                 else if (getDiscoveryServiceFunc != null)
                 {

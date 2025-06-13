@@ -209,9 +209,13 @@ internal static class XUnitIntegration
                 }
                 else
                 {
-                    if (testCaseMetadata?.IsAttemptToFix == true)
+                    if (testCaseMetadata != null)
                     {
-                        testCaseMetadata.AllAttemptsPassed = false;
+                        testCaseMetadata.HasAnException = true;
+                        if (testCaseMetadata.IsAttemptToFix)
+                        {
+                            testCaseMetadata.AllAttemptsPassed = false;
+                        }
                     }
 
                     WriteFinalTagsFromMetadata(test, testCaseMetadata);
