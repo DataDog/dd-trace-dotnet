@@ -13,7 +13,7 @@ namespace Datadog.Trace.Ci.Coverage.Metadata;
 /// <summary>
 /// Module Coverage Metadata base class
 /// </summary>
-public abstract class ModuleCoverageMetadata
+internal abstract class ModuleCoverageMetadata
 {
 #pragma warning disable SA1401
     /// <summary>

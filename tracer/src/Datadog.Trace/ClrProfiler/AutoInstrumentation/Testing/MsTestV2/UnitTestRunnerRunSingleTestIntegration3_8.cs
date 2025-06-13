@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 // ReSharper disable once InconsistentNaming
-public static class UnitTestRunnerRunSingleTestIntegration3_8
+internal static class UnitTestRunnerRunSingleTestIntegration3_8
 {
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {

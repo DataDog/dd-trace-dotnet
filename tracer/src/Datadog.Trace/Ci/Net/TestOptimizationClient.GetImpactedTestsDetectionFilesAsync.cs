@@ -128,7 +128,7 @@ internal sealed partial class TestOptimizationClient
         }
     }
 
-    public readonly struct ImpactedTestsDetectionResponse
+    internal readonly struct ImpactedTestsDetectionResponse
     {
         [JsonProperty("base_sha")]
         public readonly string? BaseSha;

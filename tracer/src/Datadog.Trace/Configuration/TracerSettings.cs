@@ -36,7 +36,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains Tracer settings.
     /// </summary>
-    public record TracerSettings
+    internal record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
         private static readonly HashSet<string> DefaultExperimentalFeatures = new HashSet<string>()

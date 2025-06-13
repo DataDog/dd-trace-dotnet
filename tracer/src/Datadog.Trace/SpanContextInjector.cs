@@ -19,7 +19,7 @@ namespace Datadog.Trace
     /// The SpanContextInjector is responsible for injecting SpanContext in the rare cases where the Tracer couldn't propagate it itself.
     /// This can happen for instance when we don't support a specific library
     /// </summary>
-    public class SpanContextInjector
+    internal class SpanContextInjector
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContextInjector"/> class

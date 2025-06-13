@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
+internal static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 {
     private static int _totalRetries = -1;
 

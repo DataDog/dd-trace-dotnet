@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     [DuckCopy]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct ViewContextStruct
+    internal struct ViewContextStruct
     {
         /// <summary>
         /// Gets the RouteData

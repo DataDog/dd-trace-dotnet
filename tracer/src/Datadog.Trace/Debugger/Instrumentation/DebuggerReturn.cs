@@ -14,7 +14,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// <typeparam name="T">Type of the return value</typeparam>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public readonly ref struct DebuggerReturn<T>
+    internal readonly ref struct DebuggerReturn<T>
     {
         private readonly T _returnValue;
 
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public readonly ref struct DebuggerReturn
+    internal readonly ref struct DebuggerReturn
     {
         /// <summary>
         /// Gets the default live debugger return value (used by the native side to initialize the locals)

@@ -25,7 +25,7 @@ internal static class DelegateInstrumentation
         where TCallbacks : struct, ICallbacks
         => (TDelegate)Wrap<TCallbacks>(target, typeof(TDelegate), callbacks);
 
-    public static Delegate Wrap<TCallbacks>(Delegate? target, Type targetType, TCallbacks callbacks)
+    internal static Delegate Wrap<TCallbacks>(Delegate? target, Type targetType, TCallbacks callbacks)
         where TCallbacks : struct, ICallbacks
     {
         targetType = target?.GetType() ?? targetType;
@@ -245,9 +245,9 @@ internal static class DelegateInstrumentation
             Callbacks = callbacks;
         }
 
-        public Delegate? Target { get; }
+        internal Delegate? Target { get; }
 
-        public Delegate Handler => _handler ??= GetHandler();
+        internal Delegate Handler => _handler ??= GetHandler();
 
         public TCallbacks Callbacks { get; }
 

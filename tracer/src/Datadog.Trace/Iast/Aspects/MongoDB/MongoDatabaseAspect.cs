@@ -16,7 +16,7 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB;
 [AspectClass("MongoDB.Driver", AspectType.Sink, VulnerabilityType.NoSqlMongoDbInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class MongoDatabaseAspect
+internal class MongoDatabaseAspect
 {
     /// <summary>
     ///     MongoDB Driver aspect

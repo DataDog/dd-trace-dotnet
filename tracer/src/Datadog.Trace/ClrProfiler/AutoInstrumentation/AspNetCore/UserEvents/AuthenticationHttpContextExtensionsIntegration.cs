@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class AuthenticationHttpContextExtensionsIntegration
+    internal static class AuthenticationHttpContextExtensionsIntegration
     {
         private const string Major2 = "2";
         private const string AssemblyName = "Microsoft.AspNetCore.Authentication.Abstractions";

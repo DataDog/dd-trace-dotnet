@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class InstrumentationLoader
+internal sealed class InstrumentationLoader
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="InstrumentationLoader"/> class.

@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class AsyncControllerActionInvoker_EndInvokeAction_Integration
+    internal class AsyncControllerActionInvoker_EndInvokeAction_Integration
     {
         private const string AssemblyName = "System.Web.Mvc";
         private const string MinimumVersion = "4";

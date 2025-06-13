@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     IntegrationName = MsmqConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class MessageQueue_ReceiveCurrent_Integration
+    internal class MessageQueue_ReceiveCurrent_Integration
     {
         private const string CommandPeek = MsmqConstants.MsmqPeekCommand;
         private const string CommandReceive = MsmqConstants.MsmqReceiveCommand;

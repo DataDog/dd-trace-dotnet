@@ -13,7 +13,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// A collection of <see cref="IntegrationSettings"/> instances, referenced by name.
     /// </summary>
-    public class IntegrationSettingsCollection
+    internal class IntegrationSettingsCollection
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<IntegrationSettingsCollection>();
 

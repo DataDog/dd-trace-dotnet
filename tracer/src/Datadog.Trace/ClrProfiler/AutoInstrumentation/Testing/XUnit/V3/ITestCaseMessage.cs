@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 /// <summary>
 /// Base interface for all messages related to test cases.
 /// </summary>
-public interface ITestCaseMessage
+internal interface ITestCaseMessage
 {
     /// <summary>
     /// Gets the test case's unique ID. Can be used to correlate test messages with the appropriate

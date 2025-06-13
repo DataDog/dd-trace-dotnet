@@ -15,7 +15,7 @@ namespace Datadog.Trace
     /// all newly created spans that are not created with the ignoreActiveSpan
     /// parameter will be automatically children of the active span.
     /// </summary>
-    public partial interface IScope : IDisposable
+    internal partial interface IScope : IDisposable
     {
         /// <summary>
         /// Gets the active span wrapped in this scope

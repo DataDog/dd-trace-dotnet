@@ -18,7 +18,7 @@ namespace Datadog.Trace.Util;
 
 internal static class HexConverter
 {
-    public enum Casing : uint
+    internal enum Casing : uint
     {
         // Output [ '0' .. '9' ] and [ 'A' .. 'F' ].
         Upper = 0,

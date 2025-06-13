@@ -19,7 +19,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Duck Type
     /// </summary>
-    public static partial class DuckType
+    internal static partial class DuckType
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly object Locker;
@@ -247,7 +247,7 @@ namespace Datadog.Trace.DuckTyping
         /// DynamicMethods delegates cache
         /// </summary>
         /// <typeparam name="TProxyDelegate">Proxy delegate type</typeparam>
-        public static class DelegateCache<TProxyDelegate>
+        internal static class DelegateCache<TProxyDelegate>
             where TProxyDelegate : Delegate
         {
             private static TProxyDelegate? _delegate;

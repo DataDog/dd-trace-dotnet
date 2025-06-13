@@ -10,7 +10,7 @@ namespace Datadog.Trace
     /// Not to be confused with span kinds.
     /// </summary>
     /// <seealso cref="SpanKinds"/>
-    public static class SpanTypes
+    internal static class SpanTypes
     {
         /// <summary>
         /// The span type for a Redis client integration.

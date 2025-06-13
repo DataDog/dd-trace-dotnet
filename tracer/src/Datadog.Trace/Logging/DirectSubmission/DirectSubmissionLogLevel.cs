@@ -13,7 +13,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public enum DirectSubmissionLogLevel
+    internal enum DirectSubmissionLogLevel
     {
         /// <summary>
         /// The most verbose level. Also known as Trace

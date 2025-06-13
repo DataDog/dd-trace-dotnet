@@ -16,7 +16,7 @@ namespace System.Runtime.CompilerServices
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    public class IgnoresAccessChecksToAttribute : Attribute
+    internal class IgnoresAccessChecksToAttribute : Attribute
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IgnoresAccessChecksToAttribute"/> class.

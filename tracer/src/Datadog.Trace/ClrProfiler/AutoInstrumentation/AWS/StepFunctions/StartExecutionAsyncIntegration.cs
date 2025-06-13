@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         IntegrationName = AwsStepFunctionsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class StartExecutionAsyncIntegration
+    internal class StartExecutionAsyncIntegration
     {
         private const string Operation = "StartExecutionAsync";
 

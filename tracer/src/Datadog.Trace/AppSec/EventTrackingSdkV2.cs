@@ -20,7 +20,7 @@ namespace Datadog.Trace.AppSec;
 /// <summary>
 /// Allow
 /// </summary>
-public static class EventTrackingSdkV2
+internal static class EventTrackingSdkV2
 {
     internal static void TrackUserLoginSuccess<TUserDetails>(string userLogin, TUserDetails? userDetails, IDictionary<string, string>? metadata, Tracer tracer)
         where TUserDetails : IUserDetails?

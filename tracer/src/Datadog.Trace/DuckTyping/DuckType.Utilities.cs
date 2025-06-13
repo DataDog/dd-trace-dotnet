@@ -15,7 +15,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Duck Type
     /// </summary>
-    public static partial class DuckType
+    internal static partial class DuckType
     {
         /// <summary>
         /// Checks and ensures the arguments for the Create methods

@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 // ReSharper disable once InconsistentNaming
-public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
+internal static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod, TMessageLogger>(TTarget instance, TTestMethod testMethod, IDictionary<string, object?> testContextProperties, TMessageLogger messageLogger)
     {

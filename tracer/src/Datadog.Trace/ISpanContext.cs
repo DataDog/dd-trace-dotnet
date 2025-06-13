@@ -10,7 +10,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Span context interface.
     /// </summary>
-    public partial interface ISpanContext
+    internal partial interface ISpanContext
     {
         /// <summary>
         /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.

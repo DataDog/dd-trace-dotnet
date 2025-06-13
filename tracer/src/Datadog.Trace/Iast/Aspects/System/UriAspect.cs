@@ -15,7 +15,7 @@ namespace Datadog.Trace.Iast.Aspects.System;
 [AspectClass("System,System.Runtime", [AspectFilter.StringOptimization])]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class UriAspect
+internal class UriAspect
 {
     /// <summary>
     /// Uri .ctor(System.String) aspect.

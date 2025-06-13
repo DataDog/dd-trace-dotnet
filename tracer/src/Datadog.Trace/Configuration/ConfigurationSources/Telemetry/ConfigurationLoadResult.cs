@@ -9,7 +9,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 /// <summary>
 /// The result of trying to load a configuration value
 /// </summary>
-public enum ConfigurationLoadResult
+internal enum ConfigurationLoadResult
 {
     /// <summary>
     /// The configuration value was found, parsed, and validated successfully

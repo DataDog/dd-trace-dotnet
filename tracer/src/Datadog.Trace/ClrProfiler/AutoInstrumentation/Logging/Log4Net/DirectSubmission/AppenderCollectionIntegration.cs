@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
         IntegrationName = nameof(IntegrationId.Log4Net))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class AppenderCollectionIntegration
+    internal class AppenderCollectionIntegration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AppenderCollectionIntegration>();
         private static bool _logWritten = false;

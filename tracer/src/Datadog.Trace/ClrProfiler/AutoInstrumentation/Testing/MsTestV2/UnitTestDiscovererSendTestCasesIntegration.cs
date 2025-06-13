@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class UnitTestDiscovererSendTestCasesIntegration
+internal class UnitTestDiscovererSendTestCasesIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TDiscoverySink, TDiscoveryContext, TLogger>(TTarget instance, ref string? source, ref IEnumerable? testElements, ref TDiscoverySink? discoverySink, ref TDiscoveryContext? discoveryContext, ref TLogger? logger)
     {

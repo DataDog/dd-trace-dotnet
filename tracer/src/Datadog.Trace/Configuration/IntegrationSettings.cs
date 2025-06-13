@@ -13,7 +13,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains integration-specific settings.
     /// </summary>
-    public class IntegrationSettings
+    internal class IntegrationSettings
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationSettings"/> class.

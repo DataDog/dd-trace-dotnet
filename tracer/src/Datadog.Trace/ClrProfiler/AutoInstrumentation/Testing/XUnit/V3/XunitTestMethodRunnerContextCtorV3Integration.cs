@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XunitTestMethodRunnerContextCtorV3Integration
+internal static class XunitTestMethodRunnerContextCtorV3Integration
 {
     private static Type? _messageBusInterfaceType;
 

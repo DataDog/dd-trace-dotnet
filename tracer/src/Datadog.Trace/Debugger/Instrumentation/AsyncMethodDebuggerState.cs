@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class AsyncMethodDebuggerState
+    internal class AsyncMethodDebuggerState
     {
         /// <summary>
         /// Gets a disabled state

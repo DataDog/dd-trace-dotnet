@@ -554,7 +554,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
-        public static class CIVisibility
+        internal static class CIVisibility
         {
             /// <summary>
             /// An internal key used to "tell" tracer settings that we're running in CI Visibility mode
@@ -700,7 +700,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// String constants for proxy configuration keys.
         /// </summary>
-        public static class Proxy
+        internal static class Proxy
         {
             /// <summary>
             /// Configuration key to set a proxy server for https requests.
@@ -717,7 +717,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
-        public static class Integrations
+        internal static class Integrations
         {
             /// <summary>
             /// Configuration key pattern for enabling or disabling an integration.

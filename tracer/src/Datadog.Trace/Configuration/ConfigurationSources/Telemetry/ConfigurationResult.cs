@@ -13,7 +13,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 /// Represents the result of a call to <see cref="IConfigurationSource"/>
 /// </summary>
 /// <typeparam name="T">The type of the returned value</typeparam>
-public readonly record struct ConfigurationResult<T>
+internal readonly record struct ConfigurationResult<T>
 {
     private ConfigurationResult(T? result, ConfigurationLoadResult loadResult)
     {

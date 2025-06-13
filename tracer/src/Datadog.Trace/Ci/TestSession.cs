@@ -29,7 +29,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// CI Visibility test session
 /// </summary>
-public sealed class TestSession
+internal sealed class TestSession
 {
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
     private static readonly HashSet<TestSession> OpenedTestSessions = new();

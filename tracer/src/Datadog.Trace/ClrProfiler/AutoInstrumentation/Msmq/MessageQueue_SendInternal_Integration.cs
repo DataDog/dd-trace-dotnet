@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     IntegrationName = MsmqConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class MessageQueue_SendInternal_Integration
+    internal class MessageQueue_SendInternal_Integration
     {
         private const string Command = MsmqConstants.MsmqSendCommand;
 

@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
     IntegrationName = RabbitMQConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class BasicConsumeAsyncIntegration
+internal class BasicConsumeAsyncIntegration
 {
     private const string Command = "basic.consume";
 

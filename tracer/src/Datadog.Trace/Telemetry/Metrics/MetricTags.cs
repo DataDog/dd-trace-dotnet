@@ -158,7 +158,7 @@ internal static class MetricTags
         [Description("header_style:baggage")] Baggage,
     }
 
-    public enum ContextHeaderTruncationReason
+    internal enum ContextHeaderTruncationReason
     {
         [Description("truncation_reason:baggage_item_count_exceeded")]BaggageItemCountExceeded,
         [Description("truncation_reason:baggage_byte_count_exceeded")]BaggageByteCountExceeded,
@@ -269,7 +269,7 @@ internal static class MetricTags
         [Description("integration_name:protobuf")] Protobuf
     }
 
-    public enum InstrumentationError
+    internal enum InstrumentationError
     {
         [Description("error_type:duck_typing")]DuckTyping,
         [Description("error_type:invoker")]Invoker,
@@ -277,7 +277,7 @@ internal static class MetricTags
         [Description("error_type:missing_member")]MissingMember,
     }
 
-    public enum WafAnalysis
+    internal enum WafAnalysis
     {
         // The generator splits on ; to add multiple tags
         // Note the initial 'waf_version'. This is an optimisation to avoid multiple array allocations
@@ -290,13 +290,13 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
 
-    public enum WafStatus
+    internal enum WafStatus
     {
         [Description("waf_version;event_rules_version;success:true")] Success,
         [Description("waf_version;event_rules_version;success:false")] Error
     }
 
-    public enum UserEventSdk
+    internal enum UserEventSdk
     {
         [Description("event_type:login_success;sdk_version:v1")] UserEventLoginSuccessSdkV1,
         [Description("event_type:login_success;sdk_version:v2")] UserEventLoginSuccessSdkV2,
@@ -306,7 +306,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum RaspRuleType
+    internal enum RaspRuleType
     {
         [Description("waf_version;event_rules_version;rule_type:lfi")] Lfi = 0,
         [Description("waf_version;event_rules_version;rule_type:ssrf")] Ssrf = 1,
@@ -316,7 +316,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum RaspRuleTypeMatch
+    internal enum RaspRuleTypeMatch
     {
         [Description("waf_version;event_rules_version;block:success;rule_type:lfi")] LfiSuccess = 0,
         [Description("waf_version;event_rules_version;block:success;rule_type:ssrf")] SsrfSuccess = 1,
@@ -335,7 +335,7 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;block:irrelevant;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecIrrelevant = 14,
     }
 
-    public enum TruncationReason
+    internal enum TruncationReason
     {
         [Description("truncation_reason:string_too_long")]StringTooLong = 1,
         [Description("truncation_reason:list_or_map_too_large")]ListOrMapTooLarge = 2,
@@ -343,7 +343,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum IastSourceType
+    internal enum IastSourceType
     {
         [Description("source_type:http.request.body")] RequestBody = 0,
         [Description("source_type:http.request.path")] RequestPath = 1,
@@ -362,7 +362,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum IastVulnerabilityType
+    internal enum IastVulnerabilityType
     {
         [Description("vulnerability_type:none")] None = 0,
         [Description("vulnerability_type:weak_cipher")] WeakCipher = 1,
@@ -393,7 +393,7 @@ internal static class MetricTags
         [Description("vulnerability_type:email_html_injection")] EmailHtmlInjection = 26,
     }
 
-    public enum AuthenticationFrameworkWithEventType
+    internal enum AuthenticationFrameworkWithEventType
     {
         [Description("framework:aspnetcore_identity;event_type:login_success")] AspNetCoreIdentityLoginSuccess,
         [Description("framework:aspnetcore_identity;event_type:login_failure")] AspNetCoreIdentityLoginFailure,
@@ -401,7 +401,7 @@ internal static class MetricTags
         [Description("framework:unknown;event_type:signup")] Unknown,
     }
 
-    public enum CIVisibilityTestFramework
+    internal enum CIVisibilityTestFramework
     {
         [Description("test_framework:xunit")] XUnit,
         [Description("test_framework:nunit")] NUnit,
@@ -410,7 +410,7 @@ internal static class MetricTags
         [Description("test_framework:unknown")] Unknown,
     }
 
-    public enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark
+    internal enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark
     {
         [Description("event_type:test")] Test,
         [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
@@ -422,7 +422,7 @@ internal static class MetricTags
         [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
     }
 
-    public enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum
+    internal enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum
     {
         [Description("event_type:test")] Test,
         [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
@@ -449,34 +449,34 @@ internal static class MetricTags
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium_IsRum,
     }
 
-    public enum CIVisibilityTestingEventTypeRetryReason
+    internal enum CIVisibilityTestingEventTypeRetryReason
     {
         [Description("")] None,
         [Description("retry_reason:efd")] EarlyFlakeDetection,
         [Description("retry_reason:atr")] AutomaticTestRetry,
     }
 
-    public enum CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled
+    internal enum CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled
     {
         [Description("")] None,
         [Description("is_quarantined:true")] IsQuarantined,
         [Description("is_disabled:true")] IsDisabled,
     }
 
-    public enum CIVisibilityTestingEventTypeTestManagementAttemptToFix
+    internal enum CIVisibilityTestingEventTypeTestManagementAttemptToFix
     {
         [Description("")] None,
         [Description("is_attempt_to_fix:true")] IsAttemptToFix,
         [Description("is_attempt_to_fix:true;has_failed_all_retries:true")] AttemptToFixHasFailedAllRetries,
     }
 
-    public enum CIVisibilityCoverageLibrary
+    internal enum CIVisibilityCoverageLibrary
     {
         [Description("library:custom")] Custom,
         [Description("library:unknown")] Unknown,
     }
 
-    public enum CIVisibilityTestingEventType
+    internal enum CIVisibilityTestingEventType
     {
         [Description("event_type:test")] Test,
         [Description("event_type:suite")] Suite,
@@ -484,13 +484,13 @@ internal static class MetricTags
         [Description("event_type:session")] Session,
     }
 
-    public enum CIVisibilityEndpoints
+    internal enum CIVisibilityEndpoints
     {
         [Description("endpoint:test_cycle")] TestCycle,
         [Description("endpoint:code_coverage")] CodeCoverage,
     }
 
-    public enum CIVisibilityEndpointAndCompression
+    internal enum CIVisibilityEndpointAndCompression
     {
         [Description("endpoint:test_cycle")] TestCycleUncompressed,
         [Description("endpoint:test_cycle;rq_compressed:true")] TestCycleRequestCompressed,
@@ -498,7 +498,7 @@ internal static class MetricTags
         [Description("endpoint:code_coverage;rq_compressed:true")] CodeCoverageRequestCompressed,
     }
 
-    public enum CIVisibilityErrorType
+    internal enum CIVisibilityErrorType
     {
         [Description("error_type:timeout")] Timeout,
         [Description("error_type:network")] Network,
@@ -513,7 +513,7 @@ internal static class MetricTags
         [Description("error_type:status_code_4xx_response;status_code:429")] StatusCode429,
     }
 
-    public enum CIVisibilityCommands
+    internal enum CIVisibilityCommands
     {
         [Description("command:get_repository")] GetRepository,
         [Description("command:get_branch")] GetBranch,
@@ -527,7 +527,7 @@ internal static class MetricTags
         [Description("command:diff")] Diff,
     }
 
-    public enum CIVisibilityExitCodes
+    internal enum CIVisibilityExitCodes
     {
         [Description("exit_code:missing")] Missing,
         [Description("exit_code:unknown")] Unknown,
@@ -539,55 +539,55 @@ internal static class MetricTags
         [Description("exit_code:129")] EC129,
     }
 
-    public enum CIVisibilitySettingsResponse_CoverageFeature
+    internal enum CIVisibilitySettingsResponse_CoverageFeature
     {
         [Description("coverage_enabled:true")] Enabled,
         [Description("coverage_enabled:false")] Disabled,
     }
 
-    public enum CIVisibilitySettingsResponse_ItrSkippingFeature
+    internal enum CIVisibilitySettingsResponse_ItrSkippingFeature
     {
         [Description("itrskip_enabled:true")] Enabled,
         [Description("itrskip_enabled:false")] Disabled,
     }
 
-    public enum CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature
+    internal enum CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature
     {
         [Description("early_flake_detection_enabled:true")] Enabled,
         [Description("early_flake_detection_enabled:false")] Disabled,
     }
 
-    public enum CIVisibilitySettingsResponse_FlakyTestRetriesFeature
+    internal enum CIVisibilitySettingsResponse_FlakyTestRetriesFeature
     {
         [Description("flaky_test_retries_enabled:true")] Enabled,
         [Description("flaky_test_retries_enabled:false")] Disabled,
     }
 
-    public enum CIVisibilitySettingsResponse_KnownTestsFeature
+    internal enum CIVisibilitySettingsResponse_KnownTestsFeature
     {
         [Description("known_tests_enabled:true")] Enabled,
         [Description("known_tests_enabled:false")] Disabled,
     }
 
-    public enum CIVisibilitySettingsResponse_TestManagementFeature
+    internal enum CIVisibilitySettingsResponse_TestManagementFeature
     {
         [Description("test_management_enabled:true")] Enabled,
         [Description("test_management_enabled:false")] Disabled,
     }
 
-    public enum CIVisibilityRequestCompressed
+    internal enum CIVisibilityRequestCompressed
     {
         [Description("")] Uncompressed,
         [Description("rq_compressed:true")] Compressed,
     }
 
-    public enum CIVisibilityResponseCompressed
+    internal enum CIVisibilityResponseCompressed
     {
         [Description("")] Uncompressed,
         [Description("rs_compressed:true")] Compressed,
     }
 
-    public enum CIVisibilityTestSessionProvider
+    internal enum CIVisibilityTestSessionProvider
     {
         [Description("provider:unsupported")] Unsupported,
         [Description("provider:appveyor")] AppVeyor,
@@ -606,13 +606,13 @@ internal static class MetricTags
         [Description("provider:aws")] AwsCodePipeline,
     }
 
-    public enum CIVisibilityTestSessionType
+    internal enum CIVisibilityTestSessionType
     {
         [Description("")] NotAutoInjected,
         [Description("auto_injected:true")] AutoInjected,
     }
 
-    public enum CIVisibilityTestSessionAgentlessLogSubmission
+    internal enum CIVisibilityTestSessionAgentlessLogSubmission
     {
         [Description("")] NotEnabled,
         [Description("agentless_log_submission_enabled:true")] Enabled,

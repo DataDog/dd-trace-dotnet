@@ -161,7 +161,7 @@ internal sealed partial class TestOptimizationClient
         }
     }
 
-    public readonly struct SkippableTestsResponse
+    internal readonly struct SkippableTestsResponse
     {
         public readonly string? CorrelationId;
         public readonly ICollection<SkippableTest> Tests;

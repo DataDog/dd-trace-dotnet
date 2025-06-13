@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class AsyncCallHandleFinishedInstrumentation
+    internal static class AsyncCallHandleFinishedInstrumentation
     {
         internal static CallTargetState OnMethodBegin<TTarget, TStatus>(TTarget instance, bool success, in TStatus clientSideStatus)
         {

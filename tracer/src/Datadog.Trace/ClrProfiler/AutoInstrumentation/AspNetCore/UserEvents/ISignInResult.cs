@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public interface ISignInResult
+internal interface ISignInResult
 {
     /// <summary>
     /// Gets a value indicating whether the sign-in was successful.

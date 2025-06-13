@@ -173,7 +173,7 @@ internal static class AwsSqsHandlerCommon
         return response;
     }
 
-    public class SendType
+    internal class SendType
     {
         public static readonly SendType SingleMessage = new("SendMessage");
 

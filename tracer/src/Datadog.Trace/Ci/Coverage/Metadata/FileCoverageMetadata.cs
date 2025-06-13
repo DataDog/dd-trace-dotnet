@@ -9,7 +9,7 @@ namespace Datadog.Trace.Ci.Coverage.Metadata;
 /// <summary>
 /// File coverage metadata struct
 /// </summary>
-public readonly struct FileCoverageMetadata
+internal readonly struct FileCoverageMetadata
 {
     /// <summary>
     /// File path

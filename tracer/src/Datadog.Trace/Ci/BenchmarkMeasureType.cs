@@ -9,7 +9,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// Benchmark measure type
 /// </summary>
-public enum BenchmarkMeasureType
+internal enum BenchmarkMeasureType
 {
     /// <summary>
     /// Duration in nanoseconds

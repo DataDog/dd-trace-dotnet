@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class AsyncCallHandleUnaryResponseInstrumentation
+    internal static class AsyncCallHandleUnaryResponseInstrumentation
     {
         internal static CallTargetState OnMethodBegin<TTarget, TStatus, TBufferReader, TMetadata>(
             TTarget instance,

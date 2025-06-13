@@ -69,7 +69,7 @@ internal readonly ref struct SpanCharSplitter
             return true;
         }
 
-        public readonly ref struct SpanSplitValue
+        internal readonly ref struct SpanSplitValue
         {
             public int StartIndex { get; init; }
 

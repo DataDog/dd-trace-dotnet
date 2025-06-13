@@ -16,7 +16,7 @@ namespace Datadog.Trace.Configuration;
 /// A version of <see cref="IConfigurationSource"/> that also allows reports the source of the telemetry
 /// when a value is retrieved using a key.
 /// </summary>
-public interface IConfigurationSource
+internal interface IConfigurationSource
 {
     /// <summary>
     /// Gets whether the specified key is present in the source.

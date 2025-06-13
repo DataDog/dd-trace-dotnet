@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class CommandExecuteReaderWithCancellationAsyncIntegration
+    internal class CommandExecuteReaderWithCancellationAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

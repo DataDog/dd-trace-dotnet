@@ -136,7 +136,7 @@ internal sealed partial class TestOptimizationClient
 
 #pragma warning disable SA1201
 
-    public sealed class TestManagementResponse
+    internal sealed class TestManagementResponse
     {
         public TestManagementResponse()
         {
@@ -152,7 +152,7 @@ internal sealed partial class TestOptimizationClient
         public Dictionary<string, TestManagementResponseSuites>? Modules { get; private set; }
     }
 
-    public sealed class TestManagementResponseSuites
+    internal sealed class TestManagementResponseSuites
     {
         public TestManagementResponseSuites()
         {
@@ -168,7 +168,7 @@ internal sealed partial class TestOptimizationClient
         public Dictionary<string, TestManagementResponseTests>? Suites { get; private set; }
     }
 
-    public sealed class TestManagementResponseTests
+    internal sealed class TestManagementResponseTests
     {
         public TestManagementResponseTests()
         {
@@ -184,7 +184,7 @@ internal sealed partial class TestOptimizationClient
         public Dictionary<string, TestManagementResponseTestProperties>? Tests { get; private set; }
     }
 
-    public sealed class TestManagementResponseTestProperties
+    internal sealed class TestManagementResponseTestProperties
     {
         public TestManagementResponseTestProperties()
         {
@@ -200,7 +200,7 @@ internal sealed partial class TestOptimizationClient
         public TestManagementResponseTestPropertiesAttributes Properties { get; private set; }
     }
 
-    public sealed class TestManagementResponseTestPropertiesAttributes
+    internal sealed class TestManagementResponseTestPropertiesAttributes
     {
         public TestManagementResponseTestPropertiesAttributes()
         {

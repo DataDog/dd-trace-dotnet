@@ -12,6 +12,6 @@ namespace Datadog.Trace.Ci.Coverage.Attributes;
 /// Avoid coverage attribute
 /// Used to ignore processing an assembly
 /// </summary>
-public class AvoidCoverageAttribute : Attribute
+internal class AvoidCoverageAttribute : Attribute
 {
 }

@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         IntegrationName = AwsDynamoDbCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DeleteItemIntegration
+    internal class DeleteItemIntegration
     {
         private const string Operation = "DeleteItem";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DeleteItemIntegration>();

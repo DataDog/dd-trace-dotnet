@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
        IntegrationName = nameof(Configuration.IntegrationId.Process))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ProcessStartIntegration
+    internal class ProcessStartIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

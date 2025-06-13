@@ -357,7 +357,7 @@ internal class TelemetryController : ITelemetryController
             State = state;
         }
 
-        public enum ItemType
+        internal enum ItemType
         {
             SetTransportManager,
             SetFlushInterval,
@@ -483,7 +483,7 @@ internal class TelemetryController : ITelemetryController
             _tasks[LogQueueSizeTaskIndex] = _logQueueTaskGenerator();
         }
 
-        public interface IDelayFactory
+        internal interface IDelayFactory
         {
             Task Delay(TimeSpan delay);
         }

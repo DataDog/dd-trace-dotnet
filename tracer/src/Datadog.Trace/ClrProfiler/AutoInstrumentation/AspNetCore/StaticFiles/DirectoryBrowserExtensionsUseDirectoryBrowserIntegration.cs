@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles;
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class DirectoryBrowserExtensionsUseDirectoryBrowserIntegration
+internal class DirectoryBrowserExtensionsUseDirectoryBrowserIntegration
 {
     private const string MethodName = "UseDirectoryBrowser";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DirectoryBrowserExtensionsUseDirectoryBrowserIntegration>();

@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class AsyncCallServerSendInitialMetadataAsyncInstrumentation
+    internal static class AsyncCallServerSendInitialMetadataAsyncInstrumentation
     {
         internal static CallTargetState OnMethodBegin<TTarget, TMetadata>(TTarget instance, in TMetadata? headers)
         {

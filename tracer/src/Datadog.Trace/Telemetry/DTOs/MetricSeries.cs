@@ -23,7 +23,7 @@ internal class MetricSeries : List<MetricDataPoint>
     {
     }
 
-    public class MetricSeriesJsonConverter : JsonConverter<MetricSeries>
+    internal class MetricSeriesJsonConverter : JsonConverter<MetricSeries>
     {
         /// <summary>
         /// Used to serialize the data in the payload

@@ -16,7 +16,7 @@ namespace Datadog.Trace.Ci.Coverage;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class CoverageReporter
+internal static class CoverageReporter
 {
     private static CoverageEventHandler _handler = TestOptimization.Instance.Settings.TestsSkippingEnabled == true ? new DefaultCoverageEventHandler() : new DefaultWithGlobalCoverageEventHandler();
 

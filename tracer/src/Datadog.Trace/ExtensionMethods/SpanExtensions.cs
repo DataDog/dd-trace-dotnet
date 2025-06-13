@@ -22,7 +22,7 @@ namespace Datadog.Trace.ExtensionMethods
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> class.
     /// </summary>
-    public static class SpanExtensions
+    internal static class SpanExtensions
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
 

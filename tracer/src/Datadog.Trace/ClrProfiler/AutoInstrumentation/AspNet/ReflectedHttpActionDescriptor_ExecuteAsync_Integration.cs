@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ReflectedHttpActionDescriptor_ExecuteAsync_Integration
+    internal class ReflectedHttpActionDescriptor_ExecuteAsync_Integration
     {
         private const string SystemWebHttpAssemblyName = "System.Web.Http";
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";

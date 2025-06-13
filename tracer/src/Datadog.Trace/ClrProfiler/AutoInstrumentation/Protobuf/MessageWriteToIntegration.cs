@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class MessageWriteToIntegration
+internal class MessageWriteToIntegration
 {
     // For performance reasons, we want to do the actual instrumentation work with a Duck constraint,
     // but to be able to disable the instrumentation we need the raw type

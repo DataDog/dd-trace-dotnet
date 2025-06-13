@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class TestMethodRunnerExecuteTestIntegration
+internal static class TestMethodRunnerExecuteTestIntegration
 {
     private static SkipTestMethodExecutor? _itrSkipTestMethodExecutor;
     private static SkipTestMethodExecutor? _disabledSkipTestMethodExecutor;
@@ -77,7 +77,7 @@ public static class TestMethodRunnerExecuteTestIntegration
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1402
-public static class TestMethodRunnerExecuteTestIntegrationV3_9
+internal static class TestMethodRunnerExecuteTestIntegrationV3_9
 #pragma warning restore SA1402
 {
     private static SkipTestMethodExecutor? _itrSkipTestMethodExecutor;

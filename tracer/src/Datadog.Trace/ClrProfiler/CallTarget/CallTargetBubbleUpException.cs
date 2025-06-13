@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget;
 /// </summary>
 [System.ComponentModel.Browsable(false)]
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-public class CallTargetBubbleUpException : Exception
+internal class CallTargetBubbleUpException : Exception
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CallTargetBubbleUpException"/> class.

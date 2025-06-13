@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects.System.DirectoryServices;
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 
-public partial class DirectorySearcherAspect
+internal partial class DirectorySearcherAspect
 {
     /// <summary>
     /// DirectorySearcher instrumentated method

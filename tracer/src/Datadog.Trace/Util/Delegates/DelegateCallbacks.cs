@@ -25,7 +25,7 @@ internal readonly struct DelegateAction0Callbacks : IBegin0Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction0Callbacks(
+    internal DelegateAction0Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null)
@@ -35,7 +35,7 @@ internal readonly struct DelegateAction0Callbacks : IBegin0Callbacks, IVoidRetur
         _onException = onException;
     }
 
-    public delegate object? DelegateBegin(object? sender);
+    internal delegate object? DelegateBegin(object? sender);
 
     object? IBegin0Callbacks.OnDelegateBegin(object? sender)
         => _onDelegateBegin?.Invoke(sender);
@@ -53,7 +53,7 @@ internal readonly struct DelegateAction1Callbacks : IBegin1Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction1Callbacks(
+    internal DelegateAction1Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null)
@@ -63,7 +63,7 @@ internal readonly struct DelegateAction1Callbacks : IBegin1Callbacks, IVoidRetur
         _onException = onException;
     }
 
-    public delegate object? DelegateBegin(object? sender, object? arg1);
+    internal delegate object? DelegateBegin(object? sender, object? arg1);
 
     object? IBegin1Callbacks.OnDelegateBegin<TArg1>(object? sender, ref TArg1 arg1)
         => _onDelegateBegin?.Invoke(sender, arg1);
@@ -81,7 +81,7 @@ internal readonly struct DelegateAction2Callbacks : IBegin2Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction2Callbacks(
+    internal DelegateAction2Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null)
@@ -91,7 +91,7 @@ internal readonly struct DelegateAction2Callbacks : IBegin2Callbacks, IVoidRetur
         _onException = onException;
     }
 
-    public delegate object? DelegateBegin(object? sender, object? arg1, object? arg2);
+    internal delegate object? DelegateBegin(object? sender, object? arg1, object? arg2);
 
     object? IBegin2Callbacks.OnDelegateBegin<TArg1, TArg2>(object? sender, ref TArg1 arg1, ref TArg2 arg2)
         => _onDelegateBegin?.Invoke(sender, arg1, arg2);
@@ -109,7 +109,7 @@ internal readonly struct DelegateAction3Callbacks : IBegin3Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction3Callbacks(
+    internal DelegateAction3Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null)
@@ -119,7 +119,7 @@ internal readonly struct DelegateAction3Callbacks : IBegin3Callbacks, IVoidRetur
         _onException = onException;
     }
 
-    public delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3);
+    internal delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3);
 
     object? IBegin3Callbacks.OnDelegateBegin<TArg1, TArg2, TArg3>(object? sender, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3)
         => _onDelegateBegin?.Invoke(sender, arg1, arg2, arg3);
@@ -137,7 +137,7 @@ internal readonly struct DelegateAction4Callbacks : IBegin4Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction4Callbacks(
+    internal DelegateAction4Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null)
@@ -147,7 +147,7 @@ internal readonly struct DelegateAction4Callbacks : IBegin4Callbacks, IVoidRetur
         _onException = onException;
     }
 
-    public delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3, object? arg4);
+    internal delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3, object? arg4);
 
     object? IBegin4Callbacks.OnDelegateBegin<TArg1, TArg2, TArg3, TArg4>(object? sender, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4)
         => _onDelegateBegin?.Invoke(sender, arg1, arg2, arg3, arg4);
@@ -165,7 +165,7 @@ internal readonly struct DelegateAction5Callbacks : IBegin5Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction5Callbacks(
+    internal DelegateAction5Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null)
@@ -175,7 +175,7 @@ internal readonly struct DelegateAction5Callbacks : IBegin5Callbacks, IVoidRetur
         _onException = onException;
     }
 
-    public delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3, object? arg4, object? arg5);
+    internal delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3, object? arg4, object? arg5);
 
     object? IBegin5Callbacks.OnDelegateBegin<TArg1, TArg2, TArg3, TArg4, TArg5>(object? sender, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5)
         => _onDelegateBegin?.Invoke(sender, arg1, arg2, arg3, arg4, arg5);
@@ -195,7 +195,7 @@ internal readonly struct DelegateFunc0Callbacks : IBegin0Callbacks, IReturnCallb
     private readonly ExceptionDelegate? _onException;
     private readonly bool _preserveAsyncContext;
 
-    public DelegateFunc0Callbacks(
+    internal DelegateFunc0Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateReturnEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null,
@@ -209,7 +209,7 @@ internal readonly struct DelegateFunc0Callbacks : IBegin0Callbacks, IReturnCallb
         _preserveAsyncContext = preserveAsyncContext;
     }
 
-    public delegate object? DelegateBegin(object? sender);
+    internal delegate object? DelegateBegin(object? sender);
 
     bool IReturnAsyncCallback.PreserveAsyncContext => _preserveAsyncContext;
 
@@ -241,7 +241,7 @@ internal readonly struct DelegateFunc1Callbacks : IBegin1Callbacks, IReturnCallb
     private readonly ExceptionDelegate? _onException;
     private readonly bool _preserveAsyncContext;
 
-    public DelegateFunc1Callbacks(
+    internal DelegateFunc1Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateReturnEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null,
@@ -255,7 +255,7 @@ internal readonly struct DelegateFunc1Callbacks : IBegin1Callbacks, IReturnCallb
         _preserveAsyncContext = preserveAsyncContext;
     }
 
-    public delegate object? DelegateBegin(object? sender, object? arg1);
+    internal delegate object? DelegateBegin(object? sender, object? arg1);
 
     bool IReturnAsyncCallback.PreserveAsyncContext => _preserveAsyncContext;
 
@@ -287,7 +287,7 @@ internal readonly struct DelegateFunc2Callbacks : IBegin2Callbacks, IReturnCallb
     private readonly ExceptionDelegate? _onException;
     private readonly bool _preserveAsyncContext;
 
-    public DelegateFunc2Callbacks(
+    internal DelegateFunc2Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateReturnEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null,
@@ -301,7 +301,7 @@ internal readonly struct DelegateFunc2Callbacks : IBegin2Callbacks, IReturnCallb
         _preserveAsyncContext = preserveAsyncContext;
     }
 
-    public delegate object? DelegateBegin(object? sender, object? arg1, object? arg2);
+    internal delegate object? DelegateBegin(object? sender, object? arg1, object? arg2);
 
     bool IReturnAsyncCallback.PreserveAsyncContext => _preserveAsyncContext;
 
@@ -333,7 +333,7 @@ internal readonly struct DelegateFunc3Callbacks : IBegin3Callbacks, IReturnCallb
     private readonly ExceptionDelegate? _onException;
     private readonly bool _preserveAsyncContext;
 
-    public DelegateFunc3Callbacks(
+    internal DelegateFunc3Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateReturnEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null,
@@ -347,7 +347,7 @@ internal readonly struct DelegateFunc3Callbacks : IBegin3Callbacks, IReturnCallb
         _preserveAsyncContext = preserveAsyncContext;
     }
 
-    public delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3);
+    internal delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3);
 
     bool IReturnAsyncCallback.PreserveAsyncContext => _preserveAsyncContext;
 
@@ -379,7 +379,7 @@ internal readonly struct DelegateFunc4Callbacks : IBegin4Callbacks, IReturnCallb
     private readonly ExceptionDelegate? _onException;
     private readonly bool _preserveAsyncContext;
 
-    public DelegateFunc4Callbacks(
+    internal DelegateFunc4Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateReturnEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null,
@@ -393,7 +393,7 @@ internal readonly struct DelegateFunc4Callbacks : IBegin4Callbacks, IReturnCallb
         _preserveAsyncContext = preserveAsyncContext;
     }
 
-    public delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3, object? arg4);
+    internal delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3, object? arg4);
 
     bool IReturnAsyncCallback.PreserveAsyncContext => _preserveAsyncContext;
 
@@ -425,7 +425,7 @@ internal readonly struct DelegateFunc5Callbacks : IBegin5Callbacks, IReturnCallb
     private readonly ExceptionDelegate? _onException;
     private readonly bool _preserveAsyncContext;
 
-    public DelegateFunc5Callbacks(
+    internal DelegateFunc5Callbacks(
         DelegateBegin? onDelegateBegin = null,
         DelegateReturnEnd? onDelegateEnd = null,
         ExceptionDelegate? onException = null,
@@ -439,7 +439,7 @@ internal readonly struct DelegateFunc5Callbacks : IBegin5Callbacks, IReturnCallb
         _preserveAsyncContext = preserveAsyncContext;
     }
 
-    public delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3, object? arg4, object? arg5);
+    internal delegate object? DelegateBegin(object? sender, object? arg1, object? arg2, object? arg3, object? arg4, object? arg5);
 
     bool IReturnAsyncCallback.PreserveAsyncContext => _preserveAsyncContext;
 

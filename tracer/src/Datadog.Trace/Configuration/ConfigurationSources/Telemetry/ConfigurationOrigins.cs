@@ -14,7 +14,7 @@ namespace Datadog.Trace.Configuration.Telemetry;
 /// The origin of a configuration value
 /// </summary>
 [EnumExtensions]
-public enum ConfigurationOrigins
+internal enum ConfigurationOrigins
 {
     /// <summary>
     /// Configuration that is set through environment variables

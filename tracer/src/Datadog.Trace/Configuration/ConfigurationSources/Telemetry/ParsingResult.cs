@@ -13,7 +13,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 /// The result of parsing a configuration value
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public readonly record struct ParsingResult<T>
+internal readonly record struct ParsingResult<T>
 {
     private ParsingResult(T? result, bool isValid)
     {

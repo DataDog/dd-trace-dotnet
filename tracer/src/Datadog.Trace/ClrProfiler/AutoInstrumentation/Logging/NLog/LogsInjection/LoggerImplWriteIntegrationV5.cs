@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         IntegrationName = "NLog")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LoggerImplWriteIntegrationV5
+    internal class LoggerImplWriteIntegrationV5
     {
         /// <summary>
         /// OnMethodBegin callback

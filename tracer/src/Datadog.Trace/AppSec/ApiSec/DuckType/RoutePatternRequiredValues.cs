@@ -15,7 +15,7 @@ namespace Datadog.Trace.AppSec.ApiSec.DuckType
     /// RoutePattern for duck typing
     /// </summary>
     [DuckCopy]
-    public struct RoutePatternRequiredValues
+    internal struct RoutePatternRequiredValues
     {
         /// <summary>
         /// Gets the RoutePattern.RequiredValues

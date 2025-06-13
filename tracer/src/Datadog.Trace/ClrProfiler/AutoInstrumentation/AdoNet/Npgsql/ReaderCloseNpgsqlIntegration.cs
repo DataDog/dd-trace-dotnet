@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql
         InstrumentationCategory = InstrumentationCategory.Iast)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ReaderCloseNpgsqlIntegration
+    internal class ReaderCloseNpgsqlIntegration
     {
         private static bool errorLogged = false;
 

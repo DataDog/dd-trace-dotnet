@@ -15,7 +15,7 @@ namespace Datadog.Trace.AppSec;
 /// <summary>
 /// Allow
 /// </summary>
-public static class EventTrackingSdk
+internal static class EventTrackingSdk
 {
     /// <summary>
     /// Sets the details of a successful logon on the local root span

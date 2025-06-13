@@ -18,7 +18,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> interface
     /// </summary>
-    public static partial class SpanExtensions
+    internal static partial class SpanExtensions
     {
         private static void RunBlockingCheck(Span span, string userId, string userSessionId)
         {

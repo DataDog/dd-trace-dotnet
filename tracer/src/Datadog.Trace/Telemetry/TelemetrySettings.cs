@@ -167,7 +167,7 @@ namespace Datadog.Trace.Telemetry
                 debugEnabled);
         }
 
-        public class AgentlessSettings
+        internal class AgentlessSettings
         {
             /// <summary>
             /// Initializes a new instance of the <see cref="AgentlessSettings"/> class.
@@ -217,7 +217,7 @@ namespace Datadog.Trace.Telemetry
                 return new AgentlessSettings(agentlessUri, apiKey, cloud);
             }
 
-            public class CloudSettings
+            internal class CloudSettings
             {
                 public CloudSettings(
                     string provider,

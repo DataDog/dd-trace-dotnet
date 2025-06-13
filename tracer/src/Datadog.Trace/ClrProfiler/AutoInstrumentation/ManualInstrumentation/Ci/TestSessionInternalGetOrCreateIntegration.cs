@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class TestSessionInternalGetOrCreateIntegration
+internal class TestSessionInternalGetOrCreateIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(string command, string workingDirectory, string framework, in DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {

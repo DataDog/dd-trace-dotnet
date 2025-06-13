@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         IntegrationName = AzureFunctionsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class AzureFunctionsExecutorTryExecuteAsyncIntegration
+    internal class AzureFunctionsExecutorTryExecuteAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class KafkaConsumerDisposeIntegration
+    internal class KafkaConsumerDisposeIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

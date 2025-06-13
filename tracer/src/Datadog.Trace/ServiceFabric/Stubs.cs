@@ -16,7 +16,7 @@ namespace Datadog.Trace.ServiceFabric
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IServiceRemotingRequestMessageHeader
+    internal interface IServiceRemotingRequestMessageHeader
     {
         /// <summary>
         /// Gets the method id. For internal use only.
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ServiceFabric
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IServiceRemotingRequestMessage
+    internal interface IServiceRemotingRequestMessage
     {
         /// <summary>
         /// For internal use only.
@@ -67,7 +67,7 @@ namespace Datadog.Trace.ServiceFabric
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IServiceRemotingRequestEventArgs
+    internal interface IServiceRemotingRequestEventArgs
     {
         /// <summary>
         /// Gets the request message. For internal use only.
@@ -90,7 +90,7 @@ namespace Datadog.Trace.ServiceFabric
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IServiceRemotingFailedResponseEventArgs
+    internal interface IServiceRemotingFailedResponseEventArgs
     {
         /// <summary>
         /// Gets the exception. For internal use only.

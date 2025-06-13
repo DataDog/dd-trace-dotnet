@@ -13,7 +13,7 @@ namespace Datadog.Trace.Headers;
 /// <summary>
 /// Builds an IHeadersCollection from a carrier and a delegate to get or set data.
 /// IHeadersCollection is used for performance gains compared to a delegate, gains which a negated when using this class.
-/// As such, this is only intended to be used to provide a user-friendly public interface, not as a convenience in internal tracer methods.
+/// As such, this is only intended to be used to provide a user-friendly internal interface, not as a convenience in internal tracer methods.
 /// </summary>
 internal readonly struct CarrierWithDelegate<TCarrier> : IHeadersCollection
 {

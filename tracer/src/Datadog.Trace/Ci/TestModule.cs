@@ -34,7 +34,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// CI Visibility test module
 /// </summary>
-public sealed class TestModule
+internal sealed class TestModule
 {
     private static readonly AsyncLocal<TestModule?> CurrentModule = new();
     private static readonly HashSet<TestModule> OpenedTestModules = new();

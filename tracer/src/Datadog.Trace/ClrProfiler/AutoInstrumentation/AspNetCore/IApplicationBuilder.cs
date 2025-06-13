@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IApplicationBuilder
+    internal interface IApplicationBuilder
     {
         /// <summary>
         /// Gets ss

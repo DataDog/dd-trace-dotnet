@@ -9,7 +9,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// Benchmark job info
 /// </summary>
-public struct BenchmarkJobInfo
+internal struct BenchmarkJobInfo
 {
     /// <summary>
     /// Job description

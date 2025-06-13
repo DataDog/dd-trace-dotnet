@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public readonly struct CallTargetRefStruct
+internal readonly struct CallTargetRefStruct
 {
     private readonly nint _value;
     private readonly RuntimeTypeHandle _refStructTypeHandle;

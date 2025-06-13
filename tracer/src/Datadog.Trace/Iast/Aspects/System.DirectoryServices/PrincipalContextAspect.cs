@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects.System.DirectoryServices;
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 
-public partial class PrincipalContextAspect
+internal partial class PrincipalContextAspect
 {
     /// <summary>
     /// PrincipalContext instrumentated method

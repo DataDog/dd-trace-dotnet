@@ -15,7 +15,7 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IDuckType
+    internal interface IDuckType
     {
         /// <summary>
         /// Gets instance

@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class TestClassInfoExecuteClassCleanupIntegration
+internal static class TestClassInfoExecuteClassCleanupIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         where TTarget : ITestClassInfo
@@ -68,7 +68,7 @@ public static class TestClassInfoExecuteClassCleanupIntegration
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1402
-public static class TestClassInfoExecuteClassCleanupIntegrationV3_9
+internal static class TestClassInfoExecuteClassCleanupIntegrationV3_9
 #pragma warning restore SA1402
 {
     internal static CallTargetState OnMethodBegin<TTarget, TArg, TArg2>(TTarget instance, TArg? arg, ref TArg2? arg2)

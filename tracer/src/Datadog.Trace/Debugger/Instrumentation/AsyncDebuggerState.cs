@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct AsyncDebuggerState
+    internal struct AsyncDebuggerState
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncDebuggerState"/> struct.

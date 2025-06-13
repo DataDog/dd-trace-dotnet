@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget;
 /// <typeparam name="T">Type of the return value</typeparam>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public readonly ref struct CallTargetReturn<T>
+internal readonly ref struct CallTargetReturn<T>
 {
     private readonly T? _returnValue;
 
@@ -60,7 +60,7 @@ public readonly ref struct CallTargetReturn<T>
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public readonly ref struct CallTargetReturn
+internal readonly ref struct CallTargetReturn
 {
     /// <summary>
     /// Gets the default call target return value (used by the native side to initialize the locals)

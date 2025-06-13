@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         IntegrationName = AwsDynamoDbCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class BatchWriteItemAsyncIntegration
+    internal class BatchWriteItemAsyncIntegration
     {
         private const string Operation = "BatchWriteItem";
 

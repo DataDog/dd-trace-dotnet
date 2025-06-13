@@ -16,7 +16,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Duck Type
     /// </summary>
-    public static partial class DuckType
+    internal static partial class DuckType
     {
         private static MethodBuilder? GetPropertyGetMethod(
             TypeBuilder? proxyTypeBuilder,

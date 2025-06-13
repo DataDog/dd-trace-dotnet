@@ -13,7 +13,7 @@ namespace Datadog.Trace.Telemetry;
 /// Specific errors that occur when parsing configuration values
 /// </summary>
 [EnumExtensions]
-public enum TelemetryErrorCode
+internal enum TelemetryErrorCode
 {
     /// <summary>
     /// No error, should not be used

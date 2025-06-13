@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         IntegrationName = WcfCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class AsyncMethodInvoker_InvokeEnd_Integration
+    internal class AsyncMethodInvoker_InvokeEnd_Integration
     {
         /// <summary>
         /// OnMethodEnd callback

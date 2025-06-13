@@ -24,7 +24,7 @@ internal class LibraryInitializationResult
     }
 
     [Flags]
-    public enum LoadStatus
+    internal enum LoadStatus
     {
         Ok = 0,
         LibraryLoad = 1 << 0,

@@ -18,7 +18,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct MethodDebuggerState
+    internal struct MethodDebuggerState
     {
         /// <summary>
         /// Gets a disabled states

@@ -20,5 +20,5 @@ internal struct Target
     /// Delegate to RequestDelegate.Target.handler
     /// </summary>
     [DuckField(Name = "handler")]
-    public Delegate? Handler;
+    internal Delegate? Handler;
 }

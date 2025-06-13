@@ -40,7 +40,7 @@ namespace Datadog.Trace.Agent
             _formatter = _formatterResolver.GetFormatter<TraceChunkModel>();
         }
 
-        public enum WriteStatus
+        internal enum WriteStatus
         {
             Success = 0,
             Full = 1,

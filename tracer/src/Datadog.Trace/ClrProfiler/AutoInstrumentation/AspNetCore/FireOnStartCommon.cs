@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class FireOnStartCommon
+internal static class FireOnStartCommon
 {
     private const string IntegrationName = nameof(IntegrationId.AspNetCore);
 

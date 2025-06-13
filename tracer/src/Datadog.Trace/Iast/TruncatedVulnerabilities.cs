@@ -31,7 +31,7 @@ internal struct TruncatedVulnerabilities
 
     public List<Vulnerability> Vulnerabilities => vulnerabilities;
 
-    public class VulnerabilityConverter : JsonConverter<Vulnerability?>
+    internal class VulnerabilityConverter : JsonConverter<Vulnerability?>
     {
         public VulnerabilityConverter()
         {
@@ -63,7 +63,7 @@ internal struct TruncatedVulnerabilities
         }
     }
 
-    public class EvidenceConverter : JsonConverter<Evidence?>
+    internal class EvidenceConverter : JsonConverter<Evidence?>
     {
         public EvidenceConverter()
         {

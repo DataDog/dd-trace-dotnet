@@ -13,7 +13,7 @@ namespace Datadog.Trace.Configuration.Telemetry;
 /// <summary>
 /// Used to collect configuration telemetry
 /// </summary>
-public interface IConfigurationTelemetry
+internal interface IConfigurationTelemetry
 {
     /// <summary>
     /// Records a value in telemetry, and marks it as the "current" value

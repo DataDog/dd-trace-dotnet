@@ -20,7 +20,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> interface
     /// </summary>
-    public static partial class SpanExtensions
+    internal static partial class SpanExtensions
     {
         /// <summary>
         /// Sets the details of the user on the local root span

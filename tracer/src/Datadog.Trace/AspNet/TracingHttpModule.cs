@@ -31,7 +31,7 @@ namespace Datadog.Trace.AspNet
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class TracingHttpModule : IHttpModule
+    internal class TracingHttpModule : IHttpModule
     {
         internal static readonly IntegrationId IntegrationId = IntegrationId.AspNet;
 

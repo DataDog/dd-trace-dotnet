@@ -12,7 +12,7 @@ namespace Datadog.Trace.DuckTyping;
 /// Duck type async awaiter interface
 /// </summary>
 /// <typeparam name="T">Type of the result</typeparam>
-public interface IDuckTypeAwaiter<out T> : ICriticalNotifyCompletion, IDuckType
+internal interface IDuckTypeAwaiter<out T> : ICriticalNotifyCompletion, IDuckType
 {
     /// <summary>
     /// Gets a value indicating whether if the async operation is completed
@@ -29,7 +29,7 @@ public interface IDuckTypeAwaiter<out T> : ICriticalNotifyCompletion, IDuckType
 /// <summary>
 /// Duck type async awaiter interface
 /// </summary>
-public interface IDuckTypeAwaiter : ICriticalNotifyCompletion, IDuckType
+internal interface IDuckTypeAwaiter : ICriticalNotifyCompletion, IDuckType
 {
     /// <summary>
     /// Gets a value indicating whether if the async operation is completed

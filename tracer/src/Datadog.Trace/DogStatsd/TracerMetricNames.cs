@@ -7,7 +7,7 @@ namespace Datadog.Trace.DogStatsd
 {
     internal static class TracerMetricNames
     {
-        public static class Api
+        internal static class Api
         {
             /// <summary>
             /// Count: Total number of API requests made
@@ -30,7 +30,7 @@ namespace Datadog.Trace.DogStatsd
             public const string Errors = "datadog.tracer.api.errors";
         }
 
-        public static class Queue
+        internal static class Queue
         {
             /// <summary>
             /// Count: Total number of traces pushed into the queue (does not include traces dropped due to a full queue)
@@ -73,7 +73,7 @@ namespace Datadog.Trace.DogStatsd
             public const string DequeuedBytes = "datadog.tracer.queue.dequeued_bytes";
         }
 
-        public static class Health
+        internal static class Health
         {
             /// <summary>
             /// Gauge: Set to 1 by each Tracer instance.

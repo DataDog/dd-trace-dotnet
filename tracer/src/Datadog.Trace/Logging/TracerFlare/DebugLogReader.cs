@@ -195,7 +195,7 @@ internal static class DebugLogReader
         return remainingCapacity >= estimatedFileSize;
     }
 
-    public class WriteCountingStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
+    internal class WriteCountingStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
     {
         private long _position = 0;
 

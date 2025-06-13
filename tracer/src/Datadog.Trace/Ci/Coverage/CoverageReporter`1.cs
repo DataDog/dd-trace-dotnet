@@ -20,7 +20,7 @@ namespace Datadog.Trace.Ci.Coverage;
 /// <typeparam name="TMeta">Type of ModuleCoverageMetadata</typeparam>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class CoverageReporter<TMeta>
+internal static class CoverageReporter<TMeta>
     where TMeta : ModuleCoverageMetadata, new()
 {
     private static readonly TMeta Metadata;

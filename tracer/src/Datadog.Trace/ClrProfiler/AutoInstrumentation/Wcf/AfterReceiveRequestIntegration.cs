@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         IntegrationName = WcfCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class AfterReceiveRequestIntegration
+    internal class AfterReceiveRequestIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

@@ -12,7 +12,7 @@ namespace Datadog.Trace
     /// <summary>
     /// A data container class for the users details
     /// </summary>
-    public partial struct UserDetails
+    internal partial struct UserDetails
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="UserDetails"/> struct.

@@ -66,7 +66,7 @@ namespace Datadog.Trace.Logging
             return new LogRateBucketInfo(currentTimeBucket, skipCount: 0, previous.SkipCount);
         }
 
-        public readonly struct LogRateBucketInfo
+        internal readonly struct LogRateBucketInfo
         {
             public readonly int TimeBucket;
             public readonly uint SkipCount;
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        public readonly struct LogRateBucketKey
+        internal readonly struct LogRateBucketKey
         {
             public readonly string FilePath;
             public readonly int LineNo;

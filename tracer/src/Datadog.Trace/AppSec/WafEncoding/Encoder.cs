@@ -666,7 +666,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
         }
 
-        public class EncodeResult : IEncodeResult
+        internal class EncodeResult : IEncodeResult
         {
             private readonly List<IntPtr> _pointers;
             private readonly UnmanagedMemoryPool _innerPool;

@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class Instrumentation
+    internal static class Instrumentation
     {
         /// <summary>
         /// Indicates whether we're initializing Instrumentation for the first time

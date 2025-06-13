@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class EventTrackingSdkTrackUserLoginFailureEventIntegration
+internal class EventTrackingSdkTrackUserLoginFailureEventIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(string userId, bool exists)
     {

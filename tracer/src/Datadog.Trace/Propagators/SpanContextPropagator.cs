@@ -311,13 +311,13 @@ namespace Datadog.Trace.Propagators
         }
 
 #pragma warning disable SA1201
-        public interface IHeaderTagProcessor
+        internal interface IHeaderTagProcessor
 #pragma warning restore SA1201
         {
             void ProcessTag(string key, string? value);
         }
 
-        public readonly struct SpanTagHeaderTagProcessor : IHeaderTagProcessor
+        internal readonly struct SpanTagHeaderTagProcessor : IHeaderTagProcessor
         {
             private readonly ISpan _span;
 

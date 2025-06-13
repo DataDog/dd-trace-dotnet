@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class StartSpanIntegration
+internal class StartSpanIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StartSpanIntegration>();
 

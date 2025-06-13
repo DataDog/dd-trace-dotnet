@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
         IntegrationName = nameof(IntegrationId.Serilog))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LoggerConfigurationInstrumentation
+    internal class LoggerConfigurationInstrumentation
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LoggerConfigurationInstrumentation>();
 

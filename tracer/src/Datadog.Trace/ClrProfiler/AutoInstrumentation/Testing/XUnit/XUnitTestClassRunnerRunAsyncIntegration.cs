@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XUnitTestClassRunnerRunAsyncIntegration
+internal static class XUnitTestClassRunnerRunAsyncIntegration
 {
     /// <summary>
     /// OnMethodBegin callback

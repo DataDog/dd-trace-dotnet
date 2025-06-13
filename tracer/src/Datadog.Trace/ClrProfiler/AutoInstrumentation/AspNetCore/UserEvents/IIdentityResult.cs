@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public interface IIdentityResult
+internal interface IIdentityResult
 {
     /// <summary>
     /// Gets a value indicating whether indicating a successful identity operation.

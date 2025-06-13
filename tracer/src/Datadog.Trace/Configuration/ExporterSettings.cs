@@ -23,7 +23,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains exporter settings.
     /// </summary>
-    public partial class ExporterSettings
+    internal partial class ExporterSettings
     {
         /// <summary>
         /// Allows overriding of file system access for tests.

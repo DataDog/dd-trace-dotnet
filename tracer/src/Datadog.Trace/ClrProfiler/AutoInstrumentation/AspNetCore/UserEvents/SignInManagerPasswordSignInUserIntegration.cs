@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class SignInManagerPasswordSignInUserIntegration
+internal static class SignInManagerPasswordSignInUserIntegration
 {
     private const string AssemblyName = "Microsoft.AspNetCore.Identity";
 

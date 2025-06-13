@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         /// Represents root interface for all functional interfaces.
         /// </summary>
         /// <typeparam name="TDelegate">The type of the delegate representing signature of the functional interface.</typeparam>
-        public interface IFunctional<out TDelegate>
+        internal interface IFunctional<out TDelegate>
             where TDelegate : Delegate
         {
             /// <summary>
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         /// <typeparam name="T1">The type of the first argument.</typeparam>
         /// <typeparam name="T2">The type of the second argument.</typeparam>
         /// <typeparam name="TResult">The type of the result.</typeparam>
-        public interface ISupplier<in T1, in T2, out TResult> : IFunctional<Func<T1, T2, TResult>>
+        internal interface ISupplier<in T1, in T2, out TResult> : IFunctional<Func<T1, T2, TResult>>
         {
             /// <summary>
             /// Invokes the supplier.
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         /// <typeparam name="T2">The type of the second argument.</typeparam>
         /// <typeparam name="TResult">The type of the result.</typeparam>
         [StructLayout(LayoutKind.Auto)]
-        public readonly struct DelegatingSupplier<T1, T2, TResult> : ISupplier<T1, T2, TResult>, IEquatable<DelegatingSupplier<T1, T2, TResult>>
+        internal readonly struct DelegatingSupplier<T1, T2, TResult> : ISupplier<T1, T2, TResult>, IEquatable<DelegatingSupplier<T1, T2, TResult>>
         {
             private readonly Func<T1, T2, TResult> func;
 

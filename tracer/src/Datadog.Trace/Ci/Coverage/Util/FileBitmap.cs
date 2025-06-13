@@ -951,7 +951,7 @@ internal unsafe ref struct FileBitmap
     /// <summary>
     /// Enumerator for iterating over the bits of a <see cref="FileBitmap"/>.
     /// </summary>
-    public struct Enumerator : IEnumerator<byte>
+    internal struct Enumerator : IEnumerator<byte>
     {
         private int _index = -1;
         private byte* _bitMap;

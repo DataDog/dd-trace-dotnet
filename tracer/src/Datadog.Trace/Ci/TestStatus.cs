@@ -9,7 +9,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// Test status
 /// </summary>
-public enum TestStatus
+internal enum TestStatus
 {
     /// <summary>
     /// Pass test status

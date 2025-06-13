@@ -225,7 +225,7 @@ namespace Datadog.Trace.Pdb
         /// <summary>
         /// Method symbols struct
         /// </summary>
-        public readonly ref struct MethodSymbol
+        internal readonly ref struct MethodSymbol
         {
             /// <summary>
             /// File Path

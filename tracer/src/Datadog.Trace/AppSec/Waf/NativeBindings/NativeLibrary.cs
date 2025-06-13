@@ -26,7 +26,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 #endif
 
         [Flags]
-        public enum FORMAT_MESSAGE : int
+        internal enum FORMAT_MESSAGE : int
         {
             NONE = 0,
             ALLOCATE_BUFFER = 0x00000100,

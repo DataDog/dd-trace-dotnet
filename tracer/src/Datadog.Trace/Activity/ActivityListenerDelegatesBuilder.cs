@@ -16,7 +16,7 @@ namespace Datadog.Trace.Activity
 {
     internal static class ActivityListenerDelegatesBuilder
     {
-        public static Delegate CreateOnActivityStartedDelegate(Type activityType, MethodInfo onActivityStartedMethodInfo)
+        internal static Delegate CreateOnActivityStartedDelegate(Type activityType, MethodInfo onActivityStartedMethodInfo)
         {
             var dynMethod = new DynamicMethod(
                 "OnActivityStartedDyn",
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Activity
             return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(activityType));
         }
 
-        public static Delegate CreateOnActivityStoppedDelegate(Type activityType, MethodInfo onActivityStoppedMethodInfo)
+        internal static Delegate CreateOnActivityStoppedDelegate(Type activityType, MethodInfo onActivityStoppedMethodInfo)
         {
             var dynMethod = new DynamicMethod(
                 "OnActivityStoppedDyn",
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Activity
             return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(activityType));
         }
 
-        public static Delegate CreateOnSampleDelegate(Type activitySamplingResultType, Type activityCreationOptionsType, Type activityContextType, Type sampleActivityType, MethodInfo onSampleMethodInfo)
+        internal static Delegate CreateOnSampleDelegate(Type activitySamplingResultType, Type activityCreationOptionsType, Type activityContextType, Type sampleActivityType, MethodInfo onSampleMethodInfo)
         {
             var dynMethod = new DynamicMethod(
                 "OnSampleDyn",
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Activity
             return dynMethod.CreateDelegate(sampleActivityType.MakeGenericType(activityContextType));
         }
 
-        public static Delegate CreateOnSampleUsingParentIdDelegate(Type activitySamplingResultType, Type activityCreationOptionsType, Type sampleActivityType, MethodInfo onSampleUsingParentIdMethodInfo)
+        internal static Delegate CreateOnSampleUsingParentIdDelegate(Type activitySamplingResultType, Type activityCreationOptionsType, Type sampleActivityType, MethodInfo onSampleUsingParentIdMethodInfo)
         {
             var dynMethod = new DynamicMethod(
                 "OnSampleUsingParentIdDyn",
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Activity
             return dynMethod.CreateDelegate(sampleActivityType.MakeGenericType(typeof(string)));
         }
 
-        public static Delegate CreateOnShouldListenToDelegate(Type activitySourceType, MethodInfo onShouldListenToMethodInfo)
+        internal static Delegate CreateOnShouldListenToDelegate(Type activitySourceType, MethodInfo onShouldListenToMethodInfo)
         {
             var dynMethod = new DynamicMethod(
                 "OnShouldListenToDyn",

@@ -308,7 +308,7 @@ namespace Datadog.Trace.Tagging
         }
 
 #pragma warning disable SA1201
-        public interface ITagEnumerator
+        internal interface ITagEnumerator
 #pragma warning restore SA1201
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

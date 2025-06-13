@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class InstrumentationAllocator
+    internal static class InstrumentationAllocator
     {
         /// <summary>
         /// Allocates an array on the heap using an Object Pooling.

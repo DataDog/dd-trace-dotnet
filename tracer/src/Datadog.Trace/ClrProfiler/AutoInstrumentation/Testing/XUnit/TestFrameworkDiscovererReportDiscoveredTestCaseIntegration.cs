@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
     IntegrationName = IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class TestFrameworkDiscovererReportDiscoveredTestCaseIntegration
+internal class TestFrameworkDiscovererReportDiscoveredTestCaseIntegration
 {
     private const string IntegrationName = nameof(IntegrationId.XUnit);
 

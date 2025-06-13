@@ -755,7 +755,7 @@ namespace Datadog.Trace.Processors
             }
         }
 
-        public struct RedisTokenizer
+        internal struct RedisTokenizer
         {
             private readonly string _query;
             private int _offset;
@@ -784,7 +784,7 @@ namespace Datadog.Trace.Processors
                 _done = _offset > _finalOffset;
             }
 
-            public enum TokenType
+            internal enum TokenType
             {
                 Command,
                 Argument,
@@ -930,7 +930,7 @@ namespace Datadog.Trace.Processors
                 }
             }
 
-            public readonly struct Token
+            internal readonly struct Token
             {
                 public readonly int Offset;
                 public readonly int Length;
