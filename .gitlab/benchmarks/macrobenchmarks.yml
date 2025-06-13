@@ -1,7 +1,7 @@
 .setup:
   script:
     - mkdir -p ~/.aws
-    - /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER > ~/.aws/config || exit $?
+    - /app/bp-infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER > ~/.aws/config || exit $?
     - export AWS_PROFILE=ephemeral-infra-ci
     - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
     - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
@@ -46,7 +46,7 @@ update-bp-infra:
   script:
     - git clone --branch fayssal/update-windows-infra-macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - mkdir -p ~/.aws
-    - /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER >> ~/.aws/config || exit $?
+    - /app/bp-infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER >> ~/.aws/config || exit $?
     - aws ssm get-parameter --region "$AWS_REGION" --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-pair-name" --with-decryption --query "Parameter.Value" --out text >> ~/.aws/key-pair-name.txt
     - aws ssm get-parameter --region "$AWS_REGION" --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-private-key" --with-decryption --query "Parameter.Value" --out text >> ~/.aws/key-pair-private-key.pem
     - export AWS_PROFILE=ephemeral-infra-ci
