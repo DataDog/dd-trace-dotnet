@@ -14,7 +14,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
 
 /// <summary>
 /// Aggregates multiple <see cref="StatsPoint"/>s into their correct buckets
-/// Note that this class is not thread safe
+/// Note that this class is *not* thread safe
 /// </summary>
 internal class DataStreamsAggregator
 {

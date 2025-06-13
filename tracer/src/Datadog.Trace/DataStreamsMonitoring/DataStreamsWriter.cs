@@ -24,13 +24,14 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
+    private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
     private readonly Task _processTask;
-    private readonly AsyncManualResetEvent _processingMutex = new(set: false);
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
     private readonly Timer _flushTimer;
+    private readonly TaskCompletionSource<bool> _completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
@@ -82,35 +83,28 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public void Add(in StatsPoint point)
     {
-        if ((Volatile.Read(ref _isSupported) != SupportState.Unsupported)
-         && _buffer.TryEnqueue(point))
+        if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
         {
-            if (!_processingMutex.IsSet)
+            if (_buffer.TryEnqueue(point))
             {
-                _processingMutex.Set();
+                return;
             }
         }
-        else
-        {
-            // TODO: Monitor with telemetry
-            Interlocked.Increment(ref _pointsDropped);
-        }
+
+        Interlocked.Increment(ref _pointsDropped);
     }
 
     public void AddBacklog(in BacklogPoint point)
     {
-        if ((Volatile.Read(ref _isSupported) != SupportState.Unsupported)
-         && _backlogBuffer.TryEnqueue(point))
+        if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
         {
-            if (!_processingMutex.IsSet)
+            if (_backlogBuffer.TryEnqueue(point))
             {
-                _processingMutex.Set();
+                return;
             }
         }
-        else
-        {
-            Interlocked.Increment(ref _pointsDropped);
-        }
+
+        Interlocked.Increment(ref _pointsDropped);
     }
 
     public async Task DisposeAsync()
@@ -126,7 +120,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task FlushAndCloseAsync()
     {
-        if (!_processExit.TrySetResult(true))
+        if (!_processExit.TrySetResult(true) || !_completionSource.TrySetResult(true))
         {
             return;
         }
@@ -151,15 +145,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private void RequestFlush()
     {
         Interlocked.Exchange(ref _flushRequested, 1);
-        if (!_processingMutex.IsSet)
-        {
-            _processingMutex.Set();
-        }
     }
 
     private async Task WriteToApiAsync()
     {
-        // This method blocks ingestion of new stats points into the aggregator
+        // This method blocks ingestion of new stats points into the aggregator,
         // but they will continue to be added to the queue, and will be processed later
         // Default buffer capacity matches Java implementation:
         // https://cs.github.com/DataDog/dd-trace-java/blob/3386bd137e58ed7450d1704e269d3567aeadf4c0/dd-trace-core/src/main/java/datadog/trace/core/datastreams/MsgPackDatastreamsPayloadWriter.java?q=MsgPackDatastreamsPayloadWriter#L28
@@ -237,8 +227,16 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            await _processingMutex.WaitAsync().ConfigureAwait(false);
-            _processingMutex.Reset();
+            if (!_completionSource.Task.IsCompleted)
+            {
+                // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
+                // and modified to avoid dealing with exceptions
+                var tcs = new TaskCompletionSource<bool>();
+                using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
+                {
+                    await Task.WhenAny(_completionSource.Task, tcs.Task).ConfigureAwait(false);
+                }
+            }
         }
     }
 
