@@ -75,6 +75,7 @@ namespace Datadog.Trace.Debugger
             _configurationUpdater = configurationUpdater;
             _dogStats = dogStats;
             _unboundProbes = new List<ProbeDefinition>();
+            _discoveryService.SubscribeToChanges(DiscoveryCallback);
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
@@ -83,7 +84,6 @@ namespace Datadog.Trace.Debugger
                     return [];
                 },
                 RcmProducts.LiveDebugging);
-            discoveryService.SubscribeToChanges(DiscoveryCallback);
         }
 
         public bool IsDisposed => Interlocked.Read(ref _disposeState) != 0;
@@ -118,8 +118,8 @@ namespace Datadog.Trace.Debugger
 
                 Log.Information("Dynamic Instrumentation initialization started");
 
-                // Start the async initialization without blocking
-                _ = Task.Run(async () => await InitializeAsync().ConfigureAwait(false));
+                // Initialize without blocking
+                _ = Task.Run(async () => await InitializeAsync().ConfigureAwait(false), _cancellationTokenSource.Token).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -139,6 +139,7 @@ namespace Datadog.Trace.Debugger
                 if (!isRcmAvailable)
                 {
                     Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available after waiting {Timeout} seconds. Please ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.", rcmTimeout.TotalSeconds);
+
                     // Reset to "not initialized"
                     Interlocked.Exchange(ref _initState, 0);
                     return;
@@ -154,6 +155,12 @@ namespace Datadog.Trace.Debugger
                 Interlocked.Exchange(ref _initState, 2);
 
                 Log.Information("Dynamic Instrumentation initialization completed successfully");
+            }
+            catch (OperationCanceledException e)
+            {
+                Log.Debug(e, "Async initialization of Dynamic Instrumentation stopped due task cancellation.");
+                // Reset to "not initialized"
+                Interlocked.Exchange(ref _initState, 0);
             }
             catch (Exception e)
             {
