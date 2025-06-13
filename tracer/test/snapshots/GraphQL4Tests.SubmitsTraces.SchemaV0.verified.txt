@@ -424,7 +424,7 @@ errors: [
 {
 "message": "Error trying to resolve field 'throwNotImplementedException'.",
 "path": "System.Object[]",
-"code": "EXECUTION_ERROR",
+"code": "NOT_IMPLEMENTED",
 "locations": [
 {
 "line": 1,
@@ -435,7 +435,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.ExecutionError,
-      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Error trying to resolve field 'throwNotImplementedException'.","path":["throwNotImplementedException"],"code":"EXECUTION_ERROR","locations":["1:32"]}}],
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Error trying to resolve field 'throwNotImplementedException'.","path":["throwNotImplementedException"],"code":"NOT_IMPLEMENTED","locations":["1:32"]}}],
       graphql.operation.name: NotImplementedSub,
       graphql.operation.type: Subscription,
       graphql.source: subscription NotImplementedSub{throwNotImplementedException{name}},
