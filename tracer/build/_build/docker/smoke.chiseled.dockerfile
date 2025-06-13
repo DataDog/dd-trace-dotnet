@@ -62,14 +62,13 @@ ENV DOTNET_EnableCrashReport=1
 ENV DD_REMOTE_CONFIGURATION_ENABLED=0
 ENV COMPlus_TieredCompilation=0
 ENV DD_CLR_ENABLE_INLINING=0
-ENV LD_DEBUG=libs,symbols,bindings
 
 ## SSI variables
 ENV DD_INJECTION_ENABLED=tracer
 ENV DD_INJECT_FORCE=1
 ENV DD_TELEMETRY_FORWARDER_PATH=/bin/true
 
-ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["LD_DEBUG=libs,symbols,bindings", "dotnet", "AspNetCoreSmokeTest.dll"]
 
 ###########################################################
 # The final image, with "dd-dotnet" configuration
