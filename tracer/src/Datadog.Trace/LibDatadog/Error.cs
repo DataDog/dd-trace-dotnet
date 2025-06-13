@@ -4,8 +4,10 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -18,7 +20,7 @@ internal struct Error
 {
     public VecU8 ErrorMessage;
 
-    internal static string ReadAndDrop(ref Error resultErr)
+    internal static string Read(ref Error resultErr)
     {
         var message = resultErr.ErrorMessage;
         if (message.Length == 0)
@@ -26,11 +28,7 @@ internal struct Error
             return string.Empty;
         }
 
-        var buffer = new byte[(int)resultErr.ErrorMessage.Length];
-        Marshal.Copy(message.Ptr, buffer, 0, (int)message.Length);
-
-        var errorMessage = Encoding.UTF8.GetString(buffer);
-        NativeInterop.Common.DropError(ref resultErr);
+        var errorMessage = NativeStringHelpers.ReadUtf8NativeString(resultErr.ErrorMessage);
         return errorMessage;
     }
 }

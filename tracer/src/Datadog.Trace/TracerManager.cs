@@ -34,6 +34,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
+using NativeInterop = Datadog.Trace.LibDatadog.NativeInterop;
 
 namespace Datadog.Trace
 {
@@ -697,7 +698,8 @@ namespace Datadog.Trace
                     var result = Utils.StoreTracerMetadata(1, Tracer.RuntimeId, TracerConstants.Language, TracerConstants.ThreePartVersion, Environment.MachineName, tracerSettings.ServiceName, tracerSettings.Environment, tracerSettings.ServiceVersion);
                     if (result.Tag == ResultTag.Error)
                     {
-                        Log.Error("Failed to store tracer metadata with message: {Error}", Error.ReadAndDrop(ref result.Error));
+                        Log.Error("Failed to store tracer metadata with message: {Error}", Error.Read(ref result.Error));
+                        NativeInterop.Common.DropError(ref result.Error);
                     }
                 }
                 catch (Exception e)
