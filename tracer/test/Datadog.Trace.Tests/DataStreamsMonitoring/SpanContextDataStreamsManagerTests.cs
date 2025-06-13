@@ -73,7 +73,8 @@ public class SpanContextDataStreamsManagerTests
         var dsm = new DataStreamsManager(
             env: "env",
             defaultServiceName: "service",
-            new Mock<IDataStreamsWriter>().Object);
+            new Mock<IDataStreamsWriter>().Object,
+            isInDefaultState: false);
         return dsm;
     }
 }
