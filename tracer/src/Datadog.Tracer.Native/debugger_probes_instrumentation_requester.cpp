@@ -553,7 +553,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
         return;
     }
 
-    auto modules = m_corProfiler->module_ids.Get();
+    auto modules = m_corProfiler->module_ids.GetRead();
 
     auto promise = std::make_shared<std::promise<std::vector<MethodIdentifier>>>();
     std::future<std::vector<MethodIdentifier>> future = promise->get_future();
@@ -615,7 +615,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
             return;
         }
 
-        auto modules = m_corProfiler->module_ids.Get();
+        auto modules = m_corProfiler->module_ids.GetRead();
 
         std::promise<std::vector<MethodIdentifier>> promise;
         std::future<std::vector<MethodIdentifier>> future = promise.get_future();
