@@ -21,7 +21,7 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFrames)
         buffer.AddFrame(ip);
     }
 
-    Callstack expectedCallstack(shared::span<std::uintptr_t>(expectedIps.data(), expectedIps.size()));
+    Callstack expectedCallstack(expectedIps);
     auto callstack = buffer.GetCallstack();
 
     ASSERT_EQ(expectedCallstack, callstack);
@@ -46,7 +46,7 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
 
     ASSERT_EQ(expectedIps.size(), buffer.GetFramesCount());
 
-    Callstack expectedCallstack(shared::span<std::uintptr_t>(expectedIps.data(), expectedIps.size()));
+    Callstack expectedCallstack(expectedIps);
     auto callstack = buffer.GetCallstack();
 
     ASSERT_EQ(expectedCallstack, callstack);

@@ -8,6 +8,10 @@
 #include "shared/src/native-src/dd_span.hpp"
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
+#ifdef DD_TEST
+#include <vector>
+#endif
+
 class Callstack
 {
 public:
@@ -22,12 +26,20 @@ public:
 
     ~Callstack();
 
-#ifdef DD_TEST
-    Callstack(shared::span<std::uintptr_t> buffer)
+    explicit Callstack(shared::span<std::uintptr_t> buffer)
     {
         _memoryResource = nullptr;
         _buffer = buffer;
-        _count = buffer.size();
+        _count = 0;
+    }
+
+#ifdef DD_TEST
+    // in the test the std::vector lifecyle is greater than the callstack
+    explicit Callstack(std::vector<std::uintptr_t>& ips)
+    {
+        _memoryResource = nullptr;
+        _buffer = shared::span<std::uintptr_t>(ips.data(), ips.size());
+        _count = ips.size();
     }
 
     bool operator==(Callstack const& other) const
@@ -69,6 +81,11 @@ public:
     std::uintptr_t* end() const;
 
     void CopyFrom(Callstack const& other);
+
+    shared::span<std::uintptr_t> AsView()
+    {
+        return _buffer;
+    }
 
 private:
     shared::pmr::memory_resource* _memoryResource;

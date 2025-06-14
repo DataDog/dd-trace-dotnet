@@ -16,6 +16,5 @@ public:
     const char* GetName() override;
 
 protected:
-    std::mutex _samplesLock;
     std::string _name;
 };
