@@ -10,6 +10,7 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Security.IntegrationTests.ApiSecurity
     public class AspNetCore5ApiSecurityEnabled : AspNetCoreApiSecurity
     {
         public AspNetCore5ApiSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, true, "AspNetCore5")
+            : base(fixture, outputHelper, true, true, sampleName: "AspNetCore5")
         {
         }
     }
@@ -27,7 +28,15 @@ namespace Datadog.Trace.Security.IntegrationTests.ApiSecurity
     public class AspNetCore5ApiSecurityDisabled : AspNetCoreApiSecurity
     {
         public AspNetCore5ApiSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, false, sampleName: "AspNetCore5")
+            : base(fixture, outputHelper, false, true, sampleName: "AspNetCore5")
+        {
+        }
+    }
+
+    public class AspNetCore5ApiSecurityParseResponseBodyDisabled : AspNetCoreApiSecurity
+    {
+        public AspNetCore5ApiSecurityParseResponseBodyDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, true, false, "AspNetCore5")
         {
         }
     }
