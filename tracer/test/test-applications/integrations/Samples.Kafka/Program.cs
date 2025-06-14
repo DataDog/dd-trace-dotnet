@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -21,8 +21,10 @@ namespace Samples.Kafka
 
                 await TopicHelpers.TryDeleteTopic(topic, config);
 
-                await ConsumeAgainstNonExistentTopic(topic, config);
+                // null message was an edge case causing us to throw a null reference in the 
+                await TryProduceWithNullMessage(topic, config);
 
+                await ConsumeAgainstNonExistentTopic(topic, config);
                 await ConsumeAndProduceMessages(topic, config);
 
                 Console.WriteLine($"Shut down complete");
@@ -120,6 +122,25 @@ namespace Samples.Kafka
             await Task.WhenAny(
                 Task.WhenAll(consumeTask1, consumeTask2),
                 Task.Delay(TimeSpan.FromSeconds(5)));
+        }
+
+        private static async Task TryProduceWithNullMessage(string topic, ClientConfig config)
+        {
+            // NOTE: you'll see an Null Ref exception, it is expected, but it shouldn't be in OUR logs
+            try
+            {
+                using var producer = new ProducerBuilder<string, string>(config).Build();
+
+                var topicPartition = new TopicPartition(topic, new Partition(0));
+
+                Console.WriteLine("Attempting to produce message with NULL MESSAGE THIS SHOULD THROW.");
+                await producer.ProduceAsync(topicPartition, null);
+                Console.WriteLine("Message produced successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Expected Exception in reproduction test: {ex}");
+            }
         }
 
         private static async Task<MessagesProduced> ProduceMessages(string topic, ClientConfig config)
