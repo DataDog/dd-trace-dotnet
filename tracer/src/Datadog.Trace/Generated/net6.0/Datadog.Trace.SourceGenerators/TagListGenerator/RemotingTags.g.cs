@@ -42,6 +42,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "rpc.method": 
                     MethodName = value;
                     break;
@@ -49,7 +52,6 @@ namespace Datadog.Trace.Tagging
                     MethodService = value;
                     break;
                 case "span.kind": 
-                case "component": 
                 case "rpc.system": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(RemotingTags));
                     break;

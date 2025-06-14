@@ -14,6 +14,8 @@ namespace Datadog.Trace.Tagging
     {
         public abstract string SpanKind { get; }
 
+        public abstract string InstrumentationName { get; set; }
+
         [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 

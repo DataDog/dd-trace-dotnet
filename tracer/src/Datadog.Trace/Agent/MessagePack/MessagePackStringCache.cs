@@ -30,6 +30,9 @@ internal static class MessagePackStringCache
     private static CachedBytes _origin;
 
     [ThreadStatic]
+    private static CachedBytes _ddIntegration;
+
+    [ThreadStatic]
     private static CachedBytes _service;
 
     private static CachedBytes _gitCommitSha;
@@ -51,6 +54,7 @@ internal static class MessagePackStringCache
         _env = default;
         _version = default;
         _origin = default;
+        _ddIntegration = default;
         _service = default;
         _gitCommitSha = default;
         _gitRepositoryUrl = default;
@@ -90,6 +94,11 @@ internal static class MessagePackStringCache
     public static byte[]? GetOriginBytes(string? origin)
     {
         return GetBytes(origin, ref _origin);
+    }
+
+    public static byte[]? GetDdIntegrationBytes(string? ddIntegration)
+    {
+        return GetBytes(ddIntegration, ref _ddIntegration);
     }
 
     public static byte[]? GetServiceBytes(string? service)
