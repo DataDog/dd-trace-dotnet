@@ -172,6 +172,11 @@ internal static class TestTags
     public const string TestIsAttemptToFix = "test.test_management.is_attempt_to_fix";
 
     /// <summary>
+    /// Test attempt to fix source flag
+    /// </summary>
+    public const string TestAttemptToFixSource = "test.test_management.attempt_to_fix_source";
+
+    /// <summary>
     /// Test has failed all retries flag
     /// </summary>
     public const string TestHasFailedAllRetries = "test.has_failed_all_retries";
