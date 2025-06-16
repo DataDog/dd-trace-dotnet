@@ -31,7 +31,7 @@ public class GoogleProtobufTests : TracingIntegrationTest
     {
         return from metadataSchemaVersion in new[] { "v0", "v1" }
                from packageVersionArray in PackageVersions.Protobuf
-               select new object[] { packageVersionArray, metadataSchemaVersion };
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
     }
 
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion)
