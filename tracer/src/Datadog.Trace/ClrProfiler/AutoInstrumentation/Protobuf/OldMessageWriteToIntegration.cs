@@ -1,14 +1,13 @@
-// <copyright file="MessageWriteToIntegration.cs" company="Datadog">
+// <copyright file="OldMessageWriteToIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
-using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
@@ -21,33 +20,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     MethodName = "WriteTo",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = ["Google.Protobuf.CodedOutputStream"],
-    MinimumVersion = "3.13.0",
-    MaximumVersion = "3.*.*",
+    MinimumVersion = "3.0.0",
+    MaximumVersion = "3.12.*",
     IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
     CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class MessageWriteToIntegration
+public class OldMessageWriteToIntegration
 {
-    // For performance reasons, we want to do the actual instrumentation work with a Duck constraint,
-    // but to be able to disable the instrumentation we need the raw type
-    // so we use 2 different methods to have access to both when we need it.
-    // Note: Disabling OnMethodBegin means the OnMethodEnd will not be called afterward.
-
     internal static CallTargetState OnMethodBegin<TTarget, TOutput>(TTarget instance, ref TOutput? output)
     {
-        Helper.DisableInstrumentationIfInternalProtobufType<TTarget>();
-        return CallTargetState.GetDefault();
-    }
-
-    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
-        where TTarget : IMessageProxy
-    {
-        if (instance.Instance != null)
+        // versions < 3.13 have recursive calls of this method for sub-messages,
+        // so we have to do the instrumentation on method begin to make sure we capture the top-most message
+        if (!Helper.DisableInstrumentationIfInternalProtobufType<TTarget>())
         {
-            SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "serialization");
+            if (instance.TryDuckCast<IMessageProxy>(out var message))
+            {
+                SchemaExtractor.EnrichActiveSpanWith(message.Descriptor, "serialization");
+            }
         }
 
-        return CallTargetReturn.GetDefault();
+        return CallTargetState.GetDefault();
     }
 }
