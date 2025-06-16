@@ -814,7 +814,7 @@ services:
     - "8126:8126"
     environment:
     - ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length
-    - SNAPSHOT_CI=1
+    - SNAPSHOT_CI=0
     # network.client.ip and http.client_ip differs between docker compose v1 and v2 - once we're migrated to v2 completely we can remove it from here
     # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
     - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers

@@ -6,12 +6,14 @@ FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION as builder
 
 # Build the smoke test app
 WORKDIR /src
-COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
+COPY ./test/test-applications/regression/WafRepo/ .
 
 ARG PUBLISH_FRAMEWORK
-RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
+RUN dotnet publish "WafRepo.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
 
 FROM $RUNTIME_IMAGE AS publish
+
+RUN dnf install -y gdb
 
 WORKDIR /app
 
@@ -24,17 +26,6 @@ RUN mkdir -p /opt/datadog \
     && cd /app/install \
     && $INSTALL_CMD \
     && rm -rf /app/install
-
-# Set the required env vars
-ENV CORECLR_ENABLE_PROFILING=1
-ENV CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
-ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
-ENV DD_DOTNET_TRACER_HOME=/opt/datadog
-ENV LD_PRELOAD=/opt/datadog/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so
-ENV DD_PROFILING_ENABLED=1
-ENV DD_APPSEC_ENABLED=1
-ENV DD_TRACE_DEBUG=1
-ENV DD_REMOTE_CONFIGURATION_ENABLED=0
 
 ## SSI variables
 ENV DD_INJECTION_ENABLED=tracer
@@ -60,4 +51,4 @@ ENV DD_CLR_ENABLE_INLINING=0
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["dotnet", "WafRepo.dll"]

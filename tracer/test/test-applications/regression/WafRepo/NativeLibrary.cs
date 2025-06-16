@@ -1,0 +1,176 @@
+// <copyright file="NativeLibrary.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+
+namespace Datadog.Trace.AppSec.Waf.NativeBindings
+{
+    /// <summary>
+    /// APIs for managing Native Libraries
+    /// </summary>
+    internal partial class NativeLibrary
+    {
+        private static bool isPosixLike =
+#if NETFRAMEWORK
+            false;
+#else
+            !RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+#endif
+
+        [Flags]
+        public enum FORMAT_MESSAGE : int
+        {
+            NONE = 0,
+            ALLOCATE_BUFFER = 0x00000100,
+            ARGUMENT_ARRAY = 0x00002000,
+            FROM_HMODULE = 0x00000800,
+            FROM_STRING = 0x00000400,
+            FROM_SYSTEM = 0x00001000,
+            IGNORE_INSERTS = 0x00000200,
+            MAX_WIDTH_MASK = 0x000000FF
+        }
+
+        internal static bool TryLoad(string libraryPath, out IntPtr handle)
+        {
+            if (libraryPath == null)
+            {
+                throw new ArgumentNullException(nameof(libraryPath));
+            }
+
+            handle = IntPtr.Zero;
+
+            try
+            {
+                if (isPosixLike)
+                {
+                    handle = LoadPosixLibrary(libraryPath);
+                }
+                else
+                {
+                    handle = LoadWindowsLibrary(libraryPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                // as this method is prefixed "Try" we shouldn't throw, but experience has
+                // shown that unforeseen circumstances can lead to exceptions being thrown
+                Console.WriteLine($"Error occurred while trying to load library from {libraryPath} {ex}");
+            }
+
+            return handle != IntPtr.Zero;
+        }
+
+        internal static bool CloseLibrary(IntPtr library)
+        {
+            try
+            {
+                if (library == IntPtr.Zero)
+                {
+                    Console.WriteLine("Trying to close WAF library with a null pointer");
+                    return false;
+                }
+
+                if (isPosixLike)
+                {
+                    var result = NonWindows.dddlclose(library);
+                    return result == 0;
+                }
+
+                return FreeLibrary(library);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error occurred while trying to unload WAF library {ex}");
+                return false;
+            }
+        }
+
+        private static IntPtr LoadWindowsLibrary(string libraryPath)
+        {
+            var handle = LoadLibrary(libraryPath);
+
+            return handle;
+        }
+
+        internal static IntPtr GetExport(IntPtr handle, string name)
+        {
+            if (isPosixLike)
+            {
+                var exportPtr = NonWindows.dddlsym(handle, name);
+                ReadDlerror("dddlsym");
+                return exportPtr;
+            }
+            else
+            {
+                var exportPtr = GetProcAddress(handle, name);
+
+                return exportPtr;
+            }
+        }
+
+        private static IntPtr LoadPosixLibrary(string path)
+        {
+            Console.WriteLine($"Reading Posix Library {path}");
+            const int RTLD_NOW = 2;
+            var addr = NonWindows.dddlopen(path, RTLD_NOW);
+            ReadDlerror("dddlopen");
+
+            return addr;
+        }
+
+        private static void ReadDlerror(string op)
+        {
+            var errorPtr = NonWindows.dddlerror();
+            if (errorPtr != IntPtr.Zero)
+            {
+                var error = Marshal.PtrToStringAnsi(errorPtr);
+                // warning, since in some cases dddlerror returns a message when an error didn't occur or was recoverable
+                Console.WriteLine("'{Op}' dddlerror returned: {Error}", op, error);
+            }
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr LoadLibrary(string dllToLoad);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool FreeLibrary(IntPtr libraryToFree);
+
+        [DllImport("Kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
+
+        [DllImport("Kernel32.dll")]
+        private static extern uint GetLastError();
+
+        [DllImport("Kernel32.dll", SetLastError = true)]
+        private static extern uint FormatMessage(
+            FORMAT_MESSAGE dwFlags,
+            IntPtr lpSource,
+            uint dwMessageId,
+            uint dwLanguageId,
+            ref StringBuilder lpBuffer,
+            uint nSize,
+            IntPtr pArguments);
+
+        private static class NonWindows
+        {
+            // These are re-written by the native tracer to point to the correct location,
+            // but if running in a managed-only context (i.e. unit tests) they need to have the right file name
+#pragma warning disable SA1300 // Element should begin with upper-case letter
+            [DllImport("c", EntryPoint = "dlopen")]
+            internal static extern IntPtr dddlopen(string fileName, int flags);
+
+            [DllImport("c", EntryPoint = "dlclose")]
+            internal static extern int dddlclose(IntPtr library);
+
+            [DllImport("c", EntryPoint = "dlerror")]
+            internal static extern IntPtr dddlerror();
+
+            [DllImport("c", EntryPoint = "dlsym")]
+            internal static extern IntPtr dddlsym(IntPtr hModule, string lpProcName);
+        }
+   }
+}

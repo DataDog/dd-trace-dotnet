@@ -810,6 +810,7 @@
       <type fullname="System.Security.SecurityException" />
       <type fullname="System.Security.SecurityRuleSet" />
       <type fullname="System.Security.SecuritySafeCriticalAttribute" />
+      <type fullname="System.Security.SuppressUnmanagedCodeSecurityAttribute" />
       <type fullname="System.Security.UnverifiableCodeAttribute" />
       <type fullname="System.SerializableAttribute" />
       <type fullname="System.Single" />
@@ -936,6 +937,7 @@
       <type fullname="System.Runtime.InteropServices.GuidAttribute" />
       <type fullname="System.Runtime.InteropServices.InterfaceTypeAttribute" />
       <type fullname="System.Runtime.InteropServices.Marshal" />
+      <type fullname="System.Runtime.InteropServices.NativeLibrary" />
       <type fullname="System.Runtime.InteropServices.SafeBuffer" />
       <type fullname="System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute" />
       <type fullname="System.Security.SecureString" />

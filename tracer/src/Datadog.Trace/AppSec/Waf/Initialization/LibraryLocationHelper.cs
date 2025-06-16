@@ -143,17 +143,6 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                 if (loaded)
                 {
-#if NETCOREAPP3_1_OR_GREATER
-                    if (!System.Runtime.InteropServices.NativeLibrary.TryGetExport(
-                            handle,
-                            "ddwaf_context_init",
-                            out var sym) ||
-                        sym == IntPtr.Zero)
-                    {
-                        throw new EntryPointNotFoundException(
-                            "Symbol ddwaf_context_init not found in libddwaf");
-                    }
-#endif
                     success = true;
                     Log.Information("Loaded library '{LibName}' from '{Path}' with handle '{Handle}'", libName, path, handle);
                     break;

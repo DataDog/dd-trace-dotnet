@@ -47,6 +47,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
             handle = IntPtr.Zero;
 
+#if NETCOREAPP3_1_OR_GREATER
+            handle = System.Runtime.InteropServices.NativeLibrary.Load(libraryPath);
+            return true;
+#else
             try
             {
                 if (isPosixLike)
@@ -66,10 +70,15 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
 
             return handle != IntPtr.Zero;
+#endif
         }
 
         internal static bool CloseLibrary(IntPtr library)
         {
+#if NETCOREAPP3_1_OR_GREATER
+            System.Runtime.InteropServices.NativeLibrary.Free(library);
+            return true;
+#else
             try
             {
                 if (library == IntPtr.Zero)
@@ -91,6 +100,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 Log.Error(ex, "Error occurred while trying to unload WAF library");
                 return false;
             }
+#endif
         }
 
         private static IntPtr LoadWindowsLibrary(string libraryPath)
@@ -122,6 +132,19 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal static IntPtr GetExport(IntPtr handle, string name)
         {
+#if NETCOREAPP3_1_OR_GREATER
+            if (!System.Runtime.InteropServices.NativeLibrary.TryGetExport(
+                    handle,
+                    name,
+                    out var sym) ||
+                sym == IntPtr.Zero)
+            {
+                throw new EntryPointNotFoundException(
+                    $"Symbol {name} not found in libddwaf");
+            }
+
+            return sym;
+#else
             if (isPosixLike)
             {
                 var exportPtr = NonWindows.dddlsym(handle, name);
@@ -138,6 +161,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
                 return exportPtr;
             }
+#endif
         }
 
         private static IntPtr LoadPosixLibrary(string path)
@@ -188,17 +212,17 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             // These are re-written by the native tracer to point to the correct location,
             // but if running in a managed-only context (i.e. unit tests) they need to have the right file name
 #pragma warning disable SA1300 // Element should begin with upper-case letter
-            [DllImport("Datadog.Tracer.Native")]
+            [DllImport("c", EntryPoint = "dlopen")]
             internal static extern IntPtr dddlopen(string fileName, int flags);
 
-            [DllImport("Datadog.Tracer.Native")]
+            [DllImport("c", EntryPoint = "dlclose")]
             internal static extern int dddlclose(IntPtr library);
 
-            [DllImport("Datadog.Tracer.Native")]
+            [DllImport("c", EntryPoint = "dlerror")]
             internal static extern IntPtr dddlerror();
 
-            [DllImport("Datadog.Tracer.Native")]
+            [DllImport("c", EntryPoint = "dlsym")]
             internal static extern IntPtr dddlsym(IntPtr hModule, string lpProcName);
         }
-    }
+   }
 }
