@@ -12,7 +12,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -29,20 +28,25 @@ internal class DataStreamsManager
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly NodeHashBase _nodeHashBase;
     private bool _isEnabled;
+    private bool _isInDefaultState;
     private IDataStreamsWriter? _writer;
 
     public DataStreamsManager(
         string? env,
         string defaultServiceName,
-        IDataStreamsWriter? writer)
+        IDataStreamsWriter? writer,
+        bool isInDefaultState)
     {
         // We don't yet support primary tag in .NET yet
         _nodeHashBase = HashHelper.CalculateNodeHashBase(defaultServiceName, env, primaryTag: null);
         _isEnabled = writer is not null;
         _writer = writer;
+        _isInDefaultState = isInDefaultState;
     }
 
     public bool IsEnabled => Volatile.Read(ref _isEnabled);
+
+    public bool IsInDefaultState => Volatile.Read(ref _isInDefaultState);
 
     public static DataStreamsManager Create(
         TracerSettings settings,
@@ -53,7 +57,7 @@ internal class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, discoveryService, defaultServiceName)
                          : null;
 
-        return new DataStreamsManager(settings.Environment, defaultServiceName, writer);
+        return new DataStreamsManager(settings.Environment, defaultServiceName, writer, settings.IsDataStreamsMonitoringInDefaultState);
     }
 
     public async Task DisposeAsync()
