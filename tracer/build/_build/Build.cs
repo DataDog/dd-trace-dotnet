@@ -408,6 +408,21 @@ partial class Build : NukeBuild
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
         });
 
+    Target BuildAzureFunctionsNuget => _ => _
+        .Unlisted()
+        .After(CreateBundleHome, ExtractDebugInfoLinux)
+        .Executes(() =>
+        {
+            DotNetPack(x => x
+                .SetProject(Solution.GetProject(Projects.DatadogAzureFunctions))
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "azure-functions")
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+        });
+
     Target BuildBenchmarkNuget => _ => _
         .Unlisted()
         .DependsOn(CreateBenchmarkIntegrationHome)

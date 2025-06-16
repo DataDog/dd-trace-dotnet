@@ -444,7 +444,8 @@ partial class Build
             );
 
             var exclude = TracerDirectory.GlobFiles(
-                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
+                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",     // no code, used to generate nuget package
+                "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
                 "src/Datadog.AutoInstrumentation.Generator/*.csproj",
