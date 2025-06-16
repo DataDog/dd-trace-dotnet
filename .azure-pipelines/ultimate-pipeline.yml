@@ -4610,9 +4610,6 @@ stages:
               # Save weblog variant image
               docker save system_tests/weblog:latest -o ../docker-images/$w.tar
             done < /tmp/weblogs_list.txt
-            
-            # Save agent image
-            docker save system_tests/agent:latest -o ../docker-images/agent.tar
 
           displayName: Build weblogs and agent & save Docker images
 
