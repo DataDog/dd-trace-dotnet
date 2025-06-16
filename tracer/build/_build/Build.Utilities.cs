@@ -307,7 +307,7 @@ partial class Build
             // Samples need to use the latest version (i.e. the _current_ build version, before updating)
             new SetAllVersions.Samples(TracerDirectory, Version, IsPrerelease).Run();
             // Source needs to use the _actual_ version
-            new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease.Value!).Run();
+            new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease!.Value).Run();
         });
 
     Target AnalyzePipelineCriticalPath => _ => _
