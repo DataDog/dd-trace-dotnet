@@ -15,6 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     [DuckCopy]
     internal struct PathStruct
     {
-        public string Name;
+        public object Name;
     }
 }
