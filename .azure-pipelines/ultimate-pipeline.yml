@@ -3482,14 +3482,18 @@ stages:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
-    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
-      displayName: Build Bundle, Benchmark NuGet and tools
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildAzureFunctionsNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
+      displayName: Build tools and pack NuGet packages (Bundle, AzureFunctions, Benchmark)
       env:
         MSBUILDDISABLENODEREUSE: "1"
 
     - publish: $(artifacts)/nuget/bundle
-      displayName: Uploading Bundle package
+      displayName: Uploading Datadog.Trace.Bundle package
       artifact: bundle-nuget-package
+
+    - publish: $(artifacts)/nuget/azure-functions
+      displayName: Uploading Datadog.AzureFunctions package
+      artifact: azurefunctions-nuget-package
 
     - publish: $(artifacts)/nuget/benchmark
       displayName: Uploading Benchmark package
@@ -3950,6 +3954,11 @@ stages:
             artifact: bundle-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: azurefunctions-nuget-package
+            path: $(Build.ArtifactStagingDirectory)
+
 #        Don't include the Datadog.Trace.BenchmarkDotNet package in the release artifacts
 #        as it currently doesn't work with v3.
 #        - task: DownloadPipelineArtifact@2
@@ -4015,7 +4024,7 @@ stages:
             path: $(Build.ArtifactStagingDirectory)
 
         # Download the artifacts required by the serverless layer and create the zip file
-        # This exapands the directory - but we want a zip file, so re-zip it!
+        # This expands the directory - but we want a zip file, so re-zip it!
         - template: steps/download-artifact.yml
           parameters:
             artifact: serverless-artifacts
