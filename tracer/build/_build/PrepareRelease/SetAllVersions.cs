@@ -253,7 +253,7 @@ namespace PrepareRelease
                     text => Regex.Replace(text, "readonly bool IsPrerelease = (true|false)", $"readonly bool IsPrerelease = {(IsPrerelease ? "true" : "false")}"));
 
                 SynchronizeVersion(
-                    "src/Directory.Build.props",
+                    "src/Common.props",
                     NugetVersionReplace);
 
                 // Fully qualified name updates

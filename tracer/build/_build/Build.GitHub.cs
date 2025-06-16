@@ -447,11 +447,11 @@ partial class Build
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
                 "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
+                "tracer/src/Common.props",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
                 "tracer/src/Datadog.Tracer.Native/CMakeLists.txt",
                 "tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h",
                 "tracer/src/Datadog.Tracer.Native/Resource.rc",
-                "tracer/src/Directory.Build.props",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
             };
 
@@ -993,17 +993,17 @@ partial class Build
                         var build = failed.OrderBy(c => c.State.Value).First();
                         Logger.Warning("- {Job} ({Status}) {Link}", failed.Key, build.State, build.TargetUrl);
                     }
-                    
+
                     throw new Exception("Some gitlab jobs did not build/test successfully. Please check the builds for details about why.");
                 }
 
                 var stages = string.Join(", ", ssiStatuses.Select(x => x.Key));
                 Logger.Information("All gitlab build stages ({Stages}) completed successfully", stages);
-                
+
                 // assert that the docker image for the commit is present
                 var image = $"ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:{CommitSha}";
                 VerifyDockerImageExists(image);
-                
+
                 if(new Version(Version).Major < 3)
                 {
                     image = $"{image}-musl";
@@ -1032,7 +1032,7 @@ partial class Build
         try
         {
             Console.WriteLine("Replacing comment in GitHub");
-        
+
             var clientId = "nuke-ci-client";
             var productInformation = Octokit.GraphQL.ProductHeaderValue.Parse(clientId);
             var connection = new Octokit.GraphQL.Connection(productInformation, GitHubToken);
@@ -1045,7 +1045,7 @@ partial class Build
                        .Select(comment => new { comment.Id, comment.Body, comment.IsMinimized });
 
             var prComments = (await connection.Run(query)).ToList();
-        
+
             Console.WriteLine($"Found {prComments.Count} comments for PR {prNumber}");
 
             var updated = false;

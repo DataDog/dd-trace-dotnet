@@ -31,6 +31,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
+		tracer\Commons.props = tracer\Commons.props
 		tracer\Datadog.Trace.proj = tracer\Datadog.Trace.proj
 		Datadog.Trace.snk = Datadog.Trace.snk
 		tracer\Directory.Build.props = tracer\Directory.Build.props
