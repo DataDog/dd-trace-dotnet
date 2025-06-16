@@ -229,7 +229,7 @@ internal static class GitCommandHelper
                 Log.Debug("GitCommandHelper: Auto-detected remote name: {RemoteName}", remoteName);
             }
 
-            if (remoteName is not { Length: > 0 })
+            if (remoteName is not { Length: > 0 } || string.IsNullOrWhiteSpace(remoteName))
             {
                 Log.Warning("GitCommandHelper: Cannot detect remote because remoteName is null or empty");
                 return null;
@@ -377,33 +377,34 @@ internal static class GitCommandHelper
                 return null;
             }
 
-            // Sort by "ahead" metric
-            metrics.Sort((a, b) => a.Ahead.CompareTo(b.Ahead));
-
-            int bestAhead = metrics[0].Ahead;
+            int bestAhead = int.MaxValue;
             var bestCandidate = metrics[0]; // Default to first
+            var isDefaultBranch = false;
 
-            // Find the best candidate among those with the same bestAhead value in a single pass
+            // First pass: find minimum ahead value
+            foreach (var candidate in metrics)
+            {
+                if (candidate.Ahead < bestAhead)
+                {
+                    bestAhead = candidate.Ahead;
+                }
+            }
+
+            // Second pass: find the best candidate among those with minimum ahead value
             foreach (var candidate in metrics)
             {
                 if (candidate.Ahead == bestAhead)
                 {
                     bestCandidate = candidate;
+                    isDefaultBranch = IsDefaultBranch(candidate.Branch);
 
                     // If this is the default branch, it's the best choice
-                    if (IsDefaultBranch(candidate.Branch))
+                    if (isDefaultBranch)
                     {
                         break; // Found the best possible candidate
                     }
                 }
-                else
-                {
-                    // Since metrics are sorted by Ahead, once we hit a different value, we're done
-                    break;
-                }
             }
-
-            var isDefaultBranch = IsDefaultBranch(bestCandidate.Branch);
 
             return new BaseBranchInfo(
                 bestCandidate.Branch,
@@ -440,7 +441,7 @@ internal static class GitCommandHelper
                 return;
             }
 
-            // Check if branch exists in remote
+            // Check if the branch exists in remote
             var remoteOutput = RunGitCommand(
                 workingDirectory,
                 $"ls-remote --heads {remoteName} {branch}",
