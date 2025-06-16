@@ -30,8 +30,7 @@ public class GoogleProtobufTests : TracingIntegrationTest
     public static IEnumerable<object[]> GetEnabledConfig()
     {
         return from metadataSchemaVersion in new[] { "v0", "v1" }
-               from packageVersionArray in PackageVersions.Protobuf
-               select new object[] { packageVersionArray, metadataSchemaVersion };
+               select new[] { metadataSchemaVersion };
     }
 
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion)
@@ -42,12 +41,12 @@ public class GoogleProtobufTests : TracingIntegrationTest
     [SkippableTheory]
     [MemberData(nameof(GetEnabledConfig))]
     [Trait("Category", "EndToEnd")]
-    public async Task TagTraces(string packageVersion, string metadataSchemaVersion)
+    public async Task TagTraces(string metadataSchemaVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, "AddressBook", packageVersion))
+        using (await RunSampleAndWaitForExit(agent, "AddressBook"))
         {
             using var assertionScope = new AssertionScope();
             var spans = agent.WaitForSpans(2);

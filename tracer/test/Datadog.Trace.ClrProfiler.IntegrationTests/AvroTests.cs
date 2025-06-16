@@ -29,7 +29,7 @@ public class AvroTests : TracingIntegrationTest
         get => from type in new[] { "Default", "SpecificDatum", "GenericDatum" }
                from packageVersionArray in PackageVersions.Avro
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new object[] { type, packageVersionArray, metadataSchemaVersion };
+               select new[] { type, packageVersionArray[0], metadataSchemaVersion };
     }
 
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion)
