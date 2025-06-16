@@ -230,6 +230,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // hacky scrubber for the fact that version 4.1.0+ switched to using " in error message in one place
             // where every other version uses '
             settings.AddSimpleScrubber("Did you mean \"appearsIn\"", "Did you mean 'appearsIn'");
+            // Adding this scrubber to actually scrub the comment within the event which failed in 4.1.0
+            settings.AddSimpleScrubber("Did you mean \\\"appearsIn\\\"", "Did you mean 'appearsIn'");
+
             // Graphql 5 has different error message for missing subscription
             settings.AddSimpleScrubber("Could not resolve source stream for field", "Error trying to resolve field");
             // Added to scrub the SpanEvents time
