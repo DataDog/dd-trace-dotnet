@@ -35,7 +35,6 @@ RUN mkdir /logs; \
     cd /install; \
     Expand-Archive 'c:\install\windows-tracer-home.zip' -DestinationPath 'c:\monitoring-home\';  \
     c:\install\installer\Datadog.FleetInstaller.exe install-version --home-path c:\monitoring-home; \
-    c:\install\installer\Datadog.FleetInstaller.exe $env:INSTALL_COMMAND --home-path c:\monitoring-home; \
     cd /app;
 
 # Set the additional env vars
@@ -66,14 +65,19 @@ RUN Remove-WebSite -Name 'Default Web Site'; \
 
 # We override the normal service monitor entrypoint, because we want the container to shut down after the request is sent
 # This is all way more convoluted than it feels like it should be, but it's the only way I could find to get things to work as required
-RUN echo '$completedFile=\"C:\logs\completed.txt\"; if (Test-Path $completedFile) { Remove-Item $completedFile;};'  > C:\app\entrypoint.ps1; \
-    echo 'Write-Host \"Running servicemonitor to copy variables\"; Start-Process -NoNewWindow -PassThru -FilePath \"c:/ServiceMonitor.exe\" -ArgumentList @(\"w3svc\", \"AspNetCorePool\");' >> C:\app\entrypoint.ps1; \
-    echo 'Write-Host \"Waiting 10s before starting app pool\"; Start-Sleep -Seconds 10;' >> C:\app\entrypoint.ps1; \
-    echo 'Write-Host \"Starting AspNetCorePool app pool\"; Start-WebAppPool -Name \"AspNetCorePool\" -PassThru;' >> C:\app\entrypoint.ps1; \
-    echo 'Write-Host \"Making 404 request\"; curl http://localhost:5000;' >> C:\app\entrypoint.ps1; \
-    echo 'while (-not (Test-Path "C:\logs\completed.txt")) { Write-Host \"Waiting for app shutdown\"; Start-Sleep -Seconds 1; }; ' >> C:\app\entrypoint.ps1; \
-    echo 'Write-Host \"Stopping pool\";Stop-WebAppPool \"AspNetCorePool\" -PassThru;' >> C:\app\entrypoint.ps1;  \
-    echo 'Write-Host \"Shutting down\"' >> C:\app\entrypoint.ps1;
+# Service monitor copies ambient environment variables to the app pool. However, it doesn't have very much error tracking
+# - if an app pool defines an environment variable that is also _globally_ defined, service monitor will crash
+# - consequently we run the fleet installer command _after_ service monitor has run,
+RUN ('$completedFile=\"C:\logs\completed.txt\"; if (Test-Path $completedFile) { Remove-Item $completedFile;};')  > C:\app\entrypoint.ps1; \
+    ('Write-Host \"Running servicemonitor to copy variables\"; Start-Process -NoNewWindow -PassThru -FilePath \"c:/ServiceMonitor.exe\" -ArgumentList @(\"w3svc\", \"AspNetCorePool\");') >> C:\app\entrypoint.ps1; \
+    ('Write-Host \"Waiting 20s\"; Start-Sleep -Seconds 20;') >> C:\app\entrypoint.ps1; \
+    ('Write-Host \"Enabling instrumentation\"') >> C:\app\entrypoint.ps1; \
+    ('c:\install\installer\Datadog.FleetInstaller.exe ' + $env:INSTALL_COMMAND + ' --home-path c:\monitoring-home') >> C:\app\entrypoint.ps1; \
+    ('Write-Host \"Starting AspNetCorePool app pool\"; Start-WebAppPool -Name \"AspNetCorePool\" -PassThru;') >> C:\app\entrypoint.ps1; \
+    ('Write-Host \"Making 404 request\"; curl http://localhost:5000;') >> C:\app\entrypoint.ps1; \
+    ('while (-not (Test-Path "C:\logs\completed.txt")) { Write-Host \"Waiting for app shutdown\"; Start-Sleep -Seconds 1; }; ') >> C:\app\entrypoint.ps1; \
+    ('Write-Host \"Stopping pool\";Stop-WebAppPool \"AspNetCorePool\" -PassThru;') >> C:\app\entrypoint.ps1;  \
+    ('Write-Host \"Shutting down\"') >> C:\app\entrypoint.ps1;
 
 # Set the script as the entrypoint
 ENTRYPOINT ["powershell", "-File", "C:\\app\\entrypoint.ps1"]
