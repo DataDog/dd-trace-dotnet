@@ -31,7 +31,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
     private readonly Timer _flushTimer;
-    private readonly TaskCompletionSource<bool> _completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
@@ -120,7 +119,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task FlushAndCloseAsync()
     {
-        if (!_processExit.TrySetResult(true) || !_completionSource.TrySetResult(true))
+        if (!_processExit.TrySetResult(true))
         {
             return;
         }
@@ -227,15 +226,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            if (!_completionSource.Task.IsCompleted)
+            // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
+            // and modified to avoid dealing with exceptions
+            var tcs = new TaskCompletionSource<bool>();
+            using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
             {
-                // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
-                // and modified to avoid dealing with exceptions
-                var tcs = new TaskCompletionSource<bool>();
-                using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
-                {
-                    await Task.WhenAny(_completionSource.Task, tcs.Task).ConfigureAwait(false);
-                }
+                await Task.WhenAny(_processExit.Task, tcs.Task).ConfigureAwait(false);
             }
         }
     }
