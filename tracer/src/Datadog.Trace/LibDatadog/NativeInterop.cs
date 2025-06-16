@@ -7,6 +7,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.LibDatadog.ServiceDiscovery;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -16,52 +17,78 @@ internal class NativeInterop
 
     internal static class Exporter
     {
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_new")]
-        // internal static extern ErrorHandle Create(out IntPtr outHandle, SafeHandle config);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_new")]
+        internal static extern ErrorHandle New(out IntPtr outHandle, SafeHandle config);
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_error_free")]
-        internal static extern void ReleaseError(IntPtr error);
+        internal static extern void FreeError(IntPtr error);
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_free")]
-        internal static extern void Release(IntPtr handle);
+        internal static extern void Free(IntPtr handle);
 
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_send")]
-        // internal static extern ErrorHandle Send(SafeHandle handle, ByteSlice trace, UIntPtr traceCount, ref IntPtr response);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_send")]
+        internal static extern ErrorHandle Send(SafeHandle handle, ByteSlice trace, UIntPtr traceCount, ref IntPtr response);
     }
 
     internal static class Config
     {
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_new")]
-        internal static extern void Create(out IntPtr outHandle);
+        internal static extern void New(out IntPtr outHandle);
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_free")]
-        internal static extern void Release(IntPtr handle);
+        internal static extern void Free(IntPtr handle);
 
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_url")]
-        // internal static extern ErrorHandle SetUrl(SafeHandle config, CharSlice url);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_url")]
+        internal static extern ErrorHandle SetUrl(SafeHandle config, CharSlice url);
 
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_tracer_version")]
-        // internal static extern ErrorHandle SetTracerVersion(SafeHandle config, CharSlice version);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_tracer_version")]
+        internal static extern ErrorHandle SetTracerVersion(SafeHandle config, CharSlice version);
 
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_language")]
-        // internal static extern ErrorHandle SetLanguage(SafeHandle config, CharSlice lang);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_language")]
+        internal static extern ErrorHandle SetLanguage(SafeHandle config, CharSlice lang);
 
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_lang_version")]
-        // internal static extern ErrorHandle SetLanguageVersion(SafeHandle config, CharSlice version);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_lang_version")]
+        internal static extern ErrorHandle SetLanguageVersion(SafeHandle config, CharSlice version);
 
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_lang_interpreter")]
-        // internal static extern ErrorHandle SetInterperter(SafeHandle config, CharSlice interpreter);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_lang_interpreter")]
+        internal static extern ErrorHandle SetInterpreter(SafeHandle config, CharSlice interpreter);
 
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_hostname")]
-        // internal static extern ErrorHandle SetHostname(SafeHandle config, CharSlice hostname);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_hostname")]
+        internal static extern ErrorHandle SetHostname(SafeHandle config, CharSlice hostname);
 
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_env")]
-        // internal static extern ErrorHandle SetEnvironment(SafeHandle config, CharSlice env);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_env")]
+        internal static extern ErrorHandle SetEnv(SafeHandle config, CharSlice env);
 
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_version")]
-        // internal static extern ErrorHandle SetVersion(SafeHandle config, CharSlice version);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_version")]
+        internal static extern ErrorHandle SetVersion(SafeHandle config, CharSlice version);
 
-        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_service")]
-        // internal static extern ErrorHandle SetService(SafeHandle config, CharSlice service);
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_service")]
+        internal static extern ErrorHandle SetService(SafeHandle config, CharSlice service);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_compute_stats")]
+        internal static extern ErrorHandle SetComputeStats(SafeHandle config, bool isEnabled);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_enable_telemetry")]
+        internal static extern ErrorHandle EnableTelemetry(SafeHandle config, IntPtr telemetryConfig);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_client_computed_stats")]
+        internal static extern ErrorHandle SetClientComputedStats(SafeHandle config, bool clientComputedStats);
+    }
+
+    internal static class Common
+    {
+        [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
+        internal static extern TracerMemfdHandleResult StoreTracerMetadata(
+            byte schemaVersion,
+            CharSlice runtimeId,
+            CharSlice tracerLanguage,
+            CharSlice tracerVersion,
+            CharSlice hostname,
+            CharSlice serviceName,
+            CharSlice serviceEnv,
+            CharSlice serviceVersion);
+
+        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
+        internal static extern void DropError(ref Error errorHandle);
     }
 }

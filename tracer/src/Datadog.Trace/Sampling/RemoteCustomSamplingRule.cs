@@ -45,7 +45,7 @@ internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
 
     public override string Provenance { get; }
 
-    public override int SamplingMechanism { get; }
+    public override string SamplingMechanism { get; }
 
     public static RemoteCustomSamplingRule[] BuildFromConfigurationString(string configuration, TimeSpan timeout)
     {

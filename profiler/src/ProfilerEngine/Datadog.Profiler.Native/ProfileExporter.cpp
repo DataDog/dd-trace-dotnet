@@ -280,6 +280,26 @@ std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledPr
         emptyList = false;
     }
 
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::CpuGc))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "cpuGc";
+        emptyList = false;
+    }
+
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::ThreadsLifetime))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "threadsLifetime";
+        emptyList = false;
+    }
+
     return buffer.str();
 }
 

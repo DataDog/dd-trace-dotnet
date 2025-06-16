@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.19.0";
+    readonly string Version = "3.20.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -93,7 +93,7 @@ partial class Build : NukeBuild
 
     [Parameter("Enable or Disable fast developer loop")]
     readonly bool FastDevLoop;
-    
+
     [Parameter("The directory containing the tool .nupkg file")]
     readonly AbsolutePath ToolSource;
 
@@ -108,11 +108,11 @@ partial class Build : NukeBuild
 
     [Parameter("Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker.")]
     readonly bool AsUniversal = false;
-    
+
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }
-    
+
     public Build()
     {
         RuntimeIdentifier = GetDefaultRuntimeIdentifier(IsAlpine);
@@ -218,7 +218,7 @@ partial class Build : NukeBuild
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile)
         .DependsOn(RegenerateSolutions);
-    
+
     Target BuildManagedTracerHomeR2R => _ => _
         .Unlisted()
         .Description("Builds the native and managed src, and publishes the tracer home directory")
@@ -286,6 +286,7 @@ partial class Build : NukeBuild
         .Description("Builds the integration tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAspNetIntegrationTests => _ => _
@@ -334,6 +335,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CopyServerlessArtifacts);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _
@@ -349,6 +351,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CopyServerlessArtifacts);
 
     Target BuildAndRunOsxIntegrationTests => _ => _

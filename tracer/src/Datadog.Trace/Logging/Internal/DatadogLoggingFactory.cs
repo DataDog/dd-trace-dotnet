@@ -107,14 +107,16 @@ internal static class DatadogLoggingFactory
             var managedLogPath = Path.Combine(fileConfig.LogDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-{domainMetadata.ProcessId.ToString(CultureInfo.InvariantCulture)}.log");
 
             loggerConfiguration
-               .Enrich.With(new RemovePropertyEnricher(LogEventLevel.Error, DatadogSerilogLogger.SkipTelemetryProperty))
-               .WriteTo.File(
-                    managedLogPath,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
-                    rollingInterval: RollingInterval.Infinite, // don't do daily rolling, rely on the file size limit for rolling instead
-                    rollOnFileSizeLimit: true,
-                    fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
-                    shared: true);
+               .WriteTo.Logger(
+                    lc => lc
+                          .Enrich.With(new RemovePropertyEnricher(LogEventLevel.Error, DatadogSerilogLogger.SkipTelemetryProperty))
+                          .WriteTo.File(
+                               managedLogPath,
+                               outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
+                               rollingInterval: RollingInterval.Infinite, // don't do daily rolling, rely on the file size limit for rolling instead
+                               rollOnFileSizeLimit: true,
+                               fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
+                               shared: true));
         }
 
         try

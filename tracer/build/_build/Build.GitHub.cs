@@ -447,21 +447,12 @@ partial class Build
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
                 "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
-                "tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
-                "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
-                "tracer/src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj",
                 "tracer/src/Datadog.Tracer.Native/CMakeLists.txt",
                 "tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h",
                 "tracer/src/Datadog.Tracer.Native/Resource.rc",
-                "tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
-                "tracer/src/Datadog.Trace.BenchmarkDotNet/Datadog.Trace.BenchmarkDotNet.csproj",
-                "tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
-                "tracer/src/Datadog.Trace.Tools.dd_dotnet/Datadog.Trace.Tools.dd_dotnet.csproj",
-                "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
-                "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
+                "tracer/src/Directory.Build.props",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
-                "tracer/src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj",
             };
 
             if (ExpectChangelogUpdate)

@@ -18,3 +18,15 @@ internal interface ITestMethodRunner
     [DuckField(Name = "testMethodInfo,_testMethodInfo")]
     ITestMethodInfo? TestMethodInfo { get; }
 }
+
+/// <summary>
+/// TestMethodRunner (v3_9) ducktype interface
+/// </summary>
+internal interface ITestMethodRunnerV3_9
+{
+    /// <summary>
+    /// Gets the TestMethodInfo instance
+    /// </summary>
+    [DuckField(Name = "testMethodInfo,_testMethodInfo")]
+    ITestMethodInfoV3_9? TestMethodInfo { get; }
+}

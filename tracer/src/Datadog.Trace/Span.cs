@@ -40,7 +40,7 @@ namespace Datadog.Trace
 
         internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
         {
-            Tags = tags ?? new CommonTags();
+            Tags = tags ?? new TagsList();
             Context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
 

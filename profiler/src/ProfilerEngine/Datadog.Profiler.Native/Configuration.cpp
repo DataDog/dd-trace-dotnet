@@ -67,8 +67,10 @@ Configuration::Configuration()
     _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
     _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
-    _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled, false);
-    _isThreadLifetimeEnabled = GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeEnabled, false);
+    _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled,
+                                  GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeInternalEnabled, true), true);
+    _isThreadLifetimeEnabled = GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeEnabled,
+                                GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeInternalEnabled, true), true);
     _gitRepositoryUrl = GetEnvironmentValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
     _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);

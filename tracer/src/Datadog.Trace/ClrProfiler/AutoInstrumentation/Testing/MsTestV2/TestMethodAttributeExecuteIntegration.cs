@@ -44,14 +44,6 @@ public static class TestMethodAttributeExecuteIntegration
 {
     private static int _totalRetries = -1;
 
-    /// <summary>
-    /// OnMethodBegin callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <typeparam name="TTestMethod">Type of the ITestMethod</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="testMethod">Test method instance</param>
-    /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
         where TTestMethod : ITestMethod
     {
@@ -69,16 +61,6 @@ public static class TestMethodAttributeExecuteIntegration
         return new CallTargetState(null, new TestRunnerState(testMethod, MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: false)));
     }
 
-    /// <summary>
-    /// OnMethodEnd callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <typeparam name="TReturn">Type of the return value</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="returnValue">Return value</param>
-    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-    /// <param name="state">Calltarget state value</param>
-    /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         var testOptimization = TestOptimization.Instance;
@@ -471,4 +453,40 @@ public static class TestMethodAttributeExecuteIntegration
             IsAttemptToFix = false;
         }
     }
+}
+
+/// <summary>
+/// Microsoft.VisualStudio.TestPlatform.TestFramework.Execute calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.TestFramework",
+    TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+    MethodName = "ExecuteAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.TestFramework",
+    TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+    MethodName = "ExecuteAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName,
+    CallTargetIntegrationKind = CallTargetKind.Derived)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public static class TestMethodAttributeExecuteAsyncIntegration
+#pragma warning restore SA1402
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
+        where TTestMethod : ITestMethod
+        => TestMethodAttributeExecuteIntegration.OnMethodBegin(instance, testMethod);
+
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+        => TestMethodAttributeExecuteIntegration.OnMethodEnd(instance, returnValue, exception, in state).GetReturnValue();
 }

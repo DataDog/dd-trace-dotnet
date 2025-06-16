@@ -13,6 +13,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.ClrProfiler;
@@ -51,6 +52,7 @@ namespace Datadog.Trace.Configuration
         private readonly bool _traceEnabled;
         private readonly bool _apmTracingEnabled;
         private readonly bool _isDataStreamsMonitoringEnabled;
+        private readonly bool _isDataStreamsMonitoringInDefaultState;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
         private readonly ReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly ReadOnlyDictionary<string, string> _globalTags;
@@ -413,6 +415,38 @@ namespace Datadog.Trace.Configuration
                                    .AsBoolResult()
                                    .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
 
+            DataPipelineEnabled = config
+                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
+                                  .AsBool(defaultValue: false);
+
+            if (DataPipelineEnabled)
+            {
+                // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
+                // as it may lead to different stats results than the managed one.
+                if (StatsComputationEnabled)
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        "{ConfigurationKey} is enabled, but {StatsComputationEnabled} is enabled. Disabling {TraceDataPipelineEnabled}.",
+                        ConfigurationKeys.TraceDataPipelineEnabled,
+                        ConfigurationKeys.StatsComputationEnabled,
+                        ConfigurationKeys.TraceDataPipelineEnabled);
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
+                // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
+                if (Exporter.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        "{ConfigurationKey} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling {TraceDataPipelineEnabled}.",
+                        ConfigurationKeys.TraceDataPipelineEnabled,
+                        ConfigurationKeys.TraceDataPipelineEnabled);
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+            }
+
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
 
@@ -618,6 +652,9 @@ namespace Datadog.Trace.Configuration
             _isDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(false);
+            _isDataStreamsMonitoringInDefaultState = config
+                                                    .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
+                                                    .AsBool() == null;
 
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
@@ -717,6 +754,20 @@ namespace Datadog.Trace.Configuration
             // these are SSI variables that would be useful for correlation purposes
             telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
             telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
+
+            var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
+
+            var instrumentationSource = installType switch
+            {
+                "dd_dotnet_launcher" => "cmd_line",
+                "dd_trace_tool" => "cmd_line",
+                "dotnet_msi" => "env_var",
+                "windows_fleet_installer" => "ssi", // windows SSI on IIS
+                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")) => "ssi", // "normal" ssi
+                _ => "unknown" // everything else
+            };
+
+            telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
 
             if (AzureAppServiceMetadata is not null)
             {
@@ -1062,6 +1113,12 @@ namespace Datadog.Trace.Configuration
         internal bool RuntimeMetricsEnabled => DynamicSettings.RuntimeMetricsEnabled ?? _runtimeMetricsEnabled;
 
         /// <summary>
+        /// Gets a value indicating whether libdatadog data pipeline
+        /// is enabled.
+        /// </summary>
+        internal bool DataPipelineEnabled { get; }
+
+        /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlSubstrings"/>
@@ -1130,6 +1187,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
         internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
+
+        /// <summary>
+        /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
+        /// </summary>
+        internal bool IsDataStreamsMonitoringInDefaultState => DynamicSettings.DataStreamsMonitoringEnabled == null && _isDataStreamsMonitoringInDefaultState;
 
         /// <summary>
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
