@@ -225,7 +225,7 @@ internal static class GitCommandHelper
             if (string.IsNullOrEmpty(remoteName))
             {
                 var originNameOutput = RunGitCommand(workingDirectory, "config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
-                remoteName = originNameOutput?.Output.Replace("\n", string.Empty).Trim() ?? "origin";
+                remoteName = originNameOutput?.Output.Replace(Environment.NewLine, string.Empty).Trim() ?? "origin";
                 Log.Debug("GitCommandHelper: Auto-detected remote name: {RemoteName}", remoteName);
             }
 
@@ -239,7 +239,7 @@ internal static class GitCommandHelper
             if (string.IsNullOrEmpty(targetBranch))
             {
                 var gitOutput = RunGitCommand(workingDirectory, "branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
-                targetBranch = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+                targetBranch = gitOutput?.Output.Replace(Environment.NewLine, string.Empty) ?? string.Empty;
                 Log.Debug("GitCommandHelper: Auto-detected source branch: {SourceBranch}", targetBranch);
             }
 
