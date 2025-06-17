@@ -139,6 +139,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     continue;
                 }
 
+/*
                 if (IsLinuxArm64())
                 {
                     var preLoaded = NativeLibrary.TryLoad(libFullPath, out handle);
@@ -147,6 +148,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                         NativeLibrary.CloseLibrary(handle);
                     }
                 }
+*/
 
                 var loaded = NativeLibrary.TryLoad(libFullPath, out handle);
                 if (loaded)
