@@ -134,6 +134,7 @@ benchmarks-dsm:
   stage: benchmarks
   when: on_success
   tags: ["runner:apm-k8s-tweaked-metal"]
+  needs: ["check_azure_pipeline"]
   image: $BASE_CI_IMAGE
   interruptible: true
   timeout: 1h
@@ -152,6 +153,8 @@ benchmarks-dsm:
   variables:
     KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-dotnet
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
 
 # calltarget_ngen:
 #   extends: .benchmarks
