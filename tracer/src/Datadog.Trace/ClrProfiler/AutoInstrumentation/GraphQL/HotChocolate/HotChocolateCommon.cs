@@ -201,12 +201,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     var path = executionError.Path.Name;
                     if (path != null)
                     {
-                        var pathName = path switch
-                        {
-                            string s => s,
-                            NameStringProxy proxy => proxy.Value,
-                            _ => path?.ToString() ?? string.Empty
-                        };
+                        var pathName = path is NameStringProxy proxy ? proxy.Value : path.ToString();
                         eventAttributes.Add(new KeyValuePair<string, object>("path", new[] { pathName }));
                     }
 
@@ -232,13 +227,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                             if (configuredExtensions.Contains(extension.Key))
                             {
                                 var key = extension.Key;
-                                var value = extension.Value;
+                                var value = extension.Value ?? "null";
 
-                                if (value == null)
-                                {
-                                    value = "null";
-                                }
-                                else if (value is Array array)
+                                if (value is Array array)
                                 {
                                     var builder = Util.StringBuilderCache.Acquire();
 

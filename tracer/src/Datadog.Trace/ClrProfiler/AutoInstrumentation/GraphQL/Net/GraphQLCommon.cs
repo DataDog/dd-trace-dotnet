@@ -215,13 +215,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                                 if (configuredExtensions.Contains(extension.Key))
                                 {
                                     var key = extension.Key;
-                                    var value = extension.Value;
+                                    var value = extension.Value ?? "null";
 
-                                    if (value == null)
-                                    {
-                                        value = "null";
-                                    }
-                                    else if (value is Array array)
+                                    if (value is Array array)
                                     {
                                         var builder = Util.StringBuilderCache.Acquire();
 
