@@ -1527,7 +1527,7 @@ partial class Build
               // As it needs to be restored first, but when it did it couldn't find the assets file
               if (IsWin && !string.IsNullOrEmpty(ApiVersion) && !string.IsNullOrEmpty(SampleName))
               {
-                  Logger.Information($"Building sample '{SampleName}' with ApiVersion '{ApiVersion}' using MSBuild");
+                  Logger.Information("Building sample {SampleName} with ApiVersion {ApiVersion} using MSBuild", SampleName, ApiVersion);
 
                   MSBuild(x => x.SetTargetPath(samples)
                                 .SetTargets("Restore", "Build")
