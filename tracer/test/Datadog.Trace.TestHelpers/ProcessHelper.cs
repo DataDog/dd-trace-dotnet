@@ -17,8 +17,9 @@ namespace Datadog.Trace.TestHelpers
     /// </summary>
     public partial class ProcessHelper : IDisposable
     {
-        private readonly TaskCompletionSource<bool> _outputTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _errorTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _outputTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly StringBuilder _outputBuffer = new();
         private readonly StringBuilder _errorBuffer = new();
         private readonly ReadOnlyDictionary<string, string> _environmentVariables;
@@ -34,7 +35,15 @@ namespace Datadog.Trace.TestHelpers
                 // ...
             }
 
-            Process = process;
+            Task = Task.WhenAll(_outputTask.Task, _errorTask.Task, _processExit.Task);
+
+            Task.Factory.StartNew(
+                () =>
+                {
+                    process.WaitForExit();
+                    _processExit.TrySetResult(true);
+                },
+                TaskCreationOptions.LongRunning);
 
             process.OutputDataReceived += (sender, args) =>
             {
@@ -76,7 +85,7 @@ namespace Datadog.Trace.TestHelpers
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            Task = WaitForExitAndDrainAsync(process);
+            Process = process;
         }
 
         public Process Process { get; }
@@ -120,12 +129,6 @@ namespace Datadog.Trace.TestHelpers
             // Wait for output/error draining to complete
             Task?.Wait();
             Process?.Dispose();
-        }
-
-        private async Task WaitForExitAndDrainAsync(Process process)
-        {
-            await Task.WhenAll(_outputTask.Task, _errorTask.Task);
-            process.WaitForExit();
         }
     }
 }
