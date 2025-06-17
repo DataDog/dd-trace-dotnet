@@ -657,8 +657,9 @@ partial class Build
         .Executes(() =>
         {
             // Copy the native files to all the test projects for simplicity.
-            var testProjects = Solution.GetProjects("*.Tests")
-                                       .Where(p => p.Path.ToString().EndsWith(".csproj")); // exclude native test projects
+            var testProjects = Solution.GetProjects("*Tests")
+                                       .Where(p => p.SolutionFolder.Name == "test"
+                                               &&  p.Path.ToString().EndsWith(".csproj")); // exclude native test projects
             foreach(var projectName in testProjects)
             {
                 Logger.Information("Copying native files for project {ProjectName}", projectName);
