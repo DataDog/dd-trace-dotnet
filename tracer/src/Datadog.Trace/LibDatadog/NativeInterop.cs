@@ -106,10 +106,7 @@ internal class NativeInterop
     {
         [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
         internal static extern void Drop(ErrorHandle error);
-    }
 
-    internal static class Common
-    {
         [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
         internal static extern TracerMemfdHandleResult StoreTracerMetadata(
             byte schemaVersion,
