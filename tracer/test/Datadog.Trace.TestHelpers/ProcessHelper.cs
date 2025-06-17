@@ -104,12 +104,11 @@ namespace Datadog.Trace.TestHelpers
             if (timeout != Timeout.Infinite)
             {
                 // Split timeout between output, error, and process exit
-                timeout /= 3;
+                timeout /= 2;
             }
 
             return _outputTask.Task.Wait(timeout)
-                && _errorTask.Task.Wait(timeout)
-                && Process.WaitForExit(timeout);
+                && _errorTask.Task.Wait(timeout);
         }
 
         public virtual void Dispose()
@@ -125,10 +124,6 @@ namespace Datadog.Trace.TestHelpers
                     // Ignore exceptions when killing the process, as it may have already exited
                 }
             }
-
-            // Wait for output/error draining to complete
-            Task?.Wait();
-            Process?.Dispose();
         }
     }
 }
