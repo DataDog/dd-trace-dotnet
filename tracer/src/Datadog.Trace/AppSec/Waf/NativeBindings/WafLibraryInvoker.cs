@@ -94,12 +94,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
-
-            if (_initContextField is not null)
-            {
-                // Initialize the context to ensure the function is available
-                InitContext(IntPtr.Zero);
-            }
         }
 
         private delegate IntPtr GetVersionDelegate();

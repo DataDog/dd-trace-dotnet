@@ -135,6 +135,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                 if (configs.HasData)
                 {
+/*
                     if (configs.Removes != null)
                     {
                         foreach (var path in configs.Removes)
@@ -165,6 +166,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                             }
                         }
                     }
+*/
 
                     wafHandle = _wafLibraryInvoker.BuilderBuildInstance(wafBuilderHandle);
                     if (wafHandle == IntPtr.Zero)
