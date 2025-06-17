@@ -216,7 +216,7 @@ namespace Datadog.Trace.AppSec.Waf
                         Log.Warning("Context can't be created as waf instance has been disposed.");
                         return null;
                     }
-                    
+
                     contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
                 }
                 finally
