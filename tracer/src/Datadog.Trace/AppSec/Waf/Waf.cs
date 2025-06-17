@@ -209,8 +209,20 @@ namespace Datadog.Trace.AppSec.Waf
             IntPtr contextHandle;
             if (_wafLocker.EnterReadLock())
             {
-                contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
-                _wafLocker.ExitReadLock();
+                try
+                {
+                    if (Disposed)
+                    {
+                        Log.Warning("Context can't be created as waf instance has been disposed.");
+                        return null;
+                    }
+                    
+                    contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
+                }
+                finally
+                {
+                    _wafLocker.ExitReadLock();
+                }
             }
             else
             {
@@ -233,17 +245,23 @@ namespace Datadog.Trace.AppSec.Waf
 
         public void Dispose()
         {
-            if (Disposed)
-            {
-                return;
-            }
-
-            Disposed = true;
             // we really need to enter here so longer timeout, otherwise waf handle might not be disposed
             if (_wafLocker.EnterWriteLock(15000))
             {
-                _wafLibraryInvoker.Destroy(_wafHandle);
-                _wafLocker.ExitWriteLock();
+                try
+                {
+                    if (Disposed)
+                    {
+                        return;
+                    }
+
+                    Disposed = true;
+                    _wafLibraryInvoker.Destroy(_wafHandle);
+                }
+                finally
+                {
+                    _wafLocker.ExitWriteLock();
+                }
             }
         }
     }
