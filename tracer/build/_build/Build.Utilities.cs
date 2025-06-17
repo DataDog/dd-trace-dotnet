@@ -63,6 +63,9 @@ partial class Build
     [LazyLocalExecutable(@"C:\Program Files\IIS Express\iisexpress.exe")]
     readonly Lazy<Tool> IisExpress;
 
+    [Parameter("The (overridden) API version to use when building sample projects (e.g. '4.7.1')")]
+    readonly string ApiVersion;
+
     AbsolutePath IisExpressApplicationConfig =>
         RootDirectory / ".vs" / Solution.Name / "config" / "applicationhost.config";
 
