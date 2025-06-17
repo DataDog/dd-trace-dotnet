@@ -249,6 +249,23 @@
     "packages": []
   },
   {
+    "integrationName": "Avro",
+    "assemblyName": "Avro",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "1.65535.65535",
+    "packages": [
+      {
+        "name": "Apache.Avro",
+        "minVersionAvailableInclusive": "1.7.7",
+        "minVersionSupportedInclusive": "1.7.7",
+        "minVersionTestedInclusive": "1.12.0",
+        "maxVersionSupportedInclusive": "1.12.0",
+        "maxVersionAvailableInclusive": "1.12.0",
+        "maxVersionTestedInclusive": "1.12.0"
+      }
+    ]
+  },
+  {
     "integrationName": "AwsDynamoDb",
     "assemblyName": "AWSSDK.DynamoDBv2",
     "minAssemblyVersionInclusive": "3.0.0",
