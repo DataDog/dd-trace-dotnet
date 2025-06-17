@@ -363,7 +363,6 @@ src/Datadog.Trace/AppSec/Waf/NativeBindings/DdwafConfigStruct.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/DDWAF_OBJ_TYPE.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/NativeLibrary.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/ReducedRegistryAccess.cs
-src/Datadog.Trace/AppSec/Waf/NativeBindings/WafLibraryInvoker.cs
 src/Datadog.Trace/AppSec/Waf/ReturnTypes.Managed/Filter.cs
 src/Datadog.Trace/AppSec/Waf/ReturnTypes.Managed/Parameter.cs
 src/Datadog.Trace/AppSec/Waf/ReturnTypes.Managed/ResultData.cs

@@ -57,6 +57,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 {
                     handle = LoadWindowsLibrary(libraryPath);
                 }
+
+                Log.Debug("NativeLibrary.TryLoad called with {LibraryPath}. Handle: {Handle}", libraryPath, handle);
             }
             catch (Exception ex)
             {
@@ -78,6 +80,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     return false;
                 }
 
+                Log.Debug("NativeLibrary.CloseLibrary called with {Library}.", library);
                 if (isPosixLike)
                 {
                     var result = NonWindows.dddlclose(library);
@@ -122,6 +125,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal static IntPtr GetExport(IntPtr handle, string name)
         {
+            Log.Debug("NativeLibrary.GetExport called with {Handle} and {Name}", handle, name);
             if (isPosixLike)
             {
                 var exportPtr = NonWindows.dddlsym(handle, name);
