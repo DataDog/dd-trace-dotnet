@@ -138,6 +138,10 @@ namespace Datadog.Trace.AppSec
                                            .AsInt32(300, val => val >= 0)
                                            .Value;
 
+            ApiSecurityParseResponseBody = config
+                                .WithKeys(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody)
+                                .AsBool(true);
+
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
 
@@ -275,6 +279,8 @@ namespace Datadog.Trace.AppSec
         public bool? ScaEnabled { get; }
 
         public bool NoCustomLocalRules { get; }
+
+        public bool ApiSecurityParseResponseBody { get; }
 
         public static SecuritySettings FromDefaultSources()
         {
