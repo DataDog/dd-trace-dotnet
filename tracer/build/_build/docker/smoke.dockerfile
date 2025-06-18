@@ -14,20 +14,15 @@ RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_
 FROM $RUNTIME_IMAGE AS publish
 
 ###############################################################################
-# --- Fedora-only glibc hot-fix ---------------------------------------------
+# Fedora-only glibc hot-fix (arm64)
 ###############################################################################
 RUN if grep -qi '^ID=fedora' /etc/os-release; then \
-        echo '[glibc-fix] Fedora detected, bumping glibc…'; \
-        set -eux; TARGET_RELEASE=37; \
-        for f in /etc/yum.repos.d/fedora*.repo; do \
-            cp "$f" "$f.bak"; \
-            sed -Ei "s/\$releasever/${TARGET_RELEASE}/g" "$f"; \
-        done; \
-        dnf -y --setopt=install_weak_deps=False upgrade \
+        echo '[glibc-fix] Fedora base detected – upgrading glibc from 2.34 → 2.36+'; \
+        set -eux; \
+        dnf -y --releasever=37 --setopt=install_weak_deps=False upgrade \
             glibc glibc-common glibc-minimal-langpack \
             libgcc libstdc++; \
         dnf clean all; \
-        for f in /etc/yum.repos.d/*.bak; do mv "$f" "${f%.bak}"; done; \
         /lib/ld-linux-aarch64.so.1 --version | head -n1; \
     else \
         echo '[glibc-fix] non-Fedora base – skipping glibc bump'; \
