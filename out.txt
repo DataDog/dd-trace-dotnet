@@ -1,0 +1,513 @@
+latest: Pulling from datadog/dd-apm-test-agent/ddapm-test-agent
+Digest: sha256:87e7614c72218b44dae7f320f2130907074c9b4db58803c361b319cb55a4da00
+Status: Image is up to date for ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
+ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
+Sending build context to Docker daemon  1.422GB
+Step 1/33 : ARG DOTNETSDK_VERSION
+Step 2/33 : ARG RUNTIME_IMAGE
+Step 3/33 : FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION as builder
+ ---> 326a701a420e
+Step 4/33 : WORKDIR /src
+ ---> Using cache
+ ---> 97719540e067
+Step 5/33 : COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
+ ---> Using cache
+ ---> 120cf192e798
+Step 6/33 : ARG PUBLISH_FRAMEWORK
+ ---> Using cache
+ ---> 896a9cbc72aa
+Step 7/33 : RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
+ ---> Using cache
+ ---> 182cbfac01be
+Step 8/33 : FROM $RUNTIME_IMAGE AS publish
+ ---> f3103b02e7b1
+Step 9/33 : WORKDIR /app
+ ---> Using cache
+ ---> 65ab84926810
+Step 10/33 : COPY --from=builder /src/artifacts /app/install
+ ---> Using cache
+ ---> 8b6c37729d1b
+Step 11/33 : ARG INSTALL_CMD
+ ---> Using cache
+ ---> e4b46dcd28dc
+Step 12/33 : RUN mkdir -p /opt/datadog     && mkdir -p /var/log/datadog     && cd /app/install     && $INSTALL_CMD     && rm -rf /app/install
+ ---> Using cache
+ ---> d3b4ccf72d42
+Step 13/33 : ENV CORECLR_ENABLE_PROFILING=1
+ ---> Using cache
+ ---> c714b9cad15e
+Step 14/33 : ENV CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+ ---> Using cache
+ ---> 5e6b095d445b
+Step 15/33 : ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
+ ---> Using cache
+ ---> 9917134a3652
+Step 16/33 : ENV DD_DOTNET_TRACER_HOME=/opt/datadog
+ ---> Using cache
+ ---> 810bb166d90e
+Step 17/33 : ENV LD_PRELOAD=/opt/datadog/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so
+ ---> Using cache
+ ---> bc070474cd7b
+Step 18/33 : ENV DD_PROFILING_ENABLED=1
+ ---> Using cache
+ ---> 40ddcf38c272
+Step 19/33 : ENV DD_APPSEC_ENABLED=1
+ ---> Using cache
+ ---> 13cb7171e20a
+Step 20/33 : ENV DD_TRACE_DEBUG=1
+ ---> Using cache
+ ---> 8e652a21dab8
+Step 21/33 : ENV DD_REMOTE_CONFIGURATION_ENABLED=0
+ ---> Using cache
+ ---> 6bdbca0e6c60
+Step 22/33 : ENV DD_INJECTION_ENABLED=tracer
+ ---> Using cache
+ ---> c53a8e2cc42a
+Step 23/33 : ENV DD_INJECT_FORCE=1
+ ---> Using cache
+ ---> 1475ad01c0b1
+Step 24/33 : ENV DD_TELEMETRY_FORWARDER_PATH=/bin/true
+ ---> Using cache
+ ---> e4cb0fc2c8e9
+Step 25/33 : ENV SUPER_SECRET_CANARY=MySuperSecretCanary
+ ---> Using cache
+ ---> 48d060ae935b
+Step 26/33 : ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
+ ---> Using cache
+ ---> a8a6ffb68e9f
+Step 27/33 : ENV ASPNETCORE_URLS=http://localhost:5000
+ ---> Using cache
+ ---> 24a64070d51c
+Step 28/33 : ENV COMPlus_DbgEnableMiniDump=1
+ ---> Using cache
+ ---> 093acd687e7c
+Step 29/33 : ENV COMPlus_DbgMiniDumpType=4
+ ---> Using cache
+ ---> e57c5b1649f9
+Step 30/33 : ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+ ---> Using cache
+ ---> 6f81c2cce60d
+Step 31/33 : ENV DOTNET_EnableCrashReport=1
+ ---> Using cache
+ ---> 1b2836d1e750
+Step 32/33 : COPY --from=builder /src/publish /app/.
+ ---> Using cache
+ ---> a9f1d407d50b
+Step 33/33 : ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
+ ---> Using cache
+ ---> 998223155747
+Successfully built 998223155747
+Successfully tagged dd-trace-dotnet/not-set-tester:latest
+Waiting for test-agent to listen on 8126...
+200: OK[?1h=== Elf! ==
+elf: [ELF: Endianess=LittleEndian, Class=Bit64, Type=SharedObject, Machine=AArch64, EntryPoint=0x10000, NumberOfSections=37, NumberOfSegments=12]
+section: : Null, load @0x0, 0 bytes long
+section: .interp: ProgBits, load @0x2E0, 27 bytes long
+section: .note.ABI-tag: Note, Type=1
+section: .note.gnu.build-id: Note, Type=3
+section: .dynsym: DynamicSymbolTable, load @0x340, 2928 bytes long
+found symbol table!
+[Local NotSpecified : 0x0, size: 0, section idx: Absolute]
+[Global Function abort: 0x0, size: 0, section idx: Absolute]
+[Global Function __libc_start_main: 0x0, size: 0, section idx: Absolute]
+[Weak NotSpecified __gmon_start__: 0x0, size: 0, section idx: Absolute]
+[Weak NotSpecified _ITM_deregisterTMCloneTable: 0x0, size: 0, section idx: Absolute]
+[Weak NotSpecified _ITM_registerTMCloneTable: 0x0, size: 0, section idx: Absolute]
+[Weak Function __cxa_finalize: 0x0, size: 0, section idx: Absolute]
+[Weak NotSpecified _Jv_RegisterClasses: 0x0, size: 0, section idx: Absolute]
+[Global Function _Unwind_Resume: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEED2Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt8ios_base4InitC1Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt8ios_base4InitD1Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZdlPv: 0x0, size: 0, section idx: Absolute]
+[Global Function __cxa_atexit: 0x0, size: 0, section idx: Absolute]
+[Global Function __cxa_call_unexpected: 0x0, size: 0, section idx: Absolute]
+[Global Function __gxx_personality_v0: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt20__throw_system_errori: 0x0, size: 0, section idx: Absolute]
+[Global Function _Znwm: 0x0, size: 0, section idx: Absolute]
+[Weak Function __pthread_key_create: 0x0, size: 0, section idx: Absolute]
+[Global Function __stack_chk_fail: 0x0, size: 0, section idx: Absolute]
+[Global Object __stack_chk_guard: 0x0, size: 0, section idx: Absolute]
+[Global Function fflush: 0x0, size: 0, section idx: Absolute]
+[Global Function fopen64: 0x0, size: 0, section idx: Absolute]
+[Global Function fputc: 0x0, size: 0, section idx: Absolute]
+[Global Function fputs: 0x0, size: 0, section idx: Absolute]
+[Global Function memset: 0x0, size: 0, section idx: Absolute]
+[Weak Function pthread_mutex_lock: 0x0, size: 0, section idx: Absolute]
+[Weak Function pthread_mutex_unlock: 0x0, size: 0, section idx: Absolute]
+[Global Function setvbuf: 0x0, size: 0, section idx: Absolute]
+[Global Object stderr: 0x0, size: 0, section idx: Absolute]
+[Global Object stdout: 0x0, size: 0, section idx: Absolute]
+[Global Function vfprintf: 0x0, size: 0, section idx: Absolute]
+[Global Function vsnprintf: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12find_last_ofEPKcmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE17find_first_not_ofEPKcmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE4findEcm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE5rfindEPKcmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE5rfindEcm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt6localeD1Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE10_M_replaceEmmPKcm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE14_M_replace_auxEmmmc: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE4swapERS4_: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE7reserveEm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE8_M_eraseEmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_appendEPKcm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_assignERKS4_: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_createERmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_mutateEmmPKcm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1118basic_stringstreamIcSt11char_traitsIcESaIcEEC1ERKNS_12basic_stringIcS2_S3_EESt13_Ios_Openmode: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt8ios_baseD2Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt19__throw_logic_errorPKc: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt20__throw_length_errorPKc: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt20__throw_out_of_rangePKc: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt24__throw_invalid_argumentPKc: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt24__throw_out_of_range_fmtPKcz: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt7getlineIcSt11char_traitsIcESaIcEERSt13basic_istreamIT_T0_ES7_RNSt7__cxx1112basic_stringIS4_S5_T1_EES4_: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt9terminatev: 0x0, size: 0, section idx: Absolute]
+[Global Object _ZTTNSt7__cxx1118basic_stringstreamIcSt11char_traitsIcESaIcEEE: 0x0, size: 0, section idx: Absolute]
+[Global Object _ZTVNSt7__cxx1115basic_stringbufIcSt11char_traitsIcESaIcEEE: 0x0, size: 0, section idx: Absolute]
+[Global Object _ZTVSt15basic_streambufIcSt11char_traitsIcEE: 0x0, size: 0, section idx: Absolute]
+[Global Function __cxa_begin_catch: 0x0, size: 0, section idx: Absolute]
+[Global Function __cxa_end_catch: 0x0, size: 0, section idx: Absolute]
+[Global Function __cxa_rethrow: 0x0, size: 0, section idx: Absolute]
+[Global Function __errno_location: 0x0, size: 0, section idx: Absolute]
+[Global Function memcpy: 0x0, size: 0, section idx: Absolute]
+[Global Function strcasecmp: 0x0, size: 0, section idx: Absolute]
+[Global Function strcmp: 0x0, size: 0, section idx: Absolute]
+[Global Function strlen: 0x0, size: 0, section idx: Absolute]
+[Global Function strncasecmp: 0x0, size: 0, section idx: Absolute]
+[Global Function strncmp: 0x0, size: 0, section idx: Absolute]
+[Global Function strtoul: 0x0, size: 0, section idx: Absolute]
+[Global Function tolower: 0x0, size: 0, section idx: Absolute]
+[Global Function toupper: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1115basic_stringbufIcSt11char_traitsIcESaIcEE3strEv: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSolsEi: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1118basic_stringstreamIcSt11char_traitsIcESaIcEEC1ESt13_Ios_Openmode: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l: 0x0, size: 0, section idx: Absolute]
+[Global Function memcmp: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt5ctypeIcE13_M_widen_initEv: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE4findEPKcmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE7compareEmmRKS4_: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt13basic_filebufIcSt11char_traitsIcEE4openEPKcSt13_Ios_Openmode: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt13basic_filebufIcSt11char_traitsIcEE5closeEv: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt13basic_fstreamIcSt11char_traitsIcEEC1Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt13basic_fstreamIcSt11char_traitsIcEED2Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt16__throw_bad_castv: 0x0, size: 0, section idx: Absolute]
+[Global Object _ZTTSt13basic_fstreamIcSt11char_traitsIcEE: 0x0, size: 0, section idx: Absolute]
+[Global Function __fxstat64: 0x0, size: 0, section idx: Absolute]
+[Global Function __fxstatat64: 0x0, size: 0, section idx: Absolute]
+[Global Function __getdelim: 0x0, size: 0, section idx: Absolute]
+[Global Function access: 0x0, size: 0, section idx: Absolute]
+[Global Function bcmp: 0x0, size: 0, section idx: Absolute]
+[Global Function close: 0x0, size: 0, section idx: Absolute]
+[Global Function closedir: 0x0, size: 0, section idx: Absolute]
+[Global Function dirfd: 0x0, size: 0, section idx: Absolute]
+[Global Function dladdr: 0x0, size: 0, section idx: Absolute]
+[Global Function dlclose: 0x0, size: 0, section idx: Absolute]
+[Global Function dlerror: 0x0, size: 0, section idx: Absolute]
+[Global Function dlopen: 0x0, size: 0, section idx: Absolute]
+[Global Function dlsym: 0x0, size: 0, section idx: Absolute]
+[Global Function fclose: 0x0, size: 0, section idx: Absolute]
+[Global Function fgets: 0x0, size: 0, section idx: Absolute]
+[Global Function fnmatch: 0x0, size: 0, section idx: Absolute]
+[Global Function free: 0x0, size: 0, section idx: Absolute]
+[Global Function getauxval: 0x0, size: 0, section idx: Absolute]
+[Global Function getcwd: 0x0, size: 0, section idx: Absolute]
+[Global Function getenv: 0x0, size: 0, section idx: Absolute]
+[Global Function getpwuid: 0x0, size: 0, section idx: Absolute]
+[Global Function getuid: 0x0, size: 0, section idx: Absolute]
+[Global Function gmtime: 0x0, size: 0, section idx: Absolute]
+[Global Function mkdir: 0x0, size: 0, section idx: Absolute]
+[Global Function mmap64: 0x0, size: 0, section idx: Absolute]
+[Global Function open64: 0x0, size: 0, section idx: Absolute]
+[Global Function opendir: 0x0, size: 0, section idx: Absolute]
+[Global Function readdir64: 0x0, size: 0, section idx: Absolute]
+[Global Function realpath: 0x0, size: 0, section idx: Absolute]
+[Global Function sscanf: 0x0, size: 0, section idx: Absolute]
+[Global Function strerror: 0x0, size: 0, section idx: Absolute]
+[Global Function strftime: 0x0, size: 0, section idx: Absolute]
+[Global Function strtol: 0x0, size: 0, section idx: Absolute]
+[Global Function time: 0x0, size: 0, section idx: Absolute]
+section: .gnu.version: 1879048191, load @0xEB0, 244 bytes long
+section: .gnu.version_r: 1879048190, load @0xFA4, 272 bytes long
+section: .gnu.hash: 1879048182, load @0x10B8, 28 bytes long
+section: .hash: HashTable, load @0x10D4, 984 bytes long
+section: .dynstr: StringTable, load @0x14AC, 3429 bytes long
+section: .rela.dyn: RelocationAddends, load @0x2218, 888 bytes long
+section: .rela.plt: RelocationAddends, load @0x2590, 2592 bytes long
+section: .rodata: ProgBits, load @0x2FB0, 4459 bytes long
+section: .gcc_except_table: ProgBits, load @0x411C, 2184 bytes long
+section: .eh_frame_hdr: ProgBits, load @0x49A4, 1092 bytes long
+section: .eh_frame: ProgBits, load @0x4DE8, 5084 bytes long
+section: .text: ProgBits, load @0x10000, 41388 bytes long
+section: .init: ProgBits, load @0x1A1AC, 20 bytes long
+section: .fini: ProgBits, load @0x1A1C0, 16 bytes long
+section: .plt: ProgBits, load @0x1A1D0, 1760 bytes long
+section: .tbss: NoBits, load @0x1A8B0, 8 bytes long
+section: .jcr: ProgBits, load @0x20000, 8 bytes long
+section: .fini_array: 15, load @0x20008, 8 bytes long
+section: .init_array: 14, load @0x20010, 64 bytes long
+section: .data.rel.ro: ProgBits, load @0x20050, 72 bytes long
+section: .dynamic: Dynamic, load @0x20098, 34 entries
+section: .got: ProgBits, load @0x202B8, 136 bytes long
+section: .got.plt: ProgBits, load @0x20340, 888 bytes long
+section: .bss.rel.ro: NoBits, load @0x206B8, 0 bytes long
+section: .data: ProgBits, load @0x30000, 141 bytes long
+section: .tm_clone_table: ProgBits, load @0x30090, 0 bytes long
+section: .bss: NoBits, load @0x30090, 77 bytes long
+section: .comment: ProgBits, load @0x0, 103 bytes long
+section: .symtab: SymbolTable, load @0x0, 288 bytes long
+found symbol table!
+[Local NotSpecified : 0x0, size: 0, section idx: Absolute]
+[Global Function __libc_csu_fini: 0x1A1A8, size: 4, section idx: 16]
+[Global Function _start: 0x10000, size: 0, section idx: 16]
+[Global Function __libc_csu_init: 0x1A130, size: 120, section idx: 16]
+[Weak NotSpecified data_start: 0x30000, size: 0, section idx: 29]
+[Global Object _IO_stdin_used: 0x2FB0, size: 4, section idx: 12]
+[Global NotSpecified __data_start: 0x30000, size: 0, section idx: 29]
+[Global Function _init: 0x1A1AC, size: 0, section idx: 17]
+[Global Function _fini: 0x1A1C0, size: 0, section idx: 18]
+[Weak Function _ZNSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS5_EE19_M_emplace_back_auxIJRKS5_EEEvDpOT_: 0x13FE0, size: 588, section idx: 16]
+[Weak Function _ZStplIcSt11char_traitsIcESaIcEENSt7__cxx1112basic_stringIT_T0_T1_EERKS8_PKS5_: 0x13E88, size: 332, section idx: 16]
+[Weak Function _ZNSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS5_EE19_M_emplace_back_auxIJRA256_cEEEvDpOT_: 0x18F4C, size: 572, section idx: 16]
+section: .shstrtab: StringTable, load @0x0, 344 bytes long
+section: .strtab: StringTable, load @0x0, 364 bytes long
+section: .gnu_debuglink: ProgBits, load @0x0, 16 bytes long
+== Elf! ==
+elf: [ELF: Endianess=LittleEndian, Class=Bit64, Type=SharedObject, Machine=AArch64, EntryPoint=0x10000, NumberOfSections=37, NumberOfSegments=12]
+section: : Null, load @0x0, 0 bytes long
+section: .interp: ProgBits, load @0x2E0, 27 bytes long
+section: .note.ABI-tag: Note, Type=1
+section: .note.gnu.build-id: Note, Type=3
+section: .dynsym: DynamicSymbolTable, load @0x340, 2928 bytes long
+found symbol table!
+[Local NotSpecified : 0x0, size: 0, section idx: Absolute]
+[Global Function abort: 0x0, size: 0, section idx: Absolute]
+[Global Function __libc_start_main: 0x0, size: 0, section idx: Absolute]
+[Weak NotSpecified __gmon_start__: 0x0, size: 0, section idx: Absolute]
+[Weak NotSpecified _ITM_deregisterTMCloneTable: 0x0, size: 0, section idx: Absolute]
+[Weak NotSpecified _ITM_registerTMCloneTable: 0x0, size: 0, section idx: Absolute]
+[Weak Function __cxa_finalize: 0x0, size: 0, section idx: Absolute]
+[Weak NotSpecified _Jv_RegisterClasses: 0x0, size: 0, section idx: Absolute]
+[Global Function _Unwind_Resume: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEED2Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt8ios_base4InitC1Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt8ios_base4InitD1Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZdlPv: 0x0, size: 0, section idx: Absolute]
+[Global Function __cxa_atexit: 0x0, size: 0, section idx: Absolute]
+[Global Function __cxa_call_unexpected: 0x0, size: 0, section idx: Absolute]
+[Global Function __gxx_personality_v0: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt20__throw_system_errori: 0x0, size: 0, section idx: Absolute]
+[Global Function _Znwm: 0x0, size: 0, section idx: Absolute]
+[Weak Function __pthread_key_create: 0x0, size: 0, section idx: Absolute]
+[Global Function __stack_chk_fail: 0x0, size: 0, section idx: Absolute]
+[Global Object __stack_chk_guard: 0x0, size: 0, section idx: Absolute]
+[Global Function fflush: 0x0, size: 0, section idx: Absolute]
+[Global Function fopen64: 0x0, size: 0, section idx: Absolute]
+[Global Function fputc: 0x0, size: 0, section idx: Absolute]
+[Global Function fputs: 0x0, size: 0, section idx: Absolute]
+[Global Function memset: 0x0, size: 0, section idx: Absolute]
+[Weak Function pthread_mutex_lock: 0x0, size: 0, section idx: Absolute]
+[Weak Function pthread_mutex_unlock: 0x0, size: 0, section idx: Absolute]
+[Global Function setvbuf: 0x0, size: 0, section idx: Absolute]
+[Global Object stderr: 0x0, size: 0, section idx: Absolute]
+[Global Object stdout: 0x0, size: 0, section idx: Absolute]
+[Global Function vfprintf: 0x0, size: 0, section idx: Absolute]
+[Global Function vsnprintf: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12find_last_ofEPKcmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE17find_first_not_ofEPKcmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE4findEcm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE5rfindEPKcmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE5rfindEcm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt6localeD1Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE10_M_replaceEmmPKcm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE14_M_replace_auxEmmmc: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE4swapERS4_: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE7reserveEm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE8_M_eraseEmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_appendEPKcm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_assignERKS4_: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_createERmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_mutateEmmPKcm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1118basic_stringstreamIcSt11char_traitsIcESaIcEEC1ERKNS_12basic_stringIcS2_S3_EESt13_Ios_Openmode: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt8ios_baseD2Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt19__throw_logic_errorPKc: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt20__throw_length_errorPKc: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt20__throw_out_of_rangePKc: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt24__throw_invalid_argumentPKc: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt24__throw_out_of_range_fmtPKcz: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt7getlineIcSt11char_traitsIcESaIcEERSt13basic_istreamIT_T0_ES7_RNSt7__cxx1112basic_stringIS4_S5_T1_EES4_: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt9terminatev: 0x0, size: 0, section idx: Absolute]
+[Global Object _ZTTNSt7__cxx1118basic_stringstreamIcSt11char_traitsIcESaIcEEE: 0x0, size: 0, section idx: Absolute]
+[Global Object _ZTVNSt7__cxx1115basic_stringbufIcSt11char_traitsIcESaIcEEE: 0x0, size: 0, section idx: Absolute]
+[Global Object _ZTVSt15basic_streambufIcSt11char_traitsIcEE: 0x0, size: 0, section idx: Absolute]
+[Global Function __cxa_begin_catch: 0x0, size: 0, section idx: Absolute]
+[Global Function __cxa_end_catch: 0x0, size: 0, section idx: Absolute]
+[Global Function __cxa_rethrow: 0x0, size: 0, section idx: Absolute]
+[Global Function __errno_location: 0x0, size: 0, section idx: Absolute]
+[Global Function memcpy: 0x0, size: 0, section idx: Absolute]
+[Global Function strcasecmp: 0x0, size: 0, section idx: Absolute]
+[Global Function strcmp: 0x0, size: 0, section idx: Absolute]
+[Global Function strlen: 0x0, size: 0, section idx: Absolute]
+[Global Function strncasecmp: 0x0, size: 0, section idx: Absolute]
+[Global Function strncmp: 0x0, size: 0, section idx: Absolute]
+[Global Function strtoul: 0x0, size: 0, section idx: Absolute]
+[Global Function tolower: 0x0, size: 0, section idx: Absolute]
+[Global Function toupper: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1115basic_stringbufIcSt11char_traitsIcESaIcEE3strEv: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSolsEi: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt7__cxx1118basic_stringstreamIcSt11char_traitsIcESaIcEEC1ESt13_Ios_Openmode: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l: 0x0, size: 0, section idx: Absolute]
+[Global Function memcmp: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt5ctypeIcE13_M_widen_initEv: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE4findEPKcmm: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE7compareEmmRKS4_: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt13basic_filebufIcSt11char_traitsIcEE4openEPKcSt13_Ios_Openmode: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt13basic_filebufIcSt11char_traitsIcEE5closeEv: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt13basic_fstreamIcSt11char_traitsIcEEC1Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt13basic_fstreamIcSt11char_traitsIcEED2Ev: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate: 0x0, size: 0, section idx: Absolute]
+[Global Function _ZSt16__throw_bad_castv: 0x0, size: 0, section idx: Absolute]
+[Global Object _ZTTSt13basic_fstreamIcSt11char_traitsIcEE: 0x0, size: 0, section idx: Absolute]
+[Global Function __fxstat64: 0x0, size: 0, section idx: Absolute]
+[Global Function __fxstatat64: 0x0, size: 0, section idx: Absolute]
+[Global Function __getdelim: 0x0, size: 0, section idx: Absolute]
+[Global Function access: 0x0, size: 0, section idx: Absolute]
+[Global Function bcmp: 0x0, size: 0, section idx: Absolute]
+[Global Function close: 0x0, size: 0, section idx: Absolute]
+[Global Function closedir: 0x0, size: 0, section idx: Absolute]
+[Global Function dirfd: 0x0, size: 0, section idx: Absolute]
+[Global Function dladdr: 0x0, size: 0, section idx: Absolute]
+[Global Function dlclose: 0x0, size: 0, section idx: Absolute]
+[Global Function dlerror: 0x0, size: 0, section idx: Absolute]
+[Global Function dlopen: 0x0, size: 0, section idx: Absolute]
+[Global Function dlsym: 0x0, size: 0, section idx: Absolute]
+[Global Function fclose: 0x0, size: 0, section idx: Absolute]
+[Global Function fgets: 0x0, size: 0, section idx: Absolute]
+[Global Function fnmatch: 0x0, size: 0, section idx: Absolute]
+[Global Function free: 0x0, size: 0, section idx: Absolute]
+[Global Function getauxval: 0x0, size: 0, section idx: Absolute]
+[Global Function getcwd: 0x0, size: 0, section idx: Absolute]
+[Global Function getenv: 0x0, size: 0, section idx: Absolute]
+[Global Function getpwuid: 0x0, size: 0, section idx: Absolute]
+[Global Function getuid: 0x0, size: 0, section idx: Absolute]
+[Global Function gmtime: 0x0, size: 0, section idx: Absolute]
+[Global Function mkdir: 0x0, size: 0, section idx: Absolute]
+[Global Function mmap64: 0x0, size: 0, section idx: Absolute]
+[Global Function open64: 0x0, size: 0, section idx: Absolute]
+[Global Function opendir: 0x0, size: 0, section idx: Absolute]
+[Global Function readdir64: 0x0, size: 0, section idx: Absolute]
+[Global Function realpath: 0x0, size: 0, section idx: Absolute]
+[Global Function sscanf: 0x0, size: 0, section idx: Absolute]
+[Global Function strerror: 0x0, size: 0, section idx: Absolute]
+[Global Function strftime: 0x0, size: 0, section idx: Absolute]
+[Global Function strtol: 0x0, size: 0, section idx: Absolute]
+[Global Function time: 0x0, size: 0, section idx: Absolute]
+section: .gnu.version: 1879048191, load @0xEB0, 244 bytes long
+section: .gnu.version_r: 1879048190, load @0xFA4, 272 bytes long
+section: .gnu.hash: 1879048182, load @0x10B8, 28 bytes long
+section: .hash: HashTable, load @0x10D4, 984 bytes long
+section: .dynstr: StringTable, load @0x14AC, 3429 bytes long
+section: .rela.dyn: RelocationAddends, load @0x2218, 888 bytes long
+section: .rela.plt: RelocationAddends, load @0x2590, 2592 bytes long
+section: .rodata: ProgBits, load @0x2FB0, 4459 bytes long
+section: .gcc_except_table: ProgBits, load @0x411C, 2184 bytes long
+section: .eh_frame_hdr: ProgBits, load @0x49A4, 1092 bytes long
+section: .eh_frame: ProgBits, load @0x4DE8, 5084 bytes long
+section: .text: ProgBits, load @0x10000, 41388 bytes long
+section: .init: ProgBits, load @0x1A1AC, 20 bytes long
+section: .fini: ProgBits, load @0x1A1C0, 16 bytes long
+section: .plt: ProgBits, load @0x1A1D0, 1760 bytes long
+section: .tbss: NoBits, load @0x1A8B0, 8 bytes long
+section: .jcr: ProgBits, load @0x20000, 8 bytes long
+section: .fini_array: 15, load @0x20008, 8 bytes long
+section: .init_array: 14, load @0x20010, 64 bytes long
+section: .data.rel.ro: ProgBits, load @0x20050, 72 bytes long
+section: .dynamic: Dynamic, load @0x20098, 34 entries
+section: .got: ProgBits, load @0x202B8, 136 bytes long
+section: .got.plt: ProgBits, load @0x20340, 888 bytes long
+section: .bss.rel.ro: NoBits, load @0x206B8, 0 bytes long
+section: .data: ProgBits, load @0x30000, 141 bytes long
+section: .tm_clone_table: ProgBits, load @0x30090, 0 bytes long
+section: .bss: NoBits, load @0x30090, 77 bytes long
+section: .comment: ProgBits, load @0x0, 103 bytes long
+section: .symtab: SymbolTable, load @0x0, 288 bytes long
+found symbol table!
+[Local NotSpecified : 0x0, size: 0, section idx: Absolute]
+[Global Function __libc_csu_fini: 0x1A1A8, size: 4, section idx: 16]
+[Global Function _start: 0x10000, size: 0, section idx: 16]
+[Global Function __libc_csu_init: 0x1A130, size: 120, section idx: 16]
+[Weak NotSpecified data_start: 0x30000, size: 0, section idx: 29]
+[Global Object _IO_stdin_used: 0x2FB0, size: 4, section idx: 12]
+[Global NotSpecified __data_start: 0x30000, size: 0, section idx: 29]
+[Global Function _init: 0x1A1AC, size: 0, section idx: 17]
+[Global Function _fini: 0x1A1C0, size: 0, section idx: 18]
+[Weak Function _ZNSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS5_EE19_M_emplace_back_auxIJRKS5_EEEvDpOT_: 0x13FE0, size: 588, section idx: 16]
+[Weak Function _ZStplIcSt11char_traitsIcESaIcEENSt7__cxx1112basic_stringIT_T0_T1_EERKS8_PKS5_: 0x13E88, size: 332, section idx: 16]
+[Weak Function _ZNSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS5_EE19_M_emplace_back_auxIJRA256_cEEEvDpOT_: 0x18F4C, size: 572, section idx: 16]
+section: .shstrtab: StringTable, load @0x0, 344 bytes long
+section: .strtab: StringTable, load @0x0, 364 bytes long
+section: .gnu_debuglink: ProgBits, load @0x0, 16 bytes long
+[?1h=[?1h=Process details: 
+Framework: .NET 7.0.20
+Process arch: Arm64
+OS arch: Arm64
+OS description: Linux 6.8.0-1029-aws #31-Ubuntu SMP Wed Apr 23 18:20:04 UTC 2025
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Waiting for app started handling requests
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Waiting for app started handling requests
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Waiting for app started handling requests
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Waiting for app started handling requests
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Waiting for app started handling requests
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Waiting for app started handling requests
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Waiting for app started handling requests
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Waiting for app started handling requests
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Waiting for app started handling requests
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5000
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Content root path: /app
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Found server address: http://localhost:5000
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Sending request to self with address http://localhost:5000
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:5000/api/values - -
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'AspNetCoreSmokeTest.ValuesController.Get (AspNetCoreSmokeTest)'
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker[102]
+      Route matched with {action = "Get", controller = "Values"}. Executing controller action with signature System.String Get() on controller AspNetCoreSmokeTest.ValuesController (AspNetCoreSmokeTest).
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker[101]
+      Executing action method AspNetCoreSmokeTest.ValuesController.Get (AspNetCoreSmokeTest) - Validation state: Valid
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.ValuesController[0]
+      Received request
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker[103]
+      Executed action method AspNetCoreSmokeTest.ValuesController.Get (AspNetCoreSmokeTest), returned result Microsoft.AspNetCore.Mvc.ObjectResult in 1.146ms.
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor[1]
+      Executing ObjectResult, writing value of type 'System.String'.
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker[105]
+      Executed action AspNetCoreSmokeTest.ValuesController.Get (AspNetCoreSmokeTest) in 256.0162ms
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'AspNetCoreSmokeTest.ValuesController.Get (AspNetCoreSmokeTest)'
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Request sent successfully
+[40m[32minfo[39m[22m[49m: AspNetCoreSmokeTest.Worker[0]
+      Shutting down application
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:5000/api/values - - - 200 - text/plain;+charset=utf-8 443.3067ms
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+200: OK

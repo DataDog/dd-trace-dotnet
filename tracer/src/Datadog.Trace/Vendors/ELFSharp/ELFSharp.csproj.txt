@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <SignAssembly>True</SignAssembly>
+        <AssemblyOriginatorKeyFile>sgKey.snk</AssemblyOriginatorKeyFile>
+        <Version>2.17.3.0</Version>
+        <AssemblyVersion>2.0</AssemblyVersion>
+        <Authors>Konrad Kruczyński, Piotr Zierhoffer, Łukasz Kucharski, Bastian Eicher, Cameron, Everett Maus, Fox, Reuben Olinsky, Connor Christie, Rollrat, Ulysses Wu, Cédric Luthi, Yong Yan, Filip Navara, Dedmen Miller, Murat Ocaktürk, Grivus, Alex E., Pavel Vorozheykin</Authors>
+        <Owners>Konrad Kruczyński</Owners>
+        <PackageProjectUrl>http://elfsharp.it/</PackageProjectUrl>
+        <PackageReleaseNotes>Fixed magic value for the x64 Big Endian Mach-O binaries. Detailed changelog available at: https://github.com/konrad-kruczynski/elfsharp/blob/master/CHANGELOG.md</PackageReleaseNotes>
+        <Summary>C# library for reading binary ELF, UImage, Mach-O files</Summary>
+        <PackageTags>ELF UImage Mach-O</PackageTags>
+        <Title>ELFSharp</Title>
+        <Description>C# library for reading binary ELF, UImage, Mach-O files</Description>
+        <PackageId>ELFSharp</PackageId>
+        <PackageIcon>icon.png</PackageIcon>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="icon.png" Pack="true" PackagePath=""/>
+        <None Include="../LICENSE" Pack="true" PackagePath=""/>
+    </ItemGroup>
+</Project>

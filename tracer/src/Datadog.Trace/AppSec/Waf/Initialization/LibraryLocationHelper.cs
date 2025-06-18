@@ -7,9 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+#if NETCOREAPP3_1_OR_GREATER
+using Datadog.Trace.Vendors.ELFSharp.ELF;
+using Datadog.Trace.Vendors.ELFSharp.ELF.Sections;
+#endif
 
 namespace Datadog.Trace.AppSec.Waf.Initialization
 {
@@ -139,7 +144,19 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     continue;
                 }
 
+                if (IsLinuxArm64())
+                {
+                    var preLoaded = NativeLibrary.TryLoad(libFullPath, out handle);
+                    DumpSymbolsTable();
+
+                    if (preLoaded)
+                    {
+                        NativeLibrary.CloseLibrary(handle);
+                    }
+                }
+
                 var loaded = NativeLibrary.TryLoad(libFullPath, out handle);
+                DumpSymbolsTable();
 
                 if (loaded)
                 {
@@ -158,6 +175,46 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
 
             return success;
+        }
+
+        internal static void DumpSymbolsTable()
+        {
+#if NETCOREAPP3_1_OR_GREATER
+            // This is the path to the currently running executable
+            string selfPath = "/proc/self/exe";
+
+            using var stream = File.OpenRead(selfPath);
+            var elf = ELFReader.Load(stream, true); // true = load symbol tables
+
+            Console.WriteLine("== Elf! ==");
+            ConsoleLog($"elf: {elf.ToString()}");
+            foreach (var section in elf.Sections)
+            {
+                ConsoleLog($"section: {section.ToString()}");
+                if (section is ISymbolTable st)
+                {
+                    ConsoleLog($"found symbol table!");
+                    foreach (var entry in st.Entries)
+                    {
+                        ConsoleLog(entry.ToString());
+                    }
+                }
+            }
+#endif
+        }
+
+        internal static void ConsoleLog(string log)
+        {
+#pragma warning disable DDLOG004 // Message templates should be constant
+            Console.WriteLine(log);
+            Log.Information(log);
+#pragma warning restore DDLOG004 // Message templates should be constant
+        }
+
+        internal static bool IsLinuxArm64()
+        {
+            var fd = FrameworkDescription.Instance;
+            return fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture == ProcessArchitecture.Arm64;
         }
 
         internal static string GetLibName(FrameworkDescription fwk, string libVersion = null)

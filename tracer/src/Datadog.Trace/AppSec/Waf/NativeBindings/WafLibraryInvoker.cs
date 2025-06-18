@@ -27,9 +27,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly BuilderInitDelegate _builderInitField;
         private readonly BuilderAddOrUpdateConfigDelegate _builderAddOrUpdateConfigField;
         private readonly BuilderRemoveConfigDelegate _builderRemoveConfigDelegate;
-        private readonly 
-        Delegate _builderBuildInstanceDelegate;
-
+        private readonly BuilderBuildInstanceDelegate _builderBuildInstanceDelegate;
         private readonly InitContextDelegate _initContextField;
         private readonly RunDelegate _runField;
         private readonly DestroyDelegate _destroyField;

@@ -21,6 +21,14 @@ namespace UpdateVendors
 
         static VendoredDependency()
         {
+            
+            Add(
+                libraryName: "ELFSharp",
+                version: "2.17.4",
+                downloadUrl: "https://github.com/robertpi/elfsharp/archive/refs/tags/2.17.4.zip",
+                pathToSrc: new[] { "elfsharp-2.17.4", "ELFSharp" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "ELFSharp", AddIfNetcoreapp31OrGreater));
+
             Add(
                 libraryName: "Microsoft.OpenApi",
                 "1.6.23",
@@ -362,6 +370,7 @@ namespace UpdateVendors
             "CS1591, " +      // Missing XML comment for publicly visible type or member 'x'
             "CS1573, " +      // Parameter 'x' has no matching param tag in the XML comment for 'y' (but other parameters do)
             "CS8018, " +      // Within cref attributes, nested types of generic types should be qualified
+            "CS1587, " +      // XML comment is not placed on a valid language element
             "SYSLIB0011, " +  // BinaryFormatter serialization is obsolete and should not be used.
             "SYSLIB0023, " +  // RNGCryptoServiceProvider is obsolete. To generate a random number, use one of the RandomNumberGenerator static methods instead.
             "SYSLIB0032";     // Recovery from corrupted process state exceptions is not supported; HandleProcessCorruptedStateExceptionsAttribute is ignored."

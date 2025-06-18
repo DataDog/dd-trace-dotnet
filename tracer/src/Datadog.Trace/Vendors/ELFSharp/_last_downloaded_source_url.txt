@@ -1,0 +1,1 @@
+https://github.com/robertpi/elfsharp/archive/refs/tags/2.17.4.zip
