@@ -13,6 +13,34 @@ RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_
 
 FROM $RUNTIME_IMAGE AS publish
 
+###############################################################################
+# --- Fedora-only glibc hot-fix ---------------------------------------------
+###############################################################################
+RUN if echo "${RUNTIME_IMAGE}" | grep -qi 'fedora'; then \
+        echo '[glibc-fix] base image detected as Fedora, bumping glibc…'; \
+        set -eux; \
+        TARGET_RELEASE=37; \
+        # 1. Temporarily switch yum repos to Fedora 37
+        for f in /etc/yum.repos.d/fedora*.repo; do \
+            cp "$f" "$f.bak"; \
+            sed -Ei "s/\$releasever/${TARGET_RELEASE}/g" "$f"; \
+        done; \
+        # 2. Upgrade only the glibc family (brings in ≥ 2.36, fixes TLS bug)
+        dnf -y --setopt=install_weak_deps=False upgrade \
+            glibc glibc-common glibc-minimal-langpack \
+            libgcc libstdc++; \
+        dnf clean all; \
+        # 3. Restore the original repo files (back to Fedora 35)
+        for f in /etc/yum.repos.d/*.bak; do \
+            mv "$f" "${f%.bak}"; \
+        done; \
+        # 4. (Optional) sanity print
+        /lib/ld-linux-aarch64.so.1 --version | head -n1; \
+    else \
+        echo '[glibc-fix] base image is NOT Fedora – skipping glibc bump'; \
+    fi
+###############################################################################
+
 WORKDIR /app
 
 # Copy the installer files from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
