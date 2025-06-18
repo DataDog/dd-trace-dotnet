@@ -19,8 +19,8 @@ FROM $RUNTIME_IMAGE AS publish
 RUN set -eux; \
     . /etc/os-release; \
     if [ "$ID" = "fedora" ] && [ "$VERSION_ID" = "35" ]; then \
-        echo "[glibc-fix] Fedora 35 detected – upgrading glibc from 2.34 to 2.36+"; \
-        dnf -y --releasever=37 --setopt=install_weak_deps=False upgrade \
+        echo "[glibc-fix] Fedora 35 detected – upgrading glibc from 2.34 to 2.39+"; \
+        dnf -y --releasever=40 --setopt=install_weak_deps=False upgrade \
             glibc glibc-common glibc-minimal-langpack \
             libgcc libstdc++; \
         dnf clean all; \
