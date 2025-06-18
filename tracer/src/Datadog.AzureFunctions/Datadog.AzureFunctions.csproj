@@ -12,7 +12,7 @@
     <VersionPrefix>$(Version)</VersionPrefix>
     <VersionSuffix>preview1</VersionSuffix>
     <Version></Version>
-    
+
     <!-- nuget package metadata -->
     <PackageId>Datadog.AzureFunctions</PackageId>
     <Description>Datadog instrumentation library for Azure Functions</Description>
@@ -27,7 +27,7 @@
     <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128 -->
     <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5100 -->
     <NoWarn>NU5128;NU5100</NoWarn>
-    
+
     <!-- reenable warnings that are disabled in tracer/src/Directory.Build.props -->
     <NugetAudit>true</NugetAudit>
     <CheckEolTargetFramework>true</CheckEolTargetFramework>
@@ -87,7 +87,4 @@
     <PackageReference Remove="StyleCop.Analyzers" />
     <AdditionalFiles Remove="$(MSBuildThisFileDirectory)../../stylecop.json" Link="stylecop.json" />
   </ItemGroup>
-  
-  
-  
 </Project>
