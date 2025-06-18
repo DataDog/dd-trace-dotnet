@@ -18,42 +18,42 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.0.10 -->
-    <PackageReference Include="AWSSDK.Core" Version="4.0.0.8" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.0.11 -->
+    <PackageReference Include="AWSSDK.Core" Version="4.0.0.11" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.1.6 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.1.7 -->
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.1.4" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.1.4 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.1.5 -->
     <PackageReference Include="AWSSDK.EventBridge" Version="4.0.1.2" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/4.0.2.7 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/4.0.2.8 -->
     <PackageReference Include="AWSSDK.Kinesis" Version="4.0.2.5" />
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.1.6 -->
-    <PackageReference Include="AWSSDK.S3" Version="4.0.1.4" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.1.7 -->
+    <PackageReference Include="AWSSDK.S3" Version="4.0.1.7" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/4.0.0.8 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/4.0.0.9 -->
     <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.0.6" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.0.9 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.0.10 -->
     <PackageReference Include="AWSSDK.SQS" Version="4.0.0.7" />
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.0.8 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.0.9 -->
     <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.0.6" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
@@ -110,8 +110,8 @@
 
     <!-- Integration: amqmdnetstd -->
     <!--    Assembly: amqmdnetstd -->
-    <!-- Latest package https://www.nuget.org/packages/IBMMQDotnetClient/9.4.2.1 -->
-    <PackageReference Include="IBMMQDotnetClient" Version="9.4.2.1" />
+    <!-- Latest package https://www.nuget.org/packages/IBMMQDotnetClient/9.4.3 -->
+    <PackageReference Include="IBMMQDotnetClient" Version="9.4.3" />
 
     <!-- Integration: log4net -->
     <!--    Assembly: log4net -->
