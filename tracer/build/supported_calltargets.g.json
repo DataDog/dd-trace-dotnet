@@ -7933,11 +7933,9 @@
     "IntegrationName": "Hangfire",
     "AssemblyName": "Hangfire.Core",
     "TargetTypeName": "Hangfire.Common.JobFilterCollection",
-    "TargetMethodName": "Add",
+    "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [
-      "System.Object"
-    ],
+    "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 1,
       "Item2": 8,
@@ -7948,7 +7946,7 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionAddIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionctorIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

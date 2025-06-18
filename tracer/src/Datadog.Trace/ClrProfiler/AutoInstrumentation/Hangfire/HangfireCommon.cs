@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS;
 using Datadog.Trace.Configuration;
@@ -27,7 +29,7 @@ internal static class HangfireCommon
     internal const string IntegrationName = nameof(Configuration.IntegrationId.Hangfire);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.Hangfire;
 
-    public static Scope CreateScope(Tracer tracer, string operationName, HangfireTags tags, ISpanContext parentContext = null, bool finishOnClose = true)
+    public static Scope? CreateScope(Tracer tracer, string operationName, HangfireTags tags, ISpanContext? parentContext = null, bool finishOnClose = true)
     {
         if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
         {
@@ -35,7 +37,7 @@ internal static class HangfireCommon
             return null;
         }
 
-        Scope scope = null;
+        Scope? scope = null;
 
         try
         {
@@ -84,5 +86,46 @@ internal static class HangfireCommon
         scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
         scope.Span.SetTag(HangfireConstants.JobIdTag, performingContext.JobId);
         scope.Span.SetTag(HangfireConstants.JobCreatedAtTag, performingContext.BackgroundJob.CreatedAt.ToString("O"));
+    }
+
+    internal static void CreateDatadogFilter(out object? serverFilter, out object? clientFilter)
+    {
+        serverFilter = null;
+        clientFilter = null;
+
+        Assembly? hangfireAssembly = AppDomain.CurrentDomain
+                                              .GetAssemblies()
+                                              .FirstOrDefault(asm => asm.GetName().Name == "Hangfire.Core");
+        if (hangfireAssembly == null)
+        {
+            Log.Debug("Error getting hangfire assembly. Did not inject datadog filter");
+            return;
+        }
+
+        Type? saferServerFilterType = hangfireAssembly.GetType("Hangfire.Server.IServerFilter");
+        Log.Debug("Datadog Jobfilter is not added in yet, attempting to do so.");
+        if (saferServerFilterType != null)
+        {
+            Log.Debug("Registering filter for {FilterType}", saferServerFilterType.ToString());
+            serverFilter = DuckType.CreateReverse(saferServerFilterType, new DatadogHangfireServerFilter());
+            Log.Debug("This is the ducktype using create reverse: {Proxy}", serverFilter.ToString());
+            Log.Debug("We added the serverFilter!");
+        }
+        else
+        {
+            Log.Debug("iserverfilter is null");
+        }
+
+        Type? clientFilterType = Type.GetType("Hangfire.Client.IClientFilter, Hangfire.Core");
+        if (clientFilterType != null)
+        {
+            Log.Debug("Registering filter for {FilterType}", clientFilterType.ToString());
+            clientFilter = DuckType.CreateReverse(clientFilterType, new DatadogHangfireClientFilter());
+            Log.Debug("We added the clientFilter!");
+        }
+        else
+        {
+            Log.Debug("iclientfilter is null");
+        }
     }
 }
