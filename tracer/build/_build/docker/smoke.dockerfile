@@ -14,7 +14,7 @@ RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_
 FROM $RUNTIME_IMAGE AS publish
 
 ###############################################################################
-# Fedora 35 (only) – glibc hot-fix to 2.36+  (arm64)
+# Fedora 35 (only) – glibc hot-fix to 2.37+  (arm64)
 ###############################################################################
 RUN set -eux; \
     . /etc/os-release; \

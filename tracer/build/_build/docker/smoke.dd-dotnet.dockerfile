@@ -13,6 +13,23 @@ RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_
 
 FROM $RUNTIME_IMAGE AS publish
 
+###############################################################################
+# Fedora 35 (only) – glibc hot-fix to 2.37+  (arm64)
+###############################################################################
+RUN set -eux; \
+    . /etc/os-release; \
+    if [ "$ID" = "fedora" ] && [ "$VERSION_ID" = "35" ]; then \
+        echo "[glibc-fix] Fedora 35 detected – upgrading glibc from 2.34 to 2.37+"; \
+        dnf -y --releasever=38 --setopt=install_weak_deps=False upgrade \
+            glibc glibc-common glibc-minimal-langpack \
+            libgcc libstdc++; \
+        dnf clean all; \
+        /lib/ld-linux-aarch64.so.1 --version | head -n1; \
+    else \
+        echo "[glibc-fix] base is $ID $VERSION_ID – no glibc bump needed"; \
+    fi
+###############################################################################
+
 WORKDIR /app
 
 # Copy the installer files from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
