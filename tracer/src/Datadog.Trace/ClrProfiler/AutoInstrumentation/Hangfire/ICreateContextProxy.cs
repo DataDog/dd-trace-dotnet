@@ -10,6 +10,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <summary>
 /// DuckTyping interface for Hangfire.Client.CreateContext
 /// </summary>
+/// <remarks>
+/// https://github.com/HangfireIO/Hangfire/blob/96c5d825ab3ee6f123f9e041ac301881e168e508/src/Hangfire.Core/Client/CreateContext.cs
+/// </remarks>
 internal interface ICreateContextProxy : IDuckType
 {
     /// <summary>

@@ -18,6 +18,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <summary>
 /// DuckTyping interface for Hangfire.Common.JobFilterAttribute
 /// </summary>
+/// <remarks>
+/// https://github.com/HangfireIO/Hangfire/blob/96c5d825ab3ee6f123f9e041ac301881e168e508/src/Hangfire.Core/Common/JobFilterAttribute.cs
+/// </remarks>
 internal interface IJobFilterAttributeProxy : IDuckType
 {
     /// <summary>

@@ -11,6 +11,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <summary>
 /// DuckTyping interface for Hangfire.Server.IServerFilter
 /// </summary>
+/// <remarks>
+/// https://github.com/HangfireIO/Hangfire/blob/96c5d825ab3ee6f123f9e041ac301881e168e508/src/Hangfire.Core/Server/IServerFilter.cs
+/// </remarks>
 internal interface IIServerFilterProxy : IDuckType
 {
     /// <summary>
