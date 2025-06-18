@@ -3,13 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+
 using System;
 using Datadog.Trace.DuckTyping;
 
-// DuckTyping interface for Hangfire.BackgroundJob
-// </summary>
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 
+/// <summary>
+/// DuckTyping interface for Hangfire.BackgroundJob
+/// </summary>
+/// <remarks>
+/// https://github.com/HangfireIO/Hangfire/blob/96c5d825ab3ee6f123f9e041ac301881e168e508/src/Hangfire.Core/BackgroundJob.cs
+/// </remarks>
 internal interface IBackgroundJobProxy : IDuckType
 {
     /// <summary>
