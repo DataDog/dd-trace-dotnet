@@ -430,7 +430,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         internal IntPtr BuilderBuildInstance(IntPtr builder)
         {
             Log.Debug("WafLibraryInvoker.BuilderBuildInstance called with builder {Builder}", builder);
-            return _builderBuildInstanceDelegate?.Invoke(builder) ?? IntPtr.Zero;
+            var res = _builderBuildInstanceDelegate?.Invoke(builder) ?? IntPtr.Zero;
+            Log.Debug("WafLibraryInvoker.BuilderBuildInstance called with builder {Builder} returned: {Res}", builder,  res);
+            return res;
         }
 
 #if NET5_0_OR_GREATER

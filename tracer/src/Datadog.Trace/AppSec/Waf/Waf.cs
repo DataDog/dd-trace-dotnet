@@ -36,6 +36,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         internal Waf(IntPtr wafBuilderHandle, IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
         {
+            Log.Debug("Waf .ctor called with wafBuilderHandle: {WafBuilderHandle}, wafHandle: {WafHandle}", wafBuilderHandle, wafHandle);
             _wafLibraryInvoker = wafLibraryInvoker;
             _wafBuilderHandle = wafBuilderHandle;
             _wafHandle = wafHandle;
