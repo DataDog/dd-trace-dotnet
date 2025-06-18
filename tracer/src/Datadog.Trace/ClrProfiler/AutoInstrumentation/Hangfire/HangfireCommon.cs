@@ -47,7 +47,7 @@ internal static class HangfireCommon
         }
         catch (Exception ex)
         {
-            Log.Debug(ex, "Error creating or populating scope.");
+            Log.Error(ex, "Error creating or populating scope.");
         }
 
         return scope;
