@@ -10,7 +10,7 @@
 
     <!-- nuget version: move $Version to $VersionPrefix so we can add a prerelease suffix -->
     <VersionPrefix>$(Version)</VersionPrefix>
-    <VersionSuffix>preview1</VersionSuffix>
+    <VersionSuffix>preview2</VersionSuffix>
     <Version></Version>
 
     <!-- nuget package metadata -->
@@ -87,4 +87,5 @@
     <PackageReference Remove="StyleCop.Analyzers" />
     <AdditionalFiles Remove="$(MSBuildThisFileDirectory)../../stylecop.json" Link="stylecop.json" />
   </ItemGroup>
+
 </Project>
