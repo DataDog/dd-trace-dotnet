@@ -71,7 +71,9 @@ ENV DD_INJECTION_ENABLED=tracer
 ENV DD_INJECT_FORCE=1
 ENV DD_TELEMETRY_FORWARDER_PATH=/bin/true
 
-ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
+#ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["/bin/sh", "-c", "ldd --version || true; exec dotnet AspNetCoreSmokeTest.dll"]
+
 
 ###########################################################
 # The final image, with "dd-dotnet" configuration
@@ -83,4 +85,15 @@ ENTRYPOINT ["/opt/datadog/linux-x64/dd-dotnet", "run", "--set-env", "DD_PROFILIN
 
 ###########################################################
 FROM installer-base as dd-dotnet-final-linux-arm64
-ENTRYPOINT ["/opt/datadog/linux-arm64/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
+#ENTRYPOINT ["/opt/datadog/linux-arm64/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
+
+ENTRYPOINT [ \
+  "/bin/sh", "-c", \
+  "echo '[glibc]'; \
+   (ldd --version 2>/dev/null || /lib/ld-linux-aarch64.so.1 --version); \
+   exec /opt/datadog/linux-arm64/dd-dotnet run \
+        --set-env DD_PROFILING_ENABLED=1 \
+        --set-env DD_APPSEC_ENABLED=1 \
+        --set-env DD_TRACE_DEBUG=1 \
+        -- dotnet /app/AspNetCoreSmokeTest.dll" \
+]

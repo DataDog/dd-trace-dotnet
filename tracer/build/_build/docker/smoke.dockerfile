@@ -63,4 +63,5 @@ ENV LD_BIND_NOW=1
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
+#ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["/bin/sh", "-c", "ldd --version || true; exec dotnet AspNetCoreSmokeTest.dll"]
