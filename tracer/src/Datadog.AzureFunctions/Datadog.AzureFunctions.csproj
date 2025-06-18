@@ -47,13 +47,13 @@
     <None Include="$(SourcePath)/net6.0/Datadog.Trace.dll" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/net6.0/">
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </None>
-    <None Include="$(SourcePath)/net461/Datadog.Trace.dll" Pack="true" Visible="false" PackagePath="contentFiles/any/net461/datadog/net461/;content/datadog/net461/">
+    <None Include="$(SourcePath)/net461/Datadog.Trace.dll" Pack="true" Visible="false" PackagePath="contentFiles/any/net461/datadog/net461/">
       <Link>home/net461/Datadog.Trace.dll</Link>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </None>
 
     <!-- native libraries -->
-    <None Include="$(SourcePath)/win-x64/*" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/win-x64/;contentFiles/any/net461/datadog/win-x64/;content/datadog/win-x64/">
+    <None Include="$(SourcePath)/win-x64/*" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/win-x64/;contentFiles/any/net461/datadog/win-x64/">
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </None>
     <None Include="$(SourcePath)/linux-x64/*" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/linux-x64/">
