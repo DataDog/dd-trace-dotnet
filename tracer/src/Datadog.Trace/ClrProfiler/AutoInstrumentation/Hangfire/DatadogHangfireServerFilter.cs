@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             {
                 var spanContextData = performContext.GetJobParameter<Dictionary<string, string>>(HangfireConstants.DatadogContextKey);
                 Log.Debug("Extracting context from the followiing data: {SpanContextData}", spanContextData);
-                PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData);
+                PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData).MergeBaggageInto(Baggage.Current);
                 parentContext = propagationContext.SpanContext;
             }
 
