@@ -28,13 +28,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerforming(object context)
         {
-            var performingContext = context.DuckCast<IPerformingContextProxy>();
-            var performContext = context.DuckCast<IPerformContextProxy>();
             SpanContext parentContext = null;
-            if (performContext is not null && performingContext is not null)
+            if (context.TryDuckCast<IPerformingContextProxy>(out var performingContext))
             {
-                var spanContextData = performContext.GetJobParameter<Dictionary<string, string>>(HangfireConstants.DatadogContextKey);
-                Log.Debug("Extracting context from the followiing data: {SpanContextData}", spanContextData);
+                var spanContextData = performingContext.GetJobParameter<Dictionary<string, string>>(HangfireConstants.DatadogContextKey);
+                Log.Debug("Extracting context from the following data: {SpanContextData}", spanContextData);
                 PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData).MergeBaggageInto(Baggage.Current);
                 parentContext = propagationContext.SpanContext;
             }
@@ -45,8 +43,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 return;
             }
 
-            HangfireCommon.PopulatePerformSpanTags(scope, performingContext, performContext);
-            ((Dictionary<string, object>)performContext?.Items)?.Add(HangfireConstants.DatadogScopeKey, scope);
+            HangfireCommon.PopulatePerformSpanTags(scope, performingContext);
+            ((Dictionary<string, object>)performingContext?.Items)?.Add(HangfireConstants.DatadogScopeKey, scope);
         }
 
         /// <summary>
@@ -56,15 +54,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerformed(object context)
         {
-            var performContext = context.DuckCast<IPerformContextProxy>();
-            var performedContext = context.DuckCast<IPerformedContextProxy>();
-            ((Dictionary<string, object>)performContext.Items).TryGetValue(HangfireConstants.DatadogScopeKey, out var scope);
-            if (performedContext.Exception is not null)
+            if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
             {
-                HangfireCommon.SetStatusAndRecordException((Scope)scope, performedContext.Exception);
-            }
+                ((Dictionary<string, object>)performedContext.Items).TryGetValue(HangfireConstants.DatadogScopeKey, out var scope);
+                if (performedContext.Exception is not null)
+                {
+                    HangfireCommon.SetStatusAndRecordException((Scope)scope, performedContext.Exception);
+                }
 
-            ((Scope)scope)?.Dispose();
+                ((Scope)scope)?.Dispose();
+            }
         }
     }
 }

@@ -36,8 +36,6 @@ public class JobFilterCollectionAddIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JobFilterCollectionAddIntegration));
     private static readonly object _registrationLock = new object();
-    private static bool _loadedClientFilter = false;
-    private static bool _loadedServerFilter = false;
     private static volatile bool _filtersRegistered = false;
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref object? filter)
@@ -85,7 +83,6 @@ public class JobFilterCollectionAddIntegration
                     Log.Debug("This is the ducktype using create reverse: {Proxy}", serverFilter.ToString());
                     instance.AddInternal(serverFilter, null);
                     Log.Debug("We added the serverFilter!");
-                    _loadedServerFilter = true;
                 }
                 else
                 {
@@ -99,14 +96,13 @@ public class JobFilterCollectionAddIntegration
                     object clientFilter = DuckType.CreateReverse(clientFilterType, new DatadogHangfireClientFilter());
                     instance.AddInternal(clientFilter, null);
                     Log.Debug("We added the clientFilter!");
-                    _loadedClientFilter = true;
                 }
                 else
                 {
                     Log.Debug("iclientfilter is null");
                 }
 
-                _loadedClientFilter = true;
+                _filtersRegistered = true;
             }
         }
 

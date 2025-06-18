@@ -36,9 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 return;
             }
 
-            var creatingContext = context.DuckCast<ICreatingContextProxy>();
-            var createContext = context.DuckCast<ICreateContextProxy>();
-            if (createContext is not null && creatingContext is not null)
+            if (context.TryDuckCast<ICreatingContextProxy>(out var creatingContext))
             {
                 PropagationContext contextToInject = new PropagationContext(scope.Span.Context, Baggage.Current, null);
                 var contextDetails = new Dictionary<string, string>();

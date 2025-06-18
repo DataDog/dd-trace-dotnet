@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <remarks>
 /// https://github.com/HangfireIO/Hangfire/blob/96c5d825ab3ee6f123f9e041ac301881e168e508/src/Hangfire.Core/Server/PerformContext.cs
 /// </remarks>
-internal interface IPerformContextProxy : IDuckType
+public interface IPerformContextProxy : IDuckType
 {
     /// <summary>
     /// Gets a value of Hangfire.JobStorage
