@@ -118,19 +118,23 @@ namespace Datadog.Trace.AppSec.Waf
                 {
                     if (_wafLocker.EnterWriteLock())
                     {
-                        if (!Disposed)
+                        try
                         {
+                            if (Disposed)
+                            {
+                                return UpdateResult.FromFailed("Waf is already disposed and can't be updated");
+                            }
+
                             // update within the lock as iis can recycle and cause dispose to happen at the same time
                             var newHandle = updateResult.WafHandle;
                             var oldHandle = _wafHandle;
                             _wafHandle = newHandle;
-                            _wafLocker.ExitWriteLock();
+                            Log.Debug("********* WAF updated successfully, replacing old handle {OldHandle} with new handle {NewHandle}", oldHandle, newHandle);
                             _wafLibraryInvoker.Destroy(oldHandle);
                         }
-                        else
+                        finally
                         {
                             _wafLocker.ExitWriteLock();
-                            return UpdateResult.FromFailed("Waf is already disposed and can't be updated");
                         }
                     }
                 }
@@ -171,6 +175,7 @@ namespace Datadog.Trace.AppSec.Waf
                 {
                     lockAcquired = true;
 
+                    Log.Debug("********* Calling _wafLibraryInvoker.GetKnownAddresses with wafHandle: {WafHandle}", _wafHandle);
                     var result = _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
                     return result;
                 }
@@ -217,7 +222,9 @@ namespace Datadog.Trace.AppSec.Waf
                         return null;
                     }
 
+                    Log.Debug("********* Calling _wafLibraryInvoker.InitContext with wafHandle: {WafHandle}", _wafHandle);
                     contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
+                    Log.Debug("********* Context created with handle: {ContextHandle}", contextHandle);
                 }
                 finally
                 {
@@ -241,7 +248,10 @@ namespace Datadog.Trace.AppSec.Waf
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
         public unsafe WafReturnCode Run(IntPtr contextHandle, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafObjectStruct retNative, ulong timeoutMicroSeconds)
-            => _wafLibraryInvoker.Run(contextHandle, rawPersistentData, rawEphemeralData, ref retNative, timeoutMicroSeconds);
+        {
+            Log.Debug("********* Calling _wafLibraryInvoker.Run with contextHandle: {ContextHandle}", contextHandle);
+            return _wafLibraryInvoker.Run(contextHandle, rawPersistentData, rawEphemeralData, ref retNative, timeoutMicroSeconds);
+        }
 
         public void Dispose()
         {
@@ -256,7 +266,9 @@ namespace Datadog.Trace.AppSec.Waf
                     }
 
                     Disposed = true;
+                    Log.Debug("********* Disposing WAF with handle: {WafHandle}", _wafHandle);
                     _wafLibraryInvoker.Destroy(_wafHandle);
+                    _wafHandle = IntPtr.Zero;
                 }
                 finally
                 {

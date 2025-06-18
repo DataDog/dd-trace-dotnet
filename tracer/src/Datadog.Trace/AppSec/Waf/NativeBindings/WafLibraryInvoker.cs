@@ -338,12 +338,14 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal void SetupLogging(bool wafDebugEnabled)
         {
+            Log.Debug("WafLibraryInvoker.SetupLogging called with wafDebugEnabled {WafDebugEnabled}", wafDebugEnabled);
             var logLevel = wafDebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
             _setupLogging?.Invoke(_setupLogCallbackField, logLevel);
         }
 
         internal string[] GetKnownAddresses(IntPtr wafHandle)
         {
+            Log.Debug("WafLibraryInvoker.GetKnownAddresses called with wafHandle {WafHandle}", wafHandle);
             if (_getKnownAddresses is null)
             {
                 Log.Warning("GetKnownAddresses is not supported by this WAF version");
@@ -372,6 +374,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal bool IsKnowAddressesSuported(string? libVersion = null)
         {
+            Log.Debug("WafLibraryInvoker.IsKnowAddressesSuported called with libVersion {LibVersion}", libVersion);
             try
             {
                 if (_version is null && libVersion is not null)
@@ -398,6 +401,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             if (_version == null)
             {
+                Log.Debug("WafLibraryInvoker.GetVersion called, fetching version from native library");
                 var ptr = _getVersionField();
                 _version = Marshal.PtrToStringAnsi(ptr) ?? string.Empty;
             }
@@ -405,15 +409,39 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return _version;
         }
 
-        internal IntPtr InitBuilder(ref DdwafConfigStruct config) => _builderInitField?.Invoke(ref config) ?? IntPtr.Zero;
+        internal IntPtr InitBuilder(ref DdwafConfigStruct config)
+        {
+            Log.Debug("WafLibraryInvoker.InitBuilder called with config {Config}", config);
+            return _builderInitField?.Invoke(ref config) ?? IntPtr.Zero;
+        }
 
-        internal bool BuilderAddOrUpdateConfig(IntPtr builder, string path, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics) => _builderAddOrUpdateConfigField?.Invoke(builder, path, (uint)path.Length, ref config, ref diagnostics) ?? false;
+        internal bool BuilderAddOrUpdateConfig(IntPtr builder, string path, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics)
+        {
+            Log.Debug("WafLibraryInvoker.BuilderAddOrUpdateConfig called with builder {Builder}, path {Path}", builder, path);
+            return _builderAddOrUpdateConfigField?.Invoke(builder, path, (uint)path.Length, ref config, ref diagnostics) ?? false;
+        }
 
-        internal bool BuilderRemoveConfig(IntPtr builder, string path) => _builderRemoveConfigDelegate?.Invoke(builder, path, (uint)path.Length) ?? false;
+        internal bool BuilderRemoveConfig(IntPtr builder, string path)
+        {
+            Log.Debug("WafLibraryInvoker.BuilderRemoveConfig called with builder {Builder}, path {Path}", builder, path);
+            return _builderRemoveConfigDelegate?.Invoke(builder, path, (uint)path.Length) ?? false;
+        }
 
-        internal IntPtr BuilderBuildInstance(IntPtr builder) => _builderBuildInstanceDelegate?.Invoke(builder) ?? IntPtr.Zero;
+        internal IntPtr BuilderBuildInstance(IntPtr builder)
+        {
+            Log.Debug("WafLibraryInvoker.BuilderBuildInstance called with builder {Builder}", builder);
+            return _builderBuildInstanceDelegate?.Invoke(builder) ?? IntPtr.Zero;
+        }
 
-        internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField != null ? _initContextField(powerwafHandle) : IntPtr.Zero;
+#if NET5_0_OR_GREATER
+        [SuppressGCTransition]
+#endif
+        [SuppressUnmanagedCodeSecurity]
+        internal IntPtr InitContext(IntPtr powerwafHandle)
+        {
+            Log.Debug("WafLibraryInvoker.InitContext called with powerwafHandle {PowerwafHandle}", powerwafHandle);
+            return _initContextField != null ? _initContextField(powerwafHandle) : IntPtr.Zero;
+        }
 
         /// <summary>
         /// WARNING: do not dispose newArgs until the Context is discarded as well
@@ -425,18 +453,38 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <param name="timeLeftInUs">timeout</param>
         /// <returns>Return waf code</returns>
         internal WafReturnCode Run(IntPtr context, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafObjectStruct result, ulong timeLeftInUs)
-            => _runField?.Invoke(context, rawPersistentData, rawEphemeralData, ref result, timeLeftInUs) ?? WafReturnCode.ErrorInternal;
+        {
+            Log.Debug("WafLibraryInvoker.Run called with context {Context}, timeLeftInUs {TimeLeftInUs}", context, timeLeftInUs);
+            return _runField?.Invoke(context, rawPersistentData, rawEphemeralData, ref result, timeLeftInUs) ?? WafReturnCode.ErrorInternal;
+        }
 
-        internal void Destroy(IntPtr wafHandle) => _destroyField?.Invoke(wafHandle);
+        internal void Destroy(IntPtr wafHandle)
+        {
+            Log.Debug("WafLibraryInvoker.Destroy called with wafHandle {WafHandle}", wafHandle);
+            _destroyField?.Invoke(wafHandle);
+        }
 
-        public void ContextDestroy(IntPtr handle) => _contextDestroyField?.Invoke(handle);
+        public void ContextDestroy(IntPtr handle)
+        {
+            Log.Debug("WafLibraryInvoker.ContextDestroy called with handle {Handle}", handle);
+            _contextDestroyField?.Invoke(handle);
+        }
 
-        public void ObjectFree(ref DdwafObjectStruct input) => _freeObjectField?.Invoke(ref input);
+        public void ObjectFree(ref DdwafObjectStruct input)
+        {
+            Log.Debug("WafLibraryInvoker.ObjectFree called with input {Input}", input);
+            _freeObjectField?.Invoke(ref input);
+        }
 
-        internal IntPtr ObjectArrayGetIndex(ref DdwafObjectStruct array, long index) => _objectArrayGetIndex?.Invoke(ref array, index) ?? IntPtr.Zero;
+        internal IntPtr ObjectArrayGetIndex(ref DdwafObjectStruct array, long index)
+        {
+            Log.Debug("WafLibraryInvoker.ObjectArrayGetIndex called with array {Array}, index {Index}", array, index);
+            return _objectArrayGetIndex?.Invoke(ref array, index) ?? IntPtr.Zero;
+        }
 
         internal DdwafObjectStruct ObjectInvalid()
         {
+            Log.Debug("WafLibraryInvoker.ObjectInvalid called");
             var item = new DdwafObjectStruct();
             _objectInvalidField?.Invoke(ref item);
             return item;
@@ -444,6 +492,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal DdwafObjectStruct ObjectStringLength(string s, ulong length)
         {
+            Log.Debug("WafLibraryInvoker.ObjectStringLength called with string {String} and length {Length}", s, length);
             var item = new DdwafObjectStruct();
             _objectStringLengthField?.Invoke(ref item, s, length);
             return item;
@@ -451,6 +500,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal DdwafObjectStruct ObjectBool(bool b)
         {
+            Log.Debug("WafLibraryInvoker.ObjectBool called with boolean {Bool}", b);
             var item = new DdwafObjectStruct();
             _objectBoolField?.Invoke(ref item, b);
             return item;
@@ -458,6 +508,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal DdwafObjectStruct ObjectLong(long l)
         {
+            Log.Debug("WafLibraryInvoker.ObjectLong called with long {Long}", l);
             var item = new DdwafObjectStruct();
             _objectLongField?.Invoke(ref item, l);
             return item;
@@ -465,6 +516,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal DdwafObjectStruct ObjectUlong(ulong l)
         {
+            Log.Debug("WafLibraryInvoker.ObjectUlong called with ulong {Ulong}", l);
             var item = new DdwafObjectStruct();
             _objectUlongField?.Invoke(ref item, l);
             return item;
@@ -472,6 +524,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal DdwafObjectStruct ObjectDouble(double b)
         {
+            Log.Debug("WafLibraryInvoker.ObjectDouble called with double {Double}", b);
             var item = new DdwafObjectStruct();
             _objectDoubleField?.Invoke(ref item, b);
             return item;
@@ -479,6 +532,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal DdwafObjectStruct ObjectNull()
         {
+            Log.Debug("WafLibraryInvoker.ObjectNull called");
             var item = new DdwafObjectStruct();
             _objectNullField?.Invoke(ref item);
             return item;
@@ -486,6 +540,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal DdwafObjectStruct ObjectArray()
         {
+            Log.Debug("WafLibraryInvoker.ObjectArray called");
             var item = new DdwafObjectStruct();
             _objectArrayField?.Invoke(ref item);
             return item;
@@ -493,15 +548,29 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal DdwafObjectStruct ObjectMap()
         {
+            Log.Debug("WafLibraryInvoker.ObjectMap called");
             var item = new DdwafObjectStruct();
             _objectMapField?.Invoke(ref item);
             return item;
         }
 
-        internal bool ObjectArrayAdd(ref DdwafObjectStruct array, ref DdwafObjectStruct entry) => _objectArrayAddField?.Invoke(ref array, ref entry) ?? false;
+        internal bool ObjectArrayAdd(ref DdwafObjectStruct array, ref DdwafObjectStruct entry)
+        {
+            Log.Debug("WafLibraryInvoker.ObjectArrayAdd called with array {Array} and entry {Entry}", array, entry);
+            return _objectArrayAddField?.Invoke(ref array, ref entry) ?? false;
+        }
 
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        internal bool ObjectMapAdd(ref DdwafObjectStruct map, string entryName, ulong entryNameLength, ref DdwafObjectStruct entry) => Environment.Is64BitProcess ? _objectMapAddFieldX64!(ref map, entryName, entryNameLength, ref entry) : _objectMapAddFieldX86!(ref map, entryName, (uint)entryNameLength, ref entry);
+        internal bool ObjectMapAdd(ref DdwafObjectStruct map, string entryName, ulong entryNameLength, ref DdwafObjectStruct entry)
+        {
+            Log.Debug("WafLibraryInvoker.ObjectMapAdd called with map {Map}, entryName {EntryName}, entryNameLength {EntryNameLength} and entry {Entry}", map, entryName, entryNameLength, entry);
+            if (Environment.Is64BitProcess)
+            {
+                return _objectMapAddFieldX64?.Invoke(ref map, entryName, entryNameLength, ref entry) ?? false;
+            }
+
+            return _objectMapAddFieldX86?.Invoke(ref map, entryName, (uint)entryNameLength, ref entry) ?? false;
+        }
 
         private void LoggingCallback(
             DDWAF_LOG_LEVEL level,
