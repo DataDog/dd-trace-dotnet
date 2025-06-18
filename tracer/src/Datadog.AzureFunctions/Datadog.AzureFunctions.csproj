@@ -34,6 +34,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- using released versions for now while testing,
+         later we can switch to the commented ProjectReferences below -->
     <PackageReference Include="Datadog.Trace" Version="3.19.0"/>
     <PackageReference Include="Datadog.Trace.Annotations" Version="1.0.0"/>
     <!--
