@@ -28,6 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class KafkaProduceAsyncIntegration
     {
+        private static readonly int SleepDurationMs = int.TryParse(Environment.GetEnvironmentVariable("DD_KAFKA_INTEGRATION_SLEEP_MS"), out var duration) ? duration : 10;
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -60,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return new CallTargetState(scope);
             }
 
-            Thread.Sleep(1);
+            Thread.Sleep(SleepDurationMs);
 
             return CallTargetState.GetDefault();
         }
@@ -102,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
                     if (dataStreams.IsEnabled)
                     {
-                        Thread.Sleep(1);
+                        Thread.Sleep(SleepDurationMs);
 
                         dataStreams.TrackBacklog(
                             $"partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce",
