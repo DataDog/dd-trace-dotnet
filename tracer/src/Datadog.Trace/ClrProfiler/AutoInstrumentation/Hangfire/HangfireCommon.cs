@@ -29,7 +29,7 @@ internal static class HangfireCommon
 
     public static Scope CreateScope(Tracer tracer, string operationName, HangfireTags tags, ISpanContext parentContext = null, bool finishOnClose = true)
     {
-        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
         {
             // integration disabled, don't create a scope, skip this trace
             return null;
