@@ -64,6 +64,7 @@ ENV COMPlus_TieredCompilation=0
 ENV DD_CLR_ENABLE_INLINING=0
 #ENV LD_DEBUG=libs,symbols,bindings
 ENV DD_APPSEC_WAF_DEBUG=1
+ENV LD_BIND_NOW=1
 
 ## SSI variables
 ENV DD_INJECTION_ENABLED=tracer
