@@ -60,6 +60,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return new CallTargetState(scope);
             }
 
+            Thread.Sleep(1);
+
             return CallTargetState.GetDefault();
         }
 
@@ -100,6 +102,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
                     if (dataStreams.IsEnabled)
                     {
+                        Thread.Sleep(1);
+
                         dataStreams.TrackBacklog(
                             $"partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce",
                             deliveryResult.Offset.Value);
