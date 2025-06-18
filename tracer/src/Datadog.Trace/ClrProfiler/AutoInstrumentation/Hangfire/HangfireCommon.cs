@@ -73,16 +73,16 @@ internal static class HangfireCommon
         jobParams[key] = value;
     }
 
-    internal static void PopulatePerformSpanTags(Scope scope, IPerformingContextProxy performingContext, IPerformContextProxy performContext)
+    internal static void PopulatePerformSpanTags(Scope scope, IPerformingContextProxy performingContext)
     {
-        if (performContext is null || performingContext is null)
+        if (performingContext is null)
         {
-            Log.Debug("Issue with populating the onPerform Span due to the performContext: {PerformContext} or CreatingContext: {PerformingContext} being null", performContext, performingContext);
+            Log.Debug("Issue with populating the onPerform Span due to the performingContext: {PerformingContext} being null", performingContext);
             return;
         }
 
-        scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performContext.Job;
-        scope.Span.SetTag(HangfireConstants.JobIdTag, performContext.JobId);
-        scope.Span.SetTag(HangfireConstants.JobCreatedAtTag, performContext.BackgroundJob.CreatedAt.ToString("O"));
+        scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
+        scope.Span.SetTag(HangfireConstants.JobIdTag, performingContext.JobId);
+        scope.Span.SetTag(HangfireConstants.JobCreatedAtTag, performingContext.BackgroundJob.CreatedAt.ToString("O"));
     }
 }
