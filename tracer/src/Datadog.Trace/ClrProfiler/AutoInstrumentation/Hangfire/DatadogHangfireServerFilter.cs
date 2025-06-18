@@ -37,7 +37,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 Log.Debug("Extracting context from the followiing data: {SpanContextData}", spanContextData);
                 PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData);
                 parentContext = propagationContext.SpanContext;
-                Baggage.Current = propagationContext.Baggage;
             }
 
             Scope scope = HangfireCommon.CreateScope(Tracer.Instance, HangfireConstants.OnPerformOperation, new HangfireTags(SpanKinds.Server), parentContext);

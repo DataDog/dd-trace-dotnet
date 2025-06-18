@@ -35,8 +35,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 public class JobFilterCollectionAddIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JobFilterCollectionAddIntegration));
+    private static readonly object _registrationLock = new object();
     private static bool _loadedClientFilter = false;
     private static bool _loadedServerFilter = false;
+    private static volatile bool _filtersRegistered = false;
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref object? filter)
         where TTarget : IJobFilterCollectionProxy
@@ -47,6 +49,12 @@ public class JobFilterCollectionAddIntegration
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         where TTarget : IJobFilterCollectionProxy
     {
+        if (!Tracer.Instance.Settings.IsIntegrationEnabled(HangfireCommon.IntegrationId))
+        {
+            // integration disabled, skip injection of datadog job filter
+            return CallTargetReturn.GetDefault();
+        }
+
         if (!_loadedServerFilter)
         {
             // Try to find the Hangfire.Core assembly
@@ -62,7 +70,7 @@ public class JobFilterCollectionAddIntegration
             Type? saferServerFilterType = hangfireAssembly.GetType("Hangfire.Server.IServerFilter");
 
             Log.Debug("Datadog Jobfilter is not added in yet, attempting to do so.");
-            Type? serverFilterType = Type.GetType("Hangfire.Server.IServerFilter, Hangfire.Core");
+            // Type? serverFilterType = Type.GetType("Hangfire.Server.IServerFilter, Hangfire.Core");
             if (saferServerFilterType != null)
             {
                 Log.Debug("Registering filter for {FilterType}", saferServerFilterType.ToString());
