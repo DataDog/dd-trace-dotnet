@@ -68,6 +68,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             try
             {
+                Console.WriteLine($"Close library {library}");
+                
                 if (library == IntPtr.Zero)
                 {
                     Console.WriteLine("Trying to close WAF library with a null pointer");

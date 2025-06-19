@@ -12,6 +12,32 @@ class Program
     {
         Console.WriteLine("Starting");
 
+        var entries = Directory.EnumerateFileSystemEntries("/opt/datadog/");
+
+        foreach (string entry in entries)
+        {
+            Console.WriteLine(entry);
+        }
+
+        entries = Directory.EnumerateFileSystemEntries("/opt/datadog/linux-arm64/");
+
+        foreach (string entry in entries)
+        {
+            Console.WriteLine(entry);
+        }
+
+        if (!NativeLibrary.TryLoad("/opt/datadog/linux-arm64/Datadog.Profiler.Native.so", out var cpHandler))
+        {
+            Console.WriteLine("failed to load CP");
+            return 1;
+        }
+
+        if (!NativeLibrary.CloseLibrary(cpHandler))
+        {
+            Console.WriteLine("failed to unload CP");
+            return 1;
+        }
+
         if (!NativeLibrary.TryLoad("/opt/datadog/libddwaf.so", out var libraryHandle))
         {
             Console.WriteLine("failed to load WAF");
