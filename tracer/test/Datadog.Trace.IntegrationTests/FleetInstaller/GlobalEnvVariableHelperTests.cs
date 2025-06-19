@@ -20,7 +20,7 @@ namespace Datadog.Trace.IntegrationTests.FleetInstaller;
 public class GlobalEnvVariableHelperTests(ITestOutputHelper output) : FleetInstallerTestsBase(output)
 {
     [SkippableFact]
-    public void FullInstallAndUninstall_WhenNoVariablesSet_SetsVariablesAndRemovesThem()
+    public void SetAndRemove_WhenNoVariablesSet_SetsVariablesAndRemovesThem()
     {
         Skip.IfNot(IsRunningAsAdministrator);
 
@@ -30,7 +30,7 @@ public class GlobalEnvVariableHelperTests(ITestOutputHelper output) : FleetInsta
         AssertAllKeysAreEmpty(values);
 
         GlobalEnvVariableHelper.SetMachineEnvironmentVariables(Log, values, out var previousValues);
-        previousValues.Should().BeEmpty();
+        previousValues.Should().AllSatisfy(kvp => kvp.Value.Should().BeNull());
 
         AssertAllEnvVarValuesAreSetAtMachineLevel(values);
 
@@ -39,20 +39,18 @@ public class GlobalEnvVariableHelperTests(ITestOutputHelper output) : FleetInsta
         AssertAllKeysAreEmpty(values);
     }
 
-    [SkippableFact]
-    public void FullInstallAndUninstall_WhenExistingVariablesPresent_OverwritesVariablesAndRemovesThem()
+    [SkippableTheory]
+    [InlineData(0)]
+    [InlineData(3)]
+    [InlineData(50)]
+    public void SetAndRemove_WhenExistingVariablesPresent_OverwritesVariablesAndRemovesThem(int skip)
     {
         Skip.IfNot(IsRunningAsAdministrator);
         var homeDirectory = CreateMonitoringHomeCopy();
         var values = new TracerValues(homeDirectory);
 
         // Add some dummy values
-        var expectedPrevious = values.GlobalRequiredEnvVariables
-                                     .ToDictionary(x => x.Key, x => x.Key);
-        foreach (var kvp in expectedPrevious)
-        {
-            Environment.SetEnvironmentVariable(kvp.Key, kvp.Value, EnvironmentVariableTarget.Machine);
-        }
+        var expectedPrevious = SetPreviousEnvVariables(values, skip);
 
         GlobalEnvVariableHelper.SetMachineEnvironmentVariables(Log, values, out var previousValues);
         previousValues.Should().BeEquivalentTo(expectedPrevious);
@@ -64,20 +62,18 @@ public class GlobalEnvVariableHelperTests(ITestOutputHelper output) : FleetInsta
         AssertAllKeysAreEmpty(values);
     }
 
-    [SkippableFact]
-    public void FullInstallAndRevert_WhenExistingVariablesPresent_RestoresPreviousValues()
+    [SkippableTheory]
+    [InlineData(0)]
+    [InlineData(3)]
+    [InlineData(50)]
+    public void SetAndRevert_WhenExistingVariablesPresent_RestoresPreviousValues(int skip)
     {
         Skip.IfNot(IsRunningAsAdministrator);
         var homeDirectory = CreateMonitoringHomeCopy();
         var values = new TracerValues(homeDirectory);
 
         // Add some dummy values
-        var expectedPrevious = values.GlobalRequiredEnvVariables
-                                     .ToDictionary(x => x.Key, x => x.Key);
-        foreach (var kvp in expectedPrevious)
-        {
-            Environment.SetEnvironmentVariable(kvp.Key, kvp.Value, EnvironmentVariableTarget.Machine);
-        }
+        var expectedPrevious = SetPreviousEnvVariables(values, skip);
 
         GlobalEnvVariableHelper.SetMachineEnvironmentVariables(Log, values, out var previousValues);
         previousValues.Should().BeEquivalentTo(expectedPrevious);
@@ -87,6 +83,22 @@ public class GlobalEnvVariableHelperTests(ITestOutputHelper output) : FleetInsta
         // Confirm that we can revert to the previous
         GlobalEnvVariableHelper.RevertMachineEnvironmentVariables(Log, previousValues);
         AssertAllEnvVarValuesAreSetAtMachineLevel(expectedPrevious);
+    }
+
+    private static Dictionary<string, string> SetPreviousEnvVariables(TracerValues values, int skip)
+    {
+        // default to null values initially
+        var previousSetValues = values
+                               .GlobalRequiredEnvVariables
+                               .ToDictionary(x => x.Key, x => (string)null);
+
+        foreach (var kvp in previousSetValues.Skip(skip).ToList())
+        {
+            previousSetValues[kvp.Key] = kvp.Value;
+            Environment.SetEnvironmentVariable(kvp.Key, kvp.Value, EnvironmentVariableTarget.Machine);
+        }
+
+        return previousSetValues;
     }
 
     private static void AssertAllEnvVarValuesAreSetAtMachineLevel(TracerValues values)

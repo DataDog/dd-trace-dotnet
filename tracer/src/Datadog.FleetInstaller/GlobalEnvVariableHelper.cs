@@ -13,7 +13,7 @@ internal static class GlobalEnvVariableHelper
     public static bool SetMachineEnvironmentVariables(
         ILogger log,
         TracerValues values,
-        out Dictionary<string, string> previousValues)
+        out Dictionary<string, string?> previousValues)
     {
         previousValues = new();
         try
@@ -23,10 +23,9 @@ internal static class GlobalEnvVariableHelper
             foreach (var kvp in values.GlobalRequiredEnvVariables)
             {
                 var previousValue = Environment.GetEnvironmentVariable(kvp.Key, EnvironmentVariableTarget.Machine);
-                if (!string.IsNullOrWhiteSpace(previousValue))
-                {
-                    previousValues[kvp.Key] = previousValue;
-                }
+                // We store the previous value, even if it's null,
+                // so that we can revert (or remove) our replacements later if necessary
+                previousValues[kvp.Key] = previousValue;
 
                 log.WriteInfo($"Setting global environment variable {kvp.Key} to {kvp.Value}");
                 Environment.SetEnvironmentVariable(kvp.Key, kvp.Value, EnvironmentVariableTarget.Machine);
@@ -42,7 +41,7 @@ internal static class GlobalEnvVariableHelper
         }
     }
 
-    public static bool RevertMachineEnvironmentVariables(ILogger log, Dictionary<string, string> previousValues)
+    public static bool RevertMachineEnvironmentVariables(ILogger log, Dictionary<string, string?> previousValues)
     {
         try
         {
