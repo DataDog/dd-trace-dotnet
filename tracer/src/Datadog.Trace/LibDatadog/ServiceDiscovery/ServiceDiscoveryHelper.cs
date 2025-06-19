@@ -14,11 +14,19 @@ internal class ServiceDiscoveryHelper
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ServiceDiscoveryHelper>();
 
-    internal static void StoreTracerMetadata(TracerSettings tracerSettings)
+    internal enum StoreMetadataResult
     {
-        if (FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux
-         && Environment.Is64BitProcess
-         && !Util.EnvironmentHelpers.IsServerlessEnvironment())
+        Success,
+        Skipped,
+        Error,
+        Exception,
+    }
+
+    internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings)
+    {
+        var platformIsSupported = FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess;
+        var deploymentIsSupported = !Util.EnvironmentHelpers.IsServerlessEnvironment();
+        if (platformIsSupported && deploymentIsSupported)
         {
             try
             {
@@ -36,15 +44,24 @@ internal class ServiceDiscoveryHelper
                 {
                     Log.Error("Failed to store tracer metadata with message: {Error}", Error.Read(ref result.Error));
                     NativeInterop.Common.DropError(ref result.Error);
+                    return StoreMetadataResult.Error;
                 }
 
                 Log.Debug("Successfully stored tracer metadata with LibDatadog");
+                return StoreMetadataResult.Success;
             }
             catch (Exception e)
             {
                 Log.Error(e, "Failed to store tracer metadata due to an unexpected error");
+                return StoreMetadataResult.Exception;
             }
         }
+
+        Log.Debug(
+            "Skipping storage of tracer metadata with LibDatadog: Platform supported: {PlatformIsSupported}, Deployment supported: {DeploymentIsSupported}",
+            platformIsSupported,
+            deploymentIsSupported);
+        return StoreMetadataResult.Skipped;
     }
 
     private static TracerMemfdHandleResult StoreTracerMetadata(
