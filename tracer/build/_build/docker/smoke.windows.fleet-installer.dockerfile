@@ -52,7 +52,5 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-# Copy the app across
-COPY --from=builder /src/publish /app/.
 
 ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]

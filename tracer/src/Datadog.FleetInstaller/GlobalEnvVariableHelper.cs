@@ -57,7 +57,7 @@ internal static class GlobalEnvVariableHelper
         }
         catch (Exception e)
         {
-            log.WriteError("Failed revert global environment variables: " + e);
+            log.WriteError("Failed to revert global environment variables: " + e);
             return false;
         }
     }
