@@ -7,6 +7,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
 
 namespace Datadog.Trace.LibDatadog;
@@ -14,6 +15,14 @@ namespace Datadog.Trace.LibDatadog;
 internal class NativeInterop
 {
     private const string DllName = "LibDatadog";
+
+    // This will never change, so we use a lazy to cache the result.
+    // This confirms that we are in an automatic instrumentation environment (and so PInvokes have been re-written)
+    // and that the libdatadog library has been deployed (which is not the case in many serverless environments).
+    // We should add or remove conditions from here as our deployment requirements change.
+    private static readonly Lazy<bool> LibDatadogAvailable = new(() => !Util.EnvironmentHelpers.IsServerlessEnvironment() && Instrumentation.ProfilerAttached);
+
+    public static bool IsLibDatadogAvailable => LibDatadogAvailable.Value;
 
     internal static class Exporter
     {
