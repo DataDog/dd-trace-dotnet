@@ -74,6 +74,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return null;
             }
 
+            scope.Span.SetTag(Tags.DbBatchSize, batch.BatchCommands.Count);
+
             if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
             {
                 try
