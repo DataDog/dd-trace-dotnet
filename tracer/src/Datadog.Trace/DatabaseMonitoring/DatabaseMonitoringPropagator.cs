@@ -45,27 +45,21 @@ namespace Datadog.Trace.DatabaseMonitoring
 
         internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
         {
-            if (PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters.Cast<DbParameter?>(), configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType))
-            {
-                command.CommandText = modifiedText;
-                command.CommandType = modifiedType;
-                return true;
-            }
+            var traceParentInjected = PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters.Cast<DbParameter?>(), configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType);
+            command.CommandText = modifiedText;
+            command.CommandType = modifiedType;
 
-            return false;
+            return traceParentInjected;
         }
 
 #if NET6_0_OR_GREATER
         internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, DbBatchCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
         {
-            if (PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters.Cast<DbParameter?>(), configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType))
-            {
-                command.CommandText = modifiedText;
-                command.CommandType = modifiedType;
-                return true;
-            }
+            var traceParentInjected = PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters.Cast<DbParameter?>(), configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType);
+            command.CommandText = modifiedText;
+            command.CommandType = modifiedType;
 
-            return false;
+            return traceParentInjected;
         }
 #endif
 

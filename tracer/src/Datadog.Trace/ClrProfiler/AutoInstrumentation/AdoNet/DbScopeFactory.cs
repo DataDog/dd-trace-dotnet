@@ -28,9 +28,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
-            var scope = CreateDbCommandScope(tracer, command.CommandText, integrationId, dbType, operationName, serviceName, ref tagsFromConnectionString);
+            var scope = CreateDbCommandScope(tracer, command.CommandText, integrationId, dbType, operationName, serviceName, ref tagsFromConnectionString, out var sqlTags);
 
-            if (scope == null)
+            if (scope == null || sqlTags == null)
             {
                 return null;
             }
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                     if (traceParentInjectedInComment || traceParentInjectedInContext)
                     {
-                        ((SqlTags)scope.Span.Tags).DbmTraceInjected = "true";
+                        sqlTags.DbmTraceInjected = "true";
                     }
                 }
                 catch (Exception ex)
@@ -67,14 +67,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         private static Scope? CreateDbBatchScope(Tracer tracer, DbBatch batch, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
             var allCommandsText = string.Join(";", batch.BatchCommands.Select(c => c.CommandText));
-            var scope = CreateDbCommandScope(tracer, allCommandsText, integrationId, dbType, operationName, serviceName, ref tagsFromConnectionString);
+            var scope = CreateDbCommandScope(tracer, allCommandsText, integrationId, dbType, operationName, serviceName, ref tagsFromConnectionString, out var sqlTags);
 
-            if (scope == null)
+            if (scope == null || sqlTags == null)
             {
                 return null;
             }
 
-            scope.Span.SetTag(Tags.DbBatchSize, batch.BatchCommands.Count);
+            sqlTags.BatchSize = batch.BatchCommands.Count.ToString();
 
             if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
             {
@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                     if (traceParentInjectedInComment || traceParentInjectedInContext)
                     {
-                        ((SqlTags)scope.Span.Tags).DbmTraceInjected = "true";
+                        sqlTags.DbmTraceInjected = "true";
                     }
                 }
                 catch (Exception ex)
@@ -113,32 +113,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 #endif
 
-        private static Scope? CreateDbCommandScope(Tracer tracer, string commandText, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        private static Scope? CreateDbCommandScope(Tracer tracer, string commandText, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString, out SqlTags? sqlTags)
         {
+            sqlTags = null;
             if (!ShouldCreateScope(tracer, integrationId, dbType, commandText))
             {
                 return null;
             }
 
             Scope? scope = null;
-            SqlTags tags;
 
             try
             {
                 // We might block the SQL call from RASP depending on the query
                 VulnerabilitiesModule.OnSqlQuery(commandText, integrationId);
 
-                tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
-                tags.DbType = dbType;
-                tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
-                tags.DbName = tagsFromConnectionString.DbName;
-                tags.DbUser = tagsFromConnectionString.DbUser;
-                tags.OutHost = tagsFromConnectionString.OutHost;
+                sqlTags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
+                sqlTags.DbType = dbType;
+                sqlTags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
+                sqlTags.DbName = tagsFromConnectionString.DbName;
+                sqlTags.DbUser = tagsFromConnectionString.DbUser;
+                sqlTags.OutHost = tagsFromConnectionString.OutHost;
 
-                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                sqlTags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(sqlTags);
 
-                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, tags: sqlTags, serviceName: serviceName);
                 scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
