@@ -1,4 +1,4 @@
-// <copyright file="RemoveGlobalInstrumentation.cs" company="Datadog">
+// <copyright file="RemoveGlobalInstrumentationCommand.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,12 +13,12 @@ namespace Datadog.FleetInstaller.Commands;
 /// <summary>
 /// Remove IIS instrumentation completely
 /// </summary>
-internal class RemoveGlobalInstrumentation : CommandBase
+internal class RemoveGlobalInstrumentationCommand : CommandBase
 {
     private const string Command = "remove-global-instrumentation";
     private const string CommandDescription = "Removes instrumentation globally with the .NET library, including from IIS";
 
-    public RemoveGlobalInstrumentation()
+    public RemoveGlobalInstrumentationCommand()
         : base(Command, CommandDescription)
     {
         AddValidator(Validate);
@@ -46,7 +46,7 @@ internal class RemoveGlobalInstrumentation : CommandBase
             return ReturnCode.ErrorRemovingGlobalEnvironmentVariables;
         }
 
-        var iisResult = RemoveIisInstrumentation.Execute(log);
+        var iisResult = RemoveIisInstrumentationCommand.Execute(log);
         if (iisResult != ReturnCode.Success)
         {
             log.WriteError("Failed to remove IIS instrumentation. Apps may continue to be instrumented");

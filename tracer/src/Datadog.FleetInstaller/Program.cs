@@ -50,9 +50,9 @@ rootCommand.AddExample("""
 rootCommand.AddCommand(new InstallVersionCommand());
 rootCommand.AddCommand(new UninstallVersionCommand());
 rootCommand.AddCommand(new EnableIisInstrumentationCommand());
-rootCommand.AddCommand(new RemoveIisInstrumentation());
+rootCommand.AddCommand(new RemoveIisInstrumentationCommand());
 rootCommand.AddCommand(new EnableGlobalInstrumentationCommand());
-rootCommand.AddCommand(new RemoveGlobalInstrumentation());
+rootCommand.AddCommand(new RemoveGlobalInstrumentationCommand());
 rootCommand.AddCommand(new AvailableCommandsCommand(rootCommand));
 
 return builder.Build().Invoke(args);
