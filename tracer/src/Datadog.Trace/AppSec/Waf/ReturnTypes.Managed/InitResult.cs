@@ -6,16 +6,13 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.AppSec.WafEncoding;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using System.Threading;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal class InitResult
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitResult));
+        private int _firstReport = 0;
 
         private InitResult(ref UpdateResult updateResult)
         {
@@ -51,7 +48,11 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal string RuleFileVersion => UpdateResult.RuleFileVersion;
 
-        internal bool Reported { get; set; }
+        /// <summary>
+        /// Gets a value indicating whether the WAF init info been reported to the WAF. Only returns true on the first report.
+        /// </summary>
+        /// <returns>True if this is the first invocation of the method on the InitResult. False for subsequent calls</returns>
+        internal bool Reported => Interlocked.Exchange(ref _firstReport, 1) == 1;
 
         internal static InitResult From(ref UpdateResult result)
         {
