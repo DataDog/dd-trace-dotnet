@@ -213,7 +213,7 @@ internal static class GitCommandHelper
         string? pullRequestBaseBranch = null,
         bool fetchRemoteBranches = true)
     {
-        if (string.IsNullOrEmpty(workingDirectory))
+        if (StringUtil.IsNullOrWhiteSpace(workingDirectory))
         {
             Log.Warning("GitCommandHelper: Cannot detect base branch because working directory is null or empty");
             return null;
@@ -222,21 +222,21 @@ internal static class GitCommandHelper
         try
         {
             // Step 1a - Get remote name if not provided
-            if (string.IsNullOrEmpty(remoteName))
+            if (StringUtil.IsNullOrWhiteSpace(remoteName))
             {
                 var originNameOutput = RunGitCommand(workingDirectory, "config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
                 remoteName = originNameOutput?.Output.Replace(Environment.NewLine, string.Empty).Trim() ?? "origin";
                 Log.Debug("GitCommandHelper: Auto-detected remote name: {RemoteName}", remoteName);
             }
 
-            if (remoteName is not { Length: > 0 } || string.IsNullOrWhiteSpace(remoteName))
+            if (StringUtil.IsNullOrWhiteSpace(remoteName))
             {
                 Log.Warning("GitCommandHelper: Cannot detect remote because remoteName is null or empty");
                 return null;
             }
 
             // Step 1b - Get source branch (target branch) if not provided
-            if (string.IsNullOrEmpty(targetBranch))
+            if (StringUtil.IsNullOrWhiteSpace(targetBranch))
             {
                 var gitOutput = RunGitCommand(workingDirectory, "branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
                 targetBranch = gitOutput?.Output.Replace(Environment.NewLine, string.Empty) ?? string.Empty;
@@ -244,7 +244,7 @@ internal static class GitCommandHelper
             }
 
             // Bail out if the target branch is still empty
-            if (string.IsNullOrEmpty(targetBranch))
+            if (StringUtil.IsNullOrWhiteSpace(targetBranch))
             {
                 Log.Warning("GitCommandHelper: Cannot detect base branch because target branch is null or empty");
                 return null;
@@ -265,7 +265,7 @@ internal static class GitCommandHelper
             // Step 2 - Build the candidate branches list and fetch them from remote
             var candidateBranches = new List<string>();
 
-            if (pullRequestBaseBranch is { Length: > 0 })
+            if (!StringUtil.IsNullOrWhiteSpace(pullRequestBaseBranch))
             {
                 // Step 2b - We have git.pull_request.base_branch
                 if (fetchRemoteBranches)
@@ -293,7 +293,7 @@ internal static class GitCommandHelper
                     $"for-each-ref --format='%(refname:short)' refs/remotes/{remoteName}",
                     MetricTags.CIVisibilityCommands.BuildCandidateList);
 
-                if (branchesOutput?.ExitCode != 0 || string.IsNullOrWhiteSpace(branchesOutput.Output))
+                if (branchesOutput?.ExitCode != 0 || StringUtil.IsNullOrWhiteSpace(branchesOutput.Output))
                 {
                     Log.Warning("GitCommandHelper: Failed to get branch list");
                     return null;
@@ -342,7 +342,7 @@ internal static class GitCommandHelper
                     $"merge-base {branch} {targetBranch}",
                     MetricTags.CIVisibilityCommands.MergeBase);
 
-                if (mergeBaseOutput?.ExitCode != 0 || string.IsNullOrWhiteSpace(mergeBaseOutput.Output))
+                if (mergeBaseOutput?.ExitCode != 0 || StringUtil.IsNullOrWhiteSpace(mergeBaseOutput.Output))
                 {
                     continue; // Skip if no common history
                 }
@@ -355,7 +355,7 @@ internal static class GitCommandHelper
                     $"rev-list --left-right --count {branch}...{targetBranch}",
                     MetricTags.CIVisibilityCommands.RevList);
 
-                if (revListOutput?.ExitCode != 0 || string.IsNullOrWhiteSpace(revListOutput.Output))
+                if (revListOutput?.ExitCode != 0 || StringUtil.IsNullOrWhiteSpace(revListOutput.Output))
                 {
                     continue;
                 }
@@ -419,7 +419,7 @@ internal static class GitCommandHelper
             return null;
         }
 
-        bool IsDefaultBranch(string candidate) => !string.IsNullOrEmpty(defaultBranch) &&
+        bool IsDefaultBranch(string candidate) => !StringUtil.IsNullOrWhiteSpace(defaultBranch) &&
                                                   (candidate == defaultBranch ||
                                                    candidate == $"{remoteName}/{defaultBranch}");
     }
