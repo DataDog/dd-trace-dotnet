@@ -45,7 +45,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 
         internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
         {
-            var traceParentInjected = PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters.Cast<DbParameter?>(), configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType);
+            var traceParentInjected = PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters, configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType);
             command.CommandText = modifiedText;
             command.CommandType = modifiedType;
 
@@ -55,7 +55,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 #if NET6_0_OR_GREATER
         internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, DbBatchCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
         {
-            var traceParentInjected = PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters.Cast<DbParameter?>(), configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType);
+            var traceParentInjected = PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters, configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType);
             command.CommandText = modifiedText;
             command.CommandType = modifiedType;
 
@@ -68,7 +68,7 @@ namespace Datadog.Trace.DatabaseMonitoring
             IntegrationId integrationId,
             string commandText,
             CommandType commandType,
-            IEnumerable<DbParameter?>? commandParameters,
+            IDataParameterCollection commandParameters,
             string configuredServiceName,
             string? dbName,
             string? outhost,
@@ -176,7 +176,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 // check to see if we have any Return/InputOutput/Output parameters
                 if (commandParameters != null)
                 {
-                    foreach (var param in commandParameters)
+                    foreach (DbParameter? param in commandParameters)
                     {
                         if (param == null)
                         {
@@ -255,7 +255,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 var paramList = new StringBuilder();
                 if (commandParameters != null)
                 {
-                    foreach (var param in commandParameters)
+                    foreach (DbParameter? param in commandParameters)
                     {
                         if (param == null)
                         {
