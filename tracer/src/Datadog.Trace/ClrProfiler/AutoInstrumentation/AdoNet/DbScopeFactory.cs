@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -27,7 +28,92 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
-            if (!ShouldCreateScope(tracer, integrationId, dbType, command.CommandText))
+            var scope = CreateDbCommandScope(tracer, command.CommandText, integrationId, dbType, operationName, serviceName, ref tagsFromConnectionString);
+
+            if (scope == null)
+            {
+                return null;
+            }
+
+            if (ShouldInjectDbmInfo(tracer, integrationId, command.CommandText, scope.Span.Context))
+            {
+                try
+                {
+                    // PropagateDataViaComment (service) - this injects varius trace information as a comment in the query
+                    // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
+                    var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
+                    // try context injection only after comment injection, so that if it fails, we still have service level propagation
+                    var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
+
+                    if (traceParentInjectedInComment || traceParentInjectedInContext)
+                    {
+                        ((SqlTags)scope.Span.Tags).DbmTraceInjected = "true";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error propagating span data for DBM");
+                }
+
+                // we have to start the span before doing the DBM propagation work (to have the span ID)
+                // but ultimately, we don't want to measure the time spent instrumenting.
+                scope.Span.ResetStartTime();
+            }
+
+            return scope;
+        }
+
+#if NET6_0_OR_GREATER
+        private static Scope? CreateDbBatchScope(Tracer tracer, DbBatch batch, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        {
+            var allCommandsText = string.Join(";", batch.BatchCommands.Select(c => c.CommandText));
+            var scope = CreateDbCommandScope(tracer, allCommandsText, integrationId, dbType, operationName, serviceName, ref tagsFromConnectionString);
+
+            if (scope == null)
+            {
+                return null;
+            }
+
+            if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
+            {
+                try
+                {
+                    var traceParentInjectedInComment = false;
+                    foreach (var command in batch.BatchCommands)
+                    {
+                        // we need to run the check for every single command because we look for already injected comments in them
+                        if (ShouldInjectDbmInfo(tracer, integrationId, command.CommandText, scope.Span.Context))
+                        {
+                            // I consider that injecting at least one comment is enough to say injection happened
+                            traceParentInjectedInComment |= DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
+                        }
+                    }
+
+                    // context injection is done only once for the whole batch (not once per command)
+                    var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, batch, scope.Span);
+
+                    if (traceParentInjectedInComment || traceParentInjectedInContext)
+                    {
+                        ((SqlTags)scope.Span.Tags).DbmTraceInjected = "true";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error propagating span data for DBM");
+                }
+
+                // we have to start the span before doing the DBM propagation work (to have the span ID)
+                // but ultimately, we don't want to measure the time spent instrumenting.
+                scope.Span.ResetStartTime();
+            }
+
+            return scope;
+        }
+#endif
+
+        private static Scope? CreateDbCommandScope(Tracer tracer, string commandText, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        {
+            if (!ShouldCreateScope(tracer, integrationId, dbType, commandText))
             {
                 return null;
             }
@@ -51,88 +137,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
-                scope.Span.ResourceName = command.CommandText;
+                scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "Error creating or populating scope.");
-                return scope;
             }
-
-            try { command.CommandText = InjectDbmInfo(tracer, command.CommandText, command.CommandType, integrationId, tagsFromConnectionString, scope, tags); }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error propagating span data for DBM");
-            }
-
-            // we have to start the span before doing the DBM propagation work (to have the span ID)
-            // but ultimately, we don't want to measure the time spent instrumenting.
-            scope.Span.ResetStartTime();
-
 
             return scope;
         }
-
-        private static Scope? CreateDbBatchScope(Tracer tracer, DbBatch batch, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
-        {
-            if (batch.BatchCommands.Count == 0)
-            {
-                return null;
-            }
-
-            var firstCommandText = batch.BatchCommands[0].CommandText;
-            if (!ShouldCreateScope(tracer, integrationId, dbType, firstCommandText))
-            {
-                return null;
-            }
-
-            Scope scope = null;
-
-            try
-            {
-                var tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
-                tags.DbType = dbType;
-                tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
-                tags.DbName = tagsFromConnectionString.DbName;
-                tags.DbUser = tagsFromConnectionString.DbUser;
-                tags.OutHost = tagsFromConnectionString.OutHost;
-
-                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
-
-                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
-                scope.Span.ResourceName = firstCommandText; // TODO should we concatenate all commands ? With ; ?
-                scope.Span.Type = SpanTypes.Sql;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-            }
-            catch (Exception ex) when (ex is not BlockException)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-                return scope;
-            }
-
-            try{
-                
-                foreach (var command in batch.BatchCommands)
-                {
-                    command.CommandText = InjectDbmInfo(tracer, command.CommandText, command.CommandType, integrationId, tagsFromConnectionString, scope, tags);
-                
-                }
-            }catch (Exception ex)
-            {
-                Log.Error(ex, "Error propagating span data for DBM");
-            }
-
-            // we have to start the span before doing the DBM propagation work (to have the span ID)
-            // but ultimately, we don't want to measure the time spent instrumenting.
-            scope.Span.ResetStartTime();
-
-            return scope;
-        }
-
-#endif
 
         private static bool ShouldCreateScope(Tracer tracer, IntegrationId integrationId, string dbType, string commandText)
         {
@@ -166,49 +181,93 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
         }
 
+        private static bool ShouldInjectDbmInfo(Tracer tracer, IntegrationId integrationId, string commandText, SpanContext spanContext)
+        {
+            if (tracer.Settings.DbmPropagationMode == DbmPropagationLevel.Disabled)
+            {
+                return false;
+            }
+
+            var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
+                                  // if we appended the comment, we need to look for a potential DBM comment in the whole string.
+                                  (DatabaseMonitoringPropagator.ShouldAppend(integrationId, commandText) && commandText.Contains(DatabaseMonitoringPropagator.DbmPrefix));
+
+            if (alreadyInjected)
+            {
+                // The command text is already injected, so they're probably caching the SqlCommand
+                // that's not a problem if they're using 'service' mode, but it _is_ a problem for 'full' mode
+                // There's not a lot we can do about it (we don't want to start parsing commandText), so just
+                // report it for now
+                if (!Volatile.Read(ref _dbCommandCachingLogged)
+                 && tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Service)
+                {
+                    _dbCommandCachingLogged = true;
+                    Log.Warning(
+                        "The DB Command instance already contains DBM information. Caching of the command objects is not supported with full DBM mode. [s_id: {SpanId}, t_id: {TraceId}]",
+                        spanContext.RawSpanId,
+                        spanContext.RawTraceId);
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Returns the modified command text, with extra data injected for DBM if necessary.
         /// </summary>
-        private static string InjectDbmInfo(Tracer tracer, string commandText, CommandType commandType, IntegrationId integrationId, DbCommandCache.TagsCacheItem tagsFromConnectionString, Scope scope, SqlTags tags)
+        private static void InjectDbmInfo(Tracer tracer, IDbCommand command, IntegrationId integrationId, DbCommandCache.TagsCacheItem tagsFromConnectionString, Scope scope, SqlTags tags)
         {
-            if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
-             && commandType != CommandType.StoredProcedure)
+            try
             {
-                var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix);
-                if (alreadyInjected)
+                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
                 {
-                    // The command text is already injected, so they're probably caching the SqlCommand
-                    // that's not a problem if they're using 'service' mode, but it _is_ a problem for 'full' mode
-                    // There's not a lot we can do about it (we don't want to start parsing commandText), so just
-                    // report it for now
-                    if (!Volatile.Read(ref _dbCommandCachingLogged)
-                     && tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Service)
-                    {
-                        _dbCommandCachingLogged = true;
-                        var spanContext = scope.Span.Context;
-                        Log.Warning(
-                            "The {CommandType} IDbCommand instance already contains DBM information. Caching of the command objects is not supported with full DBM mode. [s_id: {SpanId}, t_id: {TraceId}]",
-                            commandType,
-                            spanContext.RawSpanId,
-                            spanContext.RawTraceId);
-                    }
-                }
-                else
-                {
-                    // PropagateDataViaComment (service) - this injects varius trace information as a comment in the query
-                    // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
-                    var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
-                    // try context injection only after comment injection, so that if it fails, we still have service level propagation
-                    var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
+                    var alreadyInjected = command.CommandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
+                                          // if we appended the comment, we need to look for a potential DBM comment in the whole string.
+                                          (DatabaseMonitoringPropagator.ShouldAppend(integrationId, command.CommandText) && command.CommandText.Contains(DatabaseMonitoringPropagator.DbmPrefix));
 
-                    if (traceParentInjectedInComment || traceParentInjectedInContext)
+                    if (alreadyInjected)
                     {
-                        tags.DbmTraceInjected = "true";
+                        // The command text is already injected, so they're probably caching the SqlCommand
+                        // that's not a problem if they're using 'service' mode, but it _is_ a problem for 'full' mode
+                        // There's not a lot we can do about it (we don't want to start parsing commandText), so just
+                        // report it for now
+                        if (!Volatile.Read(ref _dbCommandCachingLogged)
+                         && tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Service)
+                        {
+                            _dbCommandCachingLogged = true;
+                            var spanContext = scope.Span.Context;
+                            Log.Warning(
+                                "The {CommandType} IDbCommand instance already contains DBM information. Caching of the command objects is not supported with full DBM mode. [s_id: {SpanId}, t_id: {TraceId}]",
+                                command.CommandType,
+                                spanContext.RawSpanId,
+                                spanContext.RawTraceId);
+                        }
+                    }
+                    else
+                    {
+                        // PropagateDataViaComment (service) - this injects varius trace information as a comment in the query
+                        // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
+                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
+                        // try context injection only after comment injection, so that if it fails, we still have service level propagation
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
+
+                        if (traceParentInjectedInComment || traceParentInjectedInContext)
+                        {
+                            tags.DbmTraceInjected = "true";
+                        }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error propagating span data for DBM");
+            }
 
-            return commandText;
+            // we have to start the span before doing the DBM propagation work (to have the span ID)
+            // but ultimately, we don't want to measure the time spent instrumenting.
+            scope.Span.ResetStartTime();
         }
 
         public static bool TryGetIntegrationDetails(
@@ -367,11 +426,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
 
 #if NET6_0_OR_GREATER
-            public static Scope CreateDbBatchScope(Tracer tracer, DbBatch batch)
+            public static Scope? CreateDbBatchScope(Tracer tracer, DbBatch batch)
             {
                 var commandType = batch.GetType();
 
-                if (commandType == CommandType)
+                if (commandType == CommandType && DbTypeName is not null && OperationName is not null)
                 {
                     // use the cached values if command.GetType() == typeof(TCommand)
                     var tagsFromConnectionString = GetTagsFromConnectionString(batch);
@@ -463,7 +522,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 #if NET6_0_OR_GREATER
             private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(DbBatch command)
             {
-                string connectionString = null;
+                string? connectionString = null;
                 try
                 {
                     connectionString = command.Connection?.ConnectionString;
@@ -481,7 +540,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
 #endif
 
-            private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(string connectionString)
+            private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(string? connectionString)
             {
                 if (connectionString is null)
                 {

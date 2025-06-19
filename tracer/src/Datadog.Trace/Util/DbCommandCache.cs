@@ -58,7 +58,7 @@ namespace Datadog.Trace.Util
             return GetTagsFromConnectionString(connectionString);
         }
 
-        internal static TagsCacheItem GetTagsFromConnectionString(string connectionString)
+        internal static TagsCacheItem GetTagsFromConnectionString(string? connectionString)
         {
             if (connectionString is null)
             {

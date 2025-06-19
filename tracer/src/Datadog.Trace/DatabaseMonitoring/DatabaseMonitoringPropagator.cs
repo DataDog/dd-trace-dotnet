@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
@@ -14,7 +16,6 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
 
@@ -44,13 +45,54 @@ namespace Datadog.Trace.DatabaseMonitoring
 
         internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
         {
+            if (PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters.Cast<DbParameter?>(), configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType))
+            {
+                command.CommandText = modifiedText;
+                command.CommandType = modifiedType;
+                return true;
+            }
+
+            return false;
+        }
+
+#if NET6_0_OR_GREATER
+        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, DbBatchCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
+        {
+            if (PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters.Cast<DbParameter?>(), configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType))
+            {
+                command.CommandText = modifiedText;
+                command.CommandType = modifiedType;
+                return true;
+            }
+
+            return false;
+        }
+#endif
+
+        internal static bool PropagateDataViaComment(
+            DbmPropagationLevel propagationLevel,
+            IntegrationId integrationId,
+            string commandText,
+            CommandType commandType,
+            IEnumerable<DbParameter?>? commandParameters,
+            string configuredServiceName,
+            string? dbName,
+            string? outhost,
+            Span span,
+            bool injectStoredProcedure,
+            out string modifiedText,
+            out CommandType modifiedType)
+        {
+            modifiedText = commandText;
+            modifiedType = commandType;
+
             if (integrationId is not (IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient or IntegrationId.Oracle) ||
                 propagationLevel is not (DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
                 return false;
             }
 
-            if (command.CommandType == CommandType.StoredProcedure && (!injectStoredProcedure || integrationId != IntegrationId.SqlClient))
+            if (commandType == CommandType.StoredProcedure && (!injectStoredProcedure || integrationId != IntegrationId.SqlClient))
             {
                 // We don't inject into StoredProcedures unless enabled as we change the commands
                 // We don't inject into StoredProcedures unless we are in SqlClient
@@ -116,10 +158,9 @@ namespace Datadog.Trace.DatabaseMonitoring
             propagatorStringBuilder.Append("*/");
 
             // modify the command to add the comment
-            var commandText = command.CommandText ?? string.Empty;
             var propagationComment = StringBuilderCache.GetStringAndRelease(propagatorStringBuilder);
 
-            if (command.CommandType == CommandType.StoredProcedure && integrationId == IntegrationId.SqlClient)
+            if (commandType == CommandType.StoredProcedure && integrationId == IntegrationId.SqlClient)
             {
                 /*
                 * For CommandType.StoredProcedure, we need to modify the command text to use an EXEC statement and swap it to a CommandType.Text.
@@ -139,9 +180,9 @@ namespace Datadog.Trace.DatabaseMonitoring
                 */
 
                 // check to see if we have any Return/InputOutput/Output parameters
-                if (command.Parameters != null)
+                if (commandParameters != null)
                 {
-                    foreach (DbParameter? param in command.Parameters)
+                    foreach (var param in commandParameters)
                     {
                         if (param == null)
                         {
@@ -167,7 +208,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                     }
                 }
 
-                var procName = command.CommandText ?? string.Empty;
+                var procName = commandText;
 
                 if (string.IsNullOrEmpty(procName))
                 {
@@ -218,9 +259,9 @@ namespace Datadog.Trace.DatabaseMonitoring
 
                 // Build parameter list for EXEC statement
                 var paramList = new StringBuilder();
-                if (command.Parameters != null)
+                if (commandParameters != null)
                 {
-                    foreach (DbParameter? param in command.Parameters)
+                    foreach (var param in commandParameters)
                     {
                         if (param == null)
                         {
@@ -247,31 +288,31 @@ namespace Datadog.Trace.DatabaseMonitoring
 
                 // Change command type to Text, this allows us to use the EXEC statement
                 // This changes how the SQL command is executed, but since we are only supporting INPUT parameters we should be fine
-                command.CommandType = CommandType.Text;
+                modifiedType = CommandType.Text;
 
                 // Create EXEC statement with parameters
                 // NOTE: EXECUTE is the exact same as EXEC, I chose EXEC arbitrarily
                 if (paramList.Length > 0)
                 {
-                    command.CommandText = $"EXEC {quotedName} {paramList} {propagationComment}";
+                    modifiedText = $"EXEC {quotedName} {paramList} {propagationComment}";
                 }
                 else
                 {
-                    command.CommandText = $"EXEC {quotedName} {propagationComment}";
+                    modifiedText = $"EXEC {quotedName} {propagationComment}";
                 }
 
                 // Log the command text for debugging purposes
-                Log.Debug("Executing stored procedure with command text: {CommandText}", command.CommandText);
+                Log.Debug("Executing stored procedure with command text: {CommandText}", modifiedText);
             }
             else if (ShouldAppend(integrationId, commandText))
             {
-                command.CommandText = $"{commandText} {propagationComment}";
+                modifiedText = $"{commandText} {propagationComment}";
             }
             else
             {
                 // prepending the propagation comment is the preferred way,
                 // as this protects it from being truncated by the character limit if the command is very long.
-                command.CommandText = $"{propagationComment} {commandText}";
+                modifiedText = $"{propagationComment} {commandText}";
             }
 
             return traceParentInjected;
@@ -294,12 +335,6 @@ namespace Datadog.Trace.DatabaseMonitoring
             return commandText.AsSpan().TrimStart().StartsWith(PgHintPrefix);
         }
 
-        /// <summary>
-        /// Uses a sql instruction to set a context for the current connection, bearing the span ID and trace ID.
-        /// This is meant to circumvent cache invalidation issues that occur when those values are injected in comment.
-        /// Currently only working for Microsoft SQL Server (uses an instruction that is specific to it)
-        /// </summary>
-        /// <returns>True if the traceparent information was set</returns>
         internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, Span span)
         {
             if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient)
@@ -309,14 +344,38 @@ namespace Datadog.Trace.DatabaseMonitoring
 
             // NOTE: For Npgsql command.Connection throws NotSupportedException for NpgsqlDataSourceCommand (v7.0+)
             //       Since the feature isn't available for Npgsql we avoid this due to the integrationId check above
-            if (command.Connection == null)
+            return PropagateDataViaContext(command.Connection, command.Transaction, span);
+        }
+
+#if NET6_0_OR_GREATER
+        internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, DbBatch batch, Span span)
+        {
+            if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient)
             {
                 return false;
             }
 
-            if (command.Connection.State != ConnectionState.Open)
+            return PropagateDataViaContext(batch.Connection, batch.Transaction, span);
+        }
+#endif
+
+        /// <summary>
+        /// Uses a sql instruction to set a context for the current connection, bearing the span ID and trace ID.
+        /// Service level info should still be injected via comment, because there isn't enough bytes in the context to fit everything.
+        /// This is meant to circumvent cache invalidation issues that occur when those values are injected in comment.
+        /// Currently only working for Microsoft SQL Server (uses an instruction that is specific to it)
+        /// </summary>
+        /// <returns>True if the traceparent information was set</returns>
+        internal static bool PropagateDataViaContext(IDbConnection? dbConnection, IDbTransaction? dbTransaction, Span span)
+        {
+            if (dbConnection == null)
             {
-                Log.Debug("PropagateDataViaContext did not have an Open connection, so it could not propagate Span data for DBM. Connection state was {ConnectionState}", command.Connection.State);
+                return false;
+            }
+
+            if (dbConnection.State != ConnectionState.Open)
+            {
+                Log.Debug("PropagateDataViaContext did not have an Open connection, so it could not propagate Span data for DBM. Connection state was {ConnectionState}", dbConnection.State);
 
                 return false;
             }
@@ -327,10 +386,10 @@ namespace Datadog.Trace.DatabaseMonitoring
             var sampled = SamplingPriorityValues.IsKeep(span.Context.TraceContext.GetOrMakeSamplingDecision());
             var contextValue = BuildContextValue(version, sampled, span.SpanId, span.TraceId128);
 
-            using (var injectionCommand = command.Connection.CreateCommand())
+            using (var injectionCommand = dbConnection.CreateCommand())
             {
                 // if there is a Transaction we need to copy it or our ExecuteNonQuery will throw
-                injectionCommand.Transaction = command.Transaction;
+                injectionCommand.Transaction = dbTransaction;
                 injectionCommand.CommandText = SetContextCommand;
 
                 var parameter = injectionCommand.CreateParameter();
