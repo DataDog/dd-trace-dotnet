@@ -155,6 +155,15 @@ public static class TestMethodAttributeExecuteIntegration
             }
             else if (testOptimization.FlakyRetryFeature?.Enabled == true && resultStatus == TestStatus.Fail)
             {
+                // check if is the first execution and the dynamic instrumentation feature is enabled
+                if (testOptimization.DynamicInstrumentationFeature?.Enabled == true)
+                {
+                    // let's wait for the instrumentation of an exception has been done
+                    Common.Log.Debug("TestMethodAttributeExecuteIntegration: First execution with an exception detected. Waiting for the exception instrumentation.");
+                    testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation().SafeWait();
+                    Common.Log.Debug("TestMethodAttributeExecuteIntegration: Exception instrumentation was set or timed out.");
+                }
+
                 // Flaky retry is enabled and the test failed
                 var retryState = new RetryState
                 {

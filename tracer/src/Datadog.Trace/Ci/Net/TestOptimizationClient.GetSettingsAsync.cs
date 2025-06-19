@@ -43,7 +43,8 @@ internal sealed partial class TestOptimizationClient
                 knownTestsEnabled: false,
                 testManagement: new TestManagementSettingsResponse(
                     enabled: false,
-                    attemptToFixRetries: 0));
+                    attemptToFixRetries: 0),
+                dynamicInstrumentationEnabled: false);
         }
 
         return new SettingsResponse(
@@ -59,7 +60,8 @@ internal sealed partial class TestOptimizationClient
             knownTestsEnabled: settings.KnownTestsEnabled,
             testManagement: new TestManagementSettingsResponse(
                 enabled: settings.TestManagementEnabled,
-                attemptToFixRetries: settings.TestManagementAttemptToFixRetryCount));
+                attemptToFixRetries: settings.TestManagementAttemptToFixRetryCount),
+            dynamicInstrumentationEnabled: settings.DynamicInstrumentationEnabled);
     }
 
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
@@ -195,11 +197,14 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("test_management")]
         public readonly TestManagementSettingsResponse TestManagement;
 
+        [JsonProperty("di_enabled")]
+        public readonly bool? DynamicInstrumentationEnabled;
+
         public SettingsResponse()
         {
         }
 
-        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection, bool? knownTestsEnabled, TestManagementSettingsResponse testManagement)
+        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection, bool? knownTestsEnabled, TestManagementSettingsResponse testManagement, bool? dynamicInstrumentationEnabled)
         {
             CodeCoverage = codeCoverage;
             TestsSkipping = testsSkipping;
@@ -209,6 +214,7 @@ internal sealed partial class TestOptimizationClient
             EarlyFlakeDetection = earlyFlakeDetection;
             KnownTestsEnabled = knownTestsEnabled;
             TestManagement = testManagement;
+            DynamicInstrumentationEnabled = dynamicInstrumentationEnabled;
         }
     }
 
