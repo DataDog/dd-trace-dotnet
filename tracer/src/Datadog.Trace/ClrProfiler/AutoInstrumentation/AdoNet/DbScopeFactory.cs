@@ -113,10 +113,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 #endif
 
-        private static Scope? CreateDbCommandScope(Tracer tracer, string commandText, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString, out SqlTags? sqlTags)
+        private static Scope? CreateDbCommandScope(Tracer tracer, string? commandText, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString, out SqlTags? sqlTags)
         {
             sqlTags = null;
-            if (!ShouldCreateScope(tracer, integrationId, dbType, commandText))
+            // commandText is null when a Batch query is wrapped in an IDbCommand inside the framework (happens at least for npgsql)
+            if (commandText == null || !ShouldCreateScope(tracer, integrationId, dbType, commandText))
             {
                 return null;
             }
