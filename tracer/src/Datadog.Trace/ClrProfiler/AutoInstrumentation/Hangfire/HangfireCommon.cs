@@ -2,16 +2,12 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
 #nullable enable
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -66,9 +62,9 @@ internal static class HangfireCommon
         return [];
     }
 
-    internal static void SetStatusAndRecordException(Scope scope, Exception exception)
+    internal static void SetStatusAndRecordException(Scope? scope, Exception exception)
     {
-        scope.Span.SetException(exception);
+        scope?.Span.SetException(exception);
     }
 
     internal static void InjectSpanProperties(IDictionary<string, string> jobParams, string key, string value)
