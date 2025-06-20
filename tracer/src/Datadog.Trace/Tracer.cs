@@ -338,6 +338,7 @@ namespace Datadog.Trace
             }
 
             var span = StartSpan(operationName, tags: null, parent, serviceName: null, startTime);
+            span.DdComponent = "opentracing";
 
             if (serviceName != null)
             {

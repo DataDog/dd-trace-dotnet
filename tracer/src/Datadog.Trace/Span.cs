@@ -130,6 +130,8 @@ namespace Datadog.Trace
 
         internal TimeSpan Duration { get; private set; }
 
+        internal string DdComponent { get; set; }
+
         internal bool IsFinished
         {
             get => _isFinished == 1;
@@ -465,6 +467,18 @@ namespace Datadog.Trace
         internal void Finish(TimeSpan duration)
         {
             ResourceName ??= OperationName;
+
+            // We want DdComponent to take the value of component only for auto-instrumentation spans (not all of which have InstrumentationTags).
+            // For manually created spans, the value should be set earlier so that we don't use the user-set component.
+            if (Tags is InstrumentationTags itags)
+            {
+                DdComponent ??= itags.InstrumentationName;
+            }
+            else
+            {
+                DdComponent ??= Tags.GetTag(Trace.Tags.InstrumentationName);
+            }
+
             if (Interlocked.CompareExchange(ref _isFinished, 1, 0) == 0)
             {
                 if (IsRootSpan)

@@ -60,6 +60,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "aws.operation": 
                     Operation = value;
                     break;
@@ -81,7 +84,6 @@ namespace Datadog.Trace.Tagging
                 case "http.status_code": 
                     HttpStatusCode = value;
                     break;
-                case "component": 
                 case "aws.agent": 
                 case "aws.region": 
                 case "aws.service": 

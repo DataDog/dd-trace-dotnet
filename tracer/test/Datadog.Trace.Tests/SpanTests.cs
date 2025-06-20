@@ -57,6 +57,27 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void DdComponentPopulatedOnFinish()
+        {
+            var span = _tracer.StartSpan("Operation");
+            span.SetTag(Tags.InstrumentationName, "my-component");
+            Assert.Null(span.DdComponent);
+            span.Finish();
+            Assert.Equal("my-component", span.DdComponent);
+        }
+
+        [Fact]
+        public void DdComponentNotOverridden()
+        {
+            var span = _tracer.StartSpan("Operation");
+            span.SetTag(Tags.InstrumentationName, "my-component");
+            span.DdComponent = "dd-component";
+            span.Finish();
+            // when it already has a value, DdComponent shouldn't take the value of the instrumentation name
+            Assert.Equal("dd-component", span.DdComponent);
+        }
+
+        [Fact]
         public void SetPeerServiceTag_CallsRemapper()
         {
             var span = _tracer.StartSpan("Operation");

@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         public override string SpanKind => SpanKinds.Server;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; }
+        public override string InstrumentationName { get; set; }
 
         [Tag(Trace.Tags.GraphQLSource)]
         public string Source { get; set; }
