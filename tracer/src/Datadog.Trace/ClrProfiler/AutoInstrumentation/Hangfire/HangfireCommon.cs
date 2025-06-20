@@ -29,7 +29,7 @@ internal static class HangfireCommon
     internal const string IntegrationName = nameof(Configuration.IntegrationId.Hangfire);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.Hangfire;
 
-    public static Scope? CreateScope(Tracer tracer, string operationName, HangfireTags tags, ISpanContext? parentContext = null, bool finishOnClose = true)
+    public static Scope? CreateScope(Tracer tracer, HangfireTags tags, IPerformingContextProxy performingContext, ISpanContext? parentContext = null, bool finishOnClose = true)
     {
         if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
         {
@@ -42,10 +42,11 @@ internal static class HangfireCommon
         try
         {
             var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, HangfireServiceName);
-            scope = tracer.StartActiveInternal(operationName, parent: parentContext, serviceName: serviceName, tags: tags);
+            scope = tracer.StartActiveInternal(HangfireConstants.OnPerformOperation, parent: parentContext, serviceName: serviceName, tags: tags);
             var span = scope.Span;
             span.Type = HangfireType;
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            PopulatePerformSpanTags(scope, performingContext);
         }
         catch (Exception ex)
         {
@@ -59,10 +60,10 @@ internal static class HangfireCommon
     {
         if (carrier.TryGetValue(key, out var value))
         {
-            return new string[] { value };
+            return [value];
         }
 
-        return Enumerable.Empty<string>();
+        return [];
     }
 
     internal static void SetStatusAndRecordException(Scope scope, Exception exception)
@@ -77,12 +78,6 @@ internal static class HangfireCommon
 
     internal static void PopulatePerformSpanTags(Scope scope, IPerformingContextProxy performingContext)
     {
-        if (performingContext is null)
-        {
-            Log.Debug("Issue with populating the onPerform Span due to the performingContext: {PerformingContext} being null", performingContext);
-            return;
-        }
-
         scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
         scope.Span.SetTag(HangfireConstants.JobIdTag, performingContext.JobId);
         scope.Span.SetTag(HangfireConstants.JobCreatedAtTag, performingContext.BackgroundJob.CreatedAt.ToString("O"));

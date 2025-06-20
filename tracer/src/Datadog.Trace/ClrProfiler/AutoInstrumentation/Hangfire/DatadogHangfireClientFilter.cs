@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             Scope scope = (Scope)Tracer.Instance.ActiveScope;
             if (scope is null)
             {
-                Log.Debug("There is no active scope to use for Context Propagation. Short-circuiting.");
+                Log.Debug("There is no active scope to use for Context Propagation.");
                 return;
             }
 
