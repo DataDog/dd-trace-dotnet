@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static bool _headersInjectionEnabled = true;
         private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
 
-        private static bool HasLogged = false;
+        private static bool _hasLogged = false;
 
         internal static Scope? CreateProducerScope(
             Tracer tracer,
@@ -342,10 +342,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    if (!HasLogged)
+                    if (!_hasLogged)
                     {
                         Console.WriteLine("Rob Custom Log: KafkaHelper.TryInjectHeaders");
-                        HasLogged = true;
+                        _hasLogged = true;
                     }
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
@@ -354,11 +354,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
-                } else {
-                    if (!HasLogged)
+                }
+                else
+                {
+                    if (!_hasLogged)
                     {
                         Console.WriteLine("Rob Custom Log: KafkaHelper.TryInjectHeaders - dataStreamsManager.IsEnabled is false");
-                        HasLogged = true;
+                        _hasLogged = true;
                     }
                 }
             }
