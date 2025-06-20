@@ -698,7 +698,7 @@ namespace Datadog.Trace
                     var result = Utils.StoreTracerMetadata(1, Tracer.RuntimeId, TracerConstants.Language, TracerConstants.ThreePartVersion, Environment.MachineName, tracerSettings.ServiceName, tracerSettings.Environment, tracerSettings.ServiceVersion);
                     if (result.Tag == ResultTag.Error)
                     {
-                        Log.Error("Failed to store tracer metadata with message: {Error}", Error.Read(ref result.Error));
+                        Log.Error("Failed to store tracer metadata with message: {Error}", result.Error.Message.ToUtf8String());
                         NativeInterop.Common.DropError(ref result.Error);
                     }
                 }
