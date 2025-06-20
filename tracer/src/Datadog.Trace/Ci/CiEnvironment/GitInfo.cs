@@ -214,33 +214,27 @@ internal class GitInfo : IGitInfo
                 }
 
                 // worktree support
-                var gitFiles = dirInfo.GetFiles(".git");
-                if (gitFiles.Length > 0)
+                var gitFile = Path.Combine(dirInfo.FullName, ".git");
+                if (File.Exists(gitFile))
                 {
-                    foreach (var gitFile in gitFiles)
+                    var gitFileContent = File.ReadAllText(gitFile);
+                    if (gitFileContent.Contains("gitdir: "))
                     {
-                        if (gitFile.Name == ".git")
-                        {
-                            var gitFileContent = File.ReadAllText(gitFile.FullName);
-                            if (gitFileContent.Contains("gitdir: "))
-                            {
-                                // If the file contains "gitdir: ", it is a git file pointing to another directory
-                                var gitDirPath = gitFileContent.Substring(gitFileContent.IndexOf("gitdir: ", StringComparison.Ordinal) + 8).Trim();
-                                var workTreeDirectory = new WorkTreeDirectoryInfo(
-                                    workTreeDirectory: gitFile.Directory!,
-                                    workTreeGitDirectory: new DirectoryInfo(gitDirPath),
-                                    gitDirectory: GetParentGitFolder(gitDirPath));
-                                Log.Debug(
-                                    "Found worktree directory: {WorkTreeDirectory}, {WorkTreeGitDirectory}, {GitDirectory}",
-                                    workTreeDirectory.WorkTreeDirectory.FullName,
-                                    workTreeDirectory.WorkTreeGitDirectory.FullName,
-                                    workTreeDirectory.GitDirectory?.FullName);
-                                return workTreeDirectory;
-                            }
-
-                            return gitFile.Directory;
-                        }
+                        // If the file contains "gitdir: ", it is a git file pointing to another directory
+                        var gitDirPath = gitFileContent.Substring(gitFileContent.IndexOf("gitdir: ", StringComparison.Ordinal) + 8).Trim();
+                        var workTreeDirectory = new WorkTreeDirectoryInfo(
+                            workTreeDirectory: dirInfo,
+                            workTreeGitDirectory: new DirectoryInfo(gitDirPath),
+                            gitDirectory: GetParentGitFolder(gitDirPath));
+                        Log.Debug(
+                            "Found worktree directory: {WorkTreeDirectory}, {WorkTreeGitDirectory}, {GitDirectory}",
+                            workTreeDirectory.WorkTreeDirectory.FullName,
+                            workTreeDirectory.WorkTreeGitDirectory.FullName,
+                            workTreeDirectory.GitDirectory?.FullName);
+                        return workTreeDirectory;
                     }
+
+                    return dirInfo;
                 }
 
                 dirInfo = dirInfo.Parent;
