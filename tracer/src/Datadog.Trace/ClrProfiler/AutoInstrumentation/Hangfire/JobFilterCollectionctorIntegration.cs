@@ -6,11 +6,8 @@
 
 using System;
 using System.ComponentModel;
-using System.Linq;
-using System.Reflection;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;

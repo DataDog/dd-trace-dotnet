@@ -2,12 +2,10 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -33,12 +31,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 return;
             }
 
-            var spanContextData = performingContext.GetJobParameter<Dictionary<string, string>>(HangfireConstants.DatadogContextKey);
+            SpanContext? parentContext = null;
+
+            var spanContextData = performingContext.GetJobParameter<Dictionary<string, string?>?>(HangfireConstants.DatadogContextKey);
             Log.Debug("Extracting context from the following data: {SpanContextData}", spanContextData);
+
             PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData).MergeBaggageInto(Baggage.Current);
-            SpanContext parentContext = propagationContext.SpanContext;
-            Scope scope = HangfireCommon.CreateScope(Tracer.Instance, new HangfireTags(SpanKinds.Server), performingContext, parentContext);
-            ((Dictionary<string, object>)performingContext.Items)?.Add(HangfireConstants.DatadogScopeKey, scope);
+            parentContext = propagationContext.SpanContext;
+
+            Scope? scope = HangfireCommon.CreateScope(Tracer.Instance, new HangfireTags(SpanKinds.Server), performingContext, parentContext);
+            ((Dictionary<string, object?>)performingContext.Items)?.Add(HangfireConstants.DatadogScopeKey, scope);
         }
 
         /// <summary>
@@ -51,12 +53,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
             {
                 ((Dictionary<string, object>)performedContext.Items).TryGetValue(HangfireConstants.DatadogScopeKey, out var scope);
-                if (scope is not null && performedContext.Exception is not null)
+                if (performedContext.Exception is not null)
                 {
-                    HangfireCommon.SetStatusAndRecordException((Scope)scope, performedContext.Exception);
+                    HangfireCommon.SetStatusAndRecordException((Scope?)scope, performedContext.Exception);
                 }
 
-                ((Scope)scope)?.Dispose();
+                ((Scope?)scope)?.Dispose();
             }
         }
     }
