@@ -105,6 +105,13 @@ namespace shared
 
     std::string GenerateRuntimeId();
 
+#if LINUX
+    /// \brief Checks if the current system has a buggy implementation of dlclose (glibc 2.34-2.36).
+    /// \return A tuple with a boolean that is True if the system is affected by the buggy dlclose, false otherwise.
+    /// The string is the version of glibc found, if any
+    std::tuple<bool, WSTRING> HasBuggyDlclose();
+#endif
+
     bool WStringStartWithCaseInsensitive(const WSTRING& longer, const WSTRING& shorter);
 
     template <class Container>
