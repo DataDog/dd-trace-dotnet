@@ -6,6 +6,9 @@
 #include <sstream>
 #include <string> //NOLINT
 #include <vector>
+#if LINUX
+#include <dlfcn.h>
+#endif
 
 namespace shared
 {
@@ -303,4 +306,80 @@ namespace shared
                    .first == std::cend(shorter);
     }
 
-}  // namespace trace
+
+#if LINUX
+    std::tuple<bool, WSTRING> HasBuggyDlclose()
+    {
+        // In certain versions of glibc, there is a TLS-reuse bug that can cause crashes when unloading shared libraries.
+        // The bug was introduced in 2.34, fixed in 2.36 on x86-64, and fixed in 2.37 on aarch64.
+        // See https://sourceware.org/git/gitweb.cgi?p=glibc.git;h=3921c5b40f293c57cb326f58713c924b0662ef59
+        // Explanation in Fedora where we spotted it: https://bugzilla.redhat.com/show_bug.cgi?id=2251557
+        //
+        // 2.34 shipped with a regression: after a dlclose() of a library that carried dynamic-TLS, the loader could reuse
+        // the same “module-ID” for a different library without first clearing the associated DTV (Dynamic Thread Vector)
+        // entry. The next time any code accessed that TLS slot it could read or write an unmapped address → SIGSEGV.
+        //
+        // This manifested as a crash in the WAF when we called `ddwaf_context_info` on arm64. It explicitly happens
+        // on arm64 when we unload the continuous profiler (because it's not supported).
+        //
+        // It manifests in this scenario, because ddwaf_context_init starts like this:
+        //   +128  bl   __tls_get_addr     ; ask glibc for the TLS slot for libddwaf
+        //   +136  mrs  x11, TPIDR_EL0     ; TLS base for this thread
+        //   +140  ldrb w9, [x11, x0]      ; <–– boom if x0 points to a stale DTV entry
+        //
+        // When we unload the continuous profiler and call dlcose, it causes the loader to hand out a recycled module-ID
+        // to libddwaf. When ddwaf_context_init tries to access TLS in the `ldrb` instruction, `x11 + x0` is outside
+        // every mapped version, and so crashes.
+        //
+        // Note that although calling dlclose with the continuous profiler may trigger the issue (the actual crash is flaky
+        // depending on load/unload timing and address layout), unloading _any_ library that is is built with
+        // `__thread`/`thread_local` data could trigger the crash. To minimize the risk of hitting this issue,
+
+        // Cache the value statically to avoid repeated checks
+        static std::tuple<bool, WSTRING> result = []() {
+            // Need to check whether we can close libraries or not
+            // But we compile for both musl and glibc, so need to manually
+            // try to load the glibc function gnu_get_libc_version
+            void* handle = dlopen("libc.so.6", RTLD_LAZY);
+            if (!handle) {
+                // Likely not glibc (e.g. musl)
+                return std::make_tuple(false, EmptyWStr);
+            }
+
+            using gnu_get_libc_version_fn = const char* (*)();
+            auto func = (gnu_get_libc_version_fn)dlsym(handle, "gnu_get_libc_version");
+            if (!func) {
+                // We do have glibc, but the function is not available...
+                // This shouldn't happen given it's available since 2.1 and we require 2.17
+                // so overall, a bit weird... Don't close the handle, just in case, and
+                // treat it as faulty
+                // dlclose(handle);
+                return std::make_tuple(true, ::shared::ToWSTRING("unknown"));
+            }
+
+            // Check if it's one of the buggy versions
+            const auto version = std::string(func());
+            // Try to "Save" the value as en environment variable so that we can report it later if necessary
+            ::shared::SetEnvironmentValue(WStr("DD_INTERNAL_GLIBC_VERSION"), ::shared::ToWSTRING(version));
+
+#if ARM64
+            const auto is_buggy = (version == "2.34" || version == "2.35" || version == "2.36");
+#else
+            const auto is_buggy = (version == "2.34" || version == "2.35");
+#endif
+
+            if (!is_buggy) {
+                // Not buggy, so we can close the handle
+                dlclose(handle);
+                return std::make_tuple(false, ::shared::ToWSTRING(version));
+            }
+
+            // buggy, so we can't close the handle
+            return std::make_tuple(true, ::shared::ToWSTRING(version));
+        }();
+
+        return result;
+    }
+#endif
+
+}  // namespace shared
