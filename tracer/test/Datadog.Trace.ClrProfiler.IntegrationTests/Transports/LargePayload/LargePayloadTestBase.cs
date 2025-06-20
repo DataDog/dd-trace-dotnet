@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentHelper.EnableTransport(transport);
             SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
 
-            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var agent = EnvironmentHelper.GetMockAgent(useStatsD: true))
             {
                 using (var sample = await RunSampleAndWaitForExit(agent, arguments: $" -t {TracesToTrigger} -s {SpansPerTrace} -f {FillerTagLength}"))
                 {

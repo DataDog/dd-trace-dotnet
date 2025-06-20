@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentHelper.EnableTransport(transportType);
             SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
 
-            using var agent = EnvironmentHelper.GetMockAgent();
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             var customResponse = behaviour switch
             {
                 AgentBehaviour.Return404 => new MockTracerResponse { StatusCode = 404 },
