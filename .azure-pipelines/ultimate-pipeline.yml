@@ -4752,6 +4752,7 @@ stages:
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg INSTALL_CMD="$(installCmd)" \
+          --build-arg $ADDITIONAL_INSTALL="$(additionalInstall)" \
           smoke-tests
       env:
         dockerTag: $(dockerTag)
@@ -5278,6 +5279,7 @@ stages:
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg INSTALL_CMD="$(installCmd)" \
+              --build-arg $ADDITIONAL_INSTALL="$(additionalInstall)" \
               smoke-tests
           env:
             dockerTag: $(dockerTag)
