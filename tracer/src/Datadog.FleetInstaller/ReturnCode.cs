@@ -18,4 +18,6 @@ internal enum ReturnCode
     ErrorRemovingAppPoolVariables,
     ErrorRemovingCrashTrackerKey,
     ErrorReadingIisConfiguration,
+    ErrorSettingGlobalEnvironmentVariables,
+    ErrorRemovingGlobalEnvironmentVariables,
 }

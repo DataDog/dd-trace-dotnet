@@ -22,13 +22,15 @@ public class EnvironmentRestorerAttribute : BeforeAfterTestAttribute
         _originalVariables = new(args.Length);
     }
 
+    public virtual EnvironmentVariableTarget Target => EnvironmentVariableTarget.Process;
+
     public override void Before(MethodInfo methodUnderTest)
     {
         foreach (var variable in _variables)
         {
-            _originalVariables[variable] = Environment.GetEnvironmentVariable(variable);
+            _originalVariables[variable] = Environment.GetEnvironmentVariable(variable, Target);
             // clear variable
-            Environment.SetEnvironmentVariable(variable, null);
+            Environment.SetEnvironmentVariable(variable, null, Target);
         }
 
         base.Before(methodUnderTest);
@@ -38,7 +40,7 @@ public class EnvironmentRestorerAttribute : BeforeAfterTestAttribute
     {
         foreach (var variable in _originalVariables)
         {
-            Environment.SetEnvironmentVariable(variable.Key, variable.Value);
+            Environment.SetEnvironmentVariable(variable.Key, variable.Value, Target);
         }
     }
 }
