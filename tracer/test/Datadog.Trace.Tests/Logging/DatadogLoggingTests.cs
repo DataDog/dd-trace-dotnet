@@ -359,7 +359,8 @@ namespace Datadog.Trace.Tests.Logging
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
                 file: null,
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                console: null);
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
 
@@ -421,16 +422,17 @@ namespace Datadog.Trace.Tests.Logging
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithoutFile(bool withException)
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithoutSinks(bool withException)
         {
             var collector = new RedactedErrorLogCollector();
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
                 file: null,
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                console: null);
 
-            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
 
             logger.Should().NotBeNull();
 
@@ -450,7 +452,7 @@ namespace Datadog.Trace.Tests.Logging
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithFile(bool withException)
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithFileSink(bool withException)
         {
             var collector = new RedactedErrorLogCollector();
 
@@ -461,9 +463,53 @@ namespace Datadog.Trace.Tests.Logging
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
                 file: new FileLoggingConfiguration(10 * 1024 * 1024, tempLogsDir, 1),
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                console: null);
 
-            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
+
+            logger.Should().NotBeNull();
+
+            // These errors should not be written to error log
+            if (withException)
+            {
+                logger.ErrorSkipTelemetry(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+            else
+            {
+                logger.ErrorSkipTelemetry(Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+
+            collector.GetLogs().Should().BeNull();
+
+            try
+            {
+                Directory.Delete(tempLogsDir, true);
+            }
+            catch
+            {
+                // cleanup isn't required, just avoiding clutter when the test passes
+            }
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithConsoleSink(bool withException)
+        {
+            var collector = new RedactedErrorLogCollector();
+
+            var tempLogsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            _output.WriteLine($"Using temporary logs directory: {tempLogsDir}");
+            Directory.CreateDirectory(tempLogsDir);
+
+            var config = new DatadogLoggingConfiguration(
+                rateLimit: 0,
+                file: null,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                console: new ConsoleLoggingConfiguration(DatadogLoggingFactory.DefaultConsoleMessageTemplate, DatadogLoggingFactory.DefaultConsoleQueueLimit));
+
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
 
             logger.Should().NotBeNull();
 
