@@ -23,6 +23,9 @@ protected:
 
 private:
     virtual void OnInitialized() = 0;
+#if LINUX
+    bool HasBuggyDlclose() const;
+#endif
 
     std::string _filePath;
     void* _instance;
