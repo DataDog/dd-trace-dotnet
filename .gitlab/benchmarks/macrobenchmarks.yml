@@ -133,7 +133,7 @@ variables:
 benchmarks-dsm:
   stage: benchmarks
   when: on_success
-  tags: ["runner:apm-k8s-tweaked-metal"]
+  tags: ["runner:apm-k8s-same-cpu"]
   needs: ["check_azure_pipeline"]
   image: $BASE_CI_IMAGE
   interruptible: true
