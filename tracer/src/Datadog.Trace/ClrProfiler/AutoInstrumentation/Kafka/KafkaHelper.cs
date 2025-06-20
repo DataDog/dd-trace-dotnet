@@ -347,6 +347,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         Console.WriteLine("Rob Custom Log: KafkaHelper.TryInjectHeaders");
                         _hasLogged = true;
                     }
+
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
