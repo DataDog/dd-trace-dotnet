@@ -691,22 +691,8 @@ namespace Datadog.Trace
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
 
-            if (FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess && !Util.EnvironmentHelpers.IsServerlessEnvironment())
-            {
-                try
-                {
-                    var result = Utils.StoreTracerMetadata(1, Tracer.RuntimeId, TracerConstants.Language, TracerConstants.ThreePartVersion, Environment.MachineName, tracerSettings.ServiceName, tracerSettings.Environment, tracerSettings.ServiceVersion);
-                    if (result.Tag == ResultTag.Error)
-                    {
-                        Log.Error("Failed to store tracer metadata with message: {Error}", Error.Read(ref result.Error));
-                        NativeInterop.Common.DropError(ref result.Error);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Failed to store tracer metadata due to an unexpected error");
-                }
-            }
+            // Record the service discovery metadata
+            ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings);
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
