@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -127,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             if (errorCount > 0)
             {
-                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors));
+                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors), ConstructErrorEvents(executionErrors));
             }
         }
 
@@ -157,10 +159,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                         builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
                     }
 
-                    var path = executionError.Path;
-                    if (path != null)
+                    var paths = executionError.Path;
+                    if (paths != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", path)}\",");
+                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", paths)}\",");
                     }
 
                     var code = executionError.Code;
@@ -169,7 +171,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                         builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
                     }
 
-                    ConstructErrorLocationsMessage(builder, tab, executionError.Locations);
+                    var locations = executionError.Locations;
+                    if (locations != null)
+                    {
+                        ConstructErrorLocationsMessage(builder, tab, locations);
+                    }
+
                     builder.AppendLine($"{tab}}},");
                 }
 
@@ -183,6 +190,126 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             }
 
             return Util.StringBuilderCache.GetStringAndRelease(builder);
+        }
+
+        private static List<SpanEvent> ConstructErrorEvents(IExecutionErrors executionErrors)
+        {
+            List<SpanEvent> spanEvents = [];
+
+            try
+            {
+                for (int i = 0; i < executionErrors.Count; i++)
+                {
+                    var eventAttributes = new List<KeyValuePair<string, object>>();
+                    var executionError = executionErrors[i];
+
+                    if (executionErrors[i].Instance.TryDuckCast<IExecutionErrorExtensions>(out var executionErrorExtensions))
+                    {
+                        var extensions = executionErrorExtensions.Extensions;
+                        if (extensions is { Count: > 0 })
+                        {
+                            var configuredExtensions = Tracer.Instance.Settings.GraphQLErrorExtensions;
+
+                            foreach (var extension in extensions)
+                            {
+                                if (configuredExtensions.Contains(extension.Key))
+                                {
+                                    var key = extension.Key;
+                                    var value = extension.Value ?? "null";
+
+                                    if (value is Array array)
+                                    {
+                                        var builder = Util.StringBuilderCache.Acquire();
+
+                                        try
+                                        {
+                                            builder.Append('[');
+                                            for (var k = 0; k < array.Length; k++)
+                                            {
+                                                var item = array.GetValue(k);
+                                                if (k > 0)
+                                                {
+                                                    builder.Append(',');
+                                                }
+
+                                                builder.Append(item?.ToString() ?? "null");
+                                            }
+
+                                            builder.Append(']');
+                                            value = Util.StringBuilderCache.GetStringAndRelease(builder);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Console.WriteLine(ex);
+                                            Util.StringBuilderCache.Release(builder);
+                                        }
+                                    }
+                                    else if (!Util.SpanEventConverter.IsAllowedType(value))
+                                    {
+                                        value = value.ToString();
+                                    }
+
+                                    eventAttributes.Add(new KeyValuePair<string, object>($"extensions.{key}", value));
+                                }
+                            }
+                        }
+                    }
+
+                    var message = executionError.Message;
+                    if (message != null)
+                    {
+                        eventAttributes.Add(new KeyValuePair<string, object>("message", message));
+                    }
+
+                    var paths = executionError.Path;
+                    if (paths != null)
+                    {
+                        var pathAttribute = new List<string>();
+                        foreach (var path in paths)
+                        {
+                            pathAttribute.Add(path.ToString());
+                        }
+
+                        eventAttributes.Add(new KeyValuePair<string, object>("path", pathAttribute.ToArray()));
+                    }
+
+                    var code = executionError.Code;
+                    if (code != null)
+                    {
+                        eventAttributes.Add(new KeyValuePair<string, object>("code", code));
+                    }
+
+                    var locations = executionError.Locations;
+                    if (locations is not null)
+                    {
+                        var joinedLocations = new List<string>();
+                        foreach (var location in locations)
+                        {
+                            if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
+                            {
+                                joinedLocations.Add($"{locationProxy.Line}:{locationProxy.Column}");
+                            }
+                        }
+
+                        eventAttributes.Add(new KeyValuePair<string, object>("locations", joinedLocations.ToArray()));
+                    }
+
+                    var stacktrace = executionError.StackTrace;
+                    if (stacktrace != null)
+                    {
+                        eventAttributes.Add(new KeyValuePair<string, object>("stacktrace", stacktrace));
+                    }
+
+                    spanEvents.Add(new SpanEvent(name: "dd.graphql.query.error", attributes: eventAttributes));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating GraphQL error SpanEvent.");
+                return spanEvents;
+            }
+
+            return spanEvents;
         }
     }
 }
