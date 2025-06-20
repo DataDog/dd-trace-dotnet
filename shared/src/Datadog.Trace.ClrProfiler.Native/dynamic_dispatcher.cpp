@@ -80,7 +80,7 @@ namespace datadog::shared::nativeloader
         fs::path configFolder = fs::path(configFilePath).remove_filename();
         Log::Debug("DynamicDispatcherImpl::LoadConfiguration: Config Folder: ", configFolder);
 
-        const auto isRunningOnAlpine = IsRunningOnAlpine();
+        const auto isRunningOnAlpine = ::shared::IsRunningOnAlpine();
         const auto currentOsArch = GetCurrentOsArch(isRunningOnAlpine);
 
         const std::string allOsArch[16] = {

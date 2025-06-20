@@ -22,6 +22,9 @@
 #pragma comment(lib, "Rpcrt4.lib")
 #endif
 
+#include "dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
+
 namespace shared
 {
     template <typename In, typename Out>
@@ -286,6 +289,15 @@ namespace shared
         }
     };
 
+    inline bool IsRunningOnAlpine()
+    {
+#if LINUX
+        std::error_code ec; // fs::exists might throw if no error_code parameter is provided
+        return fs::exists("/etc/alpine-release", ec);
+#else
+        return false;
+#endif
+}
 
 
 }  // namespace shared
