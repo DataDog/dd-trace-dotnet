@@ -104,6 +104,18 @@ bool DynamicLibraryBase::Unload()
 #if _WIN32
     auto result = FreeLibrary((HMODULE) _instance);
 #else
+#if LINUX
+    auto [is_buggy, glibc_version] = ::shared::HasBuggyDlclose();
+    if (is_buggy)
+    {
+        _logger->Warn("Unload: Skipping unload of dynamic library '", _filePath,
+                      "' due to buggy dlclose implementation on this system.",
+                      "GLIBC version 2.34-2.36 has a TLS-reuse bug that can cause crashes when unloading"
+                      " shared libraries. Consider updating the installed version of glibc. Found GLIBC version: ", glibc_version);
+        return false;
+    }
+
+#endif // if LINUX
     auto result = dlclose(_instance) == 0;
 #endif
 
