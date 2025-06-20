@@ -340,9 +340,14 @@ namespace shared
             // Need to check whether we can close libraries or not
             // But we compile for both musl and glibc, so need to manually
             // try to load the glibc function gnu_get_libc_version
+            if (::shared::IsRunningOnAlpine()) {
+                // definitely running on alpine
+                return std::make_tuple(false, EmptyWStr);
+            }
+
             void* handle = dlopen("libc.so.6", RTLD_LAZY);
             if (!handle) {
-                // Likely not glibc (e.g. musl)
+                // Likely not glibc (e.g. non-alpine musl or other libc)
                 return std::make_tuple(false, EmptyWStr);
             }
 
