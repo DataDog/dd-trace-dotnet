@@ -58,7 +58,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             var safeDirectory = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(
                     cmd: "git",
-                    arguments: $"config --global --add safe.directory {gitDirectory.FullName}",
+                    arguments: $"config --global --add safe.directory {localGitInfo.SourceRoot}",
                     workingDirectory: localGitInfo.SourceRoot,
                     useWhereIsIfFileNotFound: true));
             if (safeDirectory?.ExitCode != 0)
