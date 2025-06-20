@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static bool _headersInjectionEnabled = true;
         private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
 
-        public static bool HasLogged = false;
+        private static bool HasLogged = false;
 
         internal static Scope? CreateProducerScope(
             Tracer tracer,

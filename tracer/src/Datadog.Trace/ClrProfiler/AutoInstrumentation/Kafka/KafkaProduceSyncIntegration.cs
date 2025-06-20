@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     public class KafkaProduceSyncIntegration
     {
 
-        public static bool HasLogged = false;
+        private static bool HasLogged = false;
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
