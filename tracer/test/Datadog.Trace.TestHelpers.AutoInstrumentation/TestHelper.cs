@@ -141,6 +141,12 @@ namespace Datadog.Trace.TestHelpers
             var executable = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? $"{runtimeArgs}{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
+            // on windows in uds , not supported
+            if (agent.TransportType == TestTransports.Uds && EnvironmentTools.IsWindows())
+            {
+                SetEnvironmentVariable(ConfigurationKeys.RuntimeMetricsEnabled, "false");
+            }
+
             var process = await ProfilerHelper.StartProcessWithProfiler(
                 executable,
                 EnvironmentHelper,
