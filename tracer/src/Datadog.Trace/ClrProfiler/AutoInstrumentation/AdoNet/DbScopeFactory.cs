@@ -284,23 +284,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     integrationId = null;
                     dbType = null;
                     return false;
-                case "System.Data.SqlClient.SqlCommand" or "Microsoft.Data.SqlClient.SqlCommand":
+                case "System.Data.SqlClient.SqlCommand" or "Microsoft.Data.SqlClient.SqlCommand" or "Microsoft.Data.SqlClient.SqlBatch":
                     integrationId = IntegrationId.SqlClient;
                     dbType = DbType.SqlServer;
                     return true;
-                case "Npgsql.NpgsqlCommand":
+                case "Npgsql.NpgsqlCommand" or "Npgsql.NpgsqlBatch":
                     integrationId = IntegrationId.Npgsql;
                     dbType = DbType.PostgreSql;
                     return true;
-                case "MySql.Data.MySqlClient.MySqlCommand" or "MySqlConnector.MySqlCommand":
+                case "MySql.Data.MySqlClient.MySqlCommand" or "MySqlConnector.MySqlCommand" or "MySqlConnector.MySqlBatch":
                     integrationId = IntegrationId.MySql;
                     dbType = DbType.MySql;
                     return true;
-                case "Oracle.ManagedDataAccess.Client.OracleCommand" or "Oracle.DataAccess.Client.OracleCommand":
+                case "Oracle.ManagedDataAccess.Client.OracleCommand" or "Oracle.DataAccess.Client.OracleCommand": // Oracle seems to rely on custom "Bulk" operations and doesn't offer a DbBatch implementation
                     integrationId = IntegrationId.Oracle;
                     dbType = DbType.Oracle;
                     return true;
-                case "System.Data.SQLite.SQLiteCommand" or "Microsoft.Data.Sqlite.SqliteCommand":
+                case "System.Data.SQLite.SQLiteCommand" or "Microsoft.Data.Sqlite.SqliteCommand": // doesn't seem to offer batching https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/batching
                     // note capitalization in SQLite/Sqlite
                     integrationId = IntegrationId.Sqlite;
                     dbType = DbType.Sqlite;
