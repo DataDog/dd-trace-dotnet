@@ -364,9 +364,6 @@ namespace shared
 
             // Check if it's one of the buggy versions
             const auto version = std::string(func());
-            // Try to "Save" the value as en environment variable so that we can report it later if necessary
-            ::shared::SetEnvironmentValue(WStr("DD_INTERNAL_GLIBC_VERSION"), ::shared::ToWSTRING(version));
-
 #if ARM64
             const auto is_buggy = (version == "2.34" || version == "2.35" || version == "2.36");
 #else
