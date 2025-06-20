@@ -90,9 +90,10 @@ internal class GitInfo : IGitInfo
         List<string>? errors = null;
         foreach (var provider in _gitInfoProviders)
         {
-            // Try to load git metadata from the folder
+            Log.Debug("Trying to get git info from path {Path} using {Provider}", folder, provider);
             if (provider.TryGetFrom(folder, out var gitInfo) && gitInfo != null)
             {
+                Log.Debug("Git info found using {Provider} for path {Path}", provider, folder);
                 return gitInfo;
             }
 
@@ -103,6 +104,7 @@ internal class GitInfo : IGitInfo
             }
         }
 
+        Log.Debug("No git info found for path {Path}, returning partial info.", folder);
         // Return the partial gitInfo instance with the initial source root
         var value = new GitInfo { SourceRoot = new DirectoryInfo(folder).Parent?.FullName };
         if (errors != null)
@@ -122,13 +124,22 @@ internal class GitInfo : IGitInfo
     {
         List<string>? errors = null;
         var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        var gitDirectory = GetParentGitFolder(baseDirectory) ?? GetParentGitFolder(Environment.CurrentDirectory);
+        var gitDirectory = GetParentGitFolder(baseDirectory);
+        Log.Debug("Trying to get git info from base directory: {BaseDirectory} = {GitDirectory}", baseDirectory, gitDirectory);
+        if (gitDirectory == null)
+        {
+            gitDirectory = GetParentGitFolder(Environment.CurrentDirectory);
+            Log.Debug("Trying to get git info from Environment.CurrentDirectory: {CurrentDirectory} = {GitDirectory}", Environment.CurrentDirectory, gitDirectory);
+        }
+
         if (gitDirectory != null)
         {
             foreach (var provider in _gitInfoProviders)
             {
-                if (provider.TryGetFrom(gitDirectory.FullName, out var gitInfo) && gitInfo != null)
+                Log.Debug("Trying to get git info from path {Path} using {Provider}", gitDirectory.FullName, provider);
+                if (provider.TryGetFrom(gitDirectory, out var gitInfo) && gitInfo != null)
                 {
+                    Log.Debug("Git info found using {Provider} for path {Path}", provider, gitDirectory.FullName);
                     return gitInfo;
                 }
 
@@ -140,7 +151,24 @@ internal class GitInfo : IGitInfo
             }
         }
 
-        var value = new GitInfo { SourceRoot = gitDirectory?.Parent?.FullName };
+        var sourceRoot = string.Empty;
+        if (gitDirectory is WorkTreeDirectoryInfo workTreeDirectoryInfo)
+        {
+            Log.Debug("Found worktree directory: {WorkTreeDirectory}", workTreeDirectoryInfo.WorkTreeDirectory.FullName);
+            sourceRoot = workTreeDirectoryInfo.WorkTreeDirectory.FullName;
+        }
+        else if (gitDirectory is DirectoryInfo { Parent: { } } directoryInfo)
+        {
+            Log.Debug("Found git directory: {GitDirectory}", directoryInfo.FullName);
+            sourceRoot = directoryInfo.Parent.FullName;
+        }
+        else
+        {
+            Log.Warning("No git directory found, returning empty GitInfo.");
+        }
+
+        Log.Debug("No git info found for path {Path}, returning partial info.", sourceRoot);
+        var value = new GitInfo { SourceRoot = sourceRoot };
         if (errors != null)
         {
             value.Errors.AddRange(errors);
@@ -150,7 +178,7 @@ internal class GitInfo : IGitInfo
         return value;
     }
 
-    public static DirectoryInfo? GetParentGitFolder(string? innerFolder)
+    public static FileSystemInfo? GetParentGitFolder(string? innerFolder)
     {
         if (string.IsNullOrEmpty(innerFolder))
         {
@@ -185,6 +213,36 @@ internal class GitInfo : IGitInfo
                     }
                 }
 
+                // worktree support
+                var gitFiles = dirInfo.GetFiles(".git");
+                if (gitFiles.Length > 0)
+                {
+                    foreach (var gitFile in gitFiles)
+                    {
+                        if (gitFile.Name == ".git")
+                        {
+                            var gitFileContent = File.ReadAllText(gitFile.FullName);
+                            if (gitFileContent.Contains("gitdir: "))
+                            {
+                                // If the file contains "gitdir: ", it is a git file pointing to another directory
+                                var gitDirPath = gitFileContent.Substring(gitFileContent.IndexOf("gitdir: ", StringComparison.Ordinal) + 8).Trim();
+                                var workTreeDirectory = new WorkTreeDirectoryInfo(
+                                    workTreeDirectory: gitFile.Directory!,
+                                    workTreeGitDirectory: new DirectoryInfo(gitDirPath),
+                                    gitDirectory: GetParentGitFolder(gitDirPath));
+                                Log.Debug(
+                                    "Found worktree directory: {WorkTreeDirectory}, {WorkTreeGitDirectory}, {GitDirectory}",
+                                    workTreeDirectory.WorkTreeDirectory.FullName,
+                                    workTreeDirectory.WorkTreeGitDirectory.FullName,
+                                    workTreeDirectory.GitDirectory?.FullName);
+                                return workTreeDirectory;
+                            }
+
+                            return gitFile.Directory;
+                        }
+                    }
+                }
+
                 dirInfo = dirInfo.Parent;
             }
             catch (DirectoryNotFoundException ex)
@@ -205,5 +263,35 @@ internal class GitInfo : IGitInfo
         }
 
         return null;
+    }
+
+    internal class WorkTreeDirectoryInfo : FileSystemInfo
+    {
+        public WorkTreeDirectoryInfo(DirectoryInfo workTreeDirectory, DirectoryInfo workTreeGitDirectory, FileSystemInfo? gitDirectory)
+        {
+            WorkTreeDirectory = workTreeDirectory ?? throw new ArgumentNullException(nameof(workTreeDirectory));
+            WorkTreeGitDirectory = workTreeGitDirectory ?? throw new ArgumentNullException(nameof(workTreeGitDirectory));
+            GitDirectory = gitDirectory;
+        }
+
+        public DirectoryInfo WorkTreeDirectory { get; }
+
+        public DirectoryInfo WorkTreeGitDirectory { get; }
+
+        public FileSystemInfo? GitDirectory { get; }
+
+        public override string Name => WorkTreeDirectory.Name;
+
+        public override string FullName => WorkTreeDirectory.FullName;
+
+        public override bool Exists => WorkTreeDirectory.Exists;
+
+        public override void Delete() => WorkTreeDirectory.Delete();
+
+        public override bool Equals(object? obj) => WorkTreeDirectory.Equals(obj);
+
+        public override int GetHashCode() => WorkTreeDirectory.GetHashCode();
+
+        public override string ToString() => WorkTreeDirectory.ToString();
     }
 }
