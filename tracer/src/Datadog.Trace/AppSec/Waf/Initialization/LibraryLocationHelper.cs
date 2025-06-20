@@ -125,7 +125,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
         }
 
-        internal static bool TryLoadLibraryFromPaths(string libName, List<string> paths, out IntPtr handle)
+        internal static bool TryLoadLibraryFromPaths(FrameworkDescription frameworkDescription, string libName, List<string> paths, out IntPtr handle)
         {
             var success = false;
             handle = IntPtr.Zero;
@@ -137,6 +137,15 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 if (!File.Exists(libFullPath))
                 {
                     continue;
+                }
+
+                if (IsLinuxArm64(frameworkDescription))
+                {
+                    // This is really bizare, but if we don't do this, we see crashes on Fedora 35 only, on arm64
+                    if (NativeLibrary.TryLoad(libFullPath, out handle))
+                    {
+                        NativeLibrary.CloseLibrary(handle);
+                    }
                 }
 
                 var loaded = NativeLibrary.TryLoad(libFullPath, out handle);
@@ -158,6 +167,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
 
             return success;
+            static bool IsLinuxArm64(FrameworkDescription description)
+                => description.OSPlatform == OSPlatformName.Linux && description.ProcessArchitecture == ProcessArchitecture.Arm64;
         }
 
         internal static string GetLibName(FrameworkDescription fwk, string libVersion = null)
