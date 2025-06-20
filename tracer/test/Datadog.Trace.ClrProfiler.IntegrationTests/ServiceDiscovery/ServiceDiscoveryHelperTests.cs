@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.ServiceDiscovery;
 
 public class ServiceDiscoveryHelperTests
 {
-    [Fact]
+    [SkippableFact]
     public void ShouldSkipStoringMetadataOnWindowsAndMac()
     {
         // We do store metadata for linux - so this test doesn't apply
@@ -25,7 +25,7 @@ public class ServiceDiscoveryHelperTests
         result.Should().Be(ServiceDiscoveryHelper.StoreMetadataResult.Skipped);
     }
 
-    [Fact]
+    [SkippableFact]
     public void ShouldSkipStoringMetadataInUninstrumentedProcess()
     {
         // We only potentially store on linux
