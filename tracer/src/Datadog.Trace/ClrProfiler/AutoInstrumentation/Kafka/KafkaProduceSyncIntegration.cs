@@ -26,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class KafkaProduceSyncIntegration
     {
+        private static bool _hasLogged = false;
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -47,6 +49,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 ProducerCache.TryGetDefaultDeliveryHandler(instance, out var handler))
             {
                 deliveryHandler = handler;
+            }
+
+            if (!_hasLogged)
+{
+                Console.WriteLine("Rob Custom Log: KafkaProduceSyncIntegration.OnMethodBegin");
+                _hasLogged = true;
             }
 
             // manually doing duck cast here so we have access to the _original_ TopicPartition type
