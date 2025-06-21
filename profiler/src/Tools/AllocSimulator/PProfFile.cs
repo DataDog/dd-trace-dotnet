@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using K4os.Compression.LZ4.Streams;
 using Perftools.Profiles;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -14,7 +15,6 @@ using Perftools.Profiles;
 #pragma warning disable SA1009 // Closing parenthesis should be spaced correctly
 #pragma warning disable SA1108 // Block statements should not contain embedded comments
 #pragma warning disable SA1111 // Closing parenthesis should be on line of last parameter
-
 
 public class PProfFile
 {
@@ -28,10 +28,37 @@ public class PProfFile
     public IEnumerable<Location> Locations { get; private set; }
     public IEnumerable<Function> Functions { get; private set; }
     public IEnumerable<string> StringTable { get; private set; }
+    public long DurationNS { get; private set; }
 
+    private static readonly byte[] Lz4MagicNumber = BitConverter.GetBytes(0x184D2204);
+
+    private static Stream GetStream(string filename)
+    {
+        var s = File.OpenRead(filename);
+        var buffer = new byte[4];
+        s.Read(buffer.AsSpan());
+        s.Position = 0;
+        if (Lz4MagicNumber.SequenceEqual(buffer))
+        {
+            return LZ4Stream.Decode(s);
+        }
+        else
+        {
+            return s;
+        }
+    }
 
     // Can be called only once
-    public bool Load(Profile profile)
+    public bool Load(string filename)
+    {
+        using var stream = GetStream(filename);
+        var profile = Profile.Parser.ParseFrom(stream);
+
+        return Load(profile);
+    }
+
+    // Can be called only once
+    private bool Load(Profile profile)
     {
         if (_profile != null)
         {
@@ -41,6 +68,9 @@ public class PProfFile
         try
         {
             _profile = profile;
+
+            DurationNS = profile.DurationNanos;
+
             LoadStringTable();
             LoadValueTypes();
             LoadMappings();
@@ -148,7 +178,7 @@ public class PProfFile
         _functions = new List<Function>(_profile.Function.Count);
         foreach (var function in _profile.Function)
         {
-            _functions.Add(new Function(function.Id, GetString(function.Name)));
+            _functions.Add(new Function(function.Id, GetString(function.Name), GetString(function.Filename), function.StartLine));
         }
 
         Functions = _functions;
@@ -174,10 +204,13 @@ public class PProfFile
             var frames = new List<Frame>(framesCount);
             for (int i = 0; i < framesCount; i++)
             {
+                var function = GetFunction((int)entry.Line[i].FunctionId);
                 frames.Add(
                     new Frame(
                         entry.Line[i].FunctionId,
-                        GetFunctionName((int)entry.Line[i].FunctionId),
+                        function.Name,
+                        function.Filename,
+                        function.StartLine,
                         i != (framesCount - 1)  // the last frame is not inlined
                         )
                     );
@@ -276,15 +309,19 @@ public class Mapping
 
 public class Frame
 {
-    public Frame(ulong id, string name, bool isInlined)
+    public Frame(ulong id, string name, string filePath, long line, bool isInlined)
     {
         Id = id;
         Name = name;
         IsInlined = isInlined;
+        FilePath = filePath;
+        Line = line;
     }
 
     public ulong Id { get; }
     public string Name { get; }
+    public string FilePath { get; }
+    public long Line { get; }
     public bool IsInlined { get; }
 }
 
@@ -310,14 +347,18 @@ public class Location
 
 public class Function
 {
-    public Function(ulong id, string name)
+    public Function(ulong id, string name, string filename, long startLine)
     {
         Id = id;
         Name = name;
+        Filename = filename;
+        StartLine = startLine;
     }
 
     public ulong Id { get; }
     public string Name { get; }
+    public string Filename { get; }
+    public long StartLine { get; }
 }
 
 
@@ -347,7 +388,6 @@ public class Sample
     public IEnumerable<Label> Labels { get; }
     public IEnumerable<Location> Locations { get; }
 }
-
 
 #pragma warning restore SA1111 // Closing parenthesis should be on line of last parameter
 #pragma warning restore SA1108 // Block statements should not contain embedded comments
