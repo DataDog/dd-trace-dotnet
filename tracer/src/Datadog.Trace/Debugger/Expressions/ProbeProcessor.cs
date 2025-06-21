@@ -172,6 +172,13 @@ namespace Datadog.Trace.Debugger.Expressions
         {
             var snapshotCreator = (DebuggerSnapshotCreator)inSnapshotCreator;
 
+            if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
+            {
+                Log.Debug("Stop processing probe {ID} because DI has been disabled, probably dynamically through Remote Config", probeData.ProbeId);
+                snapshotCreator.Stop();
+                return false;
+            }
+
             ExpressionEvaluationResult evaluationResult = default;
             try
             {
@@ -354,7 +361,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.Metric.HasValue && ProbeInfo.MetricKind.HasValue)
             {
-                LiveDebugger.Instance.SendMetrics(ProbeInfo, ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value, ProbeInfo.ProbeId);
+                DebuggerManager.Instance.DynamicInstrumentation?.SendMetrics(ProbeInfo, ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value, ProbeInfo.ProbeId);
                 // snapshot creator is created for all probes in the method invokers,
                 // if it is a metric probe, once we sent the value, we can stop the invokers and dispose the snapshot creator
                 snapshotCreator.Dispose();
@@ -450,7 +457,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (attachedTags)
             {
-                LiveDebugger.Instance.SetProbeStatusToEmitting(ProbeInfo);
+                DebuggerManager.Instance.DynamicInstrumentation?.SetProbeStatusToEmitting(ProbeInfo);
             }
         }
 
@@ -554,7 +561,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (!ProbeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         break;
                     }
 
@@ -573,7 +580,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (!ProbeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         break;
                     }
 
@@ -600,7 +607,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
 
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         snapshotCreator.Stop();
                         break;
                     }
@@ -639,7 +646,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                    LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
+                    DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                     snapshotCreator.Stop();
                     break;
 

@@ -10,8 +10,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
@@ -41,12 +44,16 @@ namespace Datadog.Trace.Configuration
             {
                 _subscriptionManager.SubscribeToChanges(_subscription!);
 
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);     // 15
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true); // 14
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);  // 13
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);     // 12
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true); // 19
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, true);    // 29
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);            // 15
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true);        // 14
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);         // 13
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);            // 12
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);        // 19
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, true);           // 29
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableDynamicInstrumentation, true);    // 38
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableExceptionReplay, true);           // 39
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableCodeOrigin, true);                // 40
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableLiveDebugging, true);             // 41
             }
         }
 
@@ -94,12 +101,13 @@ namespace Datadog.Trace.Configuration
             if (dynamicSettings.Equals(oldSettings.DynamicSettings))
             {
                 Log.Debug("No changes detected in the new dynamic configuration");
-                return;
             }
-
-            Log.Information("Applying new dynamic configuration");
-
-            var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
+            else
+            {
+                Log.Information("Applying new dynamic configuration");
+                var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
+                Tracer.ConfigureInternal(newSettings);
+            }
 
             /*
             if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
@@ -111,7 +119,42 @@ namespace Datadog.Trace.Configuration
             }
             */
 
-            Tracer.ConfigureInternal(newSettings);
+            var dynamicDebuggerSettings = new ImmutableDynamicDebuggerSettings
+            {
+                DynamicInstrumentationEnabled = settings.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(),
+                ExceptionReplayEnabled = settings.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(),
+                CodeOriginEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
+                DebuggerEnabled = null,
+            };
+
+            var oldDebuggerSettings = DebuggerManager.Instance.DebuggerSettings;
+
+            if (dynamicDebuggerSettings.Equals(oldDebuggerSettings.DynamicSettings))
+            {
+                Log.Debug("No changes detected in the new dynamic debugger configuration");
+            }
+            else
+            {
+                Log.Information("Applying new dynamic debugger configuration");
+                Log.Debug(
+                    "DynamicInstrumentationEnabled={DynamicInstrumentationEnabled}, ExceptionReplayEnabled={ExceptionReplayEnabled}, CodeOriginEnabled={CodeOriginEnabled}, DebuggerEnabled={DebuggerEnabled}",
+                    dynamicDebuggerSettings.DynamicInstrumentationEnabled,
+                    dynamicDebuggerSettings.ExceptionReplayEnabled,
+                    dynamicDebuggerSettings.CodeOriginEnabled,
+                    dynamicDebuggerSettings.DebuggerEnabled);
+
+                var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
+                DebuggerManager.Instance.UpdateDynamicConfiguration(newDebuggerSettings)
+                               .ContinueWith(
+                                    t =>
+                                    {
+                                        if (t.IsFaulted && t.Exception != null)
+                                        {
+                                            Log.Error(t.Exception.InnerException, "Error updating dynamic configuration for debugger");
+                                        }
+                                    },
+                                    TaskContinuationOptions.OnlyOnFaulted);
+            }
         }
 
         private ApplyDetails[] ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)

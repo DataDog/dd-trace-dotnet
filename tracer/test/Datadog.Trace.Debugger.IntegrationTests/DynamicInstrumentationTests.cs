@@ -1,4 +1,4 @@
-// <copyright file="LiveDebuggerTests.cs" company="Datadog">
+// <copyright file="DynamicInstrumentationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,15 +20,15 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Debugger.IntegrationTests;
 
 #if !NETCOREAPP2_1
-[CollectionDefinition(nameof(LiveDebuggerTests), DisableParallelization = true)]
-[Collection(nameof(LiveDebuggerTests))]
+[CollectionDefinition(nameof(DynamicInstrumentationTests), DisableParallelization = true)]
+[Collection(nameof(DynamicInstrumentationTests))]
 [UsesVerify]
-public class LiveDebuggerTests : TestHelper
+public class DynamicInstrumentationTests : TestHelper
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
-    private const string LiveDebuggerDisabledLogEntry = "Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.";
+    private const string DynamicInstrumentationDisabledLogEntry = "Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.";
 
-    public LiveDebuggerTests(ITestOutputHelper output)
+    public DynamicInstrumentationTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
@@ -59,7 +59,7 @@ public class LiveDebuggerTests : TestHelper
         // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0");
         await RunTest();
     }
 
@@ -69,10 +69,10 @@ public class LiveDebuggerTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
-        var logPath = Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), nameof(LiveDebuggerTests) + "Logs");
+        var logPath = Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), nameof(DynamicInstrumentationTests) + "Logs");
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath);
         using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
-        await logEntryWatcher.WaitForLogEntry(LiveDebuggerDisabledLogEntry);
+        await logEntryWatcher.WaitForLogEntry(DynamicInstrumentationDisabledLogEntry);
 
         try
         {
