@@ -139,8 +139,18 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     continue;
                 }
 
-                var loaded = NativeLibrary.TryLoad(libFullPath, out handle);
+/*
+                if (IsLinuxArm64())
+                {
+                    var preLoaded = NativeLibrary.TryLoad(libFullPath, out handle);
+                    if (preLoaded)
+                    {
+                        NativeLibrary.CloseLibrary(handle);
+                    }
+                }
+*/
 
+                var loaded = NativeLibrary.TryLoad(libFullPath, out handle);
                 if (loaded)
                 {
                     success = true;
@@ -187,5 +197,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                                             : new[] { "linux-x64", "linux-musl-x64" },
                 _ => null, // unsupported
             };
+
+        internal static bool IsLinuxArm64()
+        {
+            var fd = FrameworkDescription.Instance;
+            return fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture == ProcessArchitecture.Arm64;
+        }
     }
 }
