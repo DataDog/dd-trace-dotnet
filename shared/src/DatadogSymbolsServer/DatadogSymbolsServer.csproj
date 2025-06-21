@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ELFSharp" Version="2.17.3" />
+    <PackageReference Include="LibObjectFile" Version="0.6.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.2" />
+    <PackageReference Include="PeNet" Version="4.1.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.0.29" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2" />
+  </ItemGroup>
+
+</Project>
