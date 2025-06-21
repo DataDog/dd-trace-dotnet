@@ -815,7 +815,6 @@ partial class Build
         .DependsOn(BuildProfilerSampleForSanitiserTests)
         .DependsOn(RunSampleWithProfilerUbsan);
 
-
     Target CompileProfilerWithUbsanLinux => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
@@ -840,6 +839,44 @@ partial class Build
             RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
         });
 
+
+    Target BuildProfilerTsanTest => _ => _
+        .Unlisted()
+        .Description("Compile the profiler with Clang Thread sanitizer")
+        .OnlyWhenStatic(() => IsLinux)
+        .DependsOn(BuildNativeLoader)
+        .DependsOn(CompileProfilerWithTsanLinux)
+        .DependsOn(BuildNativeWrapper)
+        .DependsOn(PublishNativeWrapper)
+        .DependsOn(PublishProfiler);
+
+    Target CompileProfilerWithTsanLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Before(PublishProfiler)
+        .Triggers(RunUnitTestsWithTsanLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_TSAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
+        });
+
+    Target RunUnitTestsWithTsanLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            // Filtering tests is temporary.
+            // For now, false negatives are reported by the tool because dependencies are not built
+            // against thread sanitizer lib (ex: libdatadog).
+            // For now we focus on the ring buffer unit tests.
+            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Tsan, testsFilter: "*RingBuffer*");
+        });
 
     Target BuildProfilerSampleForSanitiserTests => _ => _
         .Unlisted()
@@ -921,7 +958,8 @@ partial class Build
     {
         None,
         Asan,
-        Ubsan
+        Ubsan,
+        Tsan
     };
 
     void RunSampleWithSanitizer(MSBuildTargetPlatform platform, SanitizerKind sanitizer)
@@ -981,7 +1019,7 @@ partial class Build
         }
     }
 
-    void RunProfilerUnitTests(string testLibrary, Configuration configuration, MSBuildTargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None, string[] additionalEnvVars = null)
+    void RunProfilerUnitTests(string testLibrary, Configuration configuration, MSBuildTargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None, string[] additionalEnvVars = null, string testsFilter = null)
     {
         var intermediateDirPath =
             IsWin
@@ -1028,8 +1066,14 @@ partial class Build
 
         AddExtraEnvVariables(envVars, additionalEnvVars);
 
+        // This is temporary and used only by the thread sanitizer
+        // In reality we would like to run all tests with the thread sanitizer.
+        // But the thread sanitizer reports false positive or fails because dependencies are
+        // not built against thread sanitizer library (ex: libdatadog)
+        var testsFilterOption = string.IsNullOrWhiteSpace(testsFilter) ? string.Empty : $"--gtest_filter=\"{testsFilter}\"";
+
         var testsResultFile = ProfilerBuildDataDirectory / "tests" / $"{testLibrary}.Results.{Platform}.{configuration}.{platform}.xml";
         var testExe = ToolResolver.GetLocalTool(exePath);
-        testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
+        testExe($"--gtest_output=xml:{testsResultFile} {testsFilterOption}", workingDirectory: workingDirectory, environmentVariables: envVars);
     }
 }
