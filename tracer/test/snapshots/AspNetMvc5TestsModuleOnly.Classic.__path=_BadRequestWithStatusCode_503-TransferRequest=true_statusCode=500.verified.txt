@@ -8,6 +8,7 @@
     Type: web,
     Error: 1,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 503,
       error.stack:
