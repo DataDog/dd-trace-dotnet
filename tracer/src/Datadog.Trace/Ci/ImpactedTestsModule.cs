@@ -163,6 +163,8 @@ internal class ImpactedTestsModule
             if (modified)
             {
                 tags.IsModified = "true";
+                tags.IsAttemptToFix = "true";
+                tags.AttemptToFixSource = "impacted_tests";
                 TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsIsModified();
             }
         }
