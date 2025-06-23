@@ -19,6 +19,7 @@
 
     <Content Include="home\**\*.*" Pack="true" PackagePath="content\datadog;contentFiles\any\any\datadog">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
 
