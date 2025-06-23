@@ -493,7 +493,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.MsTestV2,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryBuildLoggerConfiguration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryActivateLoggingConfigurationInstrumentation"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryBuildLoggerConfiguration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryGetConfigurationForLoggerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryGetConfigurationForLoggerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegrationV4"
