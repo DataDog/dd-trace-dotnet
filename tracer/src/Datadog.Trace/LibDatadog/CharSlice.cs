@@ -8,6 +8,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -19,6 +20,14 @@ namespace Datadog.Trace.LibDatadog;
 [StructLayout(LayoutKind.Sequential)]
 internal readonly struct CharSlice : IDisposable
 {
+    private const int MaxBytesForMaxStringLength = (4096 * 2) + 1; // 4096 characters max, UTF-8 encoding can take up to 2 bytes per character, plus 1 for the null terminator
+    private const int PoolSize = 100;
+
+    /// <summary>
+    /// Memory pool for managing unmanaged memory allocations for <see cref="CharSlice"/>.
+    /// </summary>
+    private static readonly UnmanagedMemoryPool UnmanagedPool = new(MaxBytesForMaxStringLength, PoolSize);
+
     /// <summary>
     /// Pointer to the start of the slice.
     /// </summary>
@@ -28,6 +37,8 @@ internal readonly struct CharSlice : IDisposable
     /// Length of the slice.
     /// </summary>
     internal readonly nuint Len;
+
+    private readonly bool _fromPool;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CharSlice"/> struct.
@@ -40,12 +51,23 @@ internal readonly struct CharSlice : IDisposable
         {
             Ptr = IntPtr.Zero;
             Len = UIntPtr.Zero;
+            _fromPool = false;
         }
         else
         {
             var encoding = Encoding.UTF8;
             var maxBytesCount = encoding.GetMaxByteCount(str.Length);
-            Ptr = Marshal.AllocHGlobal(maxBytesCount);
+            if (maxBytesCount > MaxBytesForMaxStringLength)
+            {
+                Ptr = Marshal.AllocHGlobal(maxBytesCount);
+                _fromPool = false;
+            }
+            else
+            {
+                Ptr = UnmanagedPool.Rent();
+                _fromPool = true;
+            }
+
             unsafe
             {
                 fixed (char* strPtr = str)
@@ -58,6 +80,17 @@ internal readonly struct CharSlice : IDisposable
 
     public void Dispose()
     {
+        if (Ptr == IntPtr.Zero)
+        {
+            return;
+        }
+
+        if (_fromPool)
+        {
+            UnmanagedPool.Return(Ptr);
+            return;
+        }
+
         Marshal.FreeHGlobal(Ptr);
     }
 }
