@@ -21,12 +21,13 @@ namespace Datadog.Trace.LibDatadog;
 internal readonly struct CharSlice : IDisposable
 {
     private const int MaxBytesForMaxStringLength = (4096 * 2) + 1; // 4096 characters max, UTF-8 encoding can take up to 2 bytes per character, plus 1 for the null terminator
-    private const int PoolSize = 100;
+    private const int PoolSize = 25; // Number of segments to keep in the pool
 
     /// <summary>
     /// Memory pool for managing unmanaged memory allocations for <see cref="CharSlice"/>.
     /// </summary>
-    private static readonly UnmanagedMemoryPool UnmanagedPool = new(MaxBytesForMaxStringLength, PoolSize);
+    [ThreadStatic]
+    private static UnmanagedMemoryPool? _unmanagedPool;
 
     /// <summary>
     /// Pointer to the start of the slice.
@@ -46,7 +47,7 @@ internal readonly struct CharSlice : IDisposable
     /// </summary>
     /// <param name="str">The string to copy into memory.</param>
     /// <param name="forceAlloc">If true, forces allocation from the heap instead of the pool.</param>
-    internal CharSlice(string? str, bool forceAlloc = false)
+    internal CharSlice(string? str, bool forceAlloc = true)
     {
         if (str == null)
         {
@@ -65,7 +66,8 @@ internal readonly struct CharSlice : IDisposable
             }
             else
             {
-                Ptr = UnmanagedPool.Rent();
+                _unmanagedPool ??= new(MaxBytesForMaxStringLength, PoolSize);
+                Ptr = _unmanagedPool.Rent();
                 _fromPool = true;
             }
 
@@ -88,7 +90,7 @@ internal readonly struct CharSlice : IDisposable
 
         if (_fromPool)
         {
-            UnmanagedPool.Return(Ptr);
+            _unmanagedPool?.Return(Ptr);
             return;
         }
 

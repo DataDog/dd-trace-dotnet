@@ -25,6 +25,16 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public UnmanagedMemoryPool(int blockSize, int poolSize)
     {
+        if (blockSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(blockSize));
+        }
+
+        if (poolSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(poolSize));
+        }
+
         _blockSize = blockSize;
         _items = (IntPtr*)Marshal.AllocCoTaskMem(poolSize * sizeof(IntPtr));
         _length = poolSize;
@@ -38,7 +48,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     ~UnmanagedMemoryPool()
     {
-        Dispose();
+        Dispose(disposing: false);
     }
 
     public bool IsDisposed => _isDisposed;
@@ -54,13 +64,15 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             ThrowObjectDisposedException();
         }
 
-        for (var i = _initialSearchIndex; i < _length; i++)
+        var start = _initialSearchIndex;
+        for (var scanned = 0; scanned < _length; scanned++)
         {
+            var i = (start + scanned) % _length;
             var inst = _items[i];
             if (inst != IntPtr.Zero)
             {
-                _initialSearchIndex = i + 1;
                 _items[i] = IntPtr.Zero;
+                _initialSearchIndex = (i + 1) % _length;
                 return inst;
             }
         }
@@ -78,6 +90,11 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         if (IsDisposed)
         {
             ThrowObjectDisposedException();
+        }
+
+        if (block == IntPtr.Zero)
+        {
+            return;
         }
 
         for (var i = 0; i < _length; i++)
@@ -123,7 +140,10 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
         for (var i = blockIndex; i < blocks.Count; i++)
         {
-            ReturnSlow(blocks[i]);
+            if (blocks[i] != IntPtr.Zero)
+            {
+                ReturnSlow(blocks[i]);
+            }
         }
     }
 
@@ -133,6 +153,12 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
     }
 
     public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
     {
         if (IsDisposed)
         {
@@ -149,7 +175,6 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         }
 
         Marshal.FreeCoTaskMem((IntPtr)_items);
-
         _isDisposed = true;
     }
 
