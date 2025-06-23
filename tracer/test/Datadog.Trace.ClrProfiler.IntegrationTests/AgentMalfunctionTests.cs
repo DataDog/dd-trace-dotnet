@@ -52,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Flaky("Named pipes is flaky", maxRetries: 3)]
         public async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion, bool dataPipelineEnabled)
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
@@ -81,25 +82,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.CustomResponses[MockTracerResponseType.RemoteConfig] = cr;
             }
 
-            // The server implementation of named pipes is flaky so have 3 attempts
-            var attemptsRemaining = 3;
-            while (true)
-            {
-                try
-                {
-                    attemptsRemaining--;
-                    await TestInstrumentation(agent, metadataSchemaVersion);
-                    return;
-                }
-                catch (Exception ex) when (transportType == TestTransports.WindowsNamedPipe && attemptsRemaining > 0 && ex is not SkipException)
-                {
-                    await ReportRetry(_output, attemptsRemaining, ex);
-                }
-            }
-        }
-
-        private async Task TestInstrumentation(MockTracerAgent agent, string metadataSchemaVersion)
-        {
             // 3 on non-windows because of SecureString
             var expectedSpanCount = EnvironmentTools.IsWindows() ? 5 : 3;
 

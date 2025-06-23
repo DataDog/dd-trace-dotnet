@@ -21,27 +21,14 @@ public class PipesXUnitTests(ITestOutputHelper output) : XUnitTests(output)
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
+    [Flaky("Named pipes is flaky", maxRetries: 5)]
     public override async Task SubmitTraces(string packageVersion)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         EnvironmentHelper.EnableWindowsNamedPipes();
 
-        // The server implementation of named pipes is flaky so have 5 attempts
-        var attemptsRemaining = 5;
-        while (true)
-        {
-            try
-            {
-                attemptsRemaining--;
-                await base.SubmitTraces(packageVersion);
-                return;
-            }
-            catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
-            {
-                await ReportRetry(Output, attemptsRemaining, ex);
-            }
-        }
+        await base.SubmitTraces(packageVersion);
     }
 }
 
