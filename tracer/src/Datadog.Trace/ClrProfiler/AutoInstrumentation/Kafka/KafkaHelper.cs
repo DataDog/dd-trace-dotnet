@@ -342,7 +342,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    Thread.Sleep(10);
+                    System.Threading.Thread.Sleep(10);
                     if (!_hasLogged)
                     {
                         Console.WriteLine("Rob Custom Log: KafkaHelper.TryInjectHeaders");
