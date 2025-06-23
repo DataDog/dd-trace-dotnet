@@ -84,6 +84,9 @@
     <None Include="$(MSBuildThisFileDirectory)../Datadog.Trace.Trimming/build/Datadog.Trace.Trimming.props" Pack="true" PackagePath="buildTransitive/net6.0/$(PackageId).props" />
     <None Include="$(MSBuildThisFileDirectory)../Datadog.Trace.Trimming/build/Datadog.Trace.Trimming.xml" Pack="true" PackagePath="buildTransitive/net6.0/" />
 
+    <!-- include empty file to resolve NU5127 -->
+    <None Include="_._" Pack="true" PackagePath="lib/net6.0/;lib/net461/" />
+
     <!-- remove items inherited from ../Directory.Build.props and ../../../Directory.Build.props -->
     <Compile Remove="$(MSBuildThisFileDirectory)../GlobalSuppressions.cs" />
     <Compile Remove="$(MSBuildThisFileDirectory)../../GlobalSuppressions.cs" />
