@@ -21,7 +21,6 @@
     <PackageTags>$(PackageTags);serverless;azure;azurefunctions</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>See release notes at https://github.com/DataDog/dd-trace-dotnet/releases.</PackageReleaseNotes>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
 
     <!-- Intentionally not inheriting warnings from ../Directory.Build.props -->
     <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128 -->
