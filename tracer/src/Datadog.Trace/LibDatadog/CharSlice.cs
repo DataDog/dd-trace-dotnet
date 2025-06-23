@@ -7,6 +7,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -18,6 +19,8 @@ namespace Datadog.Trace.LibDatadog;
 [StructLayout(LayoutKind.Sequential)]
 internal struct CharSlice : IDisposable
 {
+    private static readonly Encoder UTF8Encoder = Encoding.UTF8.GetEncoder();
+
     /// <summary>
     /// Pointer to the start of the slice.
     /// </summary>
@@ -42,11 +45,15 @@ internal struct CharSlice : IDisposable
         }
         else
         {
-            // copy over str to unmanaged memory
-            var bytes = System.Text.Encoding.UTF8.GetBytes(str);
-            Ptr = Marshal.AllocHGlobal(bytes.Length);
-            Marshal.Copy(bytes, 0, Ptr, bytes.Length);
-            Len = (nuint)bytes.Length;
+            var maxBytesCount = Encoding.UTF8.GetMaxByteCount(str.Length);
+            Ptr = Marshal.AllocHGlobal(maxBytesCount);
+            unsafe
+            {
+                fixed (char* strPtr = str)
+                {
+                    Len = (nuint)UTF8Encoder.GetBytes(strPtr, str.Length, (byte*)Ptr, maxBytesCount, true);
+                }
+            }
         }
     }
 
