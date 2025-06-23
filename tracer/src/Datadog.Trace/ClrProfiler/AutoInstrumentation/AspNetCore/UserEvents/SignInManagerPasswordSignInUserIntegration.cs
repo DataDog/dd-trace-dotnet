@@ -100,18 +100,18 @@ public static class SignInManagerPasswordSignInUserIntegration
 
                 var userId = UserEventsCommon.GetId(user);
                 var userLogin = UserEventsCommon.GetLogin(user);
-                if (!string.IsNullOrEmpty(userId))
+                if (!StringUtil.IsNullOrEmpty(userId))
                 {
                     foundUserId = true;
-                    userId = processPii?.Invoke(userId!) ?? userId;
-                    setTag(Tags.AppSec.EventsUsers.InternalUserId, userId!);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId!);
+                    userId = processPii?.Invoke(userId) ?? userId;
+                    setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId);
                 }
 
-                if (!string.IsNullOrEmpty(userLogin))
+                if (!StringUtil.IsNullOrEmpty(userLogin))
                 {
                     foundLogin = true;
-                    var login = processPii?.Invoke(userLogin!) ?? userLogin!;
+                    var login = processPii?.Invoke(userLogin) ?? userLogin;
                     setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
                     tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login);
                 }

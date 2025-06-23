@@ -1,4 +1,4 @@
-﻿// <copyright file="RemoveIisInstrumentation.cs" company="Datadog">
+﻿// <copyright file="RemoveIisInstrumentationCommand.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,12 +13,12 @@ namespace Datadog.FleetInstaller.Commands;
 /// <summary>
 /// Remove IIS instrumentation completely
 /// </summary>
-internal class RemoveIisInstrumentation : CommandBase
+internal class RemoveIisInstrumentationCommand : CommandBase
 {
     private const string Command = "remove-iis-instrumentation";
     private const string CommandDescription = "Removes instrumentation with the .NET library from IIS";
 
-    public RemoveIisInstrumentation()
+    public RemoveIisInstrumentationCommand()
         : base(Command, CommandDescription)
     {
         AddValidator(Validate);
@@ -36,11 +36,11 @@ internal class RemoveIisInstrumentation : CommandBase
     }
 
     // Internal for testing
-    internal ReturnCode Execute(ILogger log)
+    internal static ReturnCode Execute(ILogger log)
     {
         log.WriteInfo("Removing IIS instrumentation for .NET tracer");
 
-        if (!HasValidIIsVersion(log, out var errorMessage))
+        if (!HasValidIIsVersion(out var errorMessage))
         {
             // IIS isn't available, weird because it means they removed it _after_ successfully installing the product
             // but whatever, there's no variables there if that's the case!

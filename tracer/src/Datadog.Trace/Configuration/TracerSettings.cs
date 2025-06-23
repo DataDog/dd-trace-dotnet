@@ -52,6 +52,7 @@ namespace Datadog.Trace.Configuration
         private readonly bool _traceEnabled;
         private readonly bool _apmTracingEnabled;
         private readonly bool _isDataStreamsMonitoringEnabled;
+        private readonly bool _isDataStreamsMonitoringInDefaultState;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
         private readonly ReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly ReadOnlyDictionary<string, string> _globalTags;
@@ -416,7 +417,7 @@ namespace Datadog.Trace.Configuration
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: true);
+                                  .AsBool(defaultValue: false);
 
             if (DataPipelineEnabled)
             {
@@ -651,6 +652,9 @@ namespace Datadog.Trace.Configuration
             _isDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(false);
+            _isDataStreamsMonitoringInDefaultState = config
+                                                    .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
+                                                    .AsBool() == null;
 
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
@@ -750,6 +754,20 @@ namespace Datadog.Trace.Configuration
             // these are SSI variables that would be useful for correlation purposes
             telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
             telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
+
+            var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
+
+            var instrumentationSource = installType switch
+            {
+                "dd_dotnet_launcher" => "cmd_line",
+                "dd_trace_tool" => "cmd_line",
+                "dotnet_msi" => "env_var",
+                "windows_fleet_installer" => "ssi", // windows SSI on IIS
+                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")) => "ssi", // "normal" ssi
+                _ => "unknown" // everything else
+            };
+
+            telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
 
             if (AzureAppServiceMetadata is not null)
             {
@@ -1169,6 +1187,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
         internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
+
+        /// <summary>
+        /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
+        /// </summary>
+        internal bool IsDataStreamsMonitoringInDefaultState => DynamicSettings.DataStreamsMonitoringEnabled == null && _isDataStreamsMonitoringInDefaultState;
 
         /// <summary>
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.

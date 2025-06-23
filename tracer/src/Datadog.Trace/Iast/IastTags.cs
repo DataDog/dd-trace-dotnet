@@ -11,7 +11,7 @@ using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Iast;
 
-internal partial class IastTags : CommonTags
+internal partial class IastTags : TagsList
 {
     [Tag(Tags.IastJson)]
     public string? IastJson { get; set; }

@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 // parse http headers from stdout
-                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput).ToList();
+                var headers = HeadersUtil.GetAllHeaders(processResult.StandardOutput).ToList();
 
                 var firstSpan = spans.First();
                 headers.FirstOrDefault(h => h.Key == HttpHeaderNames.TraceId).Value.Should().Be(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture));
@@ -198,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.Spans.Should().NotContain(s => s.Type == SpanTypes.Http);
 
                 // parse http headers from stdout
-                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput).ToList();
+                var headers = HeadersUtil.GetAllHeaders(processResult.StandardOutput).ToList();
                 headers.Where(h => h.Key == HttpHeaderNames.TracingEnabled).Should().AllSatisfy(h => h.Value.Should().Be("false"));
 
                 // when tracing is disabled, we should not see any trace context or baggage headers

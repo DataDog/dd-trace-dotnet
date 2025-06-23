@@ -91,6 +91,14 @@ namespace Datadog.Trace
 
         public string? Origin { get; set; }
 
+        public string? SamplingMechanism { get; set; }
+
+        public float? AppliedSamplingRate { get; set; }
+
+        public float? RateLimiterRate { get; set; }
+
+        public double? TracesKeepRate { get; set; }
+
         /// <summary>
         /// Gets or sets additional key/value pairs from upstream "tracestate" header that we will propagate downstream.
         /// This value will _not_ include the "dd" key, which is parsed out into other individual values
@@ -178,7 +186,8 @@ namespace Datadog.Trace
                 }
             }
 
-            if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            if (span.ServiceName is not null &&
+                !string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
                 ExtraServicesProvider.Instance.AddService(span.ServiceName);
             }
@@ -277,32 +286,46 @@ namespace Datadog.Trace
                                        ? sampler.MakeSamplingDecision(span)
                                        : SamplingDecision.Default;
 
-            SetSamplingPriority(samplingDecision.Priority, samplingDecision.Mechanism);
+            SetSamplingPriority(
+                samplingDecision.Priority,
+                samplingDecision.Mechanism,
+                samplingDecision.Rate,
+                samplingDecision.LimiterRate);
+
             return samplingDecision.Priority;
         }
 
-        public void SetSamplingPriority(SamplingDecision decision, bool notifyDistributedTracer = true)
-        {
-            SetSamplingPriority(decision.Priority, decision.Mechanism, notifyDistributedTracer);
-        }
-
-        public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
+        public void SetSamplingPriority(
+            int? priority,
+            string? mechanism = null,
+            float? rate = null,
+            float? limiterRate = null,
+            bool notifyDistributedTracer = true)
         {
             if (priority is not { } p)
             {
                 return;
             }
 
-            SamplingPriority = p;
+            // priority (keep/drop) can change (manually, ASM, etc)
+            SamplingPriority = priority;
 
-            if (SamplingPriorityValues.IsKeep(p) && mechanism is { } m)
+            // report only the original rates, do not override
+            AppliedSamplingRate ??= rate;
+            RateLimiterRate ??= limiterRate;
+            SamplingMechanism ??= mechanism;
+
+            if (SamplingPriorityValues.IsKeep(p) && mechanism != null)
             {
-                // add the tag once if trace is sampled, but never overwrite an existing tag
-                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
+                // report sampling mechanism as trace tag only if decision is to keep the trace.
+                // report only the original sampling mechanism, do not override.
+                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, mechanism);
             }
             else if (SamplingPriorityValues.IsDrop(p))
             {
-                // remove tag if trace is not sampled
+                // remove sampling mechanism trace tag if decision is to drop the trace.
+                // do not set SamplingMechanism = null because that would allow changing the mechanism later,
+                // which is not allowed.
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 

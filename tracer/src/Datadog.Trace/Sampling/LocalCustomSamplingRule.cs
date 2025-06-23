@@ -37,7 +37,7 @@ internal sealed class LocalCustomSamplingRule : CustomSamplingRule
 
     public override string Provenance => SamplingRuleProvenance.Local;
 
-    public override int SamplingMechanism => Sampling.SamplingMechanism.LocalTraceSamplingRule;
+    public override string SamplingMechanism => Sampling.SamplingMechanism.LocalTraceSamplingRule;
 
     public static LocalCustomSamplingRule[] BuildFromConfigurationString(
         string configuration,

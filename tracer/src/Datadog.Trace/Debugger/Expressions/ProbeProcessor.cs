@@ -7,13 +7,16 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -382,9 +385,13 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
-            if (Tracer.Instance?.ScopeManager?.Active == null)
+            if (!TryGetScope(out var scope))
             {
-                Log.Warning("The tracer scope manager is null, so we can't set the tags. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("No active scope available, skipping span decoration. Probe: {ProbeId}", ProbeInfo.ProbeId);
+                }
+
                 return;
             }
 
@@ -395,43 +402,42 @@ namespace Datadog.Trace.Debugger.Expressions
                 var decoration = evaluationResult.Decorations[i];
                 var evaluationErrorTag = $"{DynamicPrefix}{decoration.TagName}.evaluation_error";
                 var probeIdTag = $"{DynamicPrefix}{decoration.TagName}.probe_id";
-                Span? targetSpan = null;
+                ISpan? targetSpan = null;
 
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
-                        targetSpan = Tracer.Instance.InternalActiveScope.Root?.Span;
+                        targetSpan = scope.Root?.Span;
                         break;
                     case TargetSpan.Active:
-                        targetSpan = Tracer.Instance.InternalActiveScope.Span;
+                        targetSpan = scope.Span;
                         break;
                     default:
                         Log.Error("Invalid target span. Probe: {ProbeId}", ProbeInfo.ProbeId);
                         break;
                 }
 
-                if (targetSpan != null)
+                if (targetSpan == null)
                 {
-                    targetSpan.SetTag(decoration.TagName, decoration.Value);
-                    targetSpan.SetTag(probeIdTag, ProbeInfo.ProbeId);
-                    if (decoration.Errors?.Length > 0)
-                    {
-                        targetSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
-                    }
-                    else if (targetSpan.GetTag(evaluationErrorTag) != null)
-                    {
-                        targetSpan.SetTag(evaluationErrorTag, null);
-                    }
-
-                    attachedTags = true;
-                    if (Log.IsEnabled(LogEventLevel.Debug))
-                    {
-                        Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID={ProbeId}", decoration.TagName, targetSpan.SpanId, ProbeInfo.ProbeId);
-                    }
+                    Log.Warning("No root span or active span is available, so we can't set the {Tag} tag. Probe ID: {ProbeId}", decoration.TagName, this.ProbeInfo.ProbeId);
+                    continue;
                 }
-                else
+
+                targetSpan.SetTag(decoration.TagName, decoration.Value);
+                targetSpan.SetTag(probeIdTag, this.ProbeInfo.ProbeId);
+                if (decoration.Errors?.Length > 0)
                 {
-                    Log.Warning("No root span or active span is available, so we can't set the {Tag} tag. Probe ID: {ProbeId}", decoration.TagName, ProbeInfo.ProbeId);
+                    targetSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                }
+                else if (targetSpan.GetTag(evaluationErrorTag) != null)
+                {
+                    targetSpan.SetTag(evaluationErrorTag, null);
+                }
+
+                attachedTags = true;
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID={ProbeId}", decoration.TagName, targetSpan.SpanId, this.ProbeInfo.ProbeId);
                 }
             }
 
@@ -445,6 +451,41 @@ namespace Datadog.Trace.Debugger.Expressions
             if (attachedTags)
             {
                 LiveDebugger.Instance.SetProbeStatusToEmitting(ProbeInfo);
+            }
+        }
+
+        private bool TryGetScope([NotNullWhen(true)] out Scope? scope)
+        {
+            try
+            {
+                if (Tracer.Instance.ActiveScope is Scope activeScope)
+                {
+                    scope = activeScope;
+                    return true;
+                }
+#if NETFRAMEWORK
+                var ctx = WcfCommon.GetCurrentOperationContext?.Invoke();
+                if (ctx?.DuckCast<IOperationContextStruct>() is { } ctxProxy
+                 && ((IDuckType?)ctxProxy.RequestContext)?.Instance is { } requestContextInstance
+                 && WcfCommon.Scopes.TryGetValue(requestContextInstance, out scope))
+                {
+                    return scope != null;
+                }
+
+                Log.Warning("Unable to find active scope in WCF context for span decoration. Probe ID: {ProbeId}", this.ProbeInfo.ProbeId);
+                scope = null;
+                return false;
+#else
+                Log.Warning("No active scope available for span decoration. Probe ID: {ProbeId}", this.ProbeInfo.ProbeId);
+                scope = null;
+                return false;
+#endif
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error while trying to get active scope for span decoration. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
+                scope = null;
+                return false;
             }
         }
 

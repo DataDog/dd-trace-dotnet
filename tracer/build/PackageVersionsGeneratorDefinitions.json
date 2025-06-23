@@ -301,6 +301,7 @@
     "MinVersion": "3.0.0",
     "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
+      "3.12.*",
       "3.*.*"
     ]
   },

@@ -12,7 +12,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Ci.Tagging;
 
-internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
+internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
 {
     public TestSessionSpanTags()
     {
