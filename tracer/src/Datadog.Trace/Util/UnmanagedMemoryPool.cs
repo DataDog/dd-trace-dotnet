@@ -205,6 +205,6 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowObjectDisposedException()
     {
-        throw new ObjectDisposedException("UnmanagedMemoryPool");
+        throw new ObjectDisposedException(nameof(UnmanagedMemoryPool));
     }
 }
