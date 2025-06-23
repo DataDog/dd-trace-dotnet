@@ -81,6 +81,9 @@ namespace Datadog.Trace.Ci.Configuration
                 EarlyFlakeDetectionEnabled = false;
             }
 
+            // Dynamic Instrumentation
+            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled).AsBool(false);
+
             // RUM flush milliseconds
             RumFlushWaitMillis = config.WithKeys(ConfigurationKeys.CIVisibility.RumFlushWaitMillis).AsInt32(500);
 
@@ -240,6 +243,11 @@ namespace Datadog.Trace.Ci.Configuration
         public bool? KnownTestsEnabled { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether the Dynamic Instrumentation feature is enabled.
+        /// </summary>
+        public bool? DynamicInstrumentationEnabled { get; private set; }
+
+        /// <summary>
         /// Gets a value indicating the number of milliseconds to wait after flushing RUM data.
         /// </summary>
         public int RumFlushWaitMillis { get; }
@@ -302,6 +310,11 @@ namespace Datadog.Trace.Ci.Configuration
         internal void SetKnownTestsEnabled(bool value)
         {
             KnownTestsEnabled = value;
+        }
+
+        internal void SetDynamicInstrumentationEnabled(bool value)
+        {
+            DynamicInstrumentationEnabled = value;
         }
 
         internal void SetEarlyFlakeDetectionEnabled(bool value)
