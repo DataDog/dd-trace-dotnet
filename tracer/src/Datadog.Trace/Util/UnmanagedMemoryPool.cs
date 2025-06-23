@@ -59,7 +59,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
     /// <returns>Pointer to a memory block of size specified in the constructor</returns>
     public IntPtr Rent()
     {
-        if (IsDisposed)
+        if (_isDisposed)
         {
             ThrowObjectDisposedException();
         }
@@ -87,7 +87,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public void Return(IntPtr block)
     {
-        if (IsDisposed)
+        if (_isDisposed)
         {
             ThrowObjectDisposedException();
         }
@@ -120,7 +120,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public void Return(IList<IntPtr> blocks)
     {
-        if (IsDisposed)
+        if (_isDisposed)
         {
             ThrowObjectDisposedException();
         }
@@ -173,22 +173,33 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     private void Dispose(bool disposing)
     {
-        if (IsDisposed)
+        if (_isDisposed)
         {
             return;
         }
 
-        for (var i = 0; i < _length; i++)
+        // Mark as disposed first so re‑entry is a no‑op even if an exception
+        // is thrown while releasing unmanaged resources.
+        _isDisposed = true;
+
+        try
         {
-            if (_items[i] != IntPtr.Zero)
+            // Free each rented block (if any) first
+            for (var i = 0; i < _length; i++)
             {
-                Marshal.FreeCoTaskMem(_items[i]);
-                _items[i] = IntPtr.Zero;
+                if (_items[i] != IntPtr.Zero)
+                {
+                    Marshal.FreeCoTaskMem(_items[i]);
+                    _items[i] = IntPtr.Zero;
+                }
             }
         }
-
-        Marshal.FreeCoTaskMem((IntPtr)_items);
-        _isDisposed = true;
+        finally
+        {
+            // Always release the pointer table itself, even if an earlier
+            // FreeCoTaskMem throws (extremely unlikely, but defensive).
+            Marshal.FreeCoTaskMem((IntPtr)_items);
+        }
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
