@@ -38,7 +38,7 @@ public class DatadogLoggingFactoryTests
                 });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
             config.File?.LogDirectory.Should().Be(logDirectory);
         }
 
@@ -61,7 +61,7 @@ public class DatadogLoggingFactoryTests
                 });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
             config.File?.LogDirectory.Should().Be(obsoleteLogDirectory);
         }
 
@@ -82,7 +82,7 @@ public class DatadogLoggingFactoryTests
                 });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
             config.File?.LogDirectory.Should().NotBeNullOrWhiteSpace();
         }
 
@@ -95,7 +95,7 @@ public class DatadogLoggingFactoryTests
             var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogDirectory, logDirectory } });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
             config.File?.LogDirectory.Should().Be(logDirectory);
             Directory.Exists(logDirectory).Should().BeTrue();
         }
@@ -143,7 +143,7 @@ public class DatadogLoggingFactoryTests
             var source = new NameValueConfigurationSource(new());
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
         }
 
         [Theory]
@@ -156,7 +156,7 @@ public class DatadogLoggingFactoryTests
             var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
         }
 
         [Theory]
@@ -169,7 +169,7 @@ public class DatadogLoggingFactoryTests
             var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeFalse();
+            config.File.Should().BeNull();
         }
     }
 }
