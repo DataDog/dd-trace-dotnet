@@ -207,11 +207,18 @@ macrobenchmarks:
     include: .gitlab/benchmarks/macrobenchmarks.yml
   allow_failure: true
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "rob.carlan/dsm-throughput-testing-ci"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
       when: always
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
       when: always
     - when: manual
+
+throughput:
+  stage: benchmarks
+  needs: [ ]
+  trigger:
+    include: .gitlab/benchmarks/throughput.yml
+  allow_failure: true
 
 microbenchmarks:
   stage: benchmarks
