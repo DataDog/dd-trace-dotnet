@@ -11,6 +11,7 @@ using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -18,24 +19,24 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.DatabaseMonitoring
 {
-    public class DatabaseMonitoringPropagatorTests
+    public class DatabaseMonitoringPropagatorTests : IClassFixture<ScopedTracerFixture>
     {
         private readonly Tracer _v0Tracer;
         private readonly Tracer _v1Tracer;
         private readonly Mock<IAgentWriter> _writerMock;
 
-        public DatabaseMonitoringPropagatorTests(ITestOutputHelper output)
+        public DatabaseMonitoringPropagatorTests(ITestOutputHelper output, ScopedTracerFixture scopedTracerFixture)
         {
             var v0Settings = new TracerSettings();
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _v0Tracer = new Tracer(v0Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _v0Tracer = scopedTracerFixture.BuildScopedTracer(v0Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             var v1Settings = TracerSettings.Create(
                 new() { { ConfigurationKeys.MetadataSchemaVersion, SchemaVersion.V1.ToString() } });
 
-            _v1Tracer = new Tracer(v1Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _v1Tracer = scopedTracerFixture.BuildScopedTracer(v1Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         [Theory]

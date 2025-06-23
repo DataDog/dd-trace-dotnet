@@ -8,12 +8,13 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.Tagging;
 
-public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
+public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService : IClassFixture<ScopedTracerFixture>
 {
     private const string SamplingPriorityName = "_sampling_priority_v1";
     private const int SamplingPriorityValue = 1;
@@ -21,13 +22,13 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     private readonly MockApi _testApi;
     private readonly Tracer _tracer;
 
-    public SamplingPriorityTests_MultipleChunksWithoutUpstreamService()
+    public SamplingPriorityTests_MultipleChunksWithoutUpstreamService(ScopedTracerFixture scopedTracerFixture)
     {
         _testApi = new MockApi();
 
         var settings = new TracerSettings();
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer =  scopedTracerFixture.BuildScopedTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Fact]

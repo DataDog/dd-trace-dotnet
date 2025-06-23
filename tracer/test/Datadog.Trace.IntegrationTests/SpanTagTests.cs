@@ -9,24 +9,25 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
 {
-    public class SpanTagTests
+    public class SpanTagTests : IClassFixture<ScopedTracerFixture>
     {
         private readonly Tracer _tracer;
         private readonly AgentWriter _writer;
         private readonly MockApi _testApi;
 
-        public SpanTagTests()
+        public SpanTagTests(ScopedTracerFixture fixture)
         {
             _testApi = new MockApi();
             var matchAllRule = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":1.0, \"max_per_second\":1000.0}]";
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, matchAllRule } });
             _writer = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-            _tracer = new Tracer(settings, _writer, sampler: null, scopeManager: null, statsd: null);
+            _tracer = fixture.BuildScopedTracer(settings, _writer, sampler: null, scopeManager: null, statsd: null);
         }
 
         [Fact]
