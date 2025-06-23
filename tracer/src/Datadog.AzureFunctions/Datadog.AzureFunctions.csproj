@@ -80,6 +80,10 @@
     <None Remove="$(SourcePath)/linux-x64/libdatadog_profiling.so" />         <!-- 8.4  MB -->
     <None Remove="$(SourcePath)/linux-x64/libddwaf.so" />                     <!-- 2.5  MB -->
 
+    <!-- include trimming files -->
+    <None Include="$(MSBuildThisFileDirectory)../Datadog.Trace.Trimming/build/Datadog.Trace.Trimming.props" Pack="true" PackagePath="buildTransitive/net6.0/$(PackageId).props" />
+    <None Include="$(MSBuildThisFileDirectory)../Datadog.Trace.Trimming/build/Datadog.Trace.Trimming.xml" Pack="true" PackagePath="buildTransitive/net6.0/" />
+
     <!-- remove items inherited from ../Directory.Build.props and ../../../Directory.Build.props -->
     <Compile Remove="$(MSBuildThisFileDirectory)../GlobalSuppressions.cs" />
     <Compile Remove="$(MSBuildThisFileDirectory)../../GlobalSuppressions.cs" />
