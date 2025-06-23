@@ -23,9 +23,8 @@
     <PackageReleaseNotes>See release notes at https://github.com/DataDog/dd-trace-dotnet/releases.</PackageReleaseNotes>
 
     <!-- Intentionally not inheriting warnings from ../Directory.Build.props -->
-    <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128 -->
     <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5100 -->
-    <NoWarn>NU5128;NU5100</NoWarn>
+    <NoWarn>NU5100</NoWarn>
 
     <!-- reenable warnings that are disabled in tracer/src/Directory.Build.props -->
     <NugetAudit>true</NugetAudit>
