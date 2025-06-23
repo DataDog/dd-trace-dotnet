@@ -427,10 +427,7 @@ namespace Datadog.Trace.Configuration
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(
-                        "{ConfigurationKey} is enabled, but {StatsComputationEnabled} is enabled. Disabling {TraceDataPipelineEnabled}.",
-                        ConfigurationKeys.TraceDataPipelineEnabled,
-                        ConfigurationKeys.StatsComputationEnabled,
-                        ConfigurationKeys.TraceDataPipelineEnabled);
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
 
@@ -440,9 +437,15 @@ namespace Datadog.Trace.Configuration
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(
-                        "{ConfigurationKey} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling {TraceDataPipelineEnabled}.",
-                        ConfigurationKeys.TraceDataPipelineEnabled,
-                        ConfigurationKeys.TraceDataPipelineEnabled);
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                if (!LibDatadog.NativeInterop.IsLibDatadogAvailable)
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but Libddatadog is not available. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
             }
