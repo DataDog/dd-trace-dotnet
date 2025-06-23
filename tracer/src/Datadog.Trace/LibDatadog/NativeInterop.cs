@@ -7,12 +7,22 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.LibDatadog.ServiceDiscovery;
 
 namespace Datadog.Trace.LibDatadog;
 
 internal class NativeInterop
 {
     private const string DllName = "LibDatadog";
+
+    // This will never change, so we use a lazy to cache the result.
+    // This confirms that we are in an automatic instrumentation environment (and so PInvokes have been re-written)
+    // and that the libdatadog library has been deployed (which is not the case in many serverless environments).
+    // We should add or remove conditions from here as our deployment requirements change.
+    private static readonly Lazy<bool> LibDatadogAvailable = new(() => !Util.EnvironmentHelpers.IsServerlessEnvironment() && Instrumentation.ProfilerAttached);
+
+    public static bool IsLibDatadogAvailable => LibDatadogAvailable.Value;
 
     internal static class Exporter
     {
@@ -72,5 +82,22 @@ internal class NativeInterop
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_client_computed_stats")]
         internal static extern ErrorHandle SetClientComputedStats(SafeHandle config, bool clientComputedStats);
+    }
+
+    internal static class Common
+    {
+        [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
+        internal static extern TracerMemfdHandleResult StoreTracerMetadata(
+            byte schemaVersion,
+            CharSlice runtimeId,
+            CharSlice tracerLanguage,
+            CharSlice tracerVersion,
+            CharSlice hostname,
+            CharSlice serviceName,
+            CharSlice serviceEnv,
+            CharSlice serviceVersion);
+
+        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
+        internal static extern void DropError(ref Error errorHandle);
     }
 }

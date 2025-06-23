@@ -12,6 +12,8 @@ namespace Datadog.Trace.LibDatadog;
 
 /// <summary>
 /// Represents a slice of a byte array in memory.
+/// Do not change the values of this enum unless you really need to update the interop mapping.
+/// Libdatadog interop mapping of https://github.com/DataDog/libdatadog/blob/60583218a8de6768f67d04fcd5bc6443f67f516b/ddcommon-ffi/src/slice.rs#L54
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
 internal struct ByteSlice
