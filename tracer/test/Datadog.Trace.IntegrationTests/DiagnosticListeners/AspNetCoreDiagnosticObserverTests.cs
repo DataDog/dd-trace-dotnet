@@ -18,9 +18,11 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -425,9 +427,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var configSource = new NameValueConfigurationSource(new NameValueCollection
             {
                 { ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, featureFlag.ToString() },
-                { ConfigurationKeys.ExpandRouteTemplatesEnabled, expandRouteParameters.ToString() },
+                { ConfigurationKeys.ExpandRouteTemplatesEnabled, expandRouteParameters.ToString() }
             });
-            var tracer = GetTracer(writer, configSource);
+            await using var tracer = GetTracer(writer, configSource);
 
             var security = new AppSec.Security();
             var iast = new Iast.Iast(new IastSettings(configSource, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
@@ -530,13 +532,13 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             span.GetTag(tagName).Should().Be(expected, $"'{tagName}' should have correct value");
         }
 
-        private static Tracer GetTracer(IAgentWriter writer = null, IConfigurationSource configSource = null)
+        private static ScopedTracer GetTracer(IAgentWriter writer = null, IConfigurationSource configSource = null)
         {
             var settings = new TracerSettings(configSource);
             var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
             var samplerMock = new Mock<ITraceSampler>();
 
-            return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
+            return new ScopedTracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         private static LiveDebugger GetLiveDebugger()
