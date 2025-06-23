@@ -6,12 +6,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -27,13 +29,13 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [MemberData(nameof(GetOperationNameParams))]
-        public void GetOperationNameIsCorrect(object schemaVersionObject, string spanKind)
+        public async Task GetOperationNameIsCorrect(object schemaVersionObject, string spanKind)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject;
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion.ToString() } });
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             MsmqCommon.GetOperationName(tracer, spanKind).Should().Be(GetExpectedOperationName(schemaVersion, spanKind));
         }
