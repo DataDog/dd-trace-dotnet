@@ -17,19 +17,19 @@ namespace Datadog.Trace.LibDatadog;
 /// Libdatadog interop mapping of https://github.com/DataDog/libdatadog/blob/60583218a8de6768f67d04fcd5bc6443f67f516b/ddcommon-ffi/src/slice.rs#L51
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-internal struct CharSlice : IDisposable
+internal readonly struct CharSlice : IDisposable
 {
     private static readonly Encoder UTF8Encoder = Encoding.UTF8.GetEncoder();
 
     /// <summary>
     /// Pointer to the start of the slice.
     /// </summary>
-    internal nint Ptr;
+    internal readonly nint Ptr;
 
     /// <summary>
     /// Length of the slice.
     /// </summary>
-    internal nuint Len;
+    internal readonly nuint Len;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CharSlice"/> struct.
