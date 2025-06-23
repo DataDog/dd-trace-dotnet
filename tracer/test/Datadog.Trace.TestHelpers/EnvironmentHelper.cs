@@ -92,6 +92,8 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeFrameworkDescription.Contains("core") || IsNet5();
         }
 
+        public static bool CanUseStatsD(TestTransports transport) => transport != TestTransports.Uds || !EnvironmentTools.IsWindows();
+
         public static bool IsAlpine() => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine"));
 
         public static string GetMonitoringHomePath()
