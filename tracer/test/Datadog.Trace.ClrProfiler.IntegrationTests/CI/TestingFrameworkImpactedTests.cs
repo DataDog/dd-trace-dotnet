@@ -171,12 +171,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 while (DateTime.UtcNow < deadline)
                 {
                     filteredTests = tests.Where(testFilter).ToList();
-                    if (tests.Count() >= ExpectedTestCount)
+                    if (tests.Count >= ExpectedTestCount)
                     {
                         break;
                     }
 
-                    Thread.Sleep(500);
+                    await Task.Delay(500).ConfigureAwait(false);
                 }
 
                 // Sort and aggregate
