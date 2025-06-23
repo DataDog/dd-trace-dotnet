@@ -19,8 +19,6 @@ namespace Datadog.Trace.LibDatadog;
 [StructLayout(LayoutKind.Sequential)]
 internal readonly struct CharSlice : IDisposable
 {
-    private static readonly Encoder UTF8Encoder = Encoding.UTF8.GetEncoder();
-
     /// <summary>
     /// Pointer to the start of the slice.
     /// </summary>
@@ -45,13 +43,14 @@ internal readonly struct CharSlice : IDisposable
         }
         else
         {
-            var maxBytesCount = Encoding.UTF8.GetMaxByteCount(str.Length);
+            var encoding = Encoding.UTF8;
+            var maxBytesCount = encoding.GetMaxByteCount(str.Length);
             Ptr = Marshal.AllocHGlobal(maxBytesCount);
             unsafe
             {
                 fixed (char* strPtr = str)
                 {
-                    Len = (nuint)UTF8Encoder.GetBytes(strPtr, str.Length, (byte*)Ptr, maxBytesCount, true);
+                    Len = (nuint)encoding.GetBytes(strPtr, str.Length, (byte*)Ptr, maxBytesCount);
                 }
             }
         }
