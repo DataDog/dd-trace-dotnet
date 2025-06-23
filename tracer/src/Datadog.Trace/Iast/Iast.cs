@@ -85,6 +85,11 @@ internal class Iast
 
     internal bool IsMetaStructSupported()
     {
+        if (Tracer.Instance.Settings.ForceMetaStruct)
+        {
+            return true;
+        }
+
         if (_discoveryService is null)
         {
             _discoveryService = Tracer.Instance.TracerManager.DiscoveryService;

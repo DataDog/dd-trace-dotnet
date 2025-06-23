@@ -377,6 +377,9 @@ namespace Datadog.Trace.Configuration
             RemoveClientServiceNamesEnabled = config
                .WithKeys(ConfigurationKeys.RemoveClientServiceNamesEnabled)
                .AsBool(defaultValue: false);
+            ForceMetaStruct = config
+               .WithKeys(ConfigurationKeys.ForceMetaStruct)
+               .AsBool(defaultValue: false);
             SpanPointersEnabled = config
                .WithKeys(ConfigurationKeys.SpanPointersEnabled)
                .AsBool(defaultValue: true);
@@ -1281,6 +1284,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the metadata schema version
         /// </summary>
         internal SchemaVersion MetadataSchemaVersion { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether internal value indicating whether the tracer should force the use of meta struct.
+        /// </summary>
+        internal bool ForceMetaStruct { get; }
 
         /// <summary>
         /// Gets a value indicating whether remote configuration has been explicitly disabled.

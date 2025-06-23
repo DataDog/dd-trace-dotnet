@@ -552,6 +552,12 @@ namespace Datadog.Trace.Configuration
         public const string SpanPointersEnabled = "DD_TRACE_AWS_ADD_SPAN_POINTERS";
 
         /// <summary>
+        /// Configuration key for forcing metastruct usage in the tracer.
+        /// Default value is false
+        /// </summary>
+        public const string ForceMetaStruct = "DD_FORCE_METASTRUCT";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
