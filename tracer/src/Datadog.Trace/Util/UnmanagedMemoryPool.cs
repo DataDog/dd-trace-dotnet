@@ -25,12 +25,12 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public UnmanagedMemoryPool(int blockSize, int poolSize)
     {
-        if (blockSize <= 0)
+        if (blockSize < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(blockSize));
         }
 
-        if (poolSize <= 0)
+        if (poolSize < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(poolSize));
         }
