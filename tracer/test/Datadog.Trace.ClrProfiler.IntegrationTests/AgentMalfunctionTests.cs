@@ -23,15 +23,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private static readonly Regex StackRegex = new(@"      error.stack:(\n|\r){1,2}.*(\n|\r){1,2}.*,(\r|\n){1,2}");
         private static readonly Regex ErrorMsgRegex = new(@"      error.msg:.*,(\r|\n){1,2}");
-        private static readonly TestTransports[] Transports = new[]
-        {
-            TestTransports.Tcp,
-            TestTransports.WindowsNamedPipe,
-#if NETCOREAPP3_1_OR_GREATER
-            TestTransports.Uds,
-#endif
-        };
-
         private readonly ITestOutputHelper _output;
 
         public AgentMalfunctionTests(ITestOutputHelper output)
@@ -43,23 +34,44 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> TestData
             => from behaviour in (AgentBehaviour[])Enum.GetValues(typeof(AgentBehaviour))
-               from transportType in Transports
                from metadataSchemaVersion in new[] { "v0", "v1" }
                from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
-               select new object[] { behaviour, transportType, metadataSchemaVersion, dataPipelineEnabled };
+               select new object[] { behaviour, metadataSchemaVersion, dataPipelineEnabled };
 
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Flaky("Named pipes is flaky", maxRetries: 3)]
-        public async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion, bool dataPipelineEnabled)
+        public Task NamedPipes_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
         {
-            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-            if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
+            if (EnvironmentTools.IsWindows())
             {
                 throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
+
+            return SubmitsTraces(behaviour, TestTransports.WindowsNamedPipe, metadataSchemaVersion, dataPipelineEnabled);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public Task Tcp_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
+            => SubmitsTraces(behaviour, TestTransports.Tcp, metadataSchemaVersion, dataPipelineEnabled);
+
+#if NETCOREAPP3_1_OR_GREATER
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public Task Uds_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
+            => SubmitsTraces(behaviour, TestTransports.Uds, metadataSchemaVersion, dataPipelineEnabled);
+#endif
+
+        private async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion, bool dataPipelineEnabled)
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
             EnvironmentHelper.EnableTransport(transportType);
             SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
