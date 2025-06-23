@@ -109,7 +109,8 @@ namespace shared
     std::string GenerateRuntimeId();
 
 #if LINUX
-    /// \brief Checks if the current system has a buggy implementation of dlclose (glibc 2.34-2.36).
+    /// \brief Checks if the current system has a buggy implementation of dlclose (glibc 2.34-2.36). Does not need
+    /// to be called on Alpine Linux, as it uses musl libc which is not affected by this bug.
     /// \return A tuple with a boolean that is True if the system is affected by the buggy dlclose, false otherwise.
     /// The string is the version of glibc found, if any
     std::tuple<bool, WSTRING> HasBuggyDlclose();

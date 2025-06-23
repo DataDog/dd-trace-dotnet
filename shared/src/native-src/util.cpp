@@ -334,6 +334,7 @@ namespace shared
         // Note that although calling dlclose with the continuous profiler may trigger the issue (the actual crash is flaky
         // depending on load/unload timing and address layout), unloading _any_ library that is is built with
         // `__thread`/`thread_local` data could trigger the crash. To minimize the risk of hitting this issue,
+        // we avoid calling dlclose entirely on the flaky glibc versions
 
         // Cache the value statically to avoid repeated checks
         static std::tuple<bool, WSTRING> result = []() {
