@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     MethodName = "WriteTo",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = ["Google.Protobuf.CodedOutputStream"],
-    MinimumVersion = "3.0.0",
+    MinimumVersion = "3.13.0",
     MaximumVersion = "3.*.*",
     IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
     CallTargetIntegrationKind = CallTargetKind.Interface)]
