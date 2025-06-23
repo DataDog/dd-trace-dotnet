@@ -102,7 +102,15 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             if (_items[i] == IntPtr.Zero)
             {
                 _items[i] = block;
-                _initialSearchIndex = 0;
+
+                // Preserve round‑robin behaviour: only rewind the
+                // search pointer when we insert a block that sits
+                // *before* the current search index.
+                if (i < _initialSearchIndex)
+                {
+                    _initialSearchIndex = i;
+                }
+
                 return;
             }
         }
@@ -123,20 +131,25 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         }
 
         var blockIndex = 0;
-        for (var i = 0; i < _length; i++)
+        var earliestInserted = _length; // track the left‑most slot we refill
+
+        for (var i = 0; i < _length && blockIndex < blocks.Count; i++)
         {
             if (_items[i] == IntPtr.Zero)
             {
                 _items[i] = blocks[blockIndex++];
-                if (blockIndex == blocks.Count)
+
+                if (i < earliestInserted)
                 {
-                    _initialSearchIndex = 0;
-                    return;
+                    earliestInserted = i;
                 }
             }
         }
 
-        _initialSearchIndex = 0;
+        if (earliestInserted < _initialSearchIndex)
+        {
+            _initialSearchIndex = earliestInserted;
+        }
 
         for (var i = blockIndex; i < blocks.Count; i++)
         {
