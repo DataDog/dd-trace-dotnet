@@ -42,7 +42,8 @@
     <ProjectReference Include="..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
     -->
 
-    <PackageReference Include="Datadog.Serverless.Compat" Version="0.1.0"/>
+    <!-- content files are not transitive -->
+    <!-- <PackageReference Include="Datadog.Serverless.Compat" Version="0.1.0"/> -->
 
     <!-- managed assemblies -->
     <None Include="$(SourcePath)/net6.0/Datadog.Trace.dll" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/net6.0/">
