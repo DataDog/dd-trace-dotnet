@@ -45,7 +45,8 @@ internal readonly struct CharSlice : IDisposable
     /// This can be further optimized if we can avoid copying the string to unmanaged memory.
     /// </summary>
     /// <param name="str">The string to copy into memory.</param>
-    internal CharSlice(string? str)
+    /// <param name="forceAlloc">If true, forces allocation from the heap instead of the pool.</param>
+    internal CharSlice(string? str, bool forceAlloc = false)
     {
         if (str == null)
         {
@@ -57,7 +58,7 @@ internal readonly struct CharSlice : IDisposable
         {
             var encoding = Encoding.UTF8;
             var maxBytesCount = encoding.GetMaxByteCount(str.Length);
-            if (maxBytesCount > MaxBytesForMaxStringLength)
+            if (forceAlloc || maxBytesCount > MaxBytesForMaxStringLength)
             {
                 Ptr = Marshal.AllocHGlobal(maxBytesCount);
                 _fromPool = false;
