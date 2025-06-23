@@ -283,6 +283,12 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_APPSEC_WAF_TIMEOUT"] = 10_000_000.ToString();
             }
 
+            if (!environmentVariables.ContainsKey(ConfigurationKeys.RuntimeMetricsEnabled))
+            {
+                // enable runtime metrics by default on CI first
+                environmentVariables[ConfigurationKeys.RuntimeMetricsEnabled] = "1";
+            }
+
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {
                 var value = Environment.GetEnvironmentVariable(name);
