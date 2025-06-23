@@ -54,7 +54,7 @@ public class PopulateBasicPropertiesHeadersIntegration
         }
 
         // TReturn is type RabbitMQ.Client.BasicProperties
-        TReturn? basicProperties = default;
+        TReturn? basicProperties;
 
         // PopulateBasicPropertiesHeaders returns null if the supplied IReadOnlyBasicProperties
         // does not have to be modified or if it's a writable instance.
@@ -79,6 +79,10 @@ public class PopulateBasicPropertiesHeadersIntegration
                 // create new BasicProperties using the BasicProperties(IReadOnlyBasicProperties) copy constructor
                 basicProperties = CachedBasicPropertiesHelper<TReturn>.CreateHeaders(state.State!);
             }
+        }
+        else
+        {
+            basicProperties = returnValue;
         }
 
         // duck cast so we can access the Headers property

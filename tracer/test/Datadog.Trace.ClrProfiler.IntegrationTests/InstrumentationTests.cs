@@ -37,6 +37,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         // There's nothing .NET 8 specific here, it's just that it's an identical test for all runtimes
         // so there's not really any point in testing it repeatedly
 #if NET8_0
+        public static string GetProgramCSThatMakesSpans()
+        {
+            return @"using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+
+namespace Foo
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            // Make 1 HTTP requests to generate auto-instrumented spans
+            using var httpClient = new HttpClient();
+            for (int i = 0; i < 1; i++)
+            {
+                try
+                {
+                    var response = await httpClient.GetAsync(""http://localhost:55555/test"");
+                    Console.WriteLine($""Request {i + 1} status: {response.StatusCode}"");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($""Request {i + 1} failed: {ex.Message}"");
+                }
+            }
+
+            // just give it a sec for any spans to be sent (unsure if needed)
+            await Task.Delay(1000);
+        }
+    }
+}";
+        }
+
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task DoesNotInstrumentDotnetBuild()
@@ -59,6 +93,84 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             logDir = await RunDotnet("publish");
             AssertNotInstrumented(agent, logDir);
+
+            return;
+
+            Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
+        }
+
+        [SkippableTheory]
+        [InlineData("vsdbg")] // list has vsdbg and vsdbg.exe
+        [InlineData("dd-trace")] // list has dd-trace and dd-trace.exe
+        [Trait("RunOnWindows", "True")]
+        public async Task DoesNotInstrumentExcludedNames(string excludedProcess)
+        {
+            // FIXME: this should also take into account case insensitivity, but that is not yet supported
+            // https://devblogs.microsoft.com/oldnewthing/20241007-00/?p=110345
+            var workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
+            Directory.CreateDirectory(workingDir);
+
+            Output.WriteLine("Using workingDirectory: " + workingDir);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
+            var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
+            AssertNotInstrumented(agent, logDir);
+
+            var programCs = GetProgramCSThatMakesSpans();
+
+            File.WriteAllText(Path.Combine(workingDir, "Program.cs"), programCs);
+
+            logDir = await RunDotnet("restore");
+            AssertNotInstrumented(agent, logDir);
+
+            logDir = await RunDotnet("build");
+            AssertNotInstrumented(agent, logDir);
+
+            logDir = await RunDotnet("publish");
+            AssertNotInstrumented(agent, logDir);
+
+            // this _should NOT_ be instrumented
+            logDir = await RunDotnet("run");
+            AssertNotInstrumentedIgnoredExe(agent, logDir, excludedProcess);
+
+            return;
+
+            Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
+        }
+
+        [SkippableTheory]
+        [InlineData("VSdbuG")] // list has vsdbg and vsdbg.exe, but not vsdbug
+        [Trait("RunOnWindows", "True")]
+        public async Task DoesInstrumentAllowedProcesses(string allowedProcess)
+        {
+            // Just a safe guard in case we break the test at some point in the future and
+            // it keeps passing just because instrumentation isn't properly setup.
+            var workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
+            Directory.CreateDirectory(workingDir);
+
+            Output.WriteLine("Using workingDirectory: " + workingDir);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
+            var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore");
+            AssertNotInstrumented(agent, logDir);
+            var programCs = GetProgramCSThatMakesSpans();
+
+            File.WriteAllText(Path.Combine(workingDir, "Program.cs"), programCs);
+
+            logDir = await RunDotnet("restore");
+            AssertNotInstrumented(agent, logDir);
+
+            logDir = await RunDotnet("build");
+            AssertNotInstrumented(agent, logDir);
+
+            logDir = await RunDotnet("publish");
+            AssertNotInstrumented(agent, logDir);
+
+            // this _SHOULD_ be instrumented
+            logDir = await RunDotnet("run");
+            AssertInstrumentedAllowedProcess(agent, logDir, allowedProcess);
 
             return;
 
@@ -251,7 +363,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]
         public async Task OnEolFrameworkInSsi_WhenForwarderPathExists_CallsForwarderWithExpectedTelemetry()
         {
             var logDir = SetLogDirectory();
@@ -284,7 +395,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]
         public async Task OnEolFrameworkInSsi_WhenOverriden_CallsForwarderWithExpectedTelemetry()
         {
             var logDir = SetLogDirectory();
@@ -320,7 +430,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [InlineData("1")]
         [InlineData("0")]
-        [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]
         public async Task OnSupportedFrameworkInSsi_CallsForwarderWithExpectedTelemetry(string isOverriden)
         {
             var logDir = SetLogDirectory();
@@ -433,6 +542,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Directory.CreateDirectory(logDir);
             SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+            // Disable .NET CLI telemetry to prevent extra HTTP spans
+            SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1");
 
             using var process = await ProfilerHelper.StartProcessWithProfiler(
                                     executable: EnvironmentHelper.GetDotnetExe(),
@@ -445,6 +556,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             WaitForProcessResult(helper);
             return logDir;
+        }
+
+        private void AssertNotInstrumentedIgnoredExe(MockTracerAgent mockTracerAgent, string logDir, string exe)
+        {
+            // should have bailed out, but we still write logs to the native loader log
+            // _and_ the native tracer/profiler (because they're initialized), so important
+            // point is we don't have managed logs, and no spans or telemetry
+            using var scope = new AssertionScope();
+            var allFiles = Directory.GetFiles(logDir);
+            AddFilesAsReportable(logDir, scope, allFiles);
+
+            allFiles.Should().NotContain(filename => Path.GetFileName(filename).StartsWith($"dotnet-tracer-managed-{exe}-"));
+            mockTracerAgent.Spans.Should().ContainSingle(); // command_execution
+        }
+
+        private void AssertInstrumentedAllowedProcess(MockTracerAgent mockTracerAgent, string logDir, string exe)
+        {
+            // should have bailed out, but we still write logs to the native loader log
+            // _and_ the native tracer/profiler (because they're initialized), so important
+            // point is we don't have managed logs, and no spans or telemetry
+            using var scope = new AssertionScope();
+            var allFiles = Directory.GetFiles(logDir);
+            AddFilesAsReportable(logDir, scope, allFiles);
+
+            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith($"dotnet-tracer-managed-{exe}-"));
+            mockTracerAgent.Spans.Should().HaveCountGreaterThan(1);
         }
 
         private void AssertNotInstrumented(MockTracerAgent mockTracerAgent, string logDir)
