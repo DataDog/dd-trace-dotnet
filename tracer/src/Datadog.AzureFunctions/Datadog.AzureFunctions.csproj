@@ -10,7 +10,7 @@
 
     <!-- nuget version: move $Version to $VersionPrefix so we can add a prerelease suffix -->
     <VersionPrefix>$(Version)</VersionPrefix>
-    <VersionSuffix>preview2</VersionSuffix>
+    <VersionSuffix>preview3</VersionSuffix>
     <Version></Version>
 
     <!-- nuget package metadata -->
