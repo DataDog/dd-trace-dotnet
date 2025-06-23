@@ -263,7 +263,6 @@ internal static class CiUtils
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled] = "1";
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.RateLimitSeconds] = "0";
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.UploadFlushInterval] = "1000";
-            profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.ExceptionReplayCaptureMaxFrames] = "6";
         }
 
         // Let's set the code coverage datacollector if the code coverage is enabled
