@@ -40,7 +40,7 @@
       "name": "CallTarget\u002BInlining\u002BNGEN"
     }
   ],
-  "processName": ".\\Samples.HttpMessageHandler.exe",
+  "processName": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_net8.0\\Samples.HttpMessageHandler.exe",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_net8.0",
   "environmentVariables": {
