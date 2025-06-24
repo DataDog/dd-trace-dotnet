@@ -13,6 +13,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.ClrProfiler;
@@ -51,6 +52,7 @@ namespace Datadog.Trace.Configuration
         private readonly bool _traceEnabled;
         private readonly bool _apmTracingEnabled;
         private readonly bool _isDataStreamsMonitoringEnabled;
+        private readonly bool _isDataStreamsMonitoringInDefaultState;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
         private readonly ReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly ReadOnlyDictionary<string, string> _globalTags;
@@ -413,6 +415,38 @@ namespace Datadog.Trace.Configuration
                                    .AsBoolResult()
                                    .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
 
+            DataPipelineEnabled = config
+                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
+                                  .AsBool(defaultValue: false);
+
+            if (DataPipelineEnabled)
+            {
+                // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
+                // as it may lead to different stats results than the managed one.
+                if (StatsComputationEnabled)
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        "{ConfigurationKey} is enabled, but {StatsComputationEnabled} is enabled. Disabling {TraceDataPipelineEnabled}.",
+                        ConfigurationKeys.TraceDataPipelineEnabled,
+                        ConfigurationKeys.StatsComputationEnabled,
+                        ConfigurationKeys.TraceDataPipelineEnabled);
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
+                // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
+                if (Exporter.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        "{ConfigurationKey} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling {TraceDataPipelineEnabled}.",
+                        ConfigurationKeys.TraceDataPipelineEnabled,
+                        ConfigurationKeys.TraceDataPipelineEnabled);
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+            }
+
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
 
@@ -510,6 +544,10 @@ namespace Datadog.Trace.Configuration
             WcfObfuscationEnabled = config
                                    .WithKeys(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
                                    .AsBool(defaultValue: true);
+
+            InferredProxySpansEnabled = config
+                                      .WithKeys(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled)
+                                      .AsBool(defaultValue: false);
 
             ObfuscationQueryStringRegex = config
                                          .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
@@ -614,6 +652,9 @@ namespace Datadog.Trace.Configuration
             _isDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(false);
+            _isDataStreamsMonitoringInDefaultState = config
+                                                    .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
+                                                    .AsBool() == null;
 
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
@@ -626,7 +667,7 @@ namespace Datadog.Trace.Configuration
             StatsComputationEnabled = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningMiniAgentInAzureFunctions));
-            if (!ApmTracingEnabledInternal && StatsComputationEnabled)
+            if (!ApmTracingEnabled && StatsComputationEnabled)
             {
                 telemetry.Record(ConfigurationKeys.StatsComputationEnabled, false, ConfigurationOrigins.Calculated);
                 StatsComputationEnabled = false;
@@ -659,18 +700,23 @@ namespace Datadog.Trace.Configuration
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
+            RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(true);
+
             TraceId128BitGenerationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled)
                                             .AsBool(true);
             TraceId128BitLoggingEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
-                                         .AsBool(false);
+                                         .AsBool(TraceId128BitGenerationEnabled);
 
             CommandsCollectionEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.CommandsCollectionEnabled)
                                        .AsBool(false);
 
             BypassHttpRequestUrlCachingEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled)
+                                                       .AsBool(false);
+
+            InjectContextIntoStoredProceduresEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled)
                                                        .AsBool(false);
 
             var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
@@ -711,6 +757,20 @@ namespace Datadog.Trace.Configuration
             // these are SSI variables that would be useful for correlation purposes
             telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
             telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
+
+            var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
+
+            var instrumentationSource = installType switch
+            {
+                "dd_dotnet_launcher" => "cmd_line",
+                "dd_trace_tool" => "cmd_line",
+                "dotnet_msi" => "env_var",
+                "windows_fleet_installer" => "ssi", // windows SSI on IIS
+                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")) => "ssi", // "normal" ssi
+                _ => "unknown" // everything else
+            };
+
+            telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
 
             if (AzureAppServiceMetadata is not null)
             {
@@ -795,7 +855,7 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
-        internal bool ApmTracingEnabledInternal => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
+        internal bool ApmTracingEnabled => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
 
         /// <summary>
         /// Gets a value indicating whether profiling is enabled.
@@ -970,6 +1030,12 @@ namespace Datadog.Trace.Configuration
         internal bool WcfObfuscationEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether to generate an inferred span based on extracted headers from a proxy service.
+        /// </summary>
+        /// <seeaslo cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
+        internal bool InferredProxySpansEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating the regex to apply to obfuscate http query strings.
         /// Warning: This regex cause crashes under netcoreapp2.1 / linux / arm64, DON'T use default value on manual instrumentation
         /// </summary>
@@ -1056,6 +1122,12 @@ namespace Datadog.Trace.Configuration
         internal bool RuntimeMetricsEnabled => DynamicSettings.RuntimeMetricsEnabled ?? _runtimeMetricsEnabled;
 
         /// <summary>
+        /// Gets a value indicating whether libdatadog data pipeline
+        /// is enabled.
+        /// </summary>
+        internal bool DataPipelineEnabled { get; }
+
+        /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlSubstrings"/>
@@ -1126,6 +1198,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
 
         /// <summary>
+        /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
+        /// </summary>
+        internal bool IsDataStreamsMonitoringInDefaultState => DynamicSettings.DataStreamsMonitoringEnabled == null && _isDataStreamsMonitoringInDefaultState;
+
+        /// <summary>
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
         /// </summary>
         internal bool IsDataStreamsLegacyHeadersEnabled { get; }
@@ -1187,6 +1264,13 @@ namespace Datadog.Trace.Configuration
         internal bool BypassHttpRequestUrlCachingEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the tracer will inject context into
+        /// StoredProcedure commands for Microsoft SQL Server.
+        /// Requires the <see cref="DbmPropagationMode"/> to be set to either <see cref="DbmPropagationLevel.Service"/> or <see cref="DbmPropagationLevel.Full"/>.
+        /// </summary>
+        internal bool InjectContextIntoStoredProceduresEnabled { get; }
+
+        /// <summary>
         /// Gets the AAS settings
         /// </summary>
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
@@ -1217,6 +1301,11 @@ namespace Datadog.Trace.Configuration
         internal SchemaVersion MetadataSchemaVersion { get; }
 
         /// <summary>
+        /// Gets a value indicating whether remote configuration has been explicitly disabled.
+        /// </summary>
+        internal bool RemoteConfigurationEnabled { get; }
+
+        /// <summary>
         /// Gets the disabled ADO.NET Command Types that won't have spans generated for them.
         /// </summary>
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
@@ -1227,9 +1316,11 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
-        /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios
+        /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios.
+        /// It may also be explicitly disabled
         /// </summary>
         internal bool IsRemoteConfigurationAvailable =>
+            RemoteConfigurationEnabled &&
             !(IsRunningInAzureAppService
            || IsRunningMiniAgentInAzureFunctions
            || IsRunningInGCPFunctions

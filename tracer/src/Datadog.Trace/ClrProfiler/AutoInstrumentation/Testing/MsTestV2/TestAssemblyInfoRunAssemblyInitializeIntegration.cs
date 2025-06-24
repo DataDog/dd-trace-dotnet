@@ -33,14 +33,6 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
 {
     private static readonly MethodInfo EmptyCleanUpMethodInfo = typeof(TestAssemblyInfoRunAssemblyInitializeIntegration).GetMethod(nameof(EmptyCleanUpMethod), BindingFlags.NonPublic | BindingFlags.Static)!;
 
-    /// <summary>
-    /// OnMethodBegin callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <typeparam name="TContext">Type of the ITestMethod</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="testContext">Test context instance</param>
-    /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext? testContext)
         where TTarget : ITestAssemblyInfo
     {
@@ -74,14 +66,6 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
         return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, assemblyName));
     }
 
-    /// <summary>
-    /// OnAsyncMethodEnd callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-    /// <param name="state">Calltarget state value</param>
-    /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
     {
         if (state.State is TestModule module && exception is not null)
@@ -102,4 +86,30 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
     {
         Assembly Assembly { get; }
     }
+}
+
+/// <summary>
+/// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo.RunAssemblyInitialize(TestContext testContext, out LogMessageListener? logListener) calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo",
+    MethodName = "RunAssemblyInitialize",
+    ReturnTypeName = ClrNames.Void,
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.TestContext", ClrNames.Ignore],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public static class TestAssemblyInfoRunAssemblyInitializeIntegrationV3_9
+#pragma warning restore SA1402
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TContext, TLogMessageListener>(TTarget instance, TContext? testContext, ref TLogMessageListener? logListener)
+        where TTarget : ITestAssemblyInfo
+        => TestAssemblyInfoRunAssemblyInitializeIntegration.OnMethodBegin(instance, testContext);
+
+    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
+        => TestAssemblyInfoRunAssemblyInitializeIntegration.OnMethodEnd(instance, exception, state);
 }

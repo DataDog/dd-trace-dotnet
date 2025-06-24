@@ -10,11 +10,8 @@
 
 // forward declarations
 class IConfiguration;
-class IFrameStore;
-class IAppDomainStore;
-class IRuntimeIdStore;
 class SampleValueTypeProvider;
-
+class RawSampleTransformer;
 
 class CpuTimeProvider
     :
@@ -23,14 +20,8 @@ class CpuTimeProvider
 public:
     CpuTimeProvider(
         SampleValueTypeProvider& valueTypeProvider,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IFrameStore* pFrameStore,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration,
-        shared::pmr::memory_resource* memoryResource
-        );
+        RawSampleTransformer* rawSampleTransformer,
+        shared::pmr::memory_resource* memoryResource);
 
-private:
     static std::vector<SampleValueType> SampleTypeDefinitions;
 };

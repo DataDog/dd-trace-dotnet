@@ -7,10 +7,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 internal class TestCaseMetadata
 {
-    public TestCaseMetadata(string uniqueID, int totalExecution, int executionNumber)
+    public TestCaseMetadata(string uniqueID, int totalExecution, int countDownExecutionNumber)
     {
         TotalExecutions = totalExecution;
-        ExecutionNumber = executionNumber;
+        CountDownExecutionNumber = countDownExecutionNumber;
         EarlyFlakeDetectionEnabled = false;
         AbortByThreshold = false;
         FlakyRetryEnabled = false;
@@ -19,15 +19,29 @@ internal class TestCaseMetadata
 
     public int TotalExecutions { get; set; }
 
-    public int ExecutionNumber { get; set; }
+    public int CountDownExecutionNumber { get; set; }
 
-    public int ExecutionIndex => TotalExecutions - (ExecutionNumber + 1);
+    public int ExecutionIndex => TotalExecutions - (CountDownExecutionNumber + 1);
 
     public bool EarlyFlakeDetectionEnabled { get; set; }
 
     public bool AbortByThreshold { get; set; }
 
     public bool FlakyRetryEnabled { get; set; }
+
+    public bool IsQuarantinedTest { get; set; }
+
+    public bool IsDisabledTest { get; set; }
+
+    public bool IsAttemptToFix { get; set; }
+
+    public bool IsRetry { get; set; }
+
+    public bool IsLastRetry => IsRetry && CountDownExecutionNumber == 0;
+
+    public bool AllAttemptsPassed { get; set; } = true;
+
+    public bool AllRetriesFailed { get; set; } = true;
 
     public string UniqueID { get; }
 }

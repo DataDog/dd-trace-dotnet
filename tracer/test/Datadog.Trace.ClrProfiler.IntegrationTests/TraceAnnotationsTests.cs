@@ -35,23 +35,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    // The .NET 8 runtime is more aggressive in optimising structs
+    // so if you reference a version of the .NET tracer prior to this fix:
+    // https://github.com/DataDog/dd-trace-dotnet/pull/4608 you may get
+    // struct tearing issues. Bumping the TraceAnnotations.VersionMismatch.AfterFeature project to a version
+    // with the issue solves the problem.
+    // However Duck-typing is broken on .NET 8 prior to when we added explicit support, so there will never
+    // be an "older" package version we can test with
+#if !NET8_0_OR_GREATER
     public class TraceAnnotationsVersionMismatchBeforeFeatureTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchBeforeFeatureTests(ITestOutputHelper output)
             : base("TraceAnnotations.VersionMismatch.BeforeFeature", enableTelemetry: false, output)
         {
-#if NET8_0_OR_GREATER
-            // The .NET 8 runtime is more aggressive in optimising structs
-            // so if you reference a version of the .NET tracer prior to this fix:
-            // https://github.com/DataDog/dd-trace-dotnet/pull/4608 you may get
-            // struct tearing issues. Bumping the TraceAnnotations.VersionMismatch.AfterFeature project to a version
-            // with the issue solves the problem.
-            // _However_ Duck-typing is broken on .NET 8 prior to when we added explicit support, so there will never
-            // be an "older" package version we can test with
-            throw new SkipException("Tracer versions before TraceAnnotations was supported do not support .NET 8");
-#endif
         }
     }
+#endif
 
     public class TraceAnnotationsVersionMismatchNewerNuGetTests : TraceAnnotationsTests
     {

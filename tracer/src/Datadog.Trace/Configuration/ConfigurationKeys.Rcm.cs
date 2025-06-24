@@ -13,6 +13,13 @@ namespace Datadog.Trace.Configuration
         internal static class Rcm
         {
             /// <summary>
+            /// Is remote configuration management (RCM) enabled. Defaults to <c>true</c>. RCM requires
+            /// the use of the full agent, so will not always be available. This switch is primarily
+            /// intended for testing and for explicitly disabling RCM even though it is available.
+            /// </summary>
+            public const string RemoteConfigurationEnabled = "DD_REMOTE_CONFIGURATION_ENABLED";
+
+            /// <summary>
             /// Configuration key for RCM poll interval (in seconds).
             /// Default value is 5 s
             /// Maximum value is 5 s

@@ -24,8 +24,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string GarbageCollectionProfilerEnabled = "DD_PROFILING_GC_ENABLED";
         public const string UseBacktrace2 = "DD_INTERNAL_USE_BACKTRACE2";
         public const string DebugInfoEnabled = "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED";
-        public const string GcThreadsCpuTimeEnabled = "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED";
-        public const string ThreadLifetimeEnabled = "DD_INTERNAL_THREAD_LIFETIME_ENABLED";
+        public const string GcThreadsCpuTimeEnabled = "DD_GC_THREADS_CPUTIME_ENABLED";
+        public const string ThreadLifetimeEnabled = "DD_THREAD_LIFETIME_ENABLED";
         public const string SsiDeployed = "DD_INJECTION_ENABLED";
         public const string EtwEnabled = "DD_INTERNAL_PROFILING_ETW_ENABLED";
         public const string CpuProfilerType = "DD_INTERNAL_CPU_PROFILER_TYPE";
@@ -37,5 +37,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string HttpProfilingEnabled = "DD_INTERNAL_PROFILING_HTTP_ENABLED";
         public const string HttpRequestDurationThreshold = "DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD";
         public const string ForceHttpSamplingEnabled = "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING";
+        public const string WaitHandleContentionProfilingEnabled = "DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED";
     }
 }

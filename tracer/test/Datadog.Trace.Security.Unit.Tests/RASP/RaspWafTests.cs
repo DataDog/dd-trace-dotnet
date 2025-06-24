@@ -6,12 +6,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -52,12 +55,14 @@ public class RaspWafTests : WafLibraryRequiredTest
     }
 
     [Theory]
-    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "customblock", BlockingAction.BlockRequestType)]
+    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "customblock1", BlockingAction.BlockRequestType)]
     public void GivenALfiRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string value, string paramValue, string rule, string ruleFile, string action, string actionType)
     {
         var args = CreateArgs(paramValue);
-        var context = InitWaf(true, ruleFile, args, out var waf);
+        var configurationState = CreateConfigurationState(ruleFile);
+        var context = InitWaf(configurationState, true, args, out var waf);
 
+        // Default config does not block
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
         var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
         resultEph.BlockInfo["status_code"].Should().Be("403");
@@ -66,20 +71,18 @@ public class RaspWafTests : WafLibraryRequiredTest
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
         resultData.Rule.Id.Should().Be(rule);
 
-        var configurationStatus = UpdateConfigurationState();
-        var newAction = CreateNewStatusAction(action, actionType, 500);
-        configurationStatus.ActionsByFile[action] = [newAction];
-        configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafActionsKey);
-        var res = waf.Update(configurationStatus);
-        res.Success.Should().BeTrue();
-
-        context = waf.CreateContext();
+        // New action bloking with 500 (and remove previous one)
+        var newAction1 = CreateNewStatusAction(action, actionType, 500);
+        var ruleOverride = new RuleOverride { OnMatch = new[] { action }, Id = rule };
+        AddAsmRemoteConfig(configurationState, new Payload { Actions = [newAction1], RuleOverrides = [ruleOverride] }, "update1");
+        var updateRes1 = UpdateWaf(configurationState, waf, ref context);
+        updateRes1.Success.Should().BeTrue();
         context.Run(args, TimeoutMicroSeconds);
-        var resultEphNew = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
-        resultEphNew.Timeout.Should().BeFalse("Timeout should be false");
-        resultEphNew.BlockInfo["status_code"].Should().Be("500");
-        resultEphNew.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
-        resultEphNew.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0);
+        var resultEph1 = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
+        resultEph1.Timeout.Should().BeFalse("Timeout should be false");
+        resultEph1.BlockInfo["status_code"].Should().Be("500");
+        resultEph1.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
+        resultEph1.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0);
     }
 
     [Theory]
@@ -154,7 +157,13 @@ public class RaspWafTests : WafLibraryRequiredTest
 
     private IContext InitWaf(bool newEncoder, string ruleFile, Dictionary<string, object> args, out Waf waf)
     {
-        var initResult = CreateWaf(newEncoder, ruleFile, wafDebugEnabled: enableDebug);
+        var configurationState = CreateConfigurationState(ruleFile);
+        return InitWaf(configurationState, newEncoder, args, out waf);
+    }
+
+    private IContext InitWaf(ConfigurationState configurationState, bool newEncoder, Dictionary<string, object> args, out Waf waf)
+    {
+        var initResult = CreateWaf(configurationState, newEncoder, wafDebugEnabled: enableDebug);
         waf = initResult.Waf;
         var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
@@ -190,6 +199,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         newAction.Parameters = new AppSec.Rcm.Models.Asm.Parameter();
         newAction.Parameters.StatusCode = newStatus;
         newAction.Parameters.Type = "auto";
+        newAction.Parameters.Location = string.Empty;
 
         if (newAction.Type == BlockingAction.RedirectRequestType)
         {

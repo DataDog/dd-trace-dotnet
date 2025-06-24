@@ -16,17 +16,17 @@ namespace Datadog.Trace.Tools.Runner.Gac;
 internal interface IAssemblyCache
 {
     [PreserveSig]
-    int UninstallAssembly(UninstallAssemblyFlags dwFlags, [MarshalAs(UnmanagedType.LPWStr)] string pszAssemblyName, IntPtr pvReserved, out UninstallDisposition pulDisposition);
+    Hresult UninstallAssembly(UninstallAssemblyFlags dwFlags, [MarshalAs(UnmanagedType.LPWStr)] string pszAssemblyName, IntPtr pvReserved, out UninstallDisposition pulDisposition);
 
     [PreserveSig]
-    int QueryAssemblyInfo(QueryAssemblyInfoFlag dwFlags, [MarshalAs(UnmanagedType.LPWStr)] string pszAssemblyName, ref AssemblyInfo pAsmInfo);
+    Hresult QueryAssemblyInfo(QueryAssemblyInfoFlag dwFlags, [MarshalAs(UnmanagedType.LPWStr)] string pszAssemblyName, ref AssemblyInfo pAsmInfo);
 
     [PreserveSig]
-    int CreateAssemblyCacheItem(uint dwFlags, IntPtr pvReserved, out IAssemblyCacheItem ppAsmItem, [MarshalAs(UnmanagedType.LPWStr)] string pszAssemblyName);
+    Hresult CreateAssemblyCacheItem(uint dwFlags, IntPtr pvReserved, out IAssemblyCacheItem ppAsmItem, [MarshalAs(UnmanagedType.LPWStr)] string pszAssemblyName);
 
     [PreserveSig]
-    int CreateAssemblyScavenger(out object ppAsmScavenger);
+    Hresult CreateAssemblyScavenger(out object ppAsmScavenger);
 
     [PreserveSig]
-    int InstallAssembly(AssemblyCacheInstallFlags dwFlags, [MarshalAs(UnmanagedType.LPWStr)] string pszManifestFilePath, IntPtr pvReserved);
+    Hresult InstallAssembly(AssemblyCacheInstallFlags dwFlags, [MarshalAs(UnmanagedType.LPWStr)] string pszManifestFilePath, IntPtr pvReserved);
 }

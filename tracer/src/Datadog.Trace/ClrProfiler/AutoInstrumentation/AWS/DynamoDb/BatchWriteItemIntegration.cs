@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         ReturnTypeName = "Amazon.DynamoDBv2.Model.BatchWriteItemResponse",
         ParameterTypeNames = new[] { "Amazon.DynamoDBv2.Model.BatchWriteItemRequest" },
         MinimumVersion = "3.0.0",
-        MaximumVersion = "3.*.*",
+        MaximumVersion = "4.*.*",
         IntegrationName = AwsDynamoDbCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

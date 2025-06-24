@@ -117,6 +117,9 @@ namespace Datadog.Trace
         /// </summary>
         public const string AppSecWafInitRulesErrorCount = "_dd.appsec.event_rules.error_count";
 
+        // inferred proxy tags
+        public const string InferredSpan = "_dd.inferred_span";
+
         /// <summary>
         /// Contains tag names that are associated with Single Span Sampling.
         /// </summary>

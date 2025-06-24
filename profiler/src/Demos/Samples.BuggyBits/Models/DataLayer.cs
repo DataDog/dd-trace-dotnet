@@ -157,6 +157,36 @@ namespace BuggyBits.Models
         }
 
         // -------------------------------------------------------
+        // Different sync-over-async implementations
+        public async Task<IEnumerable<Product>> GetAllProductGetAwaiterGetResult(string rootPath)
+        {
+            // Note: sync-over-async is much slower so reduce the number of product to return
+            const int productCount = 2000;
+            var path = GetProductInfoRoot(rootPath);
+            var products = new List<Product>(productCount);
+            for (int id = 0; id < productCount; id++)
+            {
+                products.Add(GetProductAsync(path, id).GetAwaiter().GetResult());
+            }
+
+            return products;
+        }
+
+        public async Task<IEnumerable<Product>> GetAllProductWithResult(string rootPath)
+        {
+            // Note: sync-over-async is much slower so reduce the number of product to return
+            const int productCount = 2000;
+            var path = GetProductInfoRoot(rootPath);
+            var products = new List<Product>(productCount);
+            for (int id = 0; id < productCount; id++)
+            {
+                products.Add(GetProductAsync(path, id).Result);
+            }
+
+            return products;
+        }
+
+        // -------------------------------------------------------
         // Different asynchronous implementations
         public async Task<IEnumerable<Product>> GetAllProductAsync(string rootPath)
         {
@@ -319,6 +349,23 @@ namespace BuggyBits.Models
         {
             // should trigger a redirect to the secured HTTPS url
             string result = await _client.GetStringAsync("http://github.com/TessFerrandez/BuggyBits/blob/main/README.md");
+            return result;
+        }
+
+        public async Task<string> SimulateGithubPage(string rootPath)
+        {
+            Thread.Sleep(1000);
+            string result = string.Empty;
+            try
+            {
+                result = await _client.GetStringAsync($"{rootPath}/CompanyInformation/AccessGithub");
+            }
+            catch (Exception x)
+            {
+                // this will happen when the application stops during the Sleep
+                result = x.Message;
+            }
+
             return result;
         }
 

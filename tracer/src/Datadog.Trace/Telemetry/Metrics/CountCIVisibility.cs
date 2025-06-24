@@ -30,8 +30,19 @@ internal enum CountCIVisibility
     [TelemetryMetric<
         MetricTags.CIVisibilityTestFramework,
         MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum,
-        MetricTags.CIVisibilityTestingEventTypeRetryReason>
+        MetricTags.CIVisibilityTestingEventTypeRetryReason,
+        MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled,
+        MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix>
         ("event_finished", isCommon: true, NS.CIVisibility)] EventFinished,
+
+    /// <summary>
+    /// Test session by CI Visibility
+    /// </summary>
+    [TelemetryMetric<
+            MetricTags.CIVisibilityTestSessionProvider,
+            MetricTags.CIVisibilityTestSessionType,
+            MetricTags.CIVisibilityTestSessionAgentlessLogSubmission>
+        ("test_session", isCommon: true, NS.CIVisibility)] TestSession,
 
     /// <summary>
     /// The number of code coverage start calls by CI Visibility
@@ -151,7 +162,8 @@ internal enum CountCIVisibility
             MetricTags.CIVisibilitySettingsResponse_ItrSkippingFeature,
             MetricTags.CIVisibilitySettingsResponse_KnownTestsFeature,
             MetricTags.CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature,
-            MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature>
+            MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature,
+            MetricTags.CIVisibilitySettingsResponse_TestManagementFeature>
         ("git_requests.settings_response", isCommon: true, NS.CIVisibility)] GitRequestsSettingsResponse,
 
     /// <summary>
@@ -241,4 +253,19 @@ internal enum CountCIVisibility
     /// The number of tests marked as Modified by Impacted Tests Detection
     /// </summary>
     [TelemetryMetric("impacted_tests_detection.is_modified", isCommon: true, NS.CIVisibility)] ImpactedTestsIsModified,
+
+    /// <summary>
+    /// The number of requests sent to the test management tests endpoint, regardless of success.
+    /// Tagged with a boolean flag set to true if request body is compressed
+    /// </summary>
+    [TelemetryMetric<MetricTags.CIVisibilityRequestCompressed>("test_management_tests.request", isCommon: true, NS.CIVisibility)]
+    TestManagementTestsRequest,
+
+    /// <summary>
+    /// The number of test management tests requests sent to the endpoint that errored, tagget by the error type
+    /// (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)
+    /// and status code (400,401,403,404,408,429)
+    /// </summary>
+    [TelemetryMetric<MetricTags.CIVisibilityErrorType>("test_management_tests.request_errors", isCommon: true, NS.CIVisibility)]
+    TestManagementTestsRequestErrors,
 }

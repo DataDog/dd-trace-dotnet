@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Download Linux native symbols v${{ github.event.inputs.version }}
@@ -26,4 +26,4 @@ jobs:
         with:
           symbols_folder: "debug_symbols"
           preprod_key: "${{ secrets.DD_PREPROD_API_KEY }}"
-          prod_key: "${{ secrets.DD_API_KEY }}"
+          prod_key: "${{ secrets.DD_PUBLIC_SYMBOL_API_KEY }}"

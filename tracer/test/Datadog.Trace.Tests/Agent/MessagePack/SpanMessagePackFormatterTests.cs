@@ -211,6 +211,237 @@ public class SpanMessagePackFormatterTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
+    [InlineData(null)]
+    public void SpanEvent_Tag_Serialization(bool? nativeSpanEventsEnabled)
+    {
+        var discoveryService = new DiscoveryServiceMock();
+        var mockApi = new MockApi();
+        var settings = TracerSettings.Create(new());
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, discoveryService);
+
+        tracer.TracerManager.Start();
+
+        if (nativeSpanEventsEnabled is not null)
+        {
+            discoveryService.TriggerChange(spanEvents: (bool)nativeSpanEventsEnabled);
+        }
+
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+
+        var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
+        var traceContext = new TraceContext(tracer);
+        var spanContext = new SpanContext(parentContext, traceContext, "ServiceName1");
+        var span = new Span(spanContext, DateTimeOffset.UtcNow);
+
+        var eventName = "test_event";
+        var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var eventAttributes = new List<KeyValuePair<string, object>>
+        {
+            new("string_key", "hello"),
+            new("char_key", 'c'),
+            new("bool_key", true),
+            new("int_key", 42),
+            new("uint_key", 420U),
+            new("byte_key", (byte)7),
+            new("sbyte_key", (sbyte)-7),
+            new("short_key", (short)30000),
+            new("ushort_key", (ushort)60000),
+            new("float_key", 1.23f),
+            new("double_key", 3.14),
+            new("decimal_key", 1.23m),
+            new("ulong_key", 12345678901234567890),
+            new("empty_value", null),
+            new("string_array", new[] { "item1", "item2", "item3" }),
+        };
+
+        var eventAttributes2 = new List<KeyValuePair<string, object>>
+        {
+            new("object_array", new object[] { "string", 42, true }),
+            new("bool_array", new[] { true, false, true }),
+            new("int_array", new[] { 123, 1234, 12345 }),
+            new("double_array", new[] { 1.2, 1.3210, 200000.1 }),
+            new(null, "empty_key"),
+            new("string_key", "hello"),
+        };
+
+        span.AddEvent(new SpanEvent(eventName, eventTimestamp, eventAttributes));
+        span.AddEvent(new SpanEvent("another_event", eventTimestamp.AddSeconds(1), eventAttributes2));
+        span.SetDuration(TimeSpan.FromSeconds(1));
+
+        var traceChunk = new TraceChunkModel(new([span]));
+        byte[] bytes = [];
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        result.Should().HaveCount(1);
+        var deserializedSpan = result[0];
+
+        if (nativeSpanEventsEnabled is true)
+        {
+            deserializedSpan.SpanEvents.Should().HaveCount(2);
+
+            var firstEvent = deserializedSpan.SpanEvents[0];
+            firstEvent.Name.Should().Be(eventName);
+            firstEvent.Timestamp.Should().Be(eventTimestamp.ToUnixTimeNanoseconds());
+
+            var attributes = firstEvent.Attributes;
+
+            attributes.Should().NotContainKey("decimal_key");
+            attributes.Should().NotContainKey("ulong_key");
+            attributes.Should().NotContainKey("empty_value");
+
+            attributes["string_key"].Type.Should().Be(0);
+            attributes["string_key"].StringValue.Should().Be("hello");
+            attributes["string_key"].BoolValue.Should().BeNull();
+            attributes["string_key"].IntValue.Should().BeNull();
+            attributes["string_key"].DoubleValue.Should().BeNull();
+
+            attributes["bool_key"].Type.Should().Be(1);
+            attributes["bool_key"].BoolValue.Should().Be(true);
+            attributes["bool_key"].StringValue.Should().BeNull();
+            attributes["bool_key"].IntValue.Should().BeNull();
+            attributes["bool_key"].DoubleValue.Should().BeNull();
+
+            attributes["int_key"].Type.Should().Be(2);
+            attributes["int_key"].IntValue.Should().Be(42);
+            attributes["int_key"].StringValue.Should().BeNull();
+            attributes["int_key"].BoolValue.Should().BeNull();
+            attributes["int_key"].DoubleValue.Should().BeNull();
+
+            attributes["double_key"].Type.Should().Be(3);
+            attributes["double_key"].DoubleValue.Should().Be(3.14);
+            attributes["double_key"].StringValue.Should().BeNull();
+            attributes["double_key"].BoolValue.Should().BeNull();
+            attributes["double_key"].IntValue.Should().BeNull();
+
+            attributes["char_key"].Type.Should().Be(0);
+            attributes["char_key"].StringValue.Should().Be("c");
+
+            attributes["uint_key"].Type.Should().Be(2);
+            attributes["uint_key"].IntValue.Should().Be(420);
+
+            attributes["byte_key"].Type.Should().Be(2);
+            attributes["byte_key"].IntValue.Should().Be(7);
+
+            attributes["sbyte_key"].Type.Should().Be(2);
+            attributes["sbyte_key"].IntValue.Should().Be(-7);
+
+            attributes["short_key"].Type.Should().Be(2);
+            attributes["short_key"].IntValue.Should().Be(30000);
+
+            attributes["ushort_key"].Type.Should().Be(2);
+            attributes["ushort_key"].IntValue.Should().Be(60000);
+
+            attributes["float_key"].Type.Should().Be(3);
+            attributes["float_key"].DoubleValue.Should().BeApproximately(1.23, 0.001);
+
+            var arrayAttr = attributes["string_array"];
+            arrayAttr.Type.Should().Be(4);
+            arrayAttr.ArrayValue.Values.Should().AllSatisfy(item => item.Type.Should().Be(0)); // string type
+            arrayAttr.ArrayValue.Values[0].StringValue.Should().Be("item1");
+            arrayAttr.ArrayValue.Values[1].StringValue.Should().Be("item2");
+            arrayAttr.ArrayValue.Values[2].StringValue.Should().Be("item3");
+            arrayAttr.StringValue.Should().BeNull();
+            arrayAttr.BoolValue.Should().BeNull();
+            arrayAttr.IntValue.Should().BeNull();
+            arrayAttr.DoubleValue.Should().BeNull();
+
+            var secondEvent = deserializedSpan.SpanEvents[1];
+            secondEvent.Name.Should().Be("another_event");
+            secondEvent.Timestamp.Should().Be(eventTimestamp.AddSeconds(1).ToUnixTimeNanoseconds());
+
+            var attributes2 = secondEvent.Attributes;
+            attributes2.Should().HaveCount(4);
+
+            attributes2.Should().NotContainNulls();
+            attributes2.Should().NotContainKey("object_array");
+
+            attributes2["string_key"].Type.Should().Be(0);
+            attributes2["string_key"].StringValue.Should().Be("hello");
+            attributes2["string_key"].BoolValue.Should().BeNull();
+            attributes2["string_key"].IntValue.Should().BeNull();
+            attributes2["string_key"].DoubleValue.Should().BeNull();
+
+            var boolArray = attributes2["bool_array"];
+            boolArray.Type.Should().Be(4);
+            boolArray.ArrayValue.Values.Should().HaveCount(3);
+            boolArray.ArrayValue.Values.Should().AllSatisfy(item => item.Type.Should().Be(1)); // bool type
+            boolArray.ArrayValue.Values[0].BoolValue.Should().Be(true);
+            boolArray.ArrayValue.Values[1].BoolValue.Should().Be(false);
+            boolArray.ArrayValue.Values[2].BoolValue.Should().Be(true);
+            boolArray.StringValue.Should().BeNull();
+            boolArray.BoolValue.Should().BeNull();
+            boolArray.IntValue.Should().BeNull();
+            boolArray.DoubleValue.Should().BeNull();
+
+            var intArray = attributes2["int_array"];
+            intArray.Type.Should().Be(4);
+            intArray.ArrayValue.Values.Should().HaveCount(3);
+            intArray.ArrayValue.Values.Should().AllSatisfy(item => item.Type.Should().Be(2)); // int type
+            intArray.ArrayValue.Values[0].IntValue.Should().Be(123);
+            intArray.ArrayValue.Values[1].IntValue.Should().Be(1234);
+            intArray.ArrayValue.Values[2].IntValue.Should().Be(12345);
+            intArray.StringValue.Should().BeNull();
+            intArray.BoolValue.Should().BeNull();
+            intArray.IntValue.Should().BeNull();
+            intArray.DoubleValue.Should().BeNull();
+
+            var doubleArray = attributes2["double_array"];
+            doubleArray.Type.Should().Be(4);
+            doubleArray.ArrayValue.Values.Should().HaveCount(3);
+            doubleArray.ArrayValue.Values.Should().AllSatisfy(item => item.Type.Should().Be(3)); // double type
+            doubleArray.ArrayValue.Values[0].DoubleValue.Should().Be(1.2);
+            doubleArray.ArrayValue.Values[1].DoubleValue.Should().Be(1.321);
+            doubleArray.ArrayValue.Values[2].DoubleValue.Should().Be(200000.1);
+            doubleArray.StringValue.Should().BeNull();
+            doubleArray.BoolValue.Should().BeNull();
+            doubleArray.IntValue.Should().BeNull();
+            doubleArray.DoubleValue.Should().BeNull();
+        }
+        else
+        {
+            deserializedSpan.SpanEvents.Should().BeNullOrEmpty();
+            deserializedSpan.Tags.Should().ContainKey("events");
+            var eventsJson = deserializedSpan.Tags["events"];
+
+            eventsJson.Should().Contain($"\"name\":\"{eventName}\"");
+            eventsJson.Should().Contain($"\"time_unix_nano\":{eventTimestamp.ToUnixTimeNanoseconds()}");
+
+            var firstEventExpectedAttributes = new[]
+            {
+                "\"string_key\":\"hello\"",
+                "\"bool_key\":true",
+                "\"int_key\":42",
+                "\"double_key\":3.14",
+                "\"char_key\":\"c\"",
+                "\"uint_key\":420",
+                "\"byte_key\":7",
+                "\"sbyte_key\":-7",
+                "\"short_key\":30000",
+                "\"ushort_key\":60000",
+                "\"float_key\":1.23",
+                "\"string_array\":[\"item1\",\"item2\",\"item3\"]"
+            };
+            firstEventExpectedAttributes.Should().AllSatisfy(attr => eventsJson.Should().Contain(attr));
+
+            eventsJson.Should().Contain("\"name\":\"another_event\"");
+            eventsJson.Should().Contain($"\"time_unix_nano\":{eventTimestamp.AddSeconds(1).ToUnixTimeNanoseconds()}");
+
+            var secondEventExpectedAttributes = new[]
+            {
+                "\"bool_array\":[true,false,true]",
+                "\"int_array\":[123,1234,12345]",
+                "\"double_array\":[1.2,1.321,200000.1]",
+                "\"string_key\":\"hello\""
+            };
+            secondEventExpectedAttributes.Should().AllSatisfy(attr => eventsJson.Should().Contain(attr));
+        }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     public async Task TraceId128_PropagatedTag(bool generate128BitTraceId)
     {
         var mockApi = new MockApi();

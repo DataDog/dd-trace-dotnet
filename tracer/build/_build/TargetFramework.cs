@@ -11,7 +11,7 @@ using Nuke.Common.Utilities;
 public class TargetFramework : Enumeration
 {
     public static TargetFramework NET461 = new TargetFramework { Value = "net461" };
-    public static TargetFramework NET462 = new TargetFramework { Value = "net462" };
+    public static TargetFramework NET48 = new TargetFramework { Value = "net48" };
     public static TargetFramework NETSTANDARD2_0 = new TargetFramework { Value = "netstandard2.0" };
     public static TargetFramework NETCOREAPP2_1 = new TargetFramework { Value = "netcoreapp2.1" };
     public static TargetFramework NETCOREAPP3_0 = new TargetFramework { Value = "netcoreapp3.0" };

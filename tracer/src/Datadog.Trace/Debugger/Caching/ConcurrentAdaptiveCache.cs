@@ -242,6 +242,11 @@ namespace Datadog.Trace.Debugger.Caching
             _lock.EnterWriteLock();
             try
             {
+                if (_cache.TryGetValue(key, out var item))
+                {
+                    return value;
+                }
+
                 value = valueFactory(key);
                 AddOrUpdate(key, value, slidingExpiration);
                 return value;

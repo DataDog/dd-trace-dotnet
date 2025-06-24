@@ -48,6 +48,12 @@ public class IastInstrumentationUnitTests : TestHelper
     public IastInstrumentationUnitTests(ITestOutputHelper output)
         : base("InstrumentedTests", output)
     {
+        // We have seen crashes in CI for these tests which seem to be due to
+        // https://github.com/dotnet/runtime/issues/95653
+        // In the past, we have solved it by setting this variable,
+        // e.g. https://github.com/DataDog/dd-trace-dotnet/pull/5004
+        // so trying the same thing here:
+        SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "0");
     }
 
     public List<string> GetAspects()
@@ -276,7 +282,11 @@ public class IastInstrumentationUnitTests : TestHelper
 
     [Theory]
     [InlineData(typeof(StringBuilder))]
+#if NET9_0_OR_GREATER
     [InlineData(typeof(string))]
+#else
+    [InlineData(typeof(string), new[] { "System.String::Concat(System.ReadOnlySpan`1<System.String>)" })]
+#endif
     [InlineData(typeof(StreamWriter))]
     [InlineData(typeof(StreamReader))]
     [InlineData(typeof(FileStream))]
@@ -367,7 +377,7 @@ public class IastInstrumentationUnitTests : TestHelper
             SetDumpInfo(logDirectory);
             EnableEvidenceRedaction(false);
             string arguments = string.Empty;
-#if NET462
+#if NETFRAMEWORK
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #else
             if (!EnvironmentTools.IsWindows())

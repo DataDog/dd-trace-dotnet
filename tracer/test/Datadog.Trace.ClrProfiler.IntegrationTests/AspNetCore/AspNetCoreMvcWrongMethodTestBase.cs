@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
@@ -41,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             await fixture.TryStartApp(this);
 
-            var spans = await fixture.WaitForSpans(path, true);
+            var spans = await fixture.WaitForSpans(path, HttpMethod.Post);
             ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);

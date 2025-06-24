@@ -505,11 +505,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 }
 
 void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
-                                       const shared::WSTRING& rewrite_reason,
                                        const shared::WSTRING& nativemethods_type_name,
                                        const shared::WSTRING& library_path)
 {
-    HRESULT hr;
+    if (nativemethods_type_name.size() == 0)
+    {
+        return;
+    }
+
     const auto& metadata_import = module_metadata.metadata_import;
     const auto& metadata_emit = module_metadata.metadata_emit;
 
@@ -524,15 +527,15 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
 
         if (!fs::exists(native_profiler_file))
         {
-            Logger::Warn("Unable to rewrite PInvokes for ", rewrite_reason, ". Native library not found: ", native_profiler_file);
+            Logger::Warn("Unable to rewrite PInvokes for ", nativemethods_type_name, ". Native library not found: ", native_profiler_file);
             return;
         }
 
-        Logger::Info("Rewriting PInvokes to native for ", rewrite_reason, ": ", native_profiler_file);
+        Logger::Info("Rewriting PInvokes to native for ", nativemethods_type_name, ": ", native_profiler_file);
 
         // Define the actual profiler file path as a ModuleRef
         mdModuleRef profiler_ref;
-        hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
+        HRESULT hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
         if (SUCCEEDED(hr))
         {
             // Enumerate all methods inside the native methods type with the PInvokes
@@ -763,6 +766,23 @@ std::string GetNativeLoaderFilePath()
     return native_loader_file_path.string();
 }
 
+std::string GetLibDatadogFilePath()
+{
+    auto libdatadog_filename =
+#ifdef LINUX
+        "libdatadog_profiling.so";
+#elif MACOS
+        "libdatadog_profiling.dylib";
+#else
+        "datadog_profiling_ffi.dll";
+#endif
+
+    auto module_file_path = fs::path(shared::GetCurrentModuleFileName());
+
+    auto libdatadog_file_path = module_file_path.parent_path() / libdatadog_filename;
+    return libdatadog_file_path.string();
+}
+
 HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules)
 {
     const auto& module_info = GetModuleInfo(this->info_, module_id);
@@ -934,17 +954,25 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
         managedInternalModules_.push_back(module_id);
-#ifdef _WIN32
-        RewritingPInvokeMaps(module_metadata, WStr("windows"), windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_windows_nativemethods_type);
-#else
-        RewritingPInvokeMaps(module_metadata, WStr("non-windows"), nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
-#endif // _WIN32
+
+        RewritingPInvokeMaps(module_metadata, nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, appsec_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, debugger_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, fault_tolerant_nativemethods_type);
+
+        auto libdatadog_library_path = GetLibDatadogFilePath();
+        std::error_code ec;
+        if (fs::exists(libdatadog_library_path, ec))
+        {
+            auto libdatadog_filepath = shared::ToWSTRING(libdatadog_library_path);
+            RewritingPInvokeMaps(module_metadata, libdatadog_exporter_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, libdatadog_config_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, libdatadog_common_nativemethods_type, libdatadog_filepath);
+        }
+        else
+        {
+            Logger::Info("Libdatadog library does not exist: ", libdatadog_library_path);
+        }
 
         mdTypeDef bubbleUpTypeDef;
         call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata, &bubbleUpTypeDef);
@@ -953,11 +981,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             call_target_bubble_up_exception_function_available = EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(module_metadata, bubbleUpTypeDef);
         }
 
+        call_target_state_skip_method_body_function_available = IsSkipMethodBodyEnabled() && EnsureCallTargetStateSkipMethodBodyFunctionAvailable(module_metadata);
+
         auto native_loader_library_path = GetNativeLoaderFilePath();
         if (fs::exists(native_loader_library_path))
         {
             auto native_loader_file_path = shared::ToWSTRING(native_loader_library_path);
-            RewritingPInvokeMaps(module_metadata, WStr("native loader"), native_loader_nativemethods_type, native_loader_file_path);
+            RewritingPInvokeMaps(module_metadata, native_loader_nativemethods_type, native_loader_file_path);
         }
 
         if (ShouldRewriteProfilerMaps())
@@ -965,7 +995,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
             if (!profiler_library_path.empty() && fs::exists(profiler_library_path))
             {
-                RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
+                RewritingPInvokeMaps(module_metadata, profiler_nativemethods_type, profiler_library_path);
             }
         }
 
@@ -1608,6 +1638,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     }
     else if (module_metadata->assemblyName == WStr("System") ||
              module_metadata->assemblyName == WStr("System.Net.Http") ||
+             module_metadata->assemblyName == WStr("System.Security.AccessControl") ||
+             module_metadata->assemblyName == WStr("System.Security.Claims") ||
+             module_metadata->assemblyName == WStr("System.Security.Principal.Windows") ||
              module_metadata->assemblyName == WStr("System.Linq")) // Avoid instrumenting System.Linq which is used as part of the async state machine
     {
         valid_startup_hook_callsite = false;
@@ -3205,6 +3238,23 @@ bool CorProfiler::EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const Mod
     auto res = SUCCEEDED(found_call_target_bubble_up_exception_function);
     Logger::Debug("CallTargetBubbleUpException.IsCallTargetBubbleUpException method found: ", res);
     return res;
+}
+
+bool CorProfiler::EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const ModuleMetadata& module_metadata)
+{
+    mdTypeDef typeDef;
+    const auto type_found = module_metadata.metadata_import->FindTypeDefByName(calltargetstate_type_name.c_str(), mdTokenNil, &typeDef);
+    if (SUCCEEDED(type_found))
+    {
+        mdMethodDef methodDef = mdTokenNil;
+        const auto function_found = module_metadata.metadata_import->FindMethod(typeDef, calltargetstate_skipmethodbody_function_name.c_str(), 0, 0, &methodDef);
+        const auto res = SUCCEEDED(function_found);
+        Logger::Debug("CallTargetState.SkipMethodBody property found: ", res);
+        return res;
+    }
+
+    Logger::Debug("CallTargetState.SkipMethodBody property not found: ", type_found);
+    return false;
 }
 
 //

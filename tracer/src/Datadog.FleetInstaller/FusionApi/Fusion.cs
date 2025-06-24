@@ -24,5 +24,31 @@ namespace PInvoke
         public static extern HResult CreateAssemblyCache(
             out IAssemblyCache ppAsmCache,
             int dwReserved);
+
+        /// <summary>
+        /// Gets a pointer to a new <see cref=" IAssemblyEnum"/> instance that can enumerate the objects
+        /// in the assembly with the specified <see cref=" IAssemblyName"/>
+        /// </summary>
+        /// <param name="pEnum">Pointer to a memory location that contains the requested IAssemblyEnum pointer</param>
+        /// <param name="pUnkReserved">Reserved for future extensibility. pUnkReserved must be a null reference</param>
+        /// <param name="pName">The IAssemblyName of the requested assembly. This name is used to filter the enumeration.
+        /// It can be null to enumerate all assemblies in the global assembly cache</param>
+        /// <param name="dwFlags">Flags for modifying the enumerator's behavior. This parameter contains exactly one bit from the ASM_CACHE_FLAGS enumeration</param>
+        /// <param name="pvReserved">Reserved for future extensibility. pvReserved must be a null reference</param>
+        /// <returns>An <see cref="HResult"/>.</returns>
+        [DllImport(nameof(Fusion))]
+        public static extern HResult CreateAssemblyEnum (
+            out IAssemblyEnum pEnum,
+            IntPtr pUnkReserved,
+            IAssemblyName pName,
+            ASM_CACHE_FLAGS dwFlags,
+            IntPtr pvReserved);
+
+        [DllImport(nameof(Fusion), SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern HResult CreateAssemblyNameObject(
+            out IAssemblyName ppAssemblyNameObj,
+            [MarshalAs(UnmanagedType.LPWStr)] string szAssemblyName,
+            CREATE_ASM_NAME_OBJ_FLAGS flags,
+            IntPtr pvReserved);
     }
 }

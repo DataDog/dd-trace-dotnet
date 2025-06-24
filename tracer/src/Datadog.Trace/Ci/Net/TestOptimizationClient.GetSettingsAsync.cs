@@ -40,7 +40,10 @@ internal sealed partial class TestOptimizationClient
                     enabled: false,
                     slowTestRetries: new SlowTestRetriesSettingsResponse(),
                     faultySessionThreshold: 0),
-                knownTestsEnabled: false);
+                knownTestsEnabled: false,
+                testManagement: new TestManagementSettingsResponse(
+                    enabled: false,
+                    attemptToFixRetries: 0));
         }
 
         return new SettingsResponse(
@@ -53,7 +56,10 @@ internal sealed partial class TestOptimizationClient
                 enabled: settings.EarlyFlakeDetectionEnabled,
                 slowTestRetries: new SlowTestRetriesSettingsResponse(),
                 faultySessionThreshold: 0),
-            knownTestsEnabled: settings.KnownTestsEnabled);
+            knownTestsEnabled: settings.KnownTestsEnabled,
+            testManagement: new TestManagementSettingsResponse(
+                enabled: settings.TestManagementEnabled,
+                attemptToFixRetries: settings.TestManagementAttemptToFixRetryCount));
     }
 
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
@@ -100,7 +106,8 @@ internal sealed partial class TestOptimizationClient
             settingsResponse.TestsSkipping == true ? MetricTags.CIVisibilitySettingsResponse_ItrSkippingFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_ItrSkippingFeature.Disabled,
             settingsResponse.KnownTestsEnabled == true ? MetricTags.CIVisibilitySettingsResponse_KnownTestsFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_KnownTestsFeature.Disabled,
             settingsResponse.EarlyFlakeDetection.Enabled == true ? MetricTags.CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature.Disabled,
-            settingsResponse.FlakyTestRetries == true ? MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature.Disabled);
+            settingsResponse.FlakyTestRetries == true ? MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature.Disabled,
+            settingsResponse.TestManagement.Enabled == true ? MetricTags.CIVisibilitySettingsResponse_TestManagementFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_TestManagementFeature.Disabled);
 
         return settingsResponse;
     }
@@ -185,11 +192,17 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("known_tests_enabled")]
         public readonly bool? KnownTestsEnabled;
 
+        [JsonProperty("test_management")]
+        public readonly TestManagementSettingsResponse TestManagement;
+
+        [JsonProperty("default_branch")]
+        public readonly string? DefaultBranch;
+
         public SettingsResponse()
         {
         }
 
-        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection, bool? knownTestsEnabled)
+        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection, bool? knownTestsEnabled, TestManagementSettingsResponse testManagement)
         {
             CodeCoverage = codeCoverage;
             TestsSkipping = testsSkipping;
@@ -198,6 +211,7 @@ internal sealed partial class TestOptimizationClient
             FlakyTestRetries = flakyTestRetries;
             EarlyFlakeDetection = earlyFlakeDetection;
             KnownTestsEnabled = knownTestsEnabled;
+            TestManagement = testManagement;
         }
     }
 
@@ -248,6 +262,25 @@ internal sealed partial class TestOptimizationClient
             TenSeconds = tenSeconds;
             ThirtySeconds = thirtySeconds;
             FiveMinutes = fiveMinutes;
+        }
+    }
+
+    public readonly struct TestManagementSettingsResponse
+    {
+        [JsonProperty("enabled")]
+        public readonly bool? Enabled;
+
+        [JsonProperty("attempt_to_fix_retries")]
+        public readonly int? AttemptToFixRetries;
+
+        public TestManagementSettingsResponse()
+        {
+        }
+
+        public TestManagementSettingsResponse(bool? enabled, int? attemptToFixRetries)
+        {
+            Enabled = enabled;
+            AttemptToFixRetries = attemptToFixRetries;
         }
     }
 }

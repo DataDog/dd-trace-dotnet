@@ -9,6 +9,7 @@
 #include "IConfiguration.h"
 #include "LiveObjectsProvider.h"
 #include "OpSysTools.h"
+#include "RawSampleTransformer.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
@@ -25,32 +26,15 @@ const std::string LiveObjectsProvider::Gen1("1");
 const std::string LiveObjectsProvider::Gen2("2");
 
 LiveObjectsProvider::LiveObjectsProvider(
-    SampleValueTypeProvider& valueTypeProvider,
     ICorProfilerInfo13* pCorProfilerInfo,
-    IManagedThreadList* pManagedThreadList,
-    IFrameStore* pFrameStore,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration,
-    MetricsRegistry& metricsRegistry)
+    SampleValueTypeProvider& valueTypeProvider,
+    RawSampleTransformer* rawSampleTransformer,
+    IConfiguration* pConfiguration)
     :
     _pCorProfilerInfo(pCorProfilerInfo),
-    _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled())
+    _rawSampleTransformer{rawSampleTransformer},
+    _valueOffsets{valueTypeProvider.GetOrRegister(LiveObjectsProvider::SampleTypeDefinitions)}
 {
-    _pAllocationsProvider = std::make_unique<AllocationsProvider>(
-        valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
-        pCorProfilerInfo,
-        pManagedThreadList,
-        pFrameStore,
-        pThreadsCpuManager,
-        pAppDomainStore,
-        pRuntimeIdStore,
-        pConfiguration,
-        nullptr,
-        metricsRegistry,
-        CallstackProvider(shared::pmr::null_memory_resource()), // safe to pass the null memory resource for the provider. This provider does not collect callstack
-        shared::pmr::null_memory_resource()); // safe to pass null memory resource for the provider. This provider is only used to transform RawSamples
 }
 
 const char* LiveObjectsProvider::GetName()
@@ -152,8 +136,8 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
         auto sample = info.GetSample();
 
         // update samples lifetime
-        sample->ReplaceLabel(Label{Sample::ObjectLifetimeLabel, std::to_string((sample->GetTimeStamp() - currentTimestamp).count())});
-        sample->ReplaceLabel(Label{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
+        sample->ReplaceLabel(StringLabel{Sample::ObjectLifetimeLabel, std::to_string((sample->GetTimeStamp() - currentTimestamp).count())});
+        sample->ReplaceLabel(StringLabel{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
 
         samples->Add(sample);
     }
@@ -177,7 +161,7 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
         if (handle != nullptr)
         {
             LiveObjectInfo info(
-                _pAllocationsProvider->TransformRawSample(rawSample),
+                _rawSampleTransformer->Transform(rawSample, _valueOffsets),
                 rawSample.Address,
                 rawSample.Timestamp);
             info.SetHandle(handle);

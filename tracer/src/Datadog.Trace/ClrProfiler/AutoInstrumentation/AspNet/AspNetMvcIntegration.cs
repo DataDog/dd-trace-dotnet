@@ -4,12 +4,15 @@
 // </copyright>
 
 #if NETFRAMEWORK
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -27,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     internal static class AspNetMvcIntegration
     {
         internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
+        internal const string HttpProxyContextKey = HttpContextKey + ".proxy";
 
         private const string OperationName = "aspnet-mvc.request";
         private const string ChildActionOperationName = "aspnet-mvc.request.child-action";
@@ -78,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         resourceName = httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string;
                     }
 
-                    if (route == null && routeData?.Route.GetType().FullName == RouteCollectionRouteTypeName)
+                    if (route == null && routeData?.Route?.GetType().FullName == RouteCollectionRouteTypeName)
                     {
                         var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
 
@@ -138,6 +142,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             // extract propagated http headers
                             headers = httpContext.Request.Headers.Wrap();
                             extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
+
+                            if (tracer.Settings.InferredProxySpansEnabled)
+                            {
+                                var proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, headers.Value, extractedContext);
+
+                                if (proxyContext != null)
+                                {
+                                    SharedItems.PushScope(HttpContext.Current, HttpProxyContextKey, proxyContext.Value.Scope);
+                                    // Update the context to use the proxy span's context
+                                    extractedContext = proxyContext.Value.Context;
+                                }
+                            }
                         }
                         catch (Exception ex)
                         {

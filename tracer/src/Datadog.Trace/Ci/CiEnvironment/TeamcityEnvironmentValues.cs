@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Telemetry.Metrics;
+
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class TeamcityEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
@@ -15,6 +17,7 @@ internal sealed class TeamcityEnvironmentValues<TValueProvider>(TValueProvider v
 
         IsCI = true;
         Provider = "teamcity";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.Teamcity;
         JobName = ValueProvider.GetValue(Constants.TeamCityBuildConfName);
         JobUrl = ValueProvider.GetValue(Constants.TeamCityBuildUrl);
     }

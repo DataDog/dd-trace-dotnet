@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
         name: 'Open Code Freeze Milestone'
@@ -69,4 +69,5 @@ jobs:
       - uses: ./.github/actions/deploy-aas-dev-apps
         name: 'Trigger AAS deploy'
         with:
-          aas_github_token: ${{ secrets.GH_EXTERNAL_TOKEN }}
+          github_app_id: ${{ secrets.GH_APP_ID }}
+          github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}

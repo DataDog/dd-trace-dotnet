@@ -2,105 +2,186 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Ci.Tagging;
-using Datadog.Trace.Ci.Telemetry;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Pdb;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci;
 
-internal static class ImpactedTestsModule
+internal class ImpactedTestsModule
 {
-    private static readonly object _lockObject = new object();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ImpactedTestsModule>();
 
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ImpactedTestsModule));
-
-    private static FileCoverageInfo[]? modifiedFiles = null;
-
-    public static bool IsEnabled => TestOptimization.Instance.ImpactedTestsDetectionFeature?.Enabled ?? false;
-
-    private static string? CurrentCommit => CIEnvironmentValues.Instance.HeadCommit ?? CIEnvironmentValues.Instance.Commit;
-
-    private static string? BaseCommit => CIEnvironmentValues.Instance.PrBaseCommit ?? GetBaseCommitFromBackend();
-
-    public static void Analyze(Test test)
+    private ImpactedTestsModule(string baseCommitSha, string currentCommitSha, FileCoverageInfo[] modifiedFiles)
     {
-        try
+        BaseCommitSha = baseCommitSha;
+        CurrentCommitSha = currentCommitSha;
+        ModifiedFiles = modifiedFiles;
+    }
+
+    /// <summary>
+    /// Gets the modified files.
+    /// </summary>
+    public FileCoverageInfo[] ModifiedFiles { get; }
+
+    /// <summary>
+    /// Gets the current commit SHA.
+    /// </summary>
+    public string CurrentCommitSha { get; }
+
+    /// <summary>
+    /// Gets the base commit SHA.
+    /// </summary>
+    public string BaseCommitSha { get; }
+
+    /// <summary>
+    /// Creates an instance of the <see cref="ImpactedTestsModule"/> class.
+    /// </summary>
+    /// <param name="environmentValues">CI environment values</param>
+    /// <param name="defaultBranch">Repository default branch</param>
+    /// <returns>ImpactedTestModule instance</returns>
+    public static ImpactedTestsModule CreateInstance(CIEnvironmentValues environmentValues, string? defaultBranch)
+    {
+        // Get the current commit SHA
+        var currentCommitSha = environmentValues.HeadCommit ?? environmentValues.Commit ?? string.Empty;
+
+        // Get the base commit SHA
+        var baseCommitSha = environmentValues.PrBaseCommit ?? string.Empty;
+        var workspacePath = environmentValues.WorkspacePath ?? string.Empty;
+        FileCoverageInfo[] modifiedFiles = [];
+
+        // Check if the base commit SHA is available
+        if (!string.IsNullOrEmpty(baseCommitSha))
         {
-            if (IsEnabled)
+            Log.Debug("ImpactedTestsModule: PR detected. Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
+            // Retrieve diff files and lines from Git Diff CLI
+            try
             {
-                var tags = test.GetTags();
-                Log.Debug("Impacted Tests Detection is enabled for {TestName}  - {FileName} {From}..{To} ", test.Name, tags.SourceFile, tags.SourceStart, tags.SourceEnd);
-                var modified = false;
-                var testFiles = GetTestCoverage(tags);
-                var modifiedFiles = GetModifiedFiles();
+                modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, baseCommitSha);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Git command failed.");
+            }
+        }
 
-                foreach (var testFile in testFiles)
+        // We don't have any modified files, let's try to calculate the PR base commit
+        if (modifiedFiles.Length == 0)
+        {
+            // Retrieve diff files from Backend
+
+            // set the new base commit SHA
+            baseCommitSha = CalculateBaseCommit(workspacePath, defaultBranch, environmentValues);
+
+            // First, we try to use the calculated base commit SHA for the diff
+            if (!string.IsNullOrEmpty(baseCommitSha))
+            {
+                Log.Debug("ImpactedTestsModule: Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
+                // Retrieve diff files and lines from Git Diff CLI but with the calculated base commit (always try the maximum accuracy)
+                try
                 {
-                    if (string.IsNullOrEmpty(testFile.Path)) { continue; }
-
-                    var modifiedFile = modifiedFiles.FirstOrDefault(x => testFile.Path!.EndsWith(x.Path!));
-                    if (modifiedFile is not null)
-                    {
-                        Log.Debug("DiffFile found {File} ...", modifiedFile.Path);
-
-                        if (testFile.ExecutedBitmap is null || modifiedFile.ExecutedBitmap is null)
-                        {
-                            Log.Debug("  No line info");
-                            modified = true;
-                            break;
-                        }
-
-                        var testFileBitmap = new FileBitmap(testFile.ExecutedBitmap);
-                        var modifiedFileBitmap = new FileBitmap(modifiedFile.ExecutedBitmap);
-
-                        if (testFileBitmap.IntersectsWith(ref modifiedFileBitmap))
-                        {
-                            Log.Debug("  Intersecting lines. Marking test {TestName} as modified.", test.Name);
-                            modified = true;
-                            break;
-                        }
-                    }
+                    modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, baseCommitSha);
                 }
-
-                if (modified)
+                catch (Exception ex)
                 {
-                    tags.IsModified = "true";
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsIsModified();
+                    Log.Debug(ex, "Git command failed.");
                 }
             }
-            else
+        }
+
+        if (modifiedFiles.Length == 0)
+        {
+            Log.Information("ImpactedTestsModule: No modified files found.");
+        }
+
+        return new ImpactedTestsModule(baseCommitSha, currentCommitSha, modifiedFiles);
+    }
+
+    /// <summary>
+    /// Creates a NoOp instance of the <see cref="ImpactedTestsModule"/> class.
+    /// </summary>
+    /// <returns>ImpactedTestModule instance</returns>
+    public static ImpactedTestsModule CreateNoOp() => new(string.Empty, string.Empty, []);
+
+    /// <summary>
+    /// Analyzes the given test for impacted tests.
+    /// </summary>
+    /// <param name="test">Test instance</param>
+    public void Analyze(Test test)
+    {
+        if (ModifiedFiles.Length == 0)
+        {
+            // No modified files, no need to analyze
+            return;
+        }
+
+        try
+        {
+            var tags = test.GetTags();
+            Log.Debug("ImpactedTestsModule: Impacted Tests Detection is enabled for {TestName}  - {FileName} {From}..{To} ", test.Name, tags.SourceFile, tags.SourceStart, tags.SourceEnd);
+            var modified = false;
+            var testFiles = GetTestCoverage(tags);
+
+            foreach (var testFile in testFiles)
             {
-                Log.Debug("Impacted Tests Detection is DISABLED for {TestName}", test.Name);
+                if (string.IsNullOrEmpty(testFile.Path))
+                {
+                    continue;
+                }
+
+                var modifiedFile = ModifiedFiles.FirstOrDefault(x => testFile.Path!.EndsWith(x.Path!));
+                if (modifiedFile is null)
+                {
+                    continue;
+                }
+
+                Log.Debug("ImpactedTestsModule: DiffFile found {File} ...", modifiedFile.Path);
+                if (testFile.ExecutedBitmap is null || modifiedFile.ExecutedBitmap is null)
+                {
+                    Log.Debug("ImpactedTestsModule:   No line info");
+                    modified = true;
+                    break;
+                }
+
+                var testFileBitmap = new FileBitmap(testFile.ExecutedBitmap);
+                var modifiedFileBitmap = new FileBitmap(modifiedFile.ExecutedBitmap);
+                if (testFileBitmap.IntersectsWith(ref modifiedFileBitmap))
+                {
+                    Log.Debug("ImpactedTestsModule:   Intersecting lines. Marking test {TestName} as modified.", test.Name);
+                    modified = true;
+                    break;
+                }
+            }
+
+            if (modified)
+            {
+                tags.IsModified = "true";
+                TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsIsModified();
             }
         }
         catch (Exception err)
         {
-            Log.Error(err, "Error analyzing Impacted Tests for {TestName}", test.Name);
+            Log.Error(err, "ImpactedTestsModule: Error analyzing Impacted Tests for {TestName}", test.Name);
         }
     }
 
+    /// <summary>
+    /// Gets the test coverage information.
+    /// </summary>
+    /// <param name="tags">Test tags</param>
+    /// <returns>FileCoverageInfo array</returns>
     private static FileCoverageInfo[] GetTestCoverage(TestSpanTags tags)
     {
-        if (tags.SourceFile is null || tags.SourceStart is null || tags.SourceEnd is null)
+        if (string.IsNullOrEmpty(tags.SourceFile))
         {
-            Log.Warning("No test definition file found for {TestName}", tags.Name);
+            Log.Information("ImpactedTestsModule: No test definition file found for {TestName}", tags.Name);
             return [];
         }
 
@@ -108,82 +189,29 @@ internal static class ImpactedTestsModule
         var file = new FileCoverageInfo(tags.SourceFile);
 
         // Milestone 1.5 : Return the test definition lines
-        var prBase = BaseCommit;
-        if (prBase is not null)
+        if (tags.SourceStart is null or 0 || tags.SourceEnd is null or 0)
         {
-            var executedBitmap = FileBitmap.FromActiveRange((int)tags.SourceStart, (int)tags.SourceEnd);
-            file.ExecutedBitmap = executedBitmap.GetInternalArrayOrToArrayAndDispose();
-            Log.Debug<string, int, int>("TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
+            Log.Debug("ImpactedTestsModule: TestCoverage for {TestFile}", tags.SourceFile);
+            return [file];
         }
 
+        var executedBitmap = FileBitmap.FromActiveRange((int)tags.SourceStart, (int)tags.SourceEnd);
+        file.ExecutedBitmap = executedBitmap.GetInternalArrayOrToArrayAndDispose();
+        Log.Debug<string?, int, int>("ImpactedTestsModule: TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
         return [file];
     }
 
-    private static FileCoverageInfo[] GetModifiedFiles()
+    /// <summary>
+    /// Attempts to calculate the base PR commit.
+    /// </summary>
+    /// <returns>Calculated commit</returns>
+    private static string CalculateBaseCommit(string workingDirectory, string? defaultBranch, CIEnvironmentValues environmentValues)
     {
-        if (modifiedFiles is null)
-        {
-            lock (_lockObject)
-            {
-                if (modifiedFiles is null)
-                {
-                    var workspacePath = CIEnvironmentValues.Instance.WorkspacePath ?? string.Empty;
-                    var prBase = BaseCommit;
-                    if (prBase is { Length: > 0 })
-                    {
-                        Log.Debug("PR detected. Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit}", workspacePath, prBase);
-                        // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
-                        try
-                        {
-                            modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, prBase);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Debug(ex, "Git command failed.");
-                        }
-                    }
-                    else
-                    {
-                        Log.Debug("No PR detected.");
-                    }
-
-                    if (modifiedFiles is null)
-                    {
-                        // Milestone 1 : Retrieve diff files from Backend
-                        modifiedFiles = GetDiffFilesFromBackend();
-                    }
-                }
-            }
-        }
-
-        return modifiedFiles;
-    }
-
-    private static FileCoverageInfo[] GetDiffFilesFromBackend()
-    {
-        Log.Debug("Retrieving diff files from backend...");
-
-        if (TestOptimization.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { Files: { Length: > 0 } files })
-        {
-            var res = new FileCoverageInfo[files.Length];
-            for (int x = 0; x < files.Length; x++)
-            {
-                res[x] = new FileCoverageInfo(files[x]);
-            }
-
-            return res;
-        }
-
-        return [];
-    }
-
-    private static string? GetBaseCommitFromBackend()
-    {
-        if (TestOptimization.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { BaseSha: { Length: > 0 } baseSha })
-        {
-            return baseSha;
-        }
-
-        return null;
+        var baseBranchInfo = GitCommandHelper.DetectBaseBranch(
+            workingDirectory,
+            defaultBranch: defaultBranch,
+            targetBranch: environmentValues.Branch,
+            pullRequestBaseBranch: environmentValues.PrBaseBranch);
+        return baseBranchInfo?.MergeBaseSha ?? string.Empty;
     }
 }

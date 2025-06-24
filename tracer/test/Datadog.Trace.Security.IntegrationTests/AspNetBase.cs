@@ -35,7 +35,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 #pragma warning disable SA1401 // Fields should be private
 #pragma warning disable SA1202 // Elements should be ordered by access
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
-        protected const string DefaultRuleFile = "ruleset.3.0.json";
+        protected const string DefaultRuleFile = "ruleset.3.0.json"; // Test Ruleset without "custom-block" action
+        protected const string DefaultFullRuleFile = "ruleset.3.0-full.json"; // Test Ruleset with "custom-block" action
         protected const string MainIp = "86.242.244.246";
         protected const string Prefix = "Security.";
         private const string XffHeader = "X-FORWARDED-FOR";

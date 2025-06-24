@@ -1,4 +1,3 @@
-
 stages:
   - build
   - publish
@@ -8,7 +7,7 @@ stages:
   - benchmarks
 
 include:
-  - remote: https://gitlab-templates.ddbuild.io/libdatadog/include/one-pipeline.yml
+  - local: .gitlab/one-pipeline.locked.yaml
 
 variables:
   DOTNET_PACKAGE_VERSION:
@@ -21,7 +20,7 @@ build:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["windows-v2:2019"]
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -60,7 +59,7 @@ publish:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: publish
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["windows-v2:2019"]
   dependencies:
     - build
   hooks:
@@ -105,15 +104,14 @@ download-single-step-artifacts:
   rules:
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/' # Manually triggered as artifacts are from the Github release
-      when: manual
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: on_success # Artifacts are downloaded from the GitHub release, which creates the tag on publish
       allow_failure: false
     - when: on_success # Artifacts come from Azure pipeline, but as we already depend on build, we already have a delayed start
   script:
     - .gitlab/download-single-step-artifacts.sh
     - cp tracer/build/artifacts/requirements.json artifacts/requirements.json
-    # We currently only copy the windows artifacts if we're _not_ building a tag, because we don't want to push these images to prod yet
-    - if [ -z "$CI_COMMIT_TAG" ]; then cp -r artifacts-out artifacts/windows; fi
+    - cp -r artifacts-out artifacts/windows
   artifacts:
     expire_in: 2 weeks
     paths:
@@ -133,18 +131,9 @@ generate-lib-init-pinned-tag-values:
   variables:
     ADDITIONAL_TAG_SUFFIXES: musl #add -musl to all generated image tags
 
-onboarding_tests_installer:
-  parallel:
-    matrix:
-      - ONBOARDING_FILTER_WEBLOG: [test-app-dotnet, test-app-dotnet-container]
-        SCENARIO: [ SIMPLE_INSTALLER_AUTO_INJECTION, SIMPLE_AUTO_INJECTION_PROFILING ]
-
-onboarding_tests_k8s_injection:
-  parallel:
-    matrix:
-      - WEBLOG_VARIANT: [dd-lib-dotnet-init-test-app]
-        SCENARIO: [K8S_LIB_INJECTION, K8S_LIB_INJECTION_UDS, K8S_LIB_INJECTION_NO_AC, K8S_LIB_INJECTION_NO_AC_UDS, K8S_LIB_INJECTION_PROFILING_DISABLED, K8S_LIB_INJECTION_PROFILING_ENABLED, K8S_LIB_INJECTION_PROFILING_OVERRIDE]
-        K8S_CLUSTER_VERSION: ['7.56.2','7.57.0','7.59.0']
+configure_system_tests:
+  variables:
+    SYSTEM_TESTS_SCENARIOS_GROUPS: "simple_onboarding,simple_onboarding_profiling,lib-injection"
 
 deploy_to_reliability_env:
   rules:
@@ -158,8 +147,8 @@ download-serverless-artifacts:
   rules:
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/' # Manually triggered as artifacts are from the Github release
-      when: manual
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: on_success # Artifacts are downloaded from the GitHub release, which creates the tag on publish
       allow_failure: false
     - when: delayed # Artifacts come from Azure pipeline, wait a reasonable time before polling
       start_in: 15 minutes
@@ -210,4 +199,24 @@ benchmark-serverless-trigger:
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
     UPSTREAM_GITLAB_USER_LOGIN: $GITLAB_USER_LOGIN
     UPSTREAM_GITLAB_USER_EMAIL: $GITLAB_USER_EMAIL
+
+macrobenchmarks:
+  stage: benchmarks
+  needs: [ ]
+  trigger:
+    include: .gitlab/benchmarks/macrobenchmarks.yml
+  allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+      when: always
+    - when: manual
+
+microbenchmarks:
+  stage: benchmarks
+  needs: [ ]
+  trigger:
+    include: .gitlab/benchmarks/microbenchmarks.yml
+  allow_failure: true
     

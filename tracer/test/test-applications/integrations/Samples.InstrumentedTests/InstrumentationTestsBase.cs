@@ -56,7 +56,6 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _locationProperty = _vulnerabilityType.GetProperty("Location", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _pathProperty = _locationType.GetProperty("Path", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _lineProperty = _locationType.GetProperty("Line", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
-    private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
     private static MethodInfo _getArrayMethod = _arrayBuilderOfSpanType.GetMethod("GetArray");
@@ -69,6 +68,15 @@ public class InstrumentationTestsBase : IDisposable
 
     protected static string WeakHashVulnerabilityType = "WEAK_HASH";
     protected static string commandInjectionType = "COMMAND_INJECTION";
+
+#if NET6_0_OR_GREATER
+    private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public, [typeof(object)]);
+    private static MethodInfo _getSpanTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public, [ typeof(ReadOnlySpan<char>) ]);
+    delegate object? GetSpanDelegate(ref ReadOnlySpan<char> tainted);
+    private GetSpanDelegate _getSpanTaintedObjectsDelegate;
+#else
+    private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
+#endif
 
     [Flags]
     public enum SecureMarks : byte
@@ -94,6 +102,10 @@ public class InstrumentationTestsBase : IDisposable
         _iastRequestContext = _iastRequestContextProperty.Invoke(_traceContext, Array.Empty<object>());
         _taintedObjects = _taintedObjectsField.GetValue(_iastRequestContext);
         _taintedObjects.Should().NotBeNull();
+
+#if NET6_0_OR_GREATER
+        _getSpanTaintedObjectsDelegate = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public, [typeof(ReadOnlySpan<char>).MakeByRefType()]).CreateDelegate<GetSpanDelegate>(_taintedObjects);
+#endif
     }
 
     public virtual void Dispose()
@@ -144,6 +156,22 @@ public class InstrumentationTestsBase : IDisposable
     {
         return _getTaintedObjectsMethod.Invoke(_taintedObjects, new object[] { tainted });
     }
+
+#if NET6_0_OR_GREATER
+    private object GetTainted(ref ReadOnlySpan<char> tainted)
+    {
+        return _getSpanTaintedObjectsDelegate(ref tainted);
+    }
+    protected void AssertTainted(ref ReadOnlySpan<char> value, string additionalInfo = "")
+    {
+        GetTainted(ref value).Should().NotBeNull(value.ToString() + " is not tainted. " + additionalInfo);
+    }
+    protected void AssertNotTainted(ref ReadOnlySpan<char> value, string additionalInfo = "")
+    {
+        GetTainted(ref value).Should().BeNull(value.ToString() + " is tainted. " + additionalInfo);
+    }
+
+#endif
 
     protected void AssertNotTainted(object value, string additionalInfo = "")
     {

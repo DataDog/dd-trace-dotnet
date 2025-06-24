@@ -34,7 +34,7 @@ public class AmazonSimpleEmailAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(MailkitAspect)}.{nameof(Send)}");
+            IastModule.LogAspectException(ex);
             return message;
         }
     }

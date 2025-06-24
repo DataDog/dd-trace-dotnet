@@ -1,43 +1,41 @@
-﻿// <copyright file="LibraryInitializationResult.cs" company="Datadog">
+// <copyright file="LibraryInitializationResult.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
+using System;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.Waf.Initialization;
 
 internal class LibraryInitializationResult
 {
-    private LibraryInitializationResult(bool exportErrorHappened, bool libraryLoadError, bool platformNotSupported, bool versionNotCompatible, WafLibraryInvoker? wafLibraryInvoker = null)
+    public LibraryInitializationResult(LoadStatus status)
     {
-        ExportErrorHappened = exportErrorHappened;
-        LibraryLoadError = libraryLoadError;
-        PlatformNotSupported = platformNotSupported;
+        Status = status;
+        System.Diagnostics.Debug.Assert(Status != LoadStatus.Ok, "Library initialization should not be successful here");
+    }
+
+    public LibraryInitializationResult(WafLibraryInvoker? wafLibraryInvoker)
+    {
+        Status = LoadStatus.Ok;
         WafLibraryInvoker = wafLibraryInvoker;
-        VersionNotCompatible = versionNotCompatible;
+    }
+
+    [Flags]
+    public enum LoadStatus
+    {
+        Ok = 0,
+        LibraryLoad = 1 << 0,
+        ExportError = 1 << 1,
+        PlatformNotSupported = 1 << 2,
+        VersionNotCompatible = 1 << 3,
     }
 
     internal WafLibraryInvoker? WafLibraryInvoker { get; }
 
-    internal bool ExportErrorHappened { get; }
+    internal LoadStatus Status { get; }
 
-    internal bool LibraryLoadError { get; }
-
-    internal bool PlatformNotSupported { get; }
-
-    internal bool VersionNotCompatible { get; }
-
-    internal bool Success => ExportErrorHappened == false && LibraryLoadError == false && PlatformNotSupported == false && VersionNotCompatible == false;
-
-    internal static LibraryInitializationResult FromLibraryLoadError() => new(false, true, false, false);
-
-    internal static LibraryInitializationResult FromExportErrorHappened() => new(true, false, false, false);
-
-    internal static LibraryInitializationResult FromPlatformNotSupported() => new(false, false, true, false);
-
-    internal static LibraryInitializationResult FromVersionNotCompatible() => new(false, false, false, true);
-
-    public static LibraryInitializationResult FromSuccess(WafLibraryInvoker wafLibraryInvoker) => new(false, false, false, false, wafLibraryInvoker);
+    internal bool Success => Status == LoadStatus.Ok;
 }

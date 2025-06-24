@@ -26,7 +26,7 @@ internal class RegistryHelper
                 key = Registry.LocalMachine.CreateSubKey(registryKeyName, writable: true);
                 if (key is null)
                 {
-                    log.WriteError($"Registry key '{registryKeyName}' did not ");
+                    log.WriteError($"Registry key '{registryKeyName}' could not be created ");
                     return false;
                 }
             }

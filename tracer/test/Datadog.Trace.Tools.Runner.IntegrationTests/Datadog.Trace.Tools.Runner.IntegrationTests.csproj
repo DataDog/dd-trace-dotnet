@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,7 +35,10 @@
     <None Update="coverage.opencover.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="DummyLibrary.dll">
+    <None Update="V1\DummyLibrary.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="V2\DummyLibrary.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

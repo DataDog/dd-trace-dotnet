@@ -48,12 +48,12 @@ public:
 
     inline void DoAdditionalTransform(std::shared_ptr<Sample> sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
-        sample->AddLabel(Label(Sample::GarbageCollectionReasonLabel, GetReasonText()));
-        sample->AddLabel(Label(Sample::GarbageCollectionTypeLabel, GetTypeText()));
-        sample->AddLabel(Label(Sample::GarbageCollectionCompactingLabel, (IsCompacting ? "true" : "false")));
+        sample->AddLabel(StringLabel(Sample::GarbageCollectionReasonLabel, GetReasonText()));
+        sample->AddLabel(StringLabel(Sample::GarbageCollectionTypeLabel, GetTypeText()));
+        sample->AddLabel(StringLabel(Sample::GarbageCollectionCompactingLabel, (IsCompacting ? "true" : "false")));
 
         // set event type
-        sample->AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeGarbageCollection));
+        sample->AddLabel(StringLabel(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeGarbageCollection));
     }
 
 public:

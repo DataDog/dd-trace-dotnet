@@ -1,0 +1,12 @@
+---
+schema-version: v1
+kind: mergequeue
+enable: false
+---
+schema-version: v1
+kind: mergegate
+rules:
+  - require: commit-signatures
+    excluded_emails:
+      - '49699333+dependabot[bot]@users.noreply.github.com' # dependabot
+      - '41898282+github-actions[bot]@users.noreply.github.com' # version-bump bots

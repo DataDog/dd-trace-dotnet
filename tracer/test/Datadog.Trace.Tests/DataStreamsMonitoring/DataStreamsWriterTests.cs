@@ -10,6 +10,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -339,9 +340,10 @@ public class DataStreamsWriterTests
         int bucketDurationMs = BucketDurationMs)
     {
         discoveryService = new DiscoveryServiceMock();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.Environment, Environment } });
         return new DataStreamsWriter(
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(Environment, Service),
+                new DataStreamsMessagePackFormatter(settings, Service),
                 bucketDurationMs),
             stubApi,
             bucketDurationMs: bucketDurationMs,

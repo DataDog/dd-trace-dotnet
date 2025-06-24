@@ -36,8 +36,8 @@ public sealed class TestSession
 
     private readonly ITestOptimization _testOptimization;
     private readonly Span _span;
-    private readonly Dictionary<string, string?>? _environmentVariablesToRestore = null;
-    private IpcServer? _ipcServer = null;
+    private readonly Dictionary<string, string?>? _environmentVariablesToRestore;
+    private IpcServer? _ipcServer;
     private int _finished;
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
@@ -46,13 +46,13 @@ public sealed class TestSession
         _testOptimization = TestOptimization.Instance;
         _testOptimization.InitializeFromManualInstrumentation();
 
-        var environment = CIEnvironmentValues.Instance;
+        var ciValues = _testOptimization.CIValues;
 
         Command = command;
         WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory;
         Framework = framework;
 
-        WorkingDirectory = environment.MakeRelativePathFromSourceRoot(WorkingDirectory, false);
+        WorkingDirectory = ciValues.MakeRelativePathFromSourceRoot(WorkingDirectory, false);
 
         var tags = new TestSessionSpanTags
         {
@@ -61,7 +61,7 @@ public sealed class TestSession
             IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
         };
 
-        tags.SetCIEnvironmentValues(environment);
+        tags.SetCIEnvironmentValues(ciValues);
 
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",
@@ -77,6 +77,12 @@ public sealed class TestSession
         tags.SessionId = span.SpanId;
 
         _span = span;
+
+        // Check if the Test Management feature is enabled and set the flag accordingly
+        if (_testOptimization.TestManagementFeature?.Enabled == true)
+        {
+            span.SetTag(TestTags.TestManagementEnabled, "true");
+        }
 
         // Inject context to environment variables
         if (propagateEnvironmentVariables)
@@ -96,20 +102,29 @@ public sealed class TestSession
             OpenedTestSessions.Add(this);
         }
 
-        _testOptimization.Log.Debug("### Test Session Created: {Command}", command);
-
-        if (startDate is null)
-        {
-            // If a module doesn't have a fixed start time we reset it before running code
-            span.ResetStartTime();
-        }
-
         // Record EventCreate telemetry metric
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
                 MetricTags.CIVisibilityTestingEventType.Session,
                 framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(framework), eventTypeWithMetadata);
+        }
+
+        var sessionTypeTag = EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionAutoInjectedEnvironmentVariable)?.ToBoolean() is true ?
+                                 MetricTags.CIVisibilityTestSessionType.AutoInjected :
+                                 MetricTags.CIVisibilityTestSessionType.NotAutoInjected;
+
+        TelemetryFactory.Metrics.RecordCountCIVisibilityTestSession(
+            _testOptimization.CIValues.MetricTag,
+            sessionTypeTag,
+            _testOptimization.Settings.Logs ? MetricTags.CIVisibilityTestSessionAgentlessLogSubmission.Enabled : MetricTags.CIVisibilityTestSessionAgentlessLogSubmission.NotEnabled);
+
+        _testOptimization.Log.Debug("### Test Session Created: {Command}", command);
+
+        if (startDate is null)
+        {
+            // If a module doesn't have a fixed start time we reset it before running code
+            span.ResetStartTime();
         }
     }
 
@@ -391,7 +406,9 @@ public sealed class TestSession
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
                 TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework),
                 eventTypeWithMetadata,
-                MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
+                MetricTags.CIVisibilityTestingEventTypeRetryReason.None,
+                MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None,
+                MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
         }
 
         if (_environmentVariablesToRestore is { } envVars)

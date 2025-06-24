@@ -25,9 +25,9 @@
 
 
 // keywords
-const int KEYWORD_CONTENTION = 0x00004000;
-const int KEYWORD_GC = 0x00000001;
-const int KEYWORD_STACKWALK = 0x40000000;
+const int64_t KEYWORD_CONTENTION = 0x00004000;
+const int64_t KEYWORD_GC = 0x00000001;
+const int64_t KEYWORD_STACKWALK = 0x40000000;
 
 // events id
 const int EVENT_CONTENTION_STOP = 91; // version 1 contains the duration in nanoseconds
@@ -204,6 +204,18 @@ struct GCGlobalHeapPayload
     uint32_t Reason;
     uint32_t GlobalMechanisms;
 };
+
+struct WaitHandleWaitStartPayload // for .NET 9+
+{
+    uint8_t WaitSource;   // 0 if AssociatedObjectID is null or 1 otherwise
+    uintptr_t AssociatedObjectID; // null or the address of the WaitHandle-derived object
+    uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
+};
+
+struct WaitHandleWaitStopPayload // for .NET 9+
+{
+    uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
+};
 #pragma pack()
 
 class IContentionListener;
@@ -232,8 +244,9 @@ struct GCDetails
 class ClrEventsParser
 {
 public:
-    static const int KEYWORD_GC = 0x1;
-    static const int KEYWORD_CONTENTION = 0x4000;
+    static const int64_t KEYWORD_GC = 0x1;
+    static const int64_t KEYWORD_CONTENTION = 0x4000;
+    static const int64_t KEYWORD_WAITHANDLE = 0x40000000000; // .NET 9+ only
 
 public:
     ClrEventsParser(
@@ -264,6 +277,7 @@ public:
 private:
     void ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
     void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
+    void ParseWaitHandleEvent(std::chrono::nanoseconds timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
 
     // garbage collection events processing
     void OnGCTriggered();
@@ -314,8 +328,10 @@ private:
 
 private:
     const int EVENT_ALLOCATION_TICK = 10;   // version 4 contains the size + reference
-    const int EVENT_CONTENTION_STOP = 91;   // version 1 contains the duration in nanoseconds
     const int EVENT_CONTENTION_START = 81; // version 2 contains thread id of the threads that owns the lock
+    const int EVENT_CONTENTION_STOP = 91;   // version 1 contains the duration in nanoseconds
+    const int EVENT_WAITHANDLE_START = 301;
+    const int EVENT_WAITHANDLE_STOP = 302;
 
     // Events emitted during garbage collection lifetime
     // read https://medium.com/criteo-engineering/spying-on-net-garbage-collector-with-net-core-eventpipes-9f2a986d5705?source=friends_link&sk=baf9a7766fb5c7899b781f016803597f

@@ -788,6 +788,17 @@
       "description": "The library was unable to obtain a user login as part of the login success, login failure or signup event.",
       "send_to_user": false,
       "user_tags": []
+    },
+    "sdk.event": {
+      "tags": [
+        "event_type",
+        "sdk_version"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "This metric count should be sent whenever either the new or old SDK methods are invoked",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "iast": {
@@ -954,7 +965,11 @@
         "is_rum",
         "browser_driver",
         "early_flake_detection_abort_reason",
-        "retry_reason"
+        "retry_reason",
+        "is_quarantined",
+        "is_disabled",
+        "is_attempt_to_fix",
+        "has_failed_all_retries"
       ],
       "metric_type": "count",
       "data_type": "events",
@@ -1215,7 +1230,8 @@
         "itrskip_enabled",
         "flaky_test_retries_enabled",
         "early_flake_detection_enabled",
-        "known_tests_enabled"
+        "known_tests_enabled",
+        "test_management_enabled"
       ],
       "metric_type": "count",
       "data_type": "response",
@@ -1376,6 +1392,53 @@
       "metric_type": "distribution",
       "data_type": "tests",
       "description": "The number of known tests returned by the endpoint",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "test_management_tests.request": {
+      "tags": [
+        "rq_compressed"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the test management tests endpoint, regardless of success. Tagged with a boolean flag set to true if request body is compressed",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "test_management_tests.request_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to get the response of the test management tests endpoint request in ms",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "test_management_tests.request_errors": {
+      "tags": [
+        "error_type",
+        "status_code"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of test management tests requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`) and status code (400,401,403,404,408,429)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "test_management_tests.response_bytes": {
+      "tags": [
+        "rs_compressed"
+      ],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "test_management_tests.response_tests": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "tests",
+      "description": "The number of test management tests returned by the endpoint",
       "send_to_user": false,
       "user_tags": []
     },

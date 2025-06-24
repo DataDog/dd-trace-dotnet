@@ -64,7 +64,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultFullRuleFile);
 
             _classicMode = classicMode;
             _iisFixture = iisFixture;

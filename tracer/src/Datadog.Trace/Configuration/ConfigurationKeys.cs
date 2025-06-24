@@ -296,6 +296,12 @@ namespace Datadog.Trace.Configuration
         public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
 
         /// <summary>
+        /// Use libdatadog data pipeline to send traces.
+        /// Default value is <c>false</c> (disabled).
+        /// </summary>
+        public const string TraceDataPipelineEnabled = "DD_TRACE_DATA_PIPELINE_ENABLED";
+
+        /// <summary>
         /// Configuration key for when a standalone instance of the Trace Agent needs to be started.
         /// </summary>
         public const string TraceAgentPath = "DD_TRACE_AGENT_PATH";
@@ -681,6 +687,16 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for enabling Impacted Tests Detection.
             /// </summary>
             public const string ImpactedTestsDetectionEnabled = "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling the Test Management feature.
+            /// </summary>
+            public const string TestManagementEnabled = "DD_TEST_MANAGEMENT_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the number of retries to fix a flaky test.
+            /// </summary>
+            public const string TestManagementAttemptToFixRetries = "DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES";
         }
 
         /// <summary>
@@ -795,8 +811,13 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Enables injecting 128-bit trace ids into logs as a hexadecimal string.
             /// If disabled, 128-bit trace ids will be truncated to the lower 64 bits,
-            /// and all trace ids will be injected as decimal strings
-            /// Default value is <c>false</c> (disabled).
+            /// and injected as decimal strings. 64-bit trace ids are
+            /// always injected as decimal strings, regardless of this setting.
+            /// If unset, this configuration will take the value of the <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> configuration,
+            /// which is <c>true</c> by default.
+            /// Note: This configuration can be set independently of the <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> configuration,
+            /// so it's possible to inject 128-bit trace ids into logs even if the application is only generating 64-bit trace ids, since distributed traces from upstream
+            /// services may contain 128-bit trace ids.
             /// </summary>
             public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
 
@@ -808,6 +829,25 @@ namespace Datadog.Trace.Configuration
             internal const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
 
             public const string BypassHttpRequestUrlCachingEnabled = "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED";
+
+            /// <summary>
+            /// Configuration key to enable or disable the generation of an inferred span for proxy services.
+            /// Enabling this will create a fake span based on provided proxy headers to allow for better
+            /// observability when a client request routes through some proxy to an application.
+            /// Default value is <c>false</c> (disabled).
+            /// </summary>
+            internal const string InferredProxySpansEnabled = "DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED";
+
+            /// <summary>
+            /// Configuration key to enable or disable the injection of the Datadog trace context into stored procedures.
+            /// Default value is <c>false</c> (enabled).
+            /// When enabled, Datadog trace context will be injected into individual stored procedure calls when the following requirements are met:
+            /// <ul>
+            ///   <li>The database is Microsoft SQL Server and <see cref="DbmPropagationMode"/> is set to <c>service</c> or <c>full</c>.</li>
+            ///   <li>The stored procedure call does not have <c>Output</c>, <c>InputOutput</c>, or <c>Return</c> ADO.NET command parameters.</li>
+            /// </ul>
+            /// </summary>
+            public const string InjectContextIntoStoredProceduresEnabled = "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED";
         }
 
         internal static class Telemetry

@@ -111,6 +111,15 @@ internal class TelemetryDataBuilder
                 new DistributionsPayload(distributions)));
         }
 
+        if (input.AppEndpoints is { } appEndpoints)
+        {
+            Log.Debug("Application endpoints collected, sending app-endpoints");
+            data ??= new();
+            data.Add(new(
+                TelemetryRequestTypes.AppEndpoints,
+                new AppEndpointsPayload(appEndpoints, true)));
+        }
+
         if (sendAppClosing)
         {
             Log.Debug("Final push, sending app-closing");

@@ -15,9 +15,11 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Iast;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -30,6 +32,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
+using NativeInterop = Datadog.Trace.ContinuousProfiler.NativeInterop;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace
@@ -62,7 +65,8 @@ namespace Datadog.Trace
                 dataStreamsManager: null,
                 remoteConfigurationManager: null,
                 dynamicConfigurationManager: null,
-                tracerFlareManager: null);
+                tracerFlareManager: null,
+                spanEventsManager: null);
 
             try
             {
@@ -99,7 +103,8 @@ namespace Datadog.Trace
             DataStreamsManager dataStreamsManager,
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
-            ITracerFlareManager tracerFlareManager)
+            ITracerFlareManager tracerFlareManager,
+            ISpanEventsManager spanEventsManager)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
 
@@ -180,12 +185,14 @@ namespace Datadog.Trace
 
                 dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
                 tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.Create(settings.Exporter));
+                spanEventsManager ??= new SpanEventsManager(discoveryService);
             }
             else
             {
                 remoteConfigurationManager ??= new NullRemoteConfigurationManager();
                 dynamicConfigurationManager ??= new NullDynamicConfigurationManager();
                 tracerFlareManager ??= new NullTracerFlareManager();
+                spanEventsManager ??= new NullSpanEventsManager();
 
                 if (RcmSubscriptionManager.Instance.HasAnySubscription)
                 {
@@ -209,7 +216,8 @@ namespace Datadog.Trace
                 GetSpanSampler(settings),
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
-                tracerFlareManager);
+                tracerFlareManager,
+                spanEventsManager);
         }
 
         protected virtual ITelemetryController CreateTelemetryController(TracerSettings settings, IDiscoveryService discoveryService)
@@ -244,8 +252,9 @@ namespace Datadog.Trace
             ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
-            ITracerFlareManager tracerFlareManager)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
+            ITracerFlareManager tracerFlareManager,
+            ISpanEventsManager spanEventsManager)
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
@@ -262,7 +271,7 @@ namespace Datadog.Trace
             // Note: the order that rules are registered is important, as they are evaluated in order.
             // The first rule that matches will be used to determine the sampling rate.
 
-            if (settings.ApmTracingEnabledInternal == false &&
+            if (settings.ApmTracingEnabled == false &&
                 (Security.Instance.Settings.AppsecEnabled || Iast.Iast.Instance.Settings.Enabled))
             {
                 // Custom sampler for ASM and IAST standalone billing mode
@@ -343,11 +352,78 @@ namespace Datadog.Trace
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.Exporter.PartialFlushEnabled);
+            var api = GetApi(settings, statsd, updateSampleRates, apiRequestFactory, settings.Exporter.PartialFlushEnabled);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabledInternal);
+            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled);
+        }
+
+        private IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory, bool partialFlushEnabled)
+        {
+            if (settings.DataPipelineEnabled)
+            {
+                try
+                {
+                    var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
+                    TelemetryClientConfiguration? telemetryClientConfiguration = null;
+
+                    // We don't know how to handle telemetry in Agentless mode yet
+                    // so we disable telemetry in this case
+                    if (telemetrySettings.TelemetryEnabled && telemetrySettings.Agentless == null)
+                    {
+                        telemetryClientConfiguration = new TelemetryClientConfiguration
+                        {
+                            Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
+                            RuntimeId = new CharSlice(Tracer.RuntimeId),
+                            DebugEnabled = telemetrySettings.DebugEnabled
+                        };
+                    }
+
+                    // When APM is disabled, we don't want to compute stats at all
+                    // A common use case is in Application Security Monitoring (ASM) scenarios:
+                    // when APM is disabled but ASM is enabled.
+                    var clientComputedStats = !settings.StatsComputationEnabled && !settings.ApmTracingEnabled;
+
+                    using var configuration = new TraceExporterConfiguration
+                    {
+                        Url = GetUrl(settings),
+                        TraceVersion = TracerConstants.AssemblyVersion,
+                        Env = settings.Environment,
+                        Version = settings.ServiceVersion,
+                        Service = settings.ServiceName,
+                        Hostname = HostMetadata.Instance.Hostname,
+                        Language = ".NET",
+                        LanguageVersion = FrameworkDescription.Instance.ProductVersion,
+                        LanguageInterpreter = FrameworkDescription.Instance.Name,
+                        ComputeStats = settings.StatsComputationEnabled,
+                        TelemetryClientConfiguration = telemetryClientConfiguration,
+                        ClientComputedStats = clientComputedStats
+                    };
+
+                    return new TraceExporter(configuration);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to create native Trace Exporter, falling back to managed API");
+                }
+            }
+
+            return new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled);
+        }
+
+        private string GetUrl(TracerSettings settings)
+        {
+            switch (settings.Exporter.TracesTransport)
+            {
+                case TracesTransportType.WindowsNamedPipe:
+                    return $"windows://./pipe/{settings.Exporter.TracesPipeName}";
+                case TracesTransportType.UnixDomainSocket:
+                    return $"unix://{settings.Exporter.TracesUnixDomainSocketPath}";
+                case TracesTransportType.Default:
+                default:
+                    return settings.Exporter.AgentUri.ToString();
+            }
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)

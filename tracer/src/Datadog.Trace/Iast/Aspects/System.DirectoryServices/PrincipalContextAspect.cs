@@ -35,7 +35,7 @@ public partial class PrincipalContextAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(PrincipalContextAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
             return path;
         }
     }

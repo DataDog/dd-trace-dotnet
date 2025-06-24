@@ -1,0 +1,48 @@
+name: All Green
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  all-green:
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read
+      statuses: read
+    steps:
+      - uses: DataDog/ensure-ci-success@4a4b720e881d965254a9de2a4f14d1ec0c3d0d7c
+        with:
+          initial-delay-seconds: 10  # wait for this delay before starting
+          max-retries: 120  # how many retries before stopping 
+          ignored-name-patterns: |
+            consolidated-pipeline
+            dd-gitlab/run-benchmarks
+            .github/dependabot.yml
+            dd-gitlab/default-pipeline
+            benchmarks
+            profiler_execution_benchmarks
+            dd-gitlab/download-serverless-artifacts
+            dd-gitlab/download-single-step-artifacts
+
+# Why some checks are excluded? Success ratio are too low :
+# - consolidated-pipeline : 10%
+# - throughput : 20%
+# - dd-gitlab/run-benchmarks : 62%
+# - .github/dependabot.yml : 80%
+# - dd-gitlab/default-pipeline : 81%
+# - benchmarks : 84%
+# - profiler_execution_benchmarks : 84%
+# - dd-gitlab/download-serverless-artifacts : 86%
+# - dd-gitlab/download-single-step-artifacts : 88%
+# - throughput_profiler : 89%
+# - integration_tests_arm64_debugger : 89%

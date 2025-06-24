@@ -9,6 +9,7 @@ using System;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -174,11 +175,12 @@ internal static class Common
         }
     }
 
-    internal static void SetEarlyFlakeDetectionTestTagsAndAbortReason(Test test, bool isRetry, ref long newTestCases, ref long totalTestCases)
+    internal static bool SetEarlyFlakeDetectionTestTagsAndAbortReason(Test test, bool isRetry, ref long newTestCases, ref long totalTestCases)
     {
         // Early flake detection flags
         var testOptimization = TestOptimization.Instance;
-        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
+        var earlyFlakeDetectionEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true;
+        if (earlyFlakeDetectionEnabled)
         {
             var testTags = test.GetTags();
             if (testTags.TestIsNew == "true")
@@ -193,17 +195,63 @@ internal static class Common
                     CheckFaultyThreshold(test, Interlocked.Increment(ref newTestCases), Interlocked.Read(ref totalTestCases));
                 }
             }
+            else
+            {
+                earlyFlakeDetectionEnabled = false;
+            }
         }
+
+        return earlyFlakeDetectionEnabled;
     }
 
-    internal static void SetFlakyRetryTags(Test test, bool isRetry)
+    internal static bool SetFlakyRetryTags(Test test, bool isRetry)
     {
-        if (TestOptimization.Instance.FlakyRetryFeature?.Enabled == true && isRetry)
+        var flakyRetryFeature = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
+        if (flakyRetryFeature && isRetry)
         {
             var testTags = test.GetTags();
             testTags.TestIsRetry = "true";
             testTags.TestRetryReason = "atr";
         }
+
+        return flakyRetryFeature;
+    }
+
+    internal static TestOptimizationClient.TestManagementResponseTestPropertiesAttributes SetTestManagementFeature(Test test, bool isRetry)
+    {
+        // Test management feature
+        var testOptimization = TestOptimization.Instance;
+        if (testOptimization.TestManagementFeature?.Enabled == true)
+        {
+            var testTags = test.GetTags();
+            var testManagementProperties = testOptimization.TestManagementFeature.GetTestProperties(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+            if (testManagementProperties.Quarantined)
+            {
+                Log.Debug("Common: Test is quarantined. [Suite: {SuiteName}, Test: {TestName}]", test.Suite.Name, test.Name);
+                testTags.IsQuarantined = "true";
+            }
+
+            if (testManagementProperties.Disabled)
+            {
+                Log.Debug("Common: Test is disabled. [Suite: {SuiteName}, Test: {TestName}]", test.Suite.Name, test.Name);
+                testTags.IsDisabled = "true";
+            }
+
+            if (testManagementProperties.AttemptToFix)
+            {
+                Log.Debug("Common: Test is an attempt to fix. [Suite: {SuiteName}, Test: {TestName}, IsRetry: {IsRetry}]", test.Suite.Name, test.Name, isRetry);
+                testTags.IsAttemptToFix = "true";
+                if (isRetry)
+                {
+                    testTags.TestIsRetry = "true";
+                    testTags.TestRetryReason = "attempt_to_fix";
+                }
+            }
+
+            return testManagementProperties;
+        }
+
+        return TestOptimizationClient.TestManagementResponseTestPropertiesAttributes.Default;
     }
 
     internal static void CheckFaultyThreshold(Test test, long nTestCases, long tTestCases)

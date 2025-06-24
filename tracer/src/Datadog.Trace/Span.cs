@@ -40,7 +40,7 @@ namespace Datadog.Trace
 
         internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
         {
-            Tags = tags ?? new CommonTags();
+            Tags = tags ?? new TagsList();
             Context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
 
@@ -123,6 +123,8 @@ namespace Datadog.Trace
         internal SpanContext Context { get; }
 
         internal List<SpanLink> SpanLinks { get; private set; }
+
+        internal List<SpanEvent> SpanEvents { get; private set; }
 
         internal DateTimeOffset StartTime { get; private set; }
 
@@ -560,6 +562,22 @@ namespace Datadog.Trace
             SpanLinks ??= new List<SpanLink>();
             SpanLinks.Add(spanLink);
             return this;
+        }
+
+        /// <summary>
+        /// Adds a SpanEvent to the current Span if the Span is active.
+        /// </summary>
+        /// <param name="spanEvent">The SpanEvent to add</param>
+        internal void AddEvent(SpanEvent spanEvent)
+        {
+            if (IsFinished)
+            {
+                Log.Warning("Attempted to add an event to a finished span");
+                return;
+            }
+
+            SpanEvents ??= new List<SpanEvent>();
+            SpanEvents.Add(spanEvent);
         }
     }
 }

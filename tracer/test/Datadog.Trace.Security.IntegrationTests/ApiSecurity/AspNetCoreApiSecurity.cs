@@ -11,10 +11,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -25,8 +22,8 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
 {
     private readonly AspNetCoreTestFixture _fixture;
 
-    protected AspNetCoreApiSecurity(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableApiSecurity, string sampleName)
-        : base(sampleName, outputHelper, "/shutdown", testName: $"ApiSecurity.{sampleName}.{(enableApiSecurity ? "ApiSecOn" : "ApiSecOff")}")
+    protected AspNetCoreApiSecurity(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableApiSecurity, bool enableResponseBdyParsing, string sampleName)
+        : base(sampleName, outputHelper, "/shutdown", testName: $"ApiSecurity.{sampleName}.{(enableApiSecurity ? "ApiSecOn" : "ApiSecOff")}{(enableApiSecurity && !enableResponseBdyParsing ? ".BodyParseOff" : string.Empty)}")
     {
         _fixture = fixture;
         _fixture.SetOutput(outputHelper);
@@ -34,6 +31,10 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, Path.Combine("ApiSecurity", "ruleset-with-block.json"));
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
         SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, enableApiSecurity.ToString());
+        if (!enableResponseBdyParsing)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody, "false");
+        }
     }
 
     public override void Dispose()

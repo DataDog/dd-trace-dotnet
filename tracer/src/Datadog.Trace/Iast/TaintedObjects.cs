@@ -5,6 +5,10 @@
 
 #nullable enable
 
+using System;
+using InlineIL;
+using static InlineIL.IL.Emit;
+
 namespace Datadog.Trace.Iast
 {
     internal class TaintedObjects
@@ -22,6 +26,32 @@ namespace Datadog.Trace.Iast
         {
             _map = new DefaultTaintedMap();
         }
+
+#if NET6_0_OR_GREATER
+
+        internal static unsafe string? GetString(ref ReadOnlySpan<char> span)
+        {
+            try
+            {
+#pragma warning disable CS8500
+                // Gets the address of the first char
+                fixed (void* spanPointer = &span)
+                {
+                    // Adjust for the string header (8 or 4 bytes) and length (4 bytes)
+                    nint spanAddress = (*(nint*)spanPointer) - IntPtr.Size - 4;
+                    string spanStr = *(string*)&spanAddress;
+                    return spanStr;
+                }
+#pragma warning restore CS8500
+            }
+            catch (Exception ex)
+            {
+                IastModule.LogAspectException(ex, "Error while getting string from ReadOnlySpan");
+            }
+
+            return null;
+        }
+#endif
 
         public bool TaintInputString(string stringToTaint, Source source)
         {
@@ -72,6 +102,15 @@ namespace Datadog.Trace.Iast
         {
             return _map.Get(objectToFind) as TaintedObject;
         }
+
+#if NET6_0_OR_GREATER
+        public TaintedObject? Get(ref ReadOnlySpan<char> objectToFind)
+        {
+            var stringToFind = GetString(ref objectToFind);
+            if (stringToFind is null) { return null; }
+            return _map.Get(stringToFind) as TaintedObject;
+        }
+#endif
 
         public int GetEstimatedSize()
         {

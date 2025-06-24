@@ -699,6 +699,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
+                .IsPresent("messaging.destination.name")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "consumer"));
@@ -717,6 +718,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
+                .IsPresent("messaging.destination.name")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
@@ -864,7 +866,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("cmd.shell")
                 .IsOptional("cmd.truncated")
                 .IsOptional("_dd.base_service")
-                .Matches("cmd.component", "process")
+                .Matches("component", "process")
                 .Matches("span.kind", "internal"));
 
         public static Result IsProtobufV1(this MockSpan span) => Result.FromSpan(span)

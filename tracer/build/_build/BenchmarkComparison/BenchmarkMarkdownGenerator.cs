@@ -87,11 +87,11 @@ Benchmarks for {newBranchMarkdown} compared to {oldBranchMarkdown}:
                     var gen0 = memory.Gen0Collections/(memory.TotalOperations / 1000.0);
                     var gen1 = memory.Gen1Collections/(memory.TotalOperations / 1000.0);
                     var gen2 = memory.Gen2Collections/(memory.TotalOperations / 1000.0);
-                    var stdDev = FormatNanoSeconds(run.Statistics.StandardDeviation);
-                    var mean = FormatNanoSeconds(run.Statistics.Mean);
+                    var stdDev = FormatNanoSeconds(run.Statistics?.StandardDeviation);
+                    var mean = FormatNanoSeconds(run.Statistics?.Mean);
                     // Error = half of 99.9% confidence interval - not available in JSON results
                     // so we use std error of the mean instead
-                    var stdError = FormatNanoSeconds(run.Statistics.StandardError);
+                    var stdError = FormatNanoSeconds(run.Statistics?.StandardError);
                     var toolchainMatch = Regex.Match(run.DisplayInfo, ".*Toolchain=(.+?),.*");
                     var toolchain = toolchainMatch.Success ? toolchainMatch.Groups[1].Value : "Unknown";
 
@@ -301,13 +301,14 @@ Allocation changes below **{BenchmarkComparer.AllocationThresholdRatio*100:N1}%*
                    ? baseResult.Statistics.Median / diffResult.Statistics.Median
                    : diffResult.Statistics.Median / baseResult.Statistics.Median;
 
-        private static string FormatNanoSeconds(double value)
+        private static string FormatNanoSeconds(double? value)
             => value switch
             {
+                null => "N/A",
                 < 1_000 => $"{value:G3}ns",
                 >= 1_000 and < 1_000_000 => $"{value / 1_000:G3}μs",
                 >= 1_000_000 and < 1_000_000_000 => $"{value / 1_000_000:G3}ms",
-                _ => $"{Math.Round(value / 1_000_000_000, 1)}s",
+                _ => $"{Math.Round(value.Value / 1_000_000_000, 1)}s",
             };
     }
 }

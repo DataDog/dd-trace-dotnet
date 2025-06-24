@@ -11,10 +11,10 @@ jobs:
       issues: write
     
     steps:
-      - uses: octokit/request-action@v2.x
+      - uses: octokit/request-action@dad4362715b7fb2ddedf9772c8670824af564f0d  # v2.4.0
         name: 'Open Skip Milestone'
         with:
-          route: PATCH /repos/{owner}/{repo}/milestones/2
+          route: PATCH /repos/{owner}/{repo}/milestones/183
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
           state: open

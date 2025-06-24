@@ -122,6 +122,21 @@ namespace Datadog.Trace.Configuration
             internal const string ApiSecuritySampleDelay = "DD_API_SECURITY_SAMPLE_DELAY";
 
             /// <summary>
+            /// with a default value of false, it allows a customer to disable the collection of endpoints for API Security.
+            /// </summary>
+            internal const string ApiSecurityEndpointCollectionEnabled = "DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED";
+
+            /// <summary>
+            /// with a default value of 300, it defines the maximum number of endpoints to be collected (serialized) for API Security.
+            /// </summary>
+            internal const string ApiSecurityEndpointCollectionMessageLimit = "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT";
+
+            /// <summary>
+            /// Enables the parsing of the response body in the API Security module. Defaults to true
+            /// </summary>
+            internal const string ApiSecurityParseResponseBody = "DD_API_SECURITY_PARSE_RESPONSE_BODY";
+
+            /// <summary>
             /// Use new unsafe encoder for the waf
             /// </summary>
             internal const string UseUnsafeEncoder = "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER";

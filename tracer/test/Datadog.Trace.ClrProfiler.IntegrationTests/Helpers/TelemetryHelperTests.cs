@@ -167,7 +167,7 @@ public class TelemetryHelperTests
         => _dataBuilder.BuildTelemetryData(
                 _app,
                 _host,
-                new TelemetryInput(configuration, null, integrations, metrics, null, sendAppStarted),
+                new TelemetryInput(configuration, null, integrations, null, metrics, null, sendAppStarted),
                 namingSchemeVersion: "1",
                 sendAppClosing);
 }

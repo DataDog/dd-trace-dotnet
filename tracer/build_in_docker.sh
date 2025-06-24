@@ -7,7 +7,7 @@ BUILD_DIR="$ROOT_DIR/tracer/build/_build"
 IMAGE_NAME="dd-trace-dotnet/alpine-base"
 
 docker build \
-   --build-arg DOTNETSDK_VERSION=9.0.102 \
+   --build-arg DOTNETSDK_VERSION=9.0.203 \
    --tag $IMAGE_NAME \
    --file "$BUILD_DIR/docker/alpine.dockerfile" \
    "$BUILD_DIR"

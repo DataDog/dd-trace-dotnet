@@ -6,16 +6,18 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Rcm.Models.AsmData;
 
 internal class RuleData
 {
+    [JsonProperty("type")]
     public string? Type { get; set; }
 
+    [JsonProperty("id")]
     public string? Id { get; set; }
 
+    [JsonProperty("data")]
     public Data[]? Data { get; set; }
-
-    public List<KeyValuePair<string, object?>> ToKeyValuePair() => new() { new("type", Type), new("id", Id), new("data", Data?.Select(d => d.ToKeyValuePair()).ToArray()) };
 }

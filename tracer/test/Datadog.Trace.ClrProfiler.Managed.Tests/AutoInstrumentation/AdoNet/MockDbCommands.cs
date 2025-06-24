@@ -8,14 +8,20 @@
 #pragma warning disable SA1502 // element should not be in a single line
 #pragma warning disable SA1649 // file name should match first type name
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AdoNet;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AdoNet
 {
     public class MockDbCommand : DbCommand
     {
+        private readonly MockDbParameterCollection _parameters = new MockDbParameterCollection();
+
         public override string CommandText { get; set; }
 
         public override int CommandTimeout { get; set; }
@@ -28,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AdoNet
 
         protected override DbConnection DbConnection { get; set; }
 
-        protected override DbParameterCollection DbParameterCollection => null;
+        protected override DbParameterCollection DbParameterCollection => _parameters;
 
         protected override DbTransaction DbTransaction { get; set; }
 
@@ -47,6 +53,103 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AdoNet
         protected override DbParameter CreateDbParameter() => null;
 
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => null;
+    }
+
+    public class MockDbParameter : DbParameter
+    {
+        public override DbType DbType { get; set; }
+
+        public override ParameterDirection Direction { get; set; } = ParameterDirection.Input;
+
+        public override bool IsNullable { get; set; }
+
+        public override string ParameterName { get; set; }
+
+        public override string SourceColumn { get; set; }
+
+        public override DataRowVersion SourceVersion { get; set; }
+
+        public override object Value { get; set; }
+
+        public override byte Precision { get; set; }
+
+        public override byte Scale { get; set; }
+
+        public override int Size { get; set; }
+
+        // TODO no clue what this is
+        public override bool SourceColumnNullMapping { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public override void ResetDbType()
+        {
+            // No-op for mock
+        }
+    }
+
+    public class MockDbParameterCollection : DbParameterCollection
+    {
+        private readonly List<DbParameter> _parameters = new List<DbParameter>();
+
+        public override int Count => _parameters.Count;
+
+        public override object SyncRoot => this;
+
+        public override int Add(object value)
+        {
+            _parameters.Add((DbParameter)value);
+            return _parameters.Count - 1;
+        }
+
+        public override void AddRange(Array values)
+        {
+            foreach (DbParameter parameter in values)
+            {
+                _parameters.Add(parameter);
+            }
+        }
+
+        public override void Clear() => _parameters.Clear();
+
+        public override bool Contains(object value) => _parameters.Contains(value);
+
+        public override bool Contains(string value) => _parameters.Any(p => p.ParameterName == value);
+
+        public override void CopyTo(Array array, int index)
+        {
+            for (var i = 0; i < _parameters.Count; i++)
+            {
+                array.SetValue(_parameters[i], index + i);
+            }
+        }
+
+        public override IEnumerator GetEnumerator() => _parameters.GetEnumerator();
+
+        public override int IndexOf(object value) => _parameters.IndexOf((DbParameter)value);
+
+        public override int IndexOf(string parameterName) => _parameters.FindIndex(p => p.ParameterName == parameterName);
+
+        public override void Insert(int index, object value) => _parameters.Insert(index, (DbParameter)value);
+
+        public override void Remove(object value) => _parameters.Remove((DbParameter)value);
+
+        public override void RemoveAt(int index) => _parameters.RemoveAt(index);
+
+        public override void RemoveAt(string parameterName) => _parameters.RemoveAt(IndexOf(parameterName));
+
+        protected override DbParameter GetParameter(int index) => _parameters[index];
+
+        protected override DbParameter GetParameter(string parameterName) => _parameters.Find(p => p.ParameterName == parameterName);
+
+        protected override void SetParameter(int index, DbParameter value) => _parameters[index] = value;
+
+        protected override void SetParameter(string parameterName, DbParameter value)
+        {
+            int index = IndexOf(parameterName);
+            if (index >= 0)
+            {
+                _parameters[index] = value;
+            }
+        }
     }
 }
 

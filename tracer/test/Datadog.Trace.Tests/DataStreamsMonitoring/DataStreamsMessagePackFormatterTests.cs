@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
@@ -23,11 +24,11 @@ public class DataStreamsMessagePackFormatterTests
     [Fact]
     public void CanRoundTripMessagePackFormat()
     {
-        var env = "my-env";
         var service = "service=name";
         var bucketDuration = 10_000_000_000;
         var edgeTags = new[] { "edge-1" };
-        var formatter = new DataStreamsMessagePackFormatter(env, service);
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.Environment, "my-env" } });
+        var formatter = new DataStreamsMessagePackFormatter(settings, service);
 
         var timeNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
@@ -106,10 +107,11 @@ public class DataStreamsMessagePackFormatterTests
 
         var expected = new MockDataStreamsPayload
         {
-            Env = env,
+            Env = settings.Environment,
             Service = service,
             Lang = "dotnet",
             TracerVersion = TracerConstants.AssemblyVersion,
+            ProductMask = 1,
             Stats = new MockDataStreamsBucket[]
             {
                 new()

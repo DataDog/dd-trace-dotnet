@@ -11,5 +11,5 @@
 class TimelineSampleType
 {
 public:
-    static std::vector<SampleValueType> Definitions;
+    static const std::vector<SampleValueType> Definitions;
 };

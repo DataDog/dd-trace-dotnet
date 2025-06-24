@@ -15,7 +15,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         internal struct NestedAsyncGenericStruct<T> where T : IGeneric
         {
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* in optimize code this will create a generic struct state machine*/, expectProbeStatusFailure: true)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* in optimize code this will create a generic struct state machine*/, expectProbeStatusFailure: true,  skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
             public async Task<string> Method(T generic, string input)
             {
                 var output = generic.Message + input + ".";

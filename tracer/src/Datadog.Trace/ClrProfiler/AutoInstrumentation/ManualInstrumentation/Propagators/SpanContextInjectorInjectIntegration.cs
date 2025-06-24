@@ -33,11 +33,14 @@ public class SpanContextInjectorInjectIntegration
         // The Injector.Inject method currently _only_ works with SpanContext objects
         // Therefore, there's no point calling inject unless we can remap it to a SpanContext
         TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Inject);
-        var inject = (Action<TCarrier, string, string>)(object)setter!;
 
         if (SpanContextHelper.GetContext(context) is { } spanContext)
         {
-            SpanContextInjector.InjectInternal(carrier, inject, spanContext);
+            // We can't trust that the customer function is safe,
+            // so we wrap the method in a try/catch to ensure we don't throw
+            var inject = (Action<TCarrier, string, string>)(object)setter!;
+            var injector = new SafeInjector<TCarrier>(inject);
+            SpanContextInjector.InjectInternal(carrier, injector.SafeInject, spanContext);
         }
 
         return CallTargetState.GetDefault();

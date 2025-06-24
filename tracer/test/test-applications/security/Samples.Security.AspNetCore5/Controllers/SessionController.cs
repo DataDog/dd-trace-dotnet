@@ -21,7 +21,7 @@ namespace weblog
         }
 
         [HttpGet("user")]
-        public IActionResult User(string sdk_user)
+        public new IActionResult User(string sdk_user)
         {
             if (sdk_user != null)
             {

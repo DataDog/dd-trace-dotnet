@@ -41,8 +41,6 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         OSArchitecture = suiteTags.OSArchitecture;
         OSPlatform = suiteTags.OSPlatform;
         OSVersion = suiteTags.OSVersion;
-        SamplingLimitDecision = suiteTags.SamplingLimitDecision;
-        TracesKeepRate = suiteTags.TracesKeepRate;
         CIJobName = suiteTags.CIJobName;
         CIJobUrl = suiteTags.CIJobUrl;
         CIPipelineId = suiteTags.CIPipelineId;
@@ -119,4 +117,37 @@ internal partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(BrowserTags.IsModified)]
     public string? IsModified { get; set; }
+
+    [Tag(TestTags.TestIsQuarantined)]
+    public string? IsQuarantined { get; set; }
+
+    [Tag(TestTags.TestIsDisabled)]
+    public string? IsDisabled { get; set; }
+
+    [Tag(TestTags.TestIsAttemptToFix)]
+    public string? IsAttemptToFix { get; set; }
+
+    [Tag(TestTags.TestHasFailedAllRetries)]
+    public string? HasFailedAllRetries { get; set; }
+
+    [Tag(TestTags.TestAttemptToFixPassed)]
+    public string? AttemptToFixPassed { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestImpactAnalysis)]
+    public string? CapabilitiesTestImpactAnalysis { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesEarlyFlakeDetection)]
+    public string? CapabilitiesEarlyFlakeDetection { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries)]
+    public string? CapabilitiesAutoTestRetries { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine)]
+    public string? CapabilitiesTestManagementQuarantine { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestManagementDisable)]
+    public string? CapabilitiesTestManagementDisable { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestManagementAttemptToFix)]
+    public string? CapabilitiesTestManagementAttemptToFix { get; set; }
 }

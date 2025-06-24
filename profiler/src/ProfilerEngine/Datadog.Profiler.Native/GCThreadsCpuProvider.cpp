@@ -3,13 +3,12 @@
 
 #include "GCThreadsCpuProvider.h"
 
-#include "CpuTimeProvider.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
-#include "RawCpuSample.h"
+#include "RawSampleTransformer.h"
 
-GCThreadsCpuProvider::GCThreadsCpuProvider(CpuTimeProvider* cpuTimeProvider, MetricsRegistry& metricsRegistry) :
-    NativeThreadsCpuProviderBase(cpuTimeProvider)
+GCThreadsCpuProvider::GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry) :
+    NativeThreadsCpuProviderBase(valueTypeProvider, cpuSampleTransformer)
 {
     _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_gc_cpu_duration");
 }
@@ -61,7 +60,7 @@ std::vector<std::shared_ptr<IThreadInfo>> const& GCThreadsCpuProvider::GetThread
 
 Labels GCThreadsCpuProvider::GetLabels()
 {
-    return Labels{Label{"gc_cpu_sample", "true"}};
+    return Labels{StringLabel{"gc_cpu_sample", "true"}};
 }
 
 std::vector<FrameInfoView> GCThreadsCpuProvider::GetFrames()

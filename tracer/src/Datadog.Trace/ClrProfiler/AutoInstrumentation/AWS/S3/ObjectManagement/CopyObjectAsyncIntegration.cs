@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
     ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.S3.Model.CopyObjectResponse]",
     ParameterTypeNames = ["Amazon.S3.Model.CopyObjectRequest", ClrNames.CancellationToken],
     MinimumVersion = "3.3.0",
-    MaximumVersion = "3.*.*",
+    MaximumVersion = "4.*.*",
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

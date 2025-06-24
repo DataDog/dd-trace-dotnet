@@ -193,6 +193,16 @@ mdMemberRef CallTargetTokens::GetCallTargetStateDefaultMemberRef()
     return callTargetStateTypeGetDefault;
 }
 
+mdMemberRef CallTargetTokens::GetCallTargetStateSkipMethodBodyMemberRef()
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return mdMemberRefNil;
+    }
+    return callTargetStateTypeSkipMethodBodyMemberRef;
+}
+
 mdMemberRef CallTargetTokens::GetCallTargetReturnVoidDefaultMemberRef()
 {
     auto hr = EnsureBaseCalltargetTokens();
@@ -649,6 +659,28 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
             return hr;
         }
         callTargetStateTypeGetDefault = newCallTargetStateTypeGetDefault;
+    }
+
+    // *** Ensure CallTargetState.get_SkipMethodBody() member ref
+    if (callTargetStateTypeSkipMethodBodyMemberRef == mdMemberRefNil)
+    {
+        COR_SIGNATURE signature[3] = {
+            IMAGE_CEE_CS_CALLCONV_DEFAULT | IMAGE_CEE_CS_CALLCONV_HASTHIS,
+            0x00,
+            ELEMENT_TYPE_BOOLEAN,
+        };
+
+        mdMemberRef newCallTargetStateTypeSkipMethodBodyMemberRef;
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(
+            callTargetStateTypeRef, calltargetstate_skipmethodbody_function_name.data(), signature,
+            3, &newCallTargetStateTypeSkipMethodBodyMemberRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper callTargetStateTypeSkipMethodBodyMemberRef could not be defined.");
+            return hr;
+        }
+
+        callTargetStateTypeSkipMethodBodyMemberRef = newCallTargetStateTypeSkipMethodBodyMemberRef;
     }
 
     // *** Ensure calltargetrefstruct type ref

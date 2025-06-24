@@ -34,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         {
             StackTrace expectedStack;
 
-            if (framework == "net462")
+            if (framework == "net48")
             {
                 expectedStack = new StackTrace(
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
@@ -120,12 +120,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         }
 
         [Trait("Category", "LinuxOnly")]
-        [TestAppFact("Samples.ExceptionGenerator", new[] { "net462", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
+        [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void ThrowExceptionsInParallelWithNewCpuProfiler(string appName, string framework, string appAssembly)
         {
             StackTrace expectedStack;
 
-            if (framework == "net462")
+            if (framework == "net48")
             {
                 expectedStack = new StackTrace(
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
@@ -222,7 +222,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             exceptionCounts.Should().ContainKey("System.InvalidOperationException").WhoseValue.Should().Be(1);
         }
 
-        [TestAppFact("Samples.ExceptionGenerator", new[] { "net462", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
+        [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void GetExceptionSamplesWithTimestamp(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
@@ -233,7 +233,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             CheckExceptionProfiles(runner, true);
         }
 
-        [TestAppFact("Samples.ExceptionGenerator", new[] { "net462", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
+        [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void GetExceptionSamplesWithoutTimestamp(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
@@ -254,6 +254,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 

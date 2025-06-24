@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -63,7 +65,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.13.0";
+    readonly string Version = "3.20.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -80,6 +82,9 @@ partial class Build : NukeBuild
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
 
+    [Parameter("Run tests from a especific area (tracer, ASM, debugger, profiler...)")]
+    readonly string Area;
+
     [Parameter("Override the default category filter for running benchmarks. (Optional)")]
     readonly string BenchmarkCategory;
 
@@ -88,7 +93,7 @@ partial class Build : NukeBuild
 
     [Parameter("Enable or Disable fast developer loop")]
     readonly bool FastDevLoop;
-    
+
     [Parameter("The directory containing the tool .nupkg file")]
     readonly AbsolutePath ToolSource;
 
@@ -103,11 +108,11 @@ partial class Build : NukeBuild
 
     [Parameter("Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker.")]
     readonly bool AsUniversal = false;
-    
+
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }
-    
+
     public Build()
     {
         RuntimeIdentifier = GetDefaultRuntimeIdentifier(IsAlpine);
@@ -128,6 +133,7 @@ partial class Build : NukeBuild
                             Logger.Information($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
+                            Logger.Information($"Area: {Area}");
                             Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
                             Logger.Information($"TestFrameworks: {string.Join(",", TestingFrameworks.Select(x => x.ToString()))}");
                         });
@@ -143,6 +149,8 @@ partial class Build : NukeBuild
                 DeleteReparsePoints(SourceDirectory);
                 DeleteReparsePoints(TestsDirectory);
             }
+
+            RootDirectory.GlobDirectories("obj*").ForEach(x => DeleteDirectory(x));
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             BundleHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
@@ -205,10 +213,12 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
+        .DependsOn(DownloadLibDatadog)
+        .DependsOn(CopyLibDatadog)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile)
         .DependsOn(RegenerateSolutions);
-    
+
     Target BuildManagedTracerHomeR2R => _ => _
         .Unlisted()
         .Description("Builds the native and managed src, and publishes the tracer home directory")
@@ -219,6 +229,8 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedTracerR2R)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
+        .DependsOn(DownloadLibDatadog)
+        .DependsOn(CopyLibDatadog)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile);
 
@@ -274,6 +286,7 @@ partial class Build : NukeBuild
         .Description("Builds the integration tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAspNetIntegrationTests => _ => _
@@ -322,6 +335,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CopyServerlessArtifacts);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _
@@ -337,6 +351,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CopyServerlessArtifacts);
 
     Target BuildAndRunOsxIntegrationTests => _ => _
@@ -414,11 +429,6 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             var framework = Framework ?? TargetFramework.NET8_0;
-            DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.DdDotnet))
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(framework)
-                .SetNoWarnDotNetCore3());
 
             string rid;
 
@@ -444,6 +454,7 @@ partial class Build : NukeBuild
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.DdDotnet))
                 .SetFramework(framework)
+                .SetNoWarnDotNetCore3()
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
                 .SetOutput(publishFolder));
@@ -537,49 +548,66 @@ partial class Build : NukeBuild
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {
-            var benchmarksProject = Solution.GetProject(Projects.BenchmarksTrace);
-            var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
-            EnsureCleanDirectory(resultsDirectory);
+            var benchmarkProjectsWithSettings = new Tuple<string, Func<DotNetRunSettings, DotNetRunSettings>>[] {
+                new(Projects.BenchmarksTrace, s => s),
+                // new(Projects.BenchmarksOpenTelemetryApi, s => s),
+                new(Projects.BenchmarksOpenTelemetryInstrumentedApi,
+                    s => s.SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
+                          .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
+                          .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
+                          .SetProcessEnvironmentVariable("DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY", "V4")),
+            };
 
-            try
+            foreach (var tuple in benchmarkProjectsWithSettings)
             {
-                DotNetBuild(s => s
-                    .SetProjectFile(benchmarksProject)
-                    .SetConfiguration(BuildConfiguration)
-                    .EnableNoDependencies()
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                );
+                var benchmarkProjectName = tuple.Item1;
+                var configureDotNetRunSettings = tuple.Item2;
 
-                var (framework, runtimes) = IsOsx switch
+                var benchmarksProject = Solution.GetProject(benchmarkProjectName);
+                var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
+                EnsureCleanDirectory(resultsDirectory);
+
+                try
                 {
-                    true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
-                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
-                };
+                    DotNetBuild(s => s
+                        .SetProjectFile(benchmarksProject)
+                        .SetConfiguration(BuildConfiguration)
+                        .EnableNoDependencies()
+                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                    );
 
-                DotNetRun(s => s
-                    .SetProjectFile(benchmarksProject)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetFramework(framework)
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 2000")
-                    .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
-                    .SetProcessEnvironmentVariable("DD_ENV", "CI")
-                    .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
-                    .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
+                    var (framework, runtimes) = IsOsx switch
+                    {
+                        true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
+                        false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
+                    };
 
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                );
-            }
-            finally
-            {
-                if (Directory.Exists(resultsDirectory))
-                {
-                    CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
-                                             DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                    DotNetRun(s => s
+                        .SetProjectFile(benchmarksProject)
+                        .SetConfiguration(BuildConfiguration)
+                        .SetFramework(framework)
+                        .EnableNoRestore()
+                        .EnableNoBuild()
+                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
+                        .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
+                        .SetProcessEnvironmentVariable("DD_ENV", "CI")
+                        .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
+                        .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
+                        .ConfigureDotNetRunSettings(configureDotNetRunSettings)
+
+                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                    );
                 }
+                finally
+                {
+                    if (Directory.Exists(resultsDirectory))
+                    {
+                        CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
+                                                 DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                    }
 
-                CopyDumpsToBuildData();
+                    CopyDumpsToBuildData();
+                }
             }
         });
 

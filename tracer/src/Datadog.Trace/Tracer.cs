@@ -92,7 +92,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null, spanEventsManager: null))
         {
         }
 
@@ -404,7 +404,7 @@ namespace Datadog.Trace
                     // When apm tracing is disabled, only distributed traces with the `_dd.p.ts` tag (with a trace source)
                     // are propagated downstream, however we need 1 trace per minute sent to the backend, so
                     // we unset sampling priority so the rate limiter decides.
-                    if (Settings?.ApmTracingEnabledInternal == false)
+                    if (Settings?.ApmTracingEnabled == false)
                     {
                         // If the trace has appsec propagation tag, the default priority is user keep
                         samplingPriority = propagatedTags.HasTraceSources(TraceSources.Asm) ? SamplingPriorityValues.UserKeep : null;
@@ -528,7 +528,7 @@ namespace Datadog.Trace
             // write them directly to the <see cref="TraceChunkModel"/>.
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
 
-            SpanCodeOriginManager.Instance.SetCodeOrigin(span);
+            SpanCodeOriginManager.Instance.SetCodeOriginForExitSpan(span);
 
             return span;
         }

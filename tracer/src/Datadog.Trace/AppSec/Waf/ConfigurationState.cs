@@ -30,29 +30,25 @@ internal record ConfigurationState
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationState>();
 
-    internal const string WafRulesKey = "rules";
-    internal const string WafRulesOverridesKey = "rules_override";
-    internal const string WafExclusionsKey = "exclusions";
-    internal const string WafRulesDataKey = "rules_data";
-    internal const string WafExclusionsDataKey = "exclusion_data";
-    internal const string WafCustomRulesKey = "custom_rules";
-    internal const string WafActionsKey = "actions";
     private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
 
-    private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater>
-    {
-        { RcmProducts.Asm, new AsmProduct() },
-        { RcmProducts.AsmDd, new AsmDdProduct() },
-        { RcmProducts.AsmData, new AsmDataProduct() }
-    };
+    private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters;
 
     private readonly string? _rulesPath;
     private readonly bool _canBeToggled;
     private readonly Dictionary<string, List<RemoteConfiguration>> _fileUpdates = new();
     private readonly Dictionary<string, List<RemoteConfigurationPath>> _fileRemoves = new();
+    private bool _defaultRulesetApplied = false;
 
     public ConfigurationState(SecuritySettings settings, bool wafIsNull)
     {
+        _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater>
+        {
+            { RcmProducts.AsmDd, new AsmDdProduct() },
+            { RcmProducts.Asm, new AsmGenericProduct(() => AsmConfigs) },
+            { RcmProducts.AsmData, new AsmGenericProduct(() => AsmDataConfigs) }
+        };
+
         _rulesPath = settings.Rules;
         _canBeToggled = settings.CanBeToggled;
         if (settings.AppsecEnabled && wafIsNull)
@@ -61,31 +57,22 @@ internal record ConfigurationState
         }
     }
 
-    public ConfigurationState(SecuritySettings settings, bool wafIsNull, Dictionary<string, RuleSet>? rulesByFile, Dictionary<string, RuleData[]>? ruleDataByFile, Dictionary<string, RuleOverride[]>? ruleOverrideByFile, Dictionary<string, Action[]>? actionsByFile = null)
+    public ConfigurationState(SecuritySettings settings, bool wafIsNull, Dictionary<string, RuleSet>? rulesetConfigs, Dictionary<string, Models.Asm.Payload>? asmConfigs, Dictionary<string, Models.AsmData.Payload>? asmDataConfigs)
         : this(settings, wafIsNull)
     {
-        if (rulesByFile is not null)
+        if (rulesetConfigs is not null)
         {
-            RulesByFile = rulesByFile;
-            IncomingUpdateState.WafKeysToApply.Add(WafRulesKey);
+            RulesetConfigs = rulesetConfigs;
         }
 
-        if (ruleDataByFile is not null)
+        if (asmConfigs is not null)
         {
-            RulesDataByFile = ruleDataByFile;
-            IncomingUpdateState.WafKeysToApply.Add(WafRulesDataKey);
+            AsmConfigs = asmConfigs.ToDictionary(p => p.Key, p => JToken.FromObject(p.Value));
         }
 
-        if (ruleOverrideByFile is not null)
+        if (asmDataConfigs is not null)
         {
-            RulesOverridesByFile = ruleOverrideByFile;
-            IncomingUpdateState.WafKeysToApply.Add(WafRulesOverridesKey);
-        }
-
-        if (actionsByFile is not null)
-        {
-            ActionsByFile = actionsByFile;
-            IncomingUpdateState.WafKeysToApply.Add(WafActionsKey);
+            AsmDataConfigs = asmDataConfigs.ToDictionary(p => p.Key, p => JToken.FromObject(p.Value));
         }
     }
 
@@ -93,23 +80,19 @@ internal record ConfigurationState
 
     internal string? AutoUserInstrumMode { get; set; } = null;
 
-    internal Dictionary<string, RuleOverride[]> RulesOverridesByFile { get; } = new();
-
-    internal Dictionary<string, RuleData[]> RulesDataByFile { get; } = new();
-
-    internal Dictionary<string, RuleData[]> ExclusionsDataByFile { get; } = new();
-
-    internal Dictionary<string, JArray> ExclusionsByFile { get; } = new();
-
-    internal Dictionary<string, RuleSet> RulesByFile { get; } = new();
-
+    // RC Product: ASM_FEATURES
     internal Dictionary<string, AsmFeature> AsmFeaturesByFile { get; } = new();
 
     internal Dictionary<string, AutoUserInstrum> AutoUserInstrumByFile { get; } = new();
 
-    internal Dictionary<string, JArray> CustomRulesByFile { get; } = new();
+    // RC Product: ASM
+    internal Dictionary<string, JToken> AsmConfigs { get; } = new();
 
-    internal Dictionary<string, Action[]> ActionsByFile { get; init; } = new();
+    // RC Product: ASM_DATA
+    internal Dictionary<string, JToken> AsmDataConfigs { get; } = new();
+
+    // RC Product: ASM_DD
+    internal Dictionary<string, RuleSet> RulesetConfigs { get; } = new();
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
@@ -141,103 +124,80 @@ internal record ConfigurationState
         return [.. subscriptionsKeys];
     }
 
-    internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
+    internal RemoteConfigWafFiles GetWafConfigurations(bool updating = false)
     {
-        if (res == null)
+        updating &= !IncomingUpdateState.ShouldInitAppsec; // If we need to init AppSec we don't want to skip any config
+        var configurations = new Dictionary<string, object>();
+        List<string>? removes = null;
+
+        if (updating && _fileRemoves is { Count: > 0 })
         {
-            throw new ArgumentNullException(nameof(res));
+            removes = _fileRemoves.SelectMany(p => p.Value).Where(p => p.Product != RcmProducts.AsmFeatures).Select(v => v.Path).ToList();
         }
 
-        var finalRuleData = new List<RuleData>();
-        var groups = res.GroupBy(r => r.Id + r.Type);
-        foreach (var rulesData in groups)
+        if (AsmConfigs is { Count: > 0 })
         {
-            var dataByValue = rulesData.SelectMany(d => d.Data!).GroupBy(d => d.Value);
-            var mergedData = new List<Data>();
-            foreach (var data in dataByValue)
+            foreach (var config in AsmConfigs)
             {
-                var longestLastingIp = data.OrderByDescending(d => d.Expiration ?? long.MaxValue).First();
-                mergedData.Add(longestLastingIp);
-            }
-
-            var ruleData = rulesData.FirstOrDefault();
-            if (ruleData != null && !string.IsNullOrEmpty(ruleData.Type) && !string.IsNullOrEmpty(ruleData.Id))
-            {
-                ruleData.Data = mergedData.ToArray();
-                finalRuleData.Add(ruleData);
+                if (updating && !IsNewUpdate(config.Key)) { continue; }
+                configurations[config.Key] = config.Value;
             }
         }
 
-        return finalRuleData;
-    }
-
-    internal object? BuildDictionaryForWafAccordingToIncomingUpdate()
-    {
-        var configuration = new Dictionary<string, object>();
-
-        if (IncomingUpdateState.WafKeysToApply.Contains(WafExclusionsKey))
+        if (AsmDataConfigs is { Count: > 0 })
         {
-            var exclusions = ExclusionsByFile.SelectMany(x => x.Value).ToList();
-            configuration.Add(WafExclusionsKey, new JArray(exclusions));
-        }
-
-        if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesOverridesKey))
-        {
-            var overrides = RulesOverridesByFile.SelectMany(x => x.Value).ToList();
-            configuration.Add(WafRulesOverridesKey, overrides.Select(r => r.ToKeyValuePair()).ToArray());
-        }
-
-        if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesDataKey))
-        {
-            var rulesData = MergeRuleData(RulesDataByFile.SelectMany(x => x.Value));
-            configuration.Add(WafRulesDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
-        }
-
-        if (IncomingUpdateState.WafKeysToApply.Contains(WafExclusionsDataKey))
-        {
-            var rulesData = MergeRuleData(ExclusionsDataByFile.SelectMany(x => x.Value));
-            configuration.Add(WafExclusionsDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
-        }
-
-        if (IncomingUpdateState.WafKeysToApply.Contains(WafActionsKey))
-        {
-            var actions = ActionsByFile.SelectMany(x => x.Value).ToList();
-            configuration.Add(WafActionsKey, actions.Select(r => r.ToKeyValuePair()).ToArray());
-        }
-
-        if (IncomingUpdateState.WafKeysToApply.Contains(WafCustomRulesKey))
-        {
-            var customRules = CustomRulesByFile.SelectMany(x => x.Value).ToList();
-            var mergedCustomRules = new JArray(customRules);
-            configuration.Add(WafCustomRulesKey, mergedCustomRules);
+            foreach (var config in AsmDataConfigs)
+            {
+                if (updating && !IsNewUpdate(config.Key)) { continue; }
+                configurations[config.Key] = config.Value;
+            }
         }
 
         // if there's incoming rules or empty rules, or if asm is to be activated, we also want the rules key in waf arguments
-        if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesKey) || IncomingUpdateState.ShouldInitAppsec)
+        if (!_defaultRulesetApplied && RulesetConfigs.Count == 0)
         {
-            var rulesetFromRcm = RulesByFile.Values.FirstOrDefault();
-            // should deserialize from LocalRuleFile
-            if (rulesetFromRcm is null)
+            // Deserialize from LocalRuleFile
+            var deserializedFromLocalRules = WafConfigurator.DeserializeEmbeddedOrStaticRules(RulesPath);
+            if (deserializedFromLocalRules is not null)
             {
-                var deserializedFromLocalRules = WafConfigurator.DeserializeEmbeddedOrStaticRules(RulesPath);
-                if (deserializedFromLocalRules is not null)
-                {
-                    if (configuration.Count == 0)
-                    {
-                        return deserializedFromLocalRules;
-                    }
-
-                    var ruleSet = RuleSet.From(deserializedFromLocalRules);
-                    ruleSet.AddToDictionaryAtRoot(configuration);
-                }
+                configurations[AsmDdProduct.DefaultConfigKey] = deserializedFromLocalRules;
+                _defaultRulesetApplied = true;
             }
-            else
+        }
+        else if (RulesetConfigs.Count > 0 && string.IsNullOrEmpty(RulesPath))
+        {
+            // Use incoming RC rules if no external rules path has been defined
+            foreach (var config in RulesetConfigs)
             {
-                rulesetFromRcm?.AddToDictionaryAtRoot(configuration);
+                if (updating && !IsNewUpdate(config.Key)) { continue; }
+
+                var configuration = new Dictionary<string, object>();
+                config.Value?.AddToDictionaryAtRoot(configuration);
+                configurations[config.Key] = configuration;
+            }
+
+            if (_defaultRulesetApplied)
+            {
+                if (removes is null) { removes = [AsmDdProduct.DefaultConfigKey]; }
+                else { removes.Add(AsmDdProduct.DefaultConfigKey); }
+                _defaultRulesetApplied = false;
             }
         }
 
-        return configuration.Count > 0 ? configuration : null;
+        return new(configurations.Count > 0 ? configurations : null, removes);
+
+        bool IsNewUpdate(string path)
+        {
+            foreach (var productUpdates in _fileUpdates)
+            {
+                if (productUpdates.Value.Any(u => u.Path.Path == path))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     /// <summary>
@@ -279,23 +239,6 @@ internal record ConfigurationState
         var anyChange = configsByProduct.Count > 0 || removedConfigs?.Count > 0;
         if (anyChange)
         {
-            foreach (var configByProduct in configsByProduct)
-            {
-                if (configByProduct.Key != RcmProducts.AsmFeatures)
-                {
-                    hasUpdateConfigurations = true;
-                }
-
-                if (_fileUpdates.ContainsKey(configByProduct.Key))
-                {
-                    _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
-                }
-                else
-                {
-                    _fileUpdates[configByProduct.Key] = configByProduct.Value;
-                }
-            }
-
             if (removedConfigs != null)
             {
                 foreach (var configByProductToRemove in removedConfigs)
@@ -316,6 +259,23 @@ internal record ConfigurationState
                 }
             }
 
+            foreach (var configByProduct in configsByProduct)
+            {
+                if (configByProduct.Key != RcmProducts.AsmFeatures)
+                {
+                    hasUpdateConfigurations = true;
+                }
+
+                if (_fileUpdates.ContainsKey(configByProduct.Key))
+                {
+                    _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
+                }
+                else
+                {
+                    _fileUpdates[configByProduct.Key] = configByProduct.Value;
+                }
+            }
+
             ApplyAsmFeatures(AppsecEnabled);
             IncomingUpdateState.ShouldUpdateAppsec = !IncomingUpdateState.ShouldInitAppsec && AppsecEnabled && hasUpdateConfigurations;
 
@@ -331,15 +291,15 @@ internal record ConfigurationState
         var change = false;
         // only deserialize and apply asm_features as it will decide if asm gets toggled on and if we deserialize all the others
         // (the enable of auto user instrumentation as added to asm_features)
-        if (_fileUpdates.TryGetValue(RcmProducts.AsmFeatures, out var updates))
-        {
-            _asmFeatureProduct.ProcessUpdates(this, updates);
-            change = true;
-        }
-
         if (_fileRemoves.TryGetValue(RcmProducts.AsmFeatures, out var removals))
         {
             _asmFeatureProduct.ProcessRemovals(this, removals);
+            change = true;
+        }
+
+        if (_fileUpdates.TryGetValue(RcmProducts.AsmFeatures, out var updates))
+        {
+            _asmFeatureProduct.ProcessUpdates(this, updates);
             change = true;
         }
 
@@ -352,6 +312,7 @@ internal record ConfigurationState
             if (!appsecCurrentlyEnabled)
             {
                 IncomingUpdateState.ShouldInitAppsec = rcmEnable;
+                _defaultRulesetApplied = false;
             }
             else if (!rcmEnable)
             {
@@ -382,16 +343,18 @@ internal record ConfigurationState
 
         internal bool ShouldDisableAppsec { get; set; } = false;
 
-        internal HashSet<string> WafKeysToApply { get; } = new();
-
         public void Dispose() => Reset();
 
         public void Reset()
         {
-            WafKeysToApply.Clear();
             ShouldDisableAppsec = false;
             ShouldInitAppsec = false;
             ShouldUpdateAppsec = false;
         }
+    }
+
+    internal record RemoteConfigWafFiles(Dictionary<string, object>? Updates, List<string>? Removes)
+    {
+        public bool HasData => Updates is not null || Removes is not null;
     }
 }

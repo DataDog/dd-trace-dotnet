@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 3.13.0)
+project("Datadog.Profiler.Native.Linux" VERSION 3.20.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -143,4 +143,5 @@ target_link_options(${PROFILER_SHARED_LIB_NAME} PRIVATE
 # Define linker libraries
 target_link_libraries(${PROFILER_SHARED_LIB_NAME}
     -Wl,--whole-archive $<TARGET_FILE:${PROFILER_STATIC_LIB_NAME}> -Wl,--no-whole-archive
+    -Wl,-rpath,'$ORIGIN'
     ${PROFILER_STATIC_LIB_NAME})

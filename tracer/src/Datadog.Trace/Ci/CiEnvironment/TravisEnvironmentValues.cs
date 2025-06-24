@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Telemetry.Metrics;
+
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class TravisEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
@@ -15,6 +17,7 @@ internal sealed class TravisEnvironmentValues<TValueProvider>(TValueProvider val
 
         IsCI = true;
         Provider = "travisci";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.TravisCi;
 
         var prSlug = ValueProvider.GetValue(Constants.TravisPullRequestSlug);
         var repoSlug = !string.IsNullOrEmpty(prSlug) ? prSlug : ValueProvider.GetValue(Constants.TravisRepoSlug);
@@ -40,5 +43,8 @@ internal sealed class TravisEnvironmentValues<TValueProvider>(TValueProvider val
         JobUrl = ValueProvider.GetValue(Constants.TravisJobWebUrl);
 
         Message = ValueProvider.GetValue(Constants.TravisCommitMessage);
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.TravisPullRequestBranch);
+        PrBaseCommit = ValueProvider.GetValue(Constants.TravisPullRequestSha);
     }
 }

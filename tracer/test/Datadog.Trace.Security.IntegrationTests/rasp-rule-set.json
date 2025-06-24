@@ -313,7 +313,7 @@
         }
       ],
       "on_match": [
-        "customblock"
+        "block"
       ]
     },
     {

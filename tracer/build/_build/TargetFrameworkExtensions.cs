@@ -8,8 +8,8 @@
         => ((string) instance, (string) target) switch
         {
             // We ignore these, because they don't really count
-            ("net461" or "net462" or "netstandard2.0", _) => false,
-            (_, "net461" or "net462" or "netstandard2.0") => false,
+            ("net461" or "net48" or "netstandard2.0", _) => false,
+            (_, "net461" or "net48" or "netstandard2.0") => false,
             // real checks
             ("netcoreapp3.0" or "netcoreapp3.1" or "net5.0" or "net6.0" or "net7.0" or "net8.0" or "net9.0", "netcoreapp2.1") => true,
             ("netcoreapp3.1" or "net5.0" or "net6.0" or "net7.0" or "net8.0" or "net9.0", "netcoreapp3.0") => true,
@@ -28,8 +28,8 @@
     public static bool IsGreaterThanOrEqualTo(this TargetFramework instance, TargetFramework target)
         => ((string) instance, (string) target) switch
         {
-            ("net461" or "net462" or "netstandard2.0", _) => false,
-            (_, "net461" or "net462" or "netstandard2.0") => false,
+            ("net461" or "net48" or "netstandard2.0", _) => false,
+            (_, "net461" or "net48" or "netstandard2.0") => false,
             ({ } x, { } y) when x == y => true,
             _ => instance.IsGreaterThan(target),
         };

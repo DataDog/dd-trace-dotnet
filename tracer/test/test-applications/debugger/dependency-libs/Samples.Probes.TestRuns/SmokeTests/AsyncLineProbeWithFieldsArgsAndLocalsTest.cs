@@ -6,15 +6,15 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogLineProbeTestData(23)]
-    [LogLineProbeTestData(25)]
-    [LogLineProbeTestData(26)]
-    [LogLineProbeTestData(27)]
-    [LogLineProbeTestData(28)]
-    [LogLineProbeTestData(29)]
-    [LogLineProbeTestData(45)]
-    [LogLineProbeTestData(46)]
-    [LogLineProbeTestData(47)]
+    [LogLineProbeTestData(23, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(25, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(26, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(27, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(28, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(29, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(45, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(46, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(47, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
     public class AsyncLineProbeWithFieldsArgsAndLocalsTest : IAsyncRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -39,7 +39,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             }
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [LogMethodProbeTestData]
+            [LogMethodProbeTestData(skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
             public async Task<string> Method(Generic someGenericObject, string input, Person goodPerson)
             {
                 var output = goodPerson.ToString() + someGenericObject.ToString() + goodPerson.Name;

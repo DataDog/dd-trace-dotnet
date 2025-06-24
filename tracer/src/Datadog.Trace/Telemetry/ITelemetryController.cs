@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci.Configuration;
@@ -70,5 +71,10 @@ namespace Datadog.Trace.Telemetry
         /// Updates Git metadata for telemetry
         /// </summary>
         void RecordGitMetadata(GitMetadata gitMetadata);
+
+        /// <summary>
+        /// Called to record endpoints of the current application for API Security,
+        /// </summary>
+        void RecordAppEndpoints(ICollection<AppEndpointData> appEndpoints);
     }
 }

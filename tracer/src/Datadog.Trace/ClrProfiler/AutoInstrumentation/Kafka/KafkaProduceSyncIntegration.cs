@@ -43,9 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             // We should not use a delivery handler if deliveryReports are disabled (enabled by default),
             // since it will result in InvalidOperationException
             // https://github.com/confluentinc/confluent-kafka-dotnet/blob/65362199f13bdad8a0831541f53d92e1e95a8a37/src/Confluent.Kafka/Producer.cs#L869
-            if (
-                deliveryHandler == null &&
-                Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled &&
+            if (deliveryHandler == null &&
                 ProducerCache.TryGetDefaultDeliveryHandler(instance, out var handler))
             {
                 deliveryHandler = handler;

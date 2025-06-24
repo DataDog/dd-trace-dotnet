@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Telemetry.Metrics;
+
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class BitriseEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
@@ -15,12 +17,13 @@ internal sealed class BitriseEnvironmentValues<TValueProvider>(TValueProvider va
 
         IsCI = true;
         Provider = "bitrise";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.Bitrise;
         Repository = ValueProvider.GetValue(Constants.BitriseGitRepositoryUrl);
 
         var prCommit = ValueProvider.GetValue(Constants.BitriseGitCommit);
         Commit = !string.IsNullOrWhiteSpace(prCommit) ? prCommit : ValueProvider.GetValue(Constants.BitriseGitCloneCommitHash);
 
-        var prBranch = ValueProvider.GetValue(Constants.BitriseGitBranchDest);
+        var prBranch = ValueProvider.GetValue(Constants.BitrisePullRequestHeadBranch);
         Branch = !string.IsNullOrWhiteSpace(prBranch) ? prBranch : ValueProvider.GetValue(Constants.BitriseGitBranch);
 
         Tag = ValueProvider.GetValue(Constants.BitriseGitTag);
@@ -40,5 +43,7 @@ internal sealed class BitriseEnvironmentValues<TValueProvider>(TValueProvider va
         {
             CommitterEmail = CommitterName;
         }
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.BitriseGitBranchDest);
     }
 }

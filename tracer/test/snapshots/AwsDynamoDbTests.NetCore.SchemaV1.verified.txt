@@ -115,7 +115,17 @@
       span.kind: client,
       tablename: MyTableName,
       _dd.peer.service.source: tablename
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_5,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
@@ -128,7 +138,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteItem,
-      aws.requestId: Guid_5,
+      aws.requestId: Guid_6,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -141,7 +151,17 @@
       span.kind: client,
       tablename: MyTableName,
       _dd.peer.service.source: tablename
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_5,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
@@ -154,7 +174,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchWriteItem,
-      aws.requestId: Guid_6,
+      aws.requestId: Guid_7,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -180,7 +200,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchGetItem,
-      aws.requestId: Guid_7,
+      aws.requestId: Guid_8,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -206,7 +226,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchWriteItem,
-      aws.requestId: Guid_8,
+      aws.requestId: Guid_9,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,

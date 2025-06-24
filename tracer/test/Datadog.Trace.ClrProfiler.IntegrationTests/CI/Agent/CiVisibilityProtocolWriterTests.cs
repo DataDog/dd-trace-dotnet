@@ -190,27 +190,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings);
-            expectedPayload.TryProcessEvent(new SpanEvent(span));
-            expectedPayload.TryProcessEvent(new SpanEvent(span));
-            expectedPayload.TryProcessEvent(new SpanEvent(span));
+            expectedPayload.TryProcessEvent(new Ci.EventModel.SpanEvent(span));
+            expectedPayload.TryProcessEvent(new Ci.EventModel.SpanEvent(span));
+            expectedPayload.TryProcessEvent(new Ci.EventModel.SpanEvent(span));
             var expectedBytes = expectedPayload.ToArray();
 
-            agentlessWriter.WriteEvent(new SpanEvent(span));
-            agentlessWriter.WriteEvent(new SpanEvent(span));
-            agentlessWriter.WriteEvent(new SpanEvent(span));
+            agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
+            agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
+            agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
 
             var firstFlush = agentlessWriter.FlushTracesAsync();
 
-            agentlessWriter.WriteEvent(new SpanEvent(span));
-            agentlessWriter.WriteEvent(new SpanEvent(span));
-            agentlessWriter.WriteEvent(new SpanEvent(span));
+            agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
+            agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
+            agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
 
             var secondFlush = agentlessWriter.FlushTracesAsync();
             flushTcs.TrySetResult(true);
 
-            agentlessWriter.WriteEvent(new SpanEvent(span));
-            agentlessWriter.WriteEvent(new SpanEvent(span));
-            agentlessWriter.WriteEvent(new SpanEvent(span));
+            agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
+            agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
+            agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
 
             var thirdFlush = agentlessWriter.FlushTracesAsync();
 
@@ -251,7 +251,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             for (ulong i = 0; i < numSpans; i++)
             {
                 var span = new Span(new SpanContext(i, i), DateTimeOffset.UtcNow);
-                agentlessWriter.WriteEvent(new SpanEvent(span));
+                agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
             }
 
             lock (lstPayloads)
@@ -289,7 +289,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             int headerSize = Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize;
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
-            var spanEvent = new SpanEvent(span);
+            var spanEvent = new Ci.EventModel.SpanEvent(span);
             var individualType = MessagePackSerializer.Serialize<Ci.IEvent>(spanEvent, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
 
             int bufferSize = 256;

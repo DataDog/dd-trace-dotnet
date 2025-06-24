@@ -89,7 +89,7 @@ private:
         std::lock_guard<std::mutex> _lockGuard;
     };
 
-    static libdatadog::Tags CreateTags(IConfiguration* configuration, IRuntimeInfo* runtimeInfo, IEnabledProfilers* enabledProfilers);
+    static libdatadog::Tags CreateFixedTags(IConfiguration* configuration, IRuntimeInfo* runtimeInfo, IEnabledProfilers* enabledProfilers);
 
     std::unique_ptr<libdatadog::Exporter> CreateExporter(IConfiguration* configuration, libdatadog::Tags tags);
     std::unique_ptr<libdatadog::Profile> CreateProfile(std::string serviceName);

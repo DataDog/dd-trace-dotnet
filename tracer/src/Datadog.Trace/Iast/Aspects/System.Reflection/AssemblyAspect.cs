@@ -37,7 +37,7 @@ public class AssemblyAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(AssemblyAspect)}.{nameof(ReflectionAssemblyInjection)}");
+            IastModule.LogAspectException(ex);
             return assemblyString;
         }
     }

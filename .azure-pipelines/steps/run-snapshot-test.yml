@@ -84,6 +84,7 @@ steps:
     dockerTag: $(dockerTag)
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   displayName: ${{ parameters.dockerComposePath }} run ${{ parameters.target }}
+  timeoutInMinutes: 15
 
 - script: |
     echo "Dumping traces"
@@ -153,7 +154,7 @@ steps:
         LOGS+="$line"$'\n'  # Capture each line into LOGS variable
         # Profiling is disabled using DD_PROFILING_ENABLED=0 because there is a flaky freeze we are working around
         # Once we figure out the freeze, we can re-enable
-      done < <(${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e DD_PROFILING_ENABLED=0 -e CRASH_APP_ON_STARTUP=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }})
+      done < <(${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run --rm -e dockerTag=$(dockerTag) -e DD_PROFILING_ENABLED=0 -e CRASH_APP_ON_STARTUP=1 -e DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }} 2>&1)
 
       # check logs for evidence of crash detection in the output
       expected="The crash may have been caused by automatic instrumentation"
@@ -168,7 +169,9 @@ steps:
       dockerTag: $(dockerTag)
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
     displayName: Check logs for evidence of crash output
-    condition: eq(variables['runCrashTest'], 'true')
+    # This job sometimes hangs, and when it does, we lose all the logs, so explicitly end it early instead
+    timeoutInMinutes: 15
+    condition: and(succeeded(), eq(variables['runCrashTest'], 'true'))
 
 - ${{ if eq(parameters.isLinux, true) }}:
     - script: |
@@ -182,4 +185,4 @@ steps:
   condition: succeededOrFailed()
   continueOnError: true
 
-    
+- template: ./make-artifacts-uploadable.yml

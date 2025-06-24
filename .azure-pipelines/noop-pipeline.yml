@@ -7,7 +7,7 @@ pr:
 
 # Global variables
 variables:
-  dotnetCoreSdkLatestVersion: 9.0.102
+  dotnetCoreSdkLatestVersion: 9.0.203
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])] # required by update-github-status
   TargetBranch: $[variables['System.PullRequest.TargetBranch']]
 
@@ -19,7 +19,7 @@ stages:
       - job: calculate_noop_stages
         dependsOn: []
         pool:
-          vmImage: windows-2019
+          vmImage: windows-2022
 
         steps:
           - template: steps/install-latest-dotnet-sdk.yml

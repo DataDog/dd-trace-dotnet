@@ -1,0 +1,17 @@
+parameters:
+  - name: 'framework'
+    type: 'string'
+    default: ''
+
+steps:
+- template: download-artifact.yml
+  parameters:
+    artifact: samples-standalone
+    path: $(outputDir)/bin
+
+- ${{ if ne(parameters.framework, '') }}:
+  - template: download-artifact.yml
+    parameters:
+      artifact: samples-multi-version-${{ parameters.framework }}
+      path: $(outputDir)/publish
+      retryCountOnTaskFailure: 5

@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -47,7 +48,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var client = testServer.CreateClient();
             var tracer = GetTracer();
             var (security, iast) = GetSecurity();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast) };
+            var liveDebugger = GetLiveDebugger();
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null) };
             string retValue = null;
 
             using (var diagnosticManager = new DiagnosticManager(observers))
@@ -71,8 +73,9 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             var tracer = GetTracer();
             var (security, iast) = GetSecurity();
+            var liveDebugger = GetLiveDebugger();
 
-            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast);
+            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null);
 
             var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
 
@@ -121,6 +124,11 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 rcmSubscriptionManager: Mock.Of<IRcmSubscriptionManager>());
             var iast = new Iast.Iast(new IastSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
             return (security, iast);
+        }
+
+        private static LiveDebugger GetLiveDebugger()
+        {
+            return LiveDebuggerFactory.Create(null, null, new TracerSettings(), null, null, DebuggerSettings.FromDefaultSource(), null);
         }
 
         private static HttpContext GetHttpContext()

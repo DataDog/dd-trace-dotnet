@@ -15,7 +15,7 @@
     <PackageReference Include="Datadog.Trace" Version="$(DatadogTraceNuGetVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System.Net.Http" />
   </ItemGroup>
 

@@ -54,11 +54,19 @@ public static class TestMethodRunnerExecuteIntegration3_8
                 {
                     if (testResult.Outcome is UnitTestOutcome.Inconclusive)
                     {
-                        if (instance.TestMethodInfo is not null && !MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _))
+                        if (instance.TestMethodInfo is not null)
                         {
-                            // This instrumentation catches all tests being ignored
-                            MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false)?
-                               .Close(TestStatus.Skip, TimeSpan.Zero, testResult.IgnoreReason);
+                            var skipHandled =
+                                MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _) ||
+                                MsTestIntegration.GetTestProperties(instance.TestMethodInfo) is { Quarantined: true } or { Disabled: true };
+                            if (!skipHandled)
+                            {
+                                // This instrumentation catches all tests being ignored
+                                if (MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false) is { } test)
+                                {
+                                    test.Close(TestStatus.Skip, TimeSpan.Zero, testResult.IgnoreReason);
+                                }
+                            }
                         }
                     }
                 }

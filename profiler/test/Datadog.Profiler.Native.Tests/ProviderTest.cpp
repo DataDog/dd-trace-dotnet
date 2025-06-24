@@ -17,6 +17,7 @@
 #include "MemoryResourceManager.h"
 #include "ProfilerMockedInterface.h"
 #include "RawCpuSample.h"
+#include "RawSampleTransformer.h"
 #include "RawWallTimeSample.h"
 #include "RuntimeIdStoreHelper.h"
 #include "SampleValueTypeProvider.h"
@@ -96,7 +97,8 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
+    RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -128,7 +130,8 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     std::string secondExpectedRuntimeId = "OtherRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(2))).WillRepeatedly(::testing::Return(secondExpectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
+    RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -164,32 +167,42 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
         builder << "AD_" << expectedAppDomainId[currentSample];
         std::string expectedAppDomainName(builder.str());
 
-        std::stringstream builder2;
-        builder2 << expectedAppDomainId[currentSample];
-        std::string expectedPid(builder2.str());
+        auto expectedPid = expectedAppDomainId[currentSample];
 
         auto labels = sample->GetLabels();
-        for (const Label& label : labels)
+        for (auto const& label : labels)
         {
-            if (label.first == Sample::AppDomainNameLabel)
-            {
-                ASSERT_EQ(expectedAppDomainName, label.second);
-            }
-            else if (label.first == Sample::ProcessIdLabel)
-            {
-                ASSERT_EQ(expectedPid, label.second);
-            }
-            else if (
-                (label.first == Sample::ThreadIdLabel) ||
-                (label.first == Sample::ThreadNameLabel))
-            {
-                // can't test thread info
-            }
-            else
-            {
-                // unknown label
-                ASSERT_TRUE(false);
-            }
+            std::visit(LabelsVisitor{
+                [expectedPid](NumericLabel const& label){
+                    auto const& [name, value] = label;
+                    if(name == Sample::ProcessIdLabel)
+                    {
+                        ASSERT_EQ(expectedPid, value);
+                    }
+                    else
+                    {
+                        ASSERT_TRUE(false) << label.first;
+                    }
+                },
+                [expectedAppDomainName](StringLabel const& label) {
+                    auto const& [name, value] = label;
+                    if (name == Sample::AppDomainNameLabel)
+                    {
+                        ASSERT_EQ(expectedAppDomainName, value);
+                    }
+                    else if (
+                        (name == Sample::ThreadIdLabel) ||
+                        (name == Sample::ThreadNameLabel))
+                    {
+                        // can't test thread info
+                    }
+                    else
+                    {
+                        // unknown label
+                        ASSERT_TRUE(false);
+                    }
+                }, 
+            }, label);
         }
 
         currentSample++;
@@ -209,7 +222,8 @@ TEST(WallTimeProviderTest, CheckFrames)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
+    RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -270,7 +284,8 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
+    RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -314,7 +329,8 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     RuntimeIdStoreHelper runtimeIdStore;
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
-    CpuTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
+    RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
+    CpuTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
     Sample::ValuesCount = 2;
     provider.Start();
 

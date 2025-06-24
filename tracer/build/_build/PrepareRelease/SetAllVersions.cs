@@ -222,11 +222,6 @@ namespace PrepareRelease
                     "samples/WindowsContainer/Dockerfile",
                     text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
-                // Pipeline monitor
-                SynchronizeVersion(
-                    "tools/PipelineMonitor/PipelineMonitor.csproj",
-                    DatadogTraceNugetDependencyVersionReplace);
-
                 Console.WriteLine($"Completed synchronizing package versions to {VersionString()}");
             }
 
@@ -257,45 +252,8 @@ namespace PrepareRelease
                     "build/_build/Build.cs",
                     text => Regex.Replace(text, "readonly bool IsPrerelease = (true|false)", $"readonly bool IsPrerelease = {(IsPrerelease ? "true" : "false")}"));
 
-                // Managed project / NuGet package updates
                 SynchronizeVersion(
-                    "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
-                    NugetVersionReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Trace/Datadog.Trace.csproj",
-                    NugetVersionReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
-                    NugetVersionReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj",
-                    NugetVersionReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
-                    NugetVersionReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
-                    NugetVersionReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Trace.BenchmarkDotNet/Datadog.Trace.BenchmarkDotNet.csproj",
-                    NugetVersionReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
-                    NugetVersionReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Trace.Tools.dd_dotnet/Datadog.Trace.Tools.dd_dotnet.csproj",
-                    NugetVersionReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj",
+                    "src/Directory.Build.props",
                     NugetVersionReplace);
 
                 // Fully qualified name updates

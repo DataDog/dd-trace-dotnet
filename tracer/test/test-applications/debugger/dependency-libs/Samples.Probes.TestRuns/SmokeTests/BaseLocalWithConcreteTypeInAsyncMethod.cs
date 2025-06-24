@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    internal class BaseLocalWithConcreteTypeInAsyncMethod : IAsyncRun
+    public class BaseLocalWithConcreteTypeInAsyncMethod : IAsyncRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
@@ -13,7 +13,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogMethodProbeTestData]
+        [LogMethodProbeTestData(skipOnFrameworks: ["net48", "net462"])]
         public async Task<string> Pii(int arg)
         {
             PiiBase? pii;

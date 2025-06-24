@@ -8,6 +8,7 @@
 #if !NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
@@ -20,7 +21,7 @@ internal class AspNetCoreResourceNameHelper
 {
     internal static string SimplifyRoutePattern(
         RoutePattern routePattern,
-        RouteValueDictionary routeValueDictionary,
+        IReadOnlyDictionary<string, object?> routeValueDictionary,
         string? areaName,
         string? controllerName,
         string? actionName,

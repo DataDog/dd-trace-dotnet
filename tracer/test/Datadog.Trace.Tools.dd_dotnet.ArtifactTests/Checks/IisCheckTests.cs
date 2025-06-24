@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks;
 
+[Trait("Category", "LinuxUnsupported")]
 public class IisCheckTests : ToolTestHelper
 {
     public IisCheckTests(ITestOutputHelper output)

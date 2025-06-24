@@ -39,7 +39,7 @@ public class HttpCookieAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(HttpCookieAspect)}.{nameof(GetValue)}");
+            IastModule.LogAspectException(ex);
         }
 
         return value;

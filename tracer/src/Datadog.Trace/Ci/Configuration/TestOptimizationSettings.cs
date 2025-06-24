@@ -128,6 +128,10 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Test Impact Analysis enablement
             ImpactedTestsDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled).AsBool();
+
+            // Test Management enablement
+            TestManagementEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.TestManagementEnabled).AsBool();
+            TestManagementAttemptToFixRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TestManagementAttemptToFixRetries).AsInt32();
         }
 
         /// <summary>
@@ -266,6 +270,16 @@ namespace Datadog.Trace.Ci.Configuration
         public bool? ImpactedTestsDetectionEnabled { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether the Test Management feature is enabled.
+        /// </summary>
+        public bool? TestManagementEnabled { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating the number of retries to fix a test management issue.
+        /// </summary>
+        public int? TestManagementAttemptToFixRetryCount { get; private set; }
+
+        /// <summary>
         /// Gets the tracer settings
         /// </summary>
         public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
@@ -303,6 +317,11 @@ namespace Datadog.Trace.Ci.Configuration
         internal void SetImpactedTestsEnabled(bool value)
         {
             ImpactedTestsDetectionEnabled = value;
+        }
+
+        internal void SetTestManagementEnabled(bool value)
+        {
+            TestManagementEnabled = value;
         }
 
         internal void SetAgentlessConfiguration(bool enabled, string? apiKey, string? agentlessUrl)

@@ -82,6 +82,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Tombstone = "true";
                 }
 
+                if (topicPartition is not null && !string.IsNullOrEmpty(topicPartition.Topic))
+                {
+                    tags.Topic = topicPartition.Topic;
+                }
+
                 // Producer spans should always be measured
                 span.SetMetric(Trace.Tags.Measured, 1.0);
 
@@ -225,6 +230,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Tombstone = "true";
                 }
 
+                if (!string.IsNullOrEmpty(topic))
+                {
+                    tags.Topic = topic;
+                }
+
                 // Consumer spans should always be measured
                 span.SetTag(Tags.Measured, "1");
 
@@ -242,7 +252,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         dataStreamsManager,
                         CheckpointKind.Consume,
                         edgeTags,
-                        message is null ? 0 : GetMessageSize(message),
+                        message is null || dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message),
                         tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
                         pathwayContext);
 
@@ -331,8 +341,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
+                    var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
-                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetMessageSize(message), 0);
+                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
                 }
             }
@@ -341,6 +352,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // don't keep trying if we run into problems
                 _headersInjectionEnabled = false;
                 Log.Warning(ex, "There was a problem injecting headers into the Kafka record. Disabling Headers injection");
+            }
+        }
+
+        internal static void DisableHeadersIfUnsupportedBroker(Exception exception)
+        {
+            if (_headersInjectionEnabled && exception is not null && exception.Message.IndexOf("Unknown broker error", StringComparison.OrdinalIgnoreCase) != -1)
+            {
+                // If we get this exception, it likely means that the message format being used is pre-0.11
+                // We do not retry the failed message, we think this will have unnecessary complexity due to the likely rarity of this error
+                // We do not selectively disable headers injection, we disable it globally due to the likely rarity of this error
+                _headersInjectionEnabled = false;
+
+                Log.Error(exception, "Kafka Broker responded with UNKNOWN_SERVER_ERROR (-1). Please look at broker logs for more information. Tracer message header injection for Kafka is disabled.");
             }
         }
     }

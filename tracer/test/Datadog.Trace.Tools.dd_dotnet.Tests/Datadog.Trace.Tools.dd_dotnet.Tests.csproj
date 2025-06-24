@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
   </ItemGroup>
   
   <ItemGroup>
@@ -47,5 +48,12 @@
     <None Update="maps.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace.Tests\Configuration\ExporterSettingsTests.Shared.cs">
+      <Link>ExporterSettingsTests.Shared.cs</Link>
+    </Compile>
+    <Compile Remove="NameValueConfigurationSource.cs" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -16,7 +18,7 @@ namespace Datadog.Trace
         private readonly IScopeManager _scopeManager;
         private bool _finishOnClose;
 
-        internal Scope(Scope parent, Span span, IScopeManager scopeManager, bool finishOnClose)
+        internal Scope(Scope? parent, Span span, IScopeManager scopeManager, bool finishOnClose)
         {
             Parent = parent;
             Span = span;
@@ -29,7 +31,7 @@ namespace Datadog.Trace
         /// </summary>
         internal Span Span { get; }
 
-        internal Scope Parent { get; }
+        internal Scope? Parent { get; }
 
         internal Scope Root => Parent?.Root ?? this;
 

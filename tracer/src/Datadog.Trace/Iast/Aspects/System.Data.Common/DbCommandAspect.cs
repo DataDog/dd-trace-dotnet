@@ -41,7 +41,7 @@ public class DbCommandAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DbCommandAspect)}.{nameof(ReviewExecuteNonQuery)}");
+            IastModule.LogAspectException(ex);
             return command;
         }
     }

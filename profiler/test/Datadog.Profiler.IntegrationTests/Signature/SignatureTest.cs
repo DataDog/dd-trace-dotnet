@@ -21,7 +21,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net462", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
+        [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void ValidateSignatures(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 20");

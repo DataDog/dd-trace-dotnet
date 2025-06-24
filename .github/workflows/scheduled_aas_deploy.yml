@@ -92,10 +92,11 @@ jobs:
       # Checkout and deploy if we should proceed
       - name: Clone repository
         if: steps.check_skip.outputs.should_proceed == 'true'
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - uses: ./.github/actions/deploy-aas-dev-apps
         if: steps.check_skip.outputs.should_proceed == 'true'
         name: 'Trigger AAS deploy'
         with:
-          aas_github_token: ${{ secrets.GH_EXTERNAL_TOKEN }}
+          github_app_id: ${{ secrets.GH_APP_ID }}
+          github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}

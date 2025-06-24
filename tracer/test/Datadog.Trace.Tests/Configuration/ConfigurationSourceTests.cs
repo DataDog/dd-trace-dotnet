@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return (s => s.ServiceNameMappings, new string[0]);
 
             yield return (s => s.TraceId128BitGenerationEnabled, true);
-            yield return (s => s.TraceId128BitLoggingEnabled, false);
+            yield return (s => s.TraceId128BitLoggingEnabled, true);
         }
 
         public static IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> GetBreakingChangeTestData()

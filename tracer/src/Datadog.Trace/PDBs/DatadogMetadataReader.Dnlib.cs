@@ -26,14 +26,14 @@ namespace Datadog.Trace.Pdb
 
         private SymbolReader? DnlibPdbReader { get; }
 
-        private MethodDef? GetMethodDefDnlib(uint methodRid)
+        private MethodDef? GetMethodDefDnlib(int methodToken)
         {
-            return _dnlibModule?.ResolveMethod(methodRid);
+            return _dnlibModule?.ResolveMethod((uint)RidOf(methodToken));
         }
 
-        private List<SymbolScope>? GetAllScopes(uint rowId, bool searchMoveNext)
+        private List<SymbolScope>? GetAllScopes(int methodToken, bool searchMoveNext)
         {
-            var method = GetSymbolMethodDnlib(rowId, searchMoveNext);
+            var method = GetSymbolMethodDnlib(methodToken, searchMoveNext);
             if (method == null)
             {
                 return null;
@@ -59,9 +59,9 @@ namespace Datadog.Trace.Pdb
             }
         }
 
-        private string[]? GetLocalVariableNamesDnlib(int methodRid, int localVariablesCount, bool searchMoveNext)
+        private string[]? GetLocalVariableNamesDnlib(int methodToken, int localVariablesCount, bool searchMoveNext)
         {
-            if (GetSymbolMethodDnlib((uint)methodRid, searchMoveNext) is not { } symbolMethod)
+            if (GetSymbolMethodDnlib(methodToken, searchMoveNext) is not { } symbolMethod)
             {
                 return null;
             }
@@ -89,9 +89,14 @@ namespace Datadog.Trace.Pdb
             return localNames;
         }
 
-        private SymbolMethod? GetSymbolMethodDnlib(uint rowId, bool searchMoveNext)
+        private SymbolMethod? GetSymbolMethodDnlib(int methodToken, bool searchMoveNext)
         {
-            var mdMethod = GetMethodDefDnlib(rowId);
+            var mdMethod = GetMethodDefDnlib(methodToken);
+            if (mdMethod == null)
+            {
+                return null;
+            }
+
             return searchMoveNext ? (GetSymbolMethodOfAsyncMethodDnlib(mdMethod) ?? DnlibPdbReader?.GetMethod(mdMethod, version: 1)) : DnlibPdbReader?.GetMethod(mdMethod, version: 1);
         }
 
@@ -114,17 +119,17 @@ namespace Datadog.Trace.Pdb
             return DnlibPdbReader?.GetMethod(breakpointMethod.Value.BreakpointMethod, version: 1);
         }
 
-        private ImmutableArray<LocalScope>? GetLocalSymbolsDnlib(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
+        private ImmutableArray<LocalScope>? GetLocalSymbolsDnlib(int methodToken, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
         {
             ImmutableArray<LocalScope>.Builder? localScopes = null;
-            var method = GetMethodDefDnlib((uint)rowId);
+            var method = GetMethodDefDnlib(methodToken);
             if (method!.Body is not { Variables.Count: > 0 })
             {
                 return null;
             }
 
             var methodLocals = method.Body.Variables;
-            var allMethodScopes = GetAllScopes(method.MDToken.Rid, searchMoveNext);
+            var allMethodScopes = GetAllScopes(method.MDToken.ToInt32(), searchMoveNext);
             if (allMethodScopes == null)
             {
                 return null;
@@ -197,10 +202,10 @@ namespace Datadog.Trace.Pdb
             return localScopes.ToImmutable();
         }
 
-        private CustomDebugInfoAsyncAndClosure GetAsyncAndClosureCustomDebugInfoDnlib(int methodRid)
+        private CustomDebugInfoAsyncAndClosure GetAsyncAndClosureCustomDebugInfoDnlib(int methodToken)
         {
             CustomDebugInfoAsyncAndClosure cdiAsyncAndClosure = default;
-            Datadog.Trace.Vendors.dnlib.DotNet.MethodDef? method = GetMethodDefDnlib((uint)methodRid);
+            Datadog.Trace.Vendors.dnlib.DotNet.MethodDef? method = GetMethodDefDnlib(methodToken);
             if (method is not { HasCustomDebugInfos: true })
             {
                 return cdiAsyncAndClosure;
@@ -215,7 +220,7 @@ namespace Datadog.Trace.Pdb
                 else if (methodCustomDebugInfo.Kind is PdbCustomDebugInfoKind.AsyncMethod)
                 {
                     cdiAsyncAndClosure.StateMachineHoistedLocal = true;
-                    cdiAsyncAndClosure.StateMachineKickoffMethodRid = (int)((PdbAsyncMethodCustomDebugInfo)methodCustomDebugInfo).KickoffMethod.MDToken.Rid;
+                    cdiAsyncAndClosure.StateMachineKickoffMethodToken = ((PdbAsyncMethodCustomDebugInfo)methodCustomDebugInfo).KickoffMethod.MDToken.ToInt32();
                 }
             }
 
@@ -239,10 +244,10 @@ namespace Datadog.Trace.Pdb
             return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
-        private IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsDnlib(int rowId, bool searchMoveNext, out int count)
+        private IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsDnlib(int methodToken, bool searchMoveNext, out int count)
         {
             count = 0;
-            var symbolMethod = GetSymbolMethodDnlib((uint)rowId, searchMoveNext);
+            var symbolMethod = GetSymbolMethodDnlib(methodToken, searchMoveNext);
             if (symbolMethod == null)
             {
                 return null;
@@ -274,6 +279,32 @@ namespace Datadog.Trace.Pdb
             }
 
             return memory;
+        }
+
+        private DatadogSequencePoint? GetMethodSourceLocationDnlib(int methodToken, bool searchMoveNext)
+        {
+            var symbolMethod = GetSymbolMethodDnlib(methodToken, searchMoveNext);
+            if (symbolMethod == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < symbolMethod.SequencePoints.Count; i++)
+            {
+                var sp = symbolMethod.SequencePoints[i];
+                if (sp.IsHidden())
+                {
+                    continue;
+                }
+
+                var filePath = sp.Document.URL;
+                if (!string.IsNullOrEmpty(filePath) && sp.Line > 0)
+                {
+                    return new DatadogSequencePoint { URL = filePath, StartLine = sp.Line, StartColumn = sp.Column };
+                }
+            }
+
+            return null;
         }
     }
 }

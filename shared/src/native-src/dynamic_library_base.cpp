@@ -61,7 +61,8 @@ bool DynamicLibraryBase::Load()
     _logger->Debug("Load: ", _filePath);
 
 #if _WIN32
-    _instance = LoadLibrary(::shared::ToWSTRING(_filePath).c_str());
+    _instance = LoadLibraryEx(::shared::ToWSTRING(_filePath).c_str(),
+                              NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     if (_instance == NULL)
     {
         LPVOID msgBuffer;
@@ -92,7 +93,7 @@ bool DynamicLibraryBase::Load()
 
 bool DynamicLibraryBase::Unload()
 {
-    _logger->Debug("Unload");
+    _logger->Debug("Unloading ", _filePath);
     if (_instance == nullptr)
     {
         _logger->Warn("Unload: Unable to unload dynamic library '", _filePath,
@@ -103,6 +104,18 @@ bool DynamicLibraryBase::Unload()
 #if _WIN32
     auto result = FreeLibrary((HMODULE) _instance);
 #else
+#if LINUX
+    auto [is_buggy, glibc_version] = ::shared::HasBuggyDlclose();
+    if (is_buggy)
+    {
+        _logger->Warn("Unload: Skipping unload of dynamic library '", _filePath,
+                      "' due to buggy dlclose implementation on this system.",
+                      "GLIBC version 2.34-2.36 has a TLS-reuse bug that can cause crashes when unloading"
+                      " shared libraries. Consider updating the installed version of glibc. Found GLIBC version: ", glibc_version);
+        return false;
+    }
+
+#endif // if LINUX
     auto result = dlclose(_instance) == 0;
 #endif
 

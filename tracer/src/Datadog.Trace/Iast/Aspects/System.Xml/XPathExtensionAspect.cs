@@ -35,7 +35,7 @@ public class XPathExtensionAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(XPathExtensionAspect)}.{nameof(ReviewPath)}");
+            IastModule.LogAspectException(ex);
             return xpath;
         }
     }

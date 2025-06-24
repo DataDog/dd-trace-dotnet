@@ -5,6 +5,8 @@
 
 using System;
 using System.Data;
+using System.Data.Common;
+using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -34,13 +36,24 @@ namespace Datadog.Trace.DatabaseMonitoring
         private static readonly char[] PgHintPrefix = ['/', '*', '+']; // the characters that identify a pg_hint_plan
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatabaseMonitoringPropagator));
 
-        private static int _remainingErrorLogs = 100; // to prevent too many similar errors in the logs. We assume that after 100 logs, the incremental value of more logs is negligible.
+        // TODO: improve this rate limiting
+        // to prevent too many similar errors in the logs. We assume that after 100 logs, the incremental value of more logs is negligible.
+        private static int _remainingErrorLogs = 100;
+        private static int _remainingDirectionErrorLogs = 100;
+        private static int _remainingQuoteErrorLogs = 100;
 
-        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span)
+        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
         {
             if (integrationId is not (IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient or IntegrationId.Oracle) ||
                 propagationLevel is not (DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
+                return false;
+            }
+
+            if (command.CommandType == CommandType.StoredProcedure && (!injectStoredProcedure || integrationId != IntegrationId.SqlClient))
+            {
+                // We don't inject into StoredProcedures unless enabled as we change the commands
+                // We don't inject into StoredProcedures unless we are in SqlClient
                 return false;
             }
 
@@ -105,7 +118,152 @@ namespace Datadog.Trace.DatabaseMonitoring
             // modify the command to add the comment
             var commandText = command.CommandText ?? string.Empty;
             var propagationComment = StringBuilderCache.GetStringAndRelease(propagatorStringBuilder);
-            if (ShouldAppend(integrationId, commandText))
+
+            if (command.CommandType == CommandType.StoredProcedure && integrationId == IntegrationId.SqlClient)
+            {
+                /*
+                * For CommandType.StoredProcedure, we need to modify the command text to use an EXEC statement and swap it to a CommandType.Text.
+                * Without doing this we _cannot_ inject the comment as it will be taken as part of the stored procedure name.
+                *    in SqlCommand.cs we have: rpc.rpcName = this.CommandText; // just get the raw command text
+                * Injecting the comment in the CommandText would result in getting an exception that the StoredProcedure name wasn't found (and would look like an empty string).
+                *
+                * We CAN NOT safely do this though if the Command has any parameters that are not Input (e.g. Return, InputOutput, Output).
+                *
+                * What this function does is:
+                *   - Swap to EXEC statement (which is a text command executing a stored procedure).
+                *   - Build a Input parameter list for the EXEC statement, so that we can pass all the parameters to it.
+                * Some helpful links:
+                * reference RPC for stored procedure: https://github.com/microsoft/referencesource/blob/51cf7850defa8a17d815b4700b67116e3fa283c2/System.Data/System/Data/SqlClient/SqlCommand.cs#L5548
+                * reference text SQL (with params): https://github.com/microsoft/referencesource/blob/51cf7850defa8a17d815b4700b67116e3fa283c2/System.Data/System/Data/SqlClient/SqlCommand.cs#L4488
+                * reference text SQL (no params): https://github.com/microsoft/referencesource/blob/51cf7850defa8a17d815b4700b67116e3fa283c2/System.Data/System/Data/SqlClient/SqlCommand.cs#L4437
+                */
+
+                // check to see if we have any Return/InputOutput/Output parameters
+                if (command.Parameters != null)
+                {
+                    foreach (DbParameter? param in command.Parameters)
+                    {
+                        if (param == null)
+                        {
+                            continue;
+                        }
+
+                        if (param.Direction != ParameterDirection.Input)
+                        {
+                            if (_remainingDirectionErrorLogs > 0)
+                            {
+                                var actualRemaining = Interlocked.Decrement(ref _remainingDirectionErrorLogs);
+                                if (actualRemaining >= 0)
+                                {
+                                    Log.Warning<string, int>(
+                                        "Cannot propagate DBM data for stored procedure with non-Input parameter '{ProcedureName}'. Only Input parameters are supported for DBM propagation (will log {N} more times and then stop).",
+                                        commandText,
+                                        actualRemaining);
+                                }
+                            }
+
+                            return false;
+                        }
+                    }
+                }
+
+                var procName = command.CommandText ?? string.Empty;
+
+                if (string.IsNullOrEmpty(procName))
+                {
+                    return false;
+                }
+
+                string? quotedName;
+                try
+                {
+                    // dbo.SomeName -> [dbo].[SomeName]
+                    // this uses some underlying SqlClient code that I've copied to parse the identifier
+                    quotedName = VendoredSqlHelpers.ParseAndQuoteIdentifier(procName, isUdtTypeName: false);
+                    if (string.IsNullOrEmpty(quotedName))
+                    {
+                        // if we can't parse the identifier, return false
+                        if (_remainingQuoteErrorLogs > 0)
+                        {
+                            var actualRemaining = Interlocked.Decrement(ref _remainingQuoteErrorLogs);
+                            if (actualRemaining >= 0)
+                            {
+                                Log.Error<string, int>(
+                                    "Failed to parse/quote stored procedure '{ProcedureName}' for DBM propagation. (will log {N} more times and then stop).",
+                                    commandText,
+                                    actualRemaining);
+                            }
+                        }
+
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (_remainingQuoteErrorLogs > 0)
+                    {
+                        var actualRemaining = Interlocked.Decrement(ref _remainingQuoteErrorLogs);
+                        if (actualRemaining >= 0)
+                        {
+                            Log.Error<string, int>(
+                                ex,
+                                "Exception while attempting to parse/quote stored procedure '{ProcedureName}' for DBM propagation. (will log {N} more times and then stop).",
+                                commandText,
+                                actualRemaining);
+                        }
+                    }
+
+                    return false;
+                }
+
+                // Build parameter list for EXEC statement
+                var paramList = new StringBuilder();
+                if (command.Parameters != null)
+                {
+                    foreach (DbParameter? param in command.Parameters)
+                    {
+                        if (param == null)
+                        {
+                            continue;
+                        }
+
+                        // If we have any parameters that are not Input we can't do this safely as T-SQL vs RPC calls don't honor the parameters
+                        if (param.Direction != ParameterDirection.Input)
+                        {
+                            // NOTE: we shouldn't hit this as we check above
+                            paramList.Clear();
+                            return false;
+                        }
+
+                        if (paramList.Length > 0)
+                        {
+                            // e.g. @Input=@Input, @Input2=@Input2
+                            paramList.Append(", ");
+                        }
+
+                        paramList.Append(param.ParameterName).Append('=').Append(param.ParameterName);
+                    }
+                }
+
+                // Change command type to Text, this allows us to use the EXEC statement
+                // This changes how the SQL command is executed, but since we are only supporting INPUT parameters we should be fine
+                command.CommandType = CommandType.Text;
+
+                // Create EXEC statement with parameters
+                // NOTE: EXECUTE is the exact same as EXEC, I chose EXEC arbitrarily
+                if (paramList.Length > 0)
+                {
+                    command.CommandText = $"EXEC {quotedName} {paramList} {propagationComment}";
+                }
+                else
+                {
+                    command.CommandText = $"EXEC {quotedName} {propagationComment}";
+                }
+
+                // Log the command text for debugging purposes
+                Log.Debug("Executing stored procedure with command text: {CommandText}", command.CommandText);
+            }
+            else if (ShouldAppend(integrationId, commandText))
             {
                 command.CommandText = $"{commandText} {propagationComment}";
             }
@@ -139,7 +297,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         /// <summary>
         /// Uses a sql instruction to set a context for the current connection, bearing the span ID and trace ID.
         /// This is meant to circumvent cache invalidation issues that occur when those values are injected in comment.
-        /// Currently only working for MSSQL (uses an instruction that is specific to it)
+        /// Currently only working for Microsoft SQL Server (uses an instruction that is specific to it)
         /// </summary>
         /// <returns>True if the traceparent information was set</returns>
         internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, Span span)
@@ -180,12 +338,6 @@ namespace Datadog.Trace.DatabaseMonitoring
                 parameter.Value = contextValue;
                 parameter.DbType = DbType.Binary;
                 injectionCommand.Parameters.Add(parameter);
-
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    // avoid building the string representation in the general case where debug is disabled
-                    Log.Debug("Propagating span data for DBM for {Integration} via context_info with value {ContextValue} (propagation level: {PropagationLevel}", integrationId, HexConverter.ToString(contextValue), propagationLevel);
-                }
 
                 try
                 {

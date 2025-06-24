@@ -33,14 +33,15 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
         {
             string[] errorExceptions =
             {
-                "failed ddog_prof_Exporter_send: operation timed out",
-                "failed ddog_prof_Exporter_send: operation was canceled"
+                "ddog_prof_Exporter_send failed: operation timed out",
+                "ddog_prof_Exporter_send failed: operation was canceled"
             };
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output, transportType: TransportType.NamedPipe);
-            if (framework == "net462")
+            if (framework == "net48")
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
             runner.RunAndCheckWithRetries(RetryCount, errorExceptions);
         }
 
@@ -62,7 +63,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             var lines = File.ReadAllLines(logFile);
 
             lines.Should().ContainMatch("*Using agent endpoint windows:\\\\.\\pipe\\ForSureThisPipeDoesNotExist__I_Hope*");
-            lines.Should().ContainMatch("*failed ddog_prof_Exporter_send: error trying to connect: The system cannot find the file specified. (os error 2):*");
+            lines.Should().ContainMatch("*ddog_prof_Exporter_send failed: client error (Connect): The system cannot find the file specified. (os error 2)*");
         }
     }
 }

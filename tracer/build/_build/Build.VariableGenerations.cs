@@ -4,17 +4,39 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using CodeOwners;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI.AzurePipelines;
 using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.MSBuild;
 using NukeExtensions;
-using YamlDotNet.Serialization.NamingConventions;
 using Logger = Serilog.Log;
 
 partial class Build : NukeBuild
 {
+    private const string TracerArea = "Tracer";
+    private const string AsmArea = "ASM";
+    private const string TracingDotnet = "@DataDog/tracing-dotnet";
+    private const string ASMDotnet = "@DataDog/asm-dotnet";
+    private const string DebuggerDotnet = "@DataDog/debugger-dotnet";
+    private const string ProfilerDotnet = "@DataDog/profiling-dotnet";
+
+    class ChangedTeamValue
+    {
+        public string VariableName { get; set; }
+        public string TeamName { get; set; }
+        public bool IsChanged { get; set; }
+    }
+
+    static private ChangedTeamValue[] _changedTeamValue = new ChangedTeamValue[]
+    {
+        new ChangedTeamValue { VariableName = "isAsmChanged", TeamName = ASMDotnet},
+        new ChangedTeamValue { VariableName = "isTracerChanged", TeamName = TracingDotnet},
+        new ChangedTeamValue { VariableName = "isDebuggerChanged", TeamName = DebuggerDotnet},
+        new ChangedTeamValue { VariableName = "isProfilerChanged", TeamName = ProfilerDotnet},
+    };
+
     Target GenerateVariables
         => _ =>
         {
@@ -32,43 +54,60 @@ partial class Build : NukeBuild
                        GenerateIntegrationTestsDebuggerArm64Matrices();
                    });
 
+            bool CommonTracerChanges(string[] changedFiles, CodeOwnersParser codeOwners)
+            {
+                // These folders are owned by @DataDog/tracing-dotnet but changes should not affect ASM functionality
+                string[] nonCommonDirectories = new[]
+                {
+                    "tracer/test/",
+                    "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/",
+                    "tracer/src/Datadog.Trace.", // Does not match the main tracer project
+                    "tracer/src/Datadog.Trace/Agent/",
+                    "tracer/src/Datadog.Trace/ContinuousProfiler/",
+                    "tracer/src/Datadog.Trace/Generated/",
+                    "tracer/src/Datadog.Trace/Logging/",
+                    "tracer/src/Datadog.Trace/OpenTelemetry/",
+                    "tracer/src/Datadog.Trace/PDBs/",
+                    "tracer/src/Datadog.Trace/LibDatadog/",
+                    "tracer/src/Datadog.Trace/FaultTolerant/",
+                    "tracer/src/Datadog.Trace/DogStatsd/",
+                };
+
+                // Directories that are not explicitelly owned by ASM but are common to both teams
+                string[] commonDirectories = new[]
+{
+                    "tracer/test/Datadog.Trace.TestHelpers/",
+                };
+
+                foreach (var file in changedFiles)
+                {
+                    if ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
+                        (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
+                        !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))
+                        ))
+                    {
+                        Logger.Information($"File {file} was detected as common.");
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
             void GenerateConditionVariables()
             {
-                GenerateConditionVariableBasedOnGitChange("isAppSecChanged",
-                new[] {
-                    "tracer/src/Datadog.Trace/Iast",
-                    "tracer/src/Datadog.Tracer.Native/iast",
-                    "tracer/src/Datadog.Trace/AppSec",
-                    "tracer/test/benchmarks/Benchmarks.Trace/Asm",
-                    "tracer/test/benchmarks/Benchmarks.Trace/Iast",
-                    "tracer/test/Datadog.Trace.Security.IntegrationTests",
-                    "tracer/test/Datadog.Trace.Security.Unit.Tests",
-                    "tracer/test/test-applications/security",
-                }, new string[] { });
-                GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
-                GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
-                {
-                    "tracer/src/Datadog.Trace/Debugger",
-                    "tracer/src/Datadog.Tracer.Native",
-                    "tracer/test/Datadog.Trace.Debugger.IntegrationTests",
-                    "tracer/test/test-applications/debugger",
-                    "tracer/build/_build/Build.Steps.Debugger.cs",
-                    "tracer/build/_build/Build.ExplorationTests.cs",
-                }, new string[] { });
-                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[]
-                {
-                    "profiler/",
-                    "shared/",
-                    "build/",
-                    "tracer/build/_build/Build.Shared.Steps.cs",
-                    "tracer/build/_build/Build.Profiler.Steps.cs",
-                }, new string[] { });
+                CodeOwnersParser codeOwners = new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CodeOwners", "CODEOWNERS"));
 
-                void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
+                foreach(var changedTeamValue in _changedTeamValue)
+                {
+                    GenerateConditionVariableBasedOnGitChange(changedTeamValue, codeOwners);
+                }
+
+                void GenerateConditionVariableBasedOnGitChange(ChangedTeamValue changedTeamValue, CodeOwnersParser codeOwners)
                 {
                     var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
-                    bool isChanged;
-                    var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
+                    bool isChanged = false;
+                    var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{changedTeamValue.VariableName}";
 
                     if (Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
                     {
@@ -83,28 +122,45 @@ partial class Build : NukeBuild
                     else if(IsGitBaseBranch(baseBranch))
                     {
                         // on master, treat everything as having changed
+                        Logger.Information($"All tests will be launched (master branch).");
                         isChanged = true;
                     }
                     else
                     {
                         var changedFiles = GetGitChangedFiles(baseBranch);
-
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
-                        isChanged = changedFiles.Any(s => filters.Any(filter => s.StartsWith(filter, StringComparison.OrdinalIgnoreCase)) && !exclusionFilters.Any(filter => s.Contains(filter, StringComparison.OrdinalIgnoreCase)));
+
+                        if (changedTeamValue.TeamName == ASMDotnet && CommonTracerChanges(changedFiles, codeOwners))
+                        {
+                            isChanged = true;
+                            Logger.Information($"ASM tests will be launched based on common changes.");
+                        }
+                        else
+                        {
+                            foreach (var changedFile in changedFiles)
+                            {
+                                if (codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
+                                {
+                                    Logger.Information($"File {changedFile} is owned by {changedTeamValue.TeamName}");
+                                    isChanged = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
 
-                    Logger.Information($"{variableName} - {isChanged}");
-
+                    Logger.Information($"{changedTeamValue.VariableName} - {isChanged}");
                     var variableValue = isChanged.ToString();
-                    EnvironmentInfo.SetVariable(variableName, variableValue);
-                    AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
+                    EnvironmentInfo.SetVariable(changedTeamValue.VariableName, variableValue);
+                    AzurePipelines.Instance.SetOutputVariable(changedTeamValue.VariableName, variableValue);
+                    changedTeamValue.IsChanged = isChanged;
                 }
             }
 
             void GenerateUnitTestFrameworkMatrices()
             {
                 GenerateTfmsMatrix("unit_tests_windows_matrix", TestingFrameworks);
-                var unixFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 }).ToList();
+                var unixFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 }).ToList();
                 GenerateTfmsMatrix("unit_tests_macos_matrix", unixFrameworks);
                 GenerateLinuxMatrix("x64", unixFrameworks);
                 GenerateLinuxMatrix("arm64", unixFrameworks);
@@ -133,12 +189,23 @@ partial class Build : NukeBuild
                 }
             }
 
+            // We only call this method for the tracer and ASM areas
+            bool ShouldBeIncluded(string area)
+            {
+                if (area == AsmArea)
+                {
+                    return _changedTeamValue.First(x => x.TeamName == ASMDotnet).IsChanged;
+                }
+
+                return true;
+            }
+
             void GenerateIntegrationTestsWindowsMatrices()
             {
                 GenerateIntegrationTestsWindowsMatrix();
                 GenerateIntegrationTestsDebuggerWindowsMatrix();
-                GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET462);
-                GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET462);
+                GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET48);
+                GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET48);
                 GenerateIntegrationTestsWindowsAzureFunctionsMatrix();
             }
 
@@ -146,13 +213,20 @@ partial class Build : NukeBuild
             {
                 var targetFrameworks = TestingFrameworks;
                 var targetPlatforms = new[] { "x86", "x64" };
+                var areas = new[] { TracerArea, AsmArea };
                 var matrix = new Dictionary<string, object>();
 
                 foreach (var framework in targetFrameworks)
                 {
                     foreach (var targetPlatform in targetPlatforms)
                     {
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, });
+                        foreach (var area in areas)
+                        {
+                            if (ShouldBeIncluded(area))
+                            {
+                                matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, area = area });
+                            }
+                        }
                     }
                 }
 
@@ -187,7 +261,7 @@ partial class Build : NukeBuild
                                                framework = framework,
                                                targetPlatform = targetPlatform,
                                                debugType = debugType,
-                                               optimize = optimize,
+                                               optimize = optimize
                                            });
                             }
                         }
@@ -222,6 +296,7 @@ partial class Build : NukeBuild
             void GenerateIntegrationTestsWindowsIISMatrix(params TargetFramework[] targetFrameworks)
             {
                 var targetPlatforms = new[] { "x86", "x64" };
+                var areas = new[] { TracerArea, AsmArea };
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -229,7 +304,13 @@ partial class Build : NukeBuild
                     foreach (var targetPlatform in targetPlatforms)
                     {
                         var enable32bit = targetPlatform == "x86";
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit });
+                        foreach (var area in areas)
+                        {
+                            if (ShouldBeIncluded(area))
+                            {
+                                matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit, area = area });
+                            }
+                        }
                     }
                 }
 
@@ -261,12 +342,13 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrices()
             {
-                GenerateIntegrationTestsLinuxMatrix();
+                GenerateIntegrationTestsLinuxMatrix(true);
+                GenerateIntegrationTestsLinuxMatrix(false);
                 GenerateIntegrationTestsLinuxArm64Matrix();
                 GenerateIntegrationTestsDebuggerLinuxMatrix();
             }
 
-            void GenerateIntegrationTestsLinuxMatrix()
+            void GenerateIntegrationTestsLinuxMatrix(bool dockerTest)
             {
                 var baseImages = new []
                 {
@@ -274,21 +356,35 @@ partial class Build : NukeBuild
                     (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
 
-                var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
-
+                var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 });
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        if (dockerTest)
+                        {
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        }
+                        else
+                        {
+                            var areas = new[] { TracerArea, AsmArea };
+                            foreach (var area in areas)
+                            {
+                                if (ShouldBeIncluded(area))
+                                {
+                                    matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                                }
+                            }
+                        }
                     }
                 }
 
-                Logger.Information($"Integration test Linux matrix");
+                Logger.Information(dockerTest ? "Integration test Linux dockerTest matrix" : "Integration test Linux matrix");
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetOutputVariable("integration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                var outputVariableName = dockerTest ? "integration_tests_linux_docker_matrix" : "integration_tests_linux_matrix";
+                AzurePipelines.Instance.SetOutputVariable(outputVariableName, JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateIntegrationTestsLinuxArm64Matrix()
@@ -299,14 +395,21 @@ partial class Build : NukeBuild
                     (baseImage: "alpine", artifactSuffix: "linux-musl-arm64"),
                 };
 
-                var targetFrameworks = GetTestingFrameworks(isArm64: true).Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
+                var targetFrameworks = GetTestingFrameworks(isArm64: true).Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 });
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        if (ShouldBeIncluded(AsmArea))
+                        {
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        }
+                        else
+                        {
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = TracerArea });
+                        }
                     }
                 }
 
@@ -317,7 +420,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsDebuggerLinuxMatrix()
             {
-                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 });
+                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET48 });
                 var baseImages = new []
                 {
                     (baseImage: "debian", artifactSuffix: "linux-x64"),
@@ -338,7 +441,7 @@ partial class Build : NukeBuild
                                            publishTargetFramework = framework,
                                            baseImage = baseImage,
                                            optimize = optimize,
-                                           artifactSuffix = artifactSuffix,
+                                           artifactSuffix = artifactSuffix
                                        });
                         }
                     }
@@ -354,27 +457,27 @@ partial class Build : NukeBuild
                 var isDebuggerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isDebuggerChanged") ?? "false");
                 var isProfilerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isProfilerChanged") ?? "false");
 
-                var useCases = new List<string>();
+                var useCases = new List<global::ExplorationTestUseCase>();
                 if (isTracerChanged)
                 {
-                    useCases.Add(global::ExplorationTestUseCase.Tracer.ToString());
+                    useCases.Add(global::ExplorationTestUseCase.Tracer);
                 }
 
                 if (isDebuggerChanged)
                 {
-                    useCases.Add(global::ExplorationTestUseCase.Debugger.ToString());
+                    useCases.Add(global::ExplorationTestUseCase.Debugger);
                 }
 
                 if (isProfilerChanged)
                 {
-                    useCases.Add(global::ExplorationTestUseCase.ContinuousProfiler.ToString());
+                    useCases.Add(global::ExplorationTestUseCase.ContinuousProfiler);
                 }
 
                 GenerateExplorationTestsWindowsMatrix(useCases);
                 GenerateExplorationTestsLinuxMatrix(useCases);
             }
 
-            void GenerateExplorationTestsWindowsMatrix(IEnumerable<string> useCases)
+            void GenerateExplorationTestsWindowsMatrix(IEnumerable<global::ExplorationTestUseCase> useCases)
             {
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
                 var matrix = new Dictionary<string, object>();
@@ -382,9 +485,17 @@ partial class Build : NukeBuild
                 {
                     foreach (var testDescription in testDescriptions)
                     {
+                        if (explorationTestUseCase == global::ExplorationTestUseCase.Debugger
+                            && (testDescription.Name is global::ExplorationTestName.cake or global::ExplorationTestName.protobuf))
+                        {
+                            // Debugger tests are very slow on Windows only on cake and protobuf tests,
+                            //  so exclude them for now, pending investigation by debugger team
+                            continue;
+                        }
+
                         matrix.Add(
                             $"{explorationTestUseCase}_{testDescription.Name.ToString()}",
-                            new { explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name.ToString() });
+                            new { explorationTestUseCase = explorationTestUseCase.ToString(), explorationTestName = testDescription.Name.ToString() });
                     }
                 }
 
@@ -393,10 +504,10 @@ partial class Build : NukeBuild
                 AzurePipelines.Instance.SetOutputVariable("exploration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateExplorationTestsLinuxMatrix(IEnumerable<string> useCases)
+            void GenerateExplorationTestsLinuxMatrix(IEnumerable<global::ExplorationTestUseCase> useCases)
             {
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
-                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0, });
+                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0, });
 
                 var baseImages = new []
                 {
@@ -418,7 +529,7 @@ partial class Build : NukeBuild
                                 {
                                     matrix.Add(
                                         $"{baseImage}_{targetFramework}_{explorationTestUseCase}_{testDescription.Name}",
-                                        new { baseImage = baseImage, publishTargetFramework = targetFramework, explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name, artifactSuffix = artifactSuffix });
+                                        new { baseImage = baseImage, publishTargetFramework = targetFramework, explorationTestUseCase = explorationTestUseCase.ToString(), explorationTestName = testDescription.Name, artifactSuffix = artifactSuffix });
                                 }
                             }
                         }
@@ -458,7 +569,8 @@ partial class Build : NukeBuild
 
                 // tracer home / fleet installer smoke tests
                 GenerateWindowsTracerHomeSmokeTestsMatrix();
-                GenerateWindowsFleetInstalerSmokeTestsMatrix();
+                GenerateWindowsFleetInstallerIisSmokeTestsMatrix();
+                GenerateWindowsFleetInstallerSmokeTestsMatrix();
 
                 // macos smoke tests
                 GenerateMacosDotnetToolNugetSmokeTestsMatrix();
@@ -1368,7 +1480,7 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetOutputVariable("tracer_home_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
-                void GenerateWindowsFleetInstalerSmokeTestsMatrix()
+                void GenerateWindowsFleetInstallerIisSmokeTestsMatrix()
                 {
                     var dockerName = "mcr.microsoft.com/dotnet/framework/aspnet";
 
@@ -1383,7 +1495,9 @@ partial class Build : NukeBuild
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
-                                     let dockerTag = $"{image.PublishFramework}_{platform}_{image.RuntimeTag}".Replace('.', '_')
+                                     from globalInstall in new[] { false, true }
+                                     let installCommand = globalInstall ? "enable-global-instrumentation" : "enable-iis-instrumentation"
+                                     let dockerTag = $"{image.PublishFramework}_{platform}_{image.RuntimeTag}_{(globalInstall ? "global" : "iis")}".Replace('.', '_')
                                      select new
                                      {
                                          dockerTag = dockerTag,
@@ -1391,6 +1505,38 @@ partial class Build : NukeBuild
                                          runtimeImage = $"{dockerName}:{image.RuntimeTag}",
                                          targetPlatform = platform,
                                          channel = GetInstallerChannel(image.PublishFramework),
+                                         installCommand = installCommand,
+                                     }).ToDictionary(x=>x.dockerTag, x => x);
+
+                    Logger.Information($"Installer smoke tests fleet-installer iis matrix Windows");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable("fleet_installer_windows_iis_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateWindowsFleetInstallerSmokeTestsMatrix()
+                {
+                    var dockerName = "mcr.microsoft.com/dotnet/aspnet";
+
+                    var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
+                    var runtimeImages = new SmokeTestImage[]
+                    {
+                        new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
+                    };
+
+                    var matrix = (
+                                     from platform in platforms
+                                     from image in runtimeImages
+                                     let dockerTag = $"{image.PublishFramework}_{platform}_{image.RuntimeTag}".Replace('.', '_')
+                                     let channel32Bit = platform == MSBuildTargetPlatform.x86
+                                                            ? GetInstallerChannel(image.PublishFramework)
+                                                            : string.Empty
+                                     select new
+                                     {
+                                         dockerTag = dockerTag,
+                                         publishFramework = image.PublishFramework,
+                                         runtimeImage = $"{dockerName}:{image.RuntimeTag}",
+                                         channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 
                     Logger.Information($"Installer smoke tests fleet-installer matrix Windows");
@@ -1499,7 +1645,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsDebuggerArm64Matrices()
             {
-                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1,  });
+                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1,  });
                 var baseImages = new []
                 {
                     (baseImage: "debian", artifactSuffix: "linux-arm64"),

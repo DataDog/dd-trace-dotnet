@@ -83,7 +83,7 @@ public class DirectoryAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DirectoryAspect)}.{nameof(ReviewPath)}");
+            IastModule.LogAspectException(ex);
             return path;
         }
     }

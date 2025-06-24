@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -17,6 +18,7 @@ internal sealed class AWSCodePipelineEnvironmentValues<TValueProvider>(TValuePro
 
         IsCI = true;
         Provider = "awscodepipeline";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.AwsCodePipeline;
         PipelineId = ValueProvider.GetValue(Constants.AWSCodePipelineId);
 
         VariablesToBypass = new Dictionary<string, string?>();

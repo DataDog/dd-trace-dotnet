@@ -264,6 +264,7 @@
     <ClInclude Include="NetworkRequestInfo.h" />
     <ClInclude Include="RawNetworkSample.h" />
     <ClInclude Include="RawSamples.hpp" />
+    <ClInclude Include="RawSampleTransformer.h" />
     <ClInclude Include="SamplesEnumerator.h" />
     <ClInclude Include="ServiceBase.h" />
     <ClInclude Include="SsiManager.h" />
@@ -412,6 +413,7 @@
     <ClCompile Include="NetworkActivity.cpp" />
     <ClCompile Include="NetworkProvider.cpp" />
     <ClCompile Include="NetworkRequestInfo.cpp" />
+    <ClCompile Include="RawSampleTransformer.cpp" />
     <ClCompile Include="ServiceBase.cpp" />
     <ClCompile Include="SkipProfileHeuristicType.h" />
     <ClCompile Include="SsiManager.cpp" />

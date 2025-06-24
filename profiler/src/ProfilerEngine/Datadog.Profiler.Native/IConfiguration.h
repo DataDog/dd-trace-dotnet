@@ -80,4 +80,5 @@ public:
     virtual bool IsHttpProfilingEnabled() const = 0;
     virtual std::chrono::milliseconds GetHttpRequestDurationThreshold() const = 0;
     virtual bool ForceHttpSampling() const = 0;
+    virtual bool IsWaitHandleProfilingEnabled() const = 0;
 };

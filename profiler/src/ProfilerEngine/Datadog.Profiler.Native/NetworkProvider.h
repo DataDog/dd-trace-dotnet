@@ -20,11 +20,9 @@
 
 class SampleValueTypeProvider;
 class IManagedThreadList;
-class IFrameStore;
 class IThreadsCpuManager;
-class IAppDomainStore;
-class IRuntimeIdStore;
 class IConfiguration;
+class RawSampleTransformer;
 
 
 class NetworkProvider :
@@ -36,10 +34,7 @@ public:
         SampleValueTypeProvider& valueTypeProvider,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
-        IFrameStore* pFrameStore,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
+        RawSampleTransformer* rawSampleTransformer,
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,

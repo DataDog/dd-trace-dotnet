@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.Tagging
         [Fact]
         public void GetTag_GetMetric_ReturnUpdatedValues()
         {
-            var tags = new CommonTags();
+            var tags = new TagsList();
             var scope = _tracer.StartActiveInternal("root", tags: tags);
             var span = scope.Span;
 
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
-            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(SamplingMechanism.Default));
+            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, SamplingMechanism.Default);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().HaveCount(customTagCount + 5);
 
@@ -146,15 +146,15 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
-            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialized first in the trace chunk
+            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialized first in the trace chunk, and this tag is added to the first span
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
             deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 6);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 6);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
-            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 2);
+            deserializedSpan.Metrics.Should().HaveCount(customTagCount + 2);
 
             for (int i = 0; i < customTagCount; i++)
             {
@@ -186,14 +186,14 @@ namespace Datadog.Trace.Tests.Tagging
 
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
-            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialize first in the trace chunk
+            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialized first in the trace chunk, and this tag is added to the first span
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
             deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 5);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 5);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
-            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 1);
+            deserializedSpan.Metrics.Should().HaveCount(customTagCount + 1);
 
             for (int i = 0; i < customTagCount; i++)
             {
@@ -267,9 +267,6 @@ namespace Datadog.Trace.Tests.Tagging
             // Those numbers are picked to test the variable-size header of MessagePack
             // The header is resized when there are 16 or more elements in the collection
             // Neither common or additional tags have enough elements, but put together they will cause to use a bigger header
-            var tags = (CommonTags)span.Tags;
-            tags.SamplingLimitDecision = 0.5;
-
             span.Context.TraceContext.Environment = "Test";
 
             // Override the properties
@@ -303,7 +300,7 @@ namespace Datadog.Trace.Tests.Tagging
                                      })
                                     .ToArray();
 
-            if (isTag && type != typeof(CommonTags))
+            if (isTag && type != typeof(TagsList))
             {
                 // skip this for CommonTags because it is the only type without any string tags
                 propertyAndTagName

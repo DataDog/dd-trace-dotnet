@@ -65,7 +65,7 @@ public class WebClientAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(WebClientAspect)}.{nameof(Review)}");
+            IastModule.LogAspectException(ex);
             return parameter;
         }
     }
@@ -139,7 +139,7 @@ public class WebClientAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(WebClientAspect)}.{nameof(ReviewUri)}");
+            IastModule.LogAspectException(ex);
             return parameter;
         }
     }

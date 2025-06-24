@@ -211,6 +211,7 @@
       <type fullname="System.Data.CommandType" />
       <type fullname="System.Data.Common.DbCommand" />
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
+      <type fullname="System.Data.Common.DbParameter" />
       <type fullname="System.Data.ConnectionState" />
       <type fullname="System.Data.DbType" />
       <type fullname="System.Data.IDataParameter" />
@@ -220,6 +221,7 @@
       <type fullname="System.Data.IDbConnection" />
       <type fullname="System.Data.IDbDataParameter" />
       <type fullname="System.Data.IDbTransaction" />
+      <type fullname="System.Data.ParameterDirection" />
    </assembly>
    <assembly fullname="System.Data.SqlClient" />
    <assembly fullname="System.Data.SQLite" />
@@ -659,6 +661,7 @@
       <type fullname="System.Math" />
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
+      <type fullname="System.MissingMemberException" />
       <type fullname="System.MulticastDelegate" />
       <type fullname="System.Net.WebUtility" />
       <type fullname="System.NonSerializedAttribute" />
@@ -742,6 +745,7 @@
       <type fullname="System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />
+      <type fullname="System.Runtime.CompilerServices.CallerMemberNameAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilerGeneratedAttribute" />
       <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2" />
@@ -869,6 +873,7 @@
       <type fullname="System.UriFormat" />
       <type fullname="System.UriHostNameType" />
       <type fullname="System.UriKind" />
+      <type fullname="System.UriPartial" />
       <type fullname="System.ValueTuple`1" />
       <type fullname="System.ValueTuple`2" />
       <type fullname="System.ValueTuple`3" />

@@ -22,7 +22,6 @@ using Nuke.Common.Tools.Git;
 using Octokit;
 using Octokit.GraphQL;
 using Octokit.GraphQL.Model;
-using ThroughputComparison;
 using YamlDotNet.Serialization.NamingConventions;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -35,7 +34,6 @@ using Milestone = Octokit.Milestone;
 using Release = Octokit.Release;
 using Logger = Serilog.Log;
 using Nuke.Common.Utilities;
-using OpenAI;
 
 partial class Build
 {
@@ -44,9 +42,6 @@ partial class Build
 
     [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME", List = false)]
     readonly string GitHubRepositoryName = "dd-trace-dotnet";
-
-    [Parameter("An OpenAI key", Name = "OPEN_AI_KEY")]
-    readonly string OpenAIKey;
 
     [Parameter("An Azure Devops PAT (for use in GitHub Actions)", Name = "AZURE_DEVOPS_TOKEN")]
     readonly string AzureDevopsToken;
@@ -97,71 +92,6 @@ partial class Build
                 new IssueUpdate { Milestone = milestone.Number });
 
             Console.WriteLine($"PR assigned");
-        });
-
-    Target LLMPRReview => _ => _
-        .Unlisted()
-        .Requires(() => GitHubRepositoryName)
-        .Requires(() => GitHubToken)
-        .Requires(() => OpenAIKey)
-        .Requires(() => PullRequestNumber)
-        .Executes(async () =>
-        {
-            var executeLocal = IsLocalBuild;
-            var excludePath = new string[] { "Datadog.Trace/Generated", ".g.cs" };
-            var extensionsToReview = new[] { ".csproj", ".cs", ".yml", ".h", ".cpp", ".dockerfile" };
-            var prompt = "Review this pull request with a focus on improving performance and bug detection. Make a list of the most important areas that need enhancement. For each suggestion, name the involved file and include both the original code and your recommended change, adding the corrected code if applicable. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
-
-            string result = string.Empty;
-            var client = GetGitHubClient();
-
-            var pullRequest = await client.PullRequest.Get(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
-            var pullRequestFiles = await client.PullRequest.Files(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
-
-            string changesText = string.Empty;
-            foreach (var file in pullRequestFiles)
-            {
-                if (!extensionsToReview.Any(ext => file.FileName.EndsWith(ext)) || excludePath.Any(x => file.FileName.Contains(x, StringComparison.OrdinalIgnoreCase)))
-                {
-                    continue;
-                }
-
-                changesText += ($"Filename: {file.FileName}" + Environment.NewLine + ($"{file.Patch}") + Environment.NewLine + Environment.NewLine);
-            }
-
-            if (string.IsNullOrEmpty(changesText))
-            {
-                result = "No changes detected.";
-            }
-            else
-            {
-                var fullPrompt = prompt + changesText;
-
-                result = OpenAiApiCall.TryGetReponse(ref fullPrompt, OpenAIKey);
-
-                if (executeLocal)
-                {
-                    Console.Write(fullPrompt);
-                }
-            }
-
-            if (string.IsNullOrEmpty(result))
-            {
-                Console.WriteLine("Error in OpenAI's response");
-                result = "Error in OpenAI's response";
-            }
-
-            var llmReport = new StringBuilder();
-            llmReport.AppendLine("## LLM Report").AppendLine(result).AppendLine();
-
-            if (executeLocal)
-            {
-                Console.WriteLine(llmReport.ToString());
-            }
-            else
-            {
-                await ReplaceCommentInPullRequest(PullRequestNumber.Value, "## LLM Report", llmReport.ToString());
-            }
         });
 
     Target SummaryOfSnapshotChanges => _ => _
@@ -517,22 +447,12 @@ partial class Build
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
                 "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
-                "tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
-                "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
-                "tracer/src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj",
                 "tracer/src/Datadog.Tracer.Native/CMakeLists.txt",
                 "tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h",
                 "tracer/src/Datadog.Tracer.Native/Resource.rc",
-                "tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
-                "tracer/src/Datadog.Trace.BenchmarkDotNet/Datadog.Trace.BenchmarkDotNet.csproj",
-                "tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
-                "tracer/src/Datadog.Trace.Tools.dd_dotnet/Datadog.Trace.Tools.dd_dotnet.csproj",
-                "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
-                "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
+                "tracer/src/Directory.Build.props",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
-                "tracer/src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj",
-                "tracer/tools/PipelineMonitor/PipelineMonitor.csproj",
             };
 
             if (ExpectChangelogUpdate)
@@ -939,14 +859,12 @@ partial class Build
               await ReplaceCommentInPullRequest(prNumber, "## Code Coverage Report", markdown);
           });
 
-    Target CompareBenchmarksResults => _ => _
+    Target CompareBenchmarksResultsBP => _ => _
          .Unlisted()
+         .Description("Runs the benchmark comparison against previous executions in the benchmarking platform")
          .DependsOn(CreateRequiredDirectories)
-         .Requires(() => AzureDevopsToken)
          .Requires(() => GitHubRepositoryName)
-         .Requires(() => GitHubToken)
-         .Requires(() => BenchmarkCategory)
-         .Executes(async () =>
+         .Executes(() =>
          {
              if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
              {
@@ -957,148 +875,10 @@ partial class Build
              var masterDir = BuildDataDirectory / "previous_benchmarks";
              var prDir = BuildDataDirectory / "benchmarks";
 
-             EnsureCleanDirectory(masterDir);
-
-             // Connect to Azure DevOps Services
-             var connection = new VssConnection(
-                 new Uri(AzureDevopsOrganisation),
-                 new VssBasicCredential(string.Empty, AzureDevopsToken));
-
-             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
-             var artifactName = string.Empty;
-             switch (BenchmarkCategory)
-             {
-                 case  "tracer": artifactName = "benchmarks_results"; break;
-                 case  "appsec": artifactName = "benchmarks_appsec_results"; break;
-                 default: Logger.Warning("Unknown benchmark category {BenchmarkCategory}. Skipping comparison", BenchmarkCategory); break;
-             }
-
-             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", _ => artifactName, masterDir, buildReason: null);
-
-             if (oldBuild is null)
-             {
-                    Logger.Warning("Old build is null");
-                    return;
-             }
-
-             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName, BenchmarkCategory);
-
-             await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for " + BenchmarkCategory, markdown);
-         });
-
-    Target CompareThroughputResults => _ => _
-         .Unlisted()
-         .DependsOn(CreateRequiredDirectories)
-         .Requires(() => AzureDevopsToken)
-         .Requires(() => GitHubRepositoryName)
-         .Requires(() => GitHubToken)
-         .Executes(async () =>
-         {
-             var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
-
-             var testedCommit = GetCommitDetails();
-
-             var throughputDir = BuildDataDirectory / "throughput";
-             var masterDir = throughputDir / "master";
-             var oldBenchmarksDir = throughputDir / "benchmarks_2_9_0";
-             var latestBenchmarksDir = throughputDir / "latest_benchmarks";
-             var commitDir = throughputDir / "current";
-
-             FileSystemTasks.EnsureCleanDirectory(masterDir);
-             FileSystemTasks.EnsureCleanDirectory(oldBenchmarksDir);
-             FileSystemTasks.EnsureCleanDirectory(latestBenchmarksDir);
-
-             // Connect to Azure DevOps Services
-             var connection = new VssConnection(
-                 new Uri(AzureDevopsOrganisation),
-                 new VssBasicCredential(string.Empty, AzureDevopsToken));
-
-             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
-
-             // Grab the comparison artifacts
-             var masterBuild = await GetCrankArtifacts(buildHttpClient, "refs/heads/master", masterDir);
-             var oldBenchmarkBuild = await GetCrankArtifacts(buildHttpClient, "refs/heads/benchmarks/2.9.0", oldBenchmarksDir);
-             var (newBenchmarkBuild, benchmarkVersion) = await GetCrankArtifactsForLatestBenchmarkBranch(buildHttpClient, latestBenchmarksDir);
-
-             var commitName = isPr ? $"This PR ({prNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
-             var sources = new List<CrankResultSource>
-             {
-                 new(commitName, testedCommit, CrankSourceType.CurrentCommit, commitDir),
-                 new("master", masterBuild.SourceVersion, CrankSourceType.Master, masterDir),
-                 new("benchmarks/2.9.0", oldBenchmarkBuild.SourceVersion, CrankSourceType.OldBenchmark, oldBenchmarksDir),
-             };
-
-             if (newBenchmarkBuild is not null && benchmarkVersion is not null)
-             {
-                 sources.Add(new($"benchmarks/{benchmarkVersion}", newBenchmarkBuild.SourceVersion, CrankSourceType.LatestBenchmark, latestBenchmarksDir));
-             }
-
-             var markdown = CompareThroughput.GetMarkdown(sources);
-
-             Logger.Information("Markdown build complete, writing report");
-
-             // save the report so we can upload it as an atefact for prosperity
-             await File.WriteAllTextAsync(throughputDir / "throughput_report.md", markdown);
-
-             if(isPr)
-             {
-                 Logger.Information("Updating PR comment on GitHub");
-                 await ReplaceCommentInPullRequest(prNumber, "## Throughput/Crank Report", markdown);
-             }
-
-             async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, string Version)> GetCrankArtifactsForLatestBenchmarkBranch(BuildHttpClient httpClient, AbsolutePath directory)
-             {
-                 // current (not released version)
-                 var version = new Version(Version);
-                 var versionsToCheck = 3;
-                 while (versionsToCheck > 0 && version.Minor > 0)
-                 {
-                     // only looking back across minor releases (ignoring patch etc)
-                     versionsToCheck--;
-                     version = new Version(version.Major, version.Minor - 1, 0);
-
-                     try
-                     {
-                         var thisVersion = $"{version.Major}.{version.Minor}.0";
-                         var build = await GetCrankArtifacts(httpClient, $"refs/heads/benchmarks/{thisVersion}", directory);
-                         return (build, thisVersion);
-                     }
-                     catch (Exception)
-                     {
-                         // if this fails, it's because we have no primary artifacts for that branch
-                         Console.WriteLine($"No artifacts found for version {version}, checking next branch");
-                     }
-                 }
-
-                 Console.WriteLine("No benchmarks found, skipping");
-                 return (null, null);
-             }
-
-             async Task<Microsoft.TeamFoundation.Build.WebApi.Build> GetCrankArtifacts(BuildHttpClient httpClient, string branch, AbsolutePath directory)
-             {
-                 // find the first build with the linux crank results
-                 var (build, _) = await FindAndDownloadAzureArtifact(httpClient, branch, build => "crank_linux_x64_1", directory, buildReason: null);
-
-                 // get all the other artifacts from the same build for consistency
-                 var artifacts = new[] { "crank_linux_arm64_1", "crank_linux_x64_asm_1", "crank_windows_x64_1" };
-                 foreach (var artifactName in artifacts)
-                 {
-                     try
-                     {
-                         var artifact = await httpClient.GetArtifactAsync(
-                                        project: AzureDevopsProjectId,
-                                        buildId: build.Id,
-                                        artifactName: artifactName);
-                         await DownloadAzureArtifact(directory, artifact, AzureDevopsToken);
-                     }
-                     catch (ArtifactNotFoundException)
-                     {
-                         Console.WriteLine($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
-                     }
-                 }
-
-                 return build;
-             }
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, "master", GitHubRepositoryName, "benchmark platform");
+             string filePath = Path.Combine(Path.GetTempPath(), "benchmarks_report.md");
+             Console.WriteLine($"The file was stored at: {filePath}");
+             File.WriteAllText(filePath, markdown);
          });
 
     Target CompareExecutionTimeBenchmarkResults => _ => _

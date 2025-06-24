@@ -42,7 +42,7 @@ public class EntityCommandAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(EntityCommandAspect)}.{nameof(ReviewSqlCommand)}");
+            IastModule.LogAspectException(ex);
             return command;
         }
     }

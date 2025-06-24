@@ -9,13 +9,16 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "RawCpuSample.h"
+#include "RawSampleTransformer.h"
 #include "SamplesEnumerator.h"
+#include "SampleValueTypeProvider.h"
 
 using namespace std::chrono_literals;
 
-NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(CpuTimeProvider* cpuTimeProvider) :
-    _cpuTimeProvider{cpuTimeProvider},
-    _previousTotalCpuTime{0}
+NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* sampleTransformer) :
+    _sampleTransformer{sampleTransformer},
+    _previousTotalCpuTime{0},
+    _valueOffsets{valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions)}
 {
 }
 
@@ -86,7 +89,7 @@ std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
 
     // Cpu Time provider knows the offset of the Cpu value
     // So leave the transformation to it
-    auto sample = _cpuTimeProvider->TransformRawSample(rawSample);
+    auto sample = _sampleTransformer->Transform(rawSample, _valueOffsets);
 
     // The resulting callstack of the transformation is empty
     // Add a fake "GC" frame to the sample
@@ -96,9 +99,9 @@ std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
         sample->AddFrame(frame);
     }
 
-    for (auto const& label : GetLabels())
+    for (auto&& label : GetLabels())
     {
-        sample->AddLabel(Label{label.first,label.second});
+        sample->AddLabel(std::move(label));
     }
 
     enumerator->Set(sample);

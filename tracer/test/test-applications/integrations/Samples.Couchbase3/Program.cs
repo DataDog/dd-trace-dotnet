@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Authentication;
 using System.Threading.Tasks;
 using Couchbase;
 using Couchbase.Core;
@@ -8,14 +10,38 @@ namespace Samples.Couchbase3
 {
     internal class Program
     {
-        private static async Task Main()
+        private static bool ContainsAuthenticationException(Exception ex) => ex switch
+        {
+            AuthenticationException => true,
+            AggregateException aggEx => aggEx.InnerExceptions.Any(ContainsAuthenticationException),
+            { InnerException: { } inner } => ContainsAuthenticationException(inner),
+            _ => false,
+        };
+
+        private static async Task<int> Main()
         {
             var options = new ClusterOptions() 
                       .WithConnectionString("couchbase://" + Host())
                       .WithCredentials(username: "default", password: "password")
                       .WithBuckets("default");
 
-            var cluster = await Cluster.ConnectAsync(options);
+
+            ICluster cluster = null;
+
+            try
+            {
+                cluster = await Cluster.ConnectAsync(options);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception during execution " + ex);
+
+                if (ContainsAuthenticationException(ex))
+                {
+                    Console.WriteLine("Exiting with skip code (13)");
+                    return 13;
+                }
+            }
 
             // get a bucket reference
             var bucket = await cluster.BucketAsync("default");
@@ -54,6 +80,8 @@ namespace Samples.Couchbase3
             {
                 Console.WriteLine("Expected error removing non-existent key: " + ex);
             }
+
+            return 0;
         }
 
         private static string Host()

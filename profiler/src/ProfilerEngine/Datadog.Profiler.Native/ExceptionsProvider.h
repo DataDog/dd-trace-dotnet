@@ -24,6 +24,7 @@
 
 class IConfiguration;
 class SampleValueTypeProvider;
+class RawSampleTransformer;
 
 class ExceptionsProvider :
     public CollectorBase<RawExceptionSample>,
@@ -36,9 +37,7 @@ public:
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
         IConfiguration* pConfiguration,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
+        RawSampleTransformer* rawSampleTransformer,
         MetricsRegistry& metricsRegistry,
         CallstackProvider pool,
         shared::pmr::memory_resource* memoryResource);
@@ -46,7 +45,7 @@ public:
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
 
-    UpscalingInfo GetInfo() override;
+    std::list<UpscalingInfo> GetInfos() override;
 
 private:
     struct ExceptionBucket

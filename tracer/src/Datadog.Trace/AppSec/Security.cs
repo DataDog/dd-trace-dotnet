@@ -121,7 +121,7 @@ namespace Datadog.Trace.AppSec
 
         internal string? InitializationError { get; private set; }
 
-        internal bool WafExportsErrorHappened => _libraryInitializationResult?.ExportErrorHappened ?? false;
+        internal bool WafExportsErrorHappened => _libraryInitializationResult is { Status: LibraryInitializationResult.LoadStatus.ExportError };
 
         internal string? WafRuleFileVersion { get; private set; }
 
@@ -215,7 +215,7 @@ namespace Datadog.Trace.AppSec
                         InitWafAndInstrumentations();
                         UpdateActiveAddresses();
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
-                        if (_wafInitResult?.RuleFileVersion is not null)
+                        if (_wafInitResult?.RuleFileVersion is { Length: > 0 })
                         {
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                             TelemetryFactory.Metrics.SetWafAndRulesVersion(_waf!.Version, WafRuleFileVersion);
@@ -251,7 +251,7 @@ namespace Datadog.Trace.AppSec
                     productsCount += config.Value.Count;
                 }
 
-                var onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.Errors);
+                var onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.RuleErrors);
                 var applyDetails = new ApplyDetails[productsCount];
                 var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
 
@@ -290,7 +290,7 @@ namespace Datadog.Trace.AppSec
                 // It will happen if the WAF version used does not support new operators defined in the rules
                 foreach (var error in errors)
                 {
-                    if (!error.Key.ToLower().StartsWith("unknown matcher:", StringComparison.OrdinalIgnoreCase))
+                    if (!error.Key.ToLower().Contains("unknown matcher:"))
                     {
                         return false;
                     }
@@ -550,14 +550,17 @@ namespace Datadog.Trace.AppSec
                 WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                 var oldWaf = _waf;
                 _waf = _wafInitResult.Waf;
-                oldWaf?.Dispose();
-                Log.Debug("Disposed old waf and affected new waf");
+                if (oldWaf is not null)
+                {
+                    oldWaf.Dispose();
+                    Log.Debug("Disposed old waf and created a new one");
+                }
 
                 Instrumentation.EnableTracerInstrumentations(InstrumentationCategory.AppSec);
                 _rateLimiter ??= new(_settings.TraceRateLimit);
                 _configurationState.AppsecEnabled = true;
                 InitializationError = null;
-                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.AppsecEnabled, _configurationState.RuleSetTitle);
+                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, from ruleset: {RuleSet}", _settings.AppsecEnabled, _configurationState.RuleSetTitle);
 
                 if (oldWaf is null)
                 {
@@ -594,7 +597,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal void SetTraceSamplingPriority(Span span)
+        internal void SetTraceSamplingPriority(Span span, bool setSource = true)
         {
             if (!_settings.KeepTraces)
             {
@@ -605,7 +608,10 @@ namespace Datadog.Trace.AppSec
             else if (_rateLimiter?.Allowed(span) ?? false)
             {
                 span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-                span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
+                if (setSource)
+                {
+                    span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
+                }
             }
         }
 

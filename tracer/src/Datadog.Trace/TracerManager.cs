@@ -20,6 +20,8 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.LibDatadog;
+using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -32,6 +34,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
+using NativeInterop = Datadog.Trace.LibDatadog.NativeInterop;
 
 namespace Datadog.Trace
 {
@@ -70,6 +73,7 @@ namespace Datadog.Trace
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
+            ISpanEventsManager spanEventsManager,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -99,6 +103,7 @@ namespace Datadog.Trace
             RemoteConfigurationManager = remoteConfigurationManager;
             DynamicConfigurationManager = dynamicConfigurationManager;
             TracerFlareManager = tracerFlareManager;
+            SpanEventsManager = new SpanEventsManager(discoveryService);
 
             var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings, settings.PeerServiceNameMappings);
             PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema);
@@ -165,6 +170,8 @@ namespace Datadog.Trace
 
         public RuntimeMetricsWriter RuntimeMetrics { get; }
 
+        public ISpanEventsManager SpanEventsManager { get; }
+
         public PerTraceSettings PerTraceSettings { get; }
 
         public SpanContextPropagator SpanContextPropagator { get; }
@@ -223,6 +230,7 @@ namespace Datadog.Trace
             DynamicConfigurationManager.Start();
             TracerFlareManager.Start();
             RemoteConfigurationManager.Start();
+            SpanEventsManager.Start();
         }
 
         /// <summary>
@@ -533,6 +541,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("bypass_http_request_url_caching_enabled");
                     writer.WriteValue(instanceSettings.BypassHttpRequestUrlCachingEnabled);
 
+                    writer.WritePropertyName("inject_context_into_stored_procedures_enabled");
+                    writer.WriteValue(instanceSettings.InjectContextIntoStoredProceduresEnabled);
+
                     writer.WritePropertyName("data_streams_enabled");
                     writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
 
@@ -585,13 +596,11 @@ namespace Datadog.Trace
                     }
 
                     writer.WriteEndArray();
-
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
 
                 Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
-
                 OverrideErrorLog.Instance.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
                 instanceSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
             }
@@ -663,7 +672,7 @@ namespace Datadog.Trace
             if (_firstInitialization)
             {
                 _firstInitialization = false;
-                OneTimeSetup();
+                OneTimeSetup(newManager.Settings);
             }
 
             if (newManager.Settings.StartupDiagnosticLogEnabled)
@@ -674,13 +683,16 @@ namespace Datadog.Trace
             return newManager;
         }
 
-        private static void OneTimeSetup()
+        private static void OneTimeSetup(TracerSettings tracerSettings)
         {
             // Register callbacks to make sure we flush the traces before exiting
             LifetimeManager.Instance.AddAsyncShutdownTask(RunShutdownTasksAsync);
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
+
+            // Record the service discovery metadata
+            ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings);
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
@@ -705,6 +717,8 @@ namespace Datadog.Trace
                     instance.DynamicConfigurationManager.Dispose();
                     Log.Debug("Disposing TracerFlareManager");
                     instance.TracerFlareManager.Dispose();
+                    Log.Debug("Disposing SpanEventsManager");
+                    instance.SpanEventsManager.Dispose();
 
                     Log.Debug("Disposing AgentWriter.");
                     var flushTracesTask = instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;

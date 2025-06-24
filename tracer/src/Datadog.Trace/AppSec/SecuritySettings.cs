@@ -47,6 +47,8 @@ namespace Datadog.Trace.AppSec
             CanBeToggled = !enabledEnvVar.ConfigurationResult.IsValid;
             AppsecEnabled = enabledEnvVar.WithDefault(false);
 
+            ApmTracingEnabled = config.WithKeys(ConfigurationKeys.ApmTracingEnabled).AsBool(true);
+
             Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString();
             CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString();
             var extraHeaders = config.WithKeys(ConfigurationKeys.AppSec.ExtraHeaders).AsString();
@@ -129,6 +131,17 @@ namespace Datadog.Trace.AppSec
                                            .AsDouble(30.0, val => val >= 0.0)
                                            .Value;
 
+            ApiSecurityEndpointCollectionEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled)
+                                           .AsBool(false);
+
+            ApiSecurityEndpointCollectionMessageLimit = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionMessageLimit)
+                                           .AsInt32(300, val => val >= 0)
+                                           .Value;
+
+            ApiSecurityParseResponseBody = config
+                                .WithKeys(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody)
+                                .AsBool(true);
+
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
 
@@ -171,7 +184,13 @@ namespace Datadog.Trace.AppSec
 
         public int ApiSecurityMaxConcurrentRequests { get; }
 
+        public bool ApiSecurityEndpointCollectionEnabled { get; }
+
+        public int ApiSecurityEndpointCollectionMessageLimit { get; }
+
         public bool AppsecEnabled { get; }
+
+        public bool ApmTracingEnabled { get; }
 
         public bool UseUnsafeEncoder { get; }
 
@@ -260,6 +279,8 @@ namespace Datadog.Trace.AppSec
         public bool? ScaEnabled { get; }
 
         public bool NoCustomLocalRules { get; }
+
+        public bool ApiSecurityParseResponseBody { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

@@ -7,9 +7,14 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
+using System.Globalization;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -118,29 +123,84 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    public abstract class AspNetMvc5TestsInferredProxySpans : AspNetMvc5Tests
+    {
+        protected AspNetMvc5TestsInferredProxySpans(IisFixture iisFixture, ITestOutputHelper output, bool enableInferredProxySpans)
+            : base(
+                iisFixture,
+                output,
+                classicMode: false,
+                enableRouteTemplateResourceNames: true,
+                enableInferredProxySpans: enableInferredProxySpans,
+                testName: enableInferredProxySpans ? $"{nameof(AspNetMvc5Tests)}.InferredProxySpans_Enabled" : $"{nameof(AspNetMvc5Tests)}.InferredProxySpans_Disabled")
+        {
+        }
+
+        /// <summary>
+        /// Override <see cref="CreateHttpRequestMessage"/> to add proxy headers to the request.
+        /// </summary>
+        protected override HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string path, DateTimeOffset testStart)
+        {
+            var request = base.CreateHttpRequestMessage(method, path, testStart);
+            var headers = request.Headers;
+
+            headers.Add("x-dd-proxy", "aws-apigateway");
+            headers.Add("x-dd-proxy-request-time-ms", testStart.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture));
+            headers.Add("x-dd-proxy-domain-name", "test.api.com");
+            headers.Add("x-dd-proxy-httpmethod", "GET");
+            headers.Add("x-dd-proxy-path", "/api/test/1");
+            headers.Add("x-dd-proxy-stage", "prod");
+
+            return request;
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5TestsInferredProxySpansEnabled : AspNetMvc5TestsInferredProxySpans
+    {
+        public AspNetMvc5TestsInferredProxySpansEnabled(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableInferredProxySpans: true)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5TestsInferredProxySpansDisabled : AspNetMvc5TestsInferredProxySpans
+    {
+        public AspNetMvc5TestsInferredProxySpansDisabled(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableInferredProxySpans: false)
+        {
+        }
+    }
+
     [UsesVerify]
     public abstract class AspNetMvc5Tests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
         private readonly bool _classicMode;
+        private readonly bool _enableInferredProxySpans;
 
         protected AspNetMvc5Tests(
             IisFixture iisFixture,
             ITestOutputHelper output,
             bool classicMode,
             bool enableRouteTemplateResourceNames,
+            string testName = null,
             bool enableRouteTemplateExpansion = false,
             bool virtualApp = false,
-            bool enable128BitTraceIds = false)
+            bool enable128BitTraceIds = false,
+            bool enableInferredProxySpans = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, enableRouteTemplateExpansion.ToString());
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, enable128BitTraceIds ? "true" : "false");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, enable128BitTraceIds.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, enableInferredProxySpans.ToString());
 
             _classicMode = classicMode;
+            _enableInferredProxySpans = enableInferredProxySpans;
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             if (virtualApp)
@@ -148,7 +208,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.VirtualApplicationPath = "/my-app";
             }
 
-            _testName = nameof(AspNetMvc5Tests)
+            _testName = testName ??
+                        nameof(AspNetMvc5Tests)
                       + (virtualApp ? ".VirtualApp" : string.Empty)
                       + (classicMode ? ".Classic" : ".Integrated")
                       + (enableRouteTemplateExpansion     ? ".WithExpansion" :
@@ -203,9 +264,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 statusCode = (HttpStatusCode)500;
             }
 
-            // Append virtual directory to the actual request
-            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
-            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
+            var expectedSpanCount = _enableInferredProxySpans ? 3 : 2;
+
+            var spans = await GetWebServerSpans(
+                path: _iisFixture.VirtualApplicationPath + path, // Append virtual directory to the actual request
+                agent: _iisFixture.Agent,
+                httpPort: _iisFixture.HttpPort,
+                expectedHttpStatusCode: statusCode,
+                expectedSpanCount: expectedSpanCount,
+                filterServerSpans: !_enableInferredProxySpans);
+
+            // ValidateIntegrationSpans() expects only server spans, but we want all spans in the snapshot (e.g. inferred proxy spans)
+            var serverSpans = spans.Where(s => s.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server);
+            ValidateIntegrationSpans(serverSpans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);

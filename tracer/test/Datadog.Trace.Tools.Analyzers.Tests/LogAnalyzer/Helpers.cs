@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests.LogAnalyzer;
 
 public static class Helpers
 {
-    public static TheoryData<string> LogMethods { get; } = new() { "Debug", "Information", "Warning", "Error" };
+    public static TheoryData<string> LogMethods { get; } = new() { "Debug", "Information", "Warning", "Error", "ErrorSkipTelemetry" };
 
     public static string LoggerDefinitions { get; } =
         """
@@ -76,6 +76,16 @@ public static class Helpers
                 void Error<T0, T1>(Exception? exception, string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
                 void Error<T0, T1, T2>(Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
                 void Error(Exception? exception, string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
+                void ErrorSkipTelemetry(string messageTemplate, int sourceLine = 0, string sourceFile = "");
+                void ErrorSkipTelemetry<T>(string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
+                void ErrorSkipTelemetry<T0, T1>(string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
+                void ErrorSkipTelemetry<T0, T1, T2>(string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
+                void ErrorSkipTelemetry(string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
+                void ErrorSkipTelemetry(Exception? exception, string messageTemplate, int sourceLine = 0, string sourceFile = "");
+                void ErrorSkipTelemetry<T>(Exception? exception, string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
+                void ErrorSkipTelemetry<T0, T1>(Exception? exception, string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
+                void ErrorSkipTelemetry<T0, T1, T2>(Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
+                void ErrorSkipTelemetry(Exception? exception, string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
                 void CloseAndFlush();
             }
         }

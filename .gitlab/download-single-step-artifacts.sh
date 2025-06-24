@@ -17,14 +17,19 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
   done
 
   if [ -n "$CI_COMMIT_SHA" ]; then
-    echo "Downloading Windows fleet-installer from S3"
-
     # Put this in the same place the "build" stage does
     win_target_dir=artifacts-out
     mkdir -p $win_target_dir
 
+    echo "Downloading Windows Tracer Home from Github"
     curl --location --fail \
-        --output $win_target_dir/serverless-artifacts.zip \
+        --output $win_target_dir/windows-tracer-home.zip \
+        "https://github.com/DataDog/dd-trace-dotnet/releases/download/v${VERSION}/windows-tracer-home.zip"
+
+    echo "Downloading Windows fleet-installer from S3"
+
+    curl --location --fail \
+        --output $win_target_dir/fleet-installer.zip \
         "https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/${CI_COMMIT_SHA}/fleet-installer.zip"
   fi
 

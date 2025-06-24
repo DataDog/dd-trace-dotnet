@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -86,6 +87,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
                 var tableName = iterator.Key as string;
                 TagTableNameAndResourceName(tableName, tags, scope);
             }
+        }
+
+        public static string GetValueFromDynamoDbAttribute(IDynamoDbAttributeValue value)
+        {
+            if (value.S != null)
+            {
+                return value.S;
+            }
+
+            if (value.N != null)
+            {
+                return value.N;
+            }
+
+            if (value.B != null)
+            {
+#if NETCOREAPP3_1_OR_GREATER
+                if (value.B.TryGetBuffer(out var buffer))
+                {
+                    return Encoding.UTF8.GetString(buffer.AsSpan());
+                }
+#endif
+                // fallback always copies bytes into a new array
+                return Encoding.UTF8.GetString(value.B.ToArray());
+            }
+
+            return string.Empty;
         }
     }
 }

@@ -274,6 +274,7 @@ internal static class MetricTags
         [Description("error_type:duck_typing")]DuckTyping,
         [Description("error_type:invoker")]Invoker,
         [Description("error_type:execution")]Execution,
+        [Description("error_type:missing_member")]MissingMember,
     }
 
     public enum WafAnalysis
@@ -293,6 +294,15 @@ internal static class MetricTags
     {
         [Description("waf_version;event_rules_version;success:true")] Success,
         [Description("waf_version;event_rules_version;success:false")] Error
+    }
+
+    public enum UserEventSdk
+    {
+        [Description("event_type:login_success;sdk_version:v1")] UserEventLoginSuccessSdkV1,
+        [Description("event_type:login_success;sdk_version:v2")] UserEventLoginSuccessSdkV2,
+        [Description("event_type:login_failure;sdk_version:v1")] UserEventFailureSdkV1,
+        [Description("event_type:login_failure;sdk_version:v2")] UserEventFailureSdkV2,
+        [Description("event_type:custom;sdk_version:v1")] UserEventCustomSdkV1,
     }
 
     [EnumExtensions]
@@ -446,6 +456,20 @@ internal static class MetricTags
         [Description("retry_reason:atr")] AutomaticTestRetry,
     }
 
+    public enum CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled
+    {
+        [Description("")] None,
+        [Description("is_quarantined:true")] IsQuarantined,
+        [Description("is_disabled:true")] IsDisabled,
+    }
+
+    public enum CIVisibilityTestingEventTypeTestManagementAttemptToFix
+    {
+        [Description("")] None,
+        [Description("is_attempt_to_fix:true")] IsAttemptToFix,
+        [Description("is_attempt_to_fix:true;has_failed_all_retries:true")] AttemptToFixHasFailedAllRetries,
+    }
+
     public enum CIVisibilityCoverageLibrary
     {
         [Description("library:custom")] Custom,
@@ -501,6 +525,14 @@ internal static class MetricTags
         [Description("command:get_objects")] GetObjects,
         [Description("command:pack_objects")] PackObjects,
         [Description("command:diff")] Diff,
+        [Description("command:verify_branch_exists")] VerifyBranchExists,
+        [Description("command:get_symbolic_ref")] GetSymbolicRef,
+        [Description("command:show_ref")] ShowRef,
+        [Description("command:build_candidate_list")] BuildCandidateList,
+        [Description("command:merge_base")] MergeBase,
+        [Description("command:rev_list")] RevList,
+        [Description("command:ls_remote")] LsRemote,
+        [Description("command:fetch")] Fetch
     }
 
     public enum CIVisibilityExitCodes
@@ -545,6 +577,12 @@ internal static class MetricTags
         [Description("known_tests_enabled:false")] Disabled,
     }
 
+    public enum CIVisibilitySettingsResponse_TestManagementFeature
+    {
+        [Description("test_management_enabled:true")] Enabled,
+        [Description("test_management_enabled:false")] Disabled,
+    }
+
     public enum CIVisibilityRequestCompressed
     {
         [Description("")] Uncompressed,
@@ -555,5 +593,36 @@ internal static class MetricTags
     {
         [Description("")] Uncompressed,
         [Description("rs_compressed:true")] Compressed,
+    }
+
+    public enum CIVisibilityTestSessionProvider
+    {
+        [Description("provider:unsupported")] Unsupported,
+        [Description("provider:appveyor")] AppVeyor,
+        [Description("provider:azp")] AzurePipelines,
+        [Description("provider:bitbucket")] BitBucket,
+        [Description("provider:bitrise")] Bitrise,
+        [Description("provider:buildkite")] BuildKite,
+        [Description("provider:circleci")] CircleCI,
+        [Description("provider:codefresh")] Codefresh,
+        [Description("provider:githubactions")] GithubActions,
+        [Description("provider:gitlab")] Gitlab,
+        [Description("provider:jenkins")] Jenkins,
+        [Description("provider:teamcity")] Teamcity,
+        [Description("provider:travisci")] TravisCi,
+        [Description("provider:buddyci")] BuddyCi,
+        [Description("provider:aws")] AwsCodePipeline,
+    }
+
+    public enum CIVisibilityTestSessionType
+    {
+        [Description("")] NotAutoInjected,
+        [Description("auto_injected:true")] AutoInjected,
+    }
+
+    public enum CIVisibilityTestSessionAgentlessLogSubmission
+    {
+        [Description("")] NotEnabled,
+        [Description("agentless_log_submission_enabled:true")] Enabled,
     }
 }

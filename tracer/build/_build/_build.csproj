@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -24,6 +24,7 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="3.7.3.11" />
     <PackageReference Include="DiffMatchPatch" Version="1.0.3" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0"/>
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="6.0.0" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.170.0" />
     <PackageReference Include="Mono.Cecil" Version="0.11.5" />
@@ -56,15 +57,23 @@
   <ItemGroup>
     <Content Include="..\..\..\.azure-pipelines\steps\*" Link="ci\steps\%(Filename)%(Extension)" />
     <Content Include="..\..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
+    <Content Include="..\..\..\.azure-pipelines\noop-pipeline.yml" Link="ci\noop-pipeline.yml" />
+    <Content Include="..\..\..\.gitlab\*" Link="ci\.gitlab\%(Filename)%(Extension)" />
+    <Content Include="..\..\..\.gitlab\benchmarks\*" Link="ci\.gitlab\benchmarks\%(Filename)%(Extension)" />
     <Content Include="..\..\build_in_docker.sh" Link="boot\build_in_docker.sh" />
     <Content Include="..\..\build_in_docker.ps1" Link="boot\build_in_docker.ps1" />
+    <Content Include="..\..\..\.github\CODEOWNERS" Condition="Exists('..\..\..\.github\CODEOWNERS')" Link="CodeOwners\CODEOWNERS">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+   
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Honeypot/Datadog.Dependabot.Honeypot.template"/>
+    <None Remove="Honeypot/Datadog.Dependabot.Honeypot.template" />
     <EmbeddedResource Include="Honeypot/Datadog.Dependabot.Honeypot.template">
       <!-- We have to force this name because somehow on macOS, it's named without the first 'Honeypot.' -->
       <LogicalName>Honeypot.Datadog.Dependabot.Honeypot.template</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
+
 </Project>

@@ -84,6 +84,7 @@ public:
     bool IsHttpProfilingEnabled() const override;
     std::chrono::milliseconds GetHttpRequestDurationThreshold() const override;
     bool ForceHttpSampling() const override;
+    bool IsWaitHandleProfilingEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -185,4 +186,5 @@ private:
 
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
+    bool _isWaitHandleProfilingEnabled;
 };

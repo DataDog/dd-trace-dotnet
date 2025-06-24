@@ -61,6 +61,7 @@ bool IsVersionCompatibilityEnabled();
 bool IsIastEnabled();
 bool IsRaspEnabled();
 bool IsEditAndContinueEnabled();
+bool IsSkipMethodBodyEnabled();
 
 } // namespace trace
 

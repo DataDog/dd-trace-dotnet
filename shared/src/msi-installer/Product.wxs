@@ -43,6 +43,7 @@
       <ComponentGroupRef Id="Shared.EnvironmentVariables.IIS"/>
       <ComponentGroupRef Id="Shared.Files" />
       <ComponentGroupRef Id="Shared.Files.NativeLoader.32"/> <!-- 32-bit native files are always included, even in 64-bit builds -->
+      <ComponentGroupRef Id="Shared.Files.Libdatadog.32"/>
 
       <ComponentGroupRef Id="ContinuousProfiler.EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files"/>
@@ -62,6 +63,7 @@
       <ComponentGroupRef Id="dd_dotnet.cmd"/>
       <ComponentGroupRef Id="dd_dotnet.exe"/>
       <ComponentGroupRef Id="Shared.Files.NativeLoader.64"/>
+      <ComponentGroupRef Id="Shared.Files.Libdatadog.64"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Native.64"/>
       <ComponentGroupRef Id="Tracer.Files.Native.64"/>
       <?endif ?>

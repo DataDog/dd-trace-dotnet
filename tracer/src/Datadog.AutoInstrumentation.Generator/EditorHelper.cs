@@ -56,12 +56,17 @@ internal static class EditorHelper
         return new string(value.Where(c => !InvalidChars.Contains(c)).ToArray());
     }
 
-    public static string GetIntegrationName(MethodDef methodDef)
+    public static string GetIntegrationValue(MethodDef methodDef)
     {
-        var value = methodDef.DeclaringType.Name.ToString() ?? string.Empty;
-        return CleanTypeName(value);
-        // value = value.Replace("`", "Generic");
-        // return new string(value.Where(c => !InvalidChars.Contains(c)).ToArray());
+        var dllname = methodDef.Module.ToString();
+        if (!string.IsNullOrEmpty(dllname))
+        {
+            var dotposition = dllname.LastIndexOf('.');
+            var value = dotposition > 0 ? dllname.Substring(0, dotposition) : dllname;
+            return $"nameof(IntegrationId.{CleanTypeName(value)})";
+        }
+
+        return string.Empty;
     }
 
     public static string GetMinimumVersion(MethodDef methodDef)
@@ -109,43 +114,46 @@ internal static class EditorHelper
     public static string CreateTypeName(TypeSig typeSig)
     {
         var typeFullName = string.Empty;
-        if (typeSig is GenericMVar genMVar)
+        switch (typeSig)
         {
-            typeFullName = $"!!{genMVar.Number}";
-        }
-        else if (typeSig is GenericInstSig genType)
-        {
-            var genTypeFullName = genType.GenericType.FullName;
-            var genArgs = genType.GenericArguments;
+            case GenericVar genVar:
+                typeFullName = $"!{genVar.Number}";
+                break;
+            case GenericMVar genMVar:
+                typeFullName = $"!!{genMVar.Number}";
+                break;
+            case GenericInstSig genType:
+                var genTypeFullName = genType.GenericType.FullName;
+                var genArgs = genType.GenericArguments;
 
-            var sb = new StringBuilder(typeSig.FullName.Length + (genArgs.Count * 2));
-            sb.Append(genTypeFullName)
-                .Append('[');
-            for (var i = 0; i < genArgs.Count; i++)
-            {
-                if (genArgs[i] is GenericSig genericSig)
+                var sb = new StringBuilder(typeSig.FullName.Length + (genArgs.Count * 2));
+                sb.Append(genTypeFullName)
+                    .Append('[');
+                for (var i = 0; i < genArgs.Count; i++)
                 {
-                    var replacement = genericSig.IsTypeVar ? $"!{i}" : $"!!{i}";
-                    sb.Append(replacement);
-                }
-                else
-                {
-                    sb.Append(genArgs[i].FullName);
+                    if (genArgs[i] is GenericSig genericSig)
+                    {
+                        var replacement = genericSig.IsTypeVar ? $"!{i}" : $"!!{i}";
+                        sb.Append(replacement);
+                    }
+                    else
+                    {
+                        sb.Append(genArgs[i].FullName);
+                    }
+
+                    if (i < genArgs.Count - 1)
+                    {
+                        sb.Append(",");
+                    }
                 }
 
-                if (i < genArgs.Count - 1)
-                {
-                    sb.Append(",");
-                }
-            }
+                sb.Append(']');
 
-            sb.Append(']');
-
-            typeFullName = sb.ToString();
-        }
-        else
-        {
-            typeFullName = typeSig.FullName;
+                typeFullName = sb.ToString();
+                break;
+            default:
+                typeFullName = typeSig.FullName;
+                break;
         }
 
         return CreateTypeName(typeFullName);
@@ -565,27 +573,20 @@ internal interface {proxyName} : IDuckType
             foreach (var property in proxyProperties)
             {
                 var getterSetter = string.Empty;
-                var documentation = string.Empty;
                 if (property is { Getter: true, Setter: true })
                 {
-                    documentation = $"Gets or sets a value of {property.TargetFullName}";
                     getterSetter = "get; set;";
                 }
                 else if (property.Getter)
                 {
-                    documentation = $"Gets a value of {property.TargetFullName}";
                     getterSetter = "get;";
                 }
                 else if (property.Setter)
                 {
-                    documentation = $"Sets a value of {property.TargetFullName}";
                     getterSetter = "set;";
                 }
 
                 sb.AppendLine(string.Empty);
-                sb.AppendLine("\t///<summary>");
-                sb.AppendLine($"\t/// {documentation.Replace("<", "[").Replace(">", "]").Replace("&", "&amp;")}");
-                sb.AppendLine("\t///</summary>");
                 if (property.PropertyName != property.TargetName)
                 {
                     if (property.IsField)

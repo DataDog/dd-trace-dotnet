@@ -21,13 +21,16 @@ namespace BuggyBits
         private readonly Scenario _scenario;
         private readonly int _nbIdleThreads;
         private readonly int _nbNewsThreads;
-        public SelfInvoker(CancellationToken token, Scenario scenario, int nbIdleThreads)
+        private readonly bool _disableLogs;
+
+        public SelfInvoker(CancellationToken token, Scenario scenario, int nbIdleThreads, bool disableLogs)
         {
             _exitToken = token;
             _httpClient = new HttpClient();
             _scenario = scenario;
             _nbIdleThreads = nbIdleThreads;
             _nbNewsThreads = 6;
+            _disableLogs = disableLogs;
         }
 
         public void Dispose()
@@ -37,7 +40,7 @@ namespace BuggyBits
 
         public async Task RunAsync(string rootUrl, int iterations = 0)
         {
-            Console.WriteLine($"{this.GetType().Name} started.");
+            WriteLine($"{this.GetType().Name} started.");
 
             CreateIdleThreads();
 
@@ -75,7 +78,7 @@ namespace BuggyBits
                 }
             }
 
-            Console.WriteLine($"{this.GetType().Name} stopped.");
+            WriteLine($"{this.GetType().Name} stopped.");
         }
 
         private void StartThreadsForLeaks(string rootUrl, int iterations)
@@ -101,7 +104,7 @@ namespace BuggyBits
                         var bytes = guid.ToByteArray();
                         int randomIncrement = bytes[0];
                         TimeSpan delay = TimeSpan.FromMilliseconds(300 + randomIncrement);
-                        Console.WriteLine($"Delay for leak = {delay}");
+                        WriteLine($"Delay for leak = {delay}");
                         await Task.Delay(delay);
 
                         // Run for the given number of iterations
@@ -127,7 +130,7 @@ namespace BuggyBits
                 return;
             }
 
-            Console.WriteLine($"----- Creating {_nbIdleThreads} idle threads");
+            WriteLine($"----- Creating {_nbIdleThreads} idle threads");
 
             for (var i = 0; i < _nbIdleThreads; i++)
             {
@@ -188,6 +191,21 @@ namespace BuggyBits
                 {
                     urls.Add($"{rootUrl}/CompanyInformation");
                 }
+
+                if ((_scenario & Scenario.GetAwaiterGetResult) == Scenario.GetAwaiterGetResult)
+                {
+                    urls.Add($"{rootUrl}/Products/GetAwaiterGetResult");
+                }
+
+                if ((_scenario & Scenario.UseResultProperty) == Scenario.UseResultProperty)
+                {
+                    urls.Add($"{rootUrl}/Products/WithResult");
+                }
+
+                if ((_scenario & Scenario.ShortLived) == Scenario.ShortLived)
+                {
+                    urls.Add($"{rootUrl}/CompanyInformation?ShortLived=true");
+                }
             }
 
             return urls;
@@ -201,7 +219,7 @@ namespace BuggyBits
                 var response = await _httpClient.GetAsync(endpointUrl, _exitToken);
                 if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"[Error] Request '{endpointUrl}' failed {response.StatusCode}");
+                    WriteLine($"[Error] Request '{endpointUrl}' failed {response.StatusCode}");
                     return;
                 }
 
@@ -212,14 +230,24 @@ namespace BuggyBits
                 // hide traces when memory leaks
                 if ((_scenario & Scenario.MemoryLeak) == 0)
                 {
-                    Console.WriteLine($"{endpointUrl} | response length = {responseLen} in {sw.ElapsedMilliseconds} ms");
+                    WriteLine($"{endpointUrl} | response length = {responseLen} in {sw.ElapsedMilliseconds} ms");
                 }
             }
             catch (TaskCanceledException)
             {
                 // Excepted when the application exits
-                Console.WriteLine($"SelfInvokerService: {endpointUrl} request cancelled.");
+                WriteLine($"SelfInvokerService: {endpointUrl} request cancelled.");
             }
+        }
+
+        private void WriteLine(string message)
+        {
+            if (_disableLogs)
+            {
+                return;
+            }
+
+            Console.WriteLine(message);
         }
     }
 }

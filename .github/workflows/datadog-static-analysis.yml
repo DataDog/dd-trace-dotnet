@@ -3,23 +3,22 @@ on: [push]
 
 jobs:
   check-quality:
+    if: github.actor != 'dependabot[bot]'  # secrets are not available to dependabot
     runs-on: ubuntu-latest
     name: Datadog Static Analyzer
     permissions:
       actions: read # read secrets
       contents: read
-      statuses: write # add status checks (?) 
+      statuses: write # add status checks (?)
     steps:
       - name: Checkout
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Check code meets quality standards
         id: datadog-static-analysis
         uses: DataDog/datadog-static-analyzer-github-action@v1
         with:
           dd_api_key: ${{ secrets.DD_API_KEY }}
           dd_app_key: ${{ secrets.DD_APP_KEY }}
-          dd_service: dd-trace-dotnet
           dd_site: datadoghq.com
-          dd_env: ci
           cpu_count: 2
-          
+

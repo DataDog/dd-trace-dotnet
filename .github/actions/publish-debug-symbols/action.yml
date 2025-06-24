@@ -19,13 +19,13 @@ runs:
   steps:
     # datadog-ci needs the version 20 (https://github.com/DataDog/profiling-backend/blob/prod/debug-symbol-upload/Dockerfile#L6)
     - name: Install Node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
       with:
         node-version: 20
 
     # Use the same go version as in https://github.com/DataDog/profiling-backend/blob/prod/debug-symbol-upload/Dockerfile#L21
     - name: Install Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       with:
         go-version: '^1.22.3'
 

@@ -29,6 +29,7 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-8f75219c--,
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.fp.session: ssn----<SessionFp>,
@@ -76,6 +77,7 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-8f75219c--,
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.fp.session: ssn----<SessionFp>,
@@ -123,6 +125,7 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-8f75219c--,
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.fp.session: ssn----<SessionFp>,
@@ -170,6 +173,7 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-8f75219c--,
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.fp.session: ssn----<SessionFp>,
@@ -217,6 +221,7 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-8f75219c--,
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.fp.session: ssn----<SessionFp>,

@@ -45,21 +45,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => from behaviour in (AgentBehaviour[])Enum.GetValues(typeof(AgentBehaviour))
                from transportType in Transports
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new object[] { behaviour, transportType, metadataSchemaVersion };
+               from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
+               select new object[] { behaviour, transportType, metadataSchemaVersion, dataPipelineEnabled };
 
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion)
+        public async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion, bool dataPipelineEnabled)
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
             {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+                throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
             EnvironmentHelper.EnableTransport(transportType);
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
+
             using var agent = EnvironmentHelper.GetMockAgent();
             var customResponse = behaviour switch
             {

@@ -43,6 +43,7 @@ public:
 #ifdef _WINDOWS
     static shared::WSTRING GetNativeThreadName(HANDLE threadHandle);
     static ScopedHandle GetThreadHandle(DWORD threadId);
+    static bool GetFileVersion(LPCWSTR pszFilename, uint16_t& major, uint16_t& minor, uint16_t& build, uint16_t& reviews);
 #else
     static shared::WSTRING GetNativeThreadName(pid_t tid);
 #endif
@@ -114,7 +115,7 @@ public:
     {
         struct timespec ts;
         // TODO error handling ?
-        clock_gettime(CLOCK_MONOTONIC, &ts);
+        clock_gettime(CLOCK_REALTIME, &ts);
         return std::chrono::nanoseconds((std::uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec);
     }
 
@@ -138,14 +139,22 @@ private:
 #ifdef _WINDOWS
     typedef HRESULT(__stdcall* SetThreadDescriptionDelegate_t)(HANDLE threadHandle, PCWSTR pThreadDescription);
     typedef HRESULT(__stdcall* GetThreadDescriptionDelegate_t)(HANDLE hThread, PWSTR* ppThreadDescription);
-
-    static bool s_isRunTimeLinkingThreadDescriptionDone;
+    typedef BOOL(__stdcall* GetFileVersionInfoSizeDelegate_t)(LPCWSTR pszFilename, DWORD* pdwHandle);
+    typedef BOOL(__stdcall* GetFileVersionInfoDelegate_t)(LPCWSTR pszFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData);
+    typedef BOOL(__stdcall* VerQueryValueDelegate_t)(LPCVOID pBlock, LPCWSTR lpSubBlock, LPVOID* lplpBuffer, PUINT puLen);
+    static bool s_areWindowsDelegateSet;
     static SetThreadDescriptionDelegate_t s_setThreadDescriptionDelegate;
     static GetThreadDescriptionDelegate_t s_getThreadDescriptionDelegate;
+    static GetFileVersionInfoSizeDelegate_t s_getFileVersionInfoSizeW;
+    static GetFileVersionInfoDelegate_t s_getFileVersionInfoW;
+    static VerQueryValueDelegate_t s_verQueryValueW;
 
-    static void InitDelegates_GetSetThreadDescription();
+    static void InitWindowsDelegates();
     static SetThreadDescriptionDelegate_t GetDelegate_SetThreadDescription();
     static GetThreadDescriptionDelegate_t GetDelegate_GetThreadDescription();
+    static GetFileVersionInfoSizeDelegate_t GetDelegate_GetFileVersionInfoSize();
+    static GetFileVersionInfoDelegate_t GetDelegate_GetFileVersionInfo();
+    static VerQueryValueDelegate_t GetDelegate_VerQueryValue();
 #endif
 };
 

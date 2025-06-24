@@ -7,18 +7,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Globalization;
+using System.Reflection;
 using System.Threading;
 using System.Web;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 #endif
 using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
@@ -35,6 +33,10 @@ internal class IastRequestContext
     private ExecutedTelemetryHelper? _executedTelemetryHelper = ExecutedTelemetryHelper.Enabled() ? new ExecutedTelemetryHelper() : null;
     private int _lastVulnerabilityStackId = 0;
 
+    private bool _routeVulnerabilityStatsDirty = false;
+    private VulnerabilityStats _routeVulnerabilityStats;
+    private VulnerabilityStats _requestVulnerabilityStats;
+
     internal static void AddIastDisabledFlagToSpan(Span span)
     {
         span.Tags.SetTag(Tags.IastEnabled, "0");
@@ -45,6 +47,24 @@ internal class IastRequestContext
         try
         {
             span.Tags.SetTag(Tags.IastEnabled, "1");
+
+            if (_routeVulnerabilityStatsDirty)
+            {
+                if (AddVulnerabilitiesAllowed())
+                {
+                    // Global budget not depleted. Reset route stats so vulns can be detected again.
+                    Log.Debug("Clearing Vulnerability Stats for Route {Route} (Budget left)", _routeVulnerabilityStats.Route);
+                    _routeVulnerabilityStats = new VulnerabilityStats(_requestVulnerabilityStats.Route);
+                }
+                else
+                {
+                    // Global budget depleted. Update route stats so vulns new can be detected.
+                    Log.Debug("Updating Vulnerability Stats for Route {Route} (Budget depleted)", _routeVulnerabilityStats.Route);
+                    _routeVulnerabilityStats.TransferNewVulns(ref _requestVulnerabilityStats);
+                }
+
+                IastModule.UpdateRouteVulnerabilityStats(ref _routeVulnerabilityStats);
+            }
 
             if (_vulnerabilityBatch != null)
             {
@@ -79,7 +99,51 @@ internal class IastRequestContext
 
     internal bool AddVulnerabilitiesAllowed()
     {
+        // Check global budget
         return ((_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < Iast.Instance.Settings.VulnerabilitiesPerRequest);
+    }
+
+    internal bool AddVulnerabilityTypeAllowed(Span? span, string vulnerabilityType, Func<Span?, VulnerabilityStats> getForCurrentRoute)
+    {
+        // Check global budget
+        if (AddVulnerabilitiesAllowed())
+        {
+            if (_requestVulnerabilityStats.Route is null)
+            {
+                // Init the route vulnerability stats
+                _routeVulnerabilityStats = getForCurrentRoute(span);
+                _requestVulnerabilityStats = new(_routeVulnerabilityStats.Route);
+            }
+
+            if (_requestVulnerabilityStats.Route is { Length: > 0 })
+            {
+                // Check route budget
+                var index = (int)VulnerabilityTypeUtils.FromName(vulnerabilityType);
+                _requestVulnerabilityStats[index]++;
+
+                string debugTxt = string.Empty;
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                {
+                    var currentVulns = (_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) + 1;
+                    debugTxt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}  Budget: {currentVulns} out of {Iast.Instance.Settings.VulnerabilitiesPerRequest}";
+                }
+
+                _routeVulnerabilityStatsDirty = true;
+                if (_requestVulnerabilityStats[index] > _routeVulnerabilityStats[index] || _routeVulnerabilityStats[index] == 0)
+                {
+                    Log.Debug("Vulnerability Sampler ACCEPTED: {Txt}", debugTxt);
+                    return true;
+                }
+
+                Log.Debug("Vulnerability Sampler SKIPPED: {Txt}", debugTxt);
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     internal void AddVulnerability(Vulnerability vulnerability)

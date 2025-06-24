@@ -14,8 +14,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class ProcessCommandStartTags
     {
-        // ComponentBytes = MessagePack.Serialize("cmd.component");
-        private static ReadOnlySpan<byte> ComponentBytes => new byte[] { 173, 99, 109, 100, 46, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // ComponentBytes = MessagePack.Serialize("component");
+        private static ReadOnlySpan<byte> ComponentBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // EnvironmentVariablesBytes = MessagePack.Serialize("cmd.environment_variables");
@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "cmd.component" => Component,
+                "component" => Component,
                 "span.kind" => SpanKind,
                 "cmd.environment_variables" => EnvironmentVariables,
                 "cmd.exec" => CommandExec,
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tagging
                 case "cmd.truncated": 
                     Truncated = value;
                     break;
-                case "cmd.component": 
+                case "component": 
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(ProcessCommandStartTags));
                     break;
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tagging
         {
             if (Component is not null)
             {
-                processor.Process(new TagItem<string>("cmd.component", Component, ComponentBytes));
+                processor.Process(new TagItem<string>("component", Component, ComponentBytes));
             }
 
             if (SpanKind is not null)
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tagging
         {
             if (Component is not null)
             {
-                sb.Append("cmd.component (tag):")
+                sb.Append("component (tag):")
                   .Append(Component)
                   .Append(',');
             }

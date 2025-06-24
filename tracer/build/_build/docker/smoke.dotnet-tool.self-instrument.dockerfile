@@ -38,6 +38,7 @@ ENV LD_PRELOAD=/opt/datadog/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so
 ENV DD_PROFILING_ENABLED=1
 ENV DD_APPSEC_ENABLED=1
 ENV DD_TRACE_DEBUG=1
+ENV DD_REMOTE_CONFIGURATION_ENABLED=0
 ENV ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore
@@ -50,6 +51,7 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 ENV COMPlus_DbgEnableMiniDump=1
 ENV COMPlus_DbgMiniDumpType=4
 ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+ENV DOTNET_EnableCrashReport=1
 
 ## SSI variables
 ENV DD_INJECTION_ENABLED=tracer

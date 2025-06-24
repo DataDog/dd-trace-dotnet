@@ -21,16 +21,6 @@ internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeat
 
     private TestOptimizationSkippableFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
-        if (settings is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(settings));
-        }
-
-        if (testOptimizationClient is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
-        }
-
         if (settings.TestsSkippingEnabled == null && clientSettingsResponse.TestsSkipping.HasValue)
         {
             Log.Information("TestOptimizationSkippableFeature: Tests Skipping has been changed to {Value} by settings api.", clientSettingsResponse.TestsSkipping.Value);

@@ -35,16 +35,18 @@ internal class TestOptimization : ITestOptimization
     private ITestOptimizationSkippableFeature? _skippableFeature;
     private ITestOptimizationImpactedTestsDetectionFeature? _impactedTestsDetectionFeature;
     private ITestOptimizationFlakyRetryFeature? _flakyRetryFeature;
+    private ITestOptimizationTestManagementFeature? _testManagementFeature;
 
-    public TestOptimization()
+    public TestOptimization(CIEnvironmentValues ciValues)
     {
+        CIValues = ciValues;
         _enabledLazy = new Lazy<bool>(InternalEnabled, true);
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
     }
 
     public static ITestOptimization Instance
     {
-        get => LazyInitializer.EnsureInitialized(ref _instance, () => new TestOptimization())!;
+        get => LazyInitializer.EnsureInitialized(ref _instance, () => new TestOptimization(CIEnvironmentValues.Instance))!;
         internal set => _instance = value;
     }
 
@@ -72,12 +74,25 @@ internal class TestOptimization : ITestOptimization
     public TestOptimizationSettings Settings
     {
         get => LazyInitializer.EnsureInitialized(ref _settings, () => TestOptimizationSettings.FromDefaultSources())!;
-        private set => _settings = value;
+        private set
+        {
+            _settings = value;
+            _client = null;
+            _firstInitialization = 1;
+            _enabledLazy = new(InternalEnabled, true);
+            _additionalFeaturesTask = null;
+            _tracerManagement = null;
+            _hostInfo = null;
+            _earlyFlakeDetectionFeature = null;
+            _skippableFeature = null;
+            _impactedTestsDetectionFeature = null;
+            _flakyRetryFeature = null;
+        }
     }
 
     public ITestOptimizationClient Client
     {
-        get => LazyInitializer.EnsureInitialized(ref _client, () => TestOptimizationClient.CreateCached(Environment.CurrentDirectory, Settings))!;
+        get => LazyInitializer.EnsureInitialized(ref _client, () => TestOptimizationClient.CreateCached(Environment.CurrentDirectory, this))!;
         private set => _client = value;
     }
 
@@ -179,6 +194,22 @@ internal class TestOptimization : ITestOptimization
         private set => _flakyRetryFeature = value;
     }
 
+    public ITestOptimizationTestManagementFeature? TestManagementFeature
+    {
+        get
+        {
+            if (_testManagementFeature is null)
+            {
+                _additionalFeaturesTask?.SafeWait();
+            }
+
+            return _testManagementFeature;
+        }
+        private set => _testManagementFeature = value;
+    }
+
+    public CIEnvironmentValues CIValues { get; }
+
     public void Initialize()
     {
         if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
@@ -226,9 +257,6 @@ internal class TestOptimization : ITestOptimization
         // Initialize FrameworkDescription
         _ = FrameworkDescription.Instance;
 
-        // Initialize CIEnvironment
-        _ = CIEnvironmentValues.Instance;
-
         // If we are running in agentless mode or the agent support the event platform proxy endpoint.
         // We can use the intelligent test runner
         if (settings.Agentless || eventPlatformProxyEnabled)
@@ -241,13 +269,13 @@ internal class TestOptimization : ITestOptimization
         {
             Log.Warning("TestOptimization: Intelligent test runner cannot be activated. Agent doesn't support the event platform proxy endpoint.");
             Client = new NoopTestOptimizationClient();
-            InitializeDefaultFeatures(settings, TracerManagement, Client);
+            InitializeDefaultFeatures(settings, TracerManagement, Client, CIValues);
         }
         else if (settings.GitUploadEnabled != false)
         {
             Log.Warning("TestOptimization: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
             Client = new NoopTestOptimizationClient();
-            InitializeDefaultFeatures(settings, TracerManagement, Client);
+            InitializeDefaultFeatures(settings, TracerManagement, Client, CIValues);
         }
     }
 
@@ -284,12 +312,9 @@ internal class TestOptimization : ITestOptimization
         // Initialize FrameworkDescription
         _ = FrameworkDescription.Instance;
 
-        // Initialize CIEnvironment
-        _ = CIEnvironmentValues.Instance;
-
         // Initialize features
         Client = new NoopTestOptimizationClient();
-        InitializeDefaultFeatures(settings, TracerManagement, Client);
+        InitializeDefaultFeatures(settings, TracerManagement, Client, CIValues);
     }
 
     public void InitializeFromManualInstrumentation()
@@ -525,7 +550,7 @@ internal class TestOptimization : ITestOptimization
                     LifetimeManager.Instance.AddAsyncShutdownTask(_ => uploadRepositoryChangesTask);
                 }
 
-                InitializeDefaultFeatures(settings, TracerManagement, client);
+                InitializeDefaultFeatures(settings, TracerManagement, client, CIValues);
                 return;
             }
 
@@ -535,7 +560,8 @@ internal class TestOptimization : ITestOptimization
              || settings.TestsSkippingEnabled == null
              || settings.EarlyFlakeDetectionEnabled != false
              || settings.FlakyRetryEnabled == null
-             || settings.ImpactedTestsDetectionEnabled == null)
+             || settings.ImpactedTestsDetectionEnabled == null
+             || settings.TestManagementEnabled == null)
             {
                 Log.Information("TestOptimization: Calling the configuration api.");
                 var remoteSettings = await client.GetSettingsAsync().ConfigureAwait(false);
@@ -553,8 +579,9 @@ internal class TestOptimization : ITestOptimization
                 FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
                 EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
-                ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
+                ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, CIValues);
                 SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
+                TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
 
                 if (settings.CodeCoverageEnabled == null && remoteSettings.CodeCoverage.HasValue)
                 {
@@ -570,7 +597,7 @@ internal class TestOptimization : ITestOptimization
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
                 }
 
-                InitializeDefaultFeatures(settings, TracerManagement, client);
+                InitializeDefaultFeatures(settings, TracerManagement, client, CIValues);
             }
         }
         catch (Exception ex)
@@ -595,13 +622,14 @@ internal class TestOptimization : ITestOptimization
         }
     }
 
-    private void InitializeDefaultFeatures(TestOptimizationSettings settings, ITestOptimizationTracerManagement? tracerManagement, ITestOptimizationClient client)
+    private void InitializeDefaultFeatures(TestOptimizationSettings settings, ITestOptimizationTracerManagement? tracerManagement, ITestOptimizationClient client, CIEnvironmentValues environmentValues)
     {
         var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement);
         FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
         EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
-        ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
+        ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, environmentValues);
         SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
+        TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
     }
 }

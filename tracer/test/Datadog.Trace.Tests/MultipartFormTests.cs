@@ -133,6 +133,7 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetTestData))]
+        [Trait("Category", "LinuxUnsupported")]
         public async Task HttpStreamRequest_NamedPipes_MultipartTest(bool useStream, bool useGzip)
         {
             if (!EnvironmentTools.IsWindows())
@@ -169,6 +170,7 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetTestData))]
+        [Trait("Category", "LinuxUnsupported")]
         public async Task HttpStreamRequest_NamedPipes_VerificationTest(bool useStream, bool useGzip)
         {
             if (!EnvironmentTools.IsWindows())

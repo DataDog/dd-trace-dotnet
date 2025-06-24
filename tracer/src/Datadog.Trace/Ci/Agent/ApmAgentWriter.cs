@@ -32,7 +32,7 @@ internal class ApmAgentWriter : IEventWriter
         var api = new Api(apiRequestFactory, null, updateSampleRates, partialFlushEnabled);
         var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-        _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize, apmTracingEnabled: settings.ApmTracingEnabledInternal);
+        _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize, apmTracingEnabled: settings.ApmTracingEnabled);
     }
 
     public ApmAgentWriter(IApi api, int maxBufferSize = DefaultMaxBufferSize)

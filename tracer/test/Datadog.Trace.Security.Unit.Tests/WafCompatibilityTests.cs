@@ -3,12 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Diagnostics;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
+
+using LoadStatus = Datadog.Trace.AppSec.Waf.Initialization.LibraryInitializationResult.LoadStatus;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
@@ -18,21 +17,12 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableTheory]
         [InlineData("1.3.0")]
         [InlineData("1.10.0")]
-        public void ShouldNotInitializeWithExportsMissing(string version)
-        {
-            var libraryInitializationResult = WafLibraryInvoker.Initialize(version);
-            libraryInitializationResult.ExportErrorHappened.Should().BeTrue();
-            libraryInitializationResult.Success.Should().BeFalse();
-            libraryInitializationResult.WafLibraryInvoker.Should().BeNull();
-        }
-
-        [SkippableTheory]
-        [InlineData("1.16.0")]
         [InlineData("1.14.0")]
-        public void ShouldNotInitializeWithKnownIncompatibility(string version)
+        [InlineData("1.16.0")]
+        [InlineData("1.23.0")]
+        public void ShouldNotInitialize(string version)
         {
             var libraryInitializationResult = WafLibraryInvoker.Initialize(version);
-            libraryInitializationResult.VersionNotCompatible.Should().BeTrue();
             libraryInitializationResult.Success.Should().BeFalse();
             libraryInitializationResult.WafLibraryInvoker.Should().BeNull();
         }

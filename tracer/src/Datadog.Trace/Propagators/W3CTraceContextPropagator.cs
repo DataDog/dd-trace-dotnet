@@ -668,6 +668,7 @@ namespace Datadog.Trace.Propagators
         // internal for regression testing
         internal static bool TryGetSingle(IEnumerable<string?> values, out string value)
         {
+            // null values is handled in TryGetSingleRare
             // fast path for string[], List<string>, and others
             if (values is IReadOnlyList<string?> list)
             {
@@ -687,6 +688,12 @@ namespace Datadog.Trace.Propagators
         // internal for regression testing
         internal static bool TryGetSingleRare(IEnumerable<string?> values, out string value)
         {
+            if (values is null)
+            {
+                value = string.Empty;
+                return false;
+            }
+
             using var enumerator = values.GetEnumerator();
 
             if (!enumerator.MoveNext())

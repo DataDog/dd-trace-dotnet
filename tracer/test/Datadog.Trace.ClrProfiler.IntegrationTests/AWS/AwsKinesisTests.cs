@@ -73,6 +73,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_kinesis");
                 settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_kinesis");
                 settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_kinesis");
+                // V4 uses the sockets handler by default where possible instead of the httpclienthandler
+                settings.AddSimpleScrubber("http-client-handler-type: System.Net.Http.SocketsHttpHandler", "http-client-handler-type: System.Net.Http.HttpClientHandler");
                 if (!string.IsNullOrWhiteSpace(host))
                 {
                     settings.AddSimpleScrubber(host, "localhost:00000");

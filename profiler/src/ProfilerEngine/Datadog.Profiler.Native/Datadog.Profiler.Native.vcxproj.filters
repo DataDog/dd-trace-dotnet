@@ -492,6 +492,9 @@
     <ClInclude Include="NetworkProvider.h">
       <Filter>Network</Filter>
     </ClInclude>
+    <ClInclude Include="RawSampleTransformer.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -755,8 +758,8 @@
     <ClCompile Include="NetworkActivity.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ClCompile Include="RawSampleTransformer.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

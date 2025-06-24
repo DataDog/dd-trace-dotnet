@@ -87,4 +87,16 @@ internal partial class NullMetricsTelemetryCollector
     public void RecordDistributionCIVisibilityImpactedTestsDetectionResponseFiles(double value)
     {
     }
+
+    public void RecordDistributionCIVisibilityTestManagementTestsRequestMs(double value)
+    {
+    }
+
+    public void RecordDistributionCIVisibilityTestManagementTestsResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    {
+    }
+
+    public void RecordDistributionCIVisibilityTestManagementTestsResponseTests(double value)
+    {
+    }
 }

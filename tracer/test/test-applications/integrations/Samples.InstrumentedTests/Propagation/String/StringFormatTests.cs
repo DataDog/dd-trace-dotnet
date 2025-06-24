@@ -362,7 +362,7 @@ public class StringFormatTests : InstrumentationTestsBase
     }
 
 
-#if NET8_0
+#if NET8_0_OR_GREATER
     // System.String Format(System.IFormatProvider, System.Text.CompositeFormat, System.Object[])
 
     [Fact]
@@ -375,4 +375,114 @@ public class StringFormatTests : InstrumentationTestsBase
             () => System.String.Format(new FormatProviderForTest(), composite, new object[] { _taintedValue, _untaintedString }).ToString());
     }
 #endif
+
+#if NET9_0_OR_GREATER
+
+    // Testing public static string Format(string format, ReadOnlySpan<object>)
+
+    [Fact]
+    public void GivenATaintedFormatObject_WhenCallingFormatWithObjectReadOnlySpan_ResultIsTainted()
+    {
+        var values = new object[] { _taintedValue, _taintedValue2 };
+        var span = new ReadOnlySpan<object>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-formattaintedTAINTED2-+:",
+            System.String.Format(_taintedFormat2Args, span),
+            () => System.String.Format(_taintedFormat2Args, values));
+    }
+
+    [Fact]
+    public void GivenATaintedFormatObject_WhenCallingFormatWithObjectReadOnlySpan_ResultIsTainted2()
+    {
+        var values = new object[] { _taintedValue, "notTainted" };
+        var span = new ReadOnlySpan<object>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-formattaintednotTainted-+:",
+            System.String.Format(_taintedFormat2Args, span),
+            () => System.String.Format(_taintedFormat2Args, values));
+    }
+
+    [Fact]
+    public void GivenANotTaintedFormatObject_WhenCallingFormatWithObjectReadOnlySpan_ResultIsNotTainted2()
+    {
+        var values = new object[] { "notTainted", "notTainted" };
+        var span = new ReadOnlySpan<object>(values);
+        AssertUntaintedWithOriginalCallCheck("FormatnotTaintednotTainted",
+            System.String.Format("Format{0}{1}", span),
+            () => System.String.Format("Format{0}{1}", values));
+    }
+
+    [Fact]
+    public void GivenATaintedFormatObject_WhenCallingFormatWithObjectReadOnlySpan_ResultIsTainted3()
+    {
+        var values = new object[] { "notTainted", _taintedValue };
+        var span = new ReadOnlySpan<object>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-abcnotTaintedtainted-+:",
+            System.String.Format("abc{0}{1}", span),
+            () => System.String.Format("abc{0}{1}", values));
+    }
+
+    [Fact]
+    public void GivenATaintedFormatObject_WhenCallingFormatWithObjectReadOnlySpan_ResultIsTainted4()
+    {
+        var values = new object[] { "ww", "ww", "ww" };
+        var span = new ReadOnlySpan<object>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatwwwwww-+:",
+            System.String.Format(_taintedFormat3Args, span),
+            () => System.String.Format(_taintedFormat3Args, values));
+    }
+
+    // Testing public static string Format(IFormatProvider provider, string format, ReadOnlySpan<object>)
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingFormatWithProviderAndObjectReadOnlySpan_ResultIsTainted()
+    {
+        var values = new object[] { _taintedValue };
+        var span = new ReadOnlySpan<object>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-test: taintedcustomformat-+:",
+            System.String.Format(new FormatProviderForTest(), "test: {0}", span),
+            () => System.String.Format(new FormatProviderForTest(), "test: {0}", values));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingFormatWithProviderAndObjectReadOnlySpan_ResultIsTainted2()
+    {
+        var values = new object[] { _untaintedString, _taintedValue2 };
+        var span = new ReadOnlySpan<object>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedStringcustomformatTAINTED2customformat-+:",
+            System.String.Format(new FormatProviderForTest(), _taintedFormat2Args, span),
+            () => System.String.Format(new FormatProviderForTest(), _taintedFormat2Args, values));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingFormatWithProviderAndObjectReadOnlySpan_ResultIsTainted8()
+    {
+        var values = new object[] { _untaintedString, _untaintedString };
+        var span = new ReadOnlySpan<object>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedStringcustomformatUntaintedStringcustomformat-+:",
+            System.String.Format(new FormatProviderForTest(), _taintedFormat2Args, span),
+            () => System.String.Format(new FormatProviderForTest(), _taintedFormat2Args, values));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingFormatWithProviderAndObjectReadOnlySpan_ResultIsTainted3()
+    {
+        var values = new object[] { _taintedValue, _taintedValue2, _untaintedString, _taintedValue2, _otherUntaintedString };
+        var span = new ReadOnlySpan<object>(values);
+        string str = "Literal with tainteds {0}{1} and untainted {2} and tainted {3} and another untainted {4}";
+        AssertTaintedFormatWithOriginalCallCheck(":+-Literal with tainteds taintedcustomformatTAINTED2customformat and untainted UntaintedStringcustomformat and tainted TAINTED2customformat and another untainted OtherUntaintedStringcustomformat-+:",
+            System.String.Format(new FormatProviderForTest(), str, span),
+            () => System.String.Format(new FormatProviderForTest(), str, values));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingFormatWithProviderAndObjectReadOnlySpan_ResultIsTainted13()
+    {
+        var values = new object[] { "ww" };
+        var span = new ReadOnlySpan<object>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatwwcustomformat-+:",
+            System.String.Format(new FormatProviderForTest(), _taintedFormat1Arg, span),
+            () => System.String.Format(new FormatProviderForTest(), _taintedFormat1Arg, values));
+    }
+
+#endif
+
 }

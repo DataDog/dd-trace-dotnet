@@ -68,6 +68,14 @@ public sealed class Test
             Coverage.CoverageReporter.Handler.StartSession(module.Framework);
         }
 
+        // Capabilities tags (yes they are strings, this is because previously the values were "true" or "false" and we changed the format in attempt_to_fix-v2)
+        tags.CapabilitiesTestImpactAnalysis = "1";
+        tags.CapabilitiesEarlyFlakeDetection = "1";
+        tags.CapabilitiesAutoTestRetries = "1";
+        tags.CapabilitiesTestManagementQuarantine = "1";
+        tags.CapabilitiesTestManagementDisable = "1";
+        tags.CapabilitiesTestManagementAttemptToFix = "4";
+
         CurrentTest.Value = this;
         lock (OpenedTests)
         {
@@ -197,16 +205,18 @@ public sealed class Test
                 startLine -= 2;
             }
 
+            var ciValues = TestOptimization.Instance.CIValues;
+
             var tags = (TestSpanTags)_scope.Span.Tags;
-            tags.SourceFile = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
+            tags.SourceFile = ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
 
-            ImpactedTestsModule.Analyze(this);
+            _testOptimization.ImpactedTestsDetectionFeature?.ImpactedTestsAnalyzer.Analyze(this);
 
-            if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
+            if (ciValues.CodeOwners is { } codeOwners)
             {
-                var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
+                var match = codeOwners.Match("/" + ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
                 if (match is not null)
                 {
                     tags.CodeOwners = match.Value.GetOwnersString();
@@ -452,10 +462,24 @@ public sealed class Test
                 !string.IsNullOrEmpty(tags.BrowserDriver),
                 tags.IsRumActive == "true") is { } eventTypeWithMetadata)
         {
+            var retryReasonTag = tags.TestRetryReason switch
+            {
+                "efd" => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
+                "atr" => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
+                _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None
+            };
+
+            var quarantinedOrDisabled = tags.IsQuarantined == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsQuarantined :
+                                        tags.IsDisabled == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsDisabled :
+                                                                    MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None;
+            var attemptToFix = tags.IsAttemptToFix == "true" ? (tags.HasFailedAllRetries == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.AttemptToFixHasFailedAllRetries : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.IsAttemptToFix) : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None;
+
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
                 TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework),
                 eventTypeWithMetadata,
-                tags.TestRetryReason == "efd" ? MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection : tags.TestRetryReason == "atr" ? MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry : MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
+                retryReasonTag,
+                quarantinedOrDisabled,
+                attemptToFix);
         }
 
         Current = null;

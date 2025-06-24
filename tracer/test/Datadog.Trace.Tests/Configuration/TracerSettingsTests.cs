@@ -1050,16 +1050,35 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.TraceId128BitGenerationEnabled.Should().Be(expected);
+
+            // Additional behavior: Ensure that TraceId128BitLoggingEnabled is configured to the same value as TraceId128BitGenerationEnabled
+            settings.TraceId128BitLoggingEnabled.Should().Be(expected);
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
+        [MemberData(nameof(BooleanTestCases), true)]
         public void TraceId128BitLoggingEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled, value));
             var settings = new TracerSettings(source);
 
             settings.TraceId128BitLoggingEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [PairwiseData]
+        public void IsRemoteConfigurationAvailable(bool? overrideValue, bool? isRunningInAas)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, AsString(isRunningInAas)),
+                (ConfigurationKeys.Rcm.RemoteConfigurationEnabled, AsString(overrideValue)));
+            var settings = new TracerSettings(source);
+
+            // Default is "rcm is enabled" and "we're not in AAS"
+            var expected = (overrideValue ?? true) && !(isRunningInAas ?? false);
+            settings.IsRemoteConfigurationAvailable.Should().Be(expected);
+
+            static string AsString(bool? value) => value.HasValue ? (value.Value ? "1" : "0") : string.Empty;
         }
 
         [Fact]
@@ -1332,6 +1351,16 @@ namespace Datadog.Trace.Tests.Configuration
             tracerSettings.ServiceVersion.Should().NotBe("datadog_version");
             tracerSettings.ServiceName.Should().NotBe("datadog_service");
             errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "OTEL_RESOURCE_ATTRIBUTES".ToLowerInvariant(), "DD_TAGS".ToLowerInvariant());
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void InferredProxySpansEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.InferredProxySpansEnabled.Should().Be(expected);
         }
 
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)

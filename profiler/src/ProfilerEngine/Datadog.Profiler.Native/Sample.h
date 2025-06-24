@@ -5,6 +5,7 @@
 
 #include "IFrameStore.h"
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <iostream>
@@ -12,6 +13,7 @@
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <variant>
 #include <vector>
 
 struct SampleValueType
@@ -20,17 +22,20 @@ struct SampleValueType
     std::string Unit;
 };
 
-
 typedef std::vector<int64_t> Values;
-typedef std::pair<std::string_view, std::string> Label;
-typedef std::vector<Label> Labels;
+typedef std::pair<std::string_view, std::string> StringLabel;
 typedef std::pair<std::string_view, int64_t> NumericLabel;
-typedef std::pair<std::string_view, uint64_t> SpanLabel;
 typedef std::vector<NumericLabel> NumericLabels;
+typedef std::vector<std::variant<StringLabel, NumericLabel>> Labels;
+
+template<class... Ts>
+struct LabelsVisitor : Ts... { using Ts::operator()...; };
+template<class... Ts>
+LabelsVisitor(Ts...) -> LabelsVisitor<Ts...>;
 
 using namespace std::chrono_literals;
 
-class Sample
+class Sample final
 {
 public:
     static size_t ValuesCount;
@@ -53,7 +58,6 @@ public:
     const Values& GetValues() const;
     const std::vector<FrameInfoView>& GetCallstack() const;
     const Labels& GetLabels() const;
-    const NumericLabels& GetNumericLabels() const;
     std::string_view GetRuntimeId() const;
 
     // Since this class is not finished, this method is only for test purposes
@@ -65,43 +69,25 @@ public:
     void AddValue(std::int64_t value, size_t index);
     void AddFrame(FrameInfoView const& frame);
 
-    template<typename T>
+    template <typename T>
     void AddLabel(T&& label)
     {
-        _labels.push_back(std::forward<T>(label));
+        _allLabels.push_back(std::forward<T>(label));
     }
 
-    template<typename T>
-    void AddNumericLabel(T&& label)
-    {
-        _numericLabels.push_back(std::forward<T>(label));
-    }
-
-    template<typename T>
+    template <typename T>
     void ReplaceLabel(T&& label)
     {
-        for (auto it = _labels.rbegin(); it != _labels.rend(); it++)
+        auto it = std::find_if(_allLabels.rbegin(), _allLabels.rend(),
+                               [&label](auto& item) {
+                                   T* elt = std::get_if<T>(&item);
+                                   return elt != nullptr && elt->first == label.first;
+                               });
+
+        if (it != _allLabels.rend())
         {
-            if (it->first == label.first)
-            {
-                it->second = label.second;
-
-                return;
-            }
-        }
-    }
-
-    template<typename T>
-    void ReplaceNumericLabel(T&& label)
-    {
-        for (auto it = _numericLabels.rbegin(); it != _numericLabels.rend(); it++)
-        {
-            if (it->first == label.first)
-            {
-                it->second = label.second;
-
-                return;
-            }
+            auto& e = std::get<T>(*it);
+            e.second = label.second;
         }
     }
 
@@ -109,25 +95,25 @@ public:
     template <typename T>
     void SetPid(T&& pid)
     {
-        AddNumericLabel(NumericLabel{ProcessIdLabel, std::forward<T>(pid)});
+        AddLabel(NumericLabel{ProcessIdLabel, std::forward<T>(pid)});
     }
 
     template <typename T>
     void SetAppDomainName(T&& name)
     {
-        AddLabel(Label{AppDomainNameLabel, std::forward<T>(name)});
+        AddLabel(StringLabel{AppDomainNameLabel, std::forward<T>(name)});
     }
 
     template <typename T>
     void SetThreadId(T&& tid)
     {
-        AddLabel(Label{ThreadIdLabel, std::forward<T>(tid)});
+        AddLabel(StringLabel{ThreadIdLabel, std::forward<T>(tid)});
     }
 
     template <typename T>
     void SetThreadName(T&& name)
     {
-        AddLabel(Label{ThreadNameLabel, std::forward<T>(name)});
+        AddLabel(StringLabel{ThreadNameLabel, std::forward<T>(name)});
     }
 
     void SetTimestamp(std::chrono::nanoseconds timestamp)
@@ -145,8 +131,7 @@ public:
         _timestamp = 0ns;
         _callstack.clear();
         _runtimeId = {};
-        _numericLabels.clear();
-        _labels.clear();
+        _allLabels.clear();
         std::fill(_values.begin(), _values.end(), 0);
     }
     // well known labels
@@ -193,7 +178,6 @@ private:
     std::chrono::nanoseconds _timestamp;
     std::vector<FrameInfoView> _callstack;
     Values _values;
-    Labels _labels;
-    NumericLabels _numericLabels;
+    Labels _allLabels;
     std::string_view _runtimeId;
 };

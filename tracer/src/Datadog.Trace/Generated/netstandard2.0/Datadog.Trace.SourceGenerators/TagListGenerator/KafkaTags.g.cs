@@ -22,6 +22,8 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // BootstrapServersBytes = MessagePack.Serialize("messaging.kafka.bootstrap.servers");
         private static ReadOnlySpan<byte> BootstrapServersBytes => new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 107, 97, 102, 107, 97, 46, 98, 111, 111, 116, 115, 116, 114, 97, 112, 46, 115, 101, 114, 118, 101, 114, 115 };
+        // TopicBytes = MessagePack.Serialize("messaging.destination.name");
+        private static ReadOnlySpan<byte> TopicBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
         // PartitionBytes = MessagePack.Serialize("kafka.partition");
         private static ReadOnlySpan<byte> PartitionBytes => new byte[] { 175, 107, 97, 102, 107, 97, 46, 112, 97, 114, 116, 105, 116, 105, 111, 110 };
         // OffsetBytes = MessagePack.Serialize("kafka.offset");
@@ -38,6 +40,7 @@ namespace Datadog.Trace.Tagging
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
                 "messaging.kafka.bootstrap.servers" => BootstrapServers,
+                "messaging.destination.name" => Topic,
                 "kafka.partition" => Partition,
                 "kafka.offset" => Offset,
                 "kafka.tombstone" => Tombstone,
@@ -52,6 +55,9 @@ namespace Datadog.Trace.Tagging
             {
                 case "messaging.kafka.bootstrap.servers": 
                     BootstrapServers = value;
+                    break;
+                case "messaging.destination.name": 
+                    Topic = value;
                     break;
                 case "kafka.partition": 
                     Partition = value;
@@ -90,6 +96,11 @@ namespace Datadog.Trace.Tagging
             if (BootstrapServers is not null)
             {
                 processor.Process(new TagItem<string>("messaging.kafka.bootstrap.servers", BootstrapServers, BootstrapServersBytes));
+            }
+
+            if (Topic is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.destination.name", Topic, TopicBytes));
             }
 
             if (Partition is not null)
@@ -135,6 +146,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("messaging.kafka.bootstrap.servers (tag):")
                   .Append(BootstrapServers)
+                  .Append(',');
+            }
+
+            if (Topic is not null)
+            {
+                sb.Append("messaging.destination.name (tag):")
+                  .Append(Topic)
                   .Append(',');
             }
 

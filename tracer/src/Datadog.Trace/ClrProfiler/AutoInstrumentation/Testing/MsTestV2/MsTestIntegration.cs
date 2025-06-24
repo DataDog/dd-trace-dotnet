@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -79,6 +80,8 @@ internal static class MsTestIntegration
         ["b754cc51-34ed-419c-8582-bff04c3db05f"] = "3.8.0",
         ["2b3d62e3-5607-4ebd-840e-ee80475cc0bc"] = "3.8.1",
         ["3fe23123-93a2-4c44-8219-0a5f27a10316"] = "3.8.2",
+        ["102f7a9d-d61b-4864-b3c7-0a097a85f47b"] = "3.9.0",
+        ["e7bba6ac-32f6-4e62-9a3a-cf259c9e7448"] = "3.9.1",
     };
 
     private static long _totalTestCases;
@@ -93,7 +96,7 @@ internal static class MsTestIntegration
         var testName = testMethodInstance.TestMethodName ?? string.Empty;
 
         var suite = TestSuite.Current;
-        if (suite is null && testMethodInstance.Instance.TryDuckCast<ITestMethodInfo>(out var testMethodInfo))
+        if (suite is null && testMethodInstance.Instance.TryDuckCast<ITestMethodInfoWithParent>(out var testMethodInfo))
         {
             suite = GetOrCreateTestSuiteFromTestClassInfo(testMethodInfo.Parent);
         }
@@ -139,6 +142,9 @@ internal static class MsTestIntegration
 
         // Flaky retry
         Common.SetFlakyRetryTags(test, isRetry);
+
+        // Test management feature
+        Common.SetTestManagementFeature(test, isRetry);
 
         // Set test method
         if (testMethod is not null)
@@ -284,6 +290,21 @@ internal static class MsTestIntegration
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = itrShouldSkip && isUnskippable;
         return itrShouldSkip && !isUnskippable;
+    }
+
+    internal static TestOptimizationClient.TestManagementResponseTestPropertiesAttributes GetTestProperties<TTestMethod>(TTestMethod testMethodInfo)
+        where TTestMethod : ITestMethod
+    {
+        var testManagementFeature = TestOptimization.Instance.TestManagementFeature;
+        if (testManagementFeature?.Enabled != true)
+        {
+            return new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes();
+        }
+
+        var testModule = testMethodInfo.MethodInfo?.DeclaringType?.Assembly.GetName().Name ?? string.Empty;
+        var testClass = testMethodInfo.TestClassName ?? string.Empty;
+        var testMethod = testMethodInfo.MethodInfo?.Name ?? string.Empty;
+        return testManagementFeature.GetTestProperties(testModule, testClass, testMethod);
     }
 
     internal static TestModule? GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo? testAssemblyInfo, string? assemblyName = null)

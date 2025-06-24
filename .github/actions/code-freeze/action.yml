@@ -15,7 +15,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: octokit/request-action@v2.x
+    - uses: octokit/request-action@dad4362715b7fb2ddedf9772c8670824af564f0d  # v2.4.0
       name: 'Get open PRs'
       id: prs
       with:

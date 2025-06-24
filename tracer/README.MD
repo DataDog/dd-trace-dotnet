@@ -68,6 +68,43 @@ For example:
 .\build.cmd BuildAndRunWindowsIntegrationTests
 ```
 
+### Dev Containers
+
+#### VS Code
+
+##### Prerequisites
+
+- Install the [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) in VS Code.
+
+##### Steps
+
+1. Open a local VS Code window on the cloned repository.
+2. Open the command palette (`Ctrl+Shift+P` or `Cmd+Shift+P` on macOS) and select **"Dev Containers: Reopen in Container"**.
+3. Choose the **Tracer**.
+4. VS Code will open a new window connected to the selected container.
+5. Open the command palette again and select **.NET: Open Solution**. Choose the `Datadog.Trace.Minimal.slnf` solution file. Read more at [Project Management](https://code.visualstudio.com/docs/csharp/project-management).
+6. You can now build and run the tracer in the devcontainer.
+7. [Optional] Open the command palette, select `Tasks: Run Build Task`, `Tracer: Build on {OS} with Target` and choose the target you want to build.
+
+#### Rider
+
+##### Prerequisites
+
+- Ensure the **Dev Containers** plugin is enabled (it comes bundled with Rider).
+
+##### Steps
+
+1. Open **Rider**, select **Remote Development**, then choose **Dev Containers**.
+2. Since we want to use the **Dev Container** from the repository, select **"From Local Project"** and choose `.devcontainer/devcontainer.json`.
+3. In the **Select a Solution to Open** window, pick `Datadog.Trace.Minimal.slnf`.
+4. You can now build and run the tracer inside the **Dev Container**.
+
+#### Tips
+
+- Currently, the devcontainer is configured to use `debian.dockerfile`, but you can change it to either a local Dockerfile or a remote image as per your requirements.
+- Building Tracer can be resource-intensive and may even run out of memory (OOM) in some cases. If you encounter the error `MSB6006: "csc.dll" exited with code 137.`, increase the memory allocated to the devcontainer (16GB is recommended).
+- `Datadog.Trace.Minimal.slnf` is a minimal solution file that includes all the projects required to build the tracer. You can open other solutions as well, but they may not be fully supported in the devcontainer.
+
 ### Linux
 
 The recommended approach for Linux is to build using Docker. You can use this approach for both Windows and Linux hosts. The _build_in_docker.sh_ script automates building a Docker image with the required dependencies, and running the specified Nuke targets. For example, on Linux:
@@ -93,6 +130,17 @@ Alternatively, on Windows:
 You can use Rider and CLion, or Visual Studio Code to develop on macOS. When asked to select a solution file select `Datadog.Trace.OSX.slnf`. If using CLion for the native code make sure to select "Let CMake decide" for the generator.
 Building and testing can be done through the following Nuke targets:
 
+### Setup
+
+- Install [.NET SDK](https://dotnet.microsoft.com/en-us/download/dotnet)
+
+```bash
+# Install cmake
+brew install cmake
+```
+
+### Running tests
+
 ```bash
 # Clean and build the main tracer project
 ./build.sh Clean BuildTracerHome
@@ -102,6 +150,9 @@ Building and testing can be done through the following Nuke targets:
 
 # Build NuGet packages and MSIs. Requires BuildTracerHome to have previously been run
 ./build.sh PackageTracerHome
+
+# Start IntergrationTests dependencies, but only for a specific test
+docker-compose up rabbitmq_osx_arm64
 
 # Start IntegrationTests dependencies.
 docker-compose up StartDependencies.OSXARM64

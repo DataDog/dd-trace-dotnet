@@ -7,13 +7,14 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Logging
 {
     internal interface IDatadogLogger
     {
-        public string? FileLogDirectory { get; }
+        public FileLoggingConfiguration? FileLoggingConfiguration { get; }
 
         bool IsEnabled(LogEventLevel level);
 
@@ -98,6 +99,26 @@ namespace Datadog.Trace.Logging
         void Error<T0, T1, T2>(Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
 
         void Error(Exception? exception, string messageTemplate, object?[] args, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void ErrorSkipTelemetry(string messageTemplate, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void ErrorSkipTelemetry<T>(string messageTemplate, T property, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void ErrorSkipTelemetry<T0, T1>(string messageTemplate, T0 property0, T1 property1, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void ErrorSkipTelemetry<T0, T1, T2>(string messageTemplate, T0 property0, T1 property1, T2 property2, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void ErrorSkipTelemetry(string messageTemplate, object?[] args, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void ErrorSkipTelemetry(Exception? exception, string messageTemplate, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void ErrorSkipTelemetry<T>(Exception? exception, string messageTemplate, T property, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void ErrorSkipTelemetry<T0, T1>(Exception? exception, string messageTemplate, T0 property0, T1 property1, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void ErrorSkipTelemetry<T0, T1, T2>(Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void ErrorSkipTelemetry(Exception? exception, string messageTemplate, object?[] args, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
 
         void CloseAndFlush();
     }

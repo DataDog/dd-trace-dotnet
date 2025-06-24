@@ -20,7 +20,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public const string Eligible = nameof(Eligible);
         public const string NotEligible = nameof(NotEligible);
         public const string ExceptionTrackManagerNotInitialized = nameof(ExceptionTrackManagerNotInitialized);
-        public const string NotRootSpan = nameof(NotRootSpan);
         public const string ExceptionObjectIsNull = nameof(ExceptionObjectIsNull);
         public const string NonSupportedExceptionType = nameof(NonSupportedExceptionType);
         public const string CachedDoneExceptionCase = nameof(CachedDoneExceptionCase);

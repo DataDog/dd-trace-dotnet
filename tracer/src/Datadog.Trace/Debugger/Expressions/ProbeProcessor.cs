@@ -7,14 +7,18 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
@@ -161,7 +165,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public bool ShouldProcess(in ProbeData probeData)
         {
-            return HasCondition() || (probeData.Sampler.Sample());
+            return HasCondition() || probeData.Sampler.Sample();
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
@@ -343,7 +347,10 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
-            SetSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
+            if (Log.IsEnabled(LogEventLevel.Debug) && evaluationResult.HasError)
+            {
+                Log.Debug("Evaluation errors: {Errors}", evaluationResult.Errors.Select(er => $"Expression: {er.Expression}{Environment.NewLine}Error: {er.Message}"));
+            }
 
             if (evaluationResult.Metric.HasValue && ProbeInfo.MetricKind.HasValue)
             {
@@ -354,12 +361,17 @@ namespace Datadog.Trace.Debugger.Expressions
                 shouldStopCapture = true;
             }
 
+            if (evaluationResult.Decorations != null)
+            {
+                SetSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
+            }
+
             if (evaluationResult.HasError)
             {
                 return evaluationResult;
             }
 
-            if (evaluationResult.Condition != null && // meaning not metric, span probe or span decoration
+            if (evaluationResult.Condition != null && // i.e. not a metric, span probe, or span decoration
                 (evaluationResult.Condition is false ||
                 !sampler.Sample()))
             {
@@ -373,8 +385,13 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
-            if (evaluationResult.Decorations == null || Tracer.Instance?.ScopeManager?.Active == null)
+            if (!TryGetScope(out var scope))
             {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("No active scope available, skipping span decoration. Probe: {ProbeId}", ProbeInfo.ProbeId);
+                }
+
                 return;
             }
 
@@ -385,35 +402,42 @@ namespace Datadog.Trace.Debugger.Expressions
                 var decoration = evaluationResult.Decorations[i];
                 var evaluationErrorTag = $"{DynamicPrefix}{decoration.TagName}.evaluation_error";
                 var probeIdTag = $"{DynamicPrefix}{decoration.TagName}.probe_id";
-                Span? targetSpan = null;
+                ISpan? targetSpan = null;
 
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
-                        targetSpan = Tracer.Instance.InternalActiveScope.Root?.Span;
+                        targetSpan = scope.Root?.Span;
                         break;
                     case TargetSpan.Active:
-                        targetSpan = Tracer.Instance.InternalActiveScope.Span;
+                        targetSpan = scope.Span;
                         break;
                     default:
                         Log.Error("Invalid target span. Probe: {ProbeId}", ProbeInfo.ProbeId);
                         break;
                 }
 
-                if (targetSpan != null)
+                if (targetSpan == null)
                 {
-                    targetSpan.SetTag(decoration.TagName, decoration.Value);
-                    targetSpan.SetTag(probeIdTag, ProbeInfo.ProbeId);
-                    if (decoration.Errors?.Length > 0)
-                    {
-                        targetSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
-                    }
-                    else if (targetSpan.GetTag(evaluationErrorTag) != null)
-                    {
-                        targetSpan.SetTag(evaluationErrorTag, null);
-                    }
+                    Log.Warning("No root span or active span is available, so we can't set the {Tag} tag. Probe ID: {ProbeId}", decoration.TagName, this.ProbeInfo.ProbeId);
+                    continue;
+                }
 
-                    attachedTags = true;
+                targetSpan.SetTag(decoration.TagName, decoration.Value);
+                targetSpan.SetTag(probeIdTag, this.ProbeInfo.ProbeId);
+                if (decoration.Errors?.Length > 0)
+                {
+                    targetSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                }
+                else if (targetSpan.GetTag(evaluationErrorTag) != null)
+                {
+                    targetSpan.SetTag(evaluationErrorTag, null);
+                }
+
+                attachedTags = true;
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID={ProbeId}", decoration.TagName, targetSpan.SpanId, this.ProbeInfo.ProbeId);
                 }
             }
 
@@ -427,6 +451,41 @@ namespace Datadog.Trace.Debugger.Expressions
             if (attachedTags)
             {
                 LiveDebugger.Instance.SetProbeStatusToEmitting(ProbeInfo);
+            }
+        }
+
+        private bool TryGetScope([NotNullWhen(true)] out Scope? scope)
+        {
+            try
+            {
+                if (Tracer.Instance.ActiveScope is Scope activeScope)
+                {
+                    scope = activeScope;
+                    return true;
+                }
+#if NETFRAMEWORK
+                var ctx = WcfCommon.GetCurrentOperationContext?.Invoke();
+                if (ctx?.DuckCast<IOperationContextStruct>() is { } ctxProxy
+                 && ((IDuckType?)ctxProxy.RequestContext)?.Instance is { } requestContextInstance
+                 && WcfCommon.Scopes.TryGetValue(requestContextInstance, out scope))
+                {
+                    return scope != null;
+                }
+
+                Log.Warning("Unable to find active scope in WCF context for span decoration. Probe ID: {ProbeId}", this.ProbeInfo.ProbeId);
+                scope = null;
+                return false;
+#else
+                Log.Warning("No active scope available for span decoration. Probe ID: {ProbeId}", this.ProbeInfo.ProbeId);
+                scope = null;
+                return false;
+#endif
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error while trying to get active scope for span decoration. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
+                scope = null;
+                return false;
             }
         }
 

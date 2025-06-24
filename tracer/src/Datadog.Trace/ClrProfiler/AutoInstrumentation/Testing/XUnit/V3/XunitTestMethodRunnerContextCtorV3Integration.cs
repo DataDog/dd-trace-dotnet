@@ -51,15 +51,24 @@ public static class XunitTestMethodRunnerContextCtorV3Integration
         TExceptionAggregator aggregator,
         CancellationTokenSource cancellationTokenSource,
         object?[] constructorArguments)
-        where TIXunitTestMethod : IXunitTestMethodV3
     {
         var testOptimization = TestOptimization.Instance;
-        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled != true &&
-            testOptimization.FlakyRetryFeature?.Enabled != true)
+
+        var isEarlyFlakeDetectionEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true;
+        var isFlakyRetryEnabled = testOptimization.FlakyRetryFeature?.Enabled == true;
+        var isTestManagementEnabled = testOptimization.TestManagementFeature?.Enabled == true;
+
+        // If there's no...
+        // - EarlyFlakeDetectionFeature enabled
+        // - FlakyRetryFeature enabled
+        // - TestManagementFeature enabled
+        // then we don't need to handle any retry, so we just skip the retry logic.
+        if (!isEarlyFlakeDetectionEnabled && !isFlakyRetryEnabled && !isTestManagementEnabled)
         {
             return CallTargetState.GetDefault();
         }
 
+        // If the message bus is null, or it's a duck type, we don't do anything with it
         if (messageBus is null || messageBus is IDuckType)
         {
             return CallTargetState.GetDefault();

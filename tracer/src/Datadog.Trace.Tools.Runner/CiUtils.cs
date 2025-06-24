@@ -39,26 +39,22 @@ internal static class CiUtils
         // Define the arguments
         var lstArguments = new List<string>(args.Length > 1 ? args.Skip(1) : []);
 
-        // Test optimization instance.
-        var testOptimization = TestOptimization.Instance;
-
-        // Test optimization mode is enabled.
-        var testOptimizationSettings = testOptimization.Settings;
-
         // Get profiler environment variables
         if (!RunHelper.TryGetEnvironmentVariables(
                 applicationContext,
                 context,
                 commonTracerSettings,
-                new Utils.CIVisibilityOptions(testOptimizationSettings.InstallDatadogTraceInGac, true, reducePathLength),
+                new Utils.CIVisibilityOptions(TestOptimizationSettings.FromDefaultSources().InstallDatadogTraceInGac, true, reducePathLength),
                 out var profilerEnvironmentVariables))
         {
             context.ExitCode = 1;
             return new InitResults(false, lstArguments, null, false, false, Task.CompletedTask);
         }
 
-        // Reload the Test optimization settings (in case they were changed by the environment variables using the `--set-env` option)
-        testOptimizationSettings = TestOptimizationSettings.FromDefaultSources();
+        // Reload Test optimization instance and settings  (in case they were changed by the environment variables using the `--set-env` option)
+        var testOptimization = new TestOptimization(CIEnvironmentValues.Instance);
+        var testOptimizationSettings = testOptimization.Settings;
+        TestOptimization.Instance = testOptimization;
 
         // We force Test optimization mode on child process
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
@@ -122,6 +118,7 @@ internal static class CiUtils
         var earlyFlakeDetectionEnabled = testOptimizationSettings.EarlyFlakeDetectionEnabled == true;
         var flakyRetryEnabled = testOptimizationSettings.FlakyRetryEnabled == true;
         var impactedTestsDetectionEnabled = testOptimizationSettings.ImpactedTestsDetectionEnabled == true;
+        var testManagementEnabled = testOptimizationSettings.TestManagementEnabled == true;
 
         var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint);
         if (agentless || hasEvpProxy)
@@ -134,7 +131,7 @@ internal static class CiUtils
             Log.Debug("RunCiCommand: Uploading repository changes.");
 
             // Change the .git search folder to the CurrentDirectory or WorkingFolder
-            var ciValues = CIEnvironmentValues.Instance;
+            var ciValues = testOptimization.CIValues;
             ciValues.GitSearchFolder = Environment.CurrentDirectory;
             if (string.IsNullOrEmpty(ciValues.WorkspacePath))
             {
@@ -142,7 +139,7 @@ internal static class CiUtils
                 ciValues.GitSearchFolder = null;
             }
 
-            var client = TestOptimizationClient.Create(ciValues.WorkspacePath, testOptimizationSettings);
+            var client = TestOptimizationClient.Create(ciValues.WorkspacePath ?? Environment.CurrentDirectory, testOptimization);
             if (testOptimizationSettings.GitUploadEnabled != false || testOptimizationSettings.IntelligentTestRunnerEnabled)
             {
                 // If we are in git upload only then we can defer the await until the child command exits.
@@ -191,7 +188,8 @@ internal static class CiUtils
                  testOptimizationSettings.KnownTestsEnabled == null ||
                  testOptimizationSettings.EarlyFlakeDetectionEnabled == null ||
                  testOptimizationSettings.FlakyRetryEnabled == null ||
-                 testOptimizationSettings.ImpactedTestsDetectionEnabled == null))
+                 testOptimizationSettings.ImpactedTestsDetectionEnabled == null ||
+                 testOptimizationSettings.TestManagementEnabled == null))
             {
                 try
                 {
@@ -216,6 +214,7 @@ internal static class CiUtils
                     earlyFlakeDetectionEnabled = earlyFlakeDetectionEnabled || itrSettings.EarlyFlakeDetection.Enabled == true;
                     flakyRetryEnabled = flakyRetryEnabled || itrSettings.FlakyTestRetries == true;
                     impactedTestsDetectionEnabled = impactedTestsDetectionEnabled || itrSettings.ImpactedTestsEnabled == true;
+                    testManagementEnabled = testManagementEnabled || itrSettings.TestManagement.Enabled == true;
                 }
                 catch (Exception ex)
                 {
@@ -230,16 +229,19 @@ internal static class CiUtils
         Log.Debug("RunCiCommand: EarlyFlakeDetectionEnabled = {Value}", earlyFlakeDetectionEnabled);
         Log.Debug("RunCiCommand: FlakyRetryEnabled = {Value}", flakyRetryEnabled);
         Log.Debug("RunCiCommand: ImpactedTestsDetectionEnabled = {Value}", impactedTestsDetectionEnabled);
+        Log.Debug("RunCiCommand: TestManagementEnabled = {Value}", testManagementEnabled);
         testOptimizationSettings.SetCodeCoverageEnabled(codeCoverageEnabled);
         testOptimizationSettings.SetKnownTestsEnabled(knownTestsEnabled);
         testOptimizationSettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
         testOptimizationSettings.SetFlakyRetryEnabled(flakyRetryEnabled);
         testOptimizationSettings.SetImpactedTestsEnabled(impactedTestsDetectionEnabled);
+        testOptimizationSettings.SetTestManagementEnabled(testManagementEnabled);
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.KnownTestsEnabled] = knownTestsEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.FlakyRetryEnabled] = flakyRetryEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled] = impactedTestsDetectionEnabled ? "1" : "0";
+        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestManagementEnabled] = testManagementEnabled ? "1" : "0";
 
         if (!testSkippingEnabled)
         {

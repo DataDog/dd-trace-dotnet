@@ -11,9 +11,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -56,6 +58,7 @@ internal static partial class IastModule
     private const string OperationNameSessionTimeout = "session_timeout";
     private const string OperationNameEmailHtmlInjection = "email_html_injection";
     private const string ReferrerHeaderName = "Referrer";
+    private const int VulnerabilityStatsRouteLimit = 4096;
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly IastSettings IastSettings = Iast.Instance.Settings;
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy = new Lazy<EvidenceRedactor?>(() => CreateRedactor(IastSettings));
@@ -64,6 +67,7 @@ internal static partial class IastModule
     private static readonly SourceType[] _dbSources = [SourceType.SqlRowValue];
     private static readonly HashSet<int> LoggedAspectExceptionMessages = [];
     private static bool _showTimeoutExceptionError = true;
+    private static ConcurrentDictionary<string, VulnerabilityStats> _vulnerabilityStats = new ConcurrentDictionary<string, VulnerabilityStats>();
 
     internal static void LogTimeoutError(RegexMatchTimeoutException err)
     {
@@ -571,8 +575,9 @@ internal static partial class IastModule
 
         var currentSpan = (tracer.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
+        var rootSpan = traceContext?.RootSpan;
 
-        if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
+        if (traceContext?.IastRequestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
@@ -599,10 +604,40 @@ internal static partial class IastModule
 
     public static bool AddRequestVulnerabilitiesAllowed()
     {
+        // Check for global budget only
         var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
+    }
+
+    private static VulnerabilityStats GetRouteVulnerabilityStats(Span? span)
+    {
+        if (_vulnerabilityStats.Count >= VulnerabilityStatsRouteLimit)
+        {
+            _vulnerabilityStats.Clear(); // Poor man's LRU cache
+        }
+
+        if (span?.Type == SpanTypes.Web)
+        {
+            var route = span.GetTag(Tags.HttpRoute) ?? string.Empty;
+            var method = span.GetTag(Tags.HttpMethod) ?? string.Empty;
+            var key = $"{method}#{route}";
+            if (key.Length > 1)
+            {
+                return _vulnerabilityStats.GetOrAdd(key, (k) => new(k));
+            }
+        }
+
+        return new VulnerabilityStats(string.Empty);
+    }
+
+    internal static void UpdateRouteVulnerabilityStats(ref VulnerabilityStats stats)
+    {
+        if (stats.Route is not null)
+        {
+            _vulnerabilityStats[stats.Route] = stats;
+        }
     }
 
     private static IastModuleResponse GetScope(
@@ -628,7 +663,8 @@ internal static partial class IastModule
         var scope = tracer.ActiveScope as Scope;
         var currentSpan = scope?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
-        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
+        var rootSpan = traceContext?.RootSpan;
+        var isRequest = rootSpan?.Type == SpanTypes.Web;
 
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
         if (!isRequest && taintValidator != null)
@@ -659,12 +695,19 @@ internal static partial class IastModule
             var unsafeRanges = Ranges.GetUnsafeRanges(ranges, exclusionSecureMarks, safeSources);
             if (unsafeRanges is null || unsafeRanges.Length == 0)
             {
-                OnSupressedVulnerabilityTelemetry(VulnerabilityTypeUtils.GetTag(vulnerabilityType));
+                OnSupressedVulnerabilityTelemetry(VulnerabilityTypeUtils.FromName(vulnerabilityType));
                 return IastModuleResponse.Empty;
             }
 
             // Contains at least one range that is not safe (when analyzing a vulnerability that can have secure marks)
             ranges = unsafeRanges;
+        }
+
+        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
+        {
+            // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
+            // not activated for this particular request
+            return IastModuleResponse.Empty;
         }
 
         var location = addLocation ? GetLocation(externalStack, currentSpan) : null;
@@ -916,11 +959,12 @@ internal static partial class IastModule
         }
     }
 
-    public static void LogAspectException(Exception ex, string aspectInfo)
+    public static void LogAspectException(Exception ex, string extraInfo = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "")
     {
         try
         {
-            var hashCode = aspectInfo.GetHashCode();
+            var text = $"{Path.GetFileNameWithoutExtension(filePath)}.{memberName} {extraInfo}";
+            var hashCode = text.GetHashCode();
             bool alreadyLogged;
             lock (LoggedAspectExceptionMessages)
             {
@@ -931,17 +975,17 @@ internal static partial class IastModule
 #pragma warning disable DDLOG004 // Message templates should be constant
             if (alreadyLogged)
             {
-                Log.Debug(ex, $"Error invoking {aspectInfo}");
+                Log.Debug(ex, $"Error invoking {extraInfo}");
             }
             else
             {
-                Log.Error(ex, $"Error invoking {aspectInfo}");
+                Log.Error(ex, $"Error invoking {extraInfo}");
             }
 #pragma warning restore DDLOG004 // Message templates should be constant
         }
         catch (Exception e)
         {
-            Log.Debug(e, "Error while logging aspect exception.");
+            Log.Debug(new AggregateException(ex, e), "Error while logging aspect exception");
         }
     }
 

@@ -56,6 +56,9 @@ namespace Datadog.Trace.TestHelpers
         [Key("span_links")]
         public List<MockSpanLink> SpanLinks { get; set; }
 
+        [Key("span_events")]
+        public List<MockSpanEvent> SpanEvents { get; set; }
+
         public string GetTag(string key)
         {
             if (Tags.TryGetValue(key, out string value))
