@@ -60,23 +60,16 @@ internal static class DatadogLoggingFactory
 
         return new DatadogLoggingConfiguration(rateLimit, fileConfig, redactedErrorLogsConfig, consoleConfig);
 
-        static bool Contains(string?[]? array, string toMatch)
+        static bool Contains(string?[]? items, string value)
         {
-            if (array is null)
+            if (items is not null)
             {
-                return false;
-            }
-
-            foreach (var value in array)
-            {
-                if (string.IsNullOrWhiteSpace(value))
+                foreach (var item in items)
                 {
-                    continue;
-                }
-
-                if (string.Equals(value!.Trim(), toMatch))
-                {
-                    return true;
+                    if (string.Equals(item?.Trim(), value, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
                 }
             }
 
