@@ -552,6 +552,13 @@ namespace Datadog.Trace.Configuration
         public const string SpanPointersEnabled = "DD_TRACE_AWS_ADD_SPAN_POINTERS";
 
         /// <summary>
+        /// Configuration key for specifying which GraphQL error extensions to capture.
+        /// A comma-separated list of extension keys to capture. Empty or not present means no extensions are captured.
+        /// </summary>
+        /// <seealso cref="TracerSettings.GraphQLErrorExtensions"/>
+        public const string GraphQLErrorExtensions = "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility

@@ -9,7 +9,7 @@ using System.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.Agent;
+namespace Datadog.Trace.Util;
 
 internal class SpanEventConverter : JsonConverter<SpanEvent>
 {
