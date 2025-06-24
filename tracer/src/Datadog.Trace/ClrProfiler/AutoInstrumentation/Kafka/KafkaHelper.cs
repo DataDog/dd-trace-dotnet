@@ -338,10 +338,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    Console.WriteLine($"DSM Before Sleep at {DateTime.Now:HH:mm:ss.fff}");
-                    System.Threading.Thread.Sleep(100);
-                    Console.WriteLine($"DSM After Sleep at {DateTime.Now:HH:mm:ss.fff}");
-
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
