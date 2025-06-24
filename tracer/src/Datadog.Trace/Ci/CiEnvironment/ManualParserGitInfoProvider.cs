@@ -48,12 +48,14 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
             headDirectoryPath = wInfo.WorkTreeGitDirectory.FullName;
             gitDirectoryPath = wInfo.GitDirectory.FullName;
             sourceRoot = wInfo.WorkTreeDirectory.FullName;
+            Log.Information("ManualParserGitInfoProvider: Using work tree directory {SourceRoot} with head path: {HeadPath} and git directory {GitDirectory}", sourceRoot, headDirectoryPath, gitDirectoryPath);
         }
         else if (gitDirectory is DirectoryInfo { Parent: { } } dInfo)
         {
             headDirectoryPath = dInfo.FullName;
             gitDirectoryPath = dInfo.FullName;
             sourceRoot = dInfo.Parent.FullName;
+            Log.Information("ManualParserGitInfoProvider: Using directory {SourceRoot} with head path: {HeadPath} and git directory {GitDirectory}", sourceRoot, headDirectoryPath, gitDirectoryPath);
         }
         else
         {

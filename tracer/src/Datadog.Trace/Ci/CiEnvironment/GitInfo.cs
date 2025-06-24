@@ -233,8 +233,6 @@ internal class GitInfo : IGitInfo
                             workTreeDirectory.GitDirectory?.FullName);
                         return workTreeDirectory;
                     }
-
-                    return dirInfo;
                 }
 
                 dirInfo = dirInfo.Parent;
