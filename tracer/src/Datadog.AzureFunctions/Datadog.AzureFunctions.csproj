@@ -10,7 +10,7 @@
 
     <!-- nuget version: move $Version to $VersionPrefix so we can add a prerelease suffix -->
     <VersionPrefix>$(Version)</VersionPrefix>
-    <VersionSuffix>preview3</VersionSuffix>
+    <VersionSuffix>preview4</VersionSuffix>
     <Version></Version>
 
     <!-- nuget package metadata -->
@@ -32,17 +32,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- using released versions for now while testing,
-         later we can switch to the commented ProjectReferences below -->
-    <PackageReference Include="Datadog.Trace" Version="3.19.0"/>
-    <PackageReference Include="Datadog.Trace.Annotations" Version="1.0.0"/>
-    <!--
-    <ProjectReference Include="..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
-    <ProjectReference Include="..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
-    -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
 
-    <!-- content files are not transitive -->
-    <!-- <PackageReference Include="Datadog.Serverless.Compat" Version="0.1.0"/> -->
+    <PackageReference Include="Datadog.Serverless.Compat" Version="0.1.0" PrivateAssets="none" />
 
     <!-- managed assemblies -->
     <None Include="$(SourcePath)/net6.0/Datadog.Trace.dll" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/net6.0/">
