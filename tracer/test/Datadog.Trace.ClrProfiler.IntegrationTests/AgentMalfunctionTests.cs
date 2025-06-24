@@ -45,11 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Flaky("Named pipes is flaky", maxRetries: 3)]
         public Task NamedPipes_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
         {
-            if (EnvironmentTools.IsWindows())
-            {
-                throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
-            }
-
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
             return SubmitsTraces(behaviour, TestTransports.WindowsNamedPipe, metadataSchemaVersion, dataPipelineEnabled);
         }
 
