@@ -87,13 +87,15 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public void Return(IntPtr block)
     {
-        if (_isDisposed)
-        {
-            ThrowObjectDisposedException();
-        }
-
         if (block == IntPtr.Zero)
         {
+            return;
+        }
+
+        if (_isDisposed)
+        {
+            // If the pool is disposed, we free the block to avoid memory leaks.
+            ReturnSlow(block);
             return;
         }
 
@@ -120,13 +122,22 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public void Return(IList<IntPtr> blocks)
     {
-        if (_isDisposed)
-        {
-            ThrowObjectDisposedException();
-        }
-
         if (blocks.Count == 0)
         {
+            return;
+        }
+
+        if (_isDisposed)
+        {
+            foreach (var block in blocks)
+            {
+                if (block != IntPtr.Zero)
+                {
+                    // If the pool is disposed, we free each block to avoid memory leaks.
+                    ReturnSlow(block);
+                }
+            }
+
             return;
         }
 
@@ -138,11 +149,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             if (_items[i] == IntPtr.Zero)
             {
                 _items[i] = blocks[blockIndex++];
-
-                if (i < earliestInserted)
-                {
-                    earliestInserted = i;
-                }
+                earliestInserted = Math.Min(earliestInserted, i);
             }
         }
 
