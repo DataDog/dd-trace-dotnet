@@ -26,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static bool _headersInjectionEnabled = true;
         private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
 
-        private static bool _hasLogged = false;
-
         internal static Scope? CreateProducerScope(
             Tracer tracer,
             object producer,
@@ -43,7 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
                     // integration disabled, don't create a scope/span, skip this trace
-                    Console.WriteLine("Rob Custom Log: KafkaHelper.CreateProducerScope - integration disabled");
                     return null;
                 }
 
@@ -53,7 +50,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     parent.OperationName == operationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
                 {
-                    Console.WriteLine("Rob Custom Log: KafkaHelper.CreateProducerScope - parent is not null");
                     return null;
                 }
 
@@ -342,12 +338,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    System.Threading.Thread.Sleep(10);
-                    if (!_hasLogged)
-                    {
-                        Console.WriteLine("Rob Custom Log: KafkaHelper.TryInjectHeaders");
-                        _hasLogged = true;
-                    }
+                    Console.WriteLine($"DSM Before Sleep at {DateTime.Now:HH:mm:ss.fff}");
+                    System.Threading.Thread.Sleep(100);
+                    Console.WriteLine($"DSM After Sleep at {DateTime.Now:HH:mm:ss.fff}");
 
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
@@ -356,14 +349,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
-                }
-                else
-                {
-                    if (!_hasLogged)
-                    {
-                        Console.WriteLine("Rob Custom Log: KafkaHelper.TryInjectHeaders - dataStreamsManager.IsEnabled is false");
-                        _hasLogged = true;
-                    }
                 }
             }
             catch (Exception ex)
