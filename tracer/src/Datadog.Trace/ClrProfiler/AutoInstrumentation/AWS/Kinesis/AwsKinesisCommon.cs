@@ -41,9 +41,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         public static string? GetStreamName(IAmazonKinesisRequest request)
         {
             string? streamName = request.StreamName;
+            Console.WriteLine($"Got stream name from request: {streamName}");
+
             if (string.IsNullOrEmpty(streamName) && request is IAmazonKinesisRequestWithStreamARN requestWithArn)
             {
+                Console.WriteLine($"Stream name was empty and request has StreamARN, attempting to parse stream name from ARN: {requestWithArn.StreamARN}");
                 streamName = StreamNameFromARN(requestWithArn.StreamARN);
+                Console.WriteLine($"Parsed stream name from ARN: {streamName}");
             }
 
             return streamName;
