@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             SetServiceName("xunit-tests");
             SetServiceVersion("1.0.0");
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         }
 
         [SkippableTheory]

@@ -75,8 +75,6 @@ internal class ImpactedTestsModule
         // We don't have any modified files, let's try to calculate the PR base commit
         if (modifiedFiles.Length == 0)
         {
-            // Retrieve diff files from Backend
-
             // set the new base commit SHA
             baseCommitSha = CalculateBaseCommit(workspacePath, defaultBranch, environmentValues);
 
@@ -101,6 +99,7 @@ internal class ImpactedTestsModule
             Log.Information("ImpactedTestsModule: No modified files found.");
         }
 
+        Log.Debug<string, string, int>("ImpactedTestsModule: Created with BaseCommit {BaseCommit}, CurrentCommit {CurrentCommit}, ModifiedFilesCount {ModifiedFilesCount}", baseCommitSha, currentCommitSha, modifiedFiles.Length);
         return new ImpactedTestsModule(baseCommitSha, currentCommitSha, modifiedFiles);
     }
 
