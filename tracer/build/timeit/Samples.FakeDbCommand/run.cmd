@@ -23,8 +23,3 @@ echo *********************
 echo .NET Core 6.0
 echo *********************
 dotnet timeit Samples.FakeDbCommand.windows.net60.json
-
-echo *********************
-echo .NET Core 8.0
-echo *********************
-dotnet timeit Samples.FakeDbCommand.windows.net80.json
