@@ -1213,7 +1213,7 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.ContentLength64 = buffer.LongLength;
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                                 ctx.Response.Close();
-                                ConfigSent = ConfigSent || mockTracerResponse.IsConfigResponse;
+                                ConfigSent |= mockTracerResponse.IsConfigResponse;
                             }
                         }
                         catch (Exception ex)

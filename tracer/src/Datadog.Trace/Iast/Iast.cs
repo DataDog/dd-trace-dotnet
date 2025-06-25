@@ -21,7 +21,6 @@ namespace Datadog.Trace.Iast;
 /// </summary>
 internal class Iast
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Iast>();
     private static Iast? _instance;
     private static bool _globalInstanceInitialized;
     private static object _globalInstanceLock = new();
@@ -88,7 +87,6 @@ internal class Iast
     {
         if (_discoveryService is null)
         {
-            Log.Error("Discovery service null set to {0}", _discoveryService is null);
             _discoveryService = Tracer.Instance.TracerManager.DiscoveryService;
             SubscribeToDiscoveryService(_discoveryService);
         }
