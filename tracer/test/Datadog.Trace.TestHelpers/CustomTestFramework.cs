@@ -228,7 +228,7 @@ namespace Datadog.Trace.TestHelpers
                     TestCases = pair.Item2.Where(x => failedFiltered.Contains(x)).ToList(),
                     DisableParallelization = IsParallelizationDisabled(pair.Item1)
                 })
-                .Where(c => !c.TestCases.Any());
+                .Where(c => c.TestCases.Any());
                 .ToList();
                 var traceDebugOldValue = Environment.GetEnvironmentVariable("DD_TRACE_DEBUG");
                 try
