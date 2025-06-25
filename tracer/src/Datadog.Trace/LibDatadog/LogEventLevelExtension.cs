@@ -12,16 +12,14 @@ namespace Datadog.Trace.LibDatadog;
 internal static class LogEventLevelExtension
 {
     public static LogEventLevel ToLogEventLevel(this Vendors.Serilog.Events.LogEventLevel level)
-    {
-        return level switch
+        => level switch
         {
             Vendors.Serilog.Events.LogEventLevel.Verbose => LogEventLevel.Trace,
             Vendors.Serilog.Events.LogEventLevel.Debug => LogEventLevel.Debug,
             Vendors.Serilog.Events.LogEventLevel.Information => LogEventLevel.Info,
             Vendors.Serilog.Events.LogEventLevel.Warning => LogEventLevel.Warn,
-            // We don't have a "Fatal" level in libdatadog, so we map it to Error since this is closed mapping
-            Vendors.Serilog.Events.LogEventLevel.Error or Vendors.Serilog.Events.LogEventLevel.Fatal => LogEventLevel.Error,
-            _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
+            // We don't have a "Fatal" level in libdatadog, so we map everything else to Error
+            // We also don't want to risk throwing
+            _ => LogEventLevel.Error,
         };
-    }
 }
