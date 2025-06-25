@@ -776,6 +776,10 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
 
+            GraphQLErrorExtensions = TrimSplitString(
+                config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
+                commaSeparator);
+
             static void RecordDisabledIntegrationsTelemetry(IntegrationSettingsCollection integrations, IConfigurationTelemetry telemetry)
             {
                 // Record the final disabled settings values in the telemetry, we can't quite get this information
@@ -1306,6 +1310,12 @@ namespace Datadog.Trace.Configuration
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
+        /// Gets which GraphQL error extensions to capture.
+        /// A comma-separated list of extension keys to capture. Empty or not present means no extensions are captured.        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GraphQLErrorExtensions"/>
+        internal string[] GraphQLErrorExtensions { get; }
+
+        /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
         /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios.
         /// It may also be explicitly disabled
@@ -1409,7 +1419,11 @@ namespace Datadog.Trace.Configuration
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    list.Add(value.Trim());
+                    var trimmedValue = value.Trim();
+                    if (!list.Contains(trimmedValue))
+                    {
+                        list.Add(trimmedValue);
+                    }
                 }
             }
 
