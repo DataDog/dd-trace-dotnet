@@ -232,17 +232,22 @@ namespace Datadog.Trace.TestHelpers
 
                 collectionsFailed.RemoveAll(c => !c.TestCases.Any());
                 var traceDebugOldValue = Environment.GetEnvironmentVariable("DD_TRACE_DEBUG");
-                Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
-                List<Task<RunSummary>> tasks = new();
-
-                foreach (var test in collectionsFailed)
+                try
                 {
-                    tasks.Add(runner.RunAsync(async () => await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource)));
+                    Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+                    List<Task<RunSummary>> tasks = new(collectionsFailed.Count);
+    
+                    foreach (var test in collectionsFailed)
+                    {
+                        tasks.Add(runner.RunAsync(async () => await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource)));
+                    }
+    
+                    await Task.WhenAll(tasks);
                 }
-
-                await Task.WhenAll(tasks);
-
-                Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", traceDebugOldValue);
+                finally
+                {
+                    Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", traceDebugOldValue);
+                }
                 var failedSummary = new RunSummary();
                 foreach (var task in tasks)
                 {
