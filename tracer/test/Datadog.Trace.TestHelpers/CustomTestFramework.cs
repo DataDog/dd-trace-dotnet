@@ -347,7 +347,7 @@ namespace Datadog.Trace.TestHelpers
                         // If this throws, we just let it bubble up, regardless of whether there's a retry, as this indicates an xunit infra issue
                         var summary = await RunTest(messageBus);
 
-                        if (summary.Failed > 0)
+                        if ((summary.Failed > 0) && (!_failedTests.Contains(testCase)))
                         {
                             _failedTests.Enqueue(testCase);
                         }
