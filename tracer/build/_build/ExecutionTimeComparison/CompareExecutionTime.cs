@@ -138,6 +138,7 @@ public class CompareExecutionTime
         ExecutionTimeFramework.NetFramework => ".NET Framework 4.8",
         ExecutionTimeFramework.Netcoreapp31 => ".NET Core 3.1",
         ExecutionTimeFramework.Net6 => ".NET 6",
+        ExecutionTimeFramework.Net8 => ".NET 8",
         _ => throw new NotImplementedException(),
     };
 
@@ -147,11 +148,14 @@ public class CompareExecutionTime
             ("results_Samples.FakeDbCommand.windows.net48.json", ExecutionTimeFramework.NetFramework),
             ("results_Samples.FakeDbCommand.windows.netcoreapp31.json", ExecutionTimeFramework.Netcoreapp31),
             ("results_Samples.FakeDbCommand.windows.net60.json", ExecutionTimeFramework.Net6),
+            ("results_Samples.FakeDbCommand.windows.net80.json", ExecutionTimeFramework.Net8),
         }),
         ("execution_time_benchmarks_windows_x64_HttpMessageHandler_1", ExecutionTimeSample.HttpMessageHandler, new[] { 
             ("results_Samples.HttpMessageHandler.windows.net48.json", ExecutionTimeFramework.NetFramework),
             ("results_Samples.HttpMessageHandler.windows.netcoreapp31.json", ExecutionTimeFramework.Netcoreapp31),
             ("results_Samples.HttpMessageHandler.windows.net60.json", ExecutionTimeFramework.Net6),
+            ("results_Samples.HttpMessageHandler.windows.net60.json", ExecutionTimeFramework.Net6),
+            ("results_Samples.HttpMessageHandler.windows.net80.json", ExecutionTimeFramework.Net8),
         }),
     };
 
@@ -200,6 +204,7 @@ public class CompareExecutionTime
         NetFramework,
         Netcoreapp31,
         Net6,
+        Net8,
     }
 }
 
