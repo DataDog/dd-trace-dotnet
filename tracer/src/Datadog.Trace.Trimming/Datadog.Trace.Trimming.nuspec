@@ -28,8 +28,8 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="build\Datadog.Trace.Trimming.props" target="build\Datadog.Trace.Trimming.props" />
-    <file src="build\Datadog.Trace.Trimming.xml" target="build\Datadog.Trace.Trimming.xml" />
+    <file src="build\Datadog.Trace.Trimming.props" target="buildTransitive\Datadog.Trace.Trimming.props" />
+    <file src="build\Datadog.Trace.Trimming.xml" target="buildTransitive\Datadog.Trace.Trimming.xml" />
     <file src="..\..\..\datadog-logo-256x256.png" target="datadog-logo-256x256.png" />
     <file src="README.md" target="README.md" />
   </files>
