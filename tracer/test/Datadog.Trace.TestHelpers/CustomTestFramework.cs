@@ -225,7 +225,7 @@ namespace Datadog.Trace.TestHelpers
                 new
                 {
                     Collection = pair.Item1,
-                    TestCases = pair.Item2.Where(x => failedFiltered.Contains(x)),
+                    TestCases = pair.Item2.Where(x => failedFiltered.Contains(x)).ToList(),
                     DisableParallelization = IsParallelizationDisabled(pair.Item1)
                 })
                 .ToList();
