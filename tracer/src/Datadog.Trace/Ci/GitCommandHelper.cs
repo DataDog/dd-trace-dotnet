@@ -34,8 +34,11 @@ internal static class GitCommandHelper
     private static readonly char[] LineSeparators = ['\n', '\r'];
     private static readonly char[] WhitespaceSeparators = ['\t', ' '];
 
+    private static readonly HashSet<string> GitSafeDirectories = new(StringComparer.OrdinalIgnoreCase);
+
     public static ProcessHelpers.CommandOutput? RunGitCommand(string? workingDirectory, string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
+        EnsureGitSafeDirectory(workingDirectory);
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         try
         {
@@ -475,6 +478,27 @@ internal static class GitCommandHelper
     private static string[] SplitLines(string text, StringSplitOptions options = StringSplitOptions.RemoveEmptyEntries)
     {
         return text.Split(LineSeparators, options);
+    }
+
+    private static void EnsureGitSafeDirectory(string? workingDirectory)
+    {
+        lock (GitSafeDirectories)
+        {
+            if (GitSafeDirectories.Add(workingDirectory ?? string.Empty))
+            {
+                // Ensure we have permissions to read the git directory
+                var safeDirectory = ProcessHelpers.RunCommand(
+                    new ProcessHelpers.Command(
+                        cmd: "git",
+                        arguments: $"config --global --add safe.directory {workingDirectory}",
+                        workingDirectory: workingDirectory,
+                        useWhereIsIfFileNotFound: true));
+                if (safeDirectory?.ExitCode != 0)
+                {
+                    Log.Warning("GitCommandHelper: Error setting safe.directory: {WorkingDirectory}", workingDirectory);
+                }
+            }
+        }
     }
 
     private readonly record struct LineRange(int Start, int End);
