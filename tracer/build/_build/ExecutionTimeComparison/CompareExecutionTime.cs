@@ -154,7 +154,6 @@ public class CompareExecutionTime
             ("results_Samples.HttpMessageHandler.windows.net48.json", ExecutionTimeFramework.NetFramework),
             ("results_Samples.HttpMessageHandler.windows.netcoreapp31.json", ExecutionTimeFramework.Netcoreapp31),
             ("results_Samples.HttpMessageHandler.windows.net60.json", ExecutionTimeFramework.Net6),
-            ("results_Samples.HttpMessageHandler.windows.net60.json", ExecutionTimeFramework.Net6),
             ("results_Samples.HttpMessageHandler.windows.net80.json", ExecutionTimeFramework.Net8),
         }),
     };
