@@ -178,6 +178,8 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: true);
+            // in this case and version, azure registers an event listener, as runtime metrics does, we can't have 2 listeners, it will crash
+            SetEnvironmentVariable(ConfigurationKeys.RuntimeMetricsEnabled, "0");
             using (await RunAzureFunctionAndWaitForExit(agent, framework: "net6.0"))
             {
                 const int expectedSpanCount = 21;
