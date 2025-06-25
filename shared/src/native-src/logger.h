@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <iostream>
 #include <memory>
 #include <regex>
 #include <sstream>
@@ -42,6 +43,7 @@ public:
     inline void Flush();
 
     inline void EnableDebug(bool enable);
+    inline void FlushAndDisableBuffering();
     inline bool IsDebugEnabled() const;
 
 
@@ -49,7 +51,7 @@ private:
 
     friend class LogManager;
 
-    Logger(std::shared_ptr<spdlog::logger> const& logger) : _internalLogger{logger}, m_debug_logging_enabled{false}
+    Logger(std::shared_ptr<spdlog::logger> const& logger, bool bufferingEnabled) : _internalLogger{logger}, m_debug_logging_enabled{false}, m_buffering_enabled{bufferingEnabled}
     {
     }
 
@@ -69,16 +71,18 @@ private:
     static std::string GetLogPath(const std::string& file_name_suffix);
 
     template <class LoggerPolicy>
-    static std::shared_ptr<spdlog::logger> CreateInternalLogger();
+    static std::tuple<std::shared_ptr<spdlog::logger>, bool>  CreateInternalLogger();
 
     std::shared_ptr<spdlog::logger> _internalLogger;
     bool m_debug_logging_enabled;
+    bool m_buffering_enabled;
 };
 
 template <class LoggerPolicy>
 inline Logger Logger::Create()
 {
-    return {Logger::CreateInternalLogger<LoggerPolicy>()};
+    const auto [logger, bufferingEnabled] = Logger::CreateInternalLogger<LoggerPolicy>();
+    return {logger, bufferingEnabled};
 }
 
 inline std::string Logger::SanitizeProcessName(std::string const& processName)
@@ -98,7 +102,7 @@ inline std::string Logger::BuildLogFileSuffix()
 }
 
 template <class LoggerPolicy>
-std::shared_ptr<spdlog::logger> Logger::CreateInternalLogger()
+std::tuple<std::shared_ptr<spdlog::logger>, bool> Logger::CreateInternalLogger()
 {
     spdlog::set_error_handler([](const std::string& msg) {
         // By writing into the stderr was changing the behavior in a CI scenario.
@@ -107,9 +111,9 @@ std::shared_ptr<spdlog::logger> Logger::CreateInternalLogger()
         // std::cerr << "LoggerImpl Handler: " << msg << std::endl;
     });
 
-    spdlog::flush_every(std::chrono::seconds(3));
-
     static auto file_name_suffix = Logger::BuildLogFileSuffix();
+
+    const auto buffering_enabled = LoggerPolicy::enable_buffering();
 
     std::shared_ptr<spdlog::logger> logger;
 
@@ -127,13 +131,30 @@ std::shared_ptr<spdlog::logger> Logger::CreateInternalLogger()
         logger = spdlog::null_logger_mt("LoggerImpl");
     }
 
-    logger->set_level(spdlog::level::debug);
-
     logger->set_pattern(LoggerPolicy::pattern);
 
-    logger->flush_on(spdlog::level::info);
+    // Only start flushing if explicitly enabled
+    if (buffering_enabled)
+    {
+        // we set the level to off but enable backtracing so that
+        // any logs written are stored in a buffer
+        // We can then dump that buffer by calling EnableAutoFlush()
+        logger->set_level(spdlog::level::off);
+        logger->flush_on(spdlog::level::off);
+        // Can only store 100 messages in the backtrace buffer, but, we currently log ~40 in debug so should be ok for a while
+        logger->enable_backtrace(100);
+        logger->debug("Buffering of logs enabled");
+    }
+    else
+    {
+        logger->disable_backtrace();
+        logger->set_level(spdlog::level::debug);
+        logger->flush_on(spdlog::level::info);
+        spdlog::flush_every(std::chrono::seconds(3));
+        logger->debug("Buffering of logs disabled");
+    }
 
-    return logger;
+    return std::make_tuple(logger, buffering_enabled);
 }
 
 template <class TLoggerPolicy>
@@ -289,5 +310,28 @@ inline void Logger::EnableDebug(bool enable)
 inline bool Logger::IsDebugEnabled() const
 {
     return m_debug_logging_enabled;
+}
+
+/**
+ * Writes all currently buffered logs to the log file and disables buffering.
+ */
+inline void Logger::FlushAndDisableBuffering()
+{
+    if (!m_buffering_enabled)
+    {
+        return;
+    }
+
+    m_buffering_enabled = false;
+
+    // Write all
+    _internalLogger->set_level(spdlog::level::debug);
+    Flush();
+    _internalLogger->flush_on(spdlog::level::info);
+    _internalLogger->dump_backtrace();
+    _internalLogger->disable_backtrace();
+    spdlog::flush_every(std::chrono::seconds(3));
+
+    _internalLogger->debug("Buffered logs flushed and buffering disabled");
 }
 } // namespace datadog::shared
