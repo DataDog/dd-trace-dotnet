@@ -41,13 +41,6 @@ public static class Projects
     public const string DebuggerUnreferencedExternal = "Samples.Probes.Unreferenced.External";
 
     public const string RazorPages = "Samples.AspNetCoreRazorPages";
-
-    public static readonly string[] NativeFilesDependentTests = {
-        AppSecUnitTests,
-        ClrProfilerManagedTests,
-        TraceIntegrationTests,
-        TraceTests
-    };
 }
 
 public static class FileNames

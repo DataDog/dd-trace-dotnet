@@ -84,6 +84,7 @@ steps:
     dockerTag: $(dockerTag)
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   displayName: ${{ parameters.dockerComposePath }} run ${{ parameters.target }}
+  timeoutInMinutes: 15
 
 - script: |
     echo "Dumping traces"

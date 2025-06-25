@@ -1363,6 +1363,21 @@ namespace Datadog.Trace.Tests.Configuration
             settings.InferredProxySpansEnabled.Should().Be(expected);
         }
 
+        [Theory]
+        [InlineData("", new string[0])]
+        [InlineData("code,status,path,line", new[] { "code", "status", "path", "line" })]
+        [InlineData("trailing_comma,code,status,", new[] { "trailing_comma", "code", "status" })]
+        [InlineData(",leading_comma,code,status", new[] { "leading_comma", "code", "status" })]
+        [InlineData(", with_whitespace  ,code,status,path", new[] { "with_whitespace", "code", "status", "path" })]
+        [InlineData("code,code,status ,path,path", new[] { "code", "status", "path" })] // Test deduplication
+        public void GraphQlErrorExtensions(string value, string[] expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.GraphQLErrorExtensions, value));
+            var settings = new TracerSettings(source);
+
+            settings.GraphQLErrorExtensions.Should().BeEquivalentTo(expected);
+        }
+
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)
         {
             if (newErrorKeyValue is not null || deprecatedErrorKeyValue is not null)

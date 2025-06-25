@@ -52,6 +52,7 @@ namespace Datadog.Trace.Configuration
         private readonly bool _traceEnabled;
         private readonly bool _apmTracingEnabled;
         private readonly bool _isDataStreamsMonitoringEnabled;
+        private readonly bool _isDataStreamsMonitoringInDefaultState;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
         private readonly ReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly ReadOnlyDictionary<string, string> _globalTags;
@@ -651,6 +652,9 @@ namespace Datadog.Trace.Configuration
             _isDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(false);
+            _isDataStreamsMonitoringInDefaultState = config
+                                                    .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
+                                                    .AsBool() == null;
 
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
@@ -771,6 +775,10 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigTelemetryData.CloudHosting, "Azure", recordValue: true, ConfigurationOrigins.Default);
                 telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
+
+            GraphQLErrorExtensions = TrimSplitString(
+                config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
+                commaSeparator);
 
             static void RecordDisabledIntegrationsTelemetry(IntegrationSettingsCollection integrations, IConfigurationTelemetry telemetry)
             {
@@ -1185,6 +1193,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
 
         /// <summary>
+        /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
+        /// </summary>
+        internal bool IsDataStreamsMonitoringInDefaultState => DynamicSettings.DataStreamsMonitoringEnabled == null && _isDataStreamsMonitoringInDefaultState;
+
+        /// <summary>
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
         /// </summary>
         internal bool IsDataStreamsLegacyHeadersEnabled { get; }
@@ -1297,6 +1310,12 @@ namespace Datadog.Trace.Configuration
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
+        /// Gets which GraphQL error extensions to capture.
+        /// A comma-separated list of extension keys to capture. Empty or not present means no extensions are captured.        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GraphQLErrorExtensions"/>
+        internal string[] GraphQLErrorExtensions { get; }
+
+        /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
         /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios.
         /// It may also be explicitly disabled
@@ -1400,7 +1419,11 @@ namespace Datadog.Trace.Configuration
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    list.Add(value.Trim());
+                    var trimmedValue = value.Trim();
+                    if (!list.Contains(trimmedValue))
+                    {
+                        list.Add(trimmedValue);
+                    }
                 }
             }
 

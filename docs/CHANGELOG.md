@@ -21,6 +21,87 @@
 
 
 
+
+## [Release 3.19.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.19.0)
+
+## Summary
+
+- Fix recursive visibility error in duck typing (#7087)
+- Fix NullReferenceException in Rabbit. (#7083)
+- Fix exception when closing a `Span` with null `ServiceName` (#6748)
+- [Test Optimization] Improve git commands (#7050)
+- [Profiler] Enable GC CPU consumption and thread lifetime features (#7045)
+- [Dynamic Instrumentation] DEBUG-4063 Add WCF support for dynamic span tags (#7097)- 
+
+## Changes
+
+### Tracer
+* [Tracer] Add sampling tags during serialization (#5360)
+* [tracer] fix exception when closing a `Span` with null `ServiceName` (#6748)
+* chore(telemetry): track whether tracing was enabled via ssi (#6938)
+* Fix `ErrorSkipTelemetry` by changing primary file logger to sub-logger config (#7049)
+* chore: disable data pipeline by default (#7055)
+* fix(trace-exporter): add error handling when releasing handles in ErrorHandle, TraceExporter, and TraceExporterConfiguration (#7061)
+* Fix recursive visibility error in duck typing (#7087)
+* [Dynamic Instrumentation] DEBUG-4063 Add WCF support for dynamic span tags (#7097)
+
+### CI Visibility
+* [Test Optimization] Improve git commands (#7050)
+
+### ASM
+* Fix IAST DDBB flaky unit tests (#6958)
+* [AAP] Update waf version to v1.25.1 (#7079)
+
+### Continuous Profiler
+* [Profiler] Add DD_PROFILING_HTTP_ENABLED env var configuration (#6993)
+* [Profiler] Enable GC CPU consumption and thread lifetime features (#7045)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-3961 Enable SymDB by default (#7012)
+
+### Fixes
+* Update list of processes excluded from instrumentation (#6599)
+* fix(trace-exporter): use universal osx binaries for libdatadog (#7058)
+
+### Miscellaneous
+* feat(trace-exporter): setup boilerplate for data-pipeline integration (#6314)
+* [Test Package Versions Bump] Updating package versions (#6988)
+* [Tracer] Service discovery integration (#7014)
+* Delete empty commontags interface (#7060)
+* Set `DD_TRACING_ENABLED=tracing` for IIS based SSI (#7068)
+* [Test Optimization] Add support for MSTest 3.9.x (#7070)
+* Don't fail the IIS instrumentation installation if IIS is not available (#7071)
+* Refactoring to support DSM default state (#7082)
+* Fix NullReferenceException in Rabbit. (#7083)
+* Fix error in DefaultModelBindingContext (#7086)
+* Fix Exception in AspNetMvcIntegration (#7092)
+
+### Build / Test
+* Check for nested Aggregate exceptions in CouchBase tests (#7029)
+* Reduce the number of places we explicitly set the version in projects (#7031)
+* Bump the gh-actions-packages group across 2 directories with 3 updates (#7036)
+* Mark some instrumentation tests flaky (#7038)
+* Add retries to build stages (#7039)
+* Add flaky attribute to AssemblyResolveMscorlibResourcesInfiniteRecursionCrashSmokeTest.NoExceptions (#7040)
+* Do not run Datadog Static Analyzer on PR from dependabot (#7041)
+* Fix bug in `dd-dotnet`'s `ExporterSettings` (#7044)
+* Add explicit docker pull to system tests stage (#7046)
+* Update all Green job to the latest version (#7048)
+* Fix noop pipeline (#7052)
+* Print the generated snapshot in case of failures (#7056)
+* Retry cloning branches. (#7057)
+* Add `--version` and `available-commands` to FleetInstaller.exe (#7063)
+* Fix system tests (#7064)
+* test(trace-exporter): enable UDS transport test for .NET Core 3.1 or greater (#7073)
+* Allow unsigned commits from specific workflows (#7074)
+* Fix the system-tests parametric tests (#7076)
+* Replace fine-grained token usage with app token (#7091)
+* Mark Span ID generation tests as flaky (#7098)
+* Bump one pipeline version (#7100)
+
+
+[Changes since 3.18.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.18.0...v3.19.0)
+
 ## [Release 3.18.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.18.0)
 
 ## Summary

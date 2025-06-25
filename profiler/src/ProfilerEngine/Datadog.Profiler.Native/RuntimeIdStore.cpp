@@ -160,6 +160,20 @@ bool RuntimeIdStore::FreeDynamicLibrary(void* handle)
 
 #if _WINDOWS
     return FreeLibrary((HMODULE)handle);
+#elif LINUX && !DD_ALPINE
+    // only applies to glibc, not musl
+    auto [is_buggy, glibc_version] = ::shared::HasBuggyDlclose();
+    if (is_buggy)
+    {
+        Log::Warn("Skipping dddlclose for handle '", handle,
+                      "' due to buggy dlclose implementation on this system.",
+                      "GLIBC version 2.34-2.36 has a TLS-reuse bug that can cause crashes when unloading"
+                      " shared libraries. Consider updating the installed version of glibc. Found GLIBC version: ", glibc_version);
+        return 1;
+    }
+
+    // not buggy
+    return dlclose(handle) == 0;
 #else
     return dlclose(handle) == 0;
 #endif

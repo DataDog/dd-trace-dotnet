@@ -2,18 +2,29 @@ name: 'Deploy AAS dev app'
 description: 'Deploy AAS dev app'
 
 inputs:
-  aas_github_token:
-    description: 'aas_github_token'
+  github_app_id:
+    description: 'App ID for retrieving a token from a GitHub App'
+    required: true
+  github_app_private_key:
+    description: 'Private key for retrieving a token from a GitHub App'
     required: true
 
 runs:
   using: "composite"
   steps:
+    - name: Generate GitHub App Token
+      id: generate-aas-token
+      uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+      with:
+        app-id: ${{ inputs.github_app_id }}
+        private-key: ${{ inputs.github_app_private_key }}
+        repositories: datadog-aas-extension
+
     - name: Trigger AAS deploy
       shell: bash
       run: |
         curl -X POST \
         -H "Accept: application/vnd.github.v3+json" \
-        -H "Authorization: Bearer ${{ inputs.aas_github_token }}" \
+        -H "Authorization: Bearer ${{ steps.generate-aas-token.outputs.token }}" \
         https://api.github.com/repos/DataDog/datadog-aas-extension/dispatches \
         -d '{"event_type": "dd-trace-dotnet-nightly", "client_payload": {"sha":"'"$GITHUB_SHA"'" } }'

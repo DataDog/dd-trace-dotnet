@@ -4,8 +4,10 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+#nullable enable
 
 using System.ComponentModel;
+using System.Data;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -48,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// </summary>
         private const string IntegrationName = nameof(IntegrationId.AspNetCore);
 
-        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, in CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception? exception, in CallTargetState state)
         {
             var iast = Iast.Iast.Instance;
             var security = Security.Instance;
@@ -58,11 +60,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                 {
                     if (defaultModelBindingContext.Result.IsModelSet && defaultModelBindingContext.IsTopLevelObject)
                     {
-                        var span = (state.Scope ?? state.PreviousScope).Span;
+                        var span = (state.Scope ?? state.PreviousScope)?.Span;
+
+                        if (span is null)
+                        {
+                            return CallTargetReturn.GetDefault();
+                        }
 
                         if (defaultModelBindingContext.BindingSource.Id == "Body")
                         {
-                            object bodyExtracted = null;
+                            object? bodyExtracted = null;
 
                             if (security.AppsecEnabled)
                             {
@@ -83,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                                 {
                                     if (prov.BindingSource.Id is "Form" or "Body")
                                     {
-                                        object bodyExtracted = null;
+                                        object? bodyExtracted = null;
                                         if (security.AppsecEnabled)
                                         {
                                             bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);

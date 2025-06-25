@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -114,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             if (errorCount > 0)
             {
-                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors));
+                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors), ConstructErrorEvents(executionErrors));
             }
         }
 
@@ -144,7 +145,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                         builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
                     }
 
-                    ConstructErrorLocationsMessage(builder, tab, executionError.Locations);
+                    var locations = executionError.Locations;
+                    if (locations != null)
+                    {
+                        ConstructErrorLocationsMessage(builder, tab, locations);
+                    }
+
                     builder.AppendLine($"{tab}}},");
                 }
 
@@ -158,6 +164,118 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
 
             return Util.StringBuilderCache.GetStringAndRelease(builder);
+        }
+
+        private static List<SpanEvent> ConstructErrorEvents(List<IError> executionErrors)
+        {
+            List<SpanEvent> spanEvents = [];
+
+            try
+            {
+                for (int i = 0; i < executionErrors.Count; i++)
+                {
+                    var eventAttributes = new List<KeyValuePair<string, object>>();
+                    var executionError = executionErrors[i];
+
+                    var message = executionError.Message;
+                    if (message != null)
+                    {
+                        eventAttributes.Add(new KeyValuePair<string, object>("message", message));
+                    }
+
+                    var locations = executionError.Locations;
+                    if (locations != null)
+                    {
+                        var joinedLocations = new List<string>();
+                        foreach (var location in locations)
+                        {
+                            if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
+                            {
+                                joinedLocations.Add($"{locationProxy.Line}:{locationProxy.Column}");
+                            }
+                        }
+
+                        eventAttributes.Add(new KeyValuePair<string, object>("locations", joinedLocations.ToArray()));
+                    }
+
+                    var path = executionError.Path.Name;
+                    if (path != null)
+                    {
+                        var pathName = path is NameStringProxy proxy ? proxy.Value : path.ToString();
+                        eventAttributes.Add(new KeyValuePair<string, object>("path", new[] { pathName }));
+                    }
+
+                    var code = executionError.Code;
+                    if (code != null)
+                    {
+                        eventAttributes.Add(new KeyValuePair<string, object>("code", code));
+                    }
+
+                    var exception = executionError.Exception;
+                    if (exception != null)
+                    {
+                        eventAttributes.Add(new KeyValuePair<string, object>("stacktrace", exception.StackTrace));
+                    }
+
+                    var extensions = executionError.Extensions;
+                    if (extensions is { Count: > 0 })
+                    {
+                        var configuredExtensions = Tracer.Instance.Settings.GraphQLErrorExtensions;
+
+                        foreach (var extension in extensions)
+                        {
+                            if (configuredExtensions.Contains(extension.Key))
+                            {
+                                var key = extension.Key;
+                                var value = extension.Value ?? "null";
+
+                                if (value is Array array)
+                                {
+                                    var builder = Util.StringBuilderCache.Acquire();
+
+                                    try
+                                    {
+                                        builder.Append('[');
+                                        for (var k = 0; k < array.Length; k++)
+                                        {
+                                            var item = array.GetValue(k);
+                                            if (k > 0)
+                                            {
+                                                builder.Append(',');
+                                            }
+
+                                            builder.Append(item?.ToString() ?? "null");
+                                        }
+
+                                        builder.Append(']');
+                                        value = Util.StringBuilderCache.GetStringAndRelease(builder);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine(ex);
+                                        Util.StringBuilderCache.Release(builder);
+                                    }
+                                }
+                                else if (!Util.SpanEventConverter.IsAllowedType(value))
+                                {
+                                    value = value.ToString();
+                                }
+
+                                eventAttributes.Add(new KeyValuePair<string, object>($"extensions.{key}", value));
+                            }
+                        }
+                    }
+
+                    spanEvents.Add(new SpanEvent(name: "dd.graphql.query.error", attributes: eventAttributes));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating GraphQL error SpanEvent.");
+                return spanEvents;
+            }
+
+            return spanEvents;
         }
 
         internal static List<IError> GetList(System.Collections.IEnumerable errors)

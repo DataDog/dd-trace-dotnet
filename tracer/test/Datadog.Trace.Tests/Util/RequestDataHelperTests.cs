@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Web;
 using System.Web.Hosting;
 using Datadog.Trace.Agent;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
@@ -266,7 +267,7 @@ public class RequestDataHelperTests
 
         var writerMock = new Mock<IAgentWriter>();
         var samplerMock = new Mock<ITraceSampler>();
-        var security = new AppSec.Security(null, null, null);
+        var security = new Security(null, null, null);
         var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         var scope = (Scope)tracer.StartActive("Root");
         scope.Span.ServiceName = "service";

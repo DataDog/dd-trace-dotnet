@@ -48,7 +48,6 @@ src/Datadog.Trace/Agent/IStreamFactory.cs
 src/Datadog.Trace/Agent/MovingAverageKeepRateCalculator.cs
 src/Datadog.Trace/Agent/NullStatsAggregator.cs
 src/Datadog.Trace/Agent/SpanBuffer.cs
-src/Datadog.Trace/Agent/SpanEventConverter.cs
 src/Datadog.Trace/Agent/StatsAggregationKey.cs
 src/Datadog.Trace/Agent/StatsAggregator.cs
 src/Datadog.Trace/Agent/StatsBucket.cs
@@ -231,6 +230,7 @@ src/Datadog.Trace/Util/IRandomIdGenerator.cs
 src/Datadog.Trace/Util/RandomIdGenerator.Net6.cs
 src/Datadog.Trace/Util/RuntimeId.cs
 src/Datadog.Trace/Util/SamplingHelpers.cs
+src/Datadog.Trace/Util/SpanEventConverter.cs
 src/Datadog.Trace/Util/StopwatchHelpers.cs
 src/Datadog.Trace/Util/System.Diagnostics.CodeAnalysis.Attributes.cs
 src/Datadog.Trace/Util/System.Runtime.CompilerServices.Attributes.cs
@@ -428,7 +428,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSource.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSourceValueProvider.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/CompositeValueProvider.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/DefaultModelBindingContext.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/DefaultModelBindingContext_SetResult_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/ModelBindingResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/MvcOptionsIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/AwsConstants.cs

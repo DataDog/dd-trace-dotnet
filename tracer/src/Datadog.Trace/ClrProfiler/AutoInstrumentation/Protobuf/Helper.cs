@@ -16,7 +16,8 @@ internal static class Helper
     /// (currently we disable it only for Google protobuf itself and Microsoft types)
     /// </summary>
     /// <typeparam name="TMessage">needs to be the raw type (not a DuckType)</typeparam>
-    public static void DisableInstrumentationIfInternalProtobufType<TMessage>()
+    /// <returns>true if the instrumentation has been disabled</returns>
+    public static bool DisableInstrumentationIfInternalProtobufType<TMessage>()
     {
         var typeName = typeof(TMessage).FullName;
         if (typeName != null &&
@@ -30,6 +31,9 @@ internal static class Helper
             IntegrationOptions<MessageMergeFromIntegration, TMessage>.DisableIntegration();
             IntegrationOptions<BufferMessageInternalWriteToIntegration, TMessage>.DisableIntegration();
             IntegrationOptions<BufferMessageInternalMergeFromIntegration, TMessage>.DisableIntegration();
+            return true;
         }
+
+        return false;
     }
 }

@@ -152,7 +152,6 @@ internal partial class SecurityReporter
     {
         if (initResult is { Reported: false })
         {
-            initResult.Reported = true;
             _span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             _span.SetMetric(Metrics.AppSecWafInitRulesLoaded, initResult.LoadedRules);
             _span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, initResult.FailedToLoadRules);

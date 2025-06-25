@@ -35,7 +35,7 @@ namespace Datadog.Trace.Debugger
             var config = new ConfigurationBuilder(source, telemetry);
 
             Enabled = config.WithKeys(ConfigurationKeys.Debugger.Enabled).AsBool(false);
-            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(false);
+            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
 
             MaximumDepthOfMembersToCopy = config
                                          .WithKeys(ConfigurationKeys.Debugger.MaxDepthToSerialize)

@@ -252,7 +252,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         dataStreamsManager,
                         CheckpointKind.Consume,
                         edgeTags,
-                        message is null ? 0 : GetMessageSize(message),
+                        message is null || dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message),
                         tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
                         pathwayContext);
 
@@ -341,8 +341,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
+                    var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
-                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetMessageSize(message), 0);
+                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
                 }
             }

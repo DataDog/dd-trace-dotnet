@@ -1,4 +1,4 @@
-﻿// <copyright file="RandomIdGeneratorTests.cs" company="Datadog">
+// <copyright file="RandomIdGeneratorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,6 +11,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
@@ -127,6 +128,7 @@ public class RandomIdGeneratorTests
     }
 
     [Theory]
+    [Flaky("This test can rarely fail because it does not, intentionally, rely on predictable behaviour")]
     [InlineData(true)]
     [InlineData(false)]
     public void NextSpanId_Are_Evenly_Distributed(bool useAllBits)
@@ -138,6 +140,7 @@ public class RandomIdGeneratorTests
 
     [Theory]
     [InlineData(true)]
+    [Flaky("This test can rarely fail because it does not, intentionally, rely on predictable behaviour")]
     [InlineData(false)]
     public void NextTraceId_Lower_Are_Evenly_Distributed(bool useAllBits)
     {
