@@ -31,6 +31,12 @@
       }
     },
     {
+      "name": "Bailout",
+      "environmentVariables": {
+        "DD_PROFILER_EXCLUDE_PROCESSES": "Samples.HttpMessageHandler.exe"
+      }
+    },
+    {
       "name": "CallTarget\u002BInlining\u002BNGEN"
     }
   ],
