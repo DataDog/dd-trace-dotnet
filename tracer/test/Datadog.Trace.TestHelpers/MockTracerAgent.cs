@@ -106,7 +106,7 @@ namespace Datadog.Trace.TestHelpers
 
         public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
 
-        public bool ConfigSent { get; set; }
+        public bool ConfigSent { get; set; } = false;
 
         /// <summary>
         /// Gets or sets a value indicating whether to skip deserialization of traces.

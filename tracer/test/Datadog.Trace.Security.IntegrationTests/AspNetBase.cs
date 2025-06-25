@@ -464,7 +464,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, params string[] urls)
         {
-            if (agent.Configuration.SpanMetaStructs is true)
+            if (agent.Configuration.SpanMetaStructs)
             {
                 agent.WaitForConfigSent();
             }
