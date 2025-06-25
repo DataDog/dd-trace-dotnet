@@ -25,7 +25,7 @@ check_azure_pipeline:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
       - build-id.txt
     expire_in: 3 months
   tags: ["arch:amd64"]
@@ -90,11 +90,13 @@ update-bp-infra:
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
+  after_script:
+    - mv /var/log/datadog/dotnet/* platform/artifacts
   artifacts:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     K6_OPTIONS_WARMUP_RATE: 14000
@@ -123,7 +125,7 @@ baseline:
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
-
+    
 calltarget_ngen:
   extends: .benchmarks
   variables:
@@ -247,6 +249,16 @@ profiler_cpu_timer_create:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
+    
+runtime-metrics:
+  extends: .benchmarks
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_RUNTIME_METRICS_ENABLED: 1
+    ENDPOINT: "hello"
 
 .benchmarks-arm64:
   stage: benchmarks
@@ -272,11 +284,12 @@ profiler_cpu_timer_create:
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.arm.yml --debug
+  after_script: !reference [.benchmarks, after_script]
   artifacts:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     K6_OPTIONS_WARMUP_RATE: 14000
@@ -442,6 +455,18 @@ profiler_cpu_timer_create-arm64:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
+runtime-metrics-arm64:
+  tags: ["runner:apm-k8s-arm-metal"]
+  extends: .benchmarks-arm64
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_RUNTIME_METRICS_ENABLED: 1
+    ENDPOINT: "hello"
+
+
 .benchmarks-win:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
@@ -464,7 +489,7 @@ profiler_cpu_timer_create-arm64:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     # Whether to cleanup ephemeral instances after benchmarks are run
@@ -605,4 +630,12 @@ profiler_cpu_timer_create-win:
     DD_PROFILING_WALLTIME_ENABLED: 0
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
+    ENDPOINT: "hello"
+    
+runtime-metrics-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_RUNTIME_METRICS_ENABLED: 1
     ENDPOINT: "hello"
