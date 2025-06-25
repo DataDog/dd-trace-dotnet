@@ -126,7 +126,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             var wafHandle = IntPtr.Zero;
             if (wafBuilderHandle == IntPtr.Zero)
             {
-                Log.Error("DDAS-0005-00: WAF builder initialization failed."); // Check were all these error codes are defined
+                Log.Error("rc::asm_dd::diagnostic Error: WAF builder initialization failed."); // Check were all these error codes are defined
             }
             else
             {
@@ -167,14 +167,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     }
 
                     wafHandle = _wafLibraryInvoker.BuilderBuildInstance(wafBuilderHandle);
-                    if (wafHandle == IntPtr.Zero)
-                    {
-                        Log.Error("DDAS-0005-00: WAF initialization failed.");
-                    }
                 }
-                else if (!updating)
+
+                if (wafHandle == IntPtr.Zero)
                 {
-                    Log.Error("DDAS-0005-00: WAF initialization failed. No valid rules found.");
+                    Log.Error("rc::asm_dd::diagnostic Error: Failed to build WAF instance: no valid rules or processors available");
                     return UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.");
                 }
             }
@@ -191,8 +188,9 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                 if (diags.HasErrors)
                 {
-                    // TODO: This message should go to telemetry logs only, skipping the regular logs
-                    Log.Debug("Some errors were found while applying waf configuration (RulesFile: {RulesFile})", rulesFile);
+#pragma warning disable DDLOG004 // Message templates should be constant
+                    Log.Error($"Some errors were found while applying waf configuration (RulesFile: {rulesFile})");
+#pragma warning restore DDLOG004 // Message templates should be constant
                 }
                 else
                 {
@@ -214,8 +212,9 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                             var message = $"{item.Key}: [{string.Join(", ", item.Value)}]";
                             if (isError)
                             {
-                                // TODO: This message should go to telemetry logs only, skipping the regular logs
-                                Log.Debug("rc::asm_dd::diagnostic Error: {Err}", message);
+#pragma warning disable DDLOG004 // Message templates should be constant
+                                Log.Error($"rc::asm_dd::diagnostic Error: {message}");
+#pragma warning restore DDLOG004 // Message templates should be constant
                             }
                             else
                             {
