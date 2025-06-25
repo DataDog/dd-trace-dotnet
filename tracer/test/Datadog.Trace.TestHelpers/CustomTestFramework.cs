@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -236,10 +237,12 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+                    // The DelayedMessageBus is used to avoid reporting repeated failures
+                    CustomTestMethodRunner.DelayedMessageBus delayedMessageBus = new(messageBus);
 
                     foreach (var test in collectionsFailed)
                     {
-                        tasks.Add(runner.RunAsync(() => RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource)));
+                        tasks.Add(runner.RunAsync(() => RunTestCollectionAsync(delayedMessageBus, test.Collection, test.TestCases, cancellationTokenSource)));
                     }
 
                     await Task.WhenAll(tasks);
