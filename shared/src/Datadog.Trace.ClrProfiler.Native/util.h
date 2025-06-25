@@ -187,13 +187,3 @@ inline std::string GetCurrentOsArch(bool isRunningOnAlpine)
 #error "currentOsArch not defined."
 #endif
 }
-
-inline bool IsRunningOnAlpine()
-{
-#if LINUX
-    std::error_code ec; // fs::exists might throw if no error_code parameter is provided
-    return fs::exists("/etc/alpine-release", ec);
-#else
-    return false;
-#endif
-}

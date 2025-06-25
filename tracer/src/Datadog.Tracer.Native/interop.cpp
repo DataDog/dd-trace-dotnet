@@ -286,6 +286,18 @@ EXTERN_C void *dddlsym (void *__restrict __handle, const char *__restrict __name
 
 EXTERN_C int dddlclose (void *handle)
 {
+#if LINUX
+    auto [is_buggy, glibc_version] = ::shared::HasBuggyDlclose();
+    if (is_buggy)
+    {
+        trace::Logger::Warn("Skipping dddlclose for handle '", handle,
+                      "' due to buggy dlclose implementation on this system.",
+                      "GLIBC version 2.34-2.36 has a TLS-reuse bug that can cause crashes when unloading"
+                      " shared libraries. Consider updating the installed version of glibc. Found GLIBC version: ", glibc_version);
+        return 1;
+    }
+#endif
+
     return dlclose(handle);
 }
 #endif
