@@ -13,8 +13,11 @@ using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.AppSec.Waf.Initialization;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
@@ -42,6 +45,7 @@ internal record ConfigurationState
 
     public ConfigurationState(SecuritySettings settings, bool wafIsNull)
     {
+        Telemetry = settings.Telemetry;
         _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater>
         {
             { RcmProducts.AsmDd, new AsmDdProduct() },
@@ -75,6 +79,8 @@ internal record ConfigurationState
             AsmDataConfigs = asmDataConfigs.ToDictionary(p => p.Key, p => JToken.FromObject(p.Value));
         }
     }
+
+    internal IConfigurationTelemetry Telemetry { get; }
 
     public bool AppsecEnabled { get; set; }
 
@@ -317,6 +323,16 @@ internal record ConfigurationState
             else if (!rcmEnable)
             {
                 IncomingUpdateState.ShouldDisableAppsec = true;
+            }
+
+            // Update AppsecEnabled state based on the RCM data on Telemetry Config
+            if (IncomingUpdateState.ShouldInitAppsec)
+            {
+                Telemetry.Record(ConfigurationKeys.AppSec.Enabled, true, ConfigurationOrigins.RemoteConfig);
+            }
+            else if (IncomingUpdateState.ShouldDisableAppsec)
+            {
+                Telemetry.Record(ConfigurationKeys.AppSec.Enabled, false, ConfigurationOrigins.RemoteConfig);
             }
         }
 
