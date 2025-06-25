@@ -87,7 +87,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
             // without this, the developer exception page intercepts our blocking middleware and doesn't let us write the proper response
             SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
-            SetEnvironmentVariable("DD_FORCE_METASTRUCT", "1");
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
@@ -465,6 +464,11 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, params string[] urls)
         {
+            if (agent.Configuration.SpanMetaStructs is true)
+            {
+                agent.WaitForConfigSent();
+            }
+
             return SendRequestsAsync(agent, 1, urls);
         }
 

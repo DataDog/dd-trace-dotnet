@@ -106,6 +106,8 @@ namespace Datadog.Trace.TestHelpers
 
         public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
 
+        public bool ConfigSent { get; set; }
+
         /// <summary>
         /// Gets or sets a value indicating whether to skip deserialization of traces.
         /// </summary>
@@ -119,6 +121,23 @@ namespace Datadog.Trace.TestHelpers
 #endif
 
         public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config, AgentConfiguration agentConfiguration = null) => new NamedPipeAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
+
+        public bool WaitForConfigSent(int timeoutInMilliseconds = 10000)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                if (ConfigSent)
+                {
+                    return true;
+                }
+
+                Thread.Sleep(100);
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Wait for the given number of spans to appear.
@@ -543,7 +562,10 @@ namespace Datadog.Trace.TestHelpers
 
             return CustomResponses.TryGetValue(responseType, out var custom)
                        ? custom // custom response, use that
-                       : new MockTracerResponse(response ?? "{}");
+                       : new MockTracerResponse(response ?? "{}")
+                       {
+                           IsConfigResponse = responseType == MockTracerResponseType.Info,
+                       };
         }
 
         private void HandlePotentialTraces(MockHttpRequest request)
@@ -1191,6 +1213,7 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.ContentLength64 = buffer.LongLength;
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                                 ctx.Response.Close();
+                                ConfigSent = ConfigSent || mockTracerResponse.IsConfigResponse;
                             }
                         }
                         catch (Exception ex)
