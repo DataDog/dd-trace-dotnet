@@ -161,7 +161,7 @@ docker-compose up StartDependencies.OSXARM64
 ./build.sh BuildAndRunOsxIntegrationTests
 
 # Build and run integration tests filtering on one framework, one set of tests and a sample app.
-./build.sh BuildAndRunOsxIntegrationTests --framework "net6.0" --filter "rabbit" --SampleName "Samples.Rabbit"
+./build.sh BuildAndRunOsxIntegrationTests --framework "net6.0" --filter "FullyQualifiedName=Datadog.Trace.ClrProfiler.IntegrationTests.RabbitMQTests" --SampleName "Samples.Rabbit"
 
 # Stop IntegrationTests dependencies.
 docker-compose down
