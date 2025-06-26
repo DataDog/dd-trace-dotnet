@@ -464,8 +464,15 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
             AssertInstrumented(agent, logDir);
-            AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
-            AssertNativeLoaderLogContainsString(logDir, "Buffered logs flushed and buffering disabled");
+            if (EnvironmentTools.IsWindows())
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
+                AssertNativeLoaderLogContainsString(logDir, "Buffered logs flushed and buffering disabled");
+            }
+            else
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
+            }
         }
 #endif
 
