@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void ReplacingGlobalTracerManagerMidTraceWritesTheTrace()
+        public async Task ReplacingGlobalTracerManagerMidTraceWritesTheTrace()
         {
             var agentPort = TcpPortProvider.GetOpenPort();
 
@@ -102,7 +102,7 @@ namespace Datadog.Trace.Tests
 
                 scope.Dispose();
 
-                var spans = agent.WaitForSpans(count: 1);
+                var spans = await agent.WaitForSpansAsync(count: 1);
                 var received = spans.Should().ContainSingle().Subject;
                 received.Name.Should().Be("Test span");
                 received.Tags.Should().Contain("test-tag", "original-value");

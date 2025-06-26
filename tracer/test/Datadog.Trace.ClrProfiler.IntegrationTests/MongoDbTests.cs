@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(3, 500);
+                var spans = await agent.WaitForSpansAsync(3, 500);
 
                 var version = string.IsNullOrEmpty(packageVersion) ? null : new Version(packageVersion);
                 var snapshotSuffix = version switch
@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 ValidateIntegrationSpans(allMongoSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.MongoDb);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MongoDb);
 
                 // do some basic verification on the "admin" spans
                 using var scope = new AssertionScope();

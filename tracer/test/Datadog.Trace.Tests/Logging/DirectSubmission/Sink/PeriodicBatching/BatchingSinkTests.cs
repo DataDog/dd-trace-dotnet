@@ -84,7 +84,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             sink.EnqueueLog(evt);
 
             // slightly arbitrary time to wait
-            await Task.Delay(1_000).ConfigureAwait(false);
+            await Task.Delay(1_000);
             sink.Batches.Should().BeEmpty();
         }
 

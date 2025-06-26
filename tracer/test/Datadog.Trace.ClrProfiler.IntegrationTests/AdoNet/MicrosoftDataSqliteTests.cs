@@ -59,12 +59,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName);
 
             Assert.Equal(expectedSpanCount, spans.Count);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Sqlite);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("Sqlite-Test-[a-zA-Z0-9]{32}"), "System-Data-SqlClient-Test-GUID");
@@ -98,11 +98,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             string packageVersion = PackageVersions.MicrosoftDataSqlite.First()[0] as string;
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
+            var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-            telemetry.AssertIntegrationDisabled(IntegrationId.Sqlite);
+            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Sqlite);
         }
     }
 }

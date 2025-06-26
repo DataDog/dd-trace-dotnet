@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var expectedCount = 17;
                 var frameworkName = "NetCore";
 #endif
-                var spans = agent.WaitForSpans(expectedCount);
+                var spans = await agent.WaitForSpansAsync(expectedCount);
                 var dynamoDbSpans = spans.Where(
                     span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 await VerifyHelper.VerifySpans(spans, settings);
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.AwsDynamoDb);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsDynamoDb);
             }
         }
     }

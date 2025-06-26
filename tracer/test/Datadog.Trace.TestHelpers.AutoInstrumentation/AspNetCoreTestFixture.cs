@@ -202,10 +202,10 @@ namespace Datadog.Trace.TestHelpers
 
             await SendHttpRequest(request);
 
-            return Agent.WaitForSpans(
-                count: 1,
-                minDateTime: now,
-                returnAllOperations: true);
+            return await Agent.WaitForSpansAsync(
+                       count: 1,
+                       minDateTime: now,
+                       returnAllOperations: true);
         }
 
         private async Task EnsureServerStarted(bool sendHealthCheck)
@@ -231,7 +231,7 @@ namespace Datadog.Trace.TestHelpers
 
                         if (responseCode == HttpStatusCode.OK)
                         {
-                            Agent.WaitForSpans(1, minDateTime: dateTime);
+                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime).ConfigureAwait(false);
                             serverReady = true;
                         }
                     }
@@ -254,7 +254,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (milisecondsElapsed < intervalMilliseconds)
                 {
-                    await Task.Delay((int)(intervalMilliseconds - milisecondsElapsed));
+                    await Task.Delay((int)(intervalMilliseconds - milisecondsElapsed))
                 }
             }
 

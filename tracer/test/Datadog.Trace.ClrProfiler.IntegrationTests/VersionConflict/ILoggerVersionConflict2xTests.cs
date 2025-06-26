@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, aspNetCorePort: 0))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);
 
                 ValidateLogCorrelation(spans, _logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, use128Bits: false);

@@ -33,11 +33,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, arguments: nameof(MinimalSpan)))
             {
                 const int expectedSpanCount = 1;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings);
-                telemetry.AssertIntegrationEnabled(IntegrationId.DatadogTraceManual);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.DatadogTraceManual);
             }
         }
 
@@ -51,11 +51,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, arguments: nameof(CustomServiceName)))
             {
                 const int expectedSpanCount = 1;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings);
-                telemetry.AssertIntegrationEnabled(IntegrationId.DatadogTraceManual);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.DatadogTraceManual);
             }
         }
 
@@ -69,11 +69,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, arguments: nameof(Utf8Everywhere)))
             {
                 const int expectedSpanCount = 1;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings);
-                telemetry.AssertIntegrationEnabled(IntegrationId.DatadogTraceManual);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.DatadogTraceManual);
             }
         }
 

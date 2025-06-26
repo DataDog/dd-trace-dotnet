@@ -220,7 +220,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var testStart = DateTime.UtcNow;
             var expectedSpans = await SubmitRequests(fixture.HttpPort, usingWebsockets);
 
-            var spans = fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
+            var spans = await fixture.Agent.WaitForSpansAsync(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
 
             var graphQLSpans = spans.Where(span => span.Type == "graphql");
             ValidateIntegrationSpans(graphQLSpans, _metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
