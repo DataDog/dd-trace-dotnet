@@ -29,7 +29,7 @@ internal static class DatadogLoggingFactory
     private const int DefaultRateLimit = 0;
     private const int DefaultMaxLogFileSize = 10 * 1024 * 1024;
 
-    internal const string DefaultConsoleMessageTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception}{NewLine}";
+    internal const string DefaultConsoleMessageTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} dd-trace-dotnet {Level:u3}] {Message:lj}{NewLine}{Exception}";
     internal const int DefaultConsoleQueueLimit = 1024;
 
     public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
