@@ -55,20 +55,23 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
 
         if (logEvent is null || _writeQueue.IsAddingCompleted || _writeTask.IsCompleted)
         {
-            // if log event is null, or
-            // if we are no longer writing to the console,
-            // so don't accept any more log events
+            // skip null log events.
+            // if we are no longer writing to the console, don't accept any more log events.
             return;
         }
 
         try
         {
-            // try to add the log event to the queue
+            // try to add the log event to the queue (non-blocking).
+            // if the queue is full, the log event is dropped.
             _writeQueue.TryAdd(logEvent);
         }
         catch (InvalidOperationException)
         {
-            // queue is marked as complete, drop log event
+            // queue is marked as complete, drop log event.
+            // this won't usually happen as we check IsAddingCompleted above,
+            // but it can theoretically happen if the queue is completed from another thread
+            // after we checked IsAddingCompleted but before we called TryAdd().
         }
     }
 
@@ -76,6 +79,9 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
     {
         try
         {
+            // GetConsumingEnumerable() blocks until an item
+            // is available or the collection is marked as complete.
+            // The foreach loop will exit when the collection is marked as complete.
             foreach (var logEvent in _writeQueue.GetConsumingEnumerable())
             {
                 _bufferBuilder.Clear();
@@ -90,7 +96,6 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
                     _consoleWriter.Write(chunk.Span);
                 }
 #else
-                // fallback to creating string output
                 _consoleWriter.Write(_bufferBuilder.ToString());
 #endif
 
