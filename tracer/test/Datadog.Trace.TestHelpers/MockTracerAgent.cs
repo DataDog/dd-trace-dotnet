@@ -130,11 +130,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
         /// <param name="assertExpectedCount">When true, asserts that the number of spans to return matches the count</param>
         /// <returns>The list of spans.</returns>
-#if NETFRAMEWORK
-        public async Task<IImmutableList<MockSpan>> WaitForSpansAsync(
-#else
         public async ValueTask<IImmutableList<MockSpan>> WaitForSpansAsync(
-#endif
             int count,
             int timeoutInMilliseconds = 20000,
             string operationName = null,
@@ -178,7 +174,7 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                await Task.Delay(500).ConfigureAwait(false);
+                await Task.Delay(250).ConfigureAwait(false);
             }
 
             if (assertExpectedCount)
@@ -238,11 +234,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="timeoutInMilliseconds">The timeout</param>
         /// <param name="sleepTime">The time between checks</param>
         /// <returns>The telemetry that satisfied <paramref name="hasExpectedValues"/></returns>
-#if NETFRAMEWORK
-        public async Task<object> WaitForLatestTelemetryAsync(
-#else
         public async ValueTask<object> WaitForLatestTelemetryAsync(
-#endif
             Func<object, bool> hasExpectedValues,
             int timeoutInMilliseconds = 5000,
             int sleepTime = 200)
@@ -266,11 +258,7 @@ namespace Datadog.Trace.TestHelpers
             return null;
         }
 
-#if NETFRAMEWORK
-        public async Task<IImmutableList<MockClientStatsPayload>> WaitForStatsAsync(
-#else
         public async ValueTask<IImmutableList<MockClientStatsPayload>> WaitForStatsAsync(
-#endif
             int count,
             int timeoutInMilliseconds = 20000)
         {
@@ -287,17 +275,13 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                await Task.Delay(500).ConfigureAwait(false);
+                await Task.Delay(250).ConfigureAwait(false);
             }
 
             return stats;
         }
 
-#if NETFRAMEWORK
-        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
-#else
         public async ValueTask<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
-#endif
             int timeoutInMilliseconds,
             Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
         {
@@ -314,17 +298,13 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                await Task.Delay(500).ConfigureAwait(false);
+                await Task.Delay(250).ConfigureAwait(false);
             }
 
             return stats;
         }
 
-#if NETFRAMEWORK
-        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsPointsAsync(
-#else
         public async ValueTask<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsPointsAsync(
-#endif
             int statsCount,
             int timeoutInMilliseconds = 20000)
         {
@@ -336,11 +316,7 @@ namespace Datadog.Trace.TestHelpers
                 });
         }
 
-#if NETFRAMEWORK
-        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
-#else
         public async ValueTask<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
-#endif
             int payloadCount,
             int timeoutInMilliseconds = 20000)
         {

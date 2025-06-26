@@ -38,43 +38,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return telemetry;
         }
 
-#if NETFRAMEWORK
-        public static Task AssertIntegrationEnabledAsync(this MockTelemetryAgent telemetry, IntegrationId integrationId)
-#else
         public static ValueTask AssertIntegrationEnabledAsync(this MockTelemetryAgent telemetry, IntegrationId integrationId)
-#endif
         {
             return telemetry.AssertIntegrationAsync(integrationId, enabled: true, autoEnabled: true);
         }
 
-#if NETFRAMEWORK
-        public static Task AssertIntegrationDisabledAsync(this MockTelemetryAgent telemetry, IntegrationId integrationId)
-#else
         public static ValueTask AssertIntegrationDisabledAsync(this MockTelemetryAgent telemetry, IntegrationId integrationId)
-#endif
         {
             return telemetry.AssertIntegrationAsync(integrationId, enabled: false, autoEnabled: true);
         }
 
-#if NETFRAMEWORK
-        public static Task AssertIntegrationEnabledAsync(this MockTracerAgent mockAgent, IntegrationId integrationId)
-#else
         public static ValueTask AssertIntegrationEnabledAsync(this MockTracerAgent mockAgent, IntegrationId integrationId)
-#endif
             => mockAgent.AssertIntegrationAsync(integrationId, enabled: true, autoEnabled: true);
 
-#if NETFRAMEWORK
-        public static Task AssertIntegrationDisabledAsync(this MockTracerAgent mockAgent, IntegrationId integrationId)
-#else
         public static ValueTask AssertIntegrationDisabledAsync(this MockTracerAgent mockAgent, IntegrationId integrationId)
-#endif
             => mockAgent.AssertIntegrationAsync(integrationId, enabled: false, autoEnabled: true);
 
-#if NETFRAMEWORK
-        public static async Task AssertIntegrationAsync(this MockTracerAgent mockAgent, IntegrationId integrationId, bool enabled, bool? autoEnabled)
-#else
         public static async ValueTask AssertIntegrationAsync(this MockTracerAgent mockAgent, IntegrationId integrationId, bool enabled, bool? autoEnabled)
-#endif
         {
             await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
@@ -82,11 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
-#if NETFRAMEWORK
-        public static async Task AssertIntegrationAsync(this MockTelemetryAgent telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
-#else
         public static async ValueTask AssertIntegrationAsync(this MockTelemetryAgent telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
-#endif
         {
             await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
@@ -94,11 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
-#if NETFRAMEWORK
-        public static async Task AssertConfigurationAsync(this MockTracerAgent mockAgent, string key, object value = null)
-#else
         public static async ValueTask AssertConfigurationAsync(this MockTracerAgent mockAgent, string key, object value = null)
-#endif
         {
             await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
@@ -106,11 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertConfiguration(allData, key, value);
         }
 
-#if NETFRAMEWORK
-        public static async Task AssertConfigurationAsync(this MockTelemetryAgent telemetry, string key, object value)
-#else
         public static async ValueTask AssertConfigurationAsync(this MockTelemetryAgent telemetry, string key, object value)
-#endif
         {
             await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
@@ -118,18 +86,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertConfiguration(allData, key, value);
         }
 
-#if NETFRAMEWORK
-        public static Task AssertConfigurationAsync(this MockTelemetryAgent telemetry, string key)
-#else
         public static ValueTask AssertConfigurationAsync(this MockTelemetryAgent telemetry, string key)
-#endif
             => telemetry.AssertConfigurationAsync(key, value: null);
 
-#if NETFRAMEWORK
-        internal static async Task<IEnumerable<(string[] Tags, int Value, long Timestamp)>> GetMetricDataPointsAsync(this MockTelemetryAgent telemetry, string metric, string tag1 = null, string tag2 = null, string tag3 = null)
-#else
         internal static async ValueTask<IEnumerable<(string[] Tags, int Value, long Timestamp)>> GetMetricDataPointsAsync(this MockTelemetryAgent telemetry, string metric, string tag1 = null, string tag2 = null, string tag3 = null)
-#endif
         {
             await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
@@ -137,11 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return GetMetricData(allData, metric, tag1, tag2, tag3);
         }
 
-#if NETFRAMEWORK
-        internal static async Task<IEnumerable<DistributionMetricData>> GetDistributionsAsync(this MockTelemetryAgent telemetry, string distribution, string tag1 = null, string tag2 = null, string tag3 = null)
-#else
         internal static async ValueTask<IEnumerable<DistributionMetricData>> GetDistributionsAsync(this MockTelemetryAgent telemetry, string distribution, string tag1 = null, string tag2 = null, string tag3 = null)
-#endif
         {
             await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 

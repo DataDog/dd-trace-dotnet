@@ -371,21 +371,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 });
         }
 
-#if NETFRAMEWORK
-        private static async Task AssertServiceAsync(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
-#else
         private static async ValueTask AssertServiceAsync(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
-#endif
         {
             await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppStarted));
             AssertService(mockAgent.Telemetry.Cast<TelemetryData>(), expectedServiceName, expectedServiceVersion);
         }
 
-#if NETFRAMEWORK
-        private static async Task AssertServiceAsync(MockTelemetryAgent telemetry, string expectedServiceName, string expectedServiceVersion)
-#else
         private static async ValueTask AssertServiceAsync(MockTelemetryAgent telemetry, string expectedServiceName, string expectedServiceVersion)
-#endif
         {
             await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppStarted));
             AssertService(telemetry.Telemetry, expectedServiceName, expectedServiceVersion);
@@ -400,21 +392,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             appClosing.Application.ServiceVersion.Should().Be(expectedServiceVersion);
         }
 
-#if NETFRAMEWORK
-        private static async Task AssertDependenciesAsync(MockTracerAgent mockAgent, bool? enableDependencies)
-#else
         private static async ValueTask AssertDependenciesAsync(MockTracerAgent mockAgent, bool? enableDependencies)
-#endif
         {
             await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
             AssertDependencies(mockAgent.Telemetry.Cast<TelemetryData>(), enableDependencies);
         }
 
-#if NETFRAMEWORK
-        private static async Task AssertDependenciesAsync(MockTelemetryAgent telemetry, bool? enableDependencies)
-#else
         private static async ValueTask AssertDependenciesAsync(MockTelemetryAgent telemetry, bool? enableDependencies)
-#endif
         {
             await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
             AssertDependencies(telemetry.Telemetry, enableDependencies);
@@ -444,35 +428,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .UseFileName("TelemetryTests");
         }
 
-#if NETFRAMEWORK
-        private static Task WaitForAllTelemetryAsync(MockTracerAgent mockAgent)
-#else
         private static ValueTask<object> WaitForAllTelemetryAsync(MockTracerAgent mockAgent)
-#endif
             => mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
-#if NETFRAMEWORK
-        private static Task WaitForAllTelemetryAsync(MockTelemetryAgent telemetry)
-#else
         private static ValueTask<TelemetryData> WaitForAllTelemetryAsync(MockTelemetryAgent telemetry)
-#endif
             => telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
-#if NETFRAMEWORK
-        private static async Task AssertNoRedactedErrorLogsAsync(MockTracerAgent mockAgent)
-#else
         private static async ValueTask AssertNoRedactedErrorLogsAsync(MockTracerAgent mockAgent)
-#endif
         {
             await WaitForAllTelemetryAsync(mockAgent);
             AssertNoRedactedErrorLogs(mockAgent.Telemetry.Cast<TelemetryData>());
         }
 
-#if NETFRAMEWORK
-        private static async Task AssertNoRedactedErrorLogsAsync(MockTelemetryAgent telemetry)
-#else
         private static async ValueTask AssertNoRedactedErrorLogsAsync(MockTelemetryAgent telemetry)
-#endif
         {
             await WaitForAllTelemetryAsync(telemetry);
             AssertNoRedactedErrorLogs(telemetry.Telemetry);

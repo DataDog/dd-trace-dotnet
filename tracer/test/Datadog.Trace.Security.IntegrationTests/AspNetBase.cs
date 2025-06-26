@@ -444,11 +444,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             return await WaitForSpansAsync(agent, expectedSpans, phase, minDateTime, url);
         }
 
-        #if NETFRAMEWORK
-        protected async Task<IImmutableList<MockSpan>> WaitForSpansAsync(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
-        #else
         protected async ValueTask<IImmutableList<MockSpan>> WaitForSpansAsync(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
-        #endif
         {
             agent.SpanFilters.Clear();
 
