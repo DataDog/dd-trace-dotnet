@@ -14,16 +14,16 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal class UpdateResult
     {
-        private UpdateResult(DdwafObjectStruct? diagObject, IntPtr builderHandle = default(IntPtr), IntPtr wafHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null)
+        private UpdateResult(ref DdwafObjectStruct diagObject, IntPtr builderHandle = default(IntPtr), IntPtr wafHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null)
         {
             WafLibraryInvoker = invoker;
             Encoder = encoder;
             WafBuilderHandle = builderHandle;
             WafHandle = wafHandle;
 
-            if (diagObject != null)
+            if (diagObject.Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_NULL && diagObject.Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID)
             {
-                ReportedDiagnostics = DiagnosticResultUtils.ExtractReportedDiagnostics(diagObject.Value, false);
+                ReportedDiagnostics = DiagnosticResultUtils.ExtractReportedDiagnostics(ref diagObject, false);
 
                 if (ReportedDiagnostics.Rules.Errors is { Count: > 0 })
                 {
@@ -33,9 +33,10 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             }
         }
 
-        private UpdateResult(string errorMessage)
+        private UpdateResult(string errorMessage, ref DdwafObjectStruct diagObject, IntPtr builderHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null)
+            : this(ref diagObject, builderHandle, IntPtr.Zero, invoker, encoder)
         {
-            ErrorMessage = errorMessage;
+            ErrorMessage = ErrorMessage != string.Empty ? string.Join(Environment.NewLine, errorMessage, ErrorMessage) : errorMessage;
         }
 
         internal bool Success => WafHandle != IntPtr.Zero;
@@ -48,7 +49,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal IntPtr WafHandle { get; }
 
-        internal ReportedDiagnostics ReportedDiagnostics { get; } = new();
+        internal ReportedDiagnostics ReportedDiagnostics { get; }
 
         internal string RuleFileVersion => ReportedDiagnostics.RulesetVersion;
 
@@ -58,10 +59,16 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal IReadOnlyDictionary<string, object>? RuleErrors => ReportedDiagnostics.Rules.Errors;
 
-        public static UpdateResult FromSuccess(DdwafObjectStruct diagObj, IntPtr builderHandle, IntPtr wafHandle, WafLibraryInvoker invoker, IEncoder encoder) => new(diagObj, builderHandle, wafHandle, invoker, encoder);
+        public static UpdateResult FromSuccess(ref DdwafObjectStruct diagObj, IntPtr builderHandle, IntPtr wafHandle, WafLibraryInvoker invoker, IEncoder encoder) => new(ref diagObj, builderHandle, wafHandle, invoker, encoder);
 
-        internal static UpdateResult FromException(Exception e) => new(e.Message);
+        internal static UpdateResult FromFailed(string message, ref DdwafObjectStruct diagObject, IntPtr builderHandle, WafLibraryInvoker? invoker, IEncoder encoder) => new(message, ref diagObject, builderHandle, invoker, encoder);
 
-        internal static UpdateResult FromFailed(string message) => new(message);
+        internal static UpdateResult FromException(Exception e) => FromFailed(e.Message);
+
+        internal static UpdateResult FromFailed(string message)
+        {
+            var diagObj = default(DdwafObjectStruct);
+            return new(message, ref diagObj);
+        }
     }
 }

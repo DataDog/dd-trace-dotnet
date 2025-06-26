@@ -127,6 +127,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             if (wafBuilderHandle == IntPtr.Zero)
             {
                 Log.Error("rc::asm_dd::diagnostic Error: WAF builder initialization failed."); // Check were all these error codes are defined
+                return UpdateResult.FromFailed("rc::asm_dd::diagnostic Error: WAF builder initialization failed.");
             }
             else
             {
@@ -168,15 +169,20 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                     wafHandle = _wafLibraryInvoker.BuilderBuildInstance(wafBuilderHandle);
                 }
-
-                if (wafHandle == IntPtr.Zero)
-                {
-                    Log.Error("rc::asm_dd::diagnostic Error: Failed to build WAF instance: no valid rules or processors available");
-                    return UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.");
-                }
             }
 
-            var result = UpdateResult.FromSuccess(diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder);
+            UpdateResult result;
+
+            if (wafHandle == IntPtr.Zero)
+            {
+                Log.Error("rc::asm_dd::diagnostic Error: Failed to build WAF instance: no valid rules or processors available");
+                result = UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.", ref diagnostics, wafBuilderHandle, _wafLibraryInvoker, encoder);
+            }
+            else
+            {
+                result = UpdateResult.FromSuccess(ref diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder);
+            }
+
             if (result.ReportedDiagnostics.Rules.Errors is { Count: > 0 } ||
                 result.ReportedDiagnostics.Rules.Warnings is { Count: > 0 } ||
                 result.ReportedDiagnostics.Rest.Errors is { Count: > 0 } ||
@@ -210,16 +216,10 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                         foreach (var item in messages)
                         {
                             var message = $"{item.Key}: [{string.Join(", ", item.Value)}]";
-                            if (isError)
-                            {
+                            var severity = isError ? "Error" : "Warning";
 #pragma warning disable DDLOG004 // Message templates should be constant
-                                Log.Error($"rc::asm_dd::diagnostic Error: {message}");
+                            Log.Error($"rc::asm_dd::diagnostic {severity}: {message}");
 #pragma warning restore DDLOG004 // Message templates should be constant
-                            }
-                            else
-                            {
-                                Log.Debug("rc::asm_dd::diagnostic Warning: {Err}", message);
-                            }
                         }
                     }
                 }
