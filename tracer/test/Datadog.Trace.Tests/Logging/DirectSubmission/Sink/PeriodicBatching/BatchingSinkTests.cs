@@ -236,7 +236,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             sink.Batches.Should().BeEmpty();
         }
 
-        private static async ValueTask<ConcurrentStack<IList<DirectSubmissionLogEvent>>> WaitForBatchesAsync(InMemoryBatchedSink pbs, int batchCount = 1)
+        private static async Task<ConcurrentStack<IList<DirectSubmissionLogEvent>>> WaitForBatchesAsync(InMemoryBatchedSink pbs, int batchCount = 1)
         {
             var deadline = DateTime.UtcNow.AddSeconds(30);
             var batches = pbs.Batches;

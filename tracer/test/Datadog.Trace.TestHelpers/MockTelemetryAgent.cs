@@ -100,7 +100,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="timeoutInMilliseconds">The timeout</param>
         /// <param name="sleepTime">The time between checks</param>
         /// <returns>The telemetry that satisfied <paramref name="hasExpectedValues"/></returns>
-        public async ValueTask<TelemetryData> WaitForLatestTelemetryAsync(
+        public async Task<TelemetryData> WaitForLatestTelemetryAsync(
             Func<TelemetryData, bool> hasExpectedValues,
             int timeoutInMilliseconds = 10_000,
             int sleepTime = 500)
@@ -118,7 +118,7 @@ namespace Datadog.Trace.TestHelpers
                     }
                 }
 
-                await Task.Delay(sleepTime).ConfigureAwait(false);
+                await Task.Delay(sleepTime);
             }
 
             return null;

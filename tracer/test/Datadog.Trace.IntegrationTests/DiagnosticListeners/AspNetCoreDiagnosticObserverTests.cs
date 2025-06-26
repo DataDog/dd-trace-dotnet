@@ -459,7 +459,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                         break;
                     }
 
-                    await Task.Delay(200).ConfigureAwait(false);
+                    await Task.Delay(200);
                 }
             }
 
