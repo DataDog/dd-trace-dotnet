@@ -29,5 +29,7 @@ namespace Datadog.Trace.TestHelpers
         public bool SendResponse { get; set; } = true;
 
         public string ContentType { get; set; } = "application/json";
+
+        public bool IsConfigResponse { get; set; } = false;
     }
 }

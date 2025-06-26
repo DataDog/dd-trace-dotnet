@@ -31,11 +31,16 @@
       }
     },
     {
+      "name": "Bailout",
+      "environmentVariables": {
+        "DD_PROFILER_EXCLUDE_PROCESSES": "Samples.HttpMessageHandler.exe"
+      }
+    },
+    {
       "name": "CallTarget\u002BInlining\u002BNGEN"
     }
   ],
-  "processName": "dotnet",
-  "processArguments": ".\\Samples.HttpMessageHandler.dll",
+  "processName": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_net6.0\\Samples.HttpMessageHandler.exe",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_net6.0",
   "environmentVariables": {
