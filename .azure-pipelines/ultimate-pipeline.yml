@@ -4277,7 +4277,7 @@ stages:
       env:
         PR_NUMBER: $(System.PullRequest.PullRequestNumber)
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
-        GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
 
     - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/execution_time_report.md
       displayName: Upload report

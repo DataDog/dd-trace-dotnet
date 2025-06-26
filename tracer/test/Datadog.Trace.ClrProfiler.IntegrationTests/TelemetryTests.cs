@@ -140,6 +140,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
         [MemberData(nameof(Data))]
+        [Flaky("Named pipes is flaky", maxRetries: 3)]
         public async Task WhenUsingNamedPipesAgent_UsesNamedPipesTelemetry(bool? enableDependencies)
         {
             if (!EnvironmentTools.IsWindows())
@@ -150,43 +151,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentHelper.EnableWindowsNamedPipes();
             EnableAgentProxyTelemetry(enableDependencies);
 
-            // The server implementation of named pipes is flaky so have 3 attempts
-            var attemptsRemaining = 3;
-            while (true)
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            agent.Output = Output;
+
+            int httpPort = TcpPortProvider.GetOpenPort();
+            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+            using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                try
-                {
-                    attemptsRemaining--;
-                    await RunTest();
-                    return;
-                }
-                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
-                {
-                    await ReportRetry(_output, attemptsRemaining, ex);
-                }
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
+
+                var spans = agent.WaitForSpans(ExpectedSpans);
+                await AssertExpectedSpans(spans);
             }
 
-            async Task RunTest()
-            {
-                using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-                agent.Output = Output;
-
-                int httpPort = TcpPortProvider.GetOpenPort();
-                Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-                using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
-                {
-                    ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
-
-                    var spans = agent.WaitForSpans(ExpectedSpans);
-                    await AssertExpectedSpans(spans);
-                }
-
-                agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
-                agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-                AssertService(agent, "Samples.Telemetry", ServiceVersion);
-                AssertDependencies(agent, enableDependencies);
-                AssertNoRedactedErrorLogs(agent);
-            }
+            agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+            agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
+            AssertService(agent, "Samples.Telemetry", ServiceVersion);
+            AssertDependencies(agent, enableDependencies);
+            AssertNoRedactedErrorLogs(agent);
         }
 
 #if NETCOREAPP3_1_OR_GREATER
