@@ -40,7 +40,13 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
 
         // do not use the locking textwriter from console.out used by console.writeline
         _consoleWriter = consoleWriter ??
-                         new StreamWriter(Console.OpenStandardOutput(), Console.OutputEncoding) { AutoFlush = false };
+                         new StreamWriter(
+                                 Console.OpenStandardOutput(),
+                                 Console.OutputEncoding,
+                                 leaveOpen: true) // do not close the underlying stream or the app may crash when it tries to write to the console again
+                             {
+                                 AutoFlush = false // don't flush after every Write(char), we will flush manually after writing each log event
+                             };
 
         _writeTask = Task.Factory.StartNew(
             WriteToConsoleStream,
