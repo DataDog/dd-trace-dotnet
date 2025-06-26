@@ -445,7 +445,7 @@ namespace Datadog.Trace.Configuration
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but Libddatadog is not available. Disabling data pipeline.");
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
             }
