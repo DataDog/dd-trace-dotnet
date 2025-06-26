@@ -33,7 +33,8 @@
     {
       "name": "Bailout",
       "environmentVariables": {
-        "DD_PROFILER_EXCLUDE_PROCESSES": "Samples.FakeDbCommand.exe"
+        "DD_PROFILER_EXCLUDE_PROCESSES": "Samples.FakeDbCommand.exe",
+        "DD_INJECTION_ENABLED": "tracing"
       }
     },
     {
