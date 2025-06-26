@@ -268,6 +268,32 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
             AssertNotInstrumented(agent, logDir);
+            AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
+            // this is already tested in AssertNotInstrumented, but adding an explicit check here to make sure
+            if (EnvironmentTools.IsWindows())
+            {
+                Directory.GetFiles(logDir).Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-"));
+            }
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task DoesNotInstrumentOnEolFrameworkWithSsiButWritesLogsIfEnabled()
+        {
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            // This ensures we _do_ write the native loader log, even if we don't instrument
+            SetEnvironmentVariable("DD_TRACE_LOG_BUFFERING_ENABLED", "0");
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+            AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
+            if (EnvironmentTools.IsWindows())
+            {
+                Directory.GetFiles(logDir).Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-native-loader-"));
+            }
         }
 
         [SkippableFact]
@@ -414,6 +440,21 @@ namespace Foo
                              }]
                              """;
             AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task OnSupportedFrameworkInSsi_BuffersLogsInitiallyAndThenFlushes()
+        {
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertInstrumented(agent, logDir);
+            AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
+            AssertNativeLoaderLogContainsString(logDir, "Buffered logs flushed and buffering disabled");
         }
 #endif
 
