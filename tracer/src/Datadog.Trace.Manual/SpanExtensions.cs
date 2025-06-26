@@ -34,7 +34,7 @@ public static class SpanExtensions
     {
         if (string.IsNullOrEmpty(userDetails.Id))
         {
-            ThrowHelper.ThrowArgumentException("UserDetails.Id must be set to a value other than null or the empty string", nameof(userDetails.Id));
+            ThrowHelper.ThrowArgumentException(nameof(userDetails.Id) + " must be set to a value other than null or the empty string", nameof(userDetails.Id));
         }
 
         SetUser(span, userDetails.Email, userDetails.Name, userDetails.Id, userDetails.PropagateId, userDetails.SessionId, userDetails.Role, userDetails.Scope);
