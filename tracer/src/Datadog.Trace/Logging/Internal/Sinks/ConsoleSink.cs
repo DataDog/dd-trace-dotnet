@@ -20,7 +20,7 @@ namespace Datadog.Trace.Logging.Internal.Sinks;
 
 internal sealed class ConsoleSink : ILogEventSink, IDisposable
 {
-    // these are only used from the background thread
+    // in-memory buffer used only from the background thread
     private readonly StringBuilder _bufferBuilder;
     private readonly StringWriter _bufferWriter;
 
@@ -31,7 +31,7 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
 
     public ConsoleSink(string messageTemplate, int queueLimit, TextWriter? consoleWriter = null)
     {
-        // these are only used from the background thread
+        // in-memory buffer used only from the background thread
         _bufferBuilder = new StringBuilder(capacity: 512);
         _bufferWriter = new StringWriter(_bufferBuilder);
 
