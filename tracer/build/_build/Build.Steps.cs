@@ -1518,13 +1518,30 @@ partial class Build
               var samples = GetSamplesToBuild();
               Logger.Information("Building {SampleName}", samples);
 
-              // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
-              DotNetBuild(config => config
-                                   .SetConfiguration(BuildConfiguration)
-                                   .SetProperty("BuildInParallel", "true")
-                                   .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                                   .When(Framework is not null, x => x.SetFramework(Framework))
-                                   .SetProjectFile(samples));
+              // If we are building a specific sample, with a specific NuGet version, we can target just that one with MSBuild
+              // Windows only at the moment as I couldn't get `dotnet build` to work with the ApiVersion parameter
+              // As it needs to be restored first, but when it did it couldn't find the assets file
+              if (IsWin && !string.IsNullOrEmpty(ApiVersion) && !string.IsNullOrEmpty(SampleName))
+              {
+                  Logger.Information("Building sample {SampleName} with ApiVersion {ApiVersion} using MSBuild", SampleName, ApiVersion);
+
+                  MSBuild(x => x.SetTargetPath(samples)
+                                .SetTargets("Restore", "Build")
+                                .SetConfiguration(BuildConfiguration)
+                                .SetProperty("ApiVersion", ApiVersion)
+                                .When(Framework is not null, o => o.SetProperty("TargetFramework", Framework.ToString()))
+                                .SetProperty("BuildInParallel", "true")
+                                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")));
+              }
+              else
+              {
+                  // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
+                  DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
+                                              .SetProperty("BuildInParallel", "true")
+                                              .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                                              .When(Framework is not null, x => x.SetFramework(Framework))
+                                              .SetProjectFile(samples));
+              }
 
               string GetSamplesToBuild()
               {

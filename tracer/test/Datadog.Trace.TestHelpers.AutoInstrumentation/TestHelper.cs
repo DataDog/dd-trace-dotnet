@@ -654,13 +654,6 @@ namespace Datadog.Trace.TestHelpers
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
-        protected async Task ReportRetry(ITestOutputHelper outputHelper, int attemptsRemaining, Exception ex = null)
-        {
-            outputHelper.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
-
-            await ErrorHelpers.SendMetric(outputHelper, "dd_trace_dotnet.ci.tests.retries", EnvironmentHelper);
-        }
-
         private bool IsServerSpan(MockSpan span) =>
             span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
     }
