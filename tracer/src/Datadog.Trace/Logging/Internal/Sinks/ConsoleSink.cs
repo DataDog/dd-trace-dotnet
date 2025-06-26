@@ -106,10 +106,6 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
         {
             // Nowhere to log safely so just swallow!
         }
-        finally
-        {
-            _consoleWriter.Flush();
-        }
     }
 
     public async Task FlushAsync()
