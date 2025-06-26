@@ -122,7 +122,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config, AgentConfiguration agentConfiguration = null) => new NamedPipeAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
 
-        public bool WaitForConfigSent(int timeoutInMilliseconds = 10000)
+        public async Task<bool> WaitForConfigSentAsync(int timeoutInMilliseconds = 10000)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
@@ -133,7 +133,7 @@ namespace Datadog.Trace.TestHelpers
                     return true;
                 }
 
-                Thread.Sleep(100);
+                await Task.Delay(100); // Non-blocking wait
             }
 
             return false;
