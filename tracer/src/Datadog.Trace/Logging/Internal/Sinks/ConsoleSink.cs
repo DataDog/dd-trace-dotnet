@@ -38,15 +38,10 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
         _textFormatter = new MessageTemplateTextFormatter(messageTemplate, CultureInfo.InvariantCulture);
         _writeQueue = new BlockingCollection<LogEvent>(queueLimit);
 
-        // do not use the locking textwriter from console.out used by console.writeline
-        _consoleWriter = consoleWriter ??
-                         new StreamWriter(
-                                 Console.OpenStandardOutput(),
-                                 Console.OutputEncoding,
-                                 leaveOpen: true) // do not close the underlying stream or the app may crash when it tries to write to the console again
-                             {
-                                 AutoFlush = false // don't flush after every Write(char), we will flush manually after writing each log event
-                             };
+        // Since we are writing from a background thread, we can use the synchronized Console.Out
+        // instead of Console.OpenStandardOutput() without blocking the main thread. By using Console.Out we honor
+        // any previous call to Console.SetOut() and we don't have to worry about writing the UTF-8 BOM to the output stream.
+        _consoleWriter = consoleWriter ?? Console.Out;
 
         _writeTask = Task.Factory.StartNew(
             WriteToConsoleStream,
