@@ -14,7 +14,7 @@ namespace Samples.AWS.Kinesis
     {
 
         private const string StreamName = "MyStreamName";
-        private const string StreamARN = "arn:aws:kinesis:us-east-1:000000000000:stream/MyStreamName";
+
         public static async Task StartKinesisTasks(AmazonKinesisClient kinesisClient)
         {
             Console.WriteLine("Beginning Async methods");
@@ -59,8 +59,6 @@ namespace Samples.AWS.Kinesis
                 PartitionKey = Guid.NewGuid().ToString(),
             };
 
-            Console.WriteLine($"PutRecordAsync(PutRecordRequest) StreamName: {putRecordRequest.StreamName}");
-
             var data = new Dictionary<string, object> { { "name", "Jordan" }, { "lastname", "González Bustamante" }, { "age", 24 } };
             putRecordRequest.Data = Common.DictionaryToMemoryStream(data);
 
@@ -89,8 +87,6 @@ namespace Samples.AWS.Kinesis
                     }
                 }
             };
-
-            Console.WriteLine($"PutRecordsAsync(PutRecordsRequest) StreamName: {putRecordsRequest.StreamName}");
 
             var response = await kinesisClient.PutRecordsAsync(putRecordsRequest);
             Console.WriteLine($"PutRecordsAsync(PutRecordsRequest) HTTP status code: {response.HttpStatusCode}");
