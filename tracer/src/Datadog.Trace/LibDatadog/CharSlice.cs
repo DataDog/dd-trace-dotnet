@@ -7,24 +7,28 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.LibDatadog;
 
 /// <summary>
 /// Represents a slice of a UTF-8 encoded string in memory.
+/// Do not change the values of this enum unless you really need to update the interop mapping.
+/// Libdatadog interop mapping of https://github.com/DataDog/libdatadog/blob/60583218a8de6768f67d04fcd5bc6443f67f516b/ddcommon-ffi/src/slice.rs#L51
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-internal struct CharSlice : IDisposable
+internal readonly struct CharSlice : IDisposable
 {
     /// <summary>
     /// Pointer to the start of the slice.
     /// </summary>
-    internal nint Ptr;
+    internal readonly nint Ptr;
 
     /// <summary>
     /// Length of the slice.
     /// </summary>
-    internal nuint Len;
+    internal readonly nuint Len;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CharSlice"/> struct.
@@ -40,16 +44,26 @@ internal struct CharSlice : IDisposable
         }
         else
         {
-            // copy over str to unmanaged memory
-            var bytes = System.Text.Encoding.UTF8.GetBytes(str);
-            Ptr = Marshal.AllocHGlobal(bytes.Length);
-            Marshal.Copy(bytes, 0, Ptr, bytes.Length);
-            Len = (nuint)bytes.Length;
+            var encoding = Encoding.UTF8;
+            var maxBytesCount = encoding.GetMaxByteCount(str.Length);
+            Ptr = Marshal.AllocHGlobal(maxBytesCount);
+            unsafe
+            {
+                fixed (char* strPtr = str)
+                {
+                    Len = (nuint)encoding.GetBytes(strPtr, str.Length, (byte*)Ptr, maxBytesCount);
+                }
+            }
         }
     }
 
     public void Dispose()
     {
+        if (Ptr == IntPtr.Zero)
+        {
+            return;
+        }
+
         Marshal.FreeHGlobal(Ptr);
     }
 }

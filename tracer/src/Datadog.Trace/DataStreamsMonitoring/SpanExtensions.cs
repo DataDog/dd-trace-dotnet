@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
+using System.Globalization;
+
 namespace Datadog.Trace.DataStreamsMonitoring;
 
 internal static class SpanExtensions
@@ -25,10 +27,13 @@ internal static class SpanExtensions
         }
 
         span.Context.SetCheckpoint(manager, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs, parent);
-        var hash = span.Context.PathwayContext?.Hash.Value ?? 0;
-        if (hash != 0)
+        if (!manager.IsInDefaultState)
         {
-            span.SetTag("pathway.hash", hash.ToString());
+            var hash = span.Context.PathwayContext?.Hash.Value ?? 0;
+            if (hash != 0)
+            {
+                span.SetTag("pathway.hash", hash.ToString(CultureInfo.InvariantCulture));
+            }
         }
     }
 }

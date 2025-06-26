@@ -37,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableTheory]
         [CombinatorialOrPairwiseData]
+        [Flaky("This test is kind of impredictable because we are trying to trigger timeouts")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitTraces(

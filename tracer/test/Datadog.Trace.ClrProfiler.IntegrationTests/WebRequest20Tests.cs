@@ -54,9 +54,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
                 Assert.Empty(spans);
 
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+                var traceId = HeadersUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = HeadersUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var tracingEnabled = HeadersUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
 
                 Assert.Null(traceId);
                 Assert.Null(parentSpanId);
@@ -87,8 +87,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var firstSpan = spans.First();
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var traceId = HeadersUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = HeadersUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
 
                 Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
