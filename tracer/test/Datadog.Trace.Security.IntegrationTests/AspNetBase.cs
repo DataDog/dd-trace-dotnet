@@ -317,7 +317,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 }
             }
 
-            var allSpansReceived = WaitForSpans(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart, url);
+            var allSpansReceived = await WaitForSpansAsync(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart, url);
 
             var groupedSpans = allSpansReceived.GroupBy(
                 s =>
@@ -441,10 +441,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
             await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent);
 
-            return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
+            return await WaitForSpansAsync(agent, expectedSpans, phase, minDateTime, url);
         }
 
-        protected IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
+        #if NETFRAMEWORK
+        protected async Task<IImmutableList<MockSpan>> WaitForSpansAsync(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
+        #else
+        protected async ValueTask<IImmutableList<MockSpan>> WaitForSpansAsync(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
+        #endif
         {
             agent.SpanFilters.Clear();
 
@@ -453,7 +457,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
             }
 
-            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime, assertExpectedCount: false);
+            var spans = await agent.WaitForSpansAsync(expectedSpans, minDateTime: minDateTime, assertExpectedCount: false);
             if (spans.Count != expectedSpans)
             {
                 Output?.WriteLine($"spans.Count: {spans.Count} != expectedSpans: {expectedSpans}, this is phase: {phase}");

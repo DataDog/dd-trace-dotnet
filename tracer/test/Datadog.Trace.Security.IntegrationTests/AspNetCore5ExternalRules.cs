@@ -62,7 +62,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var (statusCode, _) = await SubmitRequest(url, body: null, contentType: null, userAgent: userAgent);
             ((int)statusCode).Should().Be(returnedStatusCode);
 
-            var spans = WaitForSpans(agent, 1, string.Empty, minDateTime, url);
+            var spans = await WaitForSpansAsync(agent, 1, string.Empty, minDateTime, url);
             await VerifySpans(spans, settings);
         }
     }
