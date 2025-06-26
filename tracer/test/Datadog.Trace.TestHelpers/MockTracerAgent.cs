@@ -133,7 +133,7 @@ namespace Datadog.Trace.TestHelpers
                     return true;
                 }
 
-                await Task.Delay(100); // Non-blocking wait
+                await Task.Delay(100);
             }
 
             return false;
