@@ -84,21 +84,12 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
             // The foreach loop will exit when the collection is marked as complete.
             foreach (var logEvent in _writeQueue.GetConsumingEnumerable())
             {
+                // clear in-memory buffer and format event into buffer
                 _bufferBuilder.Clear();
-
-                // format event into in-memory buffer and then flush to console
                 _textFormatter.Format(logEvent, _bufferWriter);
 
-#if NET5_0_OR_GREATER
-                // use StringBuilder internal buffers directly without allocating a new string
-                foreach (var chunk in _bufferBuilder.GetChunks())
-                {
-                    _consoleWriter.Write(chunk.Span);
-                }
-#else
-                _consoleWriter.Write(_bufferBuilder.ToString());
-#endif
-
+                // write the formatted log event to the console and flush
+                _consoleWriter.Write(_bufferBuilder);
                 _consoleWriter.Flush();
             }
         }
