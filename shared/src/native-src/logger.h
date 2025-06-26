@@ -10,6 +10,7 @@
 #include <spdlog/sinks/null_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
+#include "lazy_rotating_file_sink.h"
 
 #include "dd_filesystem.hpp"
 #include "pal.h"
@@ -119,8 +120,10 @@ std::tuple<std::shared_ptr<spdlog::logger>, bool> Logger::CreateInternalLogger()
 
     try
     {
-        logger =
-            spdlog::rotating_logger_mt(LoggerPolicy::file_name, Logger::GetLogPath<LoggerPolicy>(file_name_suffix), 1048576 * 5, 10);
+        // If we are buffering logs, we use a LazyRotatingFileSink to avoid creating the file until the first log is written.
+        logger = buffering_enabled
+            ? spdlog::lazy_rotating_logger_mt(LoggerPolicy::file_name, Logger::GetLogPath<LoggerPolicy>(file_name_suffix), 1048576 * 5, 10)
+            : spdlog::rotating_logger_mt(LoggerPolicy::file_name, Logger::GetLogPath<LoggerPolicy>(file_name_suffix), 1048576 * 5, 10);
     }
     catch (...)
     {
