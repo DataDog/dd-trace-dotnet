@@ -45,6 +45,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         internal static CallTargetState OnMethodBegin<TTarget, TPutRecordRequest>(TTarget instance, TPutRecordRequest request, CancellationToken cancellationToken)
             where TPutRecordRequest : IPutRecordRequestV3_7, IDuckType
         {
+            Console.WriteLine($"OnMethodBegin(PutRecordAsync) NEW StreamName: {request.StreamName}");
+            Console.WriteLine($"OnMethodBegin(PutRecordAsync) NEW StreamARN: {request.StreamARN}");
+
             if (request.Instance is null)
             {
                 return CallTargetState.GetDefault();

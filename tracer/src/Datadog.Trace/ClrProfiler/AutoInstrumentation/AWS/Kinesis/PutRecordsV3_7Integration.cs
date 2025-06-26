@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         /// <param name="request">The request for the Kinesis operation</param>
         /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TPutRecordsRequest>(TTarget instance, TPutRecordsRequest request)
-            where TPutRecordsRequest : IPutRecordsRequestV3_7, IPutRecordsRequest, IDuckType
+            where TPutRecordsRequest : IPutRecordsRequestV3_7, IDuckType
         {
             if (request.Instance is null)
             {
