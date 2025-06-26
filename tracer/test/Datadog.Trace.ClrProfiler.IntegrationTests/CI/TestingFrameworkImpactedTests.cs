@@ -176,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         break;
                     }
 
-                    Thread.Sleep(500);
+                    await Task.Delay(500).ConfigureAwait(false);
                 }
 
                 // Sort and aggregate

@@ -254,7 +254,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (milisecondsElapsed < intervalMilliseconds)
                 {
-                    Thread.Sleep((int)(intervalMilliseconds - milisecondsElapsed));
+                    await Task.Delay((int)(intervalMilliseconds - milisecondsElapsed));
                 }
             }
 

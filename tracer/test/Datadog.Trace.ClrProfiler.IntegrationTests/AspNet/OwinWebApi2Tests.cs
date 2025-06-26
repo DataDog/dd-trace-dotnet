@@ -258,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         break;
                     }
 
-                    Thread.Sleep(intervalMilliseconds);
+                    await Task.Delay(intervalMilliseconds);
                 }
 
                 if (!serverReady)
