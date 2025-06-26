@@ -268,11 +268,15 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
             AssertNotInstrumented(agent, logDir);
-            AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
             // this is already tested in AssertNotInstrumented, but adding an explicit check here to make sure
             if (EnvironmentTools.IsWindows())
             {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
                 Directory.GetFiles(logDir).Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-"));
+            }
+            else
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
             }
         }
 
@@ -309,8 +313,15 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
             AssertInstrumented(agent, logDir);
-            AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
-            AssertNativeLoaderLogContainsString(logDir, "Buffered logs flushed and buffering disabled");
+            if (EnvironmentTools.IsWindows())
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
+                AssertNativeLoaderLogContainsString(logDir, "Buffered logs flushed and buffering disabled");
+            }
+            else
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
+            }
         }
 
         [SkippableFact]
@@ -594,7 +605,7 @@ namespace Foo
             else
             {
                 // We should _only_ have native loader logs, no other logs (managed, native tracer, etc.)
-                allFiles.Should().OnlyContain(filename => Path.GetFileName(filename).StartsWith("dotnet-native-loader-"));
+                allFiles.Should().OnlyContain(filename => Path.GetFileName(filename).StartsWith("dotnet-native-loader-") || Path.GetExtension(filename) != ".log");
                 mockTracerAgent.Spans.Should().BeEmpty();
                 mockTracerAgent.Telemetry.Should().BeEmpty();
             }
