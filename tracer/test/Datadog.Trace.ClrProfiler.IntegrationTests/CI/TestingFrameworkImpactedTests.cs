@@ -167,12 +167,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 var deadline = DateTime.UtcNow.AddMilliseconds(5000);
                 testFilter ??= _ => true; // t => t.Meta.ContainsKey("is_modified")
 
-                List<MockCIVisibilityTest> filteredTests = tests;
+                var filteredTests = tests;
                 while (DateTime.UtcNow < deadline)
                 {
                     filteredTests = tests.Where(testFilter).ToList();
-                    if (tests.Count >= ExpectedTestCount)
+                    if (tests.Count >= ExpectedTestCount && filteredTests.Count >= expectedTests)
                     {
+                        // If we have enough tests, break the loop
+                        Output.WriteLine($"Found {tests.Count} tests, {filteredTests.Count} matching the filter.");
                         break;
                     }
 
@@ -181,9 +183,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 // Sort and aggregate
                 var results = filteredTests.Select(t => t.Resource).Distinct().OrderBy(t => t).ToList();
+                Output.WriteLine($"Found {tests.Count} tests, {filteredTests.Count} matching the filter. Results: {string.Join(", ", results)}");
 
-                tests.Count().Should().BeGreaterOrEqualTo(ExpectedTestCount, "Expected test count not met");
-                results.Count().Should().Be(expectedTests, "Expected filtered test count not met");
+                tests.Count.Should().BeGreaterOrEqualTo(ExpectedTestCount, "Expected test count not met");
+                results.Count.Should().Be(expectedTests, "Expected filtered test count not met");
             }
             finally
             {
