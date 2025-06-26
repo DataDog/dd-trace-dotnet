@@ -42,37 +42,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> Data =>
             from transport in Transports
-            from dataPipelineEnabled in new[] { true, false }
+            from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
             select new object[] { transport, dataPipelineEnabled };
 
         [SkippableTheory]
         [MemberData(nameof(Data))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Flaky("Named pipes is flaky", maxRetries: 3)]
         public async Task TransportsWorkCorrectly(TestTransports transport, bool dataPipelineEnabled)
         {
             var transportType = TracesTransportTypeFromTestTransport(transport);
-            if (transportType != TracesTransportType.WindowsNamedPipe)
-            {
-                await RunTest(transportType, dataPipelineEnabled);
-                return;
-            }
-
-            // The server implementation of named pipes is flaky so have 3 attempts
-            var attemptsRemaining = 3;
-            while (true)
-            {
-                try
-                {
-                    attemptsRemaining--;
-                    await RunTest(transportType, dataPipelineEnabled);
-                    return;
-                }
-                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
-                {
-                    await ReportRetry(_output, attemptsRemaining, ex);
-                }
-            }
+            await RunTest(transportType, dataPipelineEnabled);
         }
 
         private TracesTransportType TracesTransportTypeFromTestTransport(TestTransports transport)

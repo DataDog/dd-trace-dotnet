@@ -119,7 +119,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.19.0
+  ToolVersion: 3.20.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -4083,6 +4083,7 @@ stages:
         vmImage: ubuntu-latest
       steps:
       - checkout: none
+      - template: steps/create-github-app-token.yml
       - bash: |
           echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId) and is_release_version=False"
           curl \
@@ -4095,7 +4096,7 @@ stages:
         displayName: Start the generation of docker base images on GitHub Actions worfklow
         condition: eq(variables['isMainBranch'], true)
         env:
-          GITHUB_TOKEN: $(GITHUB_TOKEN)
+          GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['runCodeCoverage'], 'True'))
@@ -4117,7 +4118,19 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
+    # Create this token on the linux side (create_github_token doesn't work on Windows currently)
+    - job: create_github_token
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+      - checkout: none
+      - template: steps/create-github-app-token.yml
+
     - job: Windows
+      dependsOn: create_github_token
+      variables:
+        GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]  
+
       timeoutInMinutes: 30
 
       pool:
@@ -4154,7 +4167,7 @@ stages:
         env:
           PR_NUMBER: $(System.PullRequest.PullRequestNumber)
           AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
-          GITHUB_TOKEN: $(GITHUB_TOKEN)
+          GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
 
 - stage: execution_benchmarks
   dependsOn: [build_windows_tracer, merge_commit_id]
@@ -4164,7 +4177,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Windows, compare]
+      jobs: [Windows, compare, create_github_token]
 
   - job: Windows
     strategy:
@@ -4225,9 +4238,19 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+  # Create this token on the linux side (create_github_token doesn't work on Windows currently)
+  - job: create_github_token
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - checkout: none
+    - template: steps/create-github-app-token.yml
+
   - job: compare
     timeoutInMinutes: 60 #default value
-    dependsOn: [Windows]
+    dependsOn: [Windows, create_github_token]
+    variables:
+      GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]
     pool:
       vmImage: windows-2022
 
@@ -4254,7 +4277,7 @@ stages:
       env:
         PR_NUMBER: $(System.PullRequest.PullRequestNumber)
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
-        GITHUB_TOKEN: $(GITHUB_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
 
     - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/execution_time_report.md
       displayName: Upload report
@@ -4587,9 +4610,6 @@ stages:
               # Save weblog variant image
               docker save system_tests/weblog:latest -o ../docker-images/$w.tar
             done < /tmp/weblogs_list.txt
-            
-            # Save agent image
-            docker save system_tests/agent:latest -o ../docker-images/agent.tar
 
           displayName: Build weblogs and agent & save Docker images
 
@@ -4644,9 +4664,6 @@ stages:
       - script: |
           echo "Loading images for variant: $(WEBLOG_VARIANT)"
           docker load -i "$(Build.SourcesDirectory)/$(WEBLOG_VARIANT).tar"
-          
-          echo "Loading agent image"
-          docker load -i "$(Build.SourcesDirectory)/agent.tar"
           
           echo "Available Docker images after loading:"
           docker images
@@ -5912,6 +5929,83 @@ stages:
     - script: tracer\build.cmd CheckSmokeTestsForErrors
       displayName: CheckSmokeTestsForErrors
 
+- stage: fleet_installer_iis_smoke_tests
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [windows]
+
+    - job: windows
+      timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
+      strategy:
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.fleet_installer_windows_iis_smoke_tests_matrix'] ]
+      variables:
+        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+      pool:
+        vmImage: windows-2022
+
+      steps:
+        - template: steps/install-docker-compose-v1.yml
+          parameters:
+            dockerComposePath: $(dockerComposePath)
+
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: windows-tracer-home.zip
+            path: $(smokeTestAppDir)/artifacts
+
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: fleet-installer
+            path: $(smokeTestAppDir)/artifacts/installer
+
+        - powershell: |
+            ls $(smokeTestAppDir)/artifacts
+            ls $(smokeTestAppDir)/artifacts/installer
+            mkdir -p artifacts/build_data/snapshots
+            mkdir -p artifacts/build_data/logs
+          displayName: Create test data directories
+
+        - bash: |
+            $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
+              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+              --build-arg CHANNEL="$(channel)" \
+              --build-arg TARGET_PLATFORM="$(targetPlatform)" \
+              --build-arg INSTALL_COMMAND="$(installCommand)" \
+              fleet-installer-smoke-tests-iis.windows
+          env:
+            dockerTag: $(dockerTag)
+          displayName: docker-compose build smoke-tests
+          retryCountOnTaskFailure: 3
+
+        - template: steps/run-snapshot-test.yml
+          parameters:
+            target: 'fleet-installer-smoke-tests-iis.windows'
+            snapshotPrefix: "smoke_test_iis"
+            isLinux: false
+            dockerComposePath: $(dockerComposePath)
+
+        - publish: artifacts/build_data
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: always()
+          continueOnError: true
+
+        - template: steps/install-latest-dotnet-sdk.yml
+        - script: tracer\build.cmd CheckSmokeTestsForErrors
+          displayName: CheckSmokeTestsForErrors
+
 - stage: fleet_installer_smoke_tests
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
@@ -5964,8 +6058,7 @@ stages:
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg CHANNEL="$(channel)" \
-              --build-arg TARGET_PLATFORM="$(targetPlatform)" \
+              --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
               fleet-installer-smoke-tests.windows
           env:
             dockerTag: $(dockerTag)
@@ -5975,7 +6068,7 @@ stages:
         - template: steps/run-snapshot-test.yml
           parameters:
             target: 'fleet-installer-smoke-tests.windows'
-            snapshotPrefix: "smoke_test_iis"
+            snapshotPrefix: "smoke_test"
             isLinux: false
             dockerComposePath: $(dockerComposePath)
 

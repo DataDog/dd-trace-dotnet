@@ -8,6 +8,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Serilog;
@@ -24,16 +25,16 @@ namespace Datadog.Trace.Logging
         private readonly ILogRateLimiter _rateLimiter;
         private ILogger _logger;
 
-        public DatadogSerilogLogger(ILogger logger, ILogRateLimiter rateLimiter, string? fileLogDirectory)
+        public DatadogSerilogLogger(ILogger logger, ILogRateLimiter rateLimiter, FileLoggingConfiguration? fileLoggingConfiguration)
         {
             _logger = logger;
             _rateLimiter = rateLimiter;
-            FileLogDirectory = fileLogDirectory;
+            FileLoggingConfiguration = fileLoggingConfiguration;
         }
 
         public static DatadogSerilogLogger NullLogger { get; } = new(SilentLogger.Instance, new NullLogRateLimiter(), null);
 
-        public string? FileLogDirectory { get; }
+        public FileLoggingConfiguration? FileLoggingConfiguration { get; }
 
         public bool IsEnabled(LogEventLevel level) => _logger.IsEnabled(level);
 

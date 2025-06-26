@@ -65,7 +65,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.25.0";
+    const string LibDdwafVersion = "1.25.1";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0", "1.23.0" };
 
@@ -652,44 +652,40 @@ partial class Build
 
     Target CopyNativeFilesForTests => _ => _
         .Unlisted()
-        .After(Clean)
-        .After(BuildTracerHome)
+        .After(Clean, BuildTracerHome)
+        .Before(RunIntegrationTests, RunManagedUnitTests)
         .Executes(() =>
         {
-            foreach(var projectName in Projects.NativeFilesDependentTests)
+            // Copy the native files to all the test projects for simplicity.
+            var testProjects = Solution.GetProjects("*Tests")
+                                       .Where(p => p.SolutionFolder.Name == "test"
+                                               &&  p.Path.ToString().EndsWith(".csproj")); // exclude native test projects
+            foreach(var projectName in testProjects)
             {
+                Logger.Information("Copying native files for project {ProjectName}", projectName);
                 var project = Solution.GetProject(projectName);
-                var testDir = project.Directory;
+                var testDir = project!.Directory;
                 var frameworks = project.GetTargetFrameworks();
+
+                if (Framework is not null)
+                {
+                    frameworks = frameworks.Where(x=> x == Framework).ToList();
+                }
+
                 var testBinFolder = testDir / "bin" / BuildConfiguration;
 
-                if (IsWin)
+                var (ext, source) = Platform switch
                 {
-                    foreach (var framework in frameworks)
-                    {
-                        var source = MonitoringHomeDirectory / $"win-{TargetPlatform}" / "datadog_profiling_ffi.dll";
-                        var dest = testBinFolder / framework / "LibDatadog.dll";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                    }
-                }
-                else if (IsLinux)
+                    PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}" / "datadog_profiling_ffi.dll"),
+                    PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch / "libdatadog_profiling.so"),
+                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx" / $"libdatadog_profiling.dylib"),
+                    _ => throw new NotSupportedException($"Unsupported platform: {Platform}")
+                };
+
+                foreach (var framework in frameworks)
                 {
-                    var (arch, ext) = GetUnixArchitectureAndExtension();
-                    var source = MonitoringHomeDirectory / arch / $"libdatadog_profiling.{ext}";
-                    foreach (var framework in frameworks)
-                    {
-                        var dest = testBinFolder / framework / $"LibDatadog.{ext}";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                    }
-                }
-                else if (IsOsx)
-                {
-                    var source = MonitoringHomeDirectory/ "osx" / $"libdatadog_profiling.dylib";
-                    foreach (var framework in frameworks)
-                    {
-                        var dest = testBinFolder / framework / $"LibDatadog.dylib";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                    }
+                    var dest = testBinFolder / framework / $"LibDatadog.{ext}";
+                    CopyFile(source, dest, FileExistsPolicy.Overwrite);
                 }
             }
         });
@@ -1522,13 +1518,30 @@ partial class Build
               var samples = GetSamplesToBuild();
               Logger.Information("Building {SampleName}", samples);
 
-              // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
-              DotNetBuild(config => config
-                                   .SetConfiguration(BuildConfiguration)
-                                   .SetProperty("BuildInParallel", "true")
-                                   .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                                   .When(Framework is not null, x => x.SetFramework(Framework))
-                                   .SetProjectFile(samples));
+              // If we are building a specific sample, with a specific NuGet version, we can target just that one with MSBuild
+              // Windows only at the moment as I couldn't get `dotnet build` to work with the ApiVersion parameter
+              // As it needs to be restored first, but when it did it couldn't find the assets file
+              if (IsWin && !string.IsNullOrEmpty(ApiVersion) && !string.IsNullOrEmpty(SampleName))
+              {
+                  Logger.Information("Building sample {SampleName} with ApiVersion {ApiVersion} using MSBuild", SampleName, ApiVersion);
+
+                  MSBuild(x => x.SetTargetPath(samples)
+                                .SetTargets("Restore", "Build")
+                                .SetConfiguration(BuildConfiguration)
+                                .SetProperty("ApiVersion", ApiVersion)
+                                .When(Framework is not null, o => o.SetProperty("TargetFramework", Framework.ToString()))
+                                .SetProperty("BuildInParallel", "true")
+                                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")));
+              }
+              else
+              {
+                  // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
+                  DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
+                                              .SetProperty("BuildInParallel", "true")
+                                              .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                                              .When(Framework is not null, x => x.SetFramework(Framework))
+                                              .SetProjectFile(samples));
+              }
 
               string GetSamplesToBuild()
               {
@@ -2475,6 +2488,9 @@ partial class Build
            knownPatterns.Add(new(@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*TestOptimization: .*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*TestOptimizationClient: .*", RegexOptions.Compiled));
+
+           // glibc TLS-reuse bug warnings
+           knownPatterns.Add(new(@".*GLIBC version 2.34-2.36 has a TLS-reuse bug.*", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
