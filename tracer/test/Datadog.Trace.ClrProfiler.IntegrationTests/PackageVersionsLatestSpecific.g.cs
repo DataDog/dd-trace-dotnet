@@ -2120,41 +2120,49 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET48
                 new object[] { "1.0.0.505" },
                 new object[] { "2.1.0" },
-                new object[] { "3.2.1" },
                 new object[] { "4.7.15" },
                 new object[] { "5.5.0" },
+                new object[] { "6.0.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "4.7.15" },
                 new object[] { "5.5.0" },
+                new object[] { "6.0.0" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.0" },
+                new object[] { "6.0.0" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "4.7.15" },
                 new object[] { "5.5.0" },
+                new object[] { "6.0.0" },
 #endif
 #if NET5_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.0" },
+                new object[] { "6.0.0" },
 #endif
 #if NET6_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.0" },
+                new object[] { "6.0.0" },
 #endif
 #if NET7_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.0" },
+                new object[] { "6.0.0" },
 #endif
 #if NET8_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.0" },
+                new object[] { "6.0.0" },
 #endif
 #if NET9_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.0" },
+                new object[] { "6.0.0" },
 #endif
 #endif
             };
