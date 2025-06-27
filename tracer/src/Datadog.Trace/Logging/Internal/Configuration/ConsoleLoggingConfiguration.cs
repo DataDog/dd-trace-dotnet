@@ -5,16 +5,20 @@
 
 #nullable enable
 
+using System.IO;
+
 namespace Datadog.Trace.Logging.Internal.Configuration;
 
 internal readonly struct ConsoleLoggingConfiguration
 {
     public readonly string MessageTemplate;
     public readonly int BufferSize;
+    public readonly TextWriter? TextWriter;
 
-    public ConsoleLoggingConfiguration(string formatString, int bufferSize)
+    public ConsoleLoggingConfiguration(string formatString, int bufferSize, TextWriter? textWriter)
     {
         MessageTemplate = formatString;
         BufferSize = bufferSize;
+        TextWriter = textWriter;
     }
 }

@@ -79,7 +79,8 @@ internal static class DatadogLoggingFactory
 
     private static ConsoleLoggingConfiguration GetConsoleLoggingConfiguration(IConfigurationSource? source)
     {
-        return new ConsoleLoggingConfiguration(DefaultConsoleMessageTemplate, DefaultConsoleQueueLimit);
+        // textWriter: null defaults to Console.Out
+        return new ConsoleLoggingConfiguration(DefaultConsoleMessageTemplate, DefaultConsoleQueueLimit, textWriter: null);
     }
 
     public static IDatadogLogger? CreateFromConfiguration(
