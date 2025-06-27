@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -18,7 +19,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal static partial class DebuggerSnapshotSerializer
+    internal partial class DebuggerSnapshotSerializer
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSnapshotSerializer));
 

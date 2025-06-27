@@ -70,7 +70,7 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
         : base("AspNetCore5", outputHelper)
     {
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, enableDynamicInstrumentation.ToString().ToLower());
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enableDynamicInstrumentation.ToString().ToLower());
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled, captureFullCallStack.ToString().ToLower());
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
