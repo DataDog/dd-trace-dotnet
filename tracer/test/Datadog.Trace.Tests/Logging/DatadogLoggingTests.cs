@@ -499,10 +499,6 @@ namespace Datadog.Trace.Tests.Logging
         {
             var collector = new RedactedErrorLogCollector();
 
-            var tempLogsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            _output.WriteLine($"Using temporary logs directory: {tempLogsDir}");
-            Directory.CreateDirectory(tempLogsDir);
-
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
                 file: null,
@@ -524,15 +520,6 @@ namespace Datadog.Trace.Tests.Logging
             }
 
             collector.GetLogs().Should().BeNull();
-
-            try
-            {
-                Directory.Delete(tempLogsDir, true);
-            }
-            catch
-            {
-                // cleanup isn't required, just avoiding clutter when the test passes
-            }
         }
 
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)
