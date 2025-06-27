@@ -8,6 +8,7 @@ using System.IO;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Sinks;
 using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Vendors.Serilog.Formatting.Display;
 using FluentAssertions;
 using Xunit;
 
@@ -21,14 +22,14 @@ public class ConsoleSinkTests
         var sw = new StringWriter();
 
         var consoleSink = new ConsoleSink(
-            messageTemplate: DatadogLoggingFactory.DefaultConsoleMessageTemplate,
-            queueLimit: DatadogLoggingFactory.DefaultConsoleQueueLimit,
-            sw);
+            formatter: new MessageTemplateTextFormatter("{Message}{NewLine}"), // output the message only
+            consoleWriter: sw,
+            queueLimit: DatadogLoggingFactory.DefaultConsoleQueueLimit);
 
         var logger = new LoggerConfiguration()
-                    .MinimumLevel.Debug()
-                    .WriteTo.Sink(consoleSink)
-                    .CreateLogger();
+                     .MinimumLevel.Debug()
+                     .WriteTo.Sink(consoleSink)
+                     .CreateLogger();
 
         for (var i = 0; i < 100; i++)
         {

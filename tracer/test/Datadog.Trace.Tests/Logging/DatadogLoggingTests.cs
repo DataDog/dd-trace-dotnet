@@ -12,7 +12,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
-using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Util;
@@ -504,10 +503,7 @@ namespace Datadog.Trace.Tests.Logging
                 rateLimit: 0,
                 errorLogging: new RedactedErrorLoggingConfiguration(collector),
                 file: null,
-                console: new ConsoleLoggingConfiguration(
-                    DatadogLoggingFactory.DefaultConsoleMessageTemplate,
-                    DatadogLoggingFactory.DefaultConsoleQueueLimit,
-                    logsWriter));
+                console: new ConsoleLoggingConfiguration(DatadogLoggingFactory.DefaultConsoleQueueLimit, logsWriter));
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
 
