@@ -515,7 +515,9 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.BufferMessageInternalMergeFromIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.BufferMessageInternalWriteToIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageMergeFromIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.OldMessageMergeFromIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageWriteToIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.OldMessageWriteToIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Protobuf,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncAsyncIntegration"

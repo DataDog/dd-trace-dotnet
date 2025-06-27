@@ -22,8 +22,8 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
 {
     private readonly AspNetCoreTestFixture _fixture;
 
-    protected AspNetCoreApiSecurity(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableApiSecurity, string sampleName)
-        : base(sampleName, outputHelper, "/shutdown", testName: $"ApiSecurity.{sampleName}.{(enableApiSecurity ? "ApiSecOn" : "ApiSecOff")}")
+    protected AspNetCoreApiSecurity(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableApiSecurity, bool enableResponseBdyParsing, string sampleName)
+        : base(sampleName, outputHelper, "/shutdown", testName: $"ApiSecurity.{sampleName}.{(enableApiSecurity ? "ApiSecOn" : "ApiSecOff")}{(enableApiSecurity && !enableResponseBdyParsing ? ".BodyParseOff" : string.Empty)}")
     {
         _fixture = fixture;
         _fixture.SetOutput(outputHelper);
@@ -31,6 +31,10 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, Path.Combine("ApiSecurity", "ruleset-with-block.json"));
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
         SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, enableApiSecurity.ToString());
+        if (!enableResponseBdyParsing)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody, "false");
+        }
     }
 
     public override void Dispose()
@@ -53,7 +57,7 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body.Substring(0, 10), expectedStatusCode, containsAttack);
         var dateTime = DateTime.UtcNow;
         await SubmitRequest(url, body, "application/json");
-        var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+        var spans = await agent.WaitForSpansAsync(2, minDateTime: dateTime);
 #if !NET8_O_OR_GREATER
         // Simple scrubber for the response content type in .NET 8
         // .NET 8 doesn't add the content-length header, whereas previous versions do

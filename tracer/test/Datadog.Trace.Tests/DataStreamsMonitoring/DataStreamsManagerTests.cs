@@ -303,7 +303,8 @@ public class DataStreamsManagerTests
         return new DataStreamsManager(
             env: "foo",
             defaultServiceName: "bar",
-            writer);
+            writer,
+            isInDefaultState: false);
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter

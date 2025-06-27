@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     // Extra long time out because big payloads
                     var timeoutInMilliseconds = 60_000;
-                    var spans = agent.WaitForSpans(ExpectedSpans, timeoutInMilliseconds: timeoutInMilliseconds);
+                    var spans = await agent.WaitForSpansAsync(ExpectedSpans, timeoutInMilliseconds: timeoutInMilliseconds);
                     AssertLargePayloadExpectations(spans);
                 }
             }

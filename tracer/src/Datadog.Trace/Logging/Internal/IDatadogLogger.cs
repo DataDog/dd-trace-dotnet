@@ -7,13 +7,14 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Logging
 {
     internal interface IDatadogLogger
     {
-        public string? FileLogDirectory { get; }
+        public FileLoggingConfiguration? FileLoggingConfiguration { get; }
 
         bool IsEnabled(LogEventLevel level);
 

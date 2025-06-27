@@ -13609,7 +13609,7 @@
     ],
     "MinimumVersion": {
       "Item1": 3,
-      "Item2": 0,
+      "Item2": 13,
       "Item3": 0
     },
     "MaximumVersion": {
@@ -13618,6 +13618,54 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageMergeFromIntegration",
+    "IntegrationKind": 2,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Protobuf",
+    "AssemblyName": "Google.Protobuf",
+    "TargetTypeName": "Google.Protobuf.IMessage",
+    "TargetMethodName": "MergeFrom",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Google.Protobuf.CodedInputStream"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 12,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.OldMessageMergeFromIntegration",
+    "IntegrationKind": 2,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Protobuf",
+    "AssemblyName": "Google.Protobuf",
+    "TargetTypeName": "Google.Protobuf.IMessage",
+    "TargetMethodName": "WriteTo",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Google.Protobuf.CodedOutputStream"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 13,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageWriteToIntegration",
     "IntegrationKind": 2,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -13638,10 +13686,10 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 12,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageWriteToIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.OldMessageWriteToIntegration",
     "IntegrationKind": 2,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

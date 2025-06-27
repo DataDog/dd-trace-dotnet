@@ -149,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                var spans = agent.WaitForSpans(expected.Count)
+                var spans = (await agent.WaitForSpansAsync(expected.Count))
                                  .Where(s => s.Type == "elasticsearch")
                                  .OrderBy(s => s.Start)
                                  .ToList();
@@ -175,7 +175,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
                 ValidateSpans(spans, (span) => span.Resource, expected);
-                telemetry.AssertIntegrationEnabled(IntegrationId.ElasticsearchNet);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.ElasticsearchNet);
             }
         }
 
@@ -189,10 +189,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ElasticsearchNet)}_ENABLED", "false");
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(1).Where(s => s.Type == "elasticsearch").ToList();
+            var spans = (await agent.WaitForSpansAsync(1)).Where(s => s.Type == "elasticsearch").ToList();
 
             Assert.Empty(spans);
-            telemetry.AssertIntegrationDisabled(IntegrationId.ElasticsearchNet);
+            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.ElasticsearchNet);
         }
     }
 }

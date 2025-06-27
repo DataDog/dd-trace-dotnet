@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var expectedCount = 5;
                 var frameworkName = "NetCore";
 #endif
-                var spans = agent.WaitForSpans(expectedCount);
+                var spans = await agent.WaitForSpansAsync(expectedCount);
                 var kinesisSpans = spans.Where(
                     span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var taggedSpans = kinesisSpans.Where(s => s.Tags.ContainsKey("pathway.hash"));
                 taggedSpans.Should().HaveCount(expected: 2); // a send and a receive
 
-                var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 2);
+                var dsPoints = await agent.WaitForDataStreamsPointsAsync(statsCount: 2);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 await Verifier.Verify(MockDataStreamsPayload.Normalize(dsPoints), settings)
                           .DisableRequireUniquePrefix();
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.AwsKinesis);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsKinesis);
             }
         }
     }

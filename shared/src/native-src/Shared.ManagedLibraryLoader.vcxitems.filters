@@ -32,6 +32,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)lazy_rotating_file_sink.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)lazy_rotating_file_sink-inl.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)loader.h">
       <Filter>ManagedLibraryLoader</Filter>
     </ClInclude>

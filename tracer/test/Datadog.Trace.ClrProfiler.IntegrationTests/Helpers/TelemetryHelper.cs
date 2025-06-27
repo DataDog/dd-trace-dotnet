@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -37,67 +38,68 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return telemetry;
         }
 
-        public static void AssertIntegrationEnabled(this MockTelemetryAgent telemetry, IntegrationId integrationId)
+        public static Task AssertIntegrationEnabledAsync(this MockTelemetryAgent telemetry, IntegrationId integrationId)
         {
-            telemetry.AssertIntegration(integrationId, enabled: true, autoEnabled: true);
+            return telemetry.AssertIntegrationAsync(integrationId, enabled: true, autoEnabled: true);
         }
 
-        public static void AssertIntegrationDisabled(this MockTelemetryAgent telemetry, IntegrationId integrationId)
+        public static Task AssertIntegrationDisabledAsync(this MockTelemetryAgent telemetry, IntegrationId integrationId)
         {
-            telemetry.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
+            return telemetry.AssertIntegrationAsync(integrationId, enabled: false, autoEnabled: true);
         }
 
-        public static void AssertIntegrationEnabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
-            => mockAgent.AssertIntegration(integrationId, enabled: true, autoEnabled: true);
+        public static Task AssertIntegrationEnabledAsync(this MockTracerAgent mockAgent, IntegrationId integrationId)
+            => mockAgent.AssertIntegrationAsync(integrationId, enabled: true, autoEnabled: true);
 
-        public static void AssertIntegrationDisabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
-            => mockAgent.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
+        public static Task AssertIntegrationDisabledAsync(this MockTracerAgent mockAgent, IntegrationId integrationId)
+            => mockAgent.AssertIntegrationAsync(integrationId, enabled: false, autoEnabled: true);
 
-        public static void AssertIntegration(this MockTracerAgent mockAgent, IntegrationId integrationId, bool enabled, bool? autoEnabled)
+        public static async Task AssertIntegrationAsync(this MockTracerAgent mockAgent, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+            await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
             AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
-        public static void AssertIntegration(this MockTelemetryAgent telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
+        public static async Task AssertIntegrationAsync(this MockTelemetryAgent telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
-            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+            await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = telemetry.Telemetry.Cast<TelemetryData>().ToArray();
             AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
-        public static void AssertConfiguration(this MockTracerAgent mockAgent, string key, object value = null)
+        public static async Task AssertConfigurationAsync(this MockTracerAgent mockAgent, string key, object value = null)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+            await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
             AssertConfiguration(allData, key, value);
         }
 
-        public static void AssertConfiguration(this MockTelemetryAgent telemetry, string key, object value)
+        public static async Task AssertConfigurationAsync(this MockTelemetryAgent telemetry, string key, object value)
         {
-            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+            await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = telemetry.Telemetry.Cast<TelemetryData>().ToArray();
             AssertConfiguration(allData, key, value);
         }
 
-        public static void AssertConfiguration(this MockTelemetryAgent telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
+        public static Task AssertConfigurationAsync(this MockTelemetryAgent telemetry, string key)
+            => telemetry.AssertConfigurationAsync(key, value: null);
 
-        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricDataPoints(this MockTelemetryAgent telemetry, string metric, string tag1 = null, string tag2 = null, string tag3 = null)
+        internal static async Task<IEnumerable<(string[] Tags, int Value, long Timestamp)>> GetMetricDataPointsAsync(this MockTelemetryAgent telemetry, string metric, string tag1 = null, string tag2 = null, string tag3 = null)
         {
-            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+            await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = telemetry.Telemetry.Cast<TelemetryData>().ToArray();
             return GetMetricData(allData, metric, tag1, tag2, tag3);
         }
 
-        internal static IEnumerable<DistributionMetricData> GetDistributions(this MockTelemetryAgent telemetry, string distribution, string tag1 = null, string tag2 = null, string tag3 = null)
+        internal static async Task<IEnumerable<DistributionMetricData>> GetDistributionsAsync(this MockTelemetryAgent telemetry, string distribution, string tag1 = null, string tag2 = null, string tag3 = null)
         {
-            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+            await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = telemetry.Telemetry.Cast<TelemetryData>().ToArray();
             return GetDistributions(allData, distribution, tag1, tag2, tag3);

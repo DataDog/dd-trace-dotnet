@@ -342,6 +342,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Argument \"id\" has invalid value 1.\nExpected type \"String\", found 1.","code":"ARGUMENTS_OF_CORRECT_TYPE","locations":["1:24"]}},{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Cannot query field \"apearsIn\" on type \"Human\". Did you mean 'appearsIn'?","code":"FIELDS_ON_CORRECT_TYPE","locations":["1:35"]}}],
       graphql.source: query HumanError{human(id:1){name apearsIn}},
       language: dotnet,
       span.kind: server,
@@ -394,6 +395,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.ExecutionError,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Error trying to resolve field 'throwNotImplementedException'.","path":["throwNotImplementedException"],"code":"NOT_IMPLEMENTED","locations":["1:32"]}}],
       graphql.operation.name: NotImplementedSub,
       graphql.operation.type: Subscription,
       graphql.source: subscription NotImplementedSub{throwNotImplementedException{name}},

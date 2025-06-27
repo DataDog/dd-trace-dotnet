@@ -519,10 +519,10 @@ namespace Datadog.Trace.TestHelpers
                 agent.SpanFilters.Add(IsServerSpan);
             }
 
-            return agent.WaitForSpans(
-                count: expectedSpanCount,
-                minDateTime: testStart,
-                returnAllOperations: true);
+            return await agent.WaitForSpansAsync(
+                       count: expectedSpanCount,
+                       minDateTime: testStart,
+                       returnAllOperations: true);
         }
 
         protected async Task AssertWebServerSpan(
@@ -556,10 +556,10 @@ namespace Datadog.Trace.TestHelpers
 
                 agent.SpanFilters.Add(IsServerSpan);
 
-                spans = agent.WaitForSpans(
-                    count: 2,
-                    minDateTime: testStart,
-                    returnAllOperations: true);
+                spans = await agent.WaitForSpansAsync(
+                            count: 2,
+                            minDateTime: testStart,
+                            returnAllOperations: true);
 
                 Assert.True(spans.Count == 2, $"expected two span, saw {spans.Count}");
             }
@@ -629,11 +629,11 @@ namespace Datadog.Trace.TestHelpers
                 Output.WriteLine($"[http] {response.StatusCode} {content}");
                 Assert.Equal(expectedHttpStatusCode, response.StatusCode);
 
-                spans = agent.WaitForSpans(
-                    count: 1,
-                    minDateTime: testStart,
-                    operationName: "aspnet.request",
-                    returnAllOperations: true);
+                spans = await agent.WaitForSpansAsync(
+                            count: 1,
+                            minDateTime: testStart,
+                            operationName: "aspnet.request",
+                            returnAllOperations: true);
 
                 Assert.True(spans.Count == 1, $"expected two span, saw {spans.Count}");
             }
@@ -652,13 +652,6 @@ namespace Datadog.Trace.TestHelpers
             // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
-        }
-
-        protected async Task ReportRetry(ITestOutputHelper outputHelper, int attemptsRemaining, Exception ex = null)
-        {
-            outputHelper.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
-
-            await ErrorHelpers.SendMetric(outputHelper, "dd_trace_dotnet.ci.tests.retries", EnvironmentHelper);
         }
 
         private bool IsServerSpan(MockSpan span) =>

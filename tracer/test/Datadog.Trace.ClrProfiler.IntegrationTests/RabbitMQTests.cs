@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 using var assertionScope = new AssertionScope();
-                var spans = agent.WaitForSpans(expectedSpanCount); // Do not filter on operation name because they will vary depending on instrumented method
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount); // Do not filter on operation name because they will vary depending on instrumented method
 
                 var rabbitmqSpans = spans.Where(span => string.Equals(span.GetTag("component"), "RabbitMQ", StringComparison.OrdinalIgnoreCase));
 
@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   .DisableRequireUniquePrefix();
             }
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.RabbitMQ);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.RabbitMQ);
         }
 
         private string GetPackageVersionSuffix(string packageVersion)

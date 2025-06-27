@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName);
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(FakeCommandTests) + $"_{metadataSchemaVersion}");
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.AdoNet);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AdoNet);
         }
 
         private async Task RunDisabledFakeCommandTest(string metadataSchemaVersion)
@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(expectedSpanCount);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount);
             int actualSpanCount = spans.Count();
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                                   .UseFileName(nameof(FakeCommandTests) + $"_{metadataSchemaVersion}_disabledFakeCommand");
 
             // We should have created 0 spans from ADO.NET integration - spans created are from RelationaTestHarness and are manual spans
-            telemetry.AssertIntegrationDisabled(IntegrationId.AdoNet);
+            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.AdoNet);
         }
     }
 }

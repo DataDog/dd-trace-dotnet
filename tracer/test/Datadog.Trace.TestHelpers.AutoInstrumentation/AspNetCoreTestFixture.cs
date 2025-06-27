@@ -202,10 +202,10 @@ namespace Datadog.Trace.TestHelpers
 
             await SendHttpRequest(request);
 
-            return Agent.WaitForSpans(
-                count: 1,
-                minDateTime: now,
-                returnAllOperations: true);
+            return await Agent.WaitForSpansAsync(
+                       count: 1,
+                       minDateTime: now,
+                       returnAllOperations: true);
         }
 
         private async Task EnsureServerStarted(bool sendHealthCheck)
@@ -231,13 +231,13 @@ namespace Datadog.Trace.TestHelpers
 
                         if (responseCode == HttpStatusCode.OK)
                         {
-                            Agent.WaitForSpans(1, minDateTime: dateTime);
+                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
                             serverReady = true;
                         }
                     }
                     else
                     {
-                        serverReady = IsPortListening(HttpPort);
+                        serverReady = await IsPortListeningAsync(HttpPort);
                     }
                 }
                 catch
@@ -254,7 +254,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (milisecondsElapsed < intervalMilliseconds)
                 {
-                    Thread.Sleep((int)(intervalMilliseconds - milisecondsElapsed));
+                    await Task.Delay((int)(intervalMilliseconds - milisecondsElapsed));
                 }
             }
 
@@ -264,14 +264,14 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private bool IsPortListening(int port)
+        private async Task<bool> IsPortListeningAsync(int port)
         {
             try
             {
                 using (var client = new TcpClient())
                 {
                     var task = client.ConnectAsync("127.0.0.1", port);
-                    if (task.Wait(1000))
+                    if (await Task.WhenAny(task, Task.Delay(1000)) == task)
                     {
                         return client.Connected;
                     }

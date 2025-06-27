@@ -24,12 +24,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
         public static string? StreamNameFromARN(string? arn)
         {
-            if (string.IsNullOrEmpty(arn))
+            if (StringUtil.IsNullOrEmpty(arn))
             {
                 return null;
             }
 
-            var arnComponents = arn!.Split('/');
+            var arnComponents = arn.Split('/');
             if (arnComponents.Length != 2)
             {
                 return null;

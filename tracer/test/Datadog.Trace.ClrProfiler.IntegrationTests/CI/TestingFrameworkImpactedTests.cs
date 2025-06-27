@@ -45,6 +45,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
         }
 
+        internal ProcessHelpers.CommandOutput RunGitCommand(string arguments)
+        {
+            try
+            {
+                var gitOutput = ProcessHelpers.RunCommand(
+                    new ProcessHelpers.Command(
+                        "git",
+                        arguments,
+                        EnvironmentTools.GetSolutionDirectory(),
+                        outputEncoding: Encoding.Default,
+                        errorEncoding: Encoding.Default,
+                        inputEncoding: Encoding.Default,
+                        useWhereIsIfFileNotFound: true),
+                    null);
+
+                if (gitOutput is null || (gitOutput.ExitCode != 0 && gitOutput.Error is not { Length: > 0 }))
+                {
+                    return new ProcessHelpers.CommandOutput(null, "git command returned null output", -1, false);
+                }
+
+                return gitOutput;
+            }
+            catch (Exception err)
+            {
+                return new ProcessHelpers.CommandOutput(null, err.ToString(), -1, false);
+            }
+        }
+
         protected string GetSettingsJson(bool enabled = false)
         {
             var enabledValue = enabled ? "true" : "false";
@@ -148,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         break;
                     }
 
-                    Thread.Sleep(500);
+                    await Task.Delay(500);
                 }
 
                 // Sort and aggregate
@@ -165,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         protected override Dictionary<string, string> DefineCIEnvironmentValues(Dictionary<string, string> values)
         {
-            // Base sets Azure CI values. Take those we can reuse for Git Hub
+            // Base sets Azure CI values. Take those we can reuse for GitHub
             repo = values[CIEnvironmentValues.Constants.AzureBuildRepositoryUri];
 
             return values;
@@ -176,7 +204,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             // Check for GIT availability
             Skip.IfNot(gitAvailable, "Git not available or not properly configured in current environment");
 
-            // Reset all the envVars for spawned process (override possibly existing env vars)
+            // Reset all the envVars for the spawned process (override possibly existing env vars)
             foreach (var field in typeof(CIEnvironmentValues.Constants).GetFields())
             {
                 var fieldName = field.GetValue(null) as string;
@@ -214,7 +242,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        private MockTracerAgent GetAgent(List<MockCIVisibilityTest> receivedTests, Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> processRequest = null)
+        protected MockTracerAgent GetAgent(List<MockCIVisibilityTest> receivedTests, Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> processRequest = null)
         {
             var agent = EnvironmentHelper.GetMockAgent();
             agent.EventPlatformProxyPayloadReceived += (sender, e) =>
@@ -229,6 +257,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             };
 
             return agent;
+        }
+
+        protected string GetTestFile()
+        {
+            return Path.Combine(repositoryRoot, "tracer/test/test-applications/integrations/Samples.XUnitTests/TestSuite.cs");
+        }
+
+        protected void ModifyFile()
+        {
+            var path = GetTestFile();
+            var lines = File.ReadAllLines(path).ToList();
+            lines.Insert(33, ModifiedLine);
+            lines.Insert(63, ModifiedLine);
+            lines.Insert(64, ModifiedLine);
+            File.WriteAllLines(path, lines);
+        }
+
+        protected void RestoreFile()
+        {
+            var path = GetTestFile();
+            var lines = File.ReadAllLines(path).Where(l => l != ModifiedLine).ToList();
+            File.WriteAllLines(path, lines);
         }
 
         private void InitGit()
@@ -277,57 +327,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             if (output.ExitCode < 0)
             {
                 Output.WriteLine($"Git NOT available. ExitCode: {output.ExitCode} Error: {output.Error}");
-            }
-        }
-
-        private string GetTestFile()
-        {
-            return Path.Combine(repositoryRoot, "tracer/test/test-applications/integrations/Samples.XUnitTests/TestSuite.cs");
-        }
-
-        private void ModifyFile()
-        {
-            var path = GetTestFile();
-            var lines = File.ReadAllLines(path).ToList();
-            lines.Insert(33, ModifiedLine);
-            lines.Insert(63, ModifiedLine);
-            lines.Insert(64, ModifiedLine);
-            File.WriteAllLines(path, lines);
-        }
-
-        private void RestoreFile()
-        {
-            var path = GetTestFile();
-            var lines = File.ReadAllLines(path).Where(l => l != ModifiedLine).ToList();
-            File.WriteAllLines(path, lines);
-        }
-
-        private ProcessHelpers.CommandOutput RunGitCommand(string arguments)
-        {
-            try
-            {
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-                var gitOutput = ProcessHelpers.RunCommand(
-                                    new ProcessHelpers.Command(
-                                        "git",
-                                        arguments,
-                                        EnvironmentTools.GetSolutionDirectory(),
-                                        outputEncoding: Encoding.Default,
-                                        errorEncoding: Encoding.Default,
-                                        inputEncoding: Encoding.Default,
-                                        useWhereIsIfFileNotFound: true),
-                                    null);
-
-                if (gitOutput is null || (gitOutput.ExitCode < 0 && gitOutput.Error is not { Length: > 0 }))
-                {
-                    return new ProcessHelpers.CommandOutput(null, "git command returned null output", -1, false);
-                }
-
-                return gitOutput;
-            }
-            catch (Exception err)
-            {
-                return new ProcessHelpers.CommandOutput(null, err.ToString(), -1, false);
             }
         }
     }

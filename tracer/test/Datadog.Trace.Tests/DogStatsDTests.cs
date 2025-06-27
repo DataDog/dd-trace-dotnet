@@ -248,7 +248,7 @@ namespace Datadog.Trace.Tests
                     await Task.Delay(5);
                 }
 
-                spans = agent.WaitForSpans(1);
+                spans = await agent.WaitForSpansAsync(1);
             }
 
             return spans;

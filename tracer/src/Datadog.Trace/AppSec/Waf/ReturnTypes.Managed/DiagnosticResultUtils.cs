@@ -125,6 +125,8 @@ internal struct ReportedDiagnostics
     {
         Rules.Errors = errors;
     }
+
+    public bool HasErrors => Rules.Errors is { Count: > 0 } || Rest.Errors is { Count: > 0 };
 }
 
 internal struct WafStats

@@ -41,7 +41,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
-            var spans = agent.WaitForSpans(31);
+            var spans = await agent.WaitForSpansAsync(31);
             spans.Should().HaveCount(31);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -65,7 +65,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
-            var spans = agent.WaitForSpans(31);
+            var spans = await agent.WaitForSpansAsync(31);
             spans.Should().HaveCount(31);
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
             taggedSpans.Should().HaveCount(13);

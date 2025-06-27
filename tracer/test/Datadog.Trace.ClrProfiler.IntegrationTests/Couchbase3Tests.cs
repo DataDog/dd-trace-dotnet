@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(10, 500)
+                var spans = (await agent.WaitForSpansAsync(10, 500))
                                  .Where(s => s.Type == "db")
                                  .ToList();
 
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 ValidateSpans(spans, (span) => span.Resource, expected);
-                telemetry.AssertIntegrationEnabled(IntegrationId.Couchbase);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Couchbase);
             }
         }
 

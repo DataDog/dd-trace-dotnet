@@ -139,8 +139,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             var dateTime = DateTime.UtcNow;
             var res = await SubmitRequest(url, null, null);
             var res2 = await SubmitRequest(url2, null, null);
-            var spans = WaitForSpans(_iisFixture.Agent, 2, null, minDateTime: dateTime, url: url);
-            var spans2 = WaitForSpans(_iisFixture.Agent, 2, null, minDateTime: dateTime, url: url2);
+            var spans = await WaitForSpansAsync(_iisFixture.Agent, 2, null, minDateTime: dateTime, url: url);
+            var spans2 = await WaitForSpansAsync(_iisFixture.Agent, 2, null, minDateTime: dateTime, url: url2);
             await VerifySpans(spans.Concat(spans2).ToImmutableList(), settings);
         }
 

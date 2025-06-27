@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                     (s.Tags.TryGetValue("otel.library.name", out var value) && value == "Samples.AzureServiceBus")
                     || (s.Tags.TryGetValue("messaging.system", out value) && value == "servicebus") // Exclude the Admin requests
                     || (s.Tags.TryGetValue("message_bus.destination", out _))); // Include older versions of the library
-                var spans = agent.WaitForSpans(expectedProcessorSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedProcessorSpanCount);
 
                 using var s = new AssertionScope();
                 spans.Count().Should().Be(expectedProcessorSpanCount);
@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
             }
         }
 

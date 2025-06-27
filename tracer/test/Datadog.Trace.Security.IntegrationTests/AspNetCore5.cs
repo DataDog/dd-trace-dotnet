@@ -72,7 +72,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url = "/null-action/test/test";
             var dateTime = DateTime.UtcNow;
             await SubmitRequest(url, null, null);
-            var spans = agent.WaitForSpans(1, minDateTime: dateTime);
+            var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
             var settings = VerifyHelper.GetSpanVerifierSettings();
             await VerifyHelper.VerifySpans(spans, settings).UseFileName($"{GetTestName()}.test-null-action");
         }

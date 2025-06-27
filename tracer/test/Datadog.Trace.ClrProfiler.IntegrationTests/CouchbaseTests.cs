@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(13, 500);
+                var spans = await agent.WaitForSpansAsync(13, 500);
                 Assert.True(spans.Count >= 13, $"Expecting at least 13 spans, only received {spans.Count}");
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 };
 
                 ValidateSpans(spans, (span) => span.Resource, expected);
-                telemetry.AssertIntegrationEnabled(IntegrationId.Couchbase);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Couchbase);
             }
         }
     }

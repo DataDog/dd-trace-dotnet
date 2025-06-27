@@ -36,7 +36,7 @@ namespace Datadog.Trace.IntegrationTests
             var result = await transport.PushTelemetry(data);
 
             result.Should().Be(TelemetryPushResult.Success);
-            var received = agent.WaitForLatestTelemetry(x => x.SeqId == data.SeqId);
+            var received = await agent.WaitForLatestTelemetryAsync(x => x.SeqId == data.SeqId);
 
             received.Should().NotBeNull();
 
@@ -70,7 +70,7 @@ namespace Datadog.Trace.IntegrationTests
             var result = await transport.PushTelemetry(data);
 
             result.Should().Be(TelemetryPushResult.Success);
-            var received = agent.WaitForLatestTelemetry(x => x.SeqId == data.SeqId);
+            var received = await agent.WaitForLatestTelemetryAsync(x => x.SeqId == data.SeqId);
 
             received.Should().NotBeNull();
 

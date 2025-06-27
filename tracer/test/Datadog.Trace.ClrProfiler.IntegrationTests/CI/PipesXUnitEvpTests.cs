@@ -20,27 +20,14 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
+    [Flaky("Named pipes is flaky", maxRetries: 5)]
     public override async Task SubmitTraces(string packageVersion, string evpVersionToRemove, bool expectedGzip)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         EnvironmentHelper.EnableWindowsNamedPipes();
 
-        // The server implementation of named pipes is flaky so have 5 attempts
-        var attemptsRemaining = 5;
-        while (true)
-        {
-            try
-            {
-                attemptsRemaining--;
-                await base.SubmitTraces(packageVersion, evpVersionToRemove, expectedGzip);
-                return;
-            }
-            catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
-            {
-                await ReportRetry(Output, attemptsRemaining, ex);
-            }
-        }
+        await base.SubmitTraces(packageVersion, evpVersionToRemove, expectedGzip);
     }
 
     [SkippableTheory(Skip = "These are currently very flaky - revisit once we move to aspnetcore-based mock agent")]
@@ -49,27 +36,14 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "EarlyFlakeDetection")]
+    [Flaky("Named pipes is flaky", maxRetries: 5)]
     public override async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         EnvironmentHelper.EnableWindowsNamedPipes();
 
-        // The server implementation of named pipes is flaky so have 5 attempts
-        var attemptsRemaining = 5;
-        while (true)
-        {
-            try
-            {
-                attemptsRemaining--;
-                await base.EarlyFlakeDetection(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
-                return;
-            }
-            catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
-            {
-                await ReportRetry(Output, attemptsRemaining, ex);
-            }
-        }
+        await base.EarlyFlakeDetection(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
     }
 }
 #endif

@@ -10,6 +10,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
@@ -65,12 +66,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private readonly string _testName;
         private readonly string _metadataSchemaVersion;
+        private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
+        private readonly Regex _stacktraceRegex = new(@"""stacktrace"":""   at Samples\.HotChocolate\.Query\.ThrowException\([^""]*""");
 
         protected HotChocolateTestsBase(string sampleAppName, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_GRAPHQL_ERROR_EXTENSIONS", "bool,int,float,str,other,sbyte,byte,short,ushort,uint,long,ulong,decimal,double,char");
 
             _testName = testName;
             _metadataSchemaVersion = metadataSchemaVersion;
@@ -86,16 +90,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var isExternalSpan = _metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-graphql" : EnvironmentHelper.FullSampleName;
 
-            await fixture.TryStartApp(this, packageVersion: packageVersion);
+            var agentConfiguration = new MockTracerAgent.AgentConfiguration
+            {
+                SpanEvents = false
+            };
+
+            await fixture.TryStartApp(this, packageVersion: packageVersion, agentConfiguration: agentConfiguration);
             var testStart = DateTime.UtcNow;
             var expectedSpans = await SubmitRequests(fixture.HttpPort, usingWebsockets);
 
-            var spans = fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
+            var spans = await fixture.Agent.WaitForSpansAsync(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
 
             var graphQLSpans = spans.Where(span => span.Type == "graphql");
             ValidateIntegrationSpans(graphQLSpans, metadataSchemaVersion: "v0", expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+            settings.AddRegexScrubber(_stacktraceRegex, @"""stacktrace"":""   at Samples.HotChocolate.Query.ThrowException() in Query.cs:line 00""");
 
             var versionSuffix = GetSuffix(packageVersion);
 

@@ -25,6 +25,16 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public UnmanagedMemoryPool(int blockSize, int poolSize)
     {
+        if (blockSize < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(blockSize));
+        }
+
+        if (poolSize < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(poolSize));
+        }
+
         _blockSize = blockSize;
         _items = (IntPtr*)Marshal.AllocCoTaskMem(poolSize * sizeof(IntPtr));
         _length = poolSize;
@@ -38,7 +48,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     ~UnmanagedMemoryPool()
     {
-        Dispose();
+        Dispose(disposing: false);
     }
 
     public bool IsDisposed => _isDisposed;
@@ -49,18 +59,20 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
     /// <returns>Pointer to a memory block of size specified in the constructor</returns>
     public IntPtr Rent()
     {
-        if (IsDisposed)
+        if (_isDisposed)
         {
             ThrowObjectDisposedException();
         }
 
-        for (var i = _initialSearchIndex; i < _length; i++)
+        var start = _initialSearchIndex;
+        for (var scanned = 0; scanned < _length; scanned++)
         {
+            var i = (start + scanned) % _length;
             var inst = _items[i];
             if (inst != IntPtr.Zero)
             {
-                _initialSearchIndex = i + 1;
                 _items[i] = IntPtr.Zero;
+                _initialSearchIndex = (i + 1) % _length;
                 return inst;
             }
         }
@@ -75,9 +87,16 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public void Return(IntPtr block)
     {
-        if (IsDisposed)
+        if (block == IntPtr.Zero)
         {
-            ThrowObjectDisposedException();
+            return;
+        }
+
+        if (_isDisposed)
+        {
+            // If the pool is disposed, we free the block to avoid memory leaks.
+            ReturnSlow(block);
+            return;
         }
 
         for (var i = 0; i < _length; i++)
@@ -85,7 +104,15 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             if (_items[i] == IntPtr.Zero)
             {
                 _items[i] = block;
-                _initialSearchIndex = 0;
+
+                // Preserve round‑robin behaviour: only rewind the
+                // search pointer when we insert a block that sits
+                // *before* the current search index.
+                if (i < _initialSearchIndex)
+                {
+                    _initialSearchIndex = i;
+                }
+
                 return;
             }
         }
@@ -95,35 +122,48 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public void Return(IList<IntPtr> blocks)
     {
-        if (IsDisposed)
-        {
-            ThrowObjectDisposedException();
-        }
-
         if (blocks.Count == 0)
         {
             return;
         }
 
+        if (_isDisposed)
+        {
+            foreach (var block in blocks)
+            {
+                if (block != IntPtr.Zero)
+                {
+                    // If the pool is disposed, we free each block to avoid memory leaks.
+                    ReturnSlow(block);
+                }
+            }
+
+            return;
+        }
+
         var blockIndex = 0;
-        for (var i = 0; i < _length; i++)
+        var earliestInserted = _length; // track the left‑most slot we refill
+
+        for (var i = 0; i < _length && blockIndex < blocks.Count; i++)
         {
             if (_items[i] == IntPtr.Zero)
             {
                 _items[i] = blocks[blockIndex++];
-                if (blockIndex == blocks.Count)
-                {
-                    _initialSearchIndex = 0;
-                    return;
-                }
+                earliestInserted = Math.Min(earliestInserted, i);
             }
         }
 
-        _initialSearchIndex = 0;
+        if (earliestInserted < _initialSearchIndex)
+        {
+            _initialSearchIndex = earliestInserted;
+        }
 
         for (var i = blockIndex; i < blocks.Count; i++)
         {
-            ReturnSlow(blocks[i]);
+            if (blocks[i] != IntPtr.Zero)
+            {
+                ReturnSlow(blocks[i]);
+            }
         }
     }
 
@@ -134,28 +174,44 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public void Dispose()
     {
-        if (IsDisposed)
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (_isDisposed)
         {
             return;
         }
 
-        for (var i = 0; i < _length; i++)
+        // Mark as disposed first so re‑entry is a no‑op even if an exception
+        // is thrown while releasing unmanaged resources.
+        _isDisposed = true;
+
+        try
         {
-            if (_items[i] != IntPtr.Zero)
+            // Free each rented block (if any) first
+            for (var i = 0; i < _length; i++)
             {
-                Marshal.FreeCoTaskMem(_items[i]);
-                _items[i] = IntPtr.Zero;
+                if (_items[i] != IntPtr.Zero)
+                {
+                    Marshal.FreeCoTaskMem(_items[i]);
+                    _items[i] = IntPtr.Zero;
+                }
             }
         }
-
-        Marshal.FreeCoTaskMem((IntPtr)_items);
-
-        _isDisposed = true;
+        finally
+        {
+            // Always release the pointer table itself, even if an earlier
+            // FreeCoTaskMem throws (extremely unlikely, but defensive).
+            Marshal.FreeCoTaskMem((IntPtr)_items);
+        }
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowObjectDisposedException()
     {
-        throw new ObjectDisposedException("UnmanagedMemoryPool");
+        throw new ObjectDisposedException(nameof(UnmanagedMemoryPool));
     }
 }

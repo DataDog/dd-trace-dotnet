@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
@@ -185,12 +186,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private readonly string _testName;
         private readonly string _metadataSchemaVersion;
+        private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
+        private readonly Regex _stacktraceRegex = new(@"""stacktrace"":""   at Samples\.GraphQL4\.StarWarsExtensions\.StarWarsSubscription\.ThrowNotImplementedException\([^)]+\) in .*?:line \d+(\\r\\n   at .*?:line \d+)*""");
 
         protected GraphQLTests(string sampleAppName, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_GRAPHQL_ERROR_EXTENSIONS", "bool,int,float,str,other,sbyte,byte,short,ushort,uint,long,ulong,decimal,double,char");
 
             _testName = testName;
             _metadataSchemaVersion = metadataSchemaVersion;
@@ -206,11 +210,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetInstrumentationVerification();
 
-            await fixture.TryStartApp(this, packageVersion: packageVersion);
+            var agentConfiguration = new MockTracerAgent.AgentConfiguration
+            {
+                SpanEvents = false
+            };
+
+            await fixture.TryStartApp(this, packageVersion: packageVersion, agentConfiguration: agentConfiguration);
+
             var testStart = DateTime.UtcNow;
             var expectedSpans = await SubmitRequests(fixture.HttpPort, usingWebsockets);
 
-            var spans = fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
+            var spans = await fixture.Agent.WaitForSpansAsync(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
 
             var graphQLSpans = spans.Where(span => span.Type == "graphql");
             ValidateIntegrationSpans(graphQLSpans, _metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
@@ -220,8 +230,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // hacky scrubber for the fact that version 4.1.0+ switched to using " in error message in one place
             // where every other version uses '
             settings.AddSimpleScrubber("Did you mean \"appearsIn\"", "Did you mean 'appearsIn'");
+            // Adding this scrubber to actually scrub the comment within the event which failed in 4.1.0
+            settings.AddSimpleScrubber("Did you mean \\\"appearsIn\\\"", "Did you mean 'appearsIn'");
+
             // Graphql 5 has different error message for missing subscription
             settings.AddSimpleScrubber("Could not resolve source stream for field", "Error trying to resolve field");
+            // Added to scrub the SpanEvents time
+            settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+            // .NET 6 and above have a different stack trace than .NET 5 and .NET Core 3.1
+            settings.AddRegexScrubber(_stacktraceRegex, @"""stacktrace"":""   at Samples.GraphQL4.StarWarsExtensions.StarWarsSubscription.ThrowNotImplementedException(IResolveFieldContext context) in StarWarsSubscription.cs:line 00""");
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer

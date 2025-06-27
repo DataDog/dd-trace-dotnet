@@ -37,6 +37,6 @@ public class TracerTests : TestHelper
 
         // Tracing is disabled, we shouldn't have spans, even though they wrote some
         agent.Spans.Should().BeEmpty();
-        agent.AssertConfiguration("DD_TRACE_ENABLED", false);
+        await agent.AssertConfigurationAsync("DD_TRACE_ENABLED", false);
     }
 }

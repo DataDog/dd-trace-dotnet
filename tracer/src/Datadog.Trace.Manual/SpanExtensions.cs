@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanExtensions.cs" company="Datadog">
+// <copyright file="SpanExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 #nullable enable
 
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
 
@@ -30,7 +31,14 @@ public static class SpanExtensions
     /// <param name="span">The span to be tagged</param>
     /// <param name="userDetails">The details of the current logged on user</param>
     public static void SetUser(this ISpan span, UserDetails userDetails)
-        => SetUser(span, userDetails.Email, userDetails.Name, userDetails.Id, userDetails.PropagateId, userDetails.SessionId, userDetails.Role, userDetails.Scope);
+    {
+        if (string.IsNullOrEmpty(userDetails.Id))
+        {
+            ThrowHelper.ThrowArgumentException(nameof(userDetails.Id) + " must be set to a value other than null or the empty string", nameof(userDetails.Id));
+        }
+
+        SetUser(span, userDetails.Email, userDetails.Name, userDetails.Id, userDetails.PropagateId, userDetails.SessionId, userDetails.Role, userDetails.Scope);
+    }
 
     [Instrumented]
     private static void SetUser(

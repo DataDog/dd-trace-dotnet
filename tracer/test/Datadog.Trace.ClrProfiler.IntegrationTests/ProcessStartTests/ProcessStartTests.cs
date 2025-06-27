@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(1);
+            var spans = await agent.WaitForSpansAsync(1);
 
             // could snapshot this, but really doesn't seem worth it, as all we
             // really want to test is that we don't get _2_ spans

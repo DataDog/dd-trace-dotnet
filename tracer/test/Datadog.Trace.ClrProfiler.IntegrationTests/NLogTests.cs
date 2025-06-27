@@ -286,7 +286,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: string.Join(" ", new object[] { context, configType })))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var testFiles = GetTestFiles(packageVersion, true, configType);
@@ -323,7 +323,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: string.Join(" ", new object[] { context, configType })))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var testFiles = GetTestFiles(packageVersion, logsInjectionEnabled: false, configType);
@@ -391,7 +391,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 logs.Should().Contain(x => hasProperty(x, CustomContextKey, CustomContextValue));
             }
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.NLog);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.NLog);
         }
 
         private void VerifyContextProperties(LogFileTest[] testFiles, string packageVersion, string context)

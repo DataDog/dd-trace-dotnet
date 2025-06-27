@@ -156,7 +156,7 @@ internal class TracerFlareManager : ITracerFlareManager
                 Log.Debug(TracerFlareInitializationLog);
 
                 // dump the telemetry (assuming we have somewhere to dump it)
-                if (Log.FileLogDirectory is { } logDir)
+                if (Log.FileLoggingConfiguration?.LogDirectory is { } logDir)
                 {
                     // the filename here is chosen so that it will get cleaned up in the normal log rotation
                     ProcessHelpers.GetCurrentProcessInformation(out _, out _, out var pid);
@@ -226,7 +226,7 @@ internal class TracerFlareManager : ITracerFlareManager
                 return AcknowledgeAll(config);
             }
 
-            if (Log.FileLogDirectory is not { } fileLogDirectory)
+            if (Log.FileLoggingConfiguration?.LogDirectory is not { } fileLogDirectory)
             {
                 Log.Debug("Ignoring tracer flare request - file logging is disabled");
                 return AcknowledgeAll(config);

@@ -24,6 +24,10 @@ private:
         inline static const shared::WSTRING folder_path = WStr(R"(Datadog .NET Tracer\logs)");
 #endif
         inline static const std::string pattern = "[%Y-%m-%d %H:%M:%S.%e | %l | PId: %P | TId: %t] %v";
+        static bool enable_buffering() {
+            // We don't buffer logs, as we know we are definitely instrumenting
+            return false;
+        }
         struct logging_environment
         {
             inline static const shared::WSTRING log_path = EnvironmentVariables::LogPath;
