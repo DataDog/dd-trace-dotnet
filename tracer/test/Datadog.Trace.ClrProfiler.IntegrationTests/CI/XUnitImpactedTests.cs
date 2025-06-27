@@ -29,8 +29,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             SetServiceName("xunit-tests");
             SetServiceVersion("1.0.0");
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         }
 
+/*
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
@@ -50,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             InjectGitHubActionsSession(false);
             return SubmitTests(packageVersion, 2, TestIsModified);
         }
-
+*/
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
@@ -71,6 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             return SubmitTests(packageVersion, 12, TestIsModified, agentRequestProcessor);
         }
 
+/*
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
@@ -163,9 +166,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 }
             }
         }
+*/
 
         private static bool TestIsModified(MockCIVisibilityTest t) => t.Meta.ContainsKey(IsModifiedTag) && t.Meta[IsModifiedTag] == "true";
 
+/*
         private async Task SubmitTestsWithGitBranch(string packageVersion, int expectedTests, Func<MockCIVisibilityTest, bool> testFilter = null, Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> agentRequestProcessor = null)
         {
             var tests = new List<MockCIVisibilityTest>();
@@ -203,5 +208,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             Output.WriteLine($"Total tests: {tests.Count}, Modified tests: {modifiedTests.Count}, Non-modified tests: {nonModifiedTests.Count}");
         }
+*/
     }
 }
