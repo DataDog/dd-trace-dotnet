@@ -79,7 +79,6 @@ internal static class DatadogLoggingFactory
 
     private static ConsoleLoggingConfiguration GetConsoleLoggingConfiguration(IConfigurationSource? source)
     {
-        // TODO: allow users to set the message template? Use Json? Different/better message template?
         return new ConsoleLoggingConfiguration(DefaultConsoleMessageTemplate, DefaultConsoleQueueLimit);
     }
 
