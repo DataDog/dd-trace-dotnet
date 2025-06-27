@@ -15,6 +15,7 @@ using Datadog.Trace.Logging.Internal;
 using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Logging.Internal.Enrichers;
 using Datadog.Trace.Logging.Internal.Sinks;
+using Datadog.Trace.Logging.Internal.TextFormatters;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -30,7 +31,6 @@ internal static class DatadogLoggingFactory
     private const int DefaultRateLimit = 0;
     private const int DefaultMaxLogFileSize = 10 * 1024 * 1024;
 
-    internal const string DefaultConsoleMessageTemplate = "{UtcTimestamp:yyyy-MM-dd HH:mm:ss.fff} DD_TRACE_DOTNET [{Level:u3}] {Message:lj} {SingleLineException}{NewLine}";
     internal const int DefaultConsoleQueueLimit = 1024;
 
     public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
@@ -80,8 +80,11 @@ internal static class DatadogLoggingFactory
 
     private static ConsoleLoggingConfiguration GetConsoleLoggingConfiguration(IConfigurationSource? source)
     {
-        // textWriter: null defaults to Console.Out
-        return new ConsoleLoggingConfiguration(DefaultConsoleMessageTemplate, DefaultConsoleQueueLimit, textWriter: null);
+        // Since we are writing from a background thread, we can use the synchronized Console.Out
+        // instead of Console.OpenStandardOutput() without blocking the main thread. By using Console.Out we honor
+        // any previous call to Console.SetOut() and we don't have to worry about writing the UTF-8 BOM to the output stream
+        // or mangling the output by writing to the console from multiple threads.
+        return new ConsoleLoggingConfiguration(DefaultConsoleQueueLimit, Console.Out);
     }
 
     public static IDatadogLogger? CreateFromConfiguration(
@@ -135,7 +138,7 @@ internal static class DatadogLoggingFactory
                          .Enrich.With(new RemovePropertyEnricher(LogEventLevel.Error, DatadogSerilogLogger.SkipTelemetryProperty))
                          .Enrich.With(new UtcTimestampEnricher())
                          .Enrich.With(new SingleLineExceptionEnricher())
-                         .WriteTo.Sink(new ConsoleSink(consoleConfig.MessageTemplate, consoleConfig.BufferSize, consoleConfig.TextWriter)));
+                         .WriteTo.Sink(new ConsoleSink(new SimpleTextFormatter(), consoleConfig.TextWriter, consoleConfig.BufferSize)));
         }
 
         try
