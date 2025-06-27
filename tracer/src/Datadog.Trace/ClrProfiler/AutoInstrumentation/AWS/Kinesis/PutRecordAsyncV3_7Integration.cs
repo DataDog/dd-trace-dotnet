@@ -1,4 +1,4 @@
-// <copyright file="PutRecordAsyncIntegration.cs" company="Datadog">
+// <copyright file="PutRecordAsyncV3_7Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,7 @@ using Datadog.Trace.Propagators;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
-    /// AWSSDK.Kinesis PutRecordAsync CallTarget instrumentation for SDK versions 3.0.0-3.6.x
+    /// AWSSDK.Kinesis PutRecordAsync CallTarget instrumentation for SDK versions 3.7.0+
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "AWSSDK.Kinesis",
@@ -24,12 +24,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         MethodName = "PutRecordAsync",
         ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.PutRecordResponse]",
         ParameterTypeNames = new[] { "Amazon.Kinesis.Model.PutRecordRequest", ClrNames.CancellationToken },
-        MinimumVersion = "3.0.0",
-        MaximumVersion = "3.6.*",
+        MinimumVersion = "3.7.0",
+        MaximumVersion = "4.*.*",
         IntegrationName = AwsKinesisCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class PutRecordAsyncIntegration
+    public class PutRecordAsyncV3_7Integration
     {
         private const string Operation = "PutRecord";
 
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TPutRecordRequest>(TTarget instance, TPutRecordRequest request, CancellationToken cancellationToken)
-            where TPutRecordRequest : IPutRecordRequest, IDuckType
+            where TPutRecordRequest : IPutRecordRequestV3_7, IDuckType
         {
             if (request.Instance is null)
             {
@@ -51,12 +51,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
 
             var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, null, out var tags);
+            var streamName = AwsKinesisCommon.GetStreamName(request);
             if (tags is not null)
             {
-                tags.StreamName = request.StreamName;
+                tags.StreamName = streamName;
             }
 
-            ContextPropagation.InjectTraceIntoData(request, scope, request.StreamName);
+            ContextPropagation.InjectTraceIntoData(request, scope, streamName);
 
             return new CallTargetState(scope);
         }

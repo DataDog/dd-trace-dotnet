@@ -15,7 +15,7 @@ using Datadog.Trace.Propagators;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
-    /// AWSSDK.Kinesis PutRecord CallTarget instrumentation
+    /// AWSSDK.Kinesis PutRecord CallTarget instrumentation for SDK versions 3.0.0-3.6.x
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "AWSSDK.Kinesis",
@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         ReturnTypeName = "Amazon.Kinesis.Model.PutRecordResponse",
         ParameterTypeNames = new[] { "Amazon.Kinesis.Model.PutRecordRequest" },
         MinimumVersion = "3.0.0",
-        MaximumVersion = "4.*.*",
+        MaximumVersion = "3.6.*",
         IntegrationName = AwsKinesisCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -49,12 +49,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
 
             var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, null, out var tags);
+            string? streamName = request.StreamName;
             if (tags is not null)
             {
-                tags.StreamName = request.StreamName;
+                tags.StreamName = streamName;
             }
 
-            ContextPropagation.InjectTraceIntoData(request, scope, request.StreamName);
+            ContextPropagation.InjectTraceIntoData(request, scope, streamName);
 
             return new CallTargetState(scope);
         }
