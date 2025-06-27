@@ -358,8 +358,8 @@ namespace Datadog.Trace.Tests.Logging
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
-                file: null,
                 errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                file: null,
                 console: null);
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
@@ -428,8 +428,8 @@ namespace Datadog.Trace.Tests.Logging
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
-                file: null,
                 errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                file: null,
                 console: null);
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
@@ -462,8 +462,8 @@ namespace Datadog.Trace.Tests.Logging
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
-                file: new FileLoggingConfiguration(10 * 1024 * 1024, tempLogsDir, 1),
                 errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                file: new FileLoggingConfiguration(10 * 1024 * 1024, tempLogsDir, 1),
                 console: null);
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
@@ -501,9 +501,11 @@ namespace Datadog.Trace.Tests.Logging
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
-                file: null,
                 errorLogging: new RedactedErrorLoggingConfiguration(collector),
-                console: new ConsoleLoggingConfiguration(DatadogLoggingFactory.DefaultConsoleMessageTemplate, DatadogLoggingFactory.DefaultConsoleQueueLimit));
+                file: null,
+                console: new ConsoleLoggingConfiguration(
+                    DatadogLoggingFactory.DefaultConsoleMessageTemplate,
+                    DatadogLoggingFactory.DefaultConsoleQueueLimit));
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
 
@@ -527,7 +529,7 @@ namespace Datadog.Trace.Tests.Logging
 
         private class CollectionSink : ILogEventSink
         {
-            public List<LogEvent> Events { get; } = new List<LogEvent>();
+            public List<LogEvent> Events { get; } = [];
 
             public void Emit(LogEvent le)
             {

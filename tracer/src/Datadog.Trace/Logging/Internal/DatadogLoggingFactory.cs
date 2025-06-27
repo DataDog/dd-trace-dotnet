@@ -58,7 +58,7 @@ internal static class DatadogLoggingFactory
                        .AsInt32(DefaultRateLimit, x => x >= 0)
                        .Value;
 
-        return new DatadogLoggingConfiguration(rateLimit, fileConfig, redactedErrorLogsConfig, consoleConfig);
+        return new DatadogLoggingConfiguration(rateLimit, redactedErrorLogsConfig, fileConfig, consoleConfig);
 
         static bool Contains(string?[]? items, string value)
         {
