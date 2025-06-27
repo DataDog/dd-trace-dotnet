@@ -2436,10 +2436,9 @@ partial class Build
                // error thrown to check error handling in RC tests
                new(@".*haha, you weren't expect this!*", RegexOptions.Compiled),
                // known errors in waf config
-               new(@".*rc::asm_dd::diagnostic Error: missing key 'name':.*", RegexOptions.Compiled),
-               new(@".*rc::asm_dd::diagnostic Error: missing key 'tags':.*", RegexOptions.Compiled),
-               new(@".*Some errors were found while applying waf configuration (RulesFile: wrong-tags-name-rule-set.json).*", RegexOptions.Compiled),
-               new(@".*Some errors were found while applying waf configuration (RulesFile: rasp-rule-set.json).*", RegexOptions.Compiled),
+               new(@".*rc::asm_dd::diagnostic Error: missing key.*", RegexOptions.Compiled),
+               new(@".*Some errors were found while applying waf configuration \(RulesFile: wrong-tags-name-rule-set.json\).*", RegexOptions.Compiled),
+               new(@".*Some errors were found while applying waf configuration \(RulesFile: rasp-rule-set.json\).*", RegexOptions.Compiled),
            };
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
