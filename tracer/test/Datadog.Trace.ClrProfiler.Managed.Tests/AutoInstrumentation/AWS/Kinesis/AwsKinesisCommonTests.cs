@@ -4,11 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -22,7 +18,7 @@ public class AwsKinesisCommonTests
         {
             new object[] { "mystream", string.Empty, "mystream" },
             new object[] { string.Empty, "arn:aws:kinesis:us-east-2:123456789012:stream/mystream2", "mystream2" },
-            new object[] { "mystream", "arn:aws:kinesis:us-east-2:123456789012:stream/otherstream", "mystream" },
+            new object[] { "streamname", "arn:aws:kinesis:us-east-2:123456789012:stream/streamarn", "streamarn" },
         };
 
     [Fact]
