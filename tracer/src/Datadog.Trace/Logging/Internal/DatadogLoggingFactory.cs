@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.Internal;
 using Datadog.Trace.Logging.Internal.Configuration;
+using Datadog.Trace.Logging.Internal.Enrichers;
 using Datadog.Trace.Logging.Internal.Sinks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
@@ -29,7 +30,7 @@ internal static class DatadogLoggingFactory
     private const int DefaultRateLimit = 0;
     private const int DefaultMaxLogFileSize = 10 * 1024 * 1024;
 
-    internal const string DefaultConsoleMessageTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} dd-trace-dotnet {Level:u3}] {Message:lj}{NewLine}{Exception}";
+    internal const string DefaultConsoleMessageTemplate = "{UtcTimestamp:yyyy-MM-dd HH:mm:ss.fff} DD_TRACE_DOTNET [{Level:u3}] {Message:lj} {SingleLineException}{NewLine}";
     internal const int DefaultConsoleQueueLimit = 1024;
 
     public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
@@ -132,7 +133,9 @@ internal static class DatadogLoggingFactory
                .WriteTo.Logger(
                    lc => lc
                          .Enrich.With(new RemovePropertyEnricher(LogEventLevel.Error, DatadogSerilogLogger.SkipTelemetryProperty))
-                         .WriteTo.Sink(new ConsoleSink(consoleConfig.MessageTemplate, consoleConfig.BufferSize)));
+                         .Enrich.With(new UtcTimestampEnricher())
+                         .Enrich.With(new SingleLineExceptionEnricher())
+                         .WriteTo.Sink(new ConsoleSink(consoleConfig.MessageTemplate, consoleConfig.BufferSize, consoleConfig.TextWriter)));
         }
 
         try
