@@ -133,7 +133,7 @@ generate-lib-init-pinned-tag-values:
 
 configure_system_tests:
   variables:
-    SYSTEM_TESTS_SCENARIOS_GROUPS: "simple_onboarding,simple_onboarding_profiling,lib-injection"
+    SYSTEM_TESTS_SCENARIOS_GROUPS: "simple_onboarding,simple_onboarding_profiling,simple_onboarding_appsec,lib-injection"
 
 deploy_to_reliability_env:
   rules:
