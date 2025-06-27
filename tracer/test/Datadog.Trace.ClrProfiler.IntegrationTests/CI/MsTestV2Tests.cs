@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
                     using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1))
                     {
-                        spans = agent.WaitForSpans(expectedSpanCount)
+                        spans = (await agent.WaitForSpansAsync(expectedSpanCount))
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                                      .ToList();
 

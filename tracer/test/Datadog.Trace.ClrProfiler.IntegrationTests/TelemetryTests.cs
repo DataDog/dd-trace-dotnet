@@ -61,19 +61,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(ExpectedSpans);
+                var spans = await agent.WaitForSpansAsync(ExpectedSpans);
 
                 await AssertExpectedSpans(spans);
             }
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
-            telemetry.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage");
-            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage");
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.HttpMessageHandler);
+            await telemetry.AssertConfigurationAsync(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
+            await telemetry.AssertConfigurationAsync(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage");
+            await telemetry.AssertConfigurationAsync(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage");
 
-            AssertService(telemetry, "Samples.Telemetry", ServiceVersion);
-            AssertDependencies(telemetry, enableDependencies);
-            AssertNoRedactedErrorLogs(telemetry);
+            await AssertServiceAsync(telemetry, "Samples.Telemetry", ServiceVersion);
+            await AssertDependenciesAsync(telemetry, enableDependencies);
+            await AssertNoRedactedErrorLogsAsync(telemetry);
             agent.Telemetry.Should().BeEmpty();
         }
 
@@ -94,18 +94,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(ExpectedSpans);
+                var spans = await agent.WaitForSpansAsync(ExpectedSpans);
                 await AssertExpectedSpans(spans);
             }
 
-            agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
-            agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage");
-            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage");
+            await agent.AssertIntegrationEnabledAsync(IntegrationId.HttpMessageHandler);
+            await agent.AssertConfigurationAsync(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
+            await agent.AssertConfigurationAsync(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage");
+            await agent.AssertConfigurationAsync(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage");
 
-            AssertService(agent, "Samples.Telemetry", ServiceVersion);
-            AssertDependencies(agent, enableDependencies);
-            AssertNoRedactedErrorLogs(agent);
+            await AssertServiceAsync(agent, "Samples.Telemetry", ServiceVersion);
+            await AssertDependenciesAsync(agent, enableDependencies);
+            await AssertNoRedactedErrorLogsAsync(agent);
         }
 
         [SkippableFact]
@@ -125,14 +125,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(ExpectedSpans);
+                var spans = await agent.WaitForSpansAsync(ExpectedSpans);
                 await AssertExpectedSpans(spans);
             }
 
             // Shouldn't have any, but wait for 5s
-            agent.WaitForLatestTelemetry(x => true);
+            await agent.WaitForLatestTelemetryAsync(x => true);
             agent.Telemetry.Should().BeEmpty();
-            AssertNoRedactedErrorLogs(agent);
+            await AssertNoRedactedErrorLogsAsync(agent);
         }
 
         [SkippableTheory]
@@ -160,15 +160,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(ExpectedSpans);
+                var spans = await agent.WaitForSpansAsync(ExpectedSpans);
                 await AssertExpectedSpans(spans);
             }
 
-            agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
-            agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            AssertService(agent, "Samples.Telemetry", ServiceVersion);
-            AssertDependencies(agent, enableDependencies);
-            AssertNoRedactedErrorLogs(agent);
+            await agent.AssertIntegrationEnabledAsync(IntegrationId.HttpMessageHandler);
+            await agent.AssertConfigurationAsync(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
+            await AssertServiceAsync(agent, "Samples.Telemetry", ServiceVersion);
+            await AssertDependenciesAsync(agent, enableDependencies);
+            await AssertNoRedactedErrorLogsAsync(agent);
         }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -194,14 +194,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(ExpectedSpans);
+                var spans = await agent.WaitForSpansAsync(ExpectedSpans);
                 await AssertExpectedSpans(spans);
             }
 
-            agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
-            AssertService(agent, "Samples.Telemetry", ServiceVersion);
-            AssertDependencies(agent, enableDependencies);
-            AssertNoRedactedErrorLogs(agent);
+            await agent.AssertIntegrationEnabledAsync(IntegrationId.HttpMessageHandler);
+            await AssertServiceAsync(agent, "Samples.Telemetry", ServiceVersion);
+            await AssertDependenciesAsync(agent, enableDependencies);
+            await AssertNoRedactedErrorLogsAsync(agent);
         }
 #endif
 
@@ -226,31 +226,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(ExpectedSpans);
+                var spans = await agent.WaitForSpansAsync(ExpectedSpans);
                 await AssertExpectedSpans(spans);
             }
 
             // The numbers here may change, but we should have _some_
-            telemetry.GetDistributions(DistributionShared.InitTime.GetName()).Sum(x => x.Points.Count).Should().BeGreaterThan(4);
+            (await telemetry.GetDistributionsAsync(DistributionShared.InitTime.GetName())).Sum(x => x.Points.Count).Should().BeGreaterThan(4);
 
-            telemetry.GetMetricDataPoints(Count.TraceChunkEnqueued.GetName()).Sum(x => x.Value).Should().Be(ExpectedTraces);
+            (await telemetry.GetMetricDataPointsAsync(Count.TraceChunkEnqueued.GetName())).Sum(x => x.Value).Should().Be(ExpectedTraces);
 
             // The exact number of logs aren't important, but we should have some
-            telemetry.GetMetricDataPoints(Count.LogCreated.GetName(), "level:info")
+            (await telemetry.GetMetricDataPointsAsync(Count.LogCreated.GetName(), "level:info"))
                      .Sum(x => x.Value).Should().BeGreaterThan(10);
 
             // Should have at least 1 call to the Agentless telemetry API and no errors
-            var telemetryRequests = telemetry.GetMetricDataPoints(Count.TelemetryApiRequests.GetName(), "endpoint:agentless")
+            var telemetryRequests = (await telemetry.GetMetricDataPointsAsync(Count.TelemetryApiRequests.GetName(), "endpoint:agentless"))
                                              .Sum(x => x.Value);
             telemetryRequests.Should().BeGreaterThan(0);
-            telemetry.GetMetricDataPoints(Count.TelemetryApiResponses.GetName(), "endpoint:agentless")
+            (await telemetry.GetMetricDataPointsAsync(Count.TelemetryApiResponses.GetName(), "endpoint:agentless"))
                      .Sum(x => x.Value).Should().Be(telemetryRequests);
-            telemetry.GetMetricDataPoints(Count.TelemetryApiRequests.GetName(), "endpoint:agent").Should().BeEmpty();
-            telemetry.GetMetricDataPoints(Count.TelemetryApiErrors.GetName()).Should().BeEmpty();
+            (await telemetry.GetMetricDataPointsAsync(Count.TelemetryApiRequests.GetName(), "endpoint:agent")).Should().BeEmpty();
+            (await telemetry.GetMetricDataPointsAsync(Count.TelemetryApiErrors.GetName())).Should().BeEmpty();
 
             // we inject and extract headers once
             // avoiding checking the specific tag + count here so this doesn't need updating if we change the defaults
-            telemetry.GetMetricDataPoints(Count.ContextHeaderStyleInjected.GetName())
+            (await telemetry.GetMetricDataPointsAsync(Count.ContextHeaderStyleInjected.GetName()))
                      .Should()
                      .NotBeEmpty()
                      .And.OnlyContain(x => x.Tags.Length > 0)
@@ -260,21 +260,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                      .HaveCountGreaterOrEqualTo(1);
 
             // hopefully no errors
-            telemetry.GetMetricDataPoints(CountShared.IntegrationsError.GetName()).Should().BeEmpty();
-            telemetry.GetMetricDataPoints(Count.VersionConflictTracerCreated.GetName()).Should().BeEmpty();
+            (await telemetry.GetMetricDataPointsAsync(CountShared.IntegrationsError.GetName())).Should().BeEmpty();
+            (await telemetry.GetMetricDataPointsAsync(Count.VersionConflictTracerCreated.GetName())).Should().BeEmpty();
 
-            telemetry.GetMetricDataPoints(Gauge.Instrumentations.GetName()).Sum(x => x.Value).Should().BeGreaterThan(1);
+            (await telemetry.GetMetricDataPointsAsync(Gauge.Instrumentations.GetName())).Sum(x => x.Value).Should().BeGreaterThan(1);
 
-            telemetry.GetMetricDataPoints(Count.SpanCreated.GetName()).Sum(x => x.Value).Should().Be(ExpectedSpans);
-            telemetry.GetMetricDataPoints(Count.SpanFinished.GetName()).Sum(x => x.Value).Should().Be(ExpectedSpans);
-            telemetry.GetMetricDataPoints(Count.SpanEnqueuedForSerialization.GetName()).Sum(x => x.Value).Should().Be(ExpectedSpans);
-            telemetry.GetMetricDataPoints(Count.TraceSegmentCreated.GetName()).Sum(x => x.Value).Should().Be(ExpectedTraces);
-            telemetry.GetMetricDataPoints(Count.TraceChunkEnqueued.GetName()).Sum(x => x.Value).Should().Be(ExpectedTraces);
-            telemetry.GetMetricDataPoints(Count.TraceChunkSent.GetName()).Sum(x => x.Value).Should().Be(ExpectedTraces);
+            (await telemetry.GetMetricDataPointsAsync(Count.SpanCreated.GetName())).Sum(x => x.Value).Should().Be(ExpectedSpans);
+            (await telemetry.GetMetricDataPointsAsync(Count.SpanFinished.GetName())).Sum(x => x.Value).Should().Be(ExpectedSpans);
+            (await telemetry.GetMetricDataPointsAsync(Count.SpanEnqueuedForSerialization.GetName())).Sum(x => x.Value).Should().Be(ExpectedSpans);
+            (await telemetry.GetMetricDataPointsAsync(Count.TraceSegmentCreated.GetName())).Sum(x => x.Value).Should().Be(ExpectedTraces);
+            (await telemetry.GetMetricDataPointsAsync(Count.TraceChunkEnqueued.GetName())).Sum(x => x.Value).Should().Be(ExpectedTraces);
+            (await telemetry.GetMetricDataPointsAsync(Count.TraceChunkSent.GetName())).Sum(x => x.Value).Should().Be(ExpectedTraces);
 
-            telemetry.GetMetricDataPoints(Count.TraceApiRequests.GetName()).Sum(x => x.Value).Should().BeGreaterThan(0);
-            telemetry.GetMetricDataPoints(Count.TraceApiResponses.GetName()).Sum(x => x.Value).Should().BeGreaterThan(0);
-            telemetry.GetMetricDataPoints(Count.TraceApiErrors.GetName()).Should().BeEmpty();
+            (await telemetry.GetMetricDataPointsAsync(Count.TraceApiRequests.GetName())).Sum(x => x.Value).Should().BeGreaterThan(0);
+            (await telemetry.GetMetricDataPointsAsync(Count.TraceApiResponses.GetName())).Sum(x => x.Value).Should().BeGreaterThan(0);
+            (await telemetry.GetMetricDataPointsAsync(Count.TraceApiErrors.GetName())).Should().BeEmpty();
         }
 
         [SkippableFact]
@@ -302,11 +302,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(ExpectedSpans);
+                var spans = await agent.WaitForSpansAsync(ExpectedSpans);
                 await AssertExpectedSpans(spans);
             }
 
-            WaitForAllTelemetry(telemetry);
+            await WaitForAllTelemetryAsync(telemetry);
             telemetry.Telemetry
                      .Where(x => x.IsRequestType(TelemetryRequestTypes.RedactedErrorLogs))
                      .Should()
@@ -349,11 +349,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(ExpectedSpans);
+                var spans = await agent.WaitForSpansAsync(ExpectedSpans);
                 await AssertExpectedSpans(spans);
             }
 
-            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppStarted));
+            await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppStarted));
 
             var appStarted = telemetry.Telemetry.Should()
                 .ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppStarted))
@@ -371,15 +371,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 });
         }
 
-        private static void AssertService(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
+        private static async Task AssertServiceAsync(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppStarted));
+            await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppStarted));
             AssertService(mockAgent.Telemetry.Cast<TelemetryData>(), expectedServiceName, expectedServiceVersion);
         }
 
-        private static void AssertService(MockTelemetryAgent telemetry, string expectedServiceName, string expectedServiceVersion)
+        private static async Task AssertServiceAsync(MockTelemetryAgent telemetry, string expectedServiceName, string expectedServiceVersion)
         {
-            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppStarted));
+            await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppStarted));
             AssertService(telemetry.Telemetry, expectedServiceName, expectedServiceVersion);
         }
 
@@ -392,15 +392,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             appClosing.Application.ServiceVersion.Should().Be(expectedServiceVersion);
         }
 
-        private static void AssertDependencies(MockTracerAgent mockAgent, bool? enableDependencies)
+        private static async Task AssertDependenciesAsync(MockTracerAgent mockAgent, bool? enableDependencies)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+            await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
             AssertDependencies(mockAgent.Telemetry.Cast<TelemetryData>(), enableDependencies);
         }
 
-        private static void AssertDependencies(MockTelemetryAgent telemetry, bool? enableDependencies)
+        private static async Task AssertDependenciesAsync(MockTelemetryAgent telemetry, bool? enableDependencies)
         {
-            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+            await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
             AssertDependencies(telemetry.Telemetry, enableDependencies);
         }
 
@@ -428,21 +428,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .UseFileName("TelemetryTests");
         }
 
-        private static void WaitForAllTelemetry(MockTracerAgent mockAgent)
-            => mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+        private static Task<object> WaitForAllTelemetryAsync(MockTracerAgent mockAgent)
+            => mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
-        private static void WaitForAllTelemetry(MockTelemetryAgent telemetry)
-            => telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+        private static Task<TelemetryData> WaitForAllTelemetryAsync(MockTelemetryAgent telemetry)
+            => telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
-        private static void AssertNoRedactedErrorLogs(MockTracerAgent mockAgent)
+        private static async Task AssertNoRedactedErrorLogsAsync(MockTracerAgent mockAgent)
         {
-            WaitForAllTelemetry(mockAgent);
+            await WaitForAllTelemetryAsync(mockAgent);
             AssertNoRedactedErrorLogs(mockAgent.Telemetry.Cast<TelemetryData>());
         }
 
-        private static void AssertNoRedactedErrorLogs(MockTelemetryAgent telemetry)
+        private static async Task AssertNoRedactedErrorLogsAsync(MockTelemetryAgent telemetry)
         {
-            WaitForAllTelemetry(telemetry);
+            await WaitForAllTelemetryAsync(telemetry);
             AssertNoRedactedErrorLogs(telemetry.Telemetry);
         }
 

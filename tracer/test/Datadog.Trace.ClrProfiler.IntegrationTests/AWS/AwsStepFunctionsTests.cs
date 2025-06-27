@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var expectedCount = 4;
                 var frameworkName = "NetCore";
 #endif
-                var spans = agent.WaitForSpans(expectedCount);
+                var spans = await agent.WaitForSpansAsync(expectedCount);
                 var stepFunctionsSpans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 stepFunctionsSpans.Should().NotBeEmpty();
@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 await VerifyHelper.VerifySpans(spans, settings);
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.AwsStepFunctions);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsStepFunctions);
             }
         }
 
@@ -112,11 +112,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(1, returnAllOperations: true);
+                var spans = await agent.WaitForSpansAsync(1, returnAllOperations: true);
 
                 Assert.NotEmpty(spans);
                 Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-                telemetry.AssertIntegrationDisabled(IntegrationId.AwsStepFunctions);
+                await telemetry.AssertIntegrationDisabledAsync(IntegrationId.AwsStepFunctions);
             }
         }
     }
