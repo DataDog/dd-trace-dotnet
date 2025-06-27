@@ -91,6 +91,8 @@ update-bp-infra:
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
+  after_script:
+    - mv /var/log/datadog/dotnet/* artifacts/
   artifacts:
     name: "artifacts"
     when: always
@@ -285,6 +287,7 @@ runtime-metrics:
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.arm.yml --debug
+  after_script: !reference [.benchmarks, after_script]
   artifacts:
     name: "artifacts"
     when: always
@@ -519,7 +522,7 @@ runtime-metrics-arm64:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=dd-trace-dotnet/macro
+      - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=dd-trace-dotnet/macro
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./ephemeral-infra/run-windows-benchmarks.sh
   after_script:
