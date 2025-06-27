@@ -22,7 +22,7 @@ namespace Datadog.Trace.LibDatadog;
 [StructLayout(LayoutKind.Sequential)]
 internal readonly struct Error
 {
-    internal readonly FFIVec Message;
+    internal readonly VecU8 Message;
 
     public LibDatadogException ToException()
     {
