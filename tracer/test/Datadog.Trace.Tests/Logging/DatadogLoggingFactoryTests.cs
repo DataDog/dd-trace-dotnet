@@ -8,7 +8,6 @@ using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.Internal.Configuration;
 using FluentAssertions;
 using Xunit;
 

@@ -7,42 +7,40 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Formatting.Display;
+using Datadog.Trace.Vendors.Serilog.Formatting;
 
 namespace Datadog.Trace.Logging.Internal.Sinks;
 
+/// <summary>
+/// A buffered sink that writes log events to a <see cref="TextWriter"/> using a background thread.
+/// Used to write log events to the console without blocking.
+/// </summary>
 internal sealed class ConsoleSink : ILogEventSink, IDisposable
 {
     // in-memory buffer used only from the background thread
     private readonly StringBuilder _bufferBuilder;
     private readonly StringWriter _bufferWriter;
 
-    private readonly MessageTemplateTextFormatter _textFormatter;
+    private readonly ITextFormatter _textFormatter;
     private readonly BlockingCollection<LogEvent> _writeQueue;
     private readonly TextWriter _consoleWriter;
     private readonly Task _writeTask;
 
-    public ConsoleSink(string messageTemplate, int queueLimit, TextWriter? consoleWriter = null)
+    public ConsoleSink(ITextFormatter formatter, TextWriter consoleWriter, int queueLimit)
     {
         // in-memory buffer used only from the background thread
         _bufferBuilder = new StringBuilder(capacity: 512);
         _bufferWriter = new StringWriter(_bufferBuilder);
 
-        _textFormatter = new MessageTemplateTextFormatter(messageTemplate, CultureInfo.InvariantCulture);
+        _textFormatter = formatter;
         _writeQueue = new BlockingCollection<LogEvent>(queueLimit);
-
-        // Since we are writing from a background thread, we can use the synchronized Console.Out
-        // instead of Console.OpenStandardOutput() without blocking the main thread. By using Console.Out we honor
-        // any previous call to Console.SetOut() and we don't have to worry about writing the UTF-8 BOM to the output stream
-        // or mangling the output by writing to the console from multiple threads.
-        _consoleWriter = consoleWriter ?? Console.Out;
+        _consoleWriter = consoleWriter;
 
         _writeTask = Task.Factory.StartNew(
             WriteToConsoleStream,
