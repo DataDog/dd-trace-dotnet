@@ -19,12 +19,15 @@ Update all references to the SDK version across the repository:
 - **CI/CD Pipeline Files**:
   - `.azure-pipelines/ultimate-pipeline.yml`
   - `.azure-pipelines/noop-pipeline.yml`
+  - `.azure-pipelines/steps/install-dotnet.yml`
   - `.github/workflows/*.yml` (all workflow files)
   - `.gitlab-ci.yml`
 - **Docker Files**:
   - `docker-compose.yml`
-  - `tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile`
-  - All smoke test dockerfiles in `tracer/build/_build/docker/`
+  - `tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile` - the new version should be built locally pushed, and synced to datadog/images, and used in the new build.
+  - `tracer/build/_build/docker/alpine.dockerfile`
+  - `tracer/build/_build/docker/centos7.dockerfile`
+  - `tracer/build/_build/docker/debian.dockerfile`
 - **Build Scripts**:
   - `tracer/build_in_docker.ps1`
   - `tracer/build_in_docker.sh`
@@ -40,24 +43,25 @@ Add support for the new .NET version across projects:
   - Integration test projects
   - Sample applications
   - Tools and utilities
+  - `Build.Directory.props` files
+- **Smoke Tests**:
+  - Add additional smoke tests for the new .NET release
+  - This may involve pushing new versions of our dedicated smoke test dockerfiles for distros that don't have official Microsoft
 
 ### 3. Integration Support Updates *(Major versions only)*
 Update automatic instrumentation to support the new runtime:
 
 - **Version Constants**:
   - `tracer/src/Datadog.Trace/AutoInstrumentation/SupportedVersions.cs`
-- **Integration Definitions**: Update minimum supported versions in:
-  - `tracer/src/Datadog.Trace/Generated/InstrumentationDefinitions.g.cs`
-  - Integration-specific definition files
+- **Integration Definitions**: Update supported versions for integration targets as required in:
+  - `tracer/src/Datadog.Trace/ClrProfiler/*`
+- **Native Loader**: 
+  - The native loader lists the supported versions for SSI and bails out if outside this range. Need to consider whether that needs updating.
 
 ### 4. Package Version Generation *(Major versions only)*
 Regenerate package versions for integration tests:
 
-- Run package version generation to create new test matrices
-- Update generated files:
-  - `tracer/build/PackageVersionsLatestMajors.g.props`
-  - `tracer/build/PackageVersionsLatestMinors.g.props`
-  - `tracer/build/PackageVersionsLatestSpecific.g.props`
+- Run package version generation to create new test matrices, often required for testing "built-in" versions of packages that ship with the framework.
 
 ### 5. Runtime-Specific Code Updates *(Major versions only)*
 Address breaking changes and new APIs:
@@ -68,7 +72,6 @@ Address breaking changes and new APIs:
 - **Activity Filtering**: 
   - Exclude new experimental activities to prevent duplicate spans
   - Update `tracer/src/Datadog.Trace/Activity/Handlers/IgnoreActivityHandler.cs`
-- **Duck Typing**: Address reflection changes for internal APIs
 - **Test Updates**: Fix or skip tests incompatible with new runtime
 
 ### 6. Infrastructure Updates
@@ -81,6 +84,7 @@ Update development and CI infrastructure:
 ### 7. Documentation and Configuration
 - **Development Documentation**: Update CI guides and local development instructions
 - **Container Configurations**: Update devcontainer and development environment configs
+- **Update**: Update public documentation
 
 ## Pre-Release Version Considerations
 
@@ -88,47 +92,27 @@ When updating to pre-release versions (RC, preview):
 - Use pre-release SDK versions in `global.json`
 - Enable pre-release rolling forward in runtime configurations
 - May require different container image tags or availability
-- Consider stability for production CI environments
-
-## Stable vs Pre-Release Differences
-
-**Stable Versions:**
-- Full container image availability across all variants
-- Complete package ecosystem support
-- Recommended for production CI
-
-**Pre-Release Versions:**
-- Limited container image variants
-- May require manual SDK installation
-- Package versions may be incomplete
-- Useful for early testing and preparation
+- By default we bail out of preview versions of the SDK in SSI environments in the native loader, need to consider whether that needs changing, or whether we should continue to bail out.
 
 ## Files Requiring Manual Review
 
 The following areas typically require manual attention during major upgrades:
 
-1. **Test Snapshots**: May need regeneration due to runtime changes
-2. **Integration Test Compatibility**: Some packages may not support new runtimes immediately  
-3. **Native Code Compatibility**: Profiler and native components may need updates
+1. **Test Snapshots**: May need regeneration due to runtime changes - you may need to add additional scrubbing to account for the differences.
+2. **Integration Test Compatibility**: Some packages may not support new runtimes immediately, though typically this won't be a problem.
+3. **Native Code Compatibility**: Profiler and native components may need updates - if new `ICorProfiler` interfaces are available, we may need to use them.
 4. **Breaking Changes**: Runtime behavior changes requiring code adaptations
 
 ## Validation Steps
 
-After completing updates:
-1. Ensure all builds pass in CI
-2. Run integration test suites
-3. Execute smoke tests across all supported platforms
-4. Validate profiler integration tests
-5. Check for any skipped tests that can be re-enabled
+After completing updates Ensure all builds pass in CI, doing dedicated "full" runs against all target frameworks and all installer steps before merging.
 
 ## Post-Merge Tasks
 
 Major version updates typically require follow-up work:
-- Update VM scale sets with new SDK versions
-- Update GitLab build images
-- Re-enable temporarily skipped tests
-- Update benchmark environments
-- Monitor for any runtime-specific issues in production
+- Rebuild VM scale sets with new SDK versions installed
+- Update benchmark environments - we need additional refactoring, as currently these will be broken for the update branch + master after merge, and will need follow up to fix. Ideally this should be done in parallel, but that may not be feasible.
+- Monitor for any issues in master or in production
 
 ---
 
