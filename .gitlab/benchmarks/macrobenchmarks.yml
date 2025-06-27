@@ -25,7 +25,7 @@ check_azure_pipeline:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
       - build-id.txt
     expire_in: 3 months
   tags: ["arch:amd64"]
@@ -92,12 +92,12 @@ update-bp-infra:
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
   after_script:
-    - mv /var/log/datadog/dotnet/* artifacts/
+    - mv /var/log/datadog/dotnet/* platform/artifacts/
   artifacts:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
@@ -292,7 +292,7 @@ runtime-metrics:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
@@ -494,7 +494,7 @@ runtime-metrics-arm64:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
