@@ -498,6 +498,7 @@ namespace Datadog.Trace.Tests.Logging
         public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithConsoleSink(bool withException)
         {
             var collector = new RedactedErrorLogCollector();
+            var logsWriter = TextWriter.Null; // don't write logs to console (or anywhere else)
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
@@ -505,7 +506,8 @@ namespace Datadog.Trace.Tests.Logging
                 file: null,
                 console: new ConsoleLoggingConfiguration(
                     DatadogLoggingFactory.DefaultConsoleMessageTemplate,
-                    DatadogLoggingFactory.DefaultConsoleQueueLimit));
+                    DatadogLoggingFactory.DefaultConsoleQueueLimit,
+                    logsWriter));
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
 
