@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "Log.h"
+
 #include "shared/src/native-src/string.h"
 
 #include <chrono>
@@ -229,5 +231,24 @@ inline HANDLE OpSysTools::GetCurrentProcess()
     return ::GetCurrentProcess();
 #else
     return nullptr;
+#endif
+}
+
+constexpr size_t DefaultPageSize{4096}; // Concerned about hugepages?
+inline std::size_t GetPageSize()
+{
+#ifdef _WINDOWS
+    throw std::runtime_error("GetPageSize() is not implemented for Windows.");
+#else
+    static std::size_t page_size = 0;
+    if (page_size == 0)
+    {
+        page_size = sysconf(_SC_PAGESIZE);
+        if (page_size != DefaultPageSize)
+        {
+            Log::Warn("Page size is ", page_size, " expected ", DefaultPageSize);
+        }
+    }
+    return page_size;
 #endif
 }
