@@ -52,7 +52,7 @@ public class DataStreamsMonitoringAwsSnsTests : TestHelper
             var expectedTaggedCount = 2;
             var frameworkName = "NetCore";
 #endif
-            var spans = agent.WaitForSpans(expectedCount);
+            var spans = await agent.WaitForSpansAsync(expectedCount);
             spans.Should().HaveCount(expectedCount);
             var sqsSpans = spans.Where(
                 span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
@@ -62,7 +62,7 @@ public class DataStreamsMonitoringAwsSnsTests : TestHelper
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
             taggedSpans.Should().HaveCount(expected: expectedTaggedCount);
 
-            var dsPoints = agent.WaitForDataStreamsPoints(statsCount: expectedTaggedCount);
+            var dsPoints = await agent.WaitForDataStreamsPointsAsync(statsCount: expectedTaggedCount);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
@@ -72,7 +72,7 @@ public class DataStreamsMonitoringAwsSnsTests : TestHelper
                           .UseFileName(fileName)
                           .DisableRequireUniquePrefix();
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.AwsSns);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsSns);
         }
     }
 }

@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"5 5");
 
-            var spans = agent.WaitForSpans(totalTransactions);
+            var spans = await agent.WaitForSpansAsync(totalTransactions);
             Assert.True(spans.Count >= totalTransactions, $"Expecting at least {totalTransactions} spans, only received {spans.Count}");
             var msmqSpans = spans.Where(span => string.Equals(span.GetTag("component"), "msmq", StringComparison.OrdinalIgnoreCase));
             ValidateIntegrationSpans(msmqSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
@@ -124,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             purgeCount.Should().Be(expectedPurgeCount);
             receiveCount.Should().Be(expectedReceiveCount);
             peekCount.Should().Be(expectedPeekCount);
-            telemetry.AssertIntegrationEnabled(IntegrationId.Msmq);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Msmq);
         }
     }
 }

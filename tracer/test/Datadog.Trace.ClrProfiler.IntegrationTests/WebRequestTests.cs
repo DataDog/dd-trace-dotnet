@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Null(traceId);
                 Assert.Null(parentSpanId);
                 Assert.Equal("false", tracingEnabled);
-                telemetry.AssertIntegrationDisabled(IntegrationId.WebRequest);
+                await telemetry.AssertIntegrationDisabledAsync(IntegrationId.WebRequest);
                 VerifyInstrumentation(processResult.Process);
             }
         }
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
 
-            var allSpans = agent.WaitForSpans(expectedAllSpansCount, assertExpectedCount: false).OrderBy(s => s.Start).ToList();
+            var allSpans = (await agent.WaitForSpansAsync(expectedAllSpansCount, assertExpectedCount: false)).OrderBy(s => s.Start).ToList();
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 #if NET9_0_OR_GREATER
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var httpSpans = allSpans.Where(s => s.Type == SpanTypes.Http).ToList();
             ValidateIntegrationSpans(httpSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.WebRequest);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.WebRequest);
             VerifyInstrumentation(processResult.Process);
         }
     }

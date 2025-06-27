@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);
 
                 ValidateLogCorrelation(spans, _logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion: packageVersion, use128Bits: enable128BitInjection);
@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 .HaveCount(expectedLogCount);
 
             VerifyInstrumentation(processResult.Process);
-            telemetry.AssertIntegrationEnabled(IntegrationId.ILogger);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.ILogger);
         }
     }
 }

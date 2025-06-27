@@ -74,7 +74,7 @@ public class TraceExporterTests
         }
 
         await tracer.TracerManager.ShutdownAsync();
-        var recordedSpans = agent.WaitForSpans(1);
+        var recordedSpans = await agent.WaitForSpansAsync(1);
         recordedSpans.Should().ContainSingle();
 
         var recordedSpan = recordedSpans.Should().ContainSingle().Subject;
