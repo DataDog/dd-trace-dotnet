@@ -14,6 +14,7 @@ stages:
 
 variables:
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-3
+  THROUGHPUT_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dd-trace-dotnet-dsm
 
 check_azure_pipeline:
   stage: check-azure-pipeline
@@ -30,6 +31,34 @@ check_azure_pipeline:
     expire_in: 3 months
   tags: ["arch:amd64"]
   timeout: 1h
+  rules:
+    - when: on_success
+
+throughput:
+  stage: benchmarks
+  when: on_success
+  tags: ["runner:apm-k8s-same-cpu"]
+  needs: ["check_azure_pipeline"]
+  image: $THROUGHPUT_CI_IMAGE
+  interruptible: true
+  timeout: 1h
+  script:
+    - export ARTIFACTS_DIR="$(pwd)/artifacts" && (mkdir "${ARTIFACTS_DIR}" || :)
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/".insteadOf "https://github.com/DataDog/"
+    - git clone --branch dd-trace-dotnet/data-streams-monitoring https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - ./steps/setup-sut.sh
+    - bp-runner bp-runner.yml --debug
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - artifacts/
+    expire_in: 3 months
+  variables:
+    KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-dotnet
+    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
   rules:
     - when: on_success
 
@@ -83,7 +112,11 @@ update-bp-infra:
       - api_failure
       - script_failure
   rules:
-    - when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+      when: always
+    - when: manual
   image: $MACROBENCHMARKS_CI_IMAGE
   script:
     - source build-id.txt
@@ -266,7 +299,11 @@ profiler_cpu_timer_create:
       - api_failure
       - script_failure
   rules:
-    - when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+      when: always
+    - when: manual
   image: $MACROBENCHMARKS_CI_IMAGE
 
   script:
@@ -464,7 +501,11 @@ profiler_cpu_timer_create-arm64:
       - api_failure
       - script_failure
   rules:
-    - when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+      when: always
+    - when: manual
   artifacts:
     name: "artifacts"
     when: always
