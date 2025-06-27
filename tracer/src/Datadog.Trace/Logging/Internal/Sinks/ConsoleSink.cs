@@ -40,7 +40,8 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
 
         // Since we are writing from a background thread, we can use the synchronized Console.Out
         // instead of Console.OpenStandardOutput() without blocking the main thread. By using Console.Out we honor
-        // any previous call to Console.SetOut() and we don't have to worry about writing the UTF-8 BOM to the output stream.
+        // any previous call to Console.SetOut() and we don't have to worry about writing the UTF-8 BOM to the output stream
+        // or mangling the output by writing to the console from multiple threads.
         _consoleWriter = consoleWriter ?? Console.Out;
 
         _writeTask = Task.Factory.StartNew(
