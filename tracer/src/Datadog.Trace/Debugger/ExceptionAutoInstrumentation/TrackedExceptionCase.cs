@@ -91,6 +91,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public bool Revert(int normalizedExceptionHash)
         {
+            if (ExceptionDebugging.Settings.RateLimit.TotalMilliseconds == 0)
+            {
+                // No rate limit, avoid reverting
+                return false;
+            }
+
             if (BeginTeardown())
             {
                 NormalizedExceptionHash = normalizedExceptionHash;
