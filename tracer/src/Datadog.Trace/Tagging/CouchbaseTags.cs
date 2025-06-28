@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind => SpanKinds.Client;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => nameof(IntegrationId.Couchbase);
+        public override string InstrumentationName { get; set; } = nameof(IntegrationId.Couchbase);
 
         [Tag(Trace.Tags.CouchbaseSeedNodes)]
         public string SeedNodes { get; set; }

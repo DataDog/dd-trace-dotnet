@@ -42,6 +42,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "graphql.source": 
                     Source = value;
                     break;
@@ -52,7 +55,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                     OperationType = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(GraphQLTags));
                     break;
                 default: 

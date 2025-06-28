@@ -21,6 +21,9 @@ namespace Datadog.Trace.ServiceFabric
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
 
+        [Tag(Tags.InstrumentationName)]
+        public override string? InstrumentationName { get; set; }
+
         // general Service Fabric
         [Tag(Trace.Tags.ServiceFabricApplicationId)]
         public string? ApplicationId { get; set; }

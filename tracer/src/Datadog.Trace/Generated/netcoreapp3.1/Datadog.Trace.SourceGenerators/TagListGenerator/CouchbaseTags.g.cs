@@ -51,6 +51,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "db.couchbase.seed.nodes": 
                     SeedNodes = value;
                     break;
@@ -70,7 +73,6 @@ namespace Datadog.Trace.Tagging
                     Port = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(CouchbaseTags));
                     break;
                 default: 
