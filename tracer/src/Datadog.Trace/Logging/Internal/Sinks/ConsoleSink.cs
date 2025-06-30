@@ -24,7 +24,7 @@ namespace Datadog.Trace.Logging.Internal.Sinks;
 internal sealed class ConsoleSink : ILogEventSink, IDisposable
 {
     // in-memory buffer used only from the background thread
-    private readonly StringBuilder _bufferBuilder;
+    private readonly StringBuilder _buffer;
     private readonly StringWriter _bufferWriter;
 
     private readonly ITextFormatter _textFormatter;
@@ -35,8 +35,8 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
     public ConsoleSink(ITextFormatter formatter, TextWriter consoleWriter, int queueLimit)
     {
         // in-memory buffer used only from the background thread
-        _bufferBuilder = new StringBuilder(capacity: 512);
-        _bufferWriter = new StringWriter(_bufferBuilder);
+        _buffer = new StringBuilder(capacity: 512);
+        _bufferWriter = new StringWriter(_buffer);
 
         _textFormatter = formatter;
         _writeQueue = new BlockingCollection<LogEvent>(queueLimit);
@@ -85,11 +85,11 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
             foreach (var logEvent in _writeQueue.GetConsumingEnumerable())
             {
                 // clear in-memory buffer and format event into buffer
-                _bufferBuilder.Clear();
+                _buffer.Clear();
                 _textFormatter.Format(logEvent, _bufferWriter);
 
                 // write the formatted log event to the console and flush
-                _consoleWriter.Write(_bufferBuilder);
+                _consoleWriter.Write(_buffer);
                 _consoleWriter.Flush();
             }
         }
