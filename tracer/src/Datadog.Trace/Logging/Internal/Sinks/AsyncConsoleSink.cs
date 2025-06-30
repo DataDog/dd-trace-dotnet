@@ -1,4 +1,4 @@
-﻿// <copyright file="ConsoleSink.cs" company="Datadog">
+﻿// <copyright file="AsyncConsoleSink.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Logging.Internal.Sinks;
 /// A buffered sink that writes log events to a <see cref="TextWriter"/> using a background thread.
 /// Used to write log events to the console without blocking.
 /// </summary>
-internal sealed class ConsoleSink : ILogEventSink, IDisposable
+internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
 {
     // in-memory buffer used only from the background thread
     private readonly StringBuilder _buffer;
@@ -32,7 +32,7 @@ internal sealed class ConsoleSink : ILogEventSink, IDisposable
     private readonly TextWriter _consoleWriter;
     private readonly Task _writeTask;
 
-    public ConsoleSink(ITextFormatter formatter, TextWriter consoleWriter, int queueLimit)
+    public AsyncConsoleSink(ITextFormatter formatter, TextWriter consoleWriter, int queueLimit)
     {
         // in-memory buffer used only from the background thread
         _buffer = new StringBuilder(capacity: 512);
