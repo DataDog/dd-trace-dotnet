@@ -53,7 +53,7 @@ void ProfilerSignalManager::CleanupAllSignalHandlers()
     // This function should be called during profiler shutdown to avoid issues
     // with static destructor ordering in mixed runtime environments (e.g., uWSGI with Python)
     Log::Info("ProfilerSignalManager: Starting cleanup of all signal handlers");
-    
+
     for (int signal = 1; signal <= 31; ++signal)
     {
         auto* manager = Get(signal);
@@ -66,7 +66,7 @@ void ProfilerSignalManager::CleanupAllSignalHandlers()
             }
         }
     }
-    
+
     Log::Info("ProfilerSignalManager: Completed cleanup of all signal handlers");
 }
 
@@ -199,9 +199,9 @@ void ProfilerSignalManager::SignalHandler(int signal, siginfo_t* info, void* con
     auto* signalManager = Get(signal);
 
     if (signalManager == nullptr) [[unlikely]]
-    {
-        return;
-    }
+        {
+            return;
+        }
 
     if (!signalManager->CallCustomHandler(signal, info, context))
     {

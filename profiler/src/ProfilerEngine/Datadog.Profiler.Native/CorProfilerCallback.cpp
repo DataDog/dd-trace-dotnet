@@ -55,10 +55,10 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #ifdef LINUX
+#include "LibrariesInfoCache.h"
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
-#include "LibrariesInfoCache.h"
 #endif
 
 #include "shared/src/native-src/environment_variables.h"
@@ -248,8 +248,7 @@ void CorProfilerCallback::InitializeServices()
                     _pLiveObjectsProvider,
                     _metricsRegistry,
                     CallstackProvider(_memoryResourceManager.GetDefault()),
-                    MemoryResourceManager::GetDefault()
-                );
+                    MemoryResourceManager::GetDefault());
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
                 {
@@ -276,14 +275,12 @@ void CorProfilerCallback::InitializeServices()
                 nullptr, // no listener
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
-                MemoryResourceManager::GetDefault()
-            );
+                MemoryResourceManager::GetDefault());
         }
 
         if (
             (_pConfiguration->IsContentionProfilingEnabled()) ||
-            (_pConfiguration->IsWaitHandleProfilingEnabled())
-            )
+            (_pConfiguration->IsWaitHandleProfilingEnabled()))
         {
             _pContentionProvider = RegisterService<ContentionProvider>(
                 valueTypeProvider,
@@ -293,8 +290,7 @@ void CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
-                MemoryResourceManager::GetDefault()
-            );
+                MemoryResourceManager::GetDefault());
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
@@ -302,14 +298,12 @@ void CorProfilerCallback::InitializeServices()
             _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
                 valueTypeProvider,
                 _rawSampleTransformer.get(),
-                MemoryResourceManager::GetDefault()
-            );
+                MemoryResourceManager::GetDefault());
             _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
                 valueTypeProvider,
                 _rawSampleTransformer.get(),
                 _metricsRegistry,
-                MemoryResourceManager::GetDefault()
-            );
+                MemoryResourceManager::GetDefault());
         }
         else
         {
@@ -330,8 +324,7 @@ void CorProfilerCallback::InitializeServices()
                     _pConfiguration.get(),
                     _metricsRegistry,
                     CallstackProvider(_memoryResourceManager.GetDefault()),
-                    MemoryResourceManager::GetDefault()
-                );
+                    MemoryResourceManager::GetDefault());
             }
             else
             {
@@ -345,8 +338,7 @@ void CorProfilerCallback::InitializeServices()
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
-            _pNetworkProvider
-        );
+            _pNetworkProvider);
 
         if (_pGarbageCollectionProvider != nullptr)
         {
@@ -521,8 +513,7 @@ void CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         _pMetadataProvider.get(),
         _pSsiManager.get(),
-        _pAllocationsRecorder.get()
-        );
+        _pAllocationsRecorder.get());
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
         _pCpuTimeProvider != nullptr &&
@@ -586,8 +577,7 @@ void CorProfilerCallback::InitializeServices()
 
         if (
             (_pConfiguration->IsContentionProfilingEnabled()) ||
-            (_pConfiguration->IsWaitHandleProfilingEnabled())
-            )
+            (_pConfiguration->IsWaitHandleProfilingEnabled()))
         {
             _pSamplesCollector->Register(_pContentionProvider);
         }
@@ -629,7 +619,6 @@ void CorProfilerCallback::InitializeServices()
     }
 }
 
-
 // Single Step Instrumentation heuristics are triggered so profiling can start
 void CorProfilerCallback::OnStartDelayedProfiling()
 {
@@ -641,9 +630,8 @@ void CorProfilerCallback::OnStartDelayedProfiling()
 
     // if not enabled via SSI, just get out
     if (!(
-        (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled) ||
-        (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
-        ))
+            (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled) ||
+            (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)))
     {
         return;
     }
@@ -960,7 +948,7 @@ void CorProfilerCallback::GetFullFrameworkVersion(ModuleID moduleId)
     // Get the .NET Framework minor version from mscorlib
     LPCBYTE baseLoadAddress;
     ULONG moduleNameLength = 0;
-    WCHAR moduleName[1024] = { 0 };
+    WCHAR moduleName[1024] = {0};
     AssemblyID assemblyId = 0;
 
     HRESULT hr = _pCorProfilerInfo->GetModuleInfo(
@@ -990,7 +978,6 @@ void CorProfilerCallback::GetFullFrameworkVersion(ModuleID moduleId)
     }
 }
 #endif
-
 
 const char* CorProfilerCallback::SysInfoProcessorArchitectureToStr(WORD wProcArch)
 {
@@ -1070,10 +1057,7 @@ void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerI
         std::stringstream buffer;
         buffer << "{ "
                << "clrInstanceId:" << clrInstanceId
-               << ", runtimeType:" <<
-                     ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR" :
-                     (runtimeType == COR_PRF_CORE_CLR) ? "CORE_CLR" :
-                     (std::string("unknown(") + std::to_string(runtimeType) + std::string(")")))
+               << ", runtimeType:" << ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR" : (runtimeType == COR_PRF_CORE_CLR) ? "CORE_CLR" : (std::string("unknown(") + std::to_string(runtimeType) + std::string(")")))
                << ", majorVersion: " << major
                << ", minorVersion: " << minor
                << ", buildNumber: " << buildNumber
@@ -1222,8 +1206,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled() ||
         _pConfiguration->IsHttpProfilingEnabled() ||
-        _pConfiguration->IsWaitHandleProfilingEnabled()
-        ;
+        _pConfiguration->IsWaitHandleProfilingEnabled();
 
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
@@ -1266,8 +1249,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                 Log::Info("Live Heap profiling is not supported by .NET Framework (.NET 7+ is required)");
             }
         }
-        else
-        if (major < 5)
+        else if (major < 5)
         {
             if (AreEventBasedProfilersEnabled)
             {
@@ -1324,8 +1306,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
         if (
             _pConfiguration->IsAllocationProfilingEnabled() ||
-            _pConfiguration->IsHeapProfilingEnabled()
-           )
+            _pConfiguration->IsHeapProfilingEnabled())
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
 
@@ -1356,62 +1337,47 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
             providerCount = 6;
             providers =
-            {
-                COR_PRF_EVENTPIPE_PROVIDER_CONFIG {
-                    WStr("Microsoft-Windows-DotNETRuntime"),
-                    activatedKeywords,
-                    verbosity,
-                    nullptr
-                },
                 {
-                    WStr("System.Net.Http"),
-                    1,
-                    VerboseVerbosity,
-                    nullptr
-                },
-                {
-                    WStr("System.Net.Sockets"),
-                    0xFFFFFFFF,
-                    VerboseVerbosity,
-                    nullptr
-                },
-                {
-                    WStr("System.Net.NameResolution"),
-                    0xFFFFFFFF,
-                    VerboseVerbosity,
-                    nullptr
-                },
-                {
-                    WStr("System.Net.Security"),
-                    0xFFFFFFFF,
-                    VerboseVerbosity,
-                    nullptr
-                },
-                // we also need to enable the TPL event source so the activities will be correlated
-                {
-                    WStr("System.Threading.Tasks.TplEventSource"),
-                    0x80,
-                    VerboseVerbosity,
-                    nullptr
-                }
-            };
+                    COR_PRF_EVENTPIPE_PROVIDER_CONFIG{
+                        WStr("Microsoft-Windows-DotNETRuntime"),
+                        activatedKeywords,
+                        verbosity,
+                        nullptr},
+                    {WStr("System.Net.Http"),
+                     1,
+                     VerboseVerbosity,
+                     nullptr},
+                    {WStr("System.Net.Sockets"),
+                     0xFFFFFFFF,
+                     VerboseVerbosity,
+                     nullptr},
+                    {WStr("System.Net.NameResolution"),
+                     0xFFFFFFFF,
+                     VerboseVerbosity,
+                     nullptr},
+                    {WStr("System.Net.Security"),
+                     0xFFFFFFFF,
+                     VerboseVerbosity,
+                     nullptr},
+                    // we also need to enable the TPL event source so the activities will be correlated
+                    {
+                        WStr("System.Threading.Tasks.TplEventSource"),
+                        0x80,
+                        VerboseVerbosity,
+                        nullptr}};
         }
         else
         {
             providers =
-            {
                 {
-                    WStr("Microsoft-Windows-DotNETRuntime"),
-                    activatedKeywords,
-                    verbosity,
-                    nullptr
-                }
-            };
+                    {WStr("Microsoft-Windows-DotNETRuntime"),
+                     activatedKeywords,
+                     verbosity,
+                     nullptr}};
         }
 
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
-                providerCount, providers.data(), false, &_session
-                );
+            providerCount, providers.data(), false, &_session);
 
         if (FAILED(hr))
         {
@@ -1482,7 +1448,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // Clean up signal handlers early in shutdown to prevent interference
     // with Python finalization in mixed runtime environments (e.g., uWSGI)
     ProfilerSignalManager::CleanupAllSignalHandlers();
-    
+
     if (_pCpuProfiler != nullptr)
     {
         _pCpuProfiler->Stop();
