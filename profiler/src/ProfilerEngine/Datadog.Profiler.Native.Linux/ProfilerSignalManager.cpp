@@ -47,6 +47,29 @@ ProfilerSignalManager* ProfilerSignalManager::Get(int signal)
     return manager;
 }
 
+void ProfilerSignalManager::CleanupAllSignalHandlers()
+{
+    // Iterate through all possible signal managers and ensure proper cleanup
+    // This function should be called during profiler shutdown to avoid issues
+    // with static destructor ordering in mixed runtime environments (e.g., uWSGI with Python)
+    Log::Info("ProfilerSignalManager: Starting cleanup of all signal handlers");
+    
+    for (int signal = 1; signal <= 31; ++signal)
+    {
+        auto* manager = Get(signal);
+        if (manager != nullptr && manager->IsHandlerInPlace())
+        {
+            Log::Debug("ProfilerSignalManager: Cleaning up signal handler for signal ", signal);
+            if (!manager->UnRegisterHandler())
+            {
+                Log::Warn("ProfilerSignalManager: Failed to unregister signal handler for signal ", signal);
+            }
+        }
+    }
+    
+    Log::Info("ProfilerSignalManager: Completed cleanup of all signal handlers");
+}
+
 bool ProfilerSignalManager::RegisterHandler(HandlerFn_t handler)
 {
     HandlerFn_t current = _handler;

@@ -1479,6 +1479,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     Log::Info("CorProfilerCallback::Shutdown()");
 
 #ifdef LINUX
+    // Clean up signal handlers early in shutdown to prevent interference
+    // with Python finalization in mixed runtime environments (e.g., uWSGI)
+    ProfilerSignalManager::CleanupAllSignalHandlers();
+    
     if (_pCpuProfiler != nullptr)
     {
         _pCpuProfiler->Stop();
