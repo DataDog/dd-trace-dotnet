@@ -15,6 +15,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Stats;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -58,7 +59,7 @@ namespace Datadog.Trace.IntegrationTests
             });
 
             var discovery = DiscoveryService.Create(settings.Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
             Span span;
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
@@ -203,7 +204,7 @@ namespace Datadog.Trace.IntegrationTests
             });
 
             var discovery = DiscoveryService.Create(settings.Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
@@ -362,7 +363,7 @@ namespace Datadog.Trace.IntegrationTests
                     }));
 
             var discovery = DiscoveryService.Create(settings.Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             if (expectStats)
