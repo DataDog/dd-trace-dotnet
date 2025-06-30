@@ -70,24 +70,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
-        public static async Task AssertConfigurationAsync(this MockTracerAgent mockAgent, string key, object value = null)
-        {
-            await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
-
-            var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
-            AssertConfiguration(allData, key, value);
-        }
-
-        public static async Task AssertConfigurationAsync(this MockTelemetryAgent telemetry, string key, object value)
+        public static async Task AssertConfigurationAsync(this MockTelemetryAgent telemetry, string key, object value = null, string origin = null)
         {
             await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = telemetry.Telemetry.Cast<TelemetryData>().ToArray();
-            AssertConfiguration(allData, key, value);
+            AssertConfiguration(allData, key, value, origin);
         }
 
-        public static Task AssertConfigurationAsync(this MockTelemetryAgent telemetry, string key)
-            => telemetry.AssertConfigurationAsync(key, value: null);
+        public static async Task<IEnumerable<ConfigurationKeyValue>> GetConfigurationValuesAsync(this MockTelemetryAgent telemetry, string key)
+        {
+            await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+
+            var allData = telemetry.Telemetry.Cast<TelemetryData>().ToArray();
+            return GetConfigurationValues(allData, key);
+        }
 
         internal static async Task<IEnumerable<(string[] Tags, int Value, long Timestamp)>> GetMetricDataPointsAsync(this MockTelemetryAgent telemetry, string metric, string tag1 = null, string tag2 = null, string tag3 = null)
         {
@@ -105,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return GetDistributions(allData, distribution, tag1, tag2, tag3);
         }
 
-        internal static void AssertConfiguration(ICollection<TelemetryData> allData, string key, object value = null)
+        internal static void AssertConfiguration(ICollection<TelemetryData> allData, string key, object value = null, string origin = null)
         {
             var payloads = GetAllConfigurationPayloads(allData);
 
@@ -122,6 +119,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 config.Value.Should().Be(value);
             }
+
+            if (origin is not null)
+            {
+                config.Origin.Should().Be(origin, $"Configuration key '{key}' should have origin '{origin}'");
+            }
+        }
+
+        internal static IEnumerable<ConfigurationKeyValue> GetConfigurationValues(ICollection<TelemetryData> allData, string key)
+        {
+            var payloads = GetAllConfigurationPayloads(allData);
+
+            payloads.Should().NotBeEmpty();
+            var configs = payloads
+                        .SelectMany(x => x)
+                        .GroupBy(x => x.Name)
+                        .Where(x => x.Key == key)
+                        .SelectMany(x => x)
+                        .OrderBy(x => x.SeqId);
+
+            return configs;
         }
 
         internal static List<ICollection<ConfigurationKeyValue>> GetAllConfigurationPayloads(IEnumerable<TelemetryData> allData)

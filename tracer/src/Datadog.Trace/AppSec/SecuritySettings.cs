@@ -29,9 +29,8 @@ namespace Datadog.Trace.AppSec
 
         public SecuritySettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
-            Telemetry = telemetry ?? TelemetryFactory.Config;
             source ??= NullConfigurationSource.Instance;
-            var config = new ConfigurationBuilder(source, Telemetry);
+            var config = new ConfigurationBuilder(source, telemetry);
             BlockedHtmlTemplatePath = config
                                  .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
                                  .AsRedactedString(); // Redacted because it's huge
@@ -178,8 +177,6 @@ namespace Datadog.Trace.AppSec
 
             NoCustomLocalRules = Rules == null;
         }
-
-        internal IConfigurationTelemetry Telemetry { get; }
 
         public double ApiSecuritySampleDelay { get; set; }
 
