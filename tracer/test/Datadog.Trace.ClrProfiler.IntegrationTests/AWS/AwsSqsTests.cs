@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var expectedCount = 28;
                 var frameworkName = "NetCore";
 #endif
-                var spans = agent.WaitForSpans(expectedCount);
+                var spans = await agent.WaitForSpansAsync(expectedCount);
                 var sqsSpans = spans.Where(
                     span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 // - PurgeQueue
                 await VerifyHelper.VerifySpans(spans, settings);
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.AwsSqs);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsSqs);
 
                 static string GetSnapshotSuffix(string packageVersion)
                     => packageVersion switch

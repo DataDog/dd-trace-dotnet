@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using var assertionScope = new AssertionScope();
                 var expectedSpansPerRun = 13;
                 var expectedSpans = numberOfRuns * expectedSpansPerRun;
-                var spans = agent.WaitForSpans(expectedSpans)
+                var spans = (await agent.WaitForSpansAsync(expectedSpans))
                                  .OrderBy(s => s.Start)
                                  .ToList();
                 spans.Count.Should().Be(expectedSpans);
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             .ThenBy(x => x.Duration));
                 }
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.ServiceStackRedis);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.ServiceStackRedis);
             }
         }
     }

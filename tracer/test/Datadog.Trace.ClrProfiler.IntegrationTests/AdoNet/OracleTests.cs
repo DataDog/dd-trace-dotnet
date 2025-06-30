@@ -48,10 +48,10 @@ public class OracleTests : TracingIntegrationTest
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = await RunSampleAndWaitForExit(agent);
 
-        var spans = agent.WaitForSpans(expectedSpanCount);
+        var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
         spans.Count.Should().Be(expectedSpanCount);
-        telemetry.AssertIntegrationEnabled(IntegrationId.Oracle);
+        await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Oracle);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         // database name is generated with a random suffix
