@@ -1,4 +1,4 @@
-﻿// <copyright file="ConsoleSinkTests.cs" company="Datadog">
+﻿// <copyright file="AsyncConsoleSinkTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,14 +14,14 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Logging;
 
-public class ConsoleSinkTests
+public class AsyncConsoleSinkTests
 {
     [Fact]
     public void CanWriteToConsoleSink()
     {
         var sw = new StringWriter();
 
-        var consoleSink = new ConsoleSink(
+        var consoleSink = new AsyncConsoleSink(
             formatter: new MessageTemplateTextFormatter("{Message}{NewLine}"), // output the message only
             consoleWriter: sw,
             queueLimit: DatadogLoggingFactory.DefaultConsoleQueueLimit);
