@@ -221,12 +221,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 json["tags"]?.ToString(Formatting.None).Should().Be(expectedConfig.GlobalTags ?? "[]");
             }
 
-            WaitForTelemetry(agent);
+            await WaitForTelemetryAsync(agent);
 
-            AssertConfigurationChanged(agent.Telemetry, config);
+            await AssertConfigurationChangedAsync(agent.Telemetry, config);
         }
 
-        private bool WaitForTelemetry(MockTracerAgent agent)
+        private async Task<bool> WaitForTelemetryAsync(MockTracerAgent agent)
         {
             var deadline = DateTime.UtcNow.AddSeconds(20);
 
@@ -240,13 +240,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                Thread.Sleep(500);
+                await Task.Delay(500);
             }
 
             return false;
         }
 
-        private void AssertConfigurationChanged(ConcurrentStack<object> events, Config config)
+        private async Task AssertConfigurationChangedAsync(ConcurrentStack<object> events, Config config)
         {
             var expectedKeys = new List<(string Key, object Value)>
             {
@@ -297,7 +297,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (latestConfig.Count < expectedCount)
                 {
-                    Thread.Sleep(500);
+                    await Task.Delay(500);
                 }
             }
 

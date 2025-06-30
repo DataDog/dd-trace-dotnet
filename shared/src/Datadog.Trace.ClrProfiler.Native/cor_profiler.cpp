@@ -254,6 +254,9 @@ namespace datadog::shared::nativeloader
             return E_FAIL;
         }
 
+        // Guard rails have all passed, so we enable (and flush) logs if necessary
+        Log::EnableAutoFlush();
+
         if (m_dispatcher == nullptr)
         {
             Log::Error("Dispatcher is not set.");
