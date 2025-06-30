@@ -19,7 +19,7 @@ namespace Datadog.Trace.Security.IntegrationTests.ApiSecurity
     public class AspNetCore2ApiSecurityEnabled : AspNetCoreApiSecurity
     {
         public AspNetCore2ApiSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, true, "AspNetCore2")
+            : base(fixture, outputHelper, true, true, "AspNetCore2")
         {
         }
     }
@@ -27,7 +27,7 @@ namespace Datadog.Trace.Security.IntegrationTests.ApiSecurity
     public class AspNetCore2ApiSecurityDisabled : AspNetCoreApiSecurity
     {
         public AspNetCore2ApiSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, false, sampleName: "AspNetCore2")
+            : base(fixture, outputHelper, false, true, sampleName: "AspNetCore2")
         {
         }
     }
