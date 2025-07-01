@@ -2435,6 +2435,11 @@ partial class Build
                new(@".*Exception occurred when calling the CallTarget integration continuation. Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvokerException: Throwing a call target invoker exception.*"),
                // error thrown to check error handling in RC tests
                new(@".*haha, you weren't expect this!*", RegexOptions.Compiled),
+               // known errors in waf config
+               new(@".*rc::asm_dd::diagnostic Error: missing key.*", RegexOptions.Compiled),
+               new(@".*rc::asm_dd::diagnostic Warning: unknown operator.*", RegexOptions.Compiled),
+               new(@".*Some errors were found while applying waf configuration \(RulesFile: wrong-tags-name-rule-set.json\).*", RegexOptions.Compiled),
+               new(@".*Some errors were found while applying waf configuration \(RulesFile: rasp-rule-set.json\).*", RegexOptions.Compiled),
            };
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
