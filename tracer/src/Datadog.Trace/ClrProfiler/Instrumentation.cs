@@ -341,6 +341,26 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing activity listener");
             }
 
+#if NET6_0_OR_GREATER
+            try
+            {
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                {
+                    Log.Debug("Initializing meter listener.");
+                    OTelMetrics.MeterListener.Initialize();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing activity listener");
+            }
+#else
+            if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+            {
+                Log.Information("Unable to initialize OTel Metrics collection, this is only available starting with .NET 6.0..");
+            }
+#endif
+
             try
             {
                 if (Tracer.Instance.Settings.IsActivityListenerEnabled)
