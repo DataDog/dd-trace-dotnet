@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> Data =>
             from transport in Transports
-            from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
+            from dataPipelineEnabled in new[] { false, true }
             select new object[] { transport, dataPipelineEnabled };
 
         [SkippableTheory]
