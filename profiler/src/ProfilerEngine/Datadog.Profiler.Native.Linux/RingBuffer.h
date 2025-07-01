@@ -43,6 +43,7 @@ public:
 
         Buffer Reserve(std::size_t size, bool* timeout = nullptr) const;
         void Commit(Buffer);
+        void Discard(Buffer);
 
     private:
         friend class RingBuffer;

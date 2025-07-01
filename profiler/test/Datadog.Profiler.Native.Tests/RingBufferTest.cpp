@@ -53,7 +53,9 @@ TEST(RingBufferTest, CheckByteBuffer)
     ASSERT_NE(buffer.data(), nullptr);
 
     for (std::uint8_t i = 0; i < sampleSize; i++)
+    {
         buffer[i] = (std::byte)i;
+    }
 
     w.Commit(buffer);
 
@@ -65,7 +67,9 @@ TEST(RingBufferTest, CheckByteBuffer)
     ASSERT_NE(readBuffer.data(), nullptr);
 
     for (std::uint8_t i = 0; i < sampleSize; i++)
+    {
         ASSERT_EQ(readBuffer[i], (std::byte)i);
+    }
 }
 
 TEST(RingBufferTest, AddFakeSamplesAsMuchAsPossible)
@@ -147,6 +151,49 @@ TEST(RingBufferTest, StaleLock)
     ASSERT_TRUE(timeout);
 }
 
+
+TEST(RingBufferTest, CheckDiscard)
+{
+    auto rb = RingBuffer(1);
+    auto sampleSize = 25;
+    {
+        auto w = rb.GetWriter();
+        auto buffer = w.Reserve(sampleSize);
+        ASSERT_EQ(buffer.size(), sampleSize);
+        ASSERT_NE(buffer.data(), nullptr);
+
+        for (std::uint8_t i = 0; i < sampleSize; i++)
+        {
+            buffer[i] = (std::byte)i;
+        }
+
+        w.Discard(buffer);
+
+        auto r = rb.GetReader();
+        // even if the sample was discard, it's still present in the ring buffer
+        ASSERT_EQ(r.AvailableSamples(sampleSize), 1);
+        // But reading into it will return an empty buffer
+        ASSERT_TRUE(r.Read().empty());
+    }
+
+    // Make sure we still can reserve and use the ring buffer
+    {
+        auto w = rb.GetWriter();
+        auto buffer = w.Reserve(sampleSize);
+        ASSERT_EQ(buffer.size(), sampleSize);
+        ASSERT_NE(buffer.data(), nullptr);
+
+        for (std::uint8_t i = 0; i < sampleSize; i++)
+        {
+            buffer[i] = (std::byte)i;
+        }
+
+        w.Commit(buffer);
+
+        auto r = rb.GetReader();
+        ASSERT_EQ(r.AvailableSamples(sampleSize), 1);
+    }
+}
 
 struct MyStruct
 {
