@@ -110,5 +110,6 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
         FlushAsync().GetAwaiter().GetResult();
         _bufferWriter.Dispose();
         _consoleWriter.Dispose();
+        _writeQueue.Dispose();
     }
 }
