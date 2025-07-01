@@ -16,7 +16,7 @@ public class TracerTests : TestHelper
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string DiagnosticLog = "DATADOG TRACER CONFIGURATION";
-    private ITestOutputHelper _output;
+    private readonly ITestOutputHelper _output;
 
     public TracerTests(ITestOutputHelper output)
         : base("Console", output)

@@ -26,8 +26,8 @@ public class LogEntryWatcher : IDisposable
     // We must finish reading from the old one before switching to the new one, hence the queue
     private readonly ConcurrentQueue<StreamReader> _readers;
 
+    private readonly ITestOutputHelper _outputHelper;
     private StreamReader _activeReader;
-    private ITestOutputHelper _outputHelper;
 
     public LogEntryWatcher(string logFilePattern, string logDirectory = null, ITestOutputHelper outputHelper = null)
     {
