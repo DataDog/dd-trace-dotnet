@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.IO;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -15,8 +17,8 @@ internal class SingleLineTextFormatter : ITextFormatter
 {
     public void Format(LogEvent logEvent, TextWriter output)
     {
-        if (logEvent == null) { ThrowHelper.ThrowArgumentNullException(nameof(logEvent)); }
-        if (output == null) { ThrowHelper.ThrowArgumentNullException(nameof(output)); }
+        if (logEvent == null!) { ThrowHelper.ThrowArgumentNullException(nameof(logEvent)); }
+        if (output == null!) { ThrowHelper.ThrowArgumentNullException(nameof(output)); }
 
         // buffer the entire log event into a single line before writing it to the output
         var buffer = StringBuilderCache.Acquire();
