@@ -28,6 +28,11 @@ public:
     RingBuffer(std::size_t size);
     ~RingBuffer() = default;
 
+    RingBuffer(RingBuffer const&) = delete;
+    RingBuffer& operator=(RingBuffer const&) = delete;
+    RingBuffer(RingBuffer&&) = default;
+    RingBuffer& operator=(RingBuffer&&) = default;
+
     class Writer
     {
     public:
