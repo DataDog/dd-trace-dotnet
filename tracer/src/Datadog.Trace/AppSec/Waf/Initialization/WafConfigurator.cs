@@ -176,11 +176,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             if (wafHandle == IntPtr.Zero)
             {
                 Log.Error("rc::asm_dd::diagnostic Error: Failed to build WAF instance: no valid rules or processors available");
-                result = UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.", ref diagnostics, wafBuilderHandle, _wafLibraryInvoker, encoder);
+                result = UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.", diagnostics, wafBuilderHandle, _wafLibraryInvoker, encoder);
             }
             else
             {
-                result = UpdateResult.FromSuccess(ref diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder);
+                result = UpdateResult.FromSuccess(diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder);
             }
 
             if (result.ReportedDiagnostics.Rules.Errors is { Count: > 0 } ||

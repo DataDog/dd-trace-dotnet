@@ -17,7 +17,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 
 internal static class DiagnosticResultUtils
 {
-    internal static ReportedDiagnostics ExtractReportedDiagnostics(ref DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)
+    internal static ReportedDiagnostics ExtractReportedDiagnostics(in DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)
     {
         WafStats rules = new(); // Rules only stats
         var rulesetVersion = string.Empty;
