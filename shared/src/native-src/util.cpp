@@ -371,11 +371,11 @@ namespace shared
             const auto is_buggy = (version == "2.34" || version == "2.35");
 #endif
 
-            if (!is_buggy) {
+            /*if (!is_buggy) {
                 // Not buggy, so we can close the handle
                 dlclose(handle);
                 return std::make_tuple(false, ::shared::ToWSTRING(version));
-            }
+            }*/
 
             // buggy, so we can't close the handle
             return std::make_tuple(true, ::shared::ToWSTRING(version));
