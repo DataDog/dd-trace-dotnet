@@ -88,7 +88,9 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
                 _buffer.Clear();
                 _textFormatter.Format(logEvent, _bufferWriter);
 
-                // write the formatted log event to the console and flush
+                // In more recent runtimes, this uses the new WriteLine(StringBuilder) overload which
+                // uses StringBuilder.GetChunks() without allocating a new string.
+                // In earlier runtimes, the WriteLine(object) overload calls StringBuilder.ToString() instead.
                 _consoleWriter.Write(_buffer);
                 _consoleWriter.Flush();
             }
