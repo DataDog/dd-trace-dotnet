@@ -83,19 +83,48 @@ namespace ServiceBus.Minimal.Rebus
 
             var masterConnection = connectionString.Replace(builder.InitialCatalog, "master");
 
-            using (var connection = new SqlConnection(masterConnection))
-            {
-                connection.Open();
+            const int maxRetries = 5;
+            const int delayMs = 2000;
+            Exception lastException = null;
 
-                using (var command = connection.CreateCommand())
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
                 {
-                    command.CommandText = $@"
-    if(db_id('{database}') is null)
-        create database [{database}]
-    ";
-                    command.ExecuteNonQuery();
+                    using (var connection = new SqlConnection(masterConnection))
+                    {
+                        connection.Open();
+
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.CommandText = $@"
+IF (DB_ID('{database}') IS NULL)
+    CREATE DATABASE [{database}]
+";
+                            command.ExecuteNonQuery();
+                        }
+
+                        Console.WriteLine($"Database '{database}' is ensured to exist.");
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    Console.WriteLine($"Attempt {attempt}/{maxRetries} failed: {ex.GetType().Name} - {ex.Message}");
+
+                    if (attempt < maxRetries)
+                    {
+                        Thread.Sleep(delayMs);
+                    }
                 }
             }
+
+            Console.Error.WriteLine($"All attempts to connect to SQL Server failed. Throwing last exception...");
+            throw new InvalidOperationException(
+                $"Failed to connect to SQL Server and create database '{builder.InitialCatalog}' after {maxRetries} attempts.",
+                lastException
+            );
         }
     }
 }
