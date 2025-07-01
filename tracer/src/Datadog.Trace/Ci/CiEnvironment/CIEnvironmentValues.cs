@@ -276,7 +276,7 @@ internal abstract class CIEnvironmentValues
                 if (File.Exists(codeOwnersPath))
                 {
                     Log.Information("CODEOWNERS file found: {Path}", codeOwnersPath);
-                    CodeOwners = new CodeOwners(codeOwnersPath);
+                    CodeOwners = new CodeOwners(codeOwnersPath, GetType().Name.Contains("GitlabEnvironmentValues") ? CodeOwners.Platform.GitLab : CodeOwners.Platform.GitHub);
                     break;
                 }
             }
