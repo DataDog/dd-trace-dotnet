@@ -233,6 +233,7 @@ namespace Datadog.Trace.TestHelpers
                     { TelemetryRequestTypes.AppProductChanged, CreateSerializer<AppProductChangePayload>() },
                     { TelemetryRequestTypes.GenerateMetrics, CreateSerializer<GenerateMetricsPayload>() },
                     { TelemetryRequestTypes.Distributions, CreateSerializer<DistributionsPayload>() },
+                    { TelemetryRequestTypes.Sketches, CreateSerializer<SketchesPayload>() },
                     { TelemetryRequestTypes.RedactedErrorLogs, CreateLogsSerializer() },
                     { TelemetryRequestTypes.AppExtendedHeartbeat, CreateSerializer<AppExtendedHeartbeatPayload>() },
                     { TelemetryRequestTypes.AppClosing, CreateNullPayloadSerializer() },

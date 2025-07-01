@@ -20,6 +20,7 @@ namespace Datadog.Trace.Telemetry
 
         public const string GenerateMetrics = "generate-metrics";
         public const string Distributions = "distributions";
+        public const string Sketches = "sketches";
 
         public const string MessageBatch = "message-batch";
 
