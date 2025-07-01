@@ -75,7 +75,7 @@
     <None Remove="$(SourcePath)/linux-x64/libdatadog_profiling.so" />         <!-- 8.4  MB -->
     <None Remove="$(SourcePath)/linux-x64/libddwaf.so" />                     <!-- 2.5  MB -->
 
-    <!-- include empty file to resolve NU5127 -->
+    <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5127 -->
     <None Include="_._" Pack="true" PackagePath="lib/net6.0/;lib/net461/" />
 
     <!-- remove items inherited from ../Directory.Build.props and ../../../Directory.Build.props -->
