@@ -70,6 +70,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
+        public static async Task AssertConfigurationAsync(this MockTracerAgent mockAgent, string key, object value = null)
+        {
+            await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+
+            var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
+            AssertConfiguration(allData, key, value);
+        }
+
         public static async Task AssertConfigurationAsync(this MockTelemetryAgent telemetry, string key, object value = null, string origin = null)
         {
             await telemetry.WaitForLatestTelemetryAsync(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
