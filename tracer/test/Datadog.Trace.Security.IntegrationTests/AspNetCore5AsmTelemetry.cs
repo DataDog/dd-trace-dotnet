@@ -28,8 +28,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetCore5AsmTelemetry(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmTelemetry))
         {
-            // telemetry metric events under test are sent only when using managed trace exporter
-            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, "false");
         }
 
         [SkippableTheory]
@@ -41,8 +39,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             using (var fixture = new AspNetCoreTestFixture())
             {
                 fixture.SetOutput(Output);
-                // telemetry metric events under test are sent only when using managed trace exporter
-                SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, "false");
 
                 using var telemetry = new MockTelemetryAgent();
                 Output.WriteLine($"Assigned port {telemetry.Port} for the telemetry port.");
