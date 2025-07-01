@@ -4190,7 +4190,7 @@ stages:
           poolName: ExecBenchAgent2
         KafkaBenchmark:
           sampleName: KafkaBenchmark
-          poolName: ExecBenchAgent3
+          poolName: ExecBenchAgent2
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
