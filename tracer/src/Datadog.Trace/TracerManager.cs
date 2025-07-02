@@ -707,7 +707,6 @@ namespace Datadog.Trace
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
 
-			_ = DebuggerManager.Instance;
             // Record the service discovery metadata
             ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings);
         }
