@@ -272,9 +272,9 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal async Task UpdateDynamicConfiguration(DebuggerSettings? newDebuggerSettings = null)
+        internal Task UpdateDynamicConfiguration(DebuggerSettings? newDebuggerSettings = null)
         {
-            await UpdateProductsState(newDebuggerSettings ?? DebuggerSettings).ConfigureAwait(false);
+            return UpdateProductsState(newDebuggerSettings ?? DebuggerSettings);
         }
 
         private async Task UpdateProductsState(DebuggerSettings newDebuggerSettings)
