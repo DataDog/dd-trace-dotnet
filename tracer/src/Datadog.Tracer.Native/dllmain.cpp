@@ -4,6 +4,7 @@
 
 #include "dllmain.h"
 #include "class_factory.h"
+#include "logger.h"
 
 #ifndef _WIN32
 #undef EXTERN_C
@@ -30,10 +31,9 @@ EXTERN_C HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID rii
     // {50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}
     const GUID CLSID_New_CorProfiler = {0x50da5eed, 0xf1ed, 0xb00b, {0x10, 0x55, 0x5a, 0xfe, 0x55, 0xa1, 0xad, 0xe5}};
 
-    // Dummy usage (read and write) of a TLS variable.
-    if (_dummyTLSUsage == false) {
-        _dummyTLSUsage = true;
-    }
+    // Dummy usage of a TLS variable.
+    trace::Logger::Info("Writing to the TLS variable");
+    _dummyTLSUsage = true;
 
     if (ppv == nullptr || (rclsid != CLSID_CorProfiler && rclsid != CLSID_New_CorProfiler))
     {
@@ -52,5 +52,6 @@ EXTERN_C HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID rii
 
 EXTERN_C HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
 {
+    trace::Logger::Info("Reading from the TLS variable: ", _dummyTLSUsage);
     return S_OK;
 }

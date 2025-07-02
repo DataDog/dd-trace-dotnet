@@ -115,10 +115,9 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
                                     0x4896,
                                     {0xb6, 0x4f, 0xd6, 0xfa, 0x25, 0xd6, 0xb2, 0x6a}};
 
-    // Dummy usage (read and write) of a TLS variable.
-    if (_dummyTLSUsage == false) {
-        _dummyTLSUsage = true;
-    }
+    // Dummy usage of a TLS variable.
+    Log::Info("Writing to the TLS variable");
+    _dummyTLSUsage = true;
 
     if (ppv == nullptr)
     {
@@ -171,6 +170,6 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
 extern "C" HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
 {
     Log::Info("DllCanUnloadNow() invoked.");
-
+    Log::Info("Reading from the TLS variable: ", _dummyTLSUsage);
     return S_OK;
 }
