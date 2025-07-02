@@ -25,12 +25,7 @@ internal readonly struct VecU8
     {
         unsafe
         {
-#if NETCOREAPP
-            var messageBytes = new ReadOnlySpan<byte>((void*)Ptr, (int)Length);
-            return StringEncoding.UTF8.GetString(messageBytes);
-#else
             return StringEncoding.UTF8.GetString((byte*)Ptr, (int)Length);
-#endif
         }
     }
 }
