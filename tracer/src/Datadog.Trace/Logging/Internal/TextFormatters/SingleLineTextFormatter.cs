@@ -7,7 +7,6 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Formatting;
 using Datadog.Trace.Vendors.Serilog.Formatting.Display;
@@ -18,29 +17,21 @@ internal class SingleLineTextFormatter : ITextFormatter
 {
     public void Format(LogEvent logEvent, TextWriter output)
     {
-        // buffer the entire log event into a single line before writing it to the output
-        var buffer = StringBuilderCache.Acquire();
-        var bufferWriter = new StringWriter(buffer, output.FormatProvider);
-
+        // write the timestamp, source, and log level to the output
         var utcTimestamp = logEvent.Timestamp.ToUniversalTime();
         var logLevel = LevelOutputFormat.GetLevelMoniker(logEvent.Level, "u3");
-        bufferWriter.Write($"[{utcTimestamp:yyyy-MM-dd HH:mm:ss.fff zzz} | DD_TRACE_DOTNET | {logLevel}] ");
+        output.Write($"[{utcTimestamp:yyyy-MM-dd HH:mm:ss.fff zzz} | DD_TRACE_DOTNET | {logLevel}] ");
 
         // write the message to the output, using the template and properties
-        logEvent.RenderMessage(bufferWriter, output.FormatProvider);
+        logEvent.RenderMessage(output, output.FormatProvider);
 
         // if there is an exception, write it to the output
         if (logEvent.Exception != null)
         {
-            bufferWriter.Write($" | {ToSingleLineString(logEvent.Exception)}");
+            output.Write($" | {ToSingleLineString(logEvent.Exception)}");
         }
 
-        // We intentionally pass the StringBuilder directly to the TextWriter:
-        // - In newer runtimes, this calls the new TextWriter.Write(StringBuilder) overload which
-        //   uses StringBuilder.GetChunks() internally without allocating a new string.
-        // - In older runtimes, this calls the TextWriter.Write(object) overload, which calls StringBuilder.ToString() internally.
-        output.WriteLine(buffer);
-        StringBuilderCache.Release(buffer);
+        output.WriteLine();
     }
 
     private static string ToSingleLineString(Exception exception)
