@@ -21,7 +21,11 @@ namespace Datadog.Trace.Logging.Internal.Sinks;
 /// A buffered sink that writes log events to a <see cref="TextWriter"/> using a background thread.
 /// Used to write log events to the console without blocking.
 /// </summary>
+#if NETCOREAPP3_1_OR_GREATER
+internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable, IAsyncDisposable
+#else
 internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
+#endif
 {
     // in-memory buffer used only from the background thread
     private readonly StringBuilder _buffer;
@@ -113,4 +117,14 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
         _consoleWriter.Dispose();
         _writeQueue.Dispose();
     }
+
+#if NETCOREAPP3_1_OR_GREATER
+    public async ValueTask DisposeAsync()
+    {
+        await FlushAsync().ConfigureAwait(false);
+        await _bufferWriter.DisposeAsync().ConfigureAwait(false);
+        await _consoleWriter.DisposeAsync().ConfigureAwait(false);
+        _writeQueue.Dispose();
+    }
+#endif
 }
