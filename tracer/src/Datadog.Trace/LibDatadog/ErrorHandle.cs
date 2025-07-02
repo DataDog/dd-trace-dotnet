@@ -17,17 +17,12 @@ internal class ErrorHandle() : SafeHandle(IntPtr.Zero, true)
 
     public override bool IsInvalid => handle == IntPtr.Zero;
 
-    public Exception ToException()
-    {
-        var error = Marshal.PtrToStructure<Error>(handle);
-        return error.ToException();
-    }
-
     public void ThrowIfError()
     {
         if (!IsInvalid)
         {
-            throw ToException();
+            var error = Marshal.PtrToStructure<Error>(handle);
+            throw error.ToException();
         }
     }
 
