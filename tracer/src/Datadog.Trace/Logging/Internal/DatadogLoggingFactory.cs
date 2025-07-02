@@ -46,7 +46,7 @@ internal static class DatadogLoggingFactory
         }
 
         ConsoleLoggingConfiguration? consoleConfig = null;
-        if (Contains(logSinkOptions, LogSinkOptions.Console))
+        if (logSinkOptions is not null && Contains(logSinkOptions, LogSinkOptions.Console))
         {
             consoleConfig = GetConsoleLoggingConfiguration(source);
         }
@@ -60,16 +60,13 @@ internal static class DatadogLoggingFactory
 
         return new DatadogLoggingConfiguration(rateLimit, redactedErrorLogsConfig, fileConfig, consoleConfig);
 
-        static bool Contains(string?[]? items, string value)
+        static bool Contains(string[] items, string value)
         {
-            if (items is not null)
+            foreach (var item in items)
             {
-                foreach (var item in items)
+                if (string.Equals(item.Trim(), value, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (string.Equals(item?.Trim(), value, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
 
