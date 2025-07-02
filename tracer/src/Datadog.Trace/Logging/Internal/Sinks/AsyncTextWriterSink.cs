@@ -1,4 +1,4 @@
-﻿// <copyright file="AsyncConsoleSink.cs" company="Datadog">
+﻿// <copyright file="AsyncTextWriterSink.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,12 +19,11 @@ namespace Datadog.Trace.Logging.Internal.Sinks;
 
 /// <summary>
 /// A buffered sink that writes log events to a <see cref="TextWriter"/> using a background thread.
-/// Used to write log events to the console without blocking.
 /// </summary>
 #if NETCOREAPP3_1_OR_GREATER
-internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable, IAsyncDisposable
+internal sealed class AsyncTextWriterSink : ILogEventSink, IDisposable, IAsyncDisposable
 #else
-internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
+internal sealed class AsyncTextWriterSink : ILogEventSink, IDisposable
 #endif
 {
     // in-memory buffer used only from the background thread
@@ -33,21 +32,21 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
 
     private readonly ITextFormatter _textFormatter;
     private readonly BlockingCollection<LogEvent> _writeQueue;
-    private readonly TextWriter _consoleWriter;
+    private readonly TextWriter _textWriter;
     private readonly Task _writeTask;
 
-    public AsyncConsoleSink(ITextFormatter formatter, TextWriter consoleWriter, int queueLimit)
+    public AsyncTextWriterSink(ITextFormatter formatter, TextWriter textWriter, int queueLimit)
     {
         // in-memory buffer used only from the background thread
         _buffer = new StringBuilder(capacity: 4096);
         _bufferWriter = new StringWriter(_buffer);
 
         _textFormatter = formatter;
+        _textWriter = textWriter;
         _writeQueue = new BlockingCollection<LogEvent>(queueLimit);
-        _consoleWriter = consoleWriter;
 
         _writeTask = Task.Factory.StartNew(
-            WriteToConsoleStream,
+            WriteBufferedLogEvents,
             CancellationToken.None,
             TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
             TaskScheduler.Default);
@@ -77,7 +76,7 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
         }
     }
 
-    private void WriteToConsoleStream()
+    private void WriteBufferedLogEvents()
     {
         try
         {
@@ -95,7 +94,7 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
                 //   which uses StringBuilder.GetChunks() internally without allocating a new string.
                 // - In older runtimes, this calls the TextWriter.Write(object) overload,
                 //   which calls StringBuilder.ToString() internally.
-                _consoleWriter.Write(_buffer);
+                _textWriter.Write(_buffer);
             }
         }
         catch (Exception)
@@ -114,7 +113,7 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
     {
         FlushAsync().SafeWait();
         _bufferWriter.Dispose();
-        _consoleWriter.Dispose();
+        _textWriter.Dispose();
         _writeQueue.Dispose();
     }
 
@@ -123,7 +122,7 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
     {
         await FlushAsync().ConfigureAwait(false);
         await _bufferWriter.DisposeAsync().ConfigureAwait(false);
-        await _consoleWriter.DisposeAsync().ConfigureAwait(false);
+        await _textWriter.DisposeAsync().ConfigureAwait(false);
         _writeQueue.Dispose();
     }
 #endif
