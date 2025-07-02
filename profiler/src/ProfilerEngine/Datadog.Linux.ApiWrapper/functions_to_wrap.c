@@ -550,18 +550,12 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 
     int result = __real_execve(crashHandler, newArgv, new_envp);
 
-    if (writeLogsToConsole != 0)
-    {
-        fputs("Crash handler returned\n", stdout);
-    }
+    fputs("Crash handler returned\n", stdout);
 
     free(newArgv);
     free(new_envp);
 
-    if (writeLogsToConsole != 0)
-    {
-        fputs("Args freed, returning\n", stdout);
-    }
+    fputs("Args freed, returning\n", stdout);
 
     return result;
 }
