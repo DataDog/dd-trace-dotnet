@@ -35,7 +35,7 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
     public AsyncConsoleSink(ITextFormatter formatter, TextWriter consoleWriter, int queueLimit)
     {
         // in-memory buffer used only from the background thread
-        _buffer = new StringBuilder(capacity: 512);
+        _buffer = new StringBuilder(capacity: 4096);
         _bufferWriter = new StringWriter(_buffer);
 
         _textFormatter = formatter;
