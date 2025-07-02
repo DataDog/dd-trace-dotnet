@@ -248,7 +248,7 @@ namespace Datadog.Trace.Debugger
 
                     var discoveryService = tracerManager.DiscoveryService;
                     DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
-                    Log.Debug("Dynamic Instrumentation has created.");
+                    Log.Debug("Dynamic Instrumentation has been created.");
 
                     if (!_discoveryServiceReady)
                     {

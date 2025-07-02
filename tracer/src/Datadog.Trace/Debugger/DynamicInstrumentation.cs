@@ -32,7 +32,6 @@ namespace Datadog.Trace.Debugger
     internal class DynamicInstrumentation : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
-        private static readonly object GlobalLock = new();
 
         private readonly SemaphoreSlim _rcmAvailabilitySemaphore;
         private readonly CancellationTokenSource _cancellationTokenSource;
@@ -48,7 +47,7 @@ namespace Datadog.Trace.Debugger
         private readonly IDogStatsd _dogStats;
         private readonly object _instanceLock = new();
         private volatile bool _isRcmAvailable;
-        private DebuggerSettings _settings;
+        private readonly DebuggerSettings _settings;
         private long _initState = 0; // 0=not initialized, 1=initializing, 2=initialized
         private long _disposeState = 0; // 0=not disposed, 1=disposing or disposed
 
