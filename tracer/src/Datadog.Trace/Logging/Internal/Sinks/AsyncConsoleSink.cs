@@ -51,8 +51,6 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
 
     public void Emit(LogEvent? logEvent)
     {
-        // TODO: metrics about dropped logs?
-
         if (logEvent is null || _writeQueue.IsAddingCompleted || _writeTask.IsCompleted)
         {
             // skip null log events.
