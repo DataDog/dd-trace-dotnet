@@ -93,5 +93,7 @@ private:
     using RingBufferUniquePtr = std::unique_ptr<RingBufferImpl, std::function<void(RingBufferImpl*)>>;
     static std::pair<RingBufferUniquePtr, std::string> Create(std::size_t size);
 
+    static std::atomic<std::uint8_t> NbRingBuffers;
+
     RingBufferUniquePtr _impl;
 };

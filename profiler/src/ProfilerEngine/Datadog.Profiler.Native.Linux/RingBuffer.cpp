@@ -20,6 +20,8 @@
 
 using namespace std::chrono_literals;
 
+std::atomic<std::uint8_t> RingBuffer::NbRingBuffers = 1;
+
 struct RingBuffer::RingBufferImpl
 {
 public:
@@ -101,7 +103,6 @@ static inline int memfd_create(const char *name, unsigned int flags) {
 
 std::pair<RingBuffer::RingBufferUniquePtr, std::string> RingBuffer::Create(std::size_t requestedSize)
 {
-    // TODO debug log parameters
     auto rb = RingBufferUniquePtr(
         new RingBuffer::RingBufferImpl(),
         [](RingBuffer::RingBufferImpl* rb) {
@@ -127,8 +128,9 @@ std::pair<RingBuffer::RingBufferUniquePtr, std::string> RingBuffer::Create(std::
             delete rb;
         });
 
-    // FUTURE @TODO: have a name that takes into account the number of ring buffers
-    rb->mapfd = memfd_create("dd_profiler_ring_buffer", 1U /*MFD_CLOEXEC*/);
+
+    auto rbName = "dd_profiler_ring_buffer_" + std::to_string(NbRingBuffers++);
+    rb->mapfd = memfd_create(rbName.c_str(), 1U /*MFD_CLOEXEC*/);
 
     std::stringstream errorBuff;
     if (rb->mapfd < 0)
