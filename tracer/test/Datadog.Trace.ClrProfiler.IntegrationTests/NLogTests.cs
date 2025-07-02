@@ -469,7 +469,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private LogFileTest GetJsonTestFile(UnTracedLogTypes unTracedLogType) => new()
         {
             FileName = "log-jsonFile-withInject.log",
-            RegexFormat = @"""{0}"": {1}",
+            RegexFormat = @"""{0}"":\s*{1}",
             UnTracedLogTypes = unTracedLogType,
             PropertiesUseSerilogNaming = false
         };
@@ -477,7 +477,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private LogFileTest GetJsonTestFileNoInjection(UnTracedLogTypes unTracedLogType) => new()
         {
             FileName = "log-jsonFile-noInject.log",
-            RegexFormat = @"""{0}"": {1}",
+            RegexFormat = @"""{0}"":\s*{1}",
             UnTracedLogTypes = unTracedLogType,
             PropertiesUseSerilogNaming = false
         };
