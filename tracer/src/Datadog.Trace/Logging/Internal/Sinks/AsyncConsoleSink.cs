@@ -95,7 +95,6 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
                 //   uses StringBuilder.GetChunks() internally without allocating a new string.
                 // - In older runtimes, this calls the TextWriter.Write(object) overload, which calls StringBuilder.ToString() internally.
                 _consoleWriter.Write(_buffer);
-                _consoleWriter.Flush();
             }
         }
         catch (Exception)
