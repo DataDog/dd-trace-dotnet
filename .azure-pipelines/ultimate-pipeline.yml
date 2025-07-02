@@ -204,6 +204,11 @@ stages:
     parameters:
       jobs: [generate_variables_job]
 
+  - template: steps/install-dotnet-manual.yml
+    parameters:
+      sdkVersion: '10.0.100-preview.5.25277.114'
+      is64bit: true
+
   - job: generate_variables_job
     timeoutInMinutes: 60 #default value
     dependsOn: []
