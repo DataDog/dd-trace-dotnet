@@ -1,6 +1,8 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include "DllMain.h"
+
 #include <iostream>
 #include <unknwn.h>
 
@@ -112,6 +114,11 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
                                     0xac5d,
                                     0x4896,
                                     {0xb6, 0x4f, 0xd6, 0xfa, 0x25, 0xd6, 0xb2, 0x6a}};
+
+    // Dummy usage (read and write) of a TLS variable.
+    if (_dummyTLSUsage == false) {
+        _dummyTLSUsage = true;
+    }
 
     if (ppv == nullptr)
     {

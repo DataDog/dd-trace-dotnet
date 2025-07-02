@@ -10,5 +10,6 @@
 #endif
 
 EXTERN HINSTANCE DllHandle;
+inline thread_local bool _dummyTLSUsage;
 
 #endif // DD_CLR_PROFILER_DLLMAIN_H_
