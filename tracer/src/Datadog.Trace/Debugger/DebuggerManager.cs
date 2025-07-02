@@ -29,7 +29,9 @@ namespace Datadog.Trace.Debugger
 
         private static readonly Lazy<DebuggerManager> _lazyInstance =
             new(
-                () => new DebuggerManager(DebuggerSettings.FromDefaultSource(), ExceptionReplaySettings.FromDefaultSource()),
+                () => new DebuggerManager(
+                        DebuggerSettings.FromDefaultSource(),
+                        ExceptionReplaySettings.FromDefaultSource()),
                 LazyThreadSafetyMode.ExecutionAndPublication);
 
         private static volatile bool _discoveryServiceReady;
@@ -123,6 +125,7 @@ namespace Datadog.Trace.Debugger
             {
                 var tracerManager = TracerManager.Instance;
                 SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, tracerManager.Settings, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+
                 // it will do nothing if it is an instance of NoOpSymbolUploader
                 await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
             }
@@ -276,12 +279,6 @@ namespace Datadog.Trace.Debugger
 
         private async Task UpdateProductsState(DebuggerSettings newDebuggerSettings)
         {
-            if (newDebuggerSettings == null)
-            {
-                Log.Warning("DebuggerSettings is null");
-                return;
-            }
-
             if (_isShuttingDown)
             {
                 return;
