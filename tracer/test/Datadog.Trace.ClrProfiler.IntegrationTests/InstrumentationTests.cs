@@ -244,6 +244,45 @@ namespace Foo
             agent.Telemetry.Should().NotBeEmpty();
         }
 
+        [SkippableTheory]
+        [CombinatorialData]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenUsingDataPipeline_WritesLibdatadogLogs(bool debugEnabled)
+        {
+            var logDir = SetLogDirectory(debugEnabled ? "_true" : "_false");
+
+            SetEnvironmentVariable("DD_TRACE_DATA_PIPELINE_ENABLED", "1");
+            EnvironmentHelper.DebugModeEnabled = debugEnabled;
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+            AssertInstrumented(agent, logDir);
+
+            // Verify the datapipeline log is there and has some data
+            var allFiles = Directory.GetFiles(logDir);
+            var filename = allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-libdatadog-")).Subject;
+
+            if (debugEnabled)
+            {
+                File.ReadAllText(filename)
+                    .Should()
+                    .NotBeNullOrWhiteSpace().And.Contain(
+                         """
+                         "level":"DEBUG"
+                         """);
+            }
+            else
+            {
+                File.ReadAllText(filename)
+                    .Should()
+                    .NotBeNullOrWhiteSpace().And.NotContain(
+                         """
+                         "level":"DEBUG"
+                         """);
+            }
+        }
+
 #if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
