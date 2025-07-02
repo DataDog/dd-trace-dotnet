@@ -2,9 +2,12 @@ __errno_location
 __tls_get_addr
 access
 asprintf
+fprintf
 free
+fwrite
 getenv
 malloc
+stdout
 strcasecmp
 strcmp
 strcpy
