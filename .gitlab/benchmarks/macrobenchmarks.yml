@@ -14,7 +14,7 @@ stages:
 
 variables:
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-3
-  THROUGHPUT_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dd-trace-dotnet-dsm
+  DSM_THROUGHPUT_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dd-trace-dotnet-dsm
 
 check_azure_pipeline:
   stage: check-azure-pipeline
@@ -34,12 +34,12 @@ check_azure_pipeline:
   rules:
     - when: on_success
 
-throughput:
+dsm_throughput:
   stage: benchmarks
   when: on_success
   tags: ["runner:apm-k8s-same-cpu"]
   needs: ["check_azure_pipeline"]
-  image: $THROUGHPUT_CI_IMAGE
+  image: $DSM_THROUGHPUT_CI_IMAGE
   interruptible: true
   timeout: 1h
   script:
