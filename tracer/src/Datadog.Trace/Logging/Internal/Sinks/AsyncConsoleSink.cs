@@ -91,9 +91,10 @@ internal sealed class AsyncConsoleSink : ILogEventSink, IDisposable
                 _textFormatter.Format(logEvent, _bufferWriter);
 
                 // We intentionally pass the StringBuilder directly to the TextWriter:
-                // - In newer runtimes, this calls the new TextWriter.Write(StringBuilder) overload which
-                //   uses StringBuilder.GetChunks() internally without allocating a new string.
-                // - In older runtimes, this calls the TextWriter.Write(object) overload, which calls StringBuilder.ToString() internally.
+                // - In newer runtimes, this calls the new TextWriter.Write(StringBuilder) overload,
+                //   which uses StringBuilder.GetChunks() internally without allocating a new string.
+                // - In older runtimes, this calls the TextWriter.Write(object) overload,
+                //   which calls StringBuilder.ToString() internally.
                 _consoleWriter.Write(_buffer);
             }
         }
