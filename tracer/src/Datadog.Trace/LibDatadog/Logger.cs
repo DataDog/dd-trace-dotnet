@@ -47,6 +47,7 @@ internal sealed class Logger
         }
         catch (Exception ex)
         {
+            _loggingEnabled = false;
             Log.Error(ex, "Failed to configure libdatadog logger");
         }
     }
