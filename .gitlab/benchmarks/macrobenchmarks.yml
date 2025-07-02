@@ -112,11 +112,7 @@ update-bp-infra:
       - api_failure
       - script_failure
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
-      when: always
-    - when: manual
+    - when: on_success
   image: $MACROBENCHMARKS_CI_IMAGE
   script:
     - source build-id.txt
