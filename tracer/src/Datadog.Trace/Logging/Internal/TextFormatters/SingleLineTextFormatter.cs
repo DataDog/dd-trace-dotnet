@@ -17,9 +17,6 @@ internal class SingleLineTextFormatter : ITextFormatter
 {
     public void Format(LogEvent logEvent, TextWriter output)
     {
-        if (logEvent == null!) { ThrowHelper.ThrowArgumentNullException(nameof(logEvent)); }
-        if (output == null!) { ThrowHelper.ThrowArgumentNullException(nameof(output)); }
-
         // buffer the entire log event into a single line before writing it to the output
         var buffer = StringBuilderCache.Acquire();
         var bufferWriter = new StringWriter(buffer, output.FormatProvider);
