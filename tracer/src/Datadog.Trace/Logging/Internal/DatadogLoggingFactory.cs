@@ -64,7 +64,7 @@ internal static class DatadogLoggingFactory
         {
             foreach (var item in items)
             {
-                if (string.Equals(item.Trim(), value, StringComparison.OrdinalIgnoreCase))
+                if (item.AsSpan().Trim().Equals(value.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
