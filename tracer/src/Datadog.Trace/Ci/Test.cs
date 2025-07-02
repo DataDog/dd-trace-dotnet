@@ -219,7 +219,7 @@ public sealed class Test
                 var match = codeOwners.Match("/" + ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
                 if (match is not null)
                 {
-                    tags.CodeOwners = match.Value.GetOwnersString();
+                    tags.CodeOwners = "[\"" + string.Join("\",\"", match) + "\"]";
                 }
             }
         }

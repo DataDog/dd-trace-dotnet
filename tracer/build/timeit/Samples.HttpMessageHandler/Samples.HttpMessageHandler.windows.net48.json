@@ -31,6 +31,13 @@
       }
     },
     {
+      "name": "Bailout",
+      "environmentVariables": {
+        "DD_PROFILER_EXCLUDE_PROCESSES": "Samples.HttpMessageHandler.exe",
+        "DD_INJECTION_ENABLED": "tracing"
+      }
+    },
+    {
       "name": "CallTarget\u002BInlining\u002BNGEN"
     }
   ],

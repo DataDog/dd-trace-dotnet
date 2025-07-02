@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var expectedCount = 4;
                 var frameworkName = "NetCore";
 #endif
-                var spans = agent.WaitForSpans(expectedCount);
+                var spans = await agent.WaitForSpansAsync(expectedCount);
                 var eventBridgeSpans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 eventBridgeSpans.Should().NotBeEmpty();
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 // (Only PutEvents and PutEventsAsync are supported right now)
                 await VerifyHelper.VerifySpans(spans, settings);
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.AwsEventBridge);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsEventBridge);
             }
         }
 
@@ -105,11 +105,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(1, returnAllOperations: true);
+                var spans = await agent.WaitForSpansAsync(1, returnAllOperations: true);
 
                 Assert.NotEmpty(spans);
                 Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-                telemetry.AssertIntegrationDisabled(IntegrationId.AwsEventBridge);
+                await telemetry.AssertIntegrationDisabledAsync(IntegrationId.AwsEventBridge);
             }
         }
     }

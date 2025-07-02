@@ -59,7 +59,7 @@ public class MultipleAppsInDomainWithCustomConfigBuilder(ITestOutputHelper outpu
                 break;
             }
 
-            Thread.Sleep(intervalMilliseconds);
+            await Task.Delay(intervalMilliseconds);
         }
 
         // Send request to app 1

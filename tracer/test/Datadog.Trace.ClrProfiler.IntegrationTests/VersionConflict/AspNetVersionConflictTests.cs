@@ -183,7 +183,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK, $"server returned an error: {content}");
 
-            var spans = _iisFixture.Agent.WaitForSpans(expectedSpans, minDateTime: testStart, returnAllOperations: true);
+            var spans = await _iisFixture.Agent.WaitForSpansAsync(expectedSpans, minDateTime: testStart, returnAllOperations: true);
 
             spans.Should().HaveCount(expectedSpans);
 
