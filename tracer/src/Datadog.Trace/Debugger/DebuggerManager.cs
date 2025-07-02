@@ -253,7 +253,7 @@ namespace Datadog.Trace.Debugger
                     if (!_discoveryServiceReady)
                     {
                         var sw = Stopwatch.StartNew();
-                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService, this._cancellationToken.Token).ConfigureAwait(false);
+                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService, _cancellationToken.Token).ConfigureAwait(false);
                         if (isDiscoverySuccessful)
                         {
                             TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
@@ -346,7 +346,7 @@ namespace Datadog.Trace.Debugger
             }
 
             SafeDisposal.New()
-                        .Execute(() => _cancellationToken?.Cancel(), "cancelling DebuggerManager operations")
+                        .Execute(() => _cancellationToken.Cancel(), "cancelling DebuggerManager operations")
                         .Add(DynamicInstrumentation)
                         .Add(ExceptionReplay)
                         .Add(SymbolsUploader)
