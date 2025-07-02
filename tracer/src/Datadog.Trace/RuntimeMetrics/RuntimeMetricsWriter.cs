@@ -137,13 +137,17 @@ namespace Datadog.Trace.RuntimeMetrics
 
             Log.Debug("Disposing Runtime Metrics");
             _disposed = true;
+            Log.Debug("Disposing Timer");
             _timer.Dispose();
+            Log.Debug("Removing FirstChanceException handler");
             AppDomain.CurrentDomain.FirstChanceException -= FirstChanceException;
             // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
 #if NETFRAMEWORK
+            Log.Debug("Disposing EventListener for Net Framework");
             _listener?.Dispose();
 #endif
             _exceptionCounts.Clear();
+            Log.Debug("Disposing statsd");
             _statsd.Dispose();
         }
 
