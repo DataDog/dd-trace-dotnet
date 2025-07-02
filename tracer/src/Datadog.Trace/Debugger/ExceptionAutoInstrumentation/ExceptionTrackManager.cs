@@ -43,8 +43,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private readonly BasicCircuitBreaker _reportingCircuitBreaker;
         private readonly CachedItems _evaluateWithRootSpanCases;
         private readonly CachedItems _cachedInvalidatedCases;
-        private Task? _exceptionProcessorTask;
-        private bool _isInitialized;
+        private readonly Task? _exceptionProcessorTask;
+        private readonly bool _isInitialized;
 
         private ExceptionTrackManager(ExceptionReplaySettings settings)
         {

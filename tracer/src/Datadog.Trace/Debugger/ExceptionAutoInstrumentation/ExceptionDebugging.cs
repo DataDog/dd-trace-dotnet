@@ -40,11 +40,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return new ExceptionDebugging(settings);
         }
 
-        public bool Initialize()
+        public void Initialize()
         {
             if (_isDisabled)
             {
-                return false;
+                Log.Warning("Exception replay is disabled.");
+                return;
             }
 
             Log.Information("Initializing Exception Debugging");
@@ -53,12 +54,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 Log.Warning("Third party modules load has failed. Disabling Exception Debugging.");
                 _isDisabled = true;
-                return false;
+                return;
             }
 
             InitSnapshotsSink();
             _exceptionTrackManager = ExceptionTrackManager.Create(Settings);
-            return true;
+            return;
         }
 
         private void InitSnapshotsSink()
