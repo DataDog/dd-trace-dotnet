@@ -188,6 +188,7 @@ static const char* datadogCrashMarker = "datadog_crashtracking";
 #define DOTNET_DbgMiniDumpName "DOTNET_DbgMiniDumpName"
 #define COMPlus_DbgMiniDumpName "COMPlus_DbgMiniDumpName"
 #define DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME "DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME"
+#define DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE "DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE"
 
 __attribute__((constructor))
 void initLibrary(void)
@@ -531,10 +532,36 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
     }
     new_envp[index] = NULL; // NULL terminate the array
 
+    // Bash provides its own version of the getenv/setenv functions
+    // Fetch the original ones and use those instead
+    char *(*real_getenv)(const char *) = __dd_dlsym(RTLD_NEXT, "getenv");
+    int writeLogsToConsole = 0;
+
+    if (real_getenv != NULL)
+    {
+        char* writeLogsToConsoleValue = real_getenv(DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE);
+        writeLogsToConsole = writeLogsToConsoleValue != NULL && writeLogsToConsoleValue[0] == '1';
+    }
+
+    if (writeLogsToConsole != 0)
+    {
+        fprintf(stdout, "Calling crash handler: %s\n", crashHandler);
+    }
+
     int result = __real_execve(crashHandler, newArgv, new_envp);
+
+    if (writeLogsToConsole != 0)
+    {
+        fputs("Crash handler returned\n", stdout);
+    }
 
     free(newArgv);
     free(new_envp);
+
+    if (writeLogsToConsole != 0)
+    {
+        fputs("Args freed, returning\n", stdout);
+    }
 
     return result;
 }
