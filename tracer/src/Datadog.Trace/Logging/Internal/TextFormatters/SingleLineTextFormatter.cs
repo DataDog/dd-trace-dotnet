@@ -41,9 +41,10 @@ internal class SingleLineTextFormatter : ITextFormatter
         buffer.Replace("\r\n", "\\n")
               .Replace("\n", "\\n");
 
-        // In more recent runtimes, this uses the new WriteLine(StringBuilder) overload which
-        // uses StringBuilder.GetChunks() without allocating a new string.
-        // In earlier runtimes, the WriteLine(object) overload calls StringBuilder.ToString() instead.
+        // We intentionally pass the StringBuilder directly to the TextWriter:
+        // - In newer runtimes, this calls the new TextWriter.Write(StringBuilder) overload which
+        //   uses StringBuilder.GetChunks() internally without allocating a new string.
+        // - In older runtimes, this calls the TextWriter.Write(object) overload, which calls StringBuilder.ToString() internally.
         output.WriteLine(buffer);
         StringBuilderCache.Release(buffer);
     }
