@@ -31,7 +31,6 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "dynamic_instrumentation_enabled" },
             { ConfigurationKeys.Debugger.ExceptionReplayEnabled, "exception_replay_enabled" },
             { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "code_origin_enabled" },
-            { "ConfigurationKeys.Debugger.DebuggerEnabled", "live_debugging_enabled" }
         };
 
         internal DynamicConfigConfigurationSource(string json, ConfigurationOrigins origin)
