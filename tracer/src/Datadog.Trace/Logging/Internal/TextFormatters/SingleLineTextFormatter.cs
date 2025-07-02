@@ -20,7 +20,7 @@ internal class SingleLineTextFormatter : ITextFormatter
         // write the timestamp, source, and log level to the output
         var utcTimestamp = logEvent.Timestamp.ToUniversalTime();
         var logLevel = LevelOutputFormat.GetLevelMoniker(logEvent.Level, "u3");
-        output.Write($"[{utcTimestamp:yyyy-MM-dd HH:mm:ss.fff zzz} | DD_TRACE_DOTNET | {logLevel}] ");
+        output.Write($"[{utcTimestamp:yyyy-MM-dd HH:mm:ss.fff zzz} | DD_TRACE_DOTNET {TracerConstants.ThreePartVersion} | {logLevel}] ");
 
         // write the message to the output, using the template and properties
         logEvent.RenderMessage(output, output.FormatProvider);

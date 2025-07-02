@@ -32,7 +32,7 @@ public class SingleLineTextFormatterTests
         var result = sw.ToString().TrimEnd(); // remove trailing newline
 
         // assert that SimpleTextFormatter uses UTC timestamps and emits a single line.
-        result.Should().Be("[2000-01-01 04:00:00.000 +00:00 | DD_TRACE_DOTNET | INF] This is log number 1")
+        result.Should().Be($"[2000-01-01 04:00:00.000 +00:00 | DD_TRACE_DOTNET {TracerConstants.ThreePartVersion} | INF] This is log number 1")
               .And.NotContain(Environment.NewLine);
     }
 
@@ -63,7 +63,7 @@ public class SingleLineTextFormatterTests
         var result = sw.ToString().TrimEnd(); // remove trailing newline
 
         // assert that SimpleTextFormatter uses UTC timestamps and emits a single line.
-        result.Should().StartWith("[2000-01-01 04:00:00.000 +00:00 | DD_TRACE_DOTNET | INF] This is log number 1 | System.Exception: Exception message.\\n")
+        result.Should().StartWith($"[2000-01-01 04:00:00.000 +00:00 | DD_TRACE_DOTNET {TracerConstants.ThreePartVersion} | INF] This is log number 1 | System.Exception: Exception message.\\n")
               .And.NotContain(Environment.NewLine);
     }
 }
