@@ -139,10 +139,10 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var manuallyEnabled = DebuggerSettings.CodeOriginForSpansEnabled.HasValue && DebuggerSettings.CodeOriginForSpansEnabled.Value;
-                var manuallyDisabled = DebuggerSettings.CodeOriginForSpansEnabled.HasValue && !DebuggerSettings.CodeOriginForSpansEnabled.Value;
-                var dynamicallyEnabled = DebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue && DebuggerSettings.DynamicSettings.CodeOriginEnabled.Value;
-                var dynamicallyDisabled = DebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue && !DebuggerSettings.DynamicSettings.CodeOriginEnabled.Value;
+                var manuallyEnabled = DebuggerSettings.CodeOriginForSpansEnabled == true;
+                var manuallyDisabled = DebuggerSettings.CodeOriginForSpansEnabled == false;
+                var dynamicallyEnabled = DebuggerSettings.DynamicSettings.CodeOriginEnabled == true;
+                var dynamicallyDisabled = DebuggerSettings.DynamicSettings.CodeOriginEnabled == false;
 
                 if (manuallyDisabled)
                 {
@@ -172,10 +172,10 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var manuallyEnabled = ExceptionReplaySettings.Enabled.HasValue && ExceptionReplaySettings.Enabled.Value;
-                var manuallyDisabled = ExceptionReplaySettings.Enabled.HasValue && !ExceptionReplaySettings.Enabled.Value;
-                var dynamicallyEnabled = DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue && DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value;
-                var dynamicallyDisabled = DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue && !DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value;
+                var manuallyEnabled = ExceptionReplaySettings.Enabled == true;
+                var manuallyDisabled = ExceptionReplaySettings.Enabled == false;
+                var dynamicallyEnabled = DebuggerSettings.DynamicSettings.ExceptionReplayEnabled == true;
+                var dynamicallyDisabled = DebuggerSettings.DynamicSettings.ExceptionReplayEnabled == false;
 
                 if (manuallyDisabled)
                 {
@@ -209,10 +209,10 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var manuallyEnabled = DebuggerSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicInstrumentationEnabled.Value;
-                var manuallyDisabled = DebuggerSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicInstrumentationEnabled.Value;
-                var dynamicallyEnabled = DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value;
-                var dynamicallyDisabled = DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value;
+                var manuallyEnabled = DebuggerSettings.DynamicInstrumentationEnabled == true;
+                var manuallyDisabled = DebuggerSettings.DynamicInstrumentationEnabled.HasValue == false;
+                var dynamicallyEnabled = DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true;
+                var dynamicallyDisabled = DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false;
 
                 if (manuallyDisabled)
                 {
