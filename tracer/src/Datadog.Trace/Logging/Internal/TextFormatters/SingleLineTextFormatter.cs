@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.IO;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -31,12 +32,8 @@ internal class SingleLineTextFormatter : ITextFormatter
         // if there is an exception, write it to the output
         if (logEvent.Exception != null)
         {
-            bufferWriter.Write($" | {logEvent.Exception}");
+            bufferWriter.Write($" | {ToSingleLineString(logEvent.Exception)}");
         }
-
-        // replace any newlines with literal "\n" to ensure the output is a single line
-        buffer.Replace("\r\n", "\\n")
-              .Replace("\n", "\\n");
 
         // We intentionally pass the StringBuilder directly to the TextWriter:
         // - In newer runtimes, this calls the new TextWriter.Write(StringBuilder) overload which
@@ -44,5 +41,17 @@ internal class SingleLineTextFormatter : ITextFormatter
         // - In older runtimes, this calls the TextWriter.Write(object) overload, which calls StringBuilder.ToString() internally.
         output.WriteLine(buffer);
         StringBuilderCache.Release(buffer);
+    }
+
+    private static string ToSingleLineString(Exception exception)
+    {
+        var exceptionString = exception.ToString();
+
+#if NET6_0_OR_GREATER
+        return exceptionString.ReplaceLineEndings("\\n");
+#else
+        return exceptionString.Replace("\r\n", "\\n")
+                              .Replace("\n", "\\n");
+#endif
     }
 }
