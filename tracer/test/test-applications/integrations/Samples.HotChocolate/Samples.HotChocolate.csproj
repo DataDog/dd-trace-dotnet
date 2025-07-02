@@ -24,4 +24,8 @@
     <PackageReference Include="HotChocolate.AspNetCore" Version="$(ApiVersion)" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.4" />
+  </ItemGroup>
+
 </Project>
