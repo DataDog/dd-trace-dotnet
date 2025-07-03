@@ -88,7 +88,7 @@
     <PackageReference Include="RestSharp" Version="108.0.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net10.0' OR '$(TargetFramework)'=='net9.0' OR '$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0'">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))" >
     <PackageReference Include="RestSharp" Version="110.2.0" />
   </ItemGroup>  
   
