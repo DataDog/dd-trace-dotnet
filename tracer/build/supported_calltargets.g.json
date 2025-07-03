@@ -11737,6 +11737,220 @@
   {
     "IntegrationName": "Npgsql",
     "AssemblyName": "Npgsql",
+    "TargetTypeName": "Npgsql.NpgsqlBatch",
+    "TargetMethodName": "ExecuteDbDataReader",
+    "TargetReturnType": "System.Data.Common.DbDataReader",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Npgsql",
+    "AssemblyName": "Npgsql",
+    "TargetTypeName": "Npgsql.NpgsqlBatch",
+    "TargetMethodName": "ExecuteDbDataReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Npgsql",
+    "AssemblyName": "Npgsql",
+    "TargetTypeName": "Npgsql.NpgsqlBatch",
+    "TargetMethodName": "ExecuteNonQuery",
+    "TargetReturnType": "System.Int32",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Npgsql",
+    "AssemblyName": "Npgsql",
+    "TargetTypeName": "Npgsql.NpgsqlBatch",
+    "TargetMethodName": "ExecuteNonQueryAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Npgsql",
+    "AssemblyName": "Npgsql",
+    "TargetTypeName": "Npgsql.NpgsqlBatch",
+    "TargetMethodName": "ExecuteReader",
+    "TargetReturnType": "Npgsql.NpgsqlDataReader",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Npgsql",
+    "AssemblyName": "Npgsql",
+    "TargetTypeName": "Npgsql.NpgsqlBatch",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Npgsql",
+    "AssemblyName": "Npgsql",
+    "TargetTypeName": "Npgsql.NpgsqlBatch",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Npgsql",
+    "AssemblyName": "Npgsql",
+    "TargetTypeName": "Npgsql.NpgsqlBatch",
+    "TargetMethodName": "ExecuteScalar",
+    "TargetReturnType": "System.Object",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Npgsql",
+    "AssemblyName": "Npgsql",
+    "TargetTypeName": "Npgsql.NpgsqlBatch",
+    "TargetMethodName": "ExecuteScalarAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Npgsql",
+    "AssemblyName": "Npgsql",
     "TargetTypeName": "Npgsql.NpgsqlCommand",
     "TargetMethodName": "ExecuteDbDataReader",
     "TargetReturnType": "System.Data.Common.DbDataReader",
