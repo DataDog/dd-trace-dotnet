@@ -15,6 +15,7 @@
 #include "dd_profiler_version.h"
 
 HINSTANCE DllHandle;
+thread_local bool _dummyTLSUsage;
 
 const IID IID_IUnknown = {0x00000000,
                           0x0000,
@@ -40,6 +41,7 @@ extern "C" BOOL STDMETHODCALLTYPE DllMain(HINSTANCE hInstDll, DWORD reason, PVOI
 
         case DLL_PROCESS_DETACH:
             Log::Info("Profiler DLL unloaded.");
+            Log::Info("Reading from the TLS variable: ", _dummyTLSUsage);
             break;
     }
 
@@ -116,8 +118,8 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
                                     {0xb6, 0x4f, 0xd6, 0xfa, 0x25, 0xd6, 0xb2, 0x6a}};
 
     // Dummy usage of a TLS variable.
-    Log::Info("Writing to the TLS variable");
     _dummyTLSUsage = true;
+    Log::Info("Writing to the TLS variable", _dummyTLSUsage);
 
     if (ppv == nullptr)
     {
