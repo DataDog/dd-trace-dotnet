@@ -87,7 +87,7 @@ internal static class FiltersHelper
                             }
                         }
 
-                        instance.AddInclude(Path.IsPathRooted(filter) ? filter.Substring(Path.GetPathRoot(filter)?.Length ?? 0) : filter);
+                        instance.AddInclude(Path.GetPathRoot(filter) is { } rooted ? filter.Substring(rooted.Length) : filter);
                     }
 
                     return Tuple.Create(instance, (IReadOnlyList<Regex>)lstRegex);
