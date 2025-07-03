@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
                          + fxVersion + "\r\nDatadog-Client-Computed-Top-Level: 1\r\n";
 
             var sb = new StringBuilder();
-            using var textWriter = new StringWriter(sb);
+            var textWriter = new StringWriter(sb);
             helper.WriteLeadingHeaders(request, textWriter);
 
             sb.ToString().Should().Be(expected);
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
             var expected = "my-key: my-value\r\n";
 
             var sb = new StringBuilder();
-            using var textWriter = new StringWriter(sb);
+            var textWriter = new StringWriter(sb);
             helper.WriteHeader(textWriter, header);
 
             sb.ToString().Should().Be(expected);
