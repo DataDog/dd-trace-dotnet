@@ -419,8 +419,7 @@ partial class Build : NukeBuild
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
-                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "azure-functions")
-                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "azure-functions"));
         });
 
     Target BuildBenchmarkNuget => _ => _
