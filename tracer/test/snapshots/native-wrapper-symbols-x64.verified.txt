@@ -4,7 +4,6 @@ access
 asprintf
 fprintf
 free
-fwrite
 getenv
 malloc
 stdout
