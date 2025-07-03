@@ -10,6 +10,7 @@
 
 steps:
   # Use semicolon delimited list of checks, and update each of them
+- template: create-github-app-token.yml
 - script: |
     # curl is too old so doesn't support --fail-with-body
     curl_fail_with_body() {
@@ -33,5 +34,5 @@ steps:
   continueOnError: true
   env:
     AZURE_PROJECT_NAME: $(AZURE_PROJECT_NAME)
-    GITHUB_TOKEN: $(GITHUB_TOKEN)
+    GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
     GITHUB_REPOSITORY_NAME: $(GITHUB_REPOSITORY_NAME)
