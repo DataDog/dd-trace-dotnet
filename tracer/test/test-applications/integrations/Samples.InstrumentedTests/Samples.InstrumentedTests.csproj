@@ -52,7 +52,7 @@
     <PackageReference Include="NHibernate" Version="5.5.0" />
   </ItemGroup>
   
-  <ItemGroup Condition="'$(TargetFramework)'=='net10.0' OR '$(TargetFramework)'=='net9.0' OR '$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0'">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))" >
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.8" />
   </ItemGroup>
 
