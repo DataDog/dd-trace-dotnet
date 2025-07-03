@@ -824,6 +824,12 @@ namespace Datadog.Trace.Coverage.Collector
         {
             try
             {
+                if (_settings.TracerHome is null)
+                {
+                    _logger.Error("CopyRequiredAssemblies: TracerHome is not set. Cannot copy Datadog.Trace assembly.");
+                    return string.Empty;
+                }
+
                 // Get the Datadog.Trace path
                 string targetFolder = "net461";
                 switch (tracerTarget)
