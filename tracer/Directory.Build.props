@@ -6,7 +6,6 @@
     <LangVersion>latest</LangVersion>
     <!-- Strong name signature -->
     <WarningsNotAsErrors>NU1510</WarningsNotAsErrors>
-    <NoWarn>NU1510</NoWarn>    
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
