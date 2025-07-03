@@ -12,9 +12,7 @@
          This version will be published by default when we publish a new tracer release and is
          temporary until we go GA. Using "preview1" to allow publishing multiple preview versions
          for a given tracer release. -->
-    <VersionPrefix>$(Version)</VersionPrefix>
-    <VersionSuffix>preview1</VersionSuffix>
-    <Version></Version>
+    <Version>3.20.0-preview5</Version>
 
     <!-- nuget package metadata -->
     <PackageId>Datadog.AzureFunctions</PackageId>
@@ -35,7 +33,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+    <!-- using released versions while testing -->
+    <PackageReference Include="Datadog.Trace" Version="*"/>
+
+    <!-- <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" /> -->
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
 
     <!-- Use PrivateAssets="none" to stop excluding content files by default -->
