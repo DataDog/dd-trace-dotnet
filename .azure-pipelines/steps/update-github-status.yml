@@ -24,7 +24,7 @@ steps:
       TARGET_URL="https://dev.azure.com/datadoghq/$(AZURE_PROJECT_NAME)/_build/results?buildId=$(Build.BuildId)"
       curl_fail_with_body -X POST --silent --show-error \
         -H "Accept: application/vnd.github.v3+json" \
-        -H "Authorization: Bearer $(GITHUB_TOKEN)" \
+        -H "Authorization: token $(GITHUB_TOKEN)" \
         https://api.github.com/repos/DataDog/$(GITHUB_REPOSITORY_NAME)/statuses/$(OriginalCommitId) \
         -d '{"state":"${{ parameters.status }}","context":"'"$stageToSkip"'","description":"${{ parameters.description }}","target_url":"'"$TARGET_URL"'"}'    
     done
