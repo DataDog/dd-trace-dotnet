@@ -170,7 +170,10 @@ steps:
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
     displayName: Check logs for evidence of crash output
     # This job sometimes hangs, and when it does, we lose all the logs, so explicitly end it early instead
-    timeoutInMinutes: 15
+    # and retry instead. It should be very unlikely to hang on both trys, and if it does, we should probably
+    # investigate the cause of the hang further.
+    timeoutInMinutes: 10
+    retryCountOnTaskFailure: 2
     condition: and(succeeded(), eq(variables['runCrashTest'], 'true'))
 
 - ${{ if eq(parameters.isLinux, true) }}:
