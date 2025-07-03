@@ -37,7 +37,7 @@ internal record ConfigurationState
 
     private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters;
 
-    private readonly IConfigurationTelemetry? _telemetry;
+    private readonly IConfigurationTelemetry _telemetry;
 
     private readonly string? _rulesPath;
     private readonly bool _canBeToggled;
@@ -45,7 +45,7 @@ internal record ConfigurationState
     private readonly Dictionary<string, List<RemoteConfigurationPath>> _fileRemoves = new();
     private bool _defaultRulesetApplied = false;
 
-    public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry? telemetry, bool wafIsNull)
+    public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry telemetry, bool wafIsNull)
     {
         _telemetry = telemetry;
         _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater>
@@ -63,8 +63,8 @@ internal record ConfigurationState
         }
     }
 
-    public ConfigurationState(SecuritySettings settings, bool wafIsNull, Dictionary<string, RuleSet>? rulesetConfigs, Dictionary<string, Models.Asm.Payload>? asmConfigs, Dictionary<string, Models.AsmData.Payload>? asmDataConfigs)
-        : this(settings, null, wafIsNull)
+    public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry telemetry, bool wafIsNull, Dictionary<string, RuleSet>? rulesetConfigs, Dictionary<string, Models.Asm.Payload>? asmConfigs, Dictionary<string, Models.AsmData.Payload>? asmDataConfigs)
+        : this(settings, telemetry, wafIsNull)
     {
         if (rulesetConfigs is not null)
         {
@@ -326,16 +326,13 @@ internal record ConfigurationState
             }
 
             // Update AppsecEnabled state based on the RCM data on Telemetry Config
-            if (_telemetry is not null)
+            if (IncomingUpdateState.ShouldInitAppsec)
             {
-                if (IncomingUpdateState.ShouldInitAppsec)
-                {
-                    _telemetry.Record(ConfigurationKeys.AppSec.Enabled, true, ConfigurationOrigins.RemoteConfig);
-                }
-                else if (IncomingUpdateState.ShouldDisableAppsec)
-                {
-                    _telemetry.Record(ConfigurationKeys.AppSec.Enabled, false, ConfigurationOrigins.RemoteConfig);
-                }
+                _telemetry.Record(ConfigurationKeys.AppSec.Enabled, true, ConfigurationOrigins.RemoteConfig);
+            }
+            else if (IncomingUpdateState.ShouldDisableAppsec)
+            {
+                _telemetry.Record(ConfigurationKeys.AppSec.Enabled, false, ConfigurationOrigins.RemoteConfig);
             }
         }
 

@@ -1,4 +1,4 @@
-// <copyright file="AspNetCore5AsmTelemetry.cs" company="Datadog">
+// <copyright file="AsmTelemetryTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -23,10 +23,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5AsmTelemetry : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+    public class AsmTelemetryTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCore5AsmTelemetry(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmTelemetry))
+        public AsmTelemetryTests(ITestOutputHelper outputHelper)
+            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AsmTelemetryTests))
         {
         }
 
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 Output.WriteLine($"Assigned port {telemetry.Port} for the telemetry port.");
                 EnableAgentlessTelemetry(telemetry.Port);
 
-                await fixture.TryStartApp(this, enableSecurity: enableSecurity, sendHealthCheck: false, useTelemetry: true);
+                await fixture.TryStartApp(this, enableSecurity: enableSecurity, sendHealthCheck: false);
                 SetHttpPort(fixture.HttpPort);
 
                 var agent = fixture.Agent;
@@ -60,13 +60,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             using (var fixture = new AspNetCoreTestFixture())
             {
                 fixture.SetOutput(Output);
-                // telemetry metric events under test are sent only when using managed trace exporter
-                SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, "false");
 
                 Output.WriteLine($"Assigned port {telemetry.Port} for the telemetry port.");
                 EnableAgentlessTelemetry(telemetry.Port);
 
-                await fixture.TryStartApp(this, enableSecurity: null, sendHealthCheck: false, useTelemetry: true);
+                await fixture.TryStartApp(this, enableSecurity: null, sendHealthCheck: false);
                 SetHttpPort(fixture.HttpPort);
                 var configValues0 = (await telemetry.GetConfigurationValuesAsync(ConfigurationKeys.AppSec.Enabled)).ToList();
                 configValues0.Should().HaveCount(1);
