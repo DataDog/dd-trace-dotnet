@@ -555,7 +555,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
     free(newArgv);
     free(new_envp);
 
-    fputs("Args freed, returning\n", stdout);
+    fprintf(stdout, "Args freed, returning with result: %d\n", result);
 
     return result;
 }
