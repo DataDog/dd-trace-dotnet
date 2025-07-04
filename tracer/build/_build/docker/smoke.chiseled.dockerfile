@@ -53,8 +53,6 @@ ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
 ENV DD_DOTNET_TRACER_HOME=/opt/datadog
 ENV LD_PRELOAD=/opt/datadog/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so
 ENV DD_PROFILING_ENABLED=1
-ENV DD_APPSEC_ENABLED=1
-ENV DD_TRACE_DEBUG=1
 ENV COMPlus_DbgEnableMiniDump=1
 ENV COMPlus_DbgMiniDumpType=4
 ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
@@ -74,8 +72,8 @@ ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
 # Because there _is_ no shell in the chiseled containers
 # Also, we can't use env vars/args in the entrypoint, hence the need for separate targets
 FROM installer-base as dd-dotnet-final-linux-x64
-ENTRYPOINT ["/opt/datadog/linux-x64/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["/opt/datadog/linux-x64/dd-dotnet", "run", "--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
 
 ###########################################################
 FROM installer-base as dd-dotnet-final-linux-arm64
-ENTRYPOINT ["/opt/datadog/linux-arm64/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["/opt/datadog/linux-arm64/dd-dotnet", "run", "--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
