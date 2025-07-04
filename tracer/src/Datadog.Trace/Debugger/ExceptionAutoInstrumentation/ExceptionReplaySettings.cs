@@ -41,8 +41,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var seconds = config
                          .WithKeys(ConfigurationKeys.Debugger.RateLimitSeconds)
-                         .AsInt32(DefaultRateLimitSeconds, x => x > 0)
-                         .Value;
+                         .AsInt32(DefaultRateLimitSeconds);
 
             RateLimit = TimeSpan.FromSeconds(seconds);
 
