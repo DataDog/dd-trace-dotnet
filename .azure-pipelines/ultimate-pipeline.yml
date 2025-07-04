@@ -4511,7 +4511,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     scenarioGroups: "appsec"
-    additionalScenarios: '[\"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"PROFILING,TRACE_PROPAGATION_STYLE_W3C,LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
+    additionalScenarios: "REMOTE_CONFIG_SCENARIOS,TELEMETRY_SCENARIOS,DEFAULT,INTEGRATIONS,INTEGRATIONS_AWS,CROSSED_TRACING_LIBRARIES,DEBUGGER_SCENARIOS,PROFILING,TRACE_PROPAGATION_STYLE_W3C,LIBRARY_CONF_CUSTOM_HEADER_TAGS"
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -4544,7 +4544,7 @@ stages:
             
             source venv/bin/activate
             # Try to get each workflow to take 15 mins = 900s
-            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) -t 900 > out.txt
+            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) -s $(additional_scenarios) -t 900 > out.txt
 
             endtoend_scenario_groups=$(grep 'endtoend_defs_parallel_jobs' out.txt | sed 's/.*=//g')
             endtoend_weblogs=$(grep 'endtoend_weblogs' out.txt | sed 's/.*=//g')
@@ -4552,23 +4552,18 @@ stages:
 
             echo "Found scenario groups: $endtoend_scenario_groups"
             echo "Found weblogs: $endtoend_weblogs"
-            echo "Additional manual scenarios: $additional_scenarios"
             
             # Write the weblogs to a file (for later use to generate the docker images)
             python -c "import json; variants = json.loads('$endtoend_weblogs'); print('\n'.join(variants))" > /tmp/weblogs_list.txt
             # Generate matrix and write to file
-            jq -c -n --argjson main "$endtoend_scenario_groups" --argjson webs "$endtoend_weblogs" --argjson extra "$additional_scenarios" '
+            jq -c -n --argjson main "$endtoend_scenario_groups" --argjson webs "$endtoend_weblogs" '
               (
                 $main | map({
-                  ("APPSEC (" + .weblog + ") " + (.weblog_instance|tostring)): {
+                  ("GROUP (" + .weblog + ") " + (.weblog_instance|tostring)): {
                     SCENARIO: (.scenarios | join(",")), N: 1, I: 1,
                     WEBLOG_VARIANT: .weblog
                   }
                 })
-              ) + (
-                [ $extra[] as $scenario | $webs[] as $weblog |
-                  { ($scenario + " (" + $weblog + ") 1"): { SCENARIO: $scenario, WEBLOG_VARIANT: $weblog, N: 1, I: 1 } }
-                ]
               ) + (
               [ range(1; 4) as $i |
                 { ("PARAMETRIC \($i)"): {
