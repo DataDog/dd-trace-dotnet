@@ -77,7 +77,7 @@ public class LogEntryWatcher : IDisposable
         var i = 0;
 
         var foundLogs = new string[logEntries.Length];
-        var logsRead = new List<string>();
+        var logsReadLogLineRead = string.Empty;
         var timeoutReached = false;
 
         while (logEntries.Length > i)
@@ -103,7 +103,7 @@ public class LogEntryWatcher : IDisposable
 
             if (line != null)
             {
-                logsRead.Add(line);
+                logsReadLogLineRead = line;
                 if (line.Contains(logEntries[i]))
                 {
                     _outputHelper?.WriteLine($"Entry found {logEntries[i]}.");
@@ -126,13 +126,13 @@ public class LogEntryWatcher : IDisposable
 
         if (i != logEntries.Length)
         {
-            if (logsRead.IsNullOrEmpty())
+            if (logsReadLogLineRead.IsNullOrEmpty())
             {
                 throw new InvalidOperationException($"No logs could be read from {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}");
             }
             else
             {
-                throw new InvalidOperationException($"Timeout is {timeoutReached}. Log entry {logEntries[i]} was not found in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Logs read: {string.Join("\r\n", logsRead)}");
+                throw new InvalidOperationException($"Timeout is {timeoutReached}. Log entry {logEntries[i]} was not found in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Last Log line read: {logsReadLogLineRead}");
             }
         }
 
