@@ -16,6 +16,11 @@ public:
 
     static ProfilerSignalManager* Get(int signal);
 
+    // Global cleanup function to ensure all signal handlers are properly restored
+    // This should be called during profiler shutdown to avoid issues with
+    // static destructor ordering, especially in mixed runtime environments
+    static void CleanupAllSignalHandlers();
+
     bool RegisterHandler(HandlerFn_t handler);
     bool UnRegisterHandler();
     int32_t SendSignal(pid_t threadId);
