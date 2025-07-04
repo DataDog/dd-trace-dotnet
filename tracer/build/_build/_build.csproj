@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <TargetFramework Condition="$(USE_NATIVE_SDK_VERSION) == 'true'">net7.0</TargetFramework>
     <TargetFramework Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(TargetFramework)-windows10.0.19041</TargetFramework>
     <DefineConstants Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(DefineConstants);NUKE_NOTIFY</DefineConstants>

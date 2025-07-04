@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
 using FluentAssertions;
@@ -16,7 +17,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
     public class TraceAgentHttpHeaderHelperTests
     {
         [Fact]
-        public void WriteLeadingHeaders()
+        public async Task WriteLeadingHeaders()
         {
             // Note that WriteLeadingHeaders should NOT write this header in WriteLeadingHeaders
             var headers = new HttpHeaders { { "x-test", "my-value" } };
@@ -42,13 +43,13 @@ namespace Datadog.Trace.Tests.HttpOverStreams
 
             var sb = new StringBuilder();
             using var textWriter = new StringWriter(sb);
-            helper.WriteLeadingHeaders(request, textWriter);
+            await helper.WriteLeadingHeaders(request, textWriter);
 
             sb.ToString().Should().Be(expected);
         }
 
         [Fact]
-        public void WriteHeader()
+        public async Task WriteHeader()
         {
             var header = new HttpHeaders.HttpHeader("my-key", "my-value");
             var helper = new TraceAgentHttpHeaderHelper();
@@ -56,7 +57,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
 
             var sb = new StringBuilder();
             using var textWriter = new StringWriter(sb);
-            helper.WriteHeader(textWriter, header);
+            await helper.WriteHeader(textWriter, header);
 
             sb.ToString().Should().Be(expected);
         }
