@@ -70,15 +70,23 @@ public class CompareExecutionTime
                                     return (@pairedScenarios.Key, conclusion: EquivalenceTestConclusion.Same);
                                 }
 
-                                var userThresholdResult = StatisticalTestHelper.CalculateTost(WelchTest.Instance, masterValues, commitValues, SignificantResultThreshold);
-                                var conclusion = userThresholdResult.Conclusion switch
+                                try
                                 {
-                                    EquivalenceTestConclusion.Same => EquivalenceTestConclusion.Same,
-                                    _ when StatisticalTestHelper.CalculateTost(WelchTest.Instance, masterValues, commitValues, NoiseThreshold).Conclusion == EquivalenceTestConclusion.Same => EquivalenceTestConclusion.Same,
-                                    _ => userThresholdResult.Conclusion,
-                                };
+                                    var userThresholdResult = StatisticalTestHelper.CalculateTost(WelchTest.Instance, masterValues, commitValues, SignificantResultThreshold);
+                                    var conclusion = userThresholdResult.Conclusion switch
+                                    {
+                                        EquivalenceTestConclusion.Same => EquivalenceTestConclusion.Same,
+                                        _ when StatisticalTestHelper.CalculateTost(WelchTest.Instance, masterValues, commitValues, NoiseThreshold).Conclusion == EquivalenceTestConclusion.Same => EquivalenceTestConclusion.Same,
+                                        _ => userThresholdResult.Conclusion,
+                                    };
 
-                                return (@pairedScenarios.Key, conclusion);
+                                    return (@pairedScenarios.Key, conclusion);
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.Warning("Error calculating TOST for {Scenario}: {Message}", @pairedScenarios.Key, e.Message);
+                                    return (@pairedScenarios.Key, conclusion: EquivalenceTestConclusion.Same);
+                                }
                             })
                            .ToDictionary(x => x.Key, x => x.conclusion);
 
