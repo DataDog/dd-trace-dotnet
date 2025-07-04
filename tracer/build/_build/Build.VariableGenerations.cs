@@ -280,6 +280,7 @@ partial class Build : NukeBuild
                     new {framework = TargetFramework.NET7_0 },
                     new {framework = TargetFramework.NET8_0 },
                     new {framework = TargetFramework.NET9_0 },
+                    new {framework = TargetFramework.NET10_0 },
                 };
 
                 var matrix = new Dictionary<string, object>();
