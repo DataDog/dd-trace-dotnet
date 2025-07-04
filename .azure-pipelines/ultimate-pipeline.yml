@@ -5993,6 +5993,7 @@ stages:
         - template: steps/run-snapshot-test.yml
           parameters:
             target: 'fleet-installer-smoke-tests-iis.windows'
+            testAgentTarget: 'test-agent.iis.windows'
             snapshotPrefix: "smoke_test_iis"
             isLinux: false
             dockerComposePath: $(dockerComposePath)

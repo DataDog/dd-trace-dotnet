@@ -20,6 +20,10 @@ parameters:
   - name: 'dockerComposePath'
     type: string
     default: 'docker-compose'
+  
+  - name: 'testAgentTarget'
+    type: string
+    default: ''
 
 steps:
 - template: ./clean-docker-containers.yml
@@ -42,9 +46,11 @@ steps:
 
 - ${{ if eq(parameters.isLinux, true) }}:
   - bash: |
+      testAgentTarget="${{ parameters.testAgentTarget }}"
+      testAgentTarget="${testAgentTarget:-test-agent}"
       echo "##vso[task.setvariable variable=CURL_COMMAND]/usr/bin/curl"
-      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]test-agent"
-      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-test-agent"
+      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]${testAgentTarget}"
+      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-${testAgentTarget}"
       echo "##vso[task.setvariable variable=COMPOSE_PATH]docker-compose.yml"
     displayName: Set env-specific variables
 
@@ -57,9 +63,11 @@ steps:
     displayName: create test data directories
 - ${{ else }}:
   - bash: |
+      testAgentTarget="${{ parameters.testAgentTarget }}"
+      testAgentTarget="${testAgentTarget:-test-agent.windows}"
       echo "##vso[task.setvariable variable=CURL_COMMAND]curl"
-      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]test-agent.windows"
-      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-test-agent.windows"
+      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]${testAgentTarget}"
+      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-${testAgentTarget}"
       echo "##vso[task.setvariable variable=COMPOSE_PATH]docker-compose.windows.yml"
     displayName: Set env-specific  variables
 
