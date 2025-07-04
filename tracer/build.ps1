@@ -19,7 +19,44 @@ $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = 1
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = 1
 $env:DOTNET_MULTILEVEL_LOOKUP = 0
 $env:NUKE_TELEMETRY_OPTOUT = 1
-$env:DOTNET_NOLOGO=1
+$env:DOTNET_NOLOGO = 1
+
+###########################################################################
+# >>> BEGIN TEMPORARY .NET 10 INSTALLATION LOGIC <<<
+# Can be removed once .NET 10 SDK is preinstalled or managed via global.json
+###########################################################################
+
+$env:DOTNET_ROLL_FORWARD_TO_PRERELEASE = 1
+$env:DOTNET_CLI_UI_LANGUAGE = "en"
+
+$dotnetVersion = "10.0.100-preview.5.25277.114"
+$installDir = "$PSScriptRoot\.dotnet"
+
+if (-not (Test-Path "$installDir\dotnet.exe")) {
+    Write-Output "Installing .NET SDK $dotnetVersion to $installDir..."
+
+    $dotnetInstallScript = "$PSScriptRoot\dotnet-install.ps1"
+    Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile $dotnetInstallScript
+
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $dotnetInstallScript `
+        -Version $dotnetVersion `
+        -InstallDir $installDir `
+        -NoPath
+
+    Remove-Item $dotnetInstallScript -Force
+} else {
+    Write-Output ".NET SDK already installed at $installDir"
+}
+
+$env:DOTNET_ROOT = $installDir
+$env:DOTNET_EXE = Join-Path $installDir "dotnet"
+
+Write-Output "Using .NET SDK version $(& $env:DOTNET_EXE --version)"
+Write-Output "DOTNET_EXE path: $env:DOTNET_EXE"
+
+###########################################################################
+# <<< END TEMPORARY .NET 10 INSTALLATION LOGIC <<<
+###########################################################################
 
 # Allow running Nuke with the .NET 8 runtime
 $env:DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
