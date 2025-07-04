@@ -53,8 +53,10 @@ $env:PATH = "$installDir;$env:PATH"
 
 # Use 'dotnet' from PATH instead of DOTNET_EXE to avoid NUKE validation issues
 $resolvedDotnet = Get-Command dotnet | Select-Object -ExpandProperty Source
-Write-Output "Using .NET SDK version $(& dotnet --version)"
+$dotnetVersion = dotnet --version
+Write-Output "Using .NET SDK version $dotnetVersion"
 Write-Output "Resolved dotnet CLI path: $resolvedDotnet"
+
 
 ###########################################################################
 # <<< END TEMPORARY .NET 10 INSTALLATION LOGIC <<<
