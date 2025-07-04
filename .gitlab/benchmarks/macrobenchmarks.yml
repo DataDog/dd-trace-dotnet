@@ -25,7 +25,7 @@ check_azure_pipeline:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
       - build-id.txt
     expire_in: 3 months
   tags: ["arch:amd64"]
@@ -95,7 +95,7 @@ update-bp-infra:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
@@ -279,7 +279,7 @@ profiler_cpu_timer_create:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
@@ -469,7 +469,7 @@ profiler_cpu_timer_create-arm64:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
