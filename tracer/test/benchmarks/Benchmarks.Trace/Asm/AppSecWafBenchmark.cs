@@ -47,7 +47,7 @@ public class AppSecWafBenchmark
         };
         var configSource = new NameValueConfigurationSource(config);
         var settings = new SecuritySettings(configSource, NullConfigurationTelemetry.Instance);
-        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, new Datadog.Trace.AppSec.Rcm.ConfigurationState(settings, true));
+        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, new Datadog.Trace.AppSec.Rcm.ConfigurationState(settings, null, true));
         if (!initResult.Success || initResult.HasErrors)
         {
             throw new ArgumentException($"Waf could not initialize, error message is: {initResult.ErrorMessage}");
