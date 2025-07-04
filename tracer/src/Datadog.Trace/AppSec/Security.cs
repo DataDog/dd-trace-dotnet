@@ -63,12 +63,13 @@ namespace Datadog.Trace.AppSec
         {
             _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
             _activeAddressesLocker = new Concurrency.ReaderWriterLock();
+            var telemetry = TelemetryFactory.Config;
 
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
                 _waf = waf;
-                _configurationState = configurationState ?? new ConfigurationState(_settings, _waf is null);
+                _configurationState = configurationState ?? new ConfigurationState(_settings, telemetry, _waf is null);
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
                 if (_configurationState.IncomingUpdateState.ShouldInitAppsec)
@@ -86,13 +87,13 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                _settings ??= new(source: null, TelemetryFactory.Config);
-                _configurationState ??= new ConfigurationState(_settings, true);
+                _settings ??= new(source: null, telemetry);
+                _configurationState ??= new ConfigurationState(_settings, telemetry, true);
                 Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
             finally
             {
-                _settings ??= new(source: null, TelemetryFactory.Config);
+                _settings ??= new(source: null, telemetry);
                 ApiSecurity = new(_settings);
                 _configurationState?.IncomingUpdateState.Dispose();
             }

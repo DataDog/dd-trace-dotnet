@@ -187,6 +187,9 @@ missing-nullability-files.csv             @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/MetricTags.cs @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs @DataDog/apm-dotnet
 
+# Native loader 
+/shared/src/Datadog.Trace.ClrProfiler.Native/                       @DataDog/profiling-dotnet @DataDog/apm-dotnet
+
 # Version Bump Related Files - overriding to have wider coverage
 
 /profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt @DataDog/profiling-dotnet @DataDog/apm-dotnet

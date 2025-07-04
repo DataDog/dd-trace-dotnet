@@ -2540,47 +2540,57 @@ partial class Build
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
                              && nativeTracerFiles.Count > 0
-                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac
+                             && (nativeProfilerFiles.Count > 0 || IsOsx || IsArm64) // profiler doesn't support mac or ARM64
                              && nativeLoaderFiles.Count > 0);
+        var hasErrors = managedErrors.Count != 0
+                     && nativeTracerErrors.Count != 0
+                     && nativeProfilerErrors.Count != 0
+                     && nativeLoaderErrors.Count != 0;
 
-        if (hasRequiredFiles
-         && managedErrors.Count == 0
-         && nativeTracerErrors.Count == 0
-         && nativeProfilerErrors.Count == 0
-         && nativeLoaderErrors.Count == 0)
+        if (hasRequiredFiles && !hasErrors)
         {
             Logger.Information("No problems found in managed or native logs");
             return;
         }
 
-        Logger.Warning("Found the following problems in log files:");
-        var allErrors = managedErrors
-                       .Concat(nativeTracerErrors)
-                       .Concat(nativeProfilerErrors)
-                       .Concat(nativeLoaderErrors)
-                       .GroupBy(x => x.FileName);
-
-        foreach (var erroredFile in allErrors)
+        if (!hasRequiredFiles)
         {
-            var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
-            if (errors.Any())
-            {
-                Logger.Information("");
-                Logger.Error($"Found errors in log file '{erroredFile.Key}':");
-                foreach (var error in errors)
-                {
-                    Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
-                }
-            }
+            Logger.Error(
+                "Some log files were missing: managed: {ManagedFiles}, native tracer: {NativeTracerFiles}, native profiler: {NativeProfilerFiles}, native loader: {NativeLoaderFiles}",
+                managedFiles.Count, nativeTracerFiles.Count, nativeProfilerFiles.Count, nativeLoaderFiles.Count);
+        }
 
-            var canaries = erroredFile.Where(ContainsCanary).ToList();
-            if (canaries.Any())
+        if (hasErrors)
+        {
+            Logger.Warning("Found the following problems in log files:");
+            var allErrors = managedErrors
+                           .Concat(nativeTracerErrors)
+                           .Concat(nativeProfilerErrors)
+                           .Concat(nativeLoaderErrors)
+                           .GroupBy(x => x.FileName);
+
+            foreach (var erroredFile in allErrors)
             {
-                Logger.Information("");
-                Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
-                foreach (var canary in canaries)
+                var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
+                if (errors.Any())
                 {
-                    Logger.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
+                    Logger.Information("");
+                    Logger.Error($"Found errors in log file '{erroredFile.Key}':");
+                    foreach (var error in errors)
+                    {
+                        Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
+                    }
+                }
+
+                var canaries = erroredFile.Where(ContainsCanary).ToList();
+                if (canaries.Any())
+                {
+                    Logger.Information("");
+                    Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
+                    foreach (var canary in canaries)
+                    {
+                        Logger.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
+                    }
                 }
             }
         }
