@@ -49,7 +49,7 @@ if (-not (Test-Path "$installDir\dotnet.exe")) {
 }
 
 $env:DOTNET_ROOT = $installDir
-$env:DOTNET_EXE = Join-Path $installDir "dotnet"
+$env:PATH = "$installDir;$env:PATH"
 
 Write-Output "Using .NET SDK version $(& $env:DOTNET_EXE --version)"
 Write-Output "DOTNET_EXE path: $env:DOTNET_EXE"
