@@ -1471,7 +1471,7 @@ namespace Datadog.Trace.TestHelpers
                     {
                         _log("Starting PipeServer " + _pipeName);
                         using var mutex = new ManualResetEventSlim();
-#pragma warning disable CA2025
+#pragma warning disable CA2025 // Ensure tasks using 'IDisposable' instances complete before the instances are disposed
                         var startPipe = StartNamedPipeServer(mutex);
 #pragma warning restore CA2025
                         _tasks.Add(startPipe);
@@ -1510,7 +1510,7 @@ namespace Datadog.Trace.TestHelpers
                         // start a new Named pipe server to handle additional connections
                         // Yes, this is madness, but apparently the way it's supposed to be done
                         using var m = new ManualResetEventSlim();
-#pragma warning disable CA2025
+#pragma warning disable CA2025 // Ensure tasks using 'IDisposable' instances complete before the instances are disposed
                         _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
 #pragma warning restore CA2025
                         // Wait for the next instance to start listening before we handle this one
@@ -1537,7 +1537,7 @@ namespace Datadog.Trace.TestHelpers
                         // unexpected exception, so start another listener
                         _log("Unexpected exception " + instance + " " + ex.ToString());
                         using var m = new ManualResetEventSlim();
-#pragma warning disable CA2025
+#pragma warning disable CA2025 // Ensure tasks using 'IDisposable' instances complete before the instances are disposed
                         _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
 #pragma warning restore CA2025
                         m.Wait(5_000);
