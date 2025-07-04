@@ -9,23 +9,24 @@ using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
 {
-    public class TraceTagTests
+    public class TraceTagTests : IClassFixture<ScopedTracerFixture>
     {
         private readonly Tracer _tracer;
         private readonly MockApi _testApi;
 
-        public TraceTagTests()
+        public TraceTagTests(ScopedTracerFixture scopedTracerFixture)
         {
             _testApi = new MockApi();
 
             var settings = new TracerSettings();
             var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-            _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+            _tracer = scopedTracerFixture.BuildScopedTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
         [Fact]

@@ -10,17 +10,18 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.Tagging;
 
-public class TraceTags
+public class TraceTags : IClassFixture<ScopedTracerFixture>
 {
     private readonly Tracer _tracer;
     private readonly MockApi _testApi;
 
-    public TraceTags()
+    public TraceTags(ScopedTracerFixture scopedTracerFixture)
     {
         // make it so all traces are initially dropped so we can override with keep,
         // otherwise we can't change the sampling mechanism
@@ -28,7 +29,7 @@ public class TraceTags
 
         _testApi = new MockApi();
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer = scopedTracerFixture.BuildScopedTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Theory]

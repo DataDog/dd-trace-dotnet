@@ -60,7 +60,7 @@ namespace Datadog.Trace
             }
         }
 
-        public TimeSpan TaskTimeout { get; set; } = TimeSpan.FromSeconds(30);
+        public TimeSpan ShutdownTaskTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
         public void AddShutdownTask(Action<Exception?> action)
         {
@@ -123,7 +123,7 @@ namespace Datadog.Trace
                         }
                         else if (actionOrFunc is Func<Exception?, Task> func)
                         {
-                            AsyncUtil.RunSync(func, exception, (int)TaskTimeout.TotalMilliseconds);
+                            AsyncUtil.RunSync(func, exception, (int)ShutdownTaskTimeout.TotalMilliseconds);
                         }
                         else
                         {
