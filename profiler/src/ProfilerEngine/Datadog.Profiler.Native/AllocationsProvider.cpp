@@ -169,6 +169,89 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     _sampledAllocationsSizeMetric->Add((double_t)objectSize);
 }
 
+void AllocationsProvider::OnAllocationSampled(
+    uint32_t allocationKind,
+    ClassID classId,
+    const WCHAR* typeName,
+    uintptr_t address,
+    uint64_t objectSize,
+    uint64_t allocationByteOffset)
+{
+    // TODO: deal with .NET+ AllocationSampled event and find a way to upscale the values
+    // look at https://github.com/DataDog/dd-trace-dotnet/pull/4236
+
+    _allocationsCountMetric->Incr();
+    _allocationsSizeMetric->Add((double_t)objectSize);
+
+    // It is not possible to compute the total allocation size because we don't have the allocation amount
+    // that is available in AllocationTick
+    // _totalAllocationsSizeMetric->Add((double_t)allocationAmount);
+
+    // remove sampling when recording allocations
+    if (_shouldSubSample && (_sampleLimit > 0) && (!_sampler.Sample()))
+    {
+        return;
+    }
+
+    // create a sample from the allocation
+
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo == nullptr)
+    {
+        LogOnce(Warn, "AllocationsProvider::OnAllocation: Profiler failed at getting the current managed thread info ");
+        return;
+    }
+
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+        _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
+    pStackFramesCollector->PrepareForNextCollection();
+
+    uint32_t hrCollectStack = E_FAIL;
+    const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
+    static uint64_t failureCount = 0;
+    if ((result->GetFramesCount() == 0) && (failureCount % 100 == 0))
+    {
+        // log every 100 failures (every ~10 MB worse case)
+        failureCount++;
+        Log::Warn("Failed to walk ", failureCount, " stacks for sampled allocation: ", HResultConverter::ToStringWithCode(hrCollectStack));
+        return;
+    }
+
+    result->SetUnixTimeUtc(GetCurrentTimestamp());
+
+    RawAllocationSample rawSample;
+    rawSample.Timestamp = result->GetUnixTimeUtc();
+    rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
+    rawSample.SpanId = result->GetSpanId();
+    rawSample.AppDomainId = threadInfo->GetAppDomainId();
+    rawSample.Stack = result->GetCallstack();
+    rawSample.ThreadInfo = threadInfo;
+
+    // TODO: compute the upscaled allocation size or rely on upscaling
+    rawSample.AllocationSize = objectSize;
+
+    rawSample.Address = address;
+    rawSample.MethodTable = classId;
+
+    // the classID can be null when events are replayed in integration tests
+    if ((classId == 0) || !_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
+    {
+        // The provided type name contains the metadata-based `xx syntax for generics instead of <>
+        // So rely on the frame store to get a C#-like representation like what is done for frames
+        rawSample.AllocationClass = shared::ToString(shared::WSTRING(typeName));
+    }
+
+    // the listener is the live objects profiler: could be null if disabled
+    if (_pListener != nullptr)
+    {
+        _pListener->OnAllocation(rawSample);
+    }
+
+    Add(std::move(rawSample));
+    _sampledAllocationsCountMetric->Incr();
+    _sampledAllocationsSizeMetric->Add((double_t)objectSize);
+}
+
 void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
                                        uint32_t threadId,
                                        uint32_t allocationKind,
@@ -268,4 +351,11 @@ void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
 
     // TODO: don't create that metric if running under .NET Framework
     //_sampledAllocationsSizeMetric->Add((double_t)objectSize);
+}
+
+UpscalingPoissonInfo AllocationsProvider::GetPoissonInfo()
+{
+    auto const& offsets = GetValueOffsets(); //              sum(size)       count
+    UpscalingPoissonInfo info{ offsets, AllocTickThreshold, offsets[1], offsets[0] };
+    return info;
 }
