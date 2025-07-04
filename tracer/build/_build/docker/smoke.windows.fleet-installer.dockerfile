@@ -32,7 +32,7 @@ RUN mkdir /logs; \
     cd /install; \
     Expand-Archive 'c:\install\windows-tracer-home.zip' -DestinationPath 'c:\monitoring-home\';  \
     c:\install\installer\Datadog.FleetInstaller.exe install-version --home-path c:\monitoring-home; \
-    c:\install\installer\Datadog.FleetInstaller.exe enable-global-instrumentation --home-path c:\monitoring-home; \
+    c:\install\installer\Datadog.FleetInstaller.exe enable-iis-instrumentation --home-path c:\monitoring-home; \
     cd /app;
 
 # Set the additional env vars
