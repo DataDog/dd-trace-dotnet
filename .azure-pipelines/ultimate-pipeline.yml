@@ -4544,11 +4544,10 @@ stages:
             
             source venv/bin/activate
             # Try to get each workflow to take 15 mins = 900s
-            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) -s $(additional_scenarios) -t 900 > out.txt
+            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g "$(scenarioGroups)" -s "$(additionalScenarios)" -t 900 > out.txt
 
             endtoend_scenario_groups=$(grep 'endtoend_defs_parallel_jobs' out.txt | sed 's/.*=//g')
             endtoend_weblogs=$(grep 'endtoend_weblogs' out.txt | sed 's/.*=//g')
-            additional_scenarios="$(additionalScenarios)"
 
             echo "Found scenario groups: $endtoend_scenario_groups"
             echo "Found weblogs: $endtoend_weblogs"
