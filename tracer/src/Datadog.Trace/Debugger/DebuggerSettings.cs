@@ -8,7 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
@@ -34,7 +36,18 @@ namespace Datadog.Trace.Debugger
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            Enabled = config.WithKeys(ConfigurationKeys.Debugger.Enabled).AsBool(false);
+            DynamicInstrumentationEnabled =
+                config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled)
+                      .GetAs(
+                           getDefaultValue: () => null,
+                           null,
+                           x => x switch
+                           {
+                               "null" => null,
+                               _ when x.ToBoolean() is { } boolean => boolean,
+                               _ => ParsingResult<bool?>.Failure()
+                           });
+
             SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
 
             MaximumDepthOfMembersToCopy = config
@@ -131,7 +144,7 @@ namespace Datadog.Trace.Debugger
 
             RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
 
-            CodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(false);
+            CodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool();
 
             CodeOriginMaxUserFrames = config
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
@@ -141,7 +154,9 @@ namespace Datadog.Trace.Debugger
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
         }
 
-        public bool Enabled { get; }
+        internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
+
+        public bool? DynamicInstrumentationEnabled { get; }
 
         public bool SymbolDatabaseUploadEnabled { get; }
 
@@ -173,7 +188,7 @@ namespace Datadog.Trace.Debugger
 
         public HashSet<string> RedactedTypes { get; }
 
-        public bool CodeOriginForSpansEnabled { get; }
+        public bool? CodeOriginForSpansEnabled { get; }
 
         public int CodeOriginMaxUserFrames { get; }
 

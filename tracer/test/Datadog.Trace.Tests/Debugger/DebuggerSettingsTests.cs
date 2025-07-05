@@ -45,14 +45,58 @@ namespace Datadog.Trace.Tests.Debugger
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("false")]
-        public void DebuggerDisabled(string enabled)
+        public void DynamicInstrumentation_NotSet(string enabled)
         {
             var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, enabled }, }),
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
                 NullConfigurationTelemetry.Instance);
 
-            settings.Enabled.Should().BeFalse();
+            settings.DynamicInstrumentationEnabled.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData("True")]
+        [InlineData("TRUE")]
+        [InlineData("true")]
+        [InlineData("tRuE")]
+        [InlineData("1")]
+        public void DynamicInstrumentation_Enabled(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.DynamicInstrumentationEnabled.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("0")]
+        [InlineData("FALSE")]
+        [InlineData("False")]
+        [InlineData("false")]
+        [InlineData("fAlsE")]
+        public void DynamicInstrumentation_Disabled(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.DynamicInstrumentationEnabled.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData("00")]
+        [InlineData("flse")]
+        [InlineData("tru")]
+        [InlineData("-1")]
+        [InlineData("2")]
+        public void DynamicInstrumentation_InvalidValue(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.DynamicInstrumentationEnabled.Should().BeNull();
         }
 
         [Theory]
@@ -87,14 +131,14 @@ namespace Datadog.Trace.Tests.Debugger
             var settings = new DebuggerSettings(
                 new NameValueConfigurationSource(new()
                 {
-                    { ConfigurationKeys.Debugger.Enabled, "true" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true" },
                     { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" },
                     { ConfigurationKeys.Debugger.MaxDepthToSerialize, "100" },
                     { ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000" },
                 }),
                 NullConfigurationTelemetry.Instance);
 
-            settings.Enabled.Should().BeTrue();
+            settings.DynamicInstrumentationEnabled.Should().BeTrue();
             settings.SymbolDatabaseCompressionEnabled.Should().BeTrue();
             settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
             settings.MaximumDepthOfMembersToCopy.Should().Be(100);
@@ -160,12 +204,9 @@ namespace Datadog.Trace.Tests.Debugger
         public class DebuggerSettingsCodeOriginTests
         {
             [Theory]
-            [InlineData("")]
             [InlineData("False")]
             [InlineData("false")]
             [InlineData("0")]
-            [InlineData("2")]
-            [InlineData(null)]
             public void CodeOriginEnabled_False(string value)
             {
                 var settings = new DebuggerSettings(
@@ -173,6 +214,19 @@ namespace Datadog.Trace.Tests.Debugger
                     NullConfigurationTelemetry.Instance);
 
                 settings.CodeOriginForSpansEnabled.Should().BeFalse();
+            }
+
+            [Theory]
+            [InlineData("")]
+            [InlineData(null)]
+            [InlineData("2")]
+            public void CodeOriginEnabled_Null(string value)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
+                    NullConfigurationTelemetry.Instance);
+
+                settings.CodeOriginForSpansEnabled.Should().BeNull();
             }
 
             [Theory]

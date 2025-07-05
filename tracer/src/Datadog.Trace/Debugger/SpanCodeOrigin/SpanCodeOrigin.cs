@@ -1,4 +1,4 @@
-// <copyright file="SpanCodeOriginManager.cs" company="Datadog">
+// <copyright file="SpanCodeOrigin.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,25 +17,28 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
-    internal class SpanCodeOriginManager
+    internal class SpanCodeOrigin
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
         private readonly ConcurrentAdaptiveCache<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
-        private readonly DebuggerSettings _settings;
         private readonly CodeOriginTags _tags;
+        private DebuggerSettings _settings;
 
-        internal SpanCodeOriginManager()
+        internal SpanCodeOrigin(DebuggerSettings settings)
         {
-            _settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
+            _settings = settings;
             _tags = new CodeOriginTags(_settings.CodeOriginMaxUserFrames);
         }
 
-        internal static SpanCodeOriginManager Instance { get; } = new();
+        private bool Disabled =>
+            _settings.CodeOriginForSpansEnabled == null
+          || (_settings.CodeOriginForSpansEnabled == false)
+          || (_settings.DynamicSettings.CodeOriginEnabled == false);
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
-            if (span == null || !_settings.CodeOriginForSpansEnabled)
+            if (span == null || Disabled)
             {
                 return;
             }
@@ -61,7 +64,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             if (span == null ||
                 type == null ||
                 method == null ||
-                !_settings.CodeOriginForSpansEnabled)
+                Disabled)
             {
                 return;
             }
@@ -205,7 +208,10 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
             finally
             {
-                ArrayPool<FrameInfo>.Shared.Return(frames);
+                if (frames != null)
+                {
+                    ArrayPool<FrameInfo>.Shared.Return(frames);
+                }
             }
         }
 
@@ -230,7 +236,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     continue;
                 }
 
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, _settings.SymDbThirdPartyDetectionExcludes, _settings.SymDbThirdPartyDetectionIncludes))
+                if (AssemblyFilter.ShouldSkipAssembly(assembly, _settings.ThirdPartyDetectionExcludes, _settings.ThirdPartyDetectionIncludes))
                 {
                     // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
                     continue;
