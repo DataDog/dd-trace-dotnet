@@ -317,9 +317,9 @@ namespace Datadog.Trace.Debugger
                     {
                         _semaphore.Release();
                     }
-                    catch (ObjectDisposedException)
+                    catch
                     {
-                        // ignore
+                        // ignore ObjectDisposedException or SemaphoreFullException
                     }
                 }
             }
