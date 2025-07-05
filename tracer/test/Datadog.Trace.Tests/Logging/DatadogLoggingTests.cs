@@ -12,7 +12,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
-using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Util;
@@ -358,8 +357,9 @@ namespace Datadog.Trace.Tests.Logging
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
                 file: null,
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                console: null);
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
 
@@ -421,16 +421,17 @@ namespace Datadog.Trace.Tests.Logging
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithoutFile(bool withException)
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithoutSinks(bool withException)
         {
             var collector = new RedactedErrorLogCollector();
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
                 file: null,
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                console: null);
 
-            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
 
             logger.Should().NotBeNull();
 
@@ -450,7 +451,7 @@ namespace Datadog.Trace.Tests.Logging
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithFile(bool withException)
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithFileSink(bool withException)
         {
             var collector = new RedactedErrorLogCollector();
 
@@ -460,10 +461,11 @@ namespace Datadog.Trace.Tests.Logging
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
                 file: new FileLoggingConfiguration(10 * 1024 * 1024, tempLogsDir, 1),
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                console: null);
 
-            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
 
             logger.Should().NotBeNull();
 
@@ -489,12 +491,43 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithConsoleSink(bool withException)
+        {
+            var collector = new RedactedErrorLogCollector();
+            var logsWriter = TextWriter.Null; // don't write logs to console (or anywhere else)
+
+            var config = new DatadogLoggingConfiguration(
+                rateLimit: 0,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                file: null,
+                console: new ConsoleLoggingConfiguration(DatadogLoggingFactory.DefaultConsoleQueueLimit, logsWriter));
+
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
+
+            logger.Should().NotBeNull();
+
+            // These errors should not be written to error log
+            if (withException)
+            {
+                logger.ErrorSkipTelemetry(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+            else
+            {
+                logger.ErrorSkipTelemetry(Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+
+            collector.GetLogs().Should().BeNull();
+        }
+
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)
             => logger.Warning(message);
 
         private class CollectionSink : ILogEventSink
         {
-            public List<LogEvent> Events { get; } = new List<LogEvent>();
+            public List<LogEvent> Events { get; } = [];
 
             public void Emit(LogEvent le)
             {
