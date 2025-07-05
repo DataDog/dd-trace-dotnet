@@ -9,7 +9,7 @@ using System;
 
 namespace Datadog.Trace.Debugger.Configurations
 {
-    internal class ImmutableDynamicDebuggerSettings : IEquatable<ImmutableDynamicDebuggerSettings>
+    internal record ImmutableDynamicDebuggerSettings
     {
         public bool? DynamicInstrumentationEnabled { get; init; }
 
@@ -18,53 +18,5 @@ namespace Datadog.Trace.Debugger.Configurations
         public bool? CodeOriginEnabled { get; init; }
 
         public bool? DebuggerEnabled { get; init; }
-
-        public bool Equals(ImmutableDynamicDebuggerSettings? other)
-        {
-            if (other is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            return
-                DynamicInstrumentationEnabled == other.DynamicInstrumentationEnabled
-             && ExceptionReplayEnabled == other.ExceptionReplayEnabled
-             && CodeOriginEnabled == other.CodeOriginEnabled
-             && DebuggerEnabled == other.DebuggerEnabled;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            if (obj is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            if (obj.GetType() != GetType())
-            {
-                return false;
-            }
-
-            return Equals((ImmutableDynamicDebuggerSettings)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(
-                DynamicInstrumentationEnabled,
-                ExceptionReplayEnabled,
-                CodeOriginEnabled,
-                DebuggerEnabled);
-        }
     }
 }
