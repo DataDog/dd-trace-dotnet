@@ -22,13 +22,13 @@ namespace Datadog.Trace.Debugger.Helpers
                 return;
             }
 
-            var name = component ?? typeof(T).Name;
             try
             {
                 disposable.Dispose();
             }
             catch (Exception ex)
             {
+                var name = component ?? typeof(T).Name;
                 Log.Error(ex, "Error disposing {ComponentName}", name);
             }
         }
