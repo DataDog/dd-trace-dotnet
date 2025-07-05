@@ -109,7 +109,7 @@ namespace Datadog.Trace.Debugger
 
                 if (disabled)
                 {
-                    Log.Warning("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
+                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
                     // Reset to "not initialized"
                     Interlocked.Exchange(ref _initState, 0);
                     return;
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Debugger
 
                 if (!isRcmAvailable)
                 {
-                    Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available after waiting {Timeout} seconds. Please ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.", rcmTimeout.TotalSeconds);
+                    Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available after waiting {Timeout} seconds. Please note that Dynamic Instrumentation is not supported in all environments (e.g. AAS). Ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.", rcmTimeout.TotalSeconds);
 
                     // Reset to "not initialized"
                     Interlocked.Exchange(ref _initState, 0);
