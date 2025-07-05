@@ -16,7 +16,7 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger
 {
-    internal record DebuggerSettings
+    internal class DebuggerSettings
     {
         public const string DebuggerMetricPrefix = "dynamic.instrumentation.metric.probe";
         public const int DefaultMaxDepthToSerialize = 3;
