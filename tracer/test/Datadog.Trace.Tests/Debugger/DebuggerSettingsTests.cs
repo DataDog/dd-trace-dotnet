@@ -45,8 +45,7 @@ namespace Datadog.Trace.Tests.Debugger
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("2")]
-        public void DebuggerDisabled_Null(string enabled)
+        public void DynamicInstrumentation_NotSet(string enabled)
         {
             var settings = new DebuggerSettings(
                 new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
@@ -56,16 +55,48 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
+        [InlineData("True")]
+        [InlineData("TRUE")]
+        [InlineData("true")]
+        [InlineData("tRuE")]
+        [InlineData("1")]
+        public void DynamicInstrumentation_Enabled(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.DynamicInstrumentationEnabled.Should().BeTrue();
+        }
+
+        [Theory]
         [InlineData("0")]
+        [InlineData("FALSE")]
         [InlineData("False")]
         [InlineData("false")]
-        public void DebuggerDisabled_False(string enabled)
+        [InlineData("fAlsE")]
+        public void DynamicInstrumentation_Disabled(string enabled)
         {
             var settings = new DebuggerSettings(
                 new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
                 NullConfigurationTelemetry.Instance);
 
             settings.DynamicInstrumentationEnabled.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData("00")]
+        [InlineData("flse")]
+        [InlineData("tru")]
+        [InlineData("-1")]
+        [InlineData("2")]
+        public void DynamicInstrumentation_InvalidValue(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.DynamicInstrumentationEnabled.Should().BeNull();
         }
 
         [Theory]

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Telemetry;
@@ -35,7 +36,18 @@ namespace Datadog.Trace.Debugger
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(false);
+            DynamicInstrumentationEnabled =
+                config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled)
+                      .GetAs(
+                           getDefaultValue: () => null,
+                           null,
+                           x => x switch
+                           {
+                               "null" => null,
+                               _ when x.ToBoolean() is { } boolean => boolean,
+                               _ => ParsingResult<bool?>.Failure()
+                           });
+
             SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
 
             MaximumDepthOfMembersToCopy = config
