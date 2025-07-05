@@ -284,6 +284,8 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
+            OneTimeSetup();
+
             bool semaphoreAcquired = false;
             try
             {
@@ -295,7 +297,6 @@ namespace Datadog.Trace.Debugger
                 }
 
                 DebuggerSettings = newDebuggerSettings;
-                OneTimeSetup();
                 SetExceptionReplayState();
                 SetCodeOriginState();
                 await SetDynamicInstrumentationState().ConfigureAwait(false);

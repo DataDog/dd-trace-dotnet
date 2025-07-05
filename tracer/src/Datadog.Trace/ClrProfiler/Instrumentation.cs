@@ -439,7 +439,7 @@ namespace Datadog.Trace.ClrProfiler
                     {
                         Log.Error(ex, "Error initializing debugger");
                     }
-                }).ConfigureAwait(false);
+                });
         }
 
         internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
