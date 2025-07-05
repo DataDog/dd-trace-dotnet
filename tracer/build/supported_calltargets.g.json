@@ -11706,6 +11706,55 @@
   {
     "IntegrationName": "NLog",
     "AssemblyName": "NLog",
+    "TargetTypeName": "NLog.Config.LoggingConfigurationFileLoader",
+    "TargetMethodName": "Load",
+    "TargetReturnType": "NLog.Config.LoggingConfiguration",
+    "TargetParameterTypes": [
+      "NLog.LogFactory",
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 6,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LoggingConfigurationFileLoaderLoadInstrumentation",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "NLog",
+    "AssemblyName": "NLog",
+    "TargetTypeName": "NLog.LogFactory",
+    "TargetMethodName": "ActivateLoggingConfiguration",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "NLog.Config.LoggingConfiguration"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 6,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryActivateLoggingConfigurationInstrumentation",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "NLog",
+    "AssemblyName": "NLog",
     "TargetTypeName": "NLog.LogFactory",
     "TargetMethodName": "BuildLoggerConfiguration",
     "TargetReturnType": "NLog.Internal.TargetWithFilterChain[]",
@@ -11823,7 +11872,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
