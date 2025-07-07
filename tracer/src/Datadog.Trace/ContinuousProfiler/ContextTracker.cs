@@ -89,6 +89,14 @@ namespace Datadog.Trace.ContinuousProfiler
         {
             try
             {
+                // try to avoid thread abort deadly exceptions
+                if (
+                    ((Thread.CurrentThread.ThreadState & ThreadState.AbortRequested) == ThreadState.AbortRequested) ||
+                    ((Thread.CurrentThread.ThreadState & ThreadState.Aborted) == ThreadState.Aborted))
+                {
+                    return false;
+                }
+
                 if (_traceContextPtr.IsValueCreated)
                 {
                     return true;
