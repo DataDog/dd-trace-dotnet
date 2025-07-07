@@ -13,12 +13,12 @@ namespace Samples.KafkaBenchmark
         private const string BootstrapServers = "localhost:9092";
         private const string Topic = "benchmark-topic";
         private const string ConsumerGroupId = "benchmark-consumer-group";
-        private static int MessageCount = 10;
+        private static int MessageCount = 1000;
         private const int MessageSize = 32;
 
         static void Main(string[] args)
         {
-            MessageCount = int.Parse(Environment.GetEnvironmentVariable("MESSAGE_COUNT") ?? "10");
+            MessageCount = int.Parse(Environment.GetEnvironmentVariable("MESSAGE_COUNT") ?? "1000");
 
             try
             {
@@ -100,13 +100,18 @@ namespace Samples.KafkaBenchmark
                 RetryBackoffMs = 100,
             };
 
+            // Use a unique consumer group ID for each run to avoid offset conflicts
+            var uniqueConsumerGroupId = $"{ConsumerGroupId}-{DateTime.UtcNow.Ticks}";
+            
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = BootstrapServers,
-                GroupId = ConsumerGroupId,
+                GroupId = uniqueConsumerGroupId,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 EnableAutoCommit = false,
-                EnableAutoOffsetStore = false
+                EnableAutoOffsetStore = false,
+                SessionTimeoutMs = 30000,
+                HeartbeatIntervalMs = 3000
             };
 
             using var producer = new ProducerBuilder<long, string>(producerConfig)
@@ -124,12 +129,11 @@ namespace Samples.KafkaBenchmark
             // Subscribe to the topic
             consumer.Subscribe(Topic);
 
-            Console.WriteLine($"Producing and consuming {MessageCount} messages...");
+            Console.WriteLine($"Producing {MessageCount} messages...");
 
             var largeContent = new string('x', MessageSize);
-            var consumedCount = 0;
 
-            // Produce and consume messages
+            // Phase 1: Produce all messages
             for (int i = 0; i < MessageCount; i++)
             {
                 var headers = new Headers();
@@ -147,8 +151,18 @@ namespace Samples.KafkaBenchmark
 
                 // Produce message
                 producer.Produce(Topic, message);
-                producer.Flush();
+            }
 
+            // Flush all produced messages
+            producer.Flush();
+            Console.WriteLine($"Successfully produced {MessageCount} messages");
+
+            // Phase 2: Consume all messages
+            Console.WriteLine($"Consuming {MessageCount} messages...");
+            var consumedCount = 0;
+
+            for (int i = 0; i < MessageCount; i++)
+            {
                 // Consume the message synchronously
                 var consumeResult = consumer.Consume(TimeSpan.FromSeconds(10));
                 if (consumeResult != null)
@@ -163,7 +177,7 @@ namespace Samples.KafkaBenchmark
                 }
             }
 
-            Console.WriteLine($"Successfully produced and consumed {consumedCount} messages");
+            Console.WriteLine($"Successfully consumed {consumedCount} messages");
         }
     }
 }
