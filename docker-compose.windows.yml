@@ -201,9 +201,9 @@ services:
     - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
-    - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
+    - DD_TRACE_AGENT_URL=http://test-agent.iis.windows:8126
     depends_on:
-    - test-agent.windows
+    - test-agent.iis.windows
 
   fleet-installer-smoke-tests.windows:
     build:
