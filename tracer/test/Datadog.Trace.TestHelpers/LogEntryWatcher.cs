@@ -11,7 +11,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Castle.Core.Internal;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Xunit.Abstractions;
@@ -126,7 +125,7 @@ public class LogEntryWatcher : IDisposable
 
         if (i != logEntries.Length)
         {
-            if (logsReadLogLineRead.IsNullOrEmpty())
+            if (string.IsNullOrEmpty(logsReadLogLineRead))
             {
                 throw new InvalidOperationException($"No logs could be read from {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}");
             }
