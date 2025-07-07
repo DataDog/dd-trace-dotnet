@@ -4510,7 +4510,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    scenarioGroups: "appsec,remove_config,telemetry,debugger,profiling,integrations"
+    scenarioGroups: "appsec,remote_config,telemetry,debugger,profiling,integrations, tracer_release"
     additionalScenarios: "DEFAULT,INTEGRATIONS_AWS,CROSSED_TRACING_LIBRARIES,TRACE_PROPAGATION_STYLE_W3C,LIBRARY_CONF_CUSTOM_HEADER_TAGS"
   jobs:
     - template: steps/update-github-status-jobs.yml
