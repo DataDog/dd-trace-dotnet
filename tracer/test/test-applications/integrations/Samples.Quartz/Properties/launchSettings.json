@@ -26,7 +26,7 @@
     "NoDatadog": {
       "commandName": "Project",
       "environmentVariables": {
-        "DD_ENV": "",
+        "DD_ENV": "mohammad",
         "DD_SERVICE": "",
         "DD_VERSION": "",
 
@@ -34,7 +34,8 @@
         "DD_TRACE_ENABLED": "false",
 
         "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
-        "OTEL_EXPORTER_OTLP_ENABLED": "true"
+        "OTEL_EXPORTER_OTLP_ENABLED": "true",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318"
       },
       "nativeDebugging": false
     }

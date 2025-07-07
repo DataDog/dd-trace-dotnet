@@ -25,6 +25,11 @@ namespace QuartzSampleApp
                                      {
                                          options.Targets = OpenTelemetry.Exporter.ConsoleExporterOutputTargets.Console;
                                      })
+                                    .AddOtlpExporter(otlpOptions =>
+                                     {
+                                         otlpOptions.Endpoint = new Uri("http://localhost:4318/v1/traces");
+                                         otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                                     })
                                     .Build();
 
             
