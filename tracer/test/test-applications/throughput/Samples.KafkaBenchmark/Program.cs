@@ -13,10 +13,10 @@ namespace Samples.KafkaBenchmark
         private const string BootstrapServers = "localhost:9092";
         private const string Topic = "benchmark-topic";
         private const string ConsumerGroupId = "benchmark-consumer-group";
-        private int MessageCount = 10;
+        private static int MessageCount = 10;
         private const int MessageSize = 32;
 
-        static async Task<int> Main(string[] args)
+        static void Main(string[] args)
         {
             MessageCount = int.Parse(Environment.GetEnvironmentVariable("MESSAGE_COUNT") ?? "10");
 
@@ -30,13 +30,13 @@ namespace Samples.KafkaBenchmark
                 };
 
                 // Create topic if it doesn't exist
-                await CreateTopicIfNotExists(Topic, config);
+                CreateTopicIfNotExists(Topic, config).GetAwaiter().GetResult();
 
                 // Run the benchmark
-                await RunBenchmark();
+                RunBenchmark();
 
                 Console.WriteLine("Benchmark completed successfully");
-                return 0;
+                Environment.Exit(0);
             }
             catch (KafkaException ex) 
                 when(
@@ -49,12 +49,12 @@ namespace Samples.KafkaBenchmark
                 // (arbitrary) exit code 13 to indicate a faulty program, and skip the test
                 Console.WriteLine("Unexpected exception during execution " + ex);
                 Console.WriteLine("Exiting with skip code (13)");
-                return 13;
+                Environment.Exit(13);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error during benchmark execution: {ex}");
-                return 1;
+                Environment.Exit(1);
             }
         }
 
@@ -89,7 +89,7 @@ namespace Samples.KafkaBenchmark
             }
         }
 
-        private static async Task RunBenchmark()
+        private static void RunBenchmark()
         {
             var producerConfig = new ProducerConfig
             {
