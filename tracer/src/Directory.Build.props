@@ -4,7 +4,7 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1;net6.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>3.20.0</Version>
+    <Version>3.20.1</Version>
 
     <!-- Code analysis -->
     <AnalysisLevel>latest</AnalysisLevel>
