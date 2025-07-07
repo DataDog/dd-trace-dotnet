@@ -11,14 +11,15 @@ namespace Samples.KafkaBenchmark
     class Program
     {
         private const string BootstrapServers = "localhost:9092";
-        private const string Topic = "benchmark-topic";
         private const string ConsumerGroupId = "benchmark-consumer-group";
-        private static int MessageCount = 1000;
         private const int MessageSize = 32;
+        private static string Topic;
+        private static int MessageCount;
 
         static void Main(string[] args)
         {
             MessageCount = int.Parse(Environment.GetEnvironmentVariable("MESSAGE_COUNT") ?? "1000");
+            Topic = Environment.GetEnvironmentVariable("KAFKA_TOPIC") ?? "benchmark-topic";
 
             try
             {
