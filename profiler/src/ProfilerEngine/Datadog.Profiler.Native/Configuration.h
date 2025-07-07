@@ -77,8 +77,6 @@ public:
     EnablementStatus GetEnablementStatus() const override;
     DeploymentMode GetDeploymentMode() const override;
     std::chrono::milliseconds GetSsiLongLivedThreshold() const override;
-    bool IsTelemetryToDiskEnabled() const override;
-    bool IsSsiTelemetryEnabled() const override;
     CpuProfilerType GetCpuProfilerType() const override;
     std::chrono::milliseconds GetCpuProfilingInterval() const override;
     bool IsHttpProfilingEnabled() const override;
@@ -178,8 +176,6 @@ private:
     std::string _etwReplayEndpoint;
     EnablementStatus _enablementStatus;
     std::chrono::milliseconds _ssiLongLivedThreshold;
-    bool _isTelemetryToDiskEnabled;
-    bool _isSsiTelemetryEnabled;
     bool _isHttpProfilingEnabled;
     std::chrono::milliseconds _httpRequestDurationThreshold;
     bool _forceHttpSampling;

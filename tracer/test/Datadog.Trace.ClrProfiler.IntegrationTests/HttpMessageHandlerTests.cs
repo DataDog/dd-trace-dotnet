@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
 
                 agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 spans.Should().HaveCount(expectedSpanCount);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
@@ -157,11 +157,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 using var scope = new AssertionScope();
-                telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.HttpMessageHandler);
                 // ignore for now auto enabled for simplicity
-                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
+                await telemetry.AssertIntegrationAsync(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
+                await telemetry.AssertIntegrationAsync(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
+                await telemetry.AssertIntegrationAsync(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
                 VerifyInstrumentation(processResult.Process);
             }
             catch (ExitCodeException)
@@ -227,10 +227,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var scope = new AssertionScope();
                 // ignore auto enabled for simplicity
-                telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
-                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
+                await telemetry.AssertIntegrationDisabledAsync(IntegrationId.HttpMessageHandler);
+                await telemetry.AssertIntegrationAsync(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
+                await telemetry.AssertIntegrationAsync(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
+                await telemetry.AssertIntegrationAsync(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
                 VerifyInstrumentation(processResult.Process);
             }
             catch (ExitCodeException)

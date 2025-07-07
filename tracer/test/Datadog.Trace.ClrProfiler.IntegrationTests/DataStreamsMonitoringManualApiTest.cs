@@ -32,11 +32,11 @@ public class DataStreamsMonitoringManualApiTest : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         using var processResult = await RunSampleAndWaitForExit(agent);
 
-        var spans = agent.WaitForSpans(count: 2);
+        var spans = await agent.WaitForSpansAsync(count: 2);
         spans.Should().HaveCount(expected: 2);
         spans[1].TraceId.Should().Be(spans[0].TraceId); // trace context propagation
 
-        var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 2);
+        var dsPoints = await agent.WaitForDataStreamsPointsAsync(statsCount: 2);
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddDataStreamsScrubber();

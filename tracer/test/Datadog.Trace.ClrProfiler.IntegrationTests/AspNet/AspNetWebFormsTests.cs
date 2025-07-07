@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             }
 
-            var allSpans = _iisFixture.Agent.WaitForSpans(3, minDateTime: testStart)
+            var allSpans = (await _iisFixture.Agent.WaitForSpansAsync(3, minDateTime: testStart))
                                    .OrderBy(s => s.Start)
                                    .ToList();
 

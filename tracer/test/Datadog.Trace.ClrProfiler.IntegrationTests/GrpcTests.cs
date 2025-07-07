@@ -301,14 +301,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 using (processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
                 {
-                    var spans = agent.WaitForSpans(totalExpectedSpans, 500, assertExpectedCount: false);
+                    var spans = await agent.WaitForSpansAsync(totalExpectedSpans, 500, assertExpectedCount: false);
 
                     using var scope = new AssertionScope();
 
                     if (!isGrpcSupported)
                     {
                         Output.WriteLine($"Package version {packageVersion} is not supported in Grpc, skipping snapshot verification");
-                        telemetry.AssertIntegrationDisabled(IntegrationId.Grpc);
+                        await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Grpc);
                         return;
                     }
 
@@ -413,7 +413,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.Grpc);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Grpc);
             }
             catch (ExitCodeException)
             {
@@ -451,10 +451,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 using (processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
                 {
-                    var spans = agent.WaitForSpans(1, timeoutInMilliseconds: 500).Where(s => s.Type == "grpc.request").ToList();
+                    var spans = (await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 500)).Where(s => s.Type == "grpc.request").ToList();
 
                     Assert.Empty(spans);
-                    telemetry.AssertIntegrationDisabled(IntegrationId.Grpc);
+                    await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Grpc);
                 }
             }
             catch (ExitCodeException)

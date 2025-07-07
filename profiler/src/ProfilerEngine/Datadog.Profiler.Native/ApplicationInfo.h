@@ -2,8 +2,6 @@
 #include <string>
 #include <memory>
 
-#include "TelemetryMetricsWorker.h"
-
 struct ApplicationInfo
 {
 public:
@@ -12,6 +10,4 @@ public:
     std::string Version;
     std::string RepositoryUrl;
     std::string CommitSha;
-
-    std::shared_ptr<libdatadog::TelemetryMetricsWorker> Worker;
 };

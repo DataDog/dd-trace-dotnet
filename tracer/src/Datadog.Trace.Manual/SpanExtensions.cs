@@ -32,11 +32,6 @@ public static class SpanExtensions
     /// <param name="userDetails">The details of the current logged on user</param>
     public static void SetUser(this ISpan span, UserDetails userDetails)
     {
-        if (string.IsNullOrEmpty(userDetails.Id))
-        {
-            ThrowHelper.ThrowArgumentException(nameof(userDetails.Id) + " must be set to a value other than null or the empty string", nameof(userDetails.Id));
-        }
-
         SetUser(span, userDetails.Email, userDetails.Name, userDetails.Id, userDetails.PropagateId, userDetails.SessionId, userDetails.Role, userDetails.Scope);
     }
 

@@ -56,7 +56,7 @@ public abstract class AspNetFxWebApiApiSecurity : AspNetBase, IClassFixture<IisF
         settings.UseTextForParameters($"scenario={scenario}");
         var dateTime = DateTime.UtcNow;
         var res = await SubmitRequest(url, body, "application/json");
-        var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+        var spans = await agent.WaitForSpansAsync(2, minDateTime: dateTime);
         await VerifySpans(spans, settings);
     }
 

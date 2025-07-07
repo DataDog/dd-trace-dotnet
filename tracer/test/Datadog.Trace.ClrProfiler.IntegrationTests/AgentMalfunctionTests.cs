@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var process = await RunSampleAndWaitForExit(agent);
 
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName, timeoutInMilliseconds: 40000);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName, timeoutInMilliseconds: 40000);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(StackRegex, string.Empty);

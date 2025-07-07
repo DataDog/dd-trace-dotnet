@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.Util
     public class ClockTests
     {
         [Fact]
-        public void Should_use_real_clock_if_not_overriden()
+        public async Task Should_use_real_clock_if_not_overriden()
         {
             // If everything works, the fastpath should be used and this clock ignored
             using var lease = Clock.SetForCurrentThread(new SimpleClock());
@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Util
 
             var now = Clock.UtcNow;
 
-            Thread.Sleep(100);
+            await Task.Delay(100);
 
             var then = Clock.UtcNow;
 

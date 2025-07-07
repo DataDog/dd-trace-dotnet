@@ -54,7 +54,7 @@ public class GrpcDotNetTests : TestHelper
         agent.Configuration.SpanMetaStructs = false;
         using var process = await RunSampleAndWaitForExit(agent);
 
-        var spans = agent.WaitForSpans(expectedSpanCount);
+        var spans = await agent.WaitForSpansAsync(expectedSpanCount);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();

@@ -21,6 +21,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)environment_variables.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)lazy_rotating_file_sink.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)lazy_rotating_file_sink-inl.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)loader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)logger.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)logmanager.h" />

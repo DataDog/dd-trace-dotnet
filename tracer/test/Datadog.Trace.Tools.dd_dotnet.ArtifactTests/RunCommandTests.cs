@@ -64,7 +64,7 @@ public class RunCommandTests : ConsoleTestHelper
         errorOutput.Should().BeEmpty();
         exitCode.Should().Be(0);
 
-        var spans = agent.WaitForSpans(5);
+        var spans = await agent.WaitForSpansAsync(5);
 
         spans.Should().HaveCount(5)
             .And.OnlyContain(s => s.Service == "TestService" && s.Tags[Tags.Version] == "TestVersion" && s.Tags[Tags.Env] == "TestEnv");

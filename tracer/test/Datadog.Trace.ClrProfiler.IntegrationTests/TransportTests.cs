@@ -89,14 +89,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 await VerifyHelper.VerifySpans(spans, VerifyHelper.GetSpanVerifierSettings())
                                   .DisableRequireUniquePrefix()
                                   .UseFileName("TransportTests");
             }
 
-            telemetry.AssertConfiguration(ConfigTelemetryData.AgentTraceTransport, transportType.ToString());
+            await telemetry.AssertConfigurationAsync(ConfigTelemetryData.AgentTraceTransport, transportType.ToString());
 
             MockTracerAgent GetAgent(TracesTransportType type)
                 => type switch

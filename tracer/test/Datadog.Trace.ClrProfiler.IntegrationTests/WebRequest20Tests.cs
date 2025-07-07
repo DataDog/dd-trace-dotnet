@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Null(traceId);
                 Assert.Null(parentSpanId);
                 Assert.Equal("false", tracingEnabled);
-                telemetry.AssertIntegrationDisabled(IntegrationId.WebRequest);
+                await telemetry.AssertIntegrationDisabledAsync(IntegrationId.WebRequest);
                 VerifyInstrumentation(processResult.Process);
             }
         }
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 Assert.Equal(expectedSpanCount, spans.Count);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.WebRequest);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.WebRequest);
             }
         }
     }

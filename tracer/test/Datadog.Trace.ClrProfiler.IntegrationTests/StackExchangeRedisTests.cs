@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     _ => 202,
                 };
 
-                var spans = agent.WaitForSpans(expectedCount);
+                var spans = await agent.WaitForSpansAsync(expectedCount);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         .ThenBy(x => x.Duration));
             }
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.StackExchangeRedis);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.StackExchangeRedis);
         }
 
         private static PackageVersion GetPackageVersion(string packageVersionString)

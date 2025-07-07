@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             // don't call Fixture.WaitForSpans() directly so we can override span count and start date
             await Fixture.SendHttpRequest(request);
-            var spans = Fixture.Agent.WaitForSpans(count: spanCount, minDateTime: start, returnAllOperations: true);
+            var spans = await Fixture.Agent.WaitForSpansAsync(count: spanCount, minDateTime: start, returnAllOperations: true);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode, spanCount);

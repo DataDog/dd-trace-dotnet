@@ -141,7 +141,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
 
         using var assertionScope = new AssertionScope();
         // We don't expect any streams here, so no point waiting for ages
-        var dataStreams = agent.WaitForDataStreams(2, timeoutInMilliseconds: 2_000);
+        var dataStreams = await agent.WaitForDataStreamsAsync(2, timeoutInMilliseconds: 2_000);
         dataStreams.Should().BeEmpty();
     }
 

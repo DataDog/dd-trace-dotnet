@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent))
             {
                 const int expectedSpanCount = 53;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(NetActivitySdkTests));
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
             }
         }
     }

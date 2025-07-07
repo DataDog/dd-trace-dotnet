@@ -184,7 +184,7 @@ Expect: 100-continue
             Output.WriteLine($"[http] {Encoding.ASCII.GetString(bytes)}");
             Encoding.ASCII.GetString(bytes).Should().StartWith("HTTP/1.1 100 Continue");
 
-            var spans = _iisFixture.Agent.WaitForSpans(
+            var spans = await _iisFixture.Agent.WaitForSpansAsync(
                 count: isClassicMode ? 0 : 1, // classic mode doesn't generate any spans in this scenario
                 minDateTime: testStart,
                 returnAllOperations: true);

@@ -31,7 +31,7 @@ public class AppTrimmingTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         var aspnetPort = TcpPortProvider.GetOpenPort();
         using var processResult = await RunSampleAndWaitForExit(agent, aspNetCorePort: aspnetPort, usePublishWithRID: true);
-        var spans = agent.WaitForSpans(30);
+        var spans = await agent.WaitForSpansAsync(30);
 
         // Target app does 10 request, so it generates 30 spans (Http Request + AspNetCore + AspNetCore.Mvc)
         spans.Where(s => s.Name == "http.request").Should().HaveCount(10);

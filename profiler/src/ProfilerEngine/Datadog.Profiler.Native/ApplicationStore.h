@@ -12,13 +12,8 @@
 
 // forward declarations
 class IConfiguration;
-class ISsiManager;
 class IRuntimeInfo;
 
-namespace libatadog
-{
-class TelemetryMetricsWorker;
-}
 
 /// <summary>
 /// Stores the application information (name, environment, version) per runtime id
@@ -29,7 +24,7 @@ class ApplicationStore
     public ServiceBase
 {
 public:
-    ApplicationStore(IConfiguration* configuration, IRuntimeInfo* runtimeInfo, ISsiManager* ssiManager);
+    ApplicationStore(IConfiguration* configuration, IRuntimeInfo* runtimeInfo);
     ~ApplicationStore();
 
     ApplicationInfo GetApplicationInfo(const std::string& runtimeId) override;
@@ -44,12 +39,8 @@ private:
     bool StartImpl() override;
     bool StopImpl() override;
 
-    void InitializeTelemetryMetricsWorker(std::string const& runtimeId, ApplicationInfo& info);
-
     IConfiguration* const _pConfiguration;
-    ISsiManager* _pSsiManager;
     IRuntimeInfo* _pRuntimeInfo;
     std::unordered_map<std::string, ApplicationInfo> _infos;
     std::mutex _infosLock;
-    bool _isSsiTelemetryEnabled;
 };

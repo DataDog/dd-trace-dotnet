@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
 
                 foreach (var span in spans)

@@ -112,7 +112,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
         testName += _classicMode ? ".Classic" : ".Integrated";
         await SubmitRequest(url, null, "application/json");
-        var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+        var spans = await agent.WaitForSpansAsync(2, minDateTime: dateTime);
         await VerifySpans(spans, settings, testName: testName, methodNameOverride: exploit);
     }
 
@@ -130,12 +130,12 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         var dateTime = DateTime.UtcNow;
         var answer = await SubmitRequest("/Iast/PopulateDDBB", null, string.Empty);
         _iisFixture.Agent.SpanFilters.Add(s => !s.Resource.Contains("/Iast/PopulateDDBB"));
-        agent.WaitForSpans(2, minDateTime: dateTime);
+        await agent.WaitForSpansAsync(2, minDateTime: dateTime);
         dateTime = DateTime.UtcNow;
         var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
         testName += _classicMode ? ".Classic" : ".Integrated";
         await SubmitRequest(url, body, "application/json");
-        var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+        var spans = await agent.WaitForSpansAsync(2, minDateTime: dateTime);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
     }

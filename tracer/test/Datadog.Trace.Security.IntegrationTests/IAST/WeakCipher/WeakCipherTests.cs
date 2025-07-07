@@ -47,7 +47,7 @@ public class WeakCipherTests : TestHelper
         agent.Configuration.SpanMetaStructs = false;
 
         using var process = await RunSampleAndWaitForExit(agent);
-        var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
+        var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: ExpectedOperationName);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();

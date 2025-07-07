@@ -79,7 +79,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
 #else
             var expectedCount = 9;
 #endif
-            var spans = agent.WaitForSpans(expectedCount);
+            var spans = await agent.WaitForSpansAsync(expectedCount);
             var sqsSpans = spans.Where(
                 span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
@@ -88,7 +88,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
             taggedSpans.Should().HaveCount(expected: 2); // a send and a receive
 
-            var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 2);
+            var dsPoints = await agent.WaitForDataStreamsPointsAsync(statsCount: 2);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
@@ -101,7 +101,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
                           .UseFileName(fileName)
                           .DisableRequireUniquePrefix();
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.AwsSqs);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsSqs);
         }
     }
 }

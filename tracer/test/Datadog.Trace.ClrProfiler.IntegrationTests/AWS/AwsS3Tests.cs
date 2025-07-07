@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var expectedCount = 16;
                 var frameworkName = "NetCore";
 #endif
-                var spans = agent.WaitForSpans(expectedCount);
+                var spans = await agent.WaitForSpansAsync(expectedCount);
                 spans.Count().Should().Be(expectedCount);
                 var s3Spans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 // Note: http.request spans are expected for the S3 APIs that don't have explicit support
                 await VerifyHelper.VerifySpans(spans, settings);
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.AwsS3);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsS3);
             }
         }
 
@@ -100,11 +100,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(1, returnAllOperations: true);
+                var spans = await agent.WaitForSpansAsync(1, returnAllOperations: true);
 
                 Assert.NotEmpty(spans);
                 Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-                telemetry.AssertIntegrationDisabled(IntegrationId.AwsS3);
+                await telemetry.AssertIntegrationDisabledAsync(IntegrationId.AwsS3);
             }
         }
     }

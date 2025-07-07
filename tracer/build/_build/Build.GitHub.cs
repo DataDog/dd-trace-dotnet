@@ -999,32 +999,6 @@ partial class Build
 
                 var stages = string.Join(", ", ssiStatuses.Select(x => x.Key));
                 Logger.Information("All gitlab build stages ({Stages}) completed successfully", stages);
-                
-                // assert that the docker image for the commit is present
-                var image = $"ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:{CommitSha}";
-                VerifyDockerImageExists(image);
-                
-                if(new Version(Version).Major < 3)
-                {
-                    image = $"{image}-musl";
-                    VerifyDockerImageExists(image);
-                }
-
-                static void VerifyDockerImageExists(string image)
-                {
-                    try
-                    {
-                        Logger.Information("Checking for presence of SSI image '{Image}'", image);
-                        DockerTasks.DockerManifest(
-                            s => s.SetCommand($"inspect")
-                                .SetProcessArgumentConfigurator(c => c.Add(image)));
-                        Logger.Information("SSI image '{Image}' exists", image);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception($"Error verifying SSI artifacts: '{image}' could not be found. Ensure GitLab has successfully built and pushed the image", ex);
-                    }
-                }
             });
 
     async Task ReplaceCommentInPullRequest(int prNumber, string title, string markdown)

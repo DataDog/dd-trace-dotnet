@@ -244,10 +244,7 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["COR_PROFILER_PATH"] = nativeLoaderPath;
             }
 
-            if (DebugModeEnabled)
-            {
-                environmentVariables["DD_TRACE_DEBUG"] = "1";
-            }
+            environmentVariables["DD_TRACE_DEBUG"] = DebugModeEnabled ? "1" : "0";
 
             if (!string.IsNullOrEmpty(processToProfile) && !ignoreProfilerProcessesVar)
             {

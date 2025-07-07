@@ -519,10 +519,10 @@ namespace Datadog.Trace.TestHelpers
                 agent.SpanFilters.Add(IsServerSpan);
             }
 
-            return agent.WaitForSpans(
-                count: expectedSpanCount,
-                minDateTime: testStart,
-                returnAllOperations: true);
+            return await agent.WaitForSpansAsync(
+                       count: expectedSpanCount,
+                       minDateTime: testStart,
+                       returnAllOperations: true);
         }
 
         protected async Task AssertWebServerSpan(
@@ -556,10 +556,10 @@ namespace Datadog.Trace.TestHelpers
 
                 agent.SpanFilters.Add(IsServerSpan);
 
-                spans = agent.WaitForSpans(
-                    count: 2,
-                    minDateTime: testStart,
-                    returnAllOperations: true);
+                spans = await agent.WaitForSpansAsync(
+                            count: 2,
+                            minDateTime: testStart,
+                            returnAllOperations: true);
 
                 Assert.True(spans.Count == 2, $"expected two span, saw {spans.Count}");
             }
@@ -629,11 +629,11 @@ namespace Datadog.Trace.TestHelpers
                 Output.WriteLine($"[http] {response.StatusCode} {content}");
                 Assert.Equal(expectedHttpStatusCode, response.StatusCode);
 
-                spans = agent.WaitForSpans(
-                    count: 1,
-                    minDateTime: testStart,
-                    operationName: "aspnet.request",
-                    returnAllOperations: true);
+                spans = await agent.WaitForSpansAsync(
+                            count: 1,
+                            minDateTime: testStart,
+                            operationName: "aspnet.request",
+                            returnAllOperations: true);
 
                 Assert.True(spans.Count == 1, $"expected two span, saw {spans.Count}");
             }

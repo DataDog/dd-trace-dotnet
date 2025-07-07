@@ -44,7 +44,12 @@ ENV SUPER_SECRET_CANARY=MySuperSecretCanary
 # see https://github.com/DataDog/dd-trace-dotnet/pull/3579
 ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
+# We need to be able to override this for the crash tracking tests,
+# so we set it globally here instead of forcing it in the entrypoint
+ENV DD_PROFILING_ENABLED=1
+
+
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-ENTRYPOINT ["/app/datadog/dd-dotnet.cmd", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--",  "dotnet", "/app/AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["/app/datadog/dd-dotnet.cmd", "run", "--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--",  "dotnet", "/app/AspNetCoreSmokeTest.dll"]

@@ -58,7 +58,7 @@ public abstract class AspNetCoreEndpoints : AspNetBase, IClassFixture<AspNetCore
         await TryStartApp();
 
         var agent = _fixture.Agent;
-        agent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppEndpoints));
+        await agent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppEndpoints));
 
         var allData = agent.Telemetry.Cast<TelemetryData>().ToArray();
         var telemetryData = allData.Where(x => x.IsRequestType(TelemetryRequestTypes.AppEndpoints)).ToArray().FirstOrDefault();

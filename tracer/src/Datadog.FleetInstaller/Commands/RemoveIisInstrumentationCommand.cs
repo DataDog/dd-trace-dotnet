@@ -37,6 +37,28 @@ internal class RemoveIisInstrumentationCommand : CommandBase
 
     // Internal for testing
     internal static ReturnCode Execute(ILogger log)
+        => ExecuteIis(log);
+
+    internal static ReturnCode ExecuteGlobal(ILogger log)
+    {
+        log.WriteInfo("Removing global instrumentation for .NET tracer");
+
+        if (!GlobalEnvVariableHelper.RemoveMachineEnvironmentVariables(log))
+        {
+            log.WriteError("Failed to remove global environment variables. Apps may continue to be instrumented");
+            return ReturnCode.ErrorRemovingGlobalEnvironmentVariables;
+        }
+
+        var iisResult = ExecuteIis(log);
+        if (iisResult != ReturnCode.Success)
+        {
+            log.WriteError("Failed to remove IIS instrumentation. Apps may continue to be instrumented");
+        }
+
+        return iisResult;
+    }
+
+    internal static ReturnCode ExecuteIis(ILogger log)
     {
         log.WriteInfo("Removing IIS instrumentation for .NET tracer");
 

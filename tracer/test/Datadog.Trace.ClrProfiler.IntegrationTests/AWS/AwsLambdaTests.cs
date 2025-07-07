@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 var expectedSpans = requests * 2; // we manually instrument each request too
 
-                var spans = agent.WaitForSpans(expectedSpans, 15_000).ToArray();
+                var spans = (await agent.WaitForSpansAsync(expectedSpans, 15_000)).ToArray();
 
                 // Verify all the "with context" end invocations have a corresponding start context
                 using var s = new AssertionScope();

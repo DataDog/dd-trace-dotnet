@@ -22,6 +22,71 @@
 
 
 
+
+## [Release 3.20.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.20.0)
+
+## Summary
+
+- Fix AWS S3 DeleteBucket integration (#7118)
+- Fix protobuf instrumentation error on versions < 3.13 (before Aug 14 2020) (#7108)
+- [Tracer] Capturing GraphQL Errors With SpanEvents (#6899)
+- Avoid using AsyncManualResetEvent in DSM stats processing (#7027)
+- Add fix for race condition in `InitResult` (#7121)
+
+## Changes
+
+### Tracer
+* Avoid using AsyncManualResetEvent in DSM stats processing (#7027)
+* Fix AWS S3 DeleteBucket integration (#7118)
+* Update service discovery check (#7122)
+* Improve CharSlice allocations (#7127)
+* Disable data pipeline if libdatadog is not available (#7128)
+* use manual instead of unknown (#7143)
+* Check for incorrect values in Manual assembly (#7144)
+* Don't write native loader logs when bailing out in Windows SSI (#7147)
+
+### ASM
+* [AAP][ApiSec] Add response body parse switch in API Security (#7095)
+* Add fix for race condition in `InitResult` (#7121)
+
+### Fixes
+* [AAP] Reduce waf config diagnostics log levels (#7094)
+* Fix log4net tests to account for new process span to check for Android (#7104)
+* Fix protobuf instrumentation error on versions < 3.13 (before Aug 14 2020) (#7108)
+* Create a `StringUtil` helper for correct nullable annotations on `string.IsNullOrEmpty` (#7119)
+* Silently ignore empty user ids. (#7150)
+
+### Miscellaneous
+* [Tracer] Capturing GraphQL Errors With SpanEvents (#6899)
+* [Test Optimization] Remove impacted tests backend implementation (#6901)
+* Fix null reference exception (#7077)
+* [Test Package Versions Bump] Updating package versions (#7090)
+* Update libdatadog to v19.0.0 (#7105)
+* Add global tracing command to FleetInstaller.exe (#7110)
+* Avoid `dlclose` on glibc 2.34-2.36 (#7125)
+* [Test Package Versions Bump] Updating package versions (#7126)
+* Update .gitlab/one-pipeline.locked.yaml (#7129)
+* Update libdatadog to v19.0.1 (#7139)
+* [Docs] Fix Readme BuildAndRunOsxIntegrationTests sample (#7148)
+
+### Build / Test
+* Grpc legacy flaky test (#7096)
+* Do not save system-tests/agent image (#7106)
+* Minor updates for libdatadog data pipeline changes (#7115)
+* Try update `ProcessHelper` to fix flakiness (#7116)
+* Add `-ApiVersion` Nuke parameter for specific NuGet version testing (#7117)
+* Remove flaky datapipeline tests (#7124)
+* Wait for config sent in Metastruct tests (#7130)
+* Replace "manual" retries with buit-in flaky retry (#7132)
+* Update one pipeline reference (#7135)
+* Add bailout scenario to execution time tests (#7136)
+* Move trimming file into buildTransitive (#7140)
+* Replacing Thread.Sleep usage in async methods (#7145)
+* Fix missing sync to async changes (#7157)
+
+
+[Changes since 3.19.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.19.0...v3.20.0)
+
 ## [Release 3.19.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.19.0)
 
 ## Summary

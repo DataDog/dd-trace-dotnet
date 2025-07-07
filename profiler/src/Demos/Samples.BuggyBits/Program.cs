@@ -4,6 +4,8 @@
 // </copyright>
 using System;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Demos.Util;
@@ -64,6 +66,17 @@ namespace BuggyBits
                 if (string.IsNullOrEmpty(rootUrl))
                 {
                     rootUrl = "http://localhost:5000";
+                }
+
+                // avoid race condition in CI to find an available port
+                int port = -1;
+                if (int.TryParse(rootUrl.Substring(rootUrl.LastIndexOf(':') + 1), out port))
+                {
+                    port = GetValidPort(port, 3);
+                    if (port != -1)
+                    {
+                        rootUrl = rootUrl.Substring(0, rootUrl.LastIndexOf(':') + 1) + port;
+                    }
                 }
 
                 WriteLine($"Listening to {rootUrl}");
@@ -132,6 +145,64 @@ namespace BuggyBits
 
             sw.Stop();
             WriteLine($"The application exited after: {sw.Elapsed} at {DateTime.UtcNow}");
+        }
+
+        public static int GetOpenPort()
+        {
+            TcpListener tcpListener = null;
+            try
+            {
+                tcpListener = new TcpListener(IPAddress.Loopback, 0);
+                tcpListener.Start();
+                var port = ((IPEndPoint)tcpListener.LocalEndpoint).Port;
+                return port;
+            }
+            finally
+            {
+                tcpListener?.Stop();
+            }
+        }
+
+        private static int GetValidPort(int initialPort, int retries)
+        {
+            var port = initialPort;
+            bool isPortValid = false;
+            while (true)
+            {
+                // seems like we can't reuse a listener if it fails to start,
+                // so create a new listener each time we retry
+                var listener = new HttpListener();
+                listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+                listener.Prefixes.Add($"http://localhost:{port}/");
+
+                try
+                {
+                    listener.Start();
+
+                    // success
+                    isPortValid = true;
+                    break;
+                }
+                catch (HttpListenerException) when (retries > 0)
+                {
+                    // only catch the exception if there are retries left
+                    port = GetOpenPort();
+                    retries--;
+                }
+                finally
+                {
+                    listener.Close();
+                }
+            }
+
+            if (isPortValid)
+            {
+                return port;
+            }
+            else
+            {
+                return -1; // no valid port found
+            }
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>

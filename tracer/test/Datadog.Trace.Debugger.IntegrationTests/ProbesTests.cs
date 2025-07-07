@@ -575,7 +575,7 @@ public class ProbesTests : TestHelper
         var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}.{testNameSuffix}");
 
-        var spans = agent.WaitForSpans(expectedSpanCount);
+        var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
         Assert.Equal(expectedSpanCount, spans.Count);
 
@@ -616,7 +616,7 @@ public class ProbesTests : TestHelper
             var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
             settings.UseFileName($"{nameof(ProbeTests)}.{testName}.Spans");
 
-            var spans = agent.WaitForSpans(spanProbes.Length, operationName: spanProbeOperationName);
+            var spans = await agent.WaitForSpansAsync(spanProbes.Length, operationName: spanProbeOperationName);
             // Assert.Equal(spanProbes.Length, spans.Count);
             foreach (var span in spans)
             {

@@ -10,6 +10,7 @@
 
 steps:
   # Use semicolon delimited list of checks, and update each of them
+- template: create-github-app-token.yml
 - script: |
     # curl is too old so doesn't support --fail-with-body
     curl_fail_with_body() {
@@ -23,7 +24,8 @@ steps:
       TARGET_URL="https://dev.azure.com/datadoghq/$(AZURE_PROJECT_NAME)/_build/results?buildId=$(Build.BuildId)"
       curl_fail_with_body -X POST --silent --show-error \
         -H "Accept: application/vnd.github.v3+json" \
-        -H "Authorization: Bearer $(GITHUB_TOKEN)" \
+        -H "Authorization: token $GITHUB_TOKEN" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
         https://api.github.com/repos/DataDog/$(GITHUB_REPOSITORY_NAME)/statuses/$(OriginalCommitId) \
         -d '{"state":"${{ parameters.status }}","context":"'"$stageToSkip"'","description":"${{ parameters.description }}","target_url":"'"$TARGET_URL"'"}'    
     done
@@ -33,5 +35,5 @@ steps:
   continueOnError: true
   env:
     AZURE_PROJECT_NAME: $(AZURE_PROJECT_NAME)
-    GITHUB_TOKEN: $(GITHUB_TOKEN)
+    GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
     GITHUB_REPOSITORY_NAME: $(GITHUB_REPOSITORY_NAME)

@@ -474,7 +474,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         var agent = helper.Agent;
 
-        agent.WaitForLatestTelemetry(IsCrashReport).Should().NotBeNull();
+        (await agent.WaitForLatestTelemetryAsync(IsCrashReport)).Should().NotBeNull();
     }
 
     [SkippableTheory]

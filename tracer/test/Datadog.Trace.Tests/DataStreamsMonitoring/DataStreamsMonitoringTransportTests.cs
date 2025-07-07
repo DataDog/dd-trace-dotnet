@@ -75,7 +75,7 @@ public class DataStreamsMonitoringTransportTests
 
         await writer.DisposeAsync();
 
-        var result = agent.WaitForDataStreams(1);
+        var result = await agent.WaitForDataStreamsAsync(1);
 
         // we can't guarantee only having a single payload due to race conditions in the flushing code
         result.Should().OnlyContain(payload => payload.Env == "env");

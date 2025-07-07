@@ -29,7 +29,6 @@ public class ManualInstrumentationTests : TestHelper
     public ManualInstrumentationTests(ITestOutputHelper output)
         : base("ManualInstrumentation", output)
     {
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
     }
 
     [SkippableFact]
@@ -89,7 +88,7 @@ public class ManualInstrumentationTests : TestHelper
         using var assert = new AssertionScope();
         using var process = await RunSampleAndWaitForExit(agent);
 
-        var spans = agent.WaitForSpans(0, timeoutInMilliseconds: 500);
+        var spans = await agent.WaitForSpansAsync(0, timeoutInMilliseconds: 500);
         spans.Should().BeEmpty();
     }
 
@@ -102,7 +101,7 @@ public class ManualInstrumentationTests : TestHelper
         using var assert = new AssertionScope();
         using var process = await RunSampleAndWaitForExit(agent, usePublishWithRID: usePublishWithRID);
 
-        var spans = agent.WaitForSpans(expectedSpans);
+        var spans = await agent.WaitForSpansAsync(expectedSpans);
         spans.Should().HaveCount(expectedSpans);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();

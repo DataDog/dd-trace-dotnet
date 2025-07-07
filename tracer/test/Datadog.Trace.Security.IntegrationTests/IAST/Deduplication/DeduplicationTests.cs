@@ -60,10 +60,10 @@ public class DeduplicationTests : TestHelper
         agent.Configuration.SpanMetaStructs = false;
 
         using var process = await RunSampleAndWaitForExit(agent, "5");
-        var spans =
+        var spans = await (
             onlyWeakHash ?
-                agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName) :
-                agent.WaitForSpans(expectedSpanCount);
+                agent.WaitForSpansAsync(expectedSpanCount, operationName: ExpectedOperationName) :
+                agent.WaitForSpansAsync(expectedSpanCount));
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();

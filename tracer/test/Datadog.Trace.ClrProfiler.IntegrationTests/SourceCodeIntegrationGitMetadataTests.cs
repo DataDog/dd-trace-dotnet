@@ -30,7 +30,7 @@ public class SourceCodeIntegrationGitMetadataTests : TestHelper
         using var assert = new AssertionScope();
         using var process = await RunSampleAndWaitForExit(agent);
 
-        var spans = agent.WaitForSpans(expectedSpans);
+        var spans = await agent.WaitForSpansAsync(expectedSpans);
         spans.Should().HaveCount(expectedSpans);
 
         // Let's separate the traces
@@ -57,7 +57,7 @@ public class SourceCodeIntegrationGitMetadataTests : TestHelper
         using var assert = new AssertionScope();
         using var process = await RunSampleAndWaitForExit(agent);
 
-        var spans = agent.WaitForSpans(0, timeoutInMilliseconds: 500);
+        var spans = await agent.WaitForSpansAsync(0, timeoutInMilliseconds: 500);
         spans.Should().BeEmpty();
     }
 }

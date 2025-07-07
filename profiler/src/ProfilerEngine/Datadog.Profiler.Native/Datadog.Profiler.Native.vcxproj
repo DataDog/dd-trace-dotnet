@@ -371,7 +371,6 @@
     <ClInclude Include="SumMetric.h" />
     <ClInclude Include="Tags.h" />
     <ClInclude Include="TagsHelper.h" />
-    <ClInclude Include="TelemetryMetricsWorker.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadLifetimeProvider.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
@@ -460,7 +459,6 @@
     <ClCompile Include="SumMetric.cpp" />
     <ClCompile Include="Tags.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
-    <ClCompile Include="TelemetryMetricsWorker.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadLifetimeProvider.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />

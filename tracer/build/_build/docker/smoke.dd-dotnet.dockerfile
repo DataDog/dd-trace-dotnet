@@ -46,7 +46,11 @@ ENV DD_INJECTION_ENABLED=tracer
 ENV DD_INJECT_FORCE=1
 ENV DD_TELEMETRY_FORWARDER_PATH=/bin/true
 
+# We need to be able to override this for the crash tracking tests,
+# so we set it globally here instead of forcing it in the entrypoint
+ENV DD_PROFILING_ENABLED=1
+
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-ENTRYPOINT ["/opt/datadog/dd-dotnet.sh", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["/opt/datadog/dd-dotnet.sh", "run", "--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
