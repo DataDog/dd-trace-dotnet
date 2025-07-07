@@ -13,11 +13,13 @@ namespace Samples.KafkaBenchmark
         private const string BootstrapServers = "localhost:9092";
         private const string Topic = "benchmark-topic";
         private const string ConsumerGroupId = "benchmark-consumer-group";
-        private const int MessageCount = 100;
+        private int MessageCount = 10;
         private const int MessageSize = 32;
 
         static async Task<int> Main(string[] args)
         {
+            MessageCount = int.Parse(Environment.GetEnvironmentVariable("MESSAGE_COUNT") ?? "10");
+
             try
             {
                 Console.WriteLine("Starting Kafka benchmark...");
