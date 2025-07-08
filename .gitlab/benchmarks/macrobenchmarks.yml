@@ -58,8 +58,6 @@ dsm_throughput:
   variables:
     KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-dotnet
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
   rules:
     - when: on_success
 
