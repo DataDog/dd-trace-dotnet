@@ -60,9 +60,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                                   + 3 // throwing (manual only)
                                   + 3 // throwing with context
                                   + 8 // Generic types
-                                  + 1; // Toplevel Statement
+                                  + 1 // Toplevel Statement
+                                  + 2; // Disabled
 
-                var expectedSpans = requests * 2; // we manually instrument each request too
+                // We have HTTP Request + Manual span + Fake Lambda span for each request
+                // For disabled tests, we still get all the direct spans, we just lose the fake Lambda ones
+                var expectedSpans = requests * 2;
 
                 var spans = (await agent.WaitForSpansAsync(expectedSpans, 15_000)).ToArray();
 
