@@ -13,32 +13,32 @@ namespace Samples.KafkaBenchmark
         private const string BootstrapServers = "localhost:9092";
         private const string ConsumerGroupId = "benchmark-consumer-group";
         private const int MessageSize = 32;
+        private static int ThreadCount;
+        private const int MessageCount = 1000;
         private static string Topic;
-        private static int MessageCount;
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            MessageCount = int.Parse(Environment.GetEnvironmentVariable("MESSAGE_COUNT") ?? "1000");
             Topic = Environment.GetEnvironmentVariable("KAFKA_TOPIC") ?? "benchmark-topic";
+            ThreadCount = int.Parse(Environment.GetEnvironmentVariable("NUM_THREADS") ?? "5");
 
             try
             {
-                Console.WriteLine("Starting Kafka benchmark...");
-                
+                Console.WriteLine($"Starting Kafka benchmark with {ThreadCount} threads...");
+
                 var config = new ClientConfig
                 {
                     BootstrapServers = BootstrapServers
                 };
 
-                CreateTopicIfNotExists(Topic, config).GetAwaiter().GetResult();
-                RunBenchmark();
+                await RunMultiThreadedBenchmark();
 
                 Console.WriteLine("Benchmark completed successfully");
                 Environment.Exit(0);
             }
-            catch (KafkaException ex) 
-                when(
-                    ex.Message.Contains("Failed while waiting for response from broker: Local: Timed out") 
+            catch (KafkaException ex)
+                when (
+                    ex.Message.Contains("Failed while waiting for response from broker: Local: Timed out")
                   || ex.Message.Contains("Failed while waiting for controller: Local: Timed out"))
             {
                 Console.WriteLine("Unexpected exception during execution " + ex);
@@ -52,49 +52,32 @@ namespace Samples.KafkaBenchmark
             }
         }
 
-        private static async Task CreateTopicIfNotExists(string topicName, ClientConfig config)
+        private static async Task RunMultiThreadedBenchmark()
         {
-            using var adminClient = new AdminClientBuilder(config).Build();
-            
-            try
+            var tasks = new List<Task>();
+
+            for (int i = 0; i < ThreadCount; i++)
             {
-                await adminClient.CreateTopicsAsync(new List<TopicSpecification> {
-                    new()
-                    {
-                        Name = topicName,
-                        NumPartitions = 1,
-                        ReplicationFactor = 1
-                    }
-                });
+                string topicName = $"{Topic}-{i}";
+                tasks.Add(Task.Run(() => RunBenchmark(topicName)));
             }
-            catch (CreateTopicsException ex)
-            {
-                if (ex.Results[0].Error.Code == ErrorCode.TopicAlreadyExists)
-                {
-                    Console.WriteLine($"Topic {topicName} already exists, skipping creation");
-                }
-                else
-                {
-                    Console.WriteLine($"Error creating topic {topicName}: {ex.Results[0].Error.Reason}");
-                    throw;
-                }
-            }
+
+            await Task.WhenAll(tasks);
         }
 
-        private static void RunBenchmark()
+        private static void RunBenchmark(string topicName)
         {
             var producerConfig = new ProducerConfig
             {
                 BootstrapServers = BootstrapServers,
                 EnableDeliveryReports = true,
                 Acks = Acks.All,
-                MessageSendMaxRetries = 3,
+                MessageSendMaxRetries = 1,
                 RetryBackoffMs = 100,
             };
 
-            // Use a unique consumer group ID for each run to avoid offset conflicts
             var uniqueConsumerGroupId = $"{ConsumerGroupId}-{DateTime.UtcNow.Ticks}";
-            
+
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = BootstrapServers,
@@ -118,8 +101,8 @@ namespace Samples.KafkaBenchmark
                 .SetErrorHandler((_, e) => Console.WriteLine($"Consumer Error: {e.Reason}."))
                 .Build();
 
-            consumer.Subscribe(Topic);
-            Console.WriteLine($"Producing {MessageCount} messages...");
+            consumer.Subscribe(topicName);
+            Console.WriteLine($"Producing {MessageCount} messages on topic {topicName}...");
 
             var largeContent = new string('x', MessageSize);
 
@@ -139,14 +122,14 @@ namespace Samples.KafkaBenchmark
                     Headers = headers
                 };
 
-                producer.Produce(Topic, message);
+                producer.Produce(topicName, message);
             }
 
             producer.Flush();
-            Console.WriteLine($"Successfully produced {MessageCount} messages");
+            Console.WriteLine($"Successfully produced {MessageCount} messages on topic {topicName}");
 
             // Phase 2: Consume all messages
-            Console.WriteLine($"Consuming {MessageCount} messages...");
+            Console.WriteLine($"Consuming {MessageCount} messages from topic {topicName}...");
             var consumedCount = 0;
 
             for (int i = 0; i < MessageCount; i++)
@@ -161,11 +144,11 @@ namespace Samples.KafkaBenchmark
                 }
                 else
                 {
-                    throw new Exception($"Failed to consume message {i} within timeout");
+                    throw new Exception($"Failed to consume message {i} within timeout on topic {topicName}");
                 }
             }
 
-            Console.WriteLine($"Successfully consumed {consumedCount} messages");
+            Console.WriteLine($"Successfully consumed {consumedCount} messages from topic {topicName}");
         }
     }
 }
