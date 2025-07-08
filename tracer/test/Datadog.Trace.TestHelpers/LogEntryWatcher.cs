@@ -31,7 +31,14 @@ public class LogEntryWatcher : IDisposable
     public LogEntryWatcher(string logFilePattern, string logDirectory = null, ITestOutputHelper outputHelper = null)
     {
         var logPath = logDirectory ?? DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance);
-        _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
+        _fileWatcher = new FileSystemWatcher
+        {
+            Path = logPath,
+            Filter = logFilePattern,
+            EnableRaisingEvents = true,
+            InternalBufferSize = 64 * 1024 // 64KB buffer size - default is 8KB, which may not be enough for high-frequency log writes
+        };
+
         _readers = new();
         _outputHelper = outputHelper;
         var dir = new DirectoryInfo(logPath);
