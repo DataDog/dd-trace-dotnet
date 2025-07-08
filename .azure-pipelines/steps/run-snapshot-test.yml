@@ -87,7 +87,10 @@ steps:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
 
 - bash: |
-    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e PROFILER_IS_NOT_REQUIRED=${{ parameters.isNoop }} ${{ parameters.target }}
+    # We explicitly set the DD_PROFILING_ENABLED=1 flag here, because we want to ensure that profiling is enabled for this
+    # test, but _not_ for the crash tracking test. For some scenarios (e.g. chiseled tests) we can't set env vars directly
+    # in the container, so we explicitly set this once here because it needs to change between the two tests.
+    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e DD_PROFILING_ENABLED=1 -e PROFILER_IS_NOT_REQUIRED=${{ parameters.isNoop }} ${{ parameters.target }}
   env:
     dockerTag: $(dockerTag)
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
