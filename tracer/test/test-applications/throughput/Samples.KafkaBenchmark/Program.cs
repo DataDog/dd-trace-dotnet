@@ -30,10 +30,7 @@ namespace Samples.KafkaBenchmark
                     BootstrapServers = BootstrapServers
                 };
 
-                // Create topic if it doesn't exist
                 CreateTopicIfNotExists(Topic, config).GetAwaiter().GetResult();
-
-                // Run the benchmark
                 RunBenchmark();
 
                 Console.WriteLine("Benchmark completed successfully");
@@ -44,10 +41,6 @@ namespace Samples.KafkaBenchmark
                     ex.Message.Contains("Failed while waiting for response from broker: Local: Timed out") 
                   || ex.Message.Contains("Failed while waiting for controller: Local: Timed out"))
             {
-                // If the brokers are too slow in responding, we can end up with timeouts
-                // However, we can't just do retries, as that would change the number
-                // of spans causing the tests to fail. As a workaround, we use the specific
-                // (arbitrary) exit code 13 to indicate a faulty program, and skip the test
                 Console.WriteLine("Unexpected exception during execution " + ex);
                 Console.WriteLine("Exiting with skip code (13)");
                 Environment.Exit(13);
@@ -65,7 +58,6 @@ namespace Samples.KafkaBenchmark
             
             try
             {
-                Console.WriteLine($"Creating topic {topicName}...");
                 await adminClient.CreateTopicsAsync(new List<TopicSpecification> {
                     new()
                     {
@@ -74,7 +66,6 @@ namespace Samples.KafkaBenchmark
                         ReplicationFactor = 1
                     }
                 });
-                Console.WriteLine($"Topic {topicName} created successfully");
             }
             catch (CreateTopicsException ex)
             {
@@ -127,9 +118,7 @@ namespace Samples.KafkaBenchmark
                 .SetErrorHandler((_, e) => Console.WriteLine($"Consumer Error: {e.Reason}."))
                 .Build();
 
-            // Subscribe to the topic
             consumer.Subscribe(Topic);
-
             Console.WriteLine($"Producing {MessageCount} messages...");
 
             var largeContent = new string('x', MessageSize);
@@ -150,11 +139,9 @@ namespace Samples.KafkaBenchmark
                     Headers = headers
                 };
 
-                // Produce message
                 producer.Produce(Topic, message);
             }
 
-            // Flush all produced messages
             producer.Flush();
             Console.WriteLine($"Successfully produced {MessageCount} messages");
 
