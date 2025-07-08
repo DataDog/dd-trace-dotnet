@@ -49,6 +49,13 @@ public class LogEntryWatcher : IDisposable
         }
 
         _fileWatcher.Created += NewLogFileCreated;
+        _fileWatcher.Error += (sender, args) =>
+        {
+            _outputHelper?.WriteLine(
+                args.GetException() is InternalBufferOverflowException
+                    ? "ERROR: FileSystemWatcher buffer overflowed. Events were lost."
+                    : $"ERROR: FileSystemWatcher error: {args.GetException()}");
+        };
     }
 
     public void Dispose()
