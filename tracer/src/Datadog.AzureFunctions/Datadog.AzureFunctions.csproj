@@ -8,12 +8,9 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoDefaultExcludes>true</NoDefaultExcludes>
 
-    <!-- nuget version: move $Version to $VersionPrefix so we can add a prerelease suffix.
-         This version will be published by default when we publish a new tracer release and is
-         temporary until we go GA. Using "preview1" to allow publishing multiple preview versions
-         for a given tracer release. -->
+    <!-- nuget version: move $Version to $VersionPrefix so we can add a prerelease suffix. -->
     <VersionPrefix>$(Version)</VersionPrefix>
-    <VersionSuffix>preview1</VersionSuffix>
+    <VersionSuffix>preview</VersionSuffix>
     <Version></Version>
 
     <!-- nuget package metadata -->
