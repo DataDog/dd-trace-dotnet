@@ -79,7 +79,28 @@ internal class DataStreamsManager
     /// </summary>
     public PathwayContext? ExtractPathwayContext<TCarrier>(TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
-        => IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
+    {
+        if (!IsEnabled)
+        {
+            Console.WriteLine("DataStreamsManager.ExtractPathwayContext: DataStreams is disabled, returning null");
+            return null;
+        }
+
+        Console.WriteLine("DataStreamsManager.ExtractPathwayContext: Attempting to extract pathway context from headers");
+        var context = DataStreamsContextPropagator.Instance.Extract(headers);
+        Console.WriteLine("DataStreamsManager.ExtractPathwayContext: Extracted context: {HasContext}", context != null);
+
+        if (context != null)
+        {
+            Console.WriteLine(
+                "DataStreamsManager.ExtractPathwayContext: Context hash: {0}, PathwayStart: {1}, EdgeStart: {2}",
+                context.Value.Hash,
+                context.Value.PathwayStart,
+                context.Value.EdgeStart);
+        }
+
+        return context;
+    }
 
     /// <summary>
     /// Injects a <see cref="PathwayContext"/> into headers
@@ -89,12 +110,25 @@ internal class DataStreamsManager
     public void InjectPathwayContext<TCarrier>(PathwayContext? context, TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
     {
-        if (!IsEnabled || context is null)
+        if (!IsEnabled)
         {
+            Console.WriteLine("DataStreamsManager.InjectPathwayContext: DataStreams is disabled, skipping injection");
             return;
         }
 
+        if (context is null)
+        {
+            Console.WriteLine("DataStreamsManager.InjectPathwayContext: Context is null, skipping injection");
+            return;
+        }
+
+        Console.WriteLine(
+            "DataStreamsManager.InjectPathwayContext: Injecting context with hash: {0}, PathwayStart: {1}, EdgeStart: {2}",
+            context.Value.Hash,
+            context.Value.PathwayStart,
+            context.Value.EdgeStart);
         DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
+        Console.WriteLine("DataStreamsManager.InjectPathwayContext: Successfully injected pathway context");
     }
 
     public void TrackBacklog(string tags, long value)
@@ -139,7 +173,7 @@ internal class DataStreamsManager
         // This shouldn't happen normally, as you should call SetCheckpoint before calling InjectPathwayContext
         // But if data streams was disabled, you call SetCheckpoint, and then data streams is enabled
         // you will hit this code path
-        Log.Debug("Attempted to inject null pathway context");
+        Console.WriteLine("Attempted to inject null pathway context");
     }
 
     /// <summary>
@@ -159,18 +193,29 @@ internal class DataStreamsManager
         long payloadSizeBytes,
         long timeInQueueMs)
     {
+        Console.WriteLine(
+            "DataStreamsManager.SetCheckpoint: Starting checkpoint creation. Kind: {0}, EdgeTags: [{1}], PayloadSize: {2}, TimeInQueue: {3}",
+            checkpointKind,
+            string.Join(", ", edgeTags),
+            payloadSizeBytes,
+            timeInQueueMs);
+
         if (!IsEnabled)
         {
+            Console.WriteLine("DataStreamsManager.SetCheckpoint: DataStreams is disabled, returning null");
             return null;
         }
 
         try
         {
             var previousContext = parentPathway;
+            Console.WriteLine("DataStreamsManager.SetCheckpoint: Parent pathway: {HasParentPathway}", parentPathway != null);
+
             if (previousContext == null && LastConsumePathway.Value != null && checkpointKind == CheckpointKind.Produce)
             {
                 // We only enter here on produce: when we consume, the only thing that matters is the parent we'd have read from the inbound message, not what happened before.
                 // We want to use the context from the previous consume (but we'll give priority to the parent passed in param if set).
+                Console.WriteLine("DataStreamsManager.SetCheckpoint: Using LastConsumePathway as previous context for produce operation");
                 previousContext = LastConsumePathway.Value;
             }
 
@@ -182,20 +227,44 @@ internal class DataStreamsManager
             var edgeStartNs = previousContext == null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1_000_000) : nowNs;
             var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
 
+            Console.WriteLine(
+                "DataStreamsManager.SetCheckpoint: Timestamps - Now: {0}, EdgeStart: {1}, PathwayStart: {2}",
+                nowNs,
+                edgeStartNs,
+                pathwayStartNs);
+
             var nodeHash = HashHelper.CalculateNodeHash(_nodeHashBase, edgeTags);
             var parentHash = previousContext?.Hash ?? default;
             var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
 
+            Console.WriteLine(
+                "DataStreamsManager.SetCheckpoint: Hashes - NodeHash: {0}, ParentHash: {1}, PathwayHash: {2}",
+                nodeHash,
+                parentHash,
+                pathwayHash);
+
             var writer = Volatile.Read(ref _writer);
-            writer?.Add(
-                new StatsPoint(
+            if (writer != null)
+            {
+                var statsPoint = new StatsPoint(
                     edgeTags: edgeTags,
                     hash: pathwayHash,
                     parentHash: parentHash,
                     timestampNs: nowNs,
                     pathwayLatencyNs: nowNs - pathwayStartNs,
                     edgeLatencyNs: nowNs - (previousContext?.EdgeStart ?? edgeStartNs),
-                    payloadSizeBytes));
+                    payloadSizeBytes);
+
+                Console.WriteLine(
+                    "DataStreamsManager.SetCheckpoint: Adding stats point with pathway latency: {0}, edge latency: {1}",
+                    statsPoint.PathwayLatencyNs,
+                    statsPoint.EdgeLatencyNs);
+                writer.Add(statsPoint);
+            }
+            else
+            {
+                Console.WriteLine("DataStreamsManager.SetCheckpoint: Writer is null, skipping stats point addition");
+            }
 
             var pathway = new PathwayContext(
                 hash: pathwayHash,
@@ -204,7 +273,7 @@ internal class DataStreamsManager
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug(
+                Console.WriteLine(
                     "SetCheckpoint with {PathwayHash}, {PathwayStart}, {EdgeStart}",
                     pathway.Hash,
                     pathway.PathwayStart,
@@ -214,9 +283,11 @@ internal class DataStreamsManager
             // overwrite the previous checkpoint, so it can be used in the future if needed
             if (checkpointKind == CheckpointKind.Consume)
             {
+                Console.WriteLine("DataStreamsManager.SetCheckpoint: Setting LastConsumePathway for consume operation");
                 LastConsumePathway.Value = pathway;
             }
 
+            Console.WriteLine("DataStreamsManager.SetCheckpoint: Successfully created checkpoint");
             return pathway;
         }
         catch (Exception ex)
