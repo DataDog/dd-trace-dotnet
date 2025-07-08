@@ -76,7 +76,7 @@ public class LiveDebuggerTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath);
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath, Output);
         using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
         await logEntryWatcher.WaitForLogEntry(LiveDebuggerDisabledLogEntry);
 

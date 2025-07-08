@@ -16,12 +16,10 @@ public class TracerTests : TestHelper
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string DiagnosticLog = "DATADOG TRACER CONFIGURATION";
-    private readonly ITestOutputHelper _output;
 
     public TracerTests(ITestOutputHelper output)
         : base("Console", output)
     {
-        _output = output;
     }
 
     [SkippableFact]
@@ -31,7 +29,7 @@ public class TracerTests : TestHelper
         EnvironmentHelper.CustomEnvironmentVariables["DD_TRACE_ENABLED"] = "0";
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
         var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory, _output);
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory, Output);
         using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
 
         // Throws if the log entry is not found
