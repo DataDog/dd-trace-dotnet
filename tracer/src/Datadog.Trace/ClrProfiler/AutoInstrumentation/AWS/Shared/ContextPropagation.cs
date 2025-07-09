@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
 
         private static void Inject(PropagationContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
-            Console.WriteLine("ContextPropagation.Inject: Starting context injection. DataStreamsManager enabled: {IsEnabled}", dataStreamsManager?.IsEnabled);
+            Console.WriteLine("ContextPropagation.Inject: Starting context injection. DataStreamsManager enabled: {0}", dataStreamsManager?.IsEnabled);
 
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire();
