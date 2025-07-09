@@ -30,7 +30,7 @@ internal static class AwsSqsHandlerCommon
             return CallTargetState.GetDefault();
         }
 
-        Console.WriteLine("SQS BeforeSend: Starting SQS send operation. SendType: {SendType}", sendType.OperationName);
+        Console.WriteLine("SQS BeforeSend: Starting SQS send operation. SendType: {0}", sendType.OperationName);
 
         // we can't use generic constraints for this duck typing, because we need the original type
         // for the Inject call below
@@ -39,7 +39,7 @@ internal static class AwsSqsHandlerCommon
         var scope = AwsSqsCommon.CreateScope(Tracer.Instance, sendType.OperationName, out var tags, spanKind: SpanKinds.Producer);
 
         var queueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
-        Console.WriteLine("SQS BeforeSend: Queue URL: {QueueUrl}, Queue Name: {QueueName}", requestProxy.QueueUrl, queueName);
+        Console.WriteLine("SQS BeforeSend: Queue URL: {0}, Queue Name: {1}", requestProxy.QueueUrl, queueName);
 
         if (tags is not null && requestProxy.QueueUrl is not null)
         {
@@ -50,7 +50,7 @@ internal static class AwsSqsHandlerCommon
         if (scope?.Span.Context != null && !string.IsNullOrEmpty(queueName))
         {
             var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-            Console.WriteLine("SQS BeforeSend: DataStreamsManager enabled: {IsEnabled}", dataStreamsManager?.IsEnabled);
+            Console.WriteLine("SQS BeforeSend: DataStreamsManager enabled: {0}", dataStreamsManager?.IsEnabled);
 
             if (sendType == SendType.SingleMessage)
             {
@@ -66,7 +66,7 @@ internal static class AwsSqsHandlerCommon
         else
         {
             Console.WriteLine(
-                "SQS BeforeSend: Skipping DataStreams processing - Scope: {HasScope}, Context: {HasContext}, QueueName: {QueueName}",
+                "SQS BeforeSend: Skipping DataStreams processing - Scope: {0}, Context: {1}, QueueName: {2}",
                 scope != null,
                 scope?.Span.Context != null,
                 queueName);
