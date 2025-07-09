@@ -35,21 +35,17 @@ internal static class DatadogLoggingFactory
     public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         var logSinkOptions = new ConfigurationBuilder(source, telemetry)
-                            .WithKeys(ConfigurationKeys.LogSinks)
-                            .AsString()
-                           ?.Split([','], StringSplitOptions.RemoveEmptyEntries);
+                             .WithKeys(ConfigurationKeys.LogSinks)
+                             .AsString("file")
+                             .Split([','], StringSplitOptions.RemoveEmptyEntries);
 
-        FileLoggingConfiguration? fileConfig = null;
-        if (logSinkOptions is null || Contains(logSinkOptions, LogSinkOptions.File))
-        {
-            fileConfig = GetFileLoggingConfiguration(source, telemetry);
-        }
+        var fileConfig = Contains(logSinkOptions, LogSinkOptions.File) ?
+            GetFileLoggingConfiguration(source, telemetry) :
+            null;
 
-        ConsoleLoggingConfiguration? consoleConfig = null;
-        if (logSinkOptions is not null && Contains(logSinkOptions, LogSinkOptions.Console))
-        {
-            consoleConfig = GetConsoleLoggingConfiguration(source);
-        }
+        var consoleConfig = Contains(logSinkOptions, LogSinkOptions.Console) ?
+            GetConsoleLoggingConfiguration(source) :
+            (ConsoleLoggingConfiguration?)null;
 
         var redactedErrorLogsConfig = GetRedactedErrorTelemetryConfiguration(source, telemetry);
 
