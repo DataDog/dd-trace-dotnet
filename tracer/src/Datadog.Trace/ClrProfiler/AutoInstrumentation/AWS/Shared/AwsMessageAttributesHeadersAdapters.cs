@@ -126,7 +126,13 @@ internal static class AwsMessageAttributesHeadersAdapters
                     {
                         var binaryData = json.BinaryListValues[i];
                         Console.WriteLine("MessageAttributesAdapter.Constructor: BinaryListValues[{0}]: length={1}, type={2}", 
-                            i, binaryData?.Length ?? 0, binaryData?.GetType().FullName);
+                            i, 
+                            binaryData?.Length ?? 0, 
+                            binaryData?.GetType().FullName);
+                        Console.WriteLine("MessageAttributesAdapter.Constructor: BinaryListValues[{0}]: length={1}, type={2}", 
+                            i, 
+                            binaryData?.Length ?? 0, 
+                            binaryData?.GetType().FullName);
                     }
                 }
                 
@@ -141,7 +147,9 @@ internal static class AwsMessageAttributesHeadersAdapters
                         {
                             var value = prop.GetValue(json);
                             Console.WriteLine("MessageAttributesAdapter.Constructor: Property '{0}' = '{1}' (type: {2})", 
-                                prop.Name, value, value?.GetType().FullName);
+                                prop.Name, 
+                                value, 
+                                value?.GetType().FullName);
                         }
                         catch (Exception propEx)
                         {
