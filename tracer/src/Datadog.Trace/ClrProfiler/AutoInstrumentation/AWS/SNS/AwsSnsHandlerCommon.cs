@@ -70,6 +70,7 @@ internal static class AwsSnsHandlerCommon
                     {
                         Log.Error(ex, "Error injecting headers into SNS message");
                     }
+
                     Console.WriteLine("SNS BeforePublish: Injected headers into single message");
                 }
                 else
