@@ -521,8 +521,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                var isCodeOriginEnabled = DebuggerManager.Instance.DebuggerSettings.CodeOriginForSpansEnabled ?? false;
-                if (isCodeOriginEnabled)
+                if (CurrentCodeOrigin.Enabled)
                 {
                     var method = routeEndpoint?.RequestDelegate?.Method;
                     if (method != null)
@@ -600,7 +599,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.AppsecEnabled;
             var shouldUseIast = CurrentIast.Settings.Enabled;
-            var isCodeOriginEnabled = DebuggerManager.Instance.DebuggerSettings.CodeOriginForSpansEnabled ?? false;
+            var isCodeOriginEnabled = CurrentCodeOrigin.Enabled;
 
             if (!shouldTrace && !shouldSecure && !shouldUseIast && !isCodeOriginEnabled)
             {
