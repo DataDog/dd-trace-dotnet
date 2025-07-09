@@ -88,7 +88,7 @@ internal class DataStreamsManager
 
         Console.WriteLine("DataStreamsManager.ExtractPathwayContext: Attempting to extract pathway context from headers");
         var context = DataStreamsContextPropagator.Instance.Extract(headers);
-        Console.WriteLine("DataStreamsManager.ExtractPathwayContext: Extracted context: {HasContext}", context != null);
+        Console.WriteLine("DataStreamsManager.ExtractPathwayContext: Extracted context: {0}", context != null);
 
         if (context != null)
         {
