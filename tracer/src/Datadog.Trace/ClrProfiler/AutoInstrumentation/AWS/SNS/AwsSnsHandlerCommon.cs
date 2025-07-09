@@ -61,8 +61,20 @@ internal static class AwsSnsHandlerCommon
 
                 if (messageAttributes != null)
                 {
-                    ContextPropagation.InjectHeadersIntoMessage(messageAttributes, context, dataStreamsManager, CachedMessageHeadersHelper<TPublishRequest>.Instance);
+                    Console.WriteLine("SNS BeforePublish: Injecting headers into single message");
+                    try
+                    {
+                        ContextPropagation.InjectHeadersIntoMessage(messageAttributes, context, dataStreamsManager, CachedMessageHeadersHelper<TPublishRequest>.Instance);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error injecting headers into SNS message");
+                    }
                     Console.WriteLine("SNS BeforePublish: Injected headers into single message");
+                }
+                else
+                {
+                    Console.WriteLine("SNS BeforePublish: Message attributes are null, skipping");
                 }
             }
             else if (sendType == SendType.Batch)

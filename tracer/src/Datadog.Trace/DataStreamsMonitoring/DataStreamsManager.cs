@@ -292,6 +292,7 @@ internal class DataStreamsManager
         }
         catch (Exception ex)
         {
+            Console.WriteLine("Failed to set checkpoint: {0}", ex.Message);
             Log.Error(ex, "Error setting a data streams checkpoint. Disabling data streams monitoring");
             // Set this to false out of an abundance of caution.
             // We will look at being less conservative in the future
