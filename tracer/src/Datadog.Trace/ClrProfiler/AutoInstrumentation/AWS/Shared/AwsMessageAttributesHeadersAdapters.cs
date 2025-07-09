@@ -71,17 +71,94 @@ internal static class AwsMessageAttributesHeadersAdapters
         public MessageAttributesAdapter(IDictionary? messageAttributes)
         {
             Console.WriteLine("MessageAttributesAdapter.Constructor: Starting extraction from message attributes");
+            Console.WriteLine("MessageAttributesAdapter.Constructor: messageAttributes is null: {0}", (object)(messageAttributes == null));
+            
+            if (messageAttributes != null)
+            {
+                Console.WriteLine("MessageAttributesAdapter.Constructor: messageAttributes count: {0}", (object)messageAttributes.Count);
+                Console.WriteLine("MessageAttributesAdapter.Constructor: messageAttributes type: {0}", (object)messageAttributes.GetType().FullName);
+                
+                // Log all keys in the dictionary
+                foreach (var key in messageAttributes.Keys)
+                {
+                    Console.WriteLine("MessageAttributesAdapter.Constructor: Key found: '{0}' (type: {1})", key, key?.GetType().FullName);
+                }
+            }
 
             // IDictionary returns null if the key is not present
             var datadogAttribute = messageAttributes?[ContextPropagation.InjectionKey];
             Console.WriteLine("MessageAttributesAdapter.Constructor: Found _datadog attribute: {0}", (object)(datadogAttribute != null));
+            Console.WriteLine("MessageAttributesAdapter.Constructor: datadogAttribute type: {0}", (object)(datadogAttribute?.GetType().FullName));
+            Console.WriteLine("MessageAttributesAdapter.Constructor: datadogAttribute value: {0}", (object)datadogAttribute);
 
             var json = datadogAttribute?.DuckCast<IMessageAttributeValue>();
+            Console.WriteLine("MessageAttributesAdapter.Constructor: json: {0}, StringValue: {1}", json, json?.StringValue);
             Console.WriteLine("MessageAttributesAdapter.Constructor: Cast to IMessageAttributeValue: {0}", (object)(json != null));
+            Console.WriteLine("MessageAttributesAdapter.Constructor: json type: {0}", (object)(json?.GetType().FullName));
+
+            if (json != null)
+            {
+                Console.WriteLine("MessageAttributesAdapter.Constructor: json.StringValue is null: {0}", (object)(json.StringValue == null));
+                Console.WriteLine("MessageAttributesAdapter.Constructor: json.StringValue type: {0}", (object)(json.StringValue?.GetType().FullName));
+                Console.WriteLine("MessageAttributesAdapter.Constructor: json.StringValue length: {0}", (object)(json.StringValue?.Length ?? 0));
+                
+                // Log specific IMessageAttributeValue fields
+                Console.WriteLine("MessageAttributesAdapter.Constructor: === IMessageAttributeValue Field Details ===");
+                Console.WriteLine("MessageAttributesAdapter.Constructor: DataType: '{0}'", json.DataType);
+                Console.WriteLine("MessageAttributesAdapter.Constructor: StringValue: '{0}'", json.StringValue);
+                Console.WriteLine("MessageAttributesAdapter.Constructor: BinaryValue: '{0}'", json.BinaryValue);
+                Console.WriteLine("MessageAttributesAdapter.Constructor: StringListValues count: {0}", (object)(json.StringListValues?.Count ?? 0));
+                Console.WriteLine("MessageAttributesAdapter.Constructor: BinaryListValues count: {0}", (object)(json.BinaryListValues?.Count ?? 0));
+                
+                // Log StringListValues details if present
+                if (json.StringListValues != null && json.StringListValues.Count > 0)
+                {
+                    for (int i = 0; i < json.StringListValues.Count; i++)
+                    {
+                        Console.WriteLine("MessageAttributesAdapter.Constructor: StringListValues[{0}]: '{1}'", i, json.StringListValues[i]);
+                    }
+                }
+                
+                // Log BinaryListValues details if present
+                if (json.BinaryListValues != null && json.BinaryListValues.Count > 0)
+                {
+                    for (int i = 0; i < json.BinaryListValues.Count; i++)
+                    {
+                        var binaryData = json.BinaryListValues[i];
+                        Console.WriteLine("MessageAttributesAdapter.Constructor: BinaryListValues[{0}]: length={1}, type={2}", 
+                            i, binaryData?.Length ?? 0, binaryData?.GetType().FullName);
+                    }
+                }
+                
+                // Log all properties of the IMessageAttributeValue
+                try
+                {
+                    var properties = json.GetType().GetProperties();
+                    Console.WriteLine("MessageAttributesAdapter.Constructor: === All Properties via Reflection ===");
+                    foreach (var prop in properties)
+                    {
+                        try
+                        {
+                            var value = prop.GetValue(json);
+                            Console.WriteLine("MessageAttributesAdapter.Constructor: Property '{0}' = '{1}' (type: {2})", 
+                                prop.Name, value, value?.GetType().FullName);
+                        }
+                        catch (Exception propEx)
+                        {
+                            Console.WriteLine("MessageAttributesAdapter.Constructor: Failed to get property '{0}': {1}", prop.Name, propEx.Message);
+                        }
+                    }
+                }
+                catch (Exception propsEx)
+                {
+                    Console.WriteLine("MessageAttributesAdapter.Constructor: Failed to enumerate properties: {0}", propsEx.Message);
+                }
+            }
 
             if (json != null && json.StringValue != null)
             {
                 Console.WriteLine("MessageAttributesAdapter.Constructor: StringValue length: {0}", (object)json.StringValue.Length);
+                Console.WriteLine("MessageAttributesAdapter.Constructor: StringValue content: '{0}'", json.StringValue);
                 try
                 {
                     _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
@@ -98,6 +175,9 @@ internal static class AwsMessageAttributesHeadersAdapters
                 catch (Exception ex)
                 {
                     Log.Error(ex, "MessageAttributesAdapter.Constructor: Failed to deserialize JSON string: {0}", json.StringValue);
+                    Console.WriteLine("MessageAttributesAdapter.Constructor: Deserialization exception: {0}", ex.Message);
+                    Console.WriteLine("MessageAttributesAdapter.Constructor: Exception type: {0}", ex.GetType().FullName);
+                    Console.WriteLine("MessageAttributesAdapter.Constructor: Stack trace: {0}", ex.StackTrace);
                     _ddAttributes = null;
                 }
             }
