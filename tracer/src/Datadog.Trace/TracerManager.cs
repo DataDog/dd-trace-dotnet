@@ -720,16 +720,46 @@ namespace Datadog.Trace
                     Log.Debug("Disposing SpanEventsManager");
                     instance.SpanEventsManager.Dispose();
 
-                    Log.Debug("Disposing AgentWriter.");
-                    var flushTracesTask = instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;
-                    Log.Debug("Disposing DirectLogSubmission.");
-                    var logSubmissionTask = instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
-                    Log.Debug("Disposing DiscoveryService.");
-                    var discoveryService = instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
-                    Log.Debug("Disposing Data streams.");
-                    var dataStreamsTask = instance.DataStreamsManager?.DisposeAsync() ?? Task.CompletedTask;
+                    async Task AgentWriterDisposeAsync()
+                    {
+                        Log.Debug("Disposing AgentWriter.");
+                        var task = instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;
+                        await task.ConfigureAwait(false);
+                        Log.Debug("AgentWriter disposed.");
+                    }
+
+                    async Task DirectLogSubmissionDisposeAsync()
+                    {
+                        Log.Debug("Disposing DirectLogSubmission.");
+                        var task = instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
+                        await task.ConfigureAwait(false);
+                        Log.Debug("DirectLogSubmission disposed.");
+                    }
+
+                    async Task DiscoveryServiceDisposeAsync()
+                    {
+                        Log.Debug("Disposing DiscoveryService.");
+                        var task = instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
+                        await task.ConfigureAwait(false);
+                        Log.Debug("DiscoveryService disposed.");
+                    }
+
+                    async Task DataStreamsManagerDisposeAsync()
+                    {
+                        Log.Debug("Disposing Data streams.");
+                        var task = instance.DataStreamsManager?.DisposeAsync() ?? Task.CompletedTask;
+                        await task.ConfigureAwait(false);
+                        Log.Debug("Data streams disposed.");
+                    }
+
+                    var flushTracesTask = AgentWriterDisposeAsync();
+                    var logSubmissionTask = DirectLogSubmissionDisposeAsync();
+                    var discoveryService = DiscoveryServiceDisposeAsync();
+                    var dataStreamsTask = DataStreamsManagerDisposeAsync();
+
                     Log.Debug("Disposing RemoteConfigurationManager");
                     instance.RemoteConfigurationManager?.Dispose();
+                    Log.Debug("RemoteConfigurationManager disposed.");
 
                     Log.Debug("Waiting for disposals.");
                     await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
@@ -739,6 +769,7 @@ namespace Datadog.Trace
                     {
                         await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
                     }
+                    Log.Debug("Telemetry disposed.");
 
                     // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
 #if NETFRAMEWORK
