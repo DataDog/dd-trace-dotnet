@@ -330,17 +330,19 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     m_work_offloader(work_offloader),
     m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
 {
-    if (IsDynamicInstrumentationDisabled())
+    auto diEnabled = IsDynamicInstrumentationEnabled();
+    if (diEnabled == false)
     {
-        Logger::Info("Dynamic Instrumentation is explicitly disabled");
+        Logger::Info("Dynamic Instrumentation is disabled");
     }
 
-    if (IsExceptionReplayDisabled())
+    auto erEnabled = IsExceptionReplayEnabled();
+    if (erEnabled == false)
     {
         Logger::Info("Exception Replay is explicitly disabled");
     }
 
-    is_debugger_and_exception_debugging_disabled = IsDynamicInstrumentationDisabled() && IsExceptionReplayDisabled();
+    is_debugger_and_exception_debugging_disabled = diEnabled == false && erEnabled == false;
 }
 
 void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes,
