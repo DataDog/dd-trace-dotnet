@@ -209,7 +209,7 @@ internal class DataStreamsManager
         try
         {
             var previousContext = parentPathway;
-            Console.WriteLine("DataStreamsManager.SetCheckpoint: Parent pathway: {HasParentPathway}", parentPathway != null);
+            Console.WriteLine("DataStreamsManager.SetCheckpoint: Parent pathway: {0}", parentPathway != null);
 
             if (previousContext == null && LastConsumePathway.Value != null && checkpointKind == CheckpointKind.Produce)
             {
@@ -274,7 +274,7 @@ internal class DataStreamsManager
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Console.WriteLine(
-                    "SetCheckpoint with {PathwayHash}, {PathwayStart}, {EdgeStart}",
+                    "SetCheckpoint with {0}, {1}, {2}",
                     pathway.Hash,
                     pathway.PathwayStart,
                     pathway.EdgeStart);
