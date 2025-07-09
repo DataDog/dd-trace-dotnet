@@ -226,4 +226,3 @@ dsm_throughput:
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
   allow_failure: true
-
