@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
@@ -121,8 +122,8 @@ internal static class AwsMessageAttributesHeadersAdapters
                             Console.WriteLine(
                                 "MessageAttributesAdapter.Constructor: Property '{0}' = '{1}' (type: {2})",
                                 prop.Name,
-                                value ?? "null",
-                                value?.GetType().FullName ?? "null");
+                                value,
+                                value?.GetType().FullName);
                         }
                         catch (Exception propEx)
                         {
@@ -136,14 +137,40 @@ internal static class AwsMessageAttributesHeadersAdapters
                 }
             }
 
+            // Try to get JSON data from either StringValue or BinaryValue
+            string? jsonString = null;
             if (json != null && json.StringValue != null)
             {
-                Console.WriteLine("MessageAttributesAdapter.Constructor: StringValue length: {0}", json.StringValue.Length);
-                Console.WriteLine("MessageAttributesAdapter.Constructor: StringValue content: '{0}'", json.StringValue);
+                Console.WriteLine("MessageAttributesAdapter.Constructor: Using StringValue for JSON data");
+                jsonString = json.StringValue;
+            }
+            else if (json != null && json.BinaryValue != null)
+            {
+                Console.WriteLine("MessageAttributesAdapter.Constructor: StringValue is null, trying BinaryValue");
+                Console.WriteLine("MessageAttributesAdapter.Constructor: BinaryValue length: {0}", json.BinaryValue.Length);
                 try
                 {
-                    _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
-                    Console.WriteLine("MessageAttributesAdapter.Constructor: Deserialized {0} attributes", _ddAttributes?.Count);
+                    // Read bytes from MemoryStream and convert to string
+                    json.BinaryValue.Position = 0; // Reset position to beginning
+                    var jsonBytes = json.BinaryValue.ToArray();
+                    jsonString = Encoding.UTF8.GetString(jsonBytes);
+                    Console.WriteLine("MessageAttributesAdapter.Constructor: Successfully decoded BinaryValue to string: '{0}'", jsonString);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "MessageAttributesAdapter.Constructor: Failed to decode BinaryValue from MemoryStream");
+                    Console.WriteLine("MessageAttributesAdapter.Constructor: Failed to decode BinaryValue from MemoryStream: {0}", ex.Message);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(jsonString))
+            {
+                Console.WriteLine("MessageAttributesAdapter.Constructor: JSON string length: {0}", jsonString?.Length);
+                Console.WriteLine("MessageAttributesAdapter.Constructor: JSON string content: '{0}'", jsonString);
+                try
+                {
+                    _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString ?? "{}");
+                    Console.WriteLine("MessageAttributesAdapter.Constructor: Deserialized {0} attributes", _ddAttributes?.Count ?? 0);
 
                     if (_ddAttributes != null)
                     {
@@ -155,7 +182,7 @@ internal static class AwsMessageAttributesHeadersAdapters
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "MessageAttributesAdapter.Constructor: Failed to deserialize JSON string: {0}", json.StringValue);
+                    Log.Error(ex, "MessageAttributesAdapter.Constructor: Failed to deserialize JSON string: {0}", jsonString);
                     Console.WriteLine("MessageAttributesAdapter.Constructor: Deserialization exception: {0}", ex.Message);
                     Console.WriteLine("MessageAttributesAdapter.Constructor: Exception type: {0}", ex.GetType().FullName);
                     Console.WriteLine("MessageAttributesAdapter.Constructor: Stack trace: {0}", ex.StackTrace);
@@ -164,7 +191,7 @@ internal static class AwsMessageAttributesHeadersAdapters
             }
             else
             {
-                Console.WriteLine("MessageAttributesAdapter.Constructor: No StringValue found in message attribute");
+                Console.WriteLine("MessageAttributesAdapter.Constructor: No StringValue or valid BinaryValue found in message attribute");
                 _ddAttributes = null;
             }
         }
