@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -48,7 +49,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var client = testServer.CreateClient();
             var tracer = GetTracer();
             var (security, iast) = GetSecurity();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, null) };
+            var codeOrigin = GetSpanCodeOrigin();
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, codeOrigin) };
             string retValue = null;
 
             using (var diagnosticManager = new DiagnosticManager(observers))
@@ -72,8 +74,9 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             var tracer = GetTracer();
             var (security, iast) = GetSecurity();
+            var codeOrigin = GetSpanCodeOrigin();
 
-            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, null);
+            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, codeOrigin);
 
             var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
 
@@ -122,6 +125,17 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 rcmSubscriptionManager: Mock.Of<IRcmSubscriptionManager>());
             var iast = new Iast.Iast(new IastSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
             return (security, iast);
+        }
+
+        private static SpanCodeOrigin GetSpanCodeOrigin()
+        {
+            var settings = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "0" },
+            });
+
+            var co = new SpanCodeOrigin(new DebuggerSettings(settings, new NullConfigurationTelemetry()));
+            return co;
         }
 
         private static HttpContext GetHttpContext()
