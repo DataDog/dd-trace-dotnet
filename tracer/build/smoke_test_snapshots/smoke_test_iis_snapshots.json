@@ -12,7 +12,7 @@
       "meta": {
         "component": "aspnet_core",
         "span.kind": "server",
-        "http.useragent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.20348.2849",
+        "http.useragent": "FleetInstallerTester/1.0",
         "http.method": "GET",
         "http.request.headers.host": "localhost:5000",
         "http.url": "http://localhost:5000/",

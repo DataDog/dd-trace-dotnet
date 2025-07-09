@@ -74,7 +74,7 @@ RUN ('$completedFile=\"C:\logs\completed.txt\"; if (Test-Path $completedFile) { 
     ('Write-Host \"Enabling instrumentation\"') >> C:\app\entrypoint.ps1; \
     ('c:\install\installer\Datadog.FleetInstaller.exe ' + $env:INSTALL_COMMAND + ' --home-path c:\monitoring-home') >> C:\app\entrypoint.ps1; \
     ('Write-Host \"Starting AspNetCorePool app pool\"; Start-WebAppPool -Name \"AspNetCorePool\" -PassThru;') >> C:\app\entrypoint.ps1; \
-    ('Write-Host \"Making 404 request\"; curl http://localhost:5000;') >> C:\app\entrypoint.ps1; \
+    ('Write-Host \"Making 404 request\"; Invoke-WebRequest -Uri http://localhost:5000 -Headers @{ \"User-Agent\" = \"FleetInstallerTester/1.0\" }') >> C:\app\entrypoint.ps1; \
     ('while (-not (Test-Path "C:\logs\completed.txt")) { Write-Host \"Waiting for app shutdown\"; Start-Sleep -Seconds 1; }; ') >> C:\app\entrypoint.ps1; \
     ('Write-Host \"Stopping pool\";Stop-WebAppPool \"AspNetCorePool\" -PassThru;') >> C:\app\entrypoint.ps1;  \
     ('Write-Host \"Shutting down\"') >> C:\app\entrypoint.ps1;
