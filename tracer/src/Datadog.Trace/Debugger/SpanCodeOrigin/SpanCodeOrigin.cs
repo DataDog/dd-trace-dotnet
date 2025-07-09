@@ -23,13 +23,14 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private readonly ConcurrentAdaptiveCache<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
         private readonly CodeOriginTags _tags;
-        internal readonly DebuggerSettings Settings;
 
         internal SpanCodeOrigin(DebuggerSettings settings)
         {
             Settings = settings;
             _tags = new CodeOriginTags(Settings.CodeOriginMaxUserFrames);
         }
+
+        internal DebuggerSettings Settings { get; }
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {

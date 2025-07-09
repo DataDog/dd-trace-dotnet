@@ -300,7 +300,6 @@ src/Datadog.Trace/Debugger/Instrumentation/MethodDebuggerState.cs
 src/Datadog.Trace/Debugger/Instrumentation/MethodMetadataInfoFactory.cs
 src/Datadog.Trace/Debugger/Instrumentation/SpanDebuggerInvoker.cs
 src/Datadog.Trace/Debugger/Instrumentation/SpanDebuggerState.cs
-src/Datadog.Trace/Debugger/Models/LineProbeResolveResult.cs
 src/Datadog.Trace/Debugger/Models/LiveProbeResolveStatus.cs
 src/Datadog.Trace/Debugger/Models/Snapshot.cs
 src/Datadog.Trace/Debugger/Models/SnapshotProbe.cs
