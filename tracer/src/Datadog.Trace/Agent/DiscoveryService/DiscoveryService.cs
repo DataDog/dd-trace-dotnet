@@ -164,44 +164,55 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         private async Task FetchConfigurationLoopAsync()
         {
-            var uri = _apiRequestFactory.GetEndpoint("info");
+            try
+            {
+                var uri = _apiRequestFactory.GetEndpoint("info");
+                int? sleepDuration = null;
+                while (!_processExit.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var api = _apiRequestFactory.Create(uri);
 
-            int? sleepDuration = null;
+                        using var response = await api.GetAsync().ConfigureAwait(false);
+                        if (response.StatusCode is >= 200 and < 300)
+                        {
+                            await ProcessDiscoveryResponse(response).ConfigureAwait(false);
+                            sleepDuration = null;
+                        }
+                        else
+                        {
+                            Log.Warning("Error discovering available agent services");
+                            sleepDuration = GetNextSleepDuration(sleepDuration);
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        Log.Warning(exception, "Error discovering available agent services");
+                        sleepDuration = GetNextSleepDuration(sleepDuration);
+                    }
 
-            while (!_processExit.IsCancellationRequested)
+                    await Sleep(sleepDuration).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                Log.Debug("Discovery service exiting");
+            }
+
+            async Task Sleep(int? duration)
             {
                 try
                 {
-                    var api = _apiRequestFactory.Create(uri);
-
-                    using var response = await api.GetAsync().ConfigureAwait(false);
-                    if (response.StatusCode is >= 200 and < 300)
-                    {
-                        await ProcessDiscoveryResponse(response).ConfigureAwait(false);
-                        sleepDuration = null;
-                    }
-                    else
-                    {
-                        Log.Warning("Error discovering available agent services");
-                        sleepDuration = GetNextSleepDuration(sleepDuration);
-                    }
-                }
-                catch (Exception exception)
-                {
-                    Log.Warning(exception, "Error discovering available agent services");
-                    sleepDuration = GetNextSleepDuration(sleepDuration);
-                }
-
-                try
-                {
-                    await Task.Delay(sleepDuration ?? _recheckIntervalMs, _processExit.Token).ConfigureAwait(false);
+                    await Task.Delay(duration ?? _recheckIntervalMs, _processExit.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
                 }
             }
-
-            Log.Debug("Discovery service exiting");
 
             int GetNextSleepDuration(int? previousDuration) =>
                 previousDuration is null ? _initialRetryDelayMs : Math.Min(previousDuration.Value * 2, _maxRetryDelayMs);
@@ -310,10 +321,16 @@ namespace Datadog.Trace.Agent.DiscoveryService
             }
         }
 
-        public Task DisposeAsync()
+        public async Task DisposeAsync()
         {
             _processExit.Cancel();
-            return _discoveryTask;
+            try
+            {
+                await _discoveryTask.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
     }
 }
