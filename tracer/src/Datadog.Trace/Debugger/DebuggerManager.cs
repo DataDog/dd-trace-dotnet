@@ -139,8 +139,8 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var manuallyEnabled = DebuggerSettings.CodeOriginForSpansEnabled == true;
-                var manuallyDisabled = DebuggerSettings.CodeOriginForSpansEnabled == false;
+                var manuallyEnabled = DebuggerSettings.InternalCodeOriginForSpansEnabled == true;
+                var manuallyDisabled = DebuggerSettings.InternalCodeOriginForSpansEnabled == false;
                 var dynamicallyEnabled = DebuggerSettings.DynamicSettings.CodeOriginEnabled == true;
                 var dynamicallyDisabled = DebuggerSettings.DynamicSettings.CodeOriginEnabled == false;
 
@@ -209,8 +209,8 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var manuallyEnabled = DebuggerSettings.DynamicInstrumentationEnabled == true;
-                var manuallyDisabled = DebuggerSettings.DynamicInstrumentationEnabled.HasValue == false;
+                var manuallyEnabled = DebuggerSettings.InternalDynamicInstrumentationEnabled == true;
+                var manuallyDisabled = DebuggerSettings.InternalDynamicInstrumentationEnabled == false;
                 var dynamicallyEnabled = DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true;
                 var dynamicallyDisabled = DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false;
 
@@ -237,7 +237,7 @@ namespace Datadog.Trace.Debugger
 
                     if (!settings.IsRemoteConfigurationAvailable)
                     {
-                        if (DebuggerSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicInstrumentationEnabled.Value)
+                        if (DebuggerSettings.DynamicInstrumentationEnabled)
                         {
                             Log.Warning("Dynamic Instrumentation is enabled by environment variable but remote configuration is not available in this environment, so Dynamic Instrumentation cannot be enabled.");
                         }

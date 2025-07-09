@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
                 NullConfigurationTelemetry.Instance);
 
-            settings.DynamicInstrumentationEnabled.Should().BeNull();
+            settings.DynamicInstrumentationEnabled.Should().BeFalse();
         }
 
         [Theory]
@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
                 NullConfigurationTelemetry.Instance);
 
-            settings.DynamicInstrumentationEnabled.Should().BeNull();
+            settings.DynamicInstrumentationEnabled.Should().BeFalse();
         }
 
         [Theory]
@@ -204,10 +204,12 @@ namespace Datadog.Trace.Tests.Debugger
         public class DebuggerSettingsCodeOriginTests
         {
             [Theory]
+            [InlineData("0")]
+            [InlineData("FALSE")]
             [InlineData("False")]
             [InlineData("false")]
-            [InlineData("0")]
-            public void CodeOriginEnabled_False(string value)
+            [InlineData("fAlsE")]
+            public void CodeOrigin_Disabled(string value)
             {
                 var settings = new DebuggerSettings(
                     new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
@@ -220,20 +222,37 @@ namespace Datadog.Trace.Tests.Debugger
             [InlineData("")]
             [InlineData(null)]
             [InlineData("2")]
-            public void CodeOriginEnabled_Null(string value)
+            public void CodeOrigin_NotSet(string value)
             {
                 var settings = new DebuggerSettings(
                     new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
                     NullConfigurationTelemetry.Instance);
 
-                settings.CodeOriginForSpansEnabled.Should().BeNull();
+                settings.CodeOriginForSpansEnabled.Should().BeFalse();
+            }
+
+            [Theory]
+            [InlineData("00")]
+            [InlineData("flse")]
+            [InlineData("tru")]
+            [InlineData("-1")]
+            [InlineData("2")]
+            public void CodeOriginEnabled__InvalidValue(string enabled)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
+                    NullConfigurationTelemetry.Instance);
+
+                settings.DynamicInstrumentationEnabled.Should().BeFalse();
             }
 
             [Theory]
             [InlineData("True")]
+            [InlineData("TRUE")]
             [InlineData("true")]
+            [InlineData("tRuE")]
             [InlineData("1")]
-            public void CodeOriginEnabled_True(string value)
+            public void CodeOrigin_Enabled(string value)
             {
                 var settings = new DebuggerSettings(
                     new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
