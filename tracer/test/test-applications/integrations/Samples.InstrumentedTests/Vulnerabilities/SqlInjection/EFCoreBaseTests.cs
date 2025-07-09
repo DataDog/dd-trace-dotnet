@@ -255,10 +255,14 @@ public abstract class EFCoreBaseTests: InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
+    //In .NET 10, method overload resolution is stricter and more sensitive to ambiguous extension methods, particularly when both 
+    //System.Linq.AsyncEnumerable and System.Linq.Queryable are in scope. DbSet<T> implements both IQueryable<T> and is compatible with IAsyncEnumerable<T> 
+    //via EF Core async support. So the compiler can't decide whether you're using IQueryable.Where() or AsyncEnumerable.Where()
+
     [Fact]
     public void GivenACoreDatabase_WhenCallingToListSafe_VulnerabilityIsNotReported()
     {
-        dbContext.Books.Where(x => x.Title == taintedTitle).ToList();
+        _ = ((IQueryable<Book>)dbContext.Books).Where(x => x.Title == taintedTitle).ToList();
         AssertNotVulnerable();
     }
 
@@ -272,14 +276,14 @@ public abstract class EFCoreBaseTests: InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenACoreDatabase_WhenCallingLikeSafe_VulnerabilityIsNotReported()
     {
-        (from c in dbContext.Books where EF.Functions.Like(c.Title, taintedTitle) select c).ToList();
+        (from c in ((IQueryable<Book>)dbContext.Books) where EF.Functions.Like(c.Title, taintedTitle) select c).ToList();
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenACoreDatabase_WhenCallingToListSafe_VulnerabilityIsNotReported2()
     {
-        (from c in dbContext.Books where c.Title == taintedTitle select c).ToList();
+        (from c in ((IQueryable<Book>)dbContext.Books) where c.Title == taintedTitle select c).ToList();
         AssertNotVulnerable();
     }
 }
