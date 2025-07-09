@@ -769,6 +769,7 @@ namespace Datadog.Trace
                     {
                         await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
                     }
+
                     Log.Debug("Telemetry disposed.");
 
                     // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
