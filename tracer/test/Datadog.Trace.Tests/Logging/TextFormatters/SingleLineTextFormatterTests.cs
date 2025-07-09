@@ -68,4 +68,14 @@ public class SingleLineTextFormatterTests
               .StartWith($"[2000-01-01 04:00:00.000 +00:00 | DD_TRACE_DOTNET {TracerConstants.ThreePartVersion} | INF] This is log number 1 | System.Exception: Exception message.\\n")
               .And.NotContain(Environment.NewLine);
     }
+
+    [Fact]
+    public void ToSingleLineString()
+    {
+        var exception = new Exception("This is a test exception.\nIt has multiple lines.\r\nIt has multiple lines.\nIt has multiple lines.");
+
+        var singleLineString = SingleLineTextFormatter.ToSingleLineString(exception);
+
+        singleLineString.Should().Be(@"System.Exception: This is a test exception.\nIt has multiple lines.\nIt has multiple lines.\nIt has multiple lines.");
+    }
 }

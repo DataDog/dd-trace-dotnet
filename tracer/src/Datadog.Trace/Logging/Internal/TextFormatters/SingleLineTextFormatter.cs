@@ -34,7 +34,7 @@ internal class SingleLineTextFormatter : ITextFormatter
         output.WriteLine();
     }
 
-    private static string ToSingleLineString(Exception exception)
+    internal static string ToSingleLineString(Exception exception)
     {
         var exceptionString = exception.ToString();
 
