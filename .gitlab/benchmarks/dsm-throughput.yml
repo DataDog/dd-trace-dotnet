@@ -1,0 +1,37 @@
+.setup:
+  script:
+    - mkdir -p ~/.aws
+    - /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER > ~/.aws/config || exit $?
+    - export AWS_PROFILE=ephemeral-infra-ci
+    - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
+    - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
+
+variables:
+  DSM_THROUGHPUT_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dd-trace-dotnet-dsm
+
+dsm_throughput:
+  stage: benchmarks
+  when: on_success
+  tags: ["runner:apm-k8s-same-cpu"]
+  needs: ["check_azure_pipeline"]
+  image: $DSM_THROUGHPUT_CI_IMAGE
+  interruptible: true
+  timeout: 1h
+  script:
+    - source build-id.txt
+    - export ARTIFACTS_DIR="$(pwd)/artifacts" && (mkdir "${ARTIFACTS_DIR}" || :)
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/".insteadOf "https://github.com/DataDog/"
+    - git clone --branch dd-trace-dotnet/data-streams-monitoring https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - ./steps/setup-sut.sh
+    - bp-runner bp-runner.yml --debug
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - artifacts/
+    expire_in: 3 months
+  variables:
+    KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-dotnet
+    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+  rules:
+    - when: on_success
