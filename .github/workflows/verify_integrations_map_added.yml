@@ -7,6 +7,7 @@ on:
 jobs:
   bump_package_versions:
     runs-on: windows-latest
+    timeout-minutes: 96 # max + 3*std over the last 3700 runs
     permissions:
       contents: read
 
