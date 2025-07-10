@@ -11,21 +11,13 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.Vendors.Serilog.Events;
-using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
-using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation

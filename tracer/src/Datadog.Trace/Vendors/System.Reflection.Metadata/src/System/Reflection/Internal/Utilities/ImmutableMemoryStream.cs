@@ -11,7 +11,6 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 #pragma warning disable CS0168
 
 #nullable enable
