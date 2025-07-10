@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
         public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, Scope? scope, string? streamName)
-            where TRecordsRequest : IPutRecordsRequest
+            where TRecordsRequest : IContainsRecords
         {
             // request.Records is not null and has at least one element
             if (request.Records is not { Count: > 0 })

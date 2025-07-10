@@ -444,7 +444,8 @@ partial class Build
             );
 
             var exclude = TracerDirectory.GlobFiles(
-                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
+                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",     // no code, used to generate nuget package
+                "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
                 "src/Datadog.AutoInstrumentation.Generator/*.csproj",
@@ -2435,6 +2436,11 @@ partial class Build
                new(@".*Exception occurred when calling the CallTarget integration continuation. Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvokerException: Throwing a call target invoker exception.*"),
                // error thrown to check error handling in RC tests
                new(@".*haha, you weren't expect this!*", RegexOptions.Compiled),
+               // known errors in waf config
+               new(@".*rc::asm_dd::diagnostic Error: missing key.*", RegexOptions.Compiled),
+               new(@".*rc::asm_dd::diagnostic Warning: unknown operator.*", RegexOptions.Compiled),
+               new(@".*Some errors were found while applying waf configuration \(RulesFile: wrong-tags-name-rule-set.json\).*", RegexOptions.Compiled),
+               new(@".*Some errors were found while applying waf configuration \(RulesFile: rasp-rule-set.json\).*", RegexOptions.Compiled),
            };
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
@@ -2535,47 +2541,57 @@ partial class Build
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
                              && nativeTracerFiles.Count > 0
-                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac
+                             && (nativeProfilerFiles.Count > 0 || IsOsx || IsArm64) // profiler doesn't support mac or ARM64
                              && nativeLoaderFiles.Count > 0);
+        var hasErrors = managedErrors.Count != 0
+                     && nativeTracerErrors.Count != 0
+                     && nativeProfilerErrors.Count != 0
+                     && nativeLoaderErrors.Count != 0;
 
-        if (hasRequiredFiles
-         && managedErrors.Count == 0
-         && nativeTracerErrors.Count == 0
-         && nativeProfilerErrors.Count == 0
-         && nativeLoaderErrors.Count == 0)
+        if (hasRequiredFiles && !hasErrors)
         {
             Logger.Information("No problems found in managed or native logs");
             return;
         }
 
-        Logger.Warning("Found the following problems in log files:");
-        var allErrors = managedErrors
-                       .Concat(nativeTracerErrors)
-                       .Concat(nativeProfilerErrors)
-                       .Concat(nativeLoaderErrors)
-                       .GroupBy(x => x.FileName);
-
-        foreach (var erroredFile in allErrors)
+        if (!hasRequiredFiles)
         {
-            var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
-            if (errors.Any())
-            {
-                Logger.Information("");
-                Logger.Error($"Found errors in log file '{erroredFile.Key}':");
-                foreach (var error in errors)
-                {
-                    Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
-                }
-            }
+            Logger.Error(
+                "Some log files were missing: managed: {ManagedFiles}, native tracer: {NativeTracerFiles}, native profiler: {NativeProfilerFiles}, native loader: {NativeLoaderFiles}",
+                managedFiles.Count, nativeTracerFiles.Count, nativeProfilerFiles.Count, nativeLoaderFiles.Count);
+        }
 
-            var canaries = erroredFile.Where(ContainsCanary).ToList();
-            if (canaries.Any())
+        if (hasErrors)
+        {
+            Logger.Warning("Found the following problems in log files:");
+            var allErrors = managedErrors
+                           .Concat(nativeTracerErrors)
+                           .Concat(nativeProfilerErrors)
+                           .Concat(nativeLoaderErrors)
+                           .GroupBy(x => x.FileName);
+
+            foreach (var erroredFile in allErrors)
             {
-                Logger.Information("");
-                Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
-                foreach (var canary in canaries)
+                var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
+                if (errors.Any())
                 {
-                    Logger.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
+                    Logger.Information("");
+                    Logger.Error($"Found errors in log file '{erroredFile.Key}':");
+                    foreach (var error in errors)
+                    {
+                        Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
+                    }
+                }
+
+                var canaries = erroredFile.Where(ContainsCanary).ToList();
+                if (canaries.Any())
+                {
+                    Logger.Information("");
+                    Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
+                    foreach (var canary in canaries)
+                    {
+                        Logger.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
+                    }
                 }
             }
         }

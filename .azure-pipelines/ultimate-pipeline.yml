@@ -3482,14 +3482,18 @@ stages:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
-    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
-      displayName: Build Bundle, Benchmark NuGet and tools
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildAzureFunctionsNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
+      displayName: Build tools and pack NuGet packages (Bundle, AzureFunctions, Benchmark)
       env:
         MSBUILDDISABLENODEREUSE: "1"
 
     - publish: $(artifacts)/nuget/bundle
-      displayName: Uploading Bundle package
+      displayName: Uploading Datadog.Trace.Bundle package
       artifact: bundle-nuget-package
+
+    - publish: $(artifacts)/nuget/azure-functions
+      displayName: Uploading Datadog.AzureFunctions package
+      artifact: azurefunctions-nuget-package
 
     - publish: $(artifacts)/nuget/benchmark
       displayName: Uploading Benchmark package
@@ -3950,6 +3954,11 @@ stages:
             artifact: bundle-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: azurefunctions-nuget-package
+            path: $(Build.ArtifactStagingDirectory)
+
 #        Don't include the Datadog.Trace.BenchmarkDotNet package in the release artifacts
 #        as it currently doesn't work with v3.
 #        - task: DownloadPipelineArtifact@2
@@ -4015,7 +4024,7 @@ stages:
             path: $(Build.ArtifactStagingDirectory)
 
         # Download the artifacts required by the serverless layer and create the zip file
-        # This exapands the directory - but we want a zip file, so re-zip it!
+        # This expands the directory - but we want a zip file, so re-zip it!
         - template: steps/download-artifact.yml
           parameters:
             artifact: serverless-artifacts
@@ -4510,8 +4519,8 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    scenarioGroups: "appsec"
-    additionalScenarios: '[\"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"PROFILING,TRACE_PROPAGATION_STYLE_W3C,LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
+    scenarioGroups: "appsec,remote_config,telemetry,debugger,profiling,integrations, tracer_release"
+    additionalScenarios: "DEFAULT,INTEGRATIONS_AWS,CROSSED_TRACING_LIBRARIES,TRACE_PROPAGATION_STYLE_W3C,LIBRARY_CONF_CUSTOM_HEADER_TAGS"
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -4544,31 +4553,25 @@ stages:
             
             source venv/bin/activate
             # Try to get each workflow to take 15 mins = 900s
-            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) -t 900 > out.txt
+            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g "$(scenarioGroups)" -s "$(additionalScenarios)" -t 900 > out.txt
 
             endtoend_scenario_groups=$(grep 'endtoend_defs_parallel_jobs' out.txt | sed 's/.*=//g')
             endtoend_weblogs=$(grep 'endtoend_weblogs' out.txt | sed 's/.*=//g')
-            additional_scenarios="$(additionalScenarios)"
 
             echo "Found scenario groups: $endtoend_scenario_groups"
             echo "Found weblogs: $endtoend_weblogs"
-            echo "Additional manual scenarios: $additional_scenarios"
             
             # Write the weblogs to a file (for later use to generate the docker images)
             python -c "import json; variants = json.loads('$endtoend_weblogs'); print('\n'.join(variants))" > /tmp/weblogs_list.txt
             # Generate matrix and write to file
-            jq -c -n --argjson main "$endtoend_scenario_groups" --argjson webs "$endtoend_weblogs" --argjson extra "$additional_scenarios" '
+            jq -c -n --argjson main "$endtoend_scenario_groups" --argjson webs "$endtoend_weblogs" '
               (
                 $main | map({
-                  ("APPSEC (" + .weblog + ") " + (.weblog_instance|tostring)): {
+                  ("GROUP (" + .weblog + ") " + (.weblog_instance|tostring)): {
                     SCENARIO: (.scenarios | join(",")), N: 1, I: 1,
                     WEBLOG_VARIANT: .weblog
                   }
                 })
-              ) + (
-                [ $extra[] as $scenario | $webs[] as $weblog |
-                  { ($scenario + " (" + $weblog + ") 1"): { SCENARIO: $scenario, WEBLOG_VARIANT: $weblog, N: 1, I: 1 } }
-                ]
               ) + (
               [ range(1; 4) as $i |
                 { ("PARAMETRIC \($i)"): {
@@ -5993,82 +5996,8 @@ stages:
         - template: steps/run-snapshot-test.yml
           parameters:
             target: 'fleet-installer-smoke-tests-iis.windows'
+            testAgentTarget: 'test-agent.iis.windows'
             snapshotPrefix: "smoke_test_iis"
-            isLinux: false
-            dockerComposePath: $(dockerComposePath)
-
-        - publish: artifacts/build_data
-          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: always()
-          continueOnError: true
-
-        - template: steps/install-latest-dotnet-sdk.yml
-        - script: tracer\build.cmd CheckSmokeTestsForErrors
-          displayName: CheckSmokeTestsForErrors
-
-- stage: fleet_installer_smoke_tests
-  dependsOn: [package_windows, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
-  jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [windows]
-
-    - job: windows
-      timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
-      strategy:
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.fleet_installer_windows_smoke_tests_matrix'] ]
-      variables:
-        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-      pool:
-        vmImage: windows-2022
-
-      steps:
-        - template: steps/install-docker-compose-v1.yml
-          parameters:
-            dockerComposePath: $(dockerComposePath)
-
-        - template: steps/clone-repo.yml
-          parameters:
-            targetShaId: $(targetShaId)
-            targetBranch: $(targetBranch)
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: windows-tracer-home.zip
-            path: $(smokeTestAppDir)/artifacts
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: fleet-installer
-            path: $(smokeTestAppDir)/artifacts/installer
-
-        - powershell: |
-            ls $(smokeTestAppDir)/artifacts
-            ls $(smokeTestAppDir)/artifacts/installer
-            mkdir -p artifacts/build_data/snapshots
-            mkdir -p artifacts/build_data/logs
-          displayName: Create test data directories
-
-        - bash: |
-            $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
-              fleet-installer-smoke-tests.windows
-          env:
-            dockerTag: $(dockerTag)
-          displayName: docker-compose build smoke-tests
-          retryCountOnTaskFailure: 3
-
-        - template: steps/run-snapshot-test.yml
-          parameters:
-            target: 'fleet-installer-smoke-tests.windows'
-            snapshotPrefix: "smoke_test"
             isLinux: false
             dockerComposePath: $(dockerComposePath)
 

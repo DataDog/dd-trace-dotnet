@@ -15,10 +15,14 @@ namespace ServiceBus.Minimal.Rebus
         internal static readonly int NumMessagesToSend = 5;
         internal static readonly int MessageSendDelayMs = 500;
 
-        static void Main()
+        static int Main()
         {
             var connectionString = GetSqlServerConnectionString("RebusSamples");
-            EnsureDatabaseExists(connectionString);
+            if (!EnsureDatabaseExists(connectionString))
+            {
+                Console.WriteLine("Database error. Exiting with skip code (13)");
+                return 13;
+            }
 
             using var adapter = new BuiltinHandlerActivator();
             
@@ -38,6 +42,7 @@ namespace ServiceBus.Minimal.Rebus
 
             SendMessages(connectionString);
             Console.WriteLine("App completed successfully");
+            return 0;
         }
 
         static void SendMessages(string connectionString)
@@ -76,7 +81,7 @@ namespace ServiceBus.Minimal.Rebus
             return builder.ConnectionString;
         }
 
-        static void EnsureDatabaseExists(string connectionString)
+        static bool EnsureDatabaseExists(string connectionString)
         {
             var builder = new SqlConnectionStringBuilder(connectionString);
             var database = builder.InitialCatalog;
@@ -105,7 +110,7 @@ IF (DB_ID('{database}') IS NULL)
                         }
 
                         Console.WriteLine($"Database '{database}' is ensured to exist.");
-                        return;
+                        return true;
                     }
                 }
                 catch (Exception ex)
@@ -120,11 +125,8 @@ IF (DB_ID('{database}') IS NULL)
                 }
             }
 
-            Console.Error.WriteLine($"All attempts to connect to SQL Server failed. Throwing last exception...");
-            throw new InvalidOperationException(
-                $"Failed to connect to SQL Server and create database '{builder.InitialCatalog}' after {maxRetries} attempts.",
-                lastException
-            );
+            Console.Error.WriteLine($"All attempts to connect to SQL Server failed.");
+            return false;
         }
     }
 }

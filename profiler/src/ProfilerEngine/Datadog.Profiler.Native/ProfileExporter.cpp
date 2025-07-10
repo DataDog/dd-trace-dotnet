@@ -569,21 +569,7 @@ bool ProfileExporter::Export(bool lastCall)
         {
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
 
-            if (applicationInfo.Worker != nullptr)
-            {
-                applicationInfo.Worker->IncNumberOfProfiles(false);
-                if (lastCall)
-                    applicationInfo.Worker->IncNumberOfApplications();
-            }
-
             continue;
-        }
-
-        if (applicationInfo.Worker != nullptr)
-        {
-            applicationInfo.Worker->IncNumberOfProfiles(true);
-            if (lastCall)
-                applicationInfo.Worker->IncNumberOfApplications();
         }
 
         if (_exporter == nullptr)
