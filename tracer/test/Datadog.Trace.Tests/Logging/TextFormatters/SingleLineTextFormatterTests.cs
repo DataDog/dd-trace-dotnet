@@ -29,12 +29,13 @@ public class SingleLineTextFormatterTests
         // format the log event
         var sw = new StringWriter();
         new SingleLineTextFormatter().Format(logEvent, sw);
-        var result = sw.ToString().TrimEnd(); // remove trailing newline
+        var output = sw.ToString();
+        var lines = output.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
 
         // assert that SimpleTextFormatter uses UTC timestamps and emits a single line.
-        result.Should()
-              .Be($"[2000-01-01 04:00:00.000 +00:00 | DD_TRACE_DOTNET {TracerConstants.ThreePartVersion} | INF] This is log number 1")
-              .And.NotContain(Environment.NewLine);
+        lines.Should().ContainSingle()
+             .Which.Should().Be($"[2000-01-01 04:00:00.000 +00:00 | DD_TRACE_DOTNET {TracerConstants.ThreePartVersion} | INF] This is log number 1")
+             .And.NotContain(Environment.NewLine);
     }
 
     [Fact]
@@ -46,7 +47,8 @@ public class SingleLineTextFormatterTests
 
         try
         {
-            throw new Exception("Exception message.");
+            // throw from another method to force a longer stack trace
+            ThrowException();
         }
         catch (Exception e)
         {
@@ -61,12 +63,24 @@ public class SingleLineTextFormatterTests
         // format the log event
         var sw = new StringWriter();
         new SingleLineTextFormatter().Format(logEvent, sw);
-        var result = sw.ToString().TrimEnd(); // remove trailing newline
 
-        // assert that SimpleTextFormatter uses UTC timestamps and emits a single line.
-        result.Should()
-              .StartWith($"[2000-01-01 04:00:00.000 +00:00 | DD_TRACE_DOTNET {TracerConstants.ThreePartVersion} | INF] This is log number 1 | System.Exception: Exception message.\\n")
-              .And.NotContain(Environment.NewLine);
+        var output = sw.ToString();
+        var lines = output.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+
+        lines.Should().ContainSingle()
+             // Expected format: [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD_TRACE_DOTNET X.Y.Z | LVL] Message | ExceptionType: ExceptionMessage\nStackTrace1\nStackTrace2\n...
+             .Which.Should().MatchRegex(@"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \+00:00 \| DD_TRACE_DOTNET \d+\.\d+\.\d+ \| \w{3}\] (.+) | (.+)(\\n.+)+$")
+             // assert UTC timestamps
+             .And.StartWith($"[2000-01-01 04:00:00.000 +00:00 | DD_TRACE_DOTNET {TracerConstants.ThreePartVersion} | INF] This is log number 1 | System.Exception: Exception message.\\n")
+             // and single line
+             .And.NotContain(Environment.NewLine);
+
+        return;
+
+        static void ThrowException()
+        {
+            throw new Exception("Exception message.");
+        }
     }
 
     [Fact]
