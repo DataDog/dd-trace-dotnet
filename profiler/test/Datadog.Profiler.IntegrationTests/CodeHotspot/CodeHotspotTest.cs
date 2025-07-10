@@ -176,6 +176,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         public void NoTraceContextAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            runner.TestDurationInSeconds = 20;
             runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
