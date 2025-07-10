@@ -66,9 +66,23 @@ internal static class AwsMessageAttributesHeadersAdapters
         {
             // IDictionary returns null if the key is not present
             var json = messageAttributes?[ContextPropagation.InjectionKey]?.DuckCast<IMessageAttributeValue>();
-            if (json != null && json.StringValue != null)
+            if (json != null)
             {
-                _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
+                string? jsonString = null;
+                if (json.StringValue != null)
+                {
+                    jsonString = json.StringValue;
+                }
+                else if (json.BinaryValue != null)
+                {
+                    // SNS encodes the json string in base64
+                    jsonString = Encoding.UTF8.GetString(json.BinaryValue.ToArray());
+                }
+
+                if (jsonString != null)
+                {
+                    _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+                }
             }
         }
 
