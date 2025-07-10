@@ -29,7 +29,6 @@ public class ManualInstrumentationTests : TestHelper
     public ManualInstrumentationTests(ITestOutputHelper output)
         : base("ManualInstrumentation", output)
     {
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
     }
 
     [SkippableFact]

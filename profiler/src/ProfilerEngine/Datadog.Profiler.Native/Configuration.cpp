@@ -99,8 +99,6 @@ Configuration::Configuration()
     _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();
     _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
-    _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
-    _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
     _isHttpProfilingEnabled =
         GetEnvironmentValue(
             EnvironmentVariables::HttpProfilingEnabled,
@@ -767,16 +765,6 @@ std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
     if (value < 0ms)
         return defaultValue;
     return std::chrono::milliseconds(value);
-}
-
-bool Configuration::IsTelemetryToDiskEnabled() const
-{
-    return _isTelemetryToDiskEnabled;
-}
-
-bool Configuration::IsSsiTelemetryEnabled() const
-{
-    return _isSsiTelemetryEnabled;
 }
 
 bool Configuration::IsHttpProfilingEnabled() const

@@ -54,7 +54,7 @@ public class RaspRcmTests : SettingsTestsBase
     {
         var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "true")]);
         var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
-        var confState = new ConfigurationState(settings, true);
+        var confState = new ConfigurationState(settings, null, true);
         //// Set it to false to avoid all the initialization
         var security = new AppSec.Security(settings, configurationState: confState);
         confState.AppsecEnabled = true;

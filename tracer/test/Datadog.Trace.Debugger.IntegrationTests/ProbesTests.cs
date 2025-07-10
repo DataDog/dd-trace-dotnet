@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -441,10 +442,16 @@ public class ProbesTests : TestHelper
 
 #endif
 
-    private LogEntryWatcher CreateLogEntryWatcher()
+    private LogEntryWatcher CreateLogEntryWatcher(string suffix = "", [CallerMemberName] string testName = null)
     {
+        // Create a subdirectory for the logs based on the test name and suffix
+        // And write logs there instead
+        var logDir = Path.Combine(LogDirectory, $"{testName}{suffix}");
+        Directory.CreateDirectory(logDir);
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
-        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*", LogDirectory);
+        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*", logDir, Output);
     }
 
     private async Task RunMethodProbeTests(ProbeTestDescription testDescription, bool useStatsD)
@@ -453,7 +460,7 @@ public class ProbesTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent(useStatsD: useStatsD);
         SetDebuggerEnvironment(agent);
-        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var logEntryWatcher = CreateLogEntryWatcher($"optimized_{testDescription.IsOptimized}_type_{testDescription.TestType.Name}");
         using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
