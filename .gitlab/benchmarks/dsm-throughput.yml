@@ -1,14 +1,10 @@
-.setup:
-  script:
-    - mkdir -p ~/.aws
-    - /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER > ~/.aws/config || exit $?
-    - export AWS_PROFILE=ephemeral-infra-ci
-    - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
-    - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
-
 variables:
   DSM_THROUGHPUT_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dd-trace-dotnet-dsm
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-3
+
+stages:
+  - check-azure-pipeline
+  - benchmarks
 
 check_azure_pipeline:
   stage: check-azure-pipeline
@@ -30,7 +26,6 @@ check_azure_pipeline:
 
 dsm_throughput:
   stage: benchmarks
-  when: on_success
   tags: ["runner:apm-k8s-same-cpu"]
   needs: ["check_azure_pipeline"]
   image: $DSM_THROUGHPUT_CI_IMAGE
