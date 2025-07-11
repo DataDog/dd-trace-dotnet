@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -16,7 +17,7 @@ namespace Datadog.Trace.IntegrationTests.Tagging;
 
 public class TraceContextPropertyTests
 {
-    private readonly Tracer _tracer;
+    private readonly ScopedTracer _tracer;
     private readonly MockApi _testApi;
 
     public TraceContextPropertyTests()
@@ -25,7 +26,7 @@ public class TraceContextPropertyTests
 
         var settings = new TracerSettings();
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer = ScopedTracerHelper.BuildScopedTracer(settings, agentWriter);
     }
 
     [Theory]
@@ -37,24 +38,27 @@ public class TraceContextPropertyTests
     [InlineData(100)]
     public async Task SamplingPriority(int samplingPriority)
     {
-        using (var scope = CreateTrace(_tracer))
+        await using (_tracer)
         {
-            scope.Span.Context.TraceContext.SetSamplingPriority(samplingPriority);
+            using (var scope = CreateTrace(_tracer))
+            {
+                scope.Span.Context.TraceContext.SetSamplingPriority(samplingPriority);
+            }
+
+            await _tracer.FlushAsync();
+            var traceChunks = _testApi.Wait();
+            var spans = traceChunks.SelectMany(s => s).ToArray();
+
+            spans.Where(s => s.ParentId > 0)
+                 .Should()
+                 .HaveCount(3)
+                 .And.OnlyContain(s => !s.Metrics.ContainsKey("_sampling_priority_v1"));
+
+            spans.Where(s => s.ParentId is null or 0)
+                 .Should()
+                 .HaveCount(1)
+                 .And.OnlyContain(s => s.Metrics["_sampling_priority_v1"] == samplingPriority);
         }
-
-        await _tracer.FlushAsync();
-        var traceChunks = _testApi.Wait();
-        var spans = traceChunks.SelectMany(s => s).ToArray();
-
-        spans.Where(s => s.ParentId > 0)
-             .Should()
-             .HaveCount(3)
-             .And.OnlyContain(s => !s.Metrics.ContainsKey("_sampling_priority_v1"));
-
-        spans.Where(s => s.ParentId is null or 0)
-             .Should()
-             .HaveCount(1)
-             .And.OnlyContain(s => s.Metrics["_sampling_priority_v1"] == samplingPriority);
     }
 
     [Theory]
@@ -65,9 +69,12 @@ public class TraceContextPropertyTests
     [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
     public async Task Env(string before, string after)
     {
-        using (var scope = CreateTrace(_tracer))
+        await using (_tracer)
         {
-            scope.Span.Context.TraceContext.Environment = before;
+            using (var scope = CreateTrace(_tracer))
+            {
+                scope.Span.Context.TraceContext.Environment = before;
+            }
         }
 
         await AssertTag("env", after);
@@ -81,9 +88,12 @@ public class TraceContextPropertyTests
     [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
     public async Task Version(string before, string after)
     {
-        using (var scope = CreateTrace(_tracer))
+        await using (_tracer)
         {
-            scope.Span.Context.TraceContext.ServiceVersion = before;
+            using (var scope = CreateTrace(_tracer))
+            {
+                scope.Span.Context.TraceContext.ServiceVersion = before;
+            }
         }
 
         await AssertTag("version", after);
@@ -97,9 +107,12 @@ public class TraceContextPropertyTests
     [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
     public async Task Origin(string before, string after)
     {
-        using (var scope = CreateTrace(_tracer))
+        await using (_tracer)
         {
-            scope.Span.Context.TraceContext.Origin = before;
+            using (var scope = CreateTrace(_tracer))
+            {
+                scope.Span.Context.TraceContext.Origin = before;
+            }
         }
 
         await AssertTag("_dd.origin", after);
