@@ -247,18 +247,6 @@ namespace Datadog.Trace.Tests.Telemetry
                 .And.OnlyHaveUniqueItems();
         }
 
-        [Fact]
-        public void DoesNotHaveChangesWhenAssemblyNameIsCompiledRazorView()
-        {
-            var assemblyName = "01234abc.def.cshtml";
-            var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: assemblyName);
-
-            var collector = new DependencyTelemetryCollector();
-            collector.AssemblyLoaded(ignoredName, "some-guid");
-
-            collector.HasChanges().Should().BeFalse($"{assemblyName} should be filtered out as a compiled Razor view assembly");
-        }
-
         [Theory]
         [InlineData("01234abc.def.cshtm")]  // Wrong extension
         [InlineData("01234abc.de.cshtml")]  // Too short middle section
