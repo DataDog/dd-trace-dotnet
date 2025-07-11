@@ -59,7 +59,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
-        private bool _disposed;
+        private int _disposed;
 
         public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
             : this(statsd, delay, inAzureAppServiceContext, InitializeListenerFunc)
@@ -130,13 +130,13 @@ namespace Datadog.Trace.RuntimeMetrics
 
         public void Dispose()
         {
-            if (_disposed)
+            if (Interlocked.CompareExchange(ref _disposed, 1, 0) == 1)
             {
+                Log.Debug("Disposing Runtime Metrics but it was already disposed");
                 return;
             }
 
             Log.Debug("Disposing Runtime Metrics");
-            _disposed = true;
             _timer.Dispose();
             AppDomain.CurrentDomain.FirstChanceException -= FirstChanceException;
             // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
@@ -149,7 +149,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         internal void PushEvents()
         {
-            if (_disposed)
+            if (Volatile.Read(ref _disposed) == 1)
             {
                 Log.Debug("Runtime metrics is disposed and can't push new events");
                 return;
