@@ -417,7 +417,7 @@ namespace Datadog.Trace
                         ClientComputedStats = clientComputedStats
                     };
 
-                    return new TraceExporter(configuration);
+                    return new TraceExporter(configuration, updateSampleRates);
                 }
                 catch (Exception ex)
                 {

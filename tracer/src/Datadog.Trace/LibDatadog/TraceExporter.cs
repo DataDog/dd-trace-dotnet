@@ -6,25 +6,30 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using static Datadog.Trace.Agent.Api;
 
 namespace Datadog.Trace.LibDatadog;
 
 internal class TraceExporter : SafeHandle, IApi
 {
     private readonly IDatadogLogger _log;
+    private readonly Action<Dictionary<string, float>> _updateSampleRates;
 
     public TraceExporter(
         TraceExporterConfiguration configuration,
+        Action<Dictionary<string, float>> updateSampleRates,
         IDatadogLogger? log = null)
         : base(IntPtr.Zero, true)
     {
+        _updateSampleRates = updateSampleRates;
         _log = log ?? DatadogLogging.GetLoggerFor<TraceExporter>();
-
         _log.Debug("Creating new TraceExporter");
         using var errPtr = NativeInterop.Exporter.New(out var ptr, configuration);
         errPtr.ThrowIfError();
@@ -58,6 +63,21 @@ internal class TraceExporter : SafeHandle, IApi
                         _log.Error(ex, "An error occurred while sending data to the agent. Error Code: " + ex.ErrorCode + ", message: {Message}", ex.Message);
 #pragma warning restore DDLOG004
                         throw ex;
+                    }
+                    else
+                    {
+                        if (responsePtr != IntPtr.Zero)
+                        {
+                            string? response = Marshal.PtrToStringAnsi(NativeInterop.ExporterResponse.GetBody(responsePtr));
+                            if (!string.IsNullOrEmpty(response))
+                            {
+                                var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(response);
+
+                                _updateSampleRates(apiResponse.RateByService);
+                            }
+
+                            NativeInterop.ExporterResponse.Free(responsePtr);
+                        }
                     }
                 }
                 catch (Exception ex) when (ex is not TraceExporterException)

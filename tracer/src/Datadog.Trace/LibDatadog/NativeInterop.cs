@@ -39,6 +39,15 @@ internal class NativeInterop
         internal static extern TraceExporterErrorHandle Send(SafeHandle handle, ByteSlice trace, UIntPtr traceCount, ref IntPtr response);
     }
 
+    internal static class ExporterResponse
+    {
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_response_get_body")]
+        internal static extern IntPtr GetBody(IntPtr outHandle);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_response_free")]
+        internal static extern void Free(IntPtr handle);
+    }
+
     internal static class Config
     {
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_new")]
