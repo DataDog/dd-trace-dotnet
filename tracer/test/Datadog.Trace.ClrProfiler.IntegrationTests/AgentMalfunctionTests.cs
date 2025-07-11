@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> TestData
             => from behaviour in (AgentBehaviour[])Enum.GetValues(typeof(AgentBehaviour))
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
+               from dataPipelineEnabled in new[] { false, true }
                select new object[] { behaviour, metadataSchemaVersion, dataPipelineEnabled };
 
         [SkippableTheory]
