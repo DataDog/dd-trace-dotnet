@@ -266,12 +266,17 @@ partial class Build : NukeBuild
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
 
-    Target BuildAndRunManagedUnitTests => _ => _
-        .Description("Builds the managed unit tests and runs them")
+    Target BuildManagedUnitTests => _ => _
+        .Description("Builds the managed unit tests")
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(BuildRunnerTool)
-        .DependsOn(CompileManagedUnitTests)
+        .DependsOn(CompileManagedUnitTests);
+
+    Target BuildAndRunManagedUnitTests => _ => _
+        .Description("Builds the managed unit tests and runs them")
+        .After(Clean, BuildTracerHome, BuildProfilerHome)
+        .DependsOn(BuildManagedUnitTests)
         .DependsOn(RunManagedUnitTests);
 
     Target RunNativeUnitTests => _ => _
