@@ -23,10 +23,11 @@ async Task RunStandardPipelineScenario()
 {
     // Create Topics
     var topicPrefix = "data-streams";
+    var topicSuffix = Guid.NewGuid();
 
-    var topic1 = $"{topicPrefix}-1";
-    var topic2 = $"{topicPrefix}-2";
-    var topic3 = $"{topicPrefix}-3";
+    var topic1 = $"{topicPrefix}-1-{topicSuffix:N}";
+    var topic2 = $"{topicPrefix}-2-{topicSuffix:N}";
+    var topic3 = $"{topicPrefix}-3-{topicSuffix:N}";
     var allTopics = new[] { topic1, topic2, topic3 };
     var topic3ConsumeCount = 0;
 
@@ -123,9 +124,10 @@ async Task RunBatchProcessingScenario()
 {
     // Create Topics
     var topicPrefix = "data-streams-batch-processing";
+    var topicSuffix = Guid.NewGuid();
 
-    var topic1 = $"{topicPrefix}-1";
-    var topic2 = $"{topicPrefix}-2";
+    var topic1 = $"{topicPrefix}-1-{topicSuffix:N}";
+    var topic2 = $"{topicPrefix}-2-{topicSuffix:N}";
     var allTopics = new[] { topic1, topic2};
     var topic2ConsumeCount = 0;
 
