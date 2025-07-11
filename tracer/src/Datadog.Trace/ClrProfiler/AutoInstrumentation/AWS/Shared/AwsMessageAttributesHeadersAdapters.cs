@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
@@ -76,7 +77,20 @@ internal static class AwsMessageAttributesHeadersAdapters
                 else if (json.BinaryValue != null)
                 {
                     // SNS encodes the json string in base64
-                    jsonString = Encoding.UTF8.GetString(json.BinaryValue.ToArray());
+                    if (json.BinaryValue.TryGetBuffer(out var bytes))
+                    {
+                        jsonString = StringEncoding.UTF8.GetString(bytes.Array!, bytes.Offset, bytes.Count);
+                    }
+                    else
+                    {
+                        using var reader = new System.IO.StreamReader(
+                            json.BinaryValue,
+                            Encoding.UTF8,
+                            detectEncodingFromByteOrderMarks: false,
+                            bufferSize: 1024,
+                            leaveOpen: true);
+                        jsonString = reader.ReadToEnd();
+                    }
                 }
 
                 if (jsonString != null)
