@@ -987,6 +987,18 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData("1", true)]
+        [InlineData("0", false)]
+        [InlineData(null, false)]
+        public void IsDataStreamsSchemaExtractionEnabled(string dataStreamsEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.Enabled, dataStreamsEnabled));
+            var settings = new TracerSettings(source);
+
+            settings.IsDataStreamsSchemaExtractionEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
         public void IsRareSamplerEnabled(string value, bool expected)
         {
