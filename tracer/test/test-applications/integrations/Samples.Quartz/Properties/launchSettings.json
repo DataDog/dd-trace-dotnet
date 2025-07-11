@@ -14,7 +14,6 @@
         "CORECLR_PROFILER_PATH": "$(SolutionDir)shared/bin/monitoring-home/osx/Datadog.Trace.ClrProfiler.Native.dylib",
 
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared/bin/monitoring-home",
-        "DD_TRACE_OTEL_ENABLED": "true",
         "DD_TRACE_AGENT_PORT": "8136",
         "DD_TRACE_DEBUG": "true",
         "DD_ENV": "Mohammad",

@@ -1,15 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using OpenTelemetry;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Logging;
-using OpenTelemetry;
-using OpenTelemetry.Trace;
-using OpenTelemetry.Instrumentation.Quartz;
 
 namespace QuartzSampleApp
 {
@@ -18,19 +11,19 @@ namespace QuartzSampleApp
         private static async Task Main(string[] args)
         {
 
-            var tracerProvider = Sdk.CreateTracerProviderBuilder()
-                                    .AddQuartzInstrumentation()
-                                    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("QuartzSampleApp"))
-                                    .AddConsoleExporter(options =>
-                                     {
-                                         options.Targets = OpenTelemetry.Exporter.ConsoleExporterOutputTargets.Console;
-                                     })
-                                    .AddOtlpExporter(otlpOptions =>
-                                     {
-                                         otlpOptions.Endpoint = new Uri("http://localhost:4318/v1/traces");
-                                         otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-                                     })
-                                    .Build();
+            // var tracerProvider = Sdk.CreateTracerProviderBuilder()
+            //                         .AddQuartzInstrumentation()
+            //                         .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("QuartzSampleApp"))
+            //                         .AddConsoleExporter(options =>
+            //                          {
+            //                              options.Targets = OpenTelemetry.Exporter.ConsoleExporterOutputTargets.Console;
+            //                          })
+            //                         .AddOtlpExporter(otlpOptions =>
+            //                          {
+            //                              otlpOptions.Endpoint = new Uri("http://localhost:4318/v1/traces");
+            //                              otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+            //                          })
+            //                         .Build();
 
             
             LogProvider.SetCurrentLogProvider(new ConsoleLogProvider());
@@ -68,7 +61,7 @@ namespace QuartzSampleApp
             Console.WriteLine("Press any key to close the application");
             Console.ReadKey();
             
-            tracerProvider?.Dispose();
+            // tracerProvider?.Dispose();
         }
 
         // simple log provider to get something to the console

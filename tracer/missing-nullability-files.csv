@@ -108,6 +108,7 @@ src/Datadog.Trace/DiagnosticListeners/DiagnosticManager.cs
 src/Datadog.Trace/DiagnosticListeners/DiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/EndpointFeatureProxy.cs
 src/Datadog.Trace/DiagnosticListeners/IDiagnosticManager.cs
+src/Datadog.Trace/DiagnosticListeners/QuartzDiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/RouteEndpoint.cs
 src/Datadog.Trace/DogStatsd/NoOpStatsd.cs
 src/Datadog.Trace/DogStatsd/StatsdExtensions.cs
