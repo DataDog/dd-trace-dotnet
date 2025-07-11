@@ -1304,8 +1304,14 @@ stages:
           targetBranch: $(targetBranch)
       - template: steps/restore-working-directory.yml
 
-      - script: tracer\build.cmd BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-        displayName: Build and Test
+      - script: tracer\build.cmd BuildManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+        displayName: Build unit tests
+        retryCountOnTaskFailure: 3
+        env:
+          DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+      - script: tracer\build.cmd RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+        displayName: Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -1354,8 +1360,14 @@ stages:
           artifact: build-macos-native_tracer
           path: $(monitoringHome)
 
-      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-        displayName: Build and Test
+      - script: ./tracer/build.sh BuildManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+        displayName: Build unit tests
+        retryCountOnTaskFailure: 3
+        env:
+          DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+      - script: ./tracer/build.sh RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+        displayName: Run unit tests
         retryCountOnTaskFailure: 1
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1404,7 +1416,15 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
+        command: "BuildManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/make-artifacts-uploadable.yml
