@@ -112,6 +112,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData("ℛ*bcd9d48c-2728-46f5-bd56-bfb58cb0bb22#1156-0")]
         [InlineData("OK_IM_NO-GUID-BUUT-NOT_-THAT_FAR_OFF")]
         [InlineData("01234abc.def.cshtml")] // compiled Razor view assembly
+        [InlineData("Anonymously Hosted DynamicMethods Assembly")] // compiled Razor view assembly (maybe)
         public void DoesNotHaveChangesWhenAssemblyNameIsIgnoredAssembly(string assemblyName)
         {
             var ignoredName = CreateAssemblyName(new Version(1, 0), name: assemblyName);
