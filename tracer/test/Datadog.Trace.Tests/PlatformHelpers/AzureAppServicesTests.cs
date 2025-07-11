@@ -194,7 +194,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             // AAS Tags are handled at serialization now. So no tags should be set on spans
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             var settings = new TracerSettings(vars);
-            await using (var tracer = TracerHelper.CreateWithFakeAgent(settings))
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);	
             {
                 var spans = new List<ISpan>();
                 var iterations = 5;
