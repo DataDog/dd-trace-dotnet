@@ -91,7 +91,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
         settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
-                      .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(SubmitsDataStreams)}")
+                      .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(SubmitsDataStreams)}_scope={enableConsumerScopeCreation}_legacy={enableLegacyHeaders}")
                       .DisableRequireUniquePrefix();
     }
 
