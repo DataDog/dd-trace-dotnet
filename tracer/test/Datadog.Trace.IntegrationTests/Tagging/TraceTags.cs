@@ -16,12 +16,12 @@ using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.Tagging;
 
-public class TraceTags : IClassFixture<ScopedTracerFixture>
+public class TraceTags
 {
-    private readonly Tracer _tracer;
+    private readonly ScopedTracer _tracer;
     private readonly MockApi _testApi;
 
-    public TraceTags(ScopedTracerFixture scopedTracerFixture)
+    public TraceTags()
     {
         // make it so all traces are initially dropped so we can override with keep,
         // otherwise we can't change the sampling mechanism
@@ -29,7 +29,7 @@ public class TraceTags : IClassFixture<ScopedTracerFixture>
 
         _testApi = new MockApi();
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-        _tracer = scopedTracerFixture.BuildScopedTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer = ScopedTracerHelper.BuildScopedTracer(settings, agentWriter);
     }
 
     [Theory]
@@ -40,15 +40,18 @@ public class TraceTags : IClassFixture<ScopedTracerFixture>
     [InlineData(SamplingMechanism.Asm)]
     public async Task SerializeSamplingMechanismTag(string samplingMechanism)
     {
-        using (var scope = _tracer.StartActiveInternal("root"))
+        await using (_tracer)
         {
-            var traceContext = scope.Span.Context.TraceContext;
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, samplingMechanism);
-        }
+            using (var scope = _tracer.StartActiveInternal("root"))
+            {
+                var traceContext = scope.Span.Context.TraceContext;
+                traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, samplingMechanism);
+            }
 
-        await _tracer.FlushAsync();
-        var traceChunks = _testApi.Wait(TimeSpan.FromSeconds(3));
-        var deserializedSpan = traceChunks.Single().Single();
-        deserializedSpan.Tags.Should().Contain("_dd.p.dm", samplingMechanism);
+            await _tracer.FlushAsync();
+            var traceChunks = _testApi.Wait(TimeSpan.FromSeconds(3));
+            var deserializedSpan = traceChunks.Single().Single();
+            deserializedSpan.Tags.Should().Contain("_dd.p.dm", samplingMechanism);
+        }
     }
 }

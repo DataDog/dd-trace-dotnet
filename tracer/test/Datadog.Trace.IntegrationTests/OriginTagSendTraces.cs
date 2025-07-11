@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -14,57 +15,62 @@ using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
 {
-    public class OriginTagSendTraces : IClassFixture<ScopedTracerFixture>
+    public class OriginTagSendTraces
     {
-        private readonly Tracer _tracer;
+        private readonly ScopedTracer _tracer;
         private readonly MockApi _testApi;
 
-        public OriginTagSendTraces(ScopedTracerFixture fixture)
+        public OriginTagSendTraces()
         {
             var settings = new TracerSettings();
             _testApi = new MockApi();
             var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-            _tracer = fixture.BuildScopedTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+            _tracer = ScopedTracerHelper.BuildScopedTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
         [SkippableFact]
-        public void NormalSpan()
+        public async Task NormalSpan()
         {
-            using (_ = _tracer.StartActive("root"))
+            await using (_tracer)
             {
-                using (_ = _tracer.StartActive("child"))
+                using (_ = _tracer.StartActive("root"))
                 {
+                    using (_ = _tracer.StartActive("child"))
+                    {
+                    }
                 }
+
+                await _tracer.FlushAsync();
+                var traceChunks = _testApi.Wait();
+
+                traceChunks.SelectMany(s => s)
+                           .Should()
+                           .OnlyContain(s => !s.Tags.ContainsKey("_dd.origin"));
             }
-
-            _tracer.FlushAsync();
-            var traceChunks = _testApi.Wait();
-
-            traceChunks.SelectMany(s => s)
-                       .Should()
-                       .OnlyContain(s => !s.Tags.ContainsKey("_dd.origin"));
         }
 
         [SkippableFact]
-        public void NormalOriginSpan()
+        public async Task NormalOriginSpan()
         {
             const string originValue = "test-origin";
-
-            using (var scope = (Scope)_tracer.StartActive("root"))
+            await using (_tracer)
             {
-                scope.Span.Context.TraceContext.Origin = originValue;
-
-                using (_ = _tracer.StartActive("child"))
+                using (var scope = (Scope)_tracer.StartActive("root"))
                 {
+                    scope.Span.Context.TraceContext.Origin = originValue;
+
+                    using (_ = _tracer.StartActive("child"))
+                    {
+                    }
                 }
+
+                await _tracer.FlushAsync();
+                var traceChunks = _testApi.Wait();
+
+                traceChunks.SelectMany(s => s)
+                           .Should()
+                           .OnlyContain(s => s.Tags["_dd.origin"] == originValue);
             }
-
-            _tracer.FlushAsync();
-            var traceChunks = _testApi.Wait();
-
-            traceChunks.SelectMany(s => s)
-                       .Should()
-                       .OnlyContain(s => s.Tags["_dd.origin"] == originValue);
         }
     }
 }
