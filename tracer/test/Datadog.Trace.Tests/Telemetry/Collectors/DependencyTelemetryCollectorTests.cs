@@ -269,7 +269,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData("01234abc.DEF.cshtml")]  // Uppercase (not Base32)
         public void HasChangesWhenAssemblyNameIsNotValidCompiledRazorViewPattern(string assemblyName)
         {
-            var validName = CreateAssemblyName(new Version(1, 0, 0, 0), name: assemblyName);
+            var validName = CreateAssemblyName(new Version(0, 0, 0, 0), name: assemblyName);
 
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(validName, "some-guid");
