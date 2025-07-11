@@ -496,6 +496,8 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/TracerProviderBu
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/EnvironmentVariablesScrubber.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartTags.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Quartz/IJobDetailImplProxy.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Quartz/IJobDiagnosticDataProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RabbitMQ/RabbitMQConstants.cs
 src/Datadog.Trace/Debugger/Configurations/Models/Capture.cs
 src/Datadog.Trace/Debugger/Configurations/Models/DebuggerExpression.cs

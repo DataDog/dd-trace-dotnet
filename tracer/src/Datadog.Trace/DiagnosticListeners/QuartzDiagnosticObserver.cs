@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
@@ -90,11 +91,13 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnJobExecutionStart(object arg)
         {
             Log.Information("Quartz JobExecution.Start event received");
+            QuartzCommon.CreateScope(CurrentTracer, arg);
         }
 
         private void OnJobExecutionStop(object arg)
         {
             Log.Information("Quartz JobExecution.Stop event received");
+            CurrentTracer.ActiveScope.Close();
         }
 
         private void OnJobExecutionException(object arg)
