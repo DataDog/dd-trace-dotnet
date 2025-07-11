@@ -1201,6 +1201,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsDataStreamsMonitoringInDefaultState => DynamicSettings.DataStreamsMonitoringEnabled == null && _isDataStreamsMonitoringInDefaultState;
 
         /// <summary>
+        /// Gets a value indicating whether data streams schema extraction is enabled or not.
+        /// </summary>
+        internal bool IsDataStreamsSchemaExtractionEnabled => IsDataStreamsMonitoringEnabled && !IsDataStreamsMonitoringInDefaultState;
+
+        /// <summary>
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
         /// </summary>
         internal bool IsDataStreamsLegacyHeadersEnabled { get; }

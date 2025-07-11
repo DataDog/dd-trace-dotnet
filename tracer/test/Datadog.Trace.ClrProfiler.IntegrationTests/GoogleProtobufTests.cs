@@ -94,7 +94,7 @@ public class GoogleProtobufTests : TracingIntegrationTest
     [Trait("Category", "EndToEnd")]
     public async Task OnlyEnabledWithDsm()
     {
-        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, null);
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, "AddressBook"))
