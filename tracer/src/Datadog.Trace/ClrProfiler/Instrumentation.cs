@@ -445,6 +445,7 @@ namespace Datadog.Trace.ClrProfiler
                 // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal
                 // This is because user code is loaded within the functions host in a separate context
                 observers.Add(new AspNetCoreDiagnosticObserver());
+                observers.Add(new QuartzDiagnosticObserver());
             }
 
             var diagnosticManager = new DiagnosticManager(observers);
