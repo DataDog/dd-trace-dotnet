@@ -27,7 +27,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _processors = Array.Empty<ExceptionProbeProcessor>();
             ProbeId = probeId;
             Method = method;
-            _maxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
+            _maxFramesToCapture = DebuggerManager.Instance.ExceptionReplay!.Settings.MaximumFramesToCapture;
             _isMisleadingMethod = method.IsMisleadMethod();
         }
 
