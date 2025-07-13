@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -64,20 +65,24 @@ internal class TraceExporter : SafeHandle, IApi
 #pragma warning restore DDLOG004
                         throw ex;
                     }
-                    else
+
+                    try
                     {
-                        if (responsePtr != IntPtr.Zero)
-                        {
-                            string? response = Marshal.PtrToStringAnsi(NativeInterop.ExporterResponse.GetBody(responsePtr));
-                            if (!string.IsNullOrEmpty(response))
-                            {
-                                var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(response);
+                        // TODO: replace GetBodyLen with a native function in order to avoid iterating over the response to get its length.
+                        int len = GetBodyLen(responsePtr);
+                        byte* body = (byte*)NativeInterop.ExporterResponse.GetBody(responsePtr);
+                        ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(body, len);
 
-                                _updateSampleRates(apiResponse.RateByService);
-                            }
-
-                            NativeInterop.ExporterResponse.Free(responsePtr);
-                        }
+                        var apiResponse = System.Text.Json.JsonSerializer.Deserialize<ApiResponse>(span);
+                        _updateSampleRates(apiResponse.RateByService);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "An error ocurred deserializing the response.");
+                    }
+                    finally
+                    {
+                        NativeInterop.ExporterResponse.Free(responsePtr);
                     }
                 }
                 catch (Exception ex) when (ex is not TraceExporterException)
@@ -111,5 +116,22 @@ internal class TraceExporter : SafeHandle, IApi
         }
 
         return true;
+    }
+
+    private unsafe int GetBodyLen(IntPtr body)
+    {
+        if (body == IntPtr.Zero)
+        {
+            throw new ArgumentNullException(nameof(body));
+        }
+
+        byte* p = (byte*)body;
+        int len = 0;
+        while (p[len] != 0)
+        {
+            len++;
+        }
+
+        return len;
     }
 }
