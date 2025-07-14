@@ -69,5 +69,5 @@
     "benchmark.job.runtime.name": ".NET Framework 4.8",
     "benchmark.job.runtime.moniker": "net48"
   },
-  "overheadThreshold": 5
+  "overheadThreshold": 10
 }

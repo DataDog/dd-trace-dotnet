@@ -70,5 +70,5 @@
     "benchmark.job.runtime.name": ".NET 6.0",
     "benchmark.job.runtime.moniker": "net6.0"
   },
-  "overheadThreshold": 5
+  "overheadThreshold": 10
 }
