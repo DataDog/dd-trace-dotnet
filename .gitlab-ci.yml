@@ -219,4 +219,9 @@ microbenchmarks:
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
   allow_failure: true
-    
+
+dsm_throughput:
+  stage: benchmarks
+  trigger:
+    include: .gitlab/benchmarks/dsm-throughput.yml
+  allow_failure: true

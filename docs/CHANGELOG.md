@@ -23,6 +23,86 @@
 
 
 
+
+## [Release 3.21.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.21.0)
+
+## Summary
+
+- [Tracing] Add support for NLog 6.x.x
+- [Test Optimization] Improve the CodeOwners parser
+- [Data stream Monitoring] Various fixes for Kinesis, SQS, SNS, and RabbitMQ integrations
+- [Serverless] Add preview support for [Datadog.AzureFunctions](https://www.nuget.org/packages/Datadog.AzureFunctions/3.21.0-preview#readme-body-tab) NuGet package
+
+## Changes
+
+### Tracer
+* Add support for NLog 6.0 (#7131)
+* Show correct `agent_uri` path in startup log for named pipes (#7199)
+* Try removing exceptions from the shutdown path (#7200)
+* Use non-BOM version of `Encoding.UTF8` in Libdatadog interop code (#7204)
+* feat(libdatadog-logger): integrate libdatadog logging (#7075)
+
+### CI Visibility
+* [Test Optimization] Improve the CodeOwners parser (#7155)
+
+### ASM
+* [AAP] Report ASM RC status to Telemetry Config (#7141)
+* [AAP] Send WAF config errors to Telemetry Logs (#7142)
+
+### Continuous Profiler
+* Don't load the profiler on arm64 (#7169)
+* [Profiler] Remove ssi telemetry (#7176)
+* [Profiler] Protect against thread abort (#7187)
+
+### Debugger
+* [Exception Replay] Groundwork to support Test Optimization (#7085)
+* [Dynamic Instrumentaiton] Marking instrumentation as failure if IsReEntryField is absent (#7188)
+* [Dynamic Instrumentation] Reducing noisy log lines (#7198)
+
+### Serverless
+* Add new `Datadog.AzureFunctions` nuget package (#7111)
+* [Serverless] Update nuget package reference (#7203)
+* Add support for writing managed logs to the console (stdout) (#7160)
+
+### Fixes
+* fix: Handle both SQS StringValue and SNS BinaryValue in context extraction (#7205)
+
+### Build / Test
+* [Profiler] Fix flacky tests (#7161)
+* Adding Throughput Test for Kafka & DSM (#7133)
+* ServiceBus.Minimal.Rebus SQL connection error (#7146)
+* [Test Optimization] Remove impacted tests backend tests (#7151)
+* [Test Package Versions Bump] Updating package versions (#7156)
+* Fix test InitializesTracerWhenTracingIsDisabled Flakiness (#7163)
+* Bump the gh-actions-packages group across 2 directories with 3 updates (#7166)
+* Add retry to smoke crash tracking tests (#7172)
+* Remove all-green jobs (#7173)
+* Fix github token usage (#7174)
+* Try to fix flaky IIS fleet-installer tests (#7177)
+* Explicitly disable debug mode as required (#7178)
+* Send Skip code in MinimalRebus DDBB error (#7179)
+* Fix release process by removing check for SSI artifacts (#7180)
+* Add workaround for messed up execution_benchmark results (#7181)
+* Make sure we can override the `DD_PROFILING_ENABLED` value in smoke tests (#7184)
+* Remove duplication in system-tests (#7185)
+* [Test Package Versions Bump] Updating package versions (#7186)
+* Try to fix flaky tests that use `FileSystemWatcher` (#7189)
+* Fix potential flake in crash-tracking tests for chiseled containers (#7190)
+* Revert "Fix test InitializesTracerWhenTracingIsDisabled Flakiness (#7163) (#7191)
+* Fix more flake in the Fleet-installer IIS snapshot smoke tests (#7196)
+* Retry building unit tests (#7207)
+* Reinstate `[Flaky]` attribute (#7208)
+* Skip SqlServer tests if they flake due to a connection issue (#7210)
+
+### Miscellaneous
+* Deduce StreamName from StreamARN for Kinesis when StreamName not provided (#7134)
+* Lower Case DSM RabbitMQ has_routing_key (#7137)
+* Ignore compiled `cshtml` DLLs from telemetry (#7212)
+* [fleet installer] Remove the global instrumentation commands (#7182)
+
+
+[Changes since 3.20.1](https://github.com/DataDog/dd-trace-dotnet/compare/v3.20.1...v3.21.0)
+
 ## [Release 3.20.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.20.0)
 
 ## Summary
