@@ -47,11 +47,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
+            var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-            telemetry.AssertIntegrationDisabled(IntegrationId.SqlClient);
+            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.SqlClient);
         }
 
         private async Task RunTest(string metadataSchemaVersion)
@@ -67,11 +67,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName);
 
             Assert.Equal(expectedSpanCount, spans.Count);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
-            telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.SqlClient);
         }
     }
 }

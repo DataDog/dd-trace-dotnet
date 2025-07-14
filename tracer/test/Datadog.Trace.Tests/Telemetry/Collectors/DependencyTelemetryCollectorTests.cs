@@ -111,6 +111,8 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData("ℛ*1887feb5-1546-46da-a64e-07cba2cb32fa#112-0")]
         [InlineData("ℛ*bcd9d48c-2728-46f5-bd56-bfb58cb0bb22#1156-0")]
         [InlineData("OK_IM_NO-GUID-BUUT-NOT_-THAT_FAR_OFF")]
+        [InlineData("01234abc.def.cshtml")] // compiled Razor view assembly
+        [InlineData("Anonymously Hosted DynamicMethods Assembly")] // compiled Razor view assembly (maybe)
         public void DoesNotHaveChangesWhenAssemblyNameIsIgnoredAssembly(string assemblyName)
         {
             var ignoredName = CreateAssemblyName(new Version(1, 0), name: assemblyName);
@@ -243,6 +245,24 @@ namespace Datadog.Trace.Tests.Telemetry
                 .NotBeNullOrEmpty()
                 .And.HaveCount(1) // as we send to the backend only new versions
                 .And.OnlyHaveUniqueItems();
+        }
+
+        [Theory]
+        [InlineData("01234abc.def.cshtm")]  // Wrong extension
+        [InlineData("01234abc.de.cshtml")]  // Too short middle section
+        [InlineData("01234abc.defg.cshtml")] // Too long middle section
+        [InlineData("01234abcd.def.cshtml")] // Too long first section
+        [InlineData("01234ab.def.cshtml")]   // Too short first section
+        [InlineData("01234abc-def.cshtml")]  // Wrong separator
+        [InlineData("01234abc.DEF.cshtml")]  // Uppercase (not Base32)
+        public void HasChangesWhenAssemblyNameIsNotValidCompiledRazorViewPattern(string assemblyName)
+        {
+            var validName = CreateAssemblyName(new Version(0, 0, 0, 0), name: assemblyName);
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(validName, "some-guid");
+
+            collector.HasChanges().Should().BeTrue($"{assemblyName} should not be filtered out as it doesn't match the exact Razor view pattern");
         }
 
         private static AssemblyName CreateAssemblyName(Version version = null, string name = null)

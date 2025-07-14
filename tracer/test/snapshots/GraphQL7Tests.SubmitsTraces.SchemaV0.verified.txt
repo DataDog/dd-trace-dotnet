@@ -320,6 +320,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Subscription operations are not supported for POST requests.","code":"HTTP_METHOD_VALIDATION","locations":["1:1"]}}],
       graphql.source: subscription HumanAddedSub{humanAdded{name}},
       language: dotnet,
       runtime-id: Guid_1,
@@ -368,6 +369,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Argument 'id' has invalid value. Expected type 'String', found 1.","code":"ARGUMENTS_OF_CORRECT_TYPE","locations":["1:24"]}},{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Cannot query field 'apearsIn' on type 'Human'. Did you mean 'appearsIn'?","code":"FIELDS_ON_CORRECT_TYPE","locations":["1:35"]}}],
       graphql.source: query HumanError{human(id:1){name apearsIn}},
       language: dotnet,
       runtime-id: Guid_1,
@@ -406,6 +408,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Subscription operations are not supported for POST requests.","code":"HTTP_METHOD_VALIDATION","locations":["1:1"]}}],
       graphql.source: subscription NotImplementedSub{throwNotImplementedException{name}},
       language: dotnet,
       runtime-id: Guid_1,

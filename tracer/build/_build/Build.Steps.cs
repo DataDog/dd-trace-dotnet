@@ -444,7 +444,8 @@ partial class Build
             );
 
             var exclude = TracerDirectory.GlobFiles(
-                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
+                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",     // no code, used to generate nuget package
+                "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
                 "src/Datadog.AutoInstrumentation.Generator/*.csproj",
@@ -652,44 +653,40 @@ partial class Build
 
     Target CopyNativeFilesForTests => _ => _
         .Unlisted()
-        .After(Clean)
-        .After(BuildTracerHome)
+        .After(Clean, BuildTracerHome)
+        .Before(RunIntegrationTests, RunManagedUnitTests)
         .Executes(() =>
         {
-            foreach(var projectName in Projects.NativeFilesDependentTests)
+            // Copy the native files to all the test projects for simplicity.
+            var testProjects = Solution.GetProjects("*Tests")
+                                       .Where(p => p.SolutionFolder.Name == "test"
+                                               &&  p.Path.ToString().EndsWith(".csproj")); // exclude native test projects
+            foreach(var projectName in testProjects)
             {
+                Logger.Information("Copying native files for project {ProjectName}", projectName);
                 var project = Solution.GetProject(projectName);
-                var testDir = project.Directory;
+                var testDir = project!.Directory;
                 var frameworks = project.GetTargetFrameworks();
+
+                if (Framework is not null)
+                {
+                    frameworks = frameworks.Where(x=> x == Framework).ToList();
+                }
+
                 var testBinFolder = testDir / "bin" / BuildConfiguration;
 
-                if (IsWin)
+                var (ext, source) = Platform switch
                 {
-                    foreach (var framework in frameworks)
-                    {
-                        var source = MonitoringHomeDirectory / $"win-{TargetPlatform}" / "datadog_profiling_ffi.dll";
-                        var dest = testBinFolder / framework / "LibDatadog.dll";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                    }
-                }
-                else if (IsLinux)
+                    PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}" / "datadog_profiling_ffi.dll"),
+                    PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch / "libdatadog_profiling.so"),
+                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx" / $"libdatadog_profiling.dylib"),
+                    _ => throw new NotSupportedException($"Unsupported platform: {Platform}")
+                };
+
+                foreach (var framework in frameworks)
                 {
-                    var (arch, ext) = GetUnixArchitectureAndExtension();
-                    var source = MonitoringHomeDirectory / arch / $"libdatadog_profiling.{ext}";
-                    foreach (var framework in frameworks)
-                    {
-                        var dest = testBinFolder / framework / $"LibDatadog.{ext}";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                    }
-                }
-                else if (IsOsx)
-                {
-                    var source = MonitoringHomeDirectory/ "osx" / $"libdatadog_profiling.dylib";
-                    foreach (var framework in frameworks)
-                    {
-                        var dest = testBinFolder / framework / $"LibDatadog.dylib";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                    }
+                    var dest = testBinFolder / framework / $"LibDatadog.{ext}";
+                    CopyFile(source, dest, FileExistsPolicy.Overwrite);
                 }
             }
         });
@@ -1522,13 +1519,30 @@ partial class Build
               var samples = GetSamplesToBuild();
               Logger.Information("Building {SampleName}", samples);
 
-              // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
-              DotNetBuild(config => config
-                                   .SetConfiguration(BuildConfiguration)
-                                   .SetProperty("BuildInParallel", "true")
-                                   .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                                   .When(Framework is not null, x => x.SetFramework(Framework))
-                                   .SetProjectFile(samples));
+              // If we are building a specific sample, with a specific NuGet version, we can target just that one with MSBuild
+              // Windows only at the moment as I couldn't get `dotnet build` to work with the ApiVersion parameter
+              // As it needs to be restored first, but when it did it couldn't find the assets file
+              if (IsWin && !string.IsNullOrEmpty(ApiVersion) && !string.IsNullOrEmpty(SampleName))
+              {
+                  Logger.Information("Building sample {SampleName} with ApiVersion {ApiVersion} using MSBuild", SampleName, ApiVersion);
+
+                  MSBuild(x => x.SetTargetPath(samples)
+                                .SetTargets("Restore", "Build")
+                                .SetConfiguration(BuildConfiguration)
+                                .SetProperty("ApiVersion", ApiVersion)
+                                .When(Framework is not null, o => o.SetProperty("TargetFramework", Framework.ToString()))
+                                .SetProperty("BuildInParallel", "true")
+                                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")));
+              }
+              else
+              {
+                  // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
+                  DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
+                                              .SetProperty("BuildInParallel", "true")
+                                              .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                                              .When(Framework is not null, x => x.SetFramework(Framework))
+                                              .SetProjectFile(samples));
+              }
 
               string GetSamplesToBuild()
               {
@@ -2422,6 +2436,11 @@ partial class Build
                new(@".*Exception occurred when calling the CallTarget integration continuation. Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvokerException: Throwing a call target invoker exception.*"),
                // error thrown to check error handling in RC tests
                new(@".*haha, you weren't expect this!*", RegexOptions.Compiled),
+               // known errors in waf config
+               new(@".*rc::asm_dd::diagnostic Error: missing key.*", RegexOptions.Compiled),
+               new(@".*rc::asm_dd::diagnostic Warning: unknown operator.*", RegexOptions.Compiled),
+               new(@".*Some errors were found while applying waf configuration \(RulesFile: wrong-tags-name-rule-set.json\).*", RegexOptions.Compiled),
+               new(@".*Some errors were found while applying waf configuration \(RulesFile: rasp-rule-set.json\).*", RegexOptions.Compiled),
            };
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
@@ -2476,6 +2495,9 @@ partial class Build
            knownPatterns.Add(new(@".*TestOptimization: .*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*TestOptimizationClient: .*", RegexOptions.Compiled));
 
+           // glibc TLS-reuse bug warnings
+           knownPatterns.Add(new(@".*GLIBC version 2.34-2.36 has a TLS-reuse bug.*", RegexOptions.Compiled));
+
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
 
@@ -2519,47 +2541,57 @@ partial class Build
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
                              && nativeTracerFiles.Count > 0
-                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac
+                             && (nativeProfilerFiles.Count > 0 || IsOsx || IsArm64) // profiler doesn't support mac or ARM64
                              && nativeLoaderFiles.Count > 0);
+        var hasErrors = managedErrors.Count != 0
+                     && nativeTracerErrors.Count != 0
+                     && nativeProfilerErrors.Count != 0
+                     && nativeLoaderErrors.Count != 0;
 
-        if (hasRequiredFiles
-         && managedErrors.Count == 0
-         && nativeTracerErrors.Count == 0
-         && nativeProfilerErrors.Count == 0
-         && nativeLoaderErrors.Count == 0)
+        if (hasRequiredFiles && !hasErrors)
         {
             Logger.Information("No problems found in managed or native logs");
             return;
         }
 
-        Logger.Warning("Found the following problems in log files:");
-        var allErrors = managedErrors
-                       .Concat(nativeTracerErrors)
-                       .Concat(nativeProfilerErrors)
-                       .Concat(nativeLoaderErrors)
-                       .GroupBy(x => x.FileName);
-
-        foreach (var erroredFile in allErrors)
+        if (!hasRequiredFiles)
         {
-            var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
-            if (errors.Any())
-            {
-                Logger.Information("");
-                Logger.Error($"Found errors in log file '{erroredFile.Key}':");
-                foreach (var error in errors)
-                {
-                    Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
-                }
-            }
+            Logger.Error(
+                "Some log files were missing: managed: {ManagedFiles}, native tracer: {NativeTracerFiles}, native profiler: {NativeProfilerFiles}, native loader: {NativeLoaderFiles}",
+                managedFiles.Count, nativeTracerFiles.Count, nativeProfilerFiles.Count, nativeLoaderFiles.Count);
+        }
 
-            var canaries = erroredFile.Where(ContainsCanary).ToList();
-            if (canaries.Any())
+        if (hasErrors)
+        {
+            Logger.Warning("Found the following problems in log files:");
+            var allErrors = managedErrors
+                           .Concat(nativeTracerErrors)
+                           .Concat(nativeProfilerErrors)
+                           .Concat(nativeLoaderErrors)
+                           .GroupBy(x => x.FileName);
+
+            foreach (var erroredFile in allErrors)
             {
-                Logger.Information("");
-                Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
-                foreach (var canary in canaries)
+                var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
+                if (errors.Any())
                 {
-                    Logger.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
+                    Logger.Information("");
+                    Logger.Error($"Found errors in log file '{erroredFile.Key}':");
+                    foreach (var error in errors)
+                    {
+                        Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
+                    }
+                }
+
+                var canaries = erroredFile.Where(ContainsCanary).ToList();
+                if (canaries.Any())
+                {
+                    Logger.Information("");
+                    Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
+                    foreach (var canary in canaries)
+                    {
+                        Logger.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
+                    }
                 }
             }
         }

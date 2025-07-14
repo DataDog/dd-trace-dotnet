@@ -197,6 +197,9 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("test_management")]
         public readonly TestManagementSettingsResponse TestManagement;
 
+        [JsonProperty("default_branch")]
+        public readonly string? DefaultBranch;
+
         [JsonProperty("di_enabled")]
         public readonly bool? DynamicInstrumentationEnabled;
 

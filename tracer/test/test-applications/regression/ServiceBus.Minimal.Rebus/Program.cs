@@ -15,10 +15,14 @@ namespace ServiceBus.Minimal.Rebus
         internal static readonly int NumMessagesToSend = 5;
         internal static readonly int MessageSendDelayMs = 500;
 
-        static void Main()
+        static int Main()
         {
             var connectionString = GetSqlServerConnectionString("RebusSamples");
-            EnsureDatabaseExists(connectionString);
+            if (!EnsureDatabaseExists(connectionString))
+            {
+                Console.WriteLine("Database error. Exiting with skip code (13)");
+                return 13;
+            }
 
             using var adapter = new BuiltinHandlerActivator();
             
@@ -38,6 +42,7 @@ namespace ServiceBus.Minimal.Rebus
 
             SendMessages(connectionString);
             Console.WriteLine("App completed successfully");
+            return 0;
         }
 
         static void SendMessages(string connectionString)
@@ -76,26 +81,52 @@ namespace ServiceBus.Minimal.Rebus
             return builder.ConnectionString;
         }
 
-        static void EnsureDatabaseExists(string connectionString)
+        static bool EnsureDatabaseExists(string connectionString)
         {
             var builder = new SqlConnectionStringBuilder(connectionString);
             var database = builder.InitialCatalog;
 
             var masterConnection = connectionString.Replace(builder.InitialCatalog, "master");
 
-            using (var connection = new SqlConnection(masterConnection))
-            {
-                connection.Open();
+            const int maxRetries = 5;
+            const int delayMs = 2000;
+            Exception lastException = null;
 
-                using (var command = connection.CreateCommand())
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
                 {
-                    command.CommandText = $@"
-    if(db_id('{database}') is null)
-        create database [{database}]
-    ";
-                    command.ExecuteNonQuery();
+                    using (var connection = new SqlConnection(masterConnection))
+                    {
+                        connection.Open();
+
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.CommandText = $@"
+IF (DB_ID('{database}') IS NULL)
+    CREATE DATABASE [{database}]
+";
+                            command.ExecuteNonQuery();
+                        }
+
+                        Console.WriteLine($"Database '{database}' is ensured to exist.");
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    Console.WriteLine($"Attempt {attempt}/{maxRetries} failed: {ex.GetType().Name} - {ex.Message}");
+
+                    if (attempt < maxRetries)
+                    {
+                        Thread.Sleep(delayMs);
+                    }
                 }
             }
+
+            Console.Error.WriteLine($"All attempts to connect to SQL Server failed.");
+            return false;
         }
     }
 }

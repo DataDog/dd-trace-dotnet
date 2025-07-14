@@ -11,10 +11,10 @@
         {
           EdgeTags: [
             direction:out,
-            topic:data-streams-batch-processing-1,
+            topic:data-streams-batch-processing-1-HandlesBatchProcessing,
             type:kafka
           ],
-          Hash: 4913488602916801083,
+          Hash: 9751442692034380744,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -24,11 +24,11 @@
           EdgeTags: [
             direction:in,
             group:Samples.DataStreams.Kafka.fan-in-consumer,
-            topic:data-streams-batch-processing-1,
+            topic:data-streams-batch-processing-1-HandlesBatchProcessing,
             type:kafka
           ],
-          Hash: 9315422718960432191,
-          ParentHash: 4913488602916801083,
+          Hash: 11254684039468539015,
+          ParentHash: 9751442692034380744,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -37,11 +37,11 @@
         {
           EdgeTags: [
             direction:out,
-            topic:data-streams-batch-processing-2,
+            topic:data-streams-batch-processing-2-HandlesBatchProcessing,
             type:kafka
           ],
-          Hash: 9937680799879052874,
-          ParentHash: 9315422718960432191,
+          Hash: 13798769173313021740,
+          ParentHash: 11254684039468539015,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -51,11 +51,11 @@
           EdgeTags: [
             direction:in,
             group:Samples.DataStreams.Kafka.topic-2-consumer,
-            topic:data-streams-batch-processing-2,
+            topic:data-streams-batch-processing-2-HandlesBatchProcessing,
             type:kafka
           ],
-          Hash: 8667739576086808638,
-          ParentHash: 9937680799879052874,
+          Hash: 13395884887236079874,
+          ParentHash: 13798769173313021740,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -67,7 +67,7 @@
           Tags: [
             consumer_group:Samples.DataStreams.Kafka.fan-in-consumer,
             partition:0,
-            topic:data-streams-batch-processing-1,
+            topic:data-streams-batch-processing-1-HandlesBatchProcessing,
             type:kafka_commit
           ]
         },
@@ -75,7 +75,7 @@
           Tags: [
             consumer_group:Samples.DataStreams.Kafka.fan-in-consumer,
             partition:1,
-            topic:data-streams-batch-processing-1,
+            topic:data-streams-batch-processing-1-HandlesBatchProcessing,
             type:kafka_commit
           ]
         },
@@ -83,7 +83,7 @@
           Tags: [
             consumer_group:Samples.DataStreams.Kafka.fan-in-consumer,
             partition:2,
-            topic:data-streams-batch-processing-1,
+            topic:data-streams-batch-processing-1-HandlesBatchProcessing,
             type:kafka_commit
           ]
         },
@@ -91,7 +91,7 @@
           Tags: [
             consumer_group:Samples.DataStreams.Kafka.topic-2-consumer,
             partition:0,
-            topic:data-streams-batch-processing-2,
+            topic:data-streams-batch-processing-2-HandlesBatchProcessing,
             type:kafka_commit
           ]
         },
@@ -99,7 +99,7 @@
           Tags: [
             consumer_group:Samples.DataStreams.Kafka.topic-2-consumer,
             partition:1,
-            topic:data-streams-batch-processing-2,
+            topic:data-streams-batch-processing-2-HandlesBatchProcessing,
             type:kafka_commit
           ]
         },
@@ -107,49 +107,49 @@
           Tags: [
             consumer_group:Samples.DataStreams.Kafka.topic-2-consumer,
             partition:2,
-            topic:data-streams-batch-processing-2,
+            topic:data-streams-batch-processing-2-HandlesBatchProcessing,
             type:kafka_commit
           ]
         },
         {
           Tags: [
             partition:0,
-            topic:data-streams-batch-processing-1,
+            topic:data-streams-batch-processing-1-HandlesBatchProcessing,
             type:kafka_produce
           ]
         },
         {
           Tags: [
             partition:0,
-            topic:data-streams-batch-processing-2,
+            topic:data-streams-batch-processing-2-HandlesBatchProcessing,
             type:kafka_produce
           ]
         },
         {
           Tags: [
             partition:1,
-            topic:data-streams-batch-processing-1,
+            topic:data-streams-batch-processing-1-HandlesBatchProcessing,
             type:kafka_produce
           ]
         },
         {
           Tags: [
             partition:1,
-            topic:data-streams-batch-processing-2,
+            topic:data-streams-batch-processing-2-HandlesBatchProcessing,
             type:kafka_produce
           ]
         },
         {
           Tags: [
             partition:2,
-            topic:data-streams-batch-processing-1,
+            topic:data-streams-batch-processing-1-HandlesBatchProcessing,
             type:kafka_produce
           ]
         },
         {
           Tags: [
             partition:2,
-            topic:data-streams-batch-processing-2,
+            topic:data-streams-batch-processing-2-HandlesBatchProcessing,
             type:kafka_produce
           ]
         }
@@ -162,10 +162,10 @@
         {
           EdgeTags: [
             direction:out,
-            topic:data-streams-batch-processing-1,
+            topic:data-streams-batch-processing-1-HandlesBatchProcessing,
             type:kafka
           ],
-          Hash: 4913488602916801083,
+          Hash: 9751442692034380744,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -175,11 +175,11 @@
           EdgeTags: [
             direction:in,
             group:Samples.DataStreams.Kafka.fan-in-consumer,
-            topic:data-streams-batch-processing-1,
+            topic:data-streams-batch-processing-1-HandlesBatchProcessing,
             type:kafka
           ],
-          Hash: 9315422718960432191,
-          ParentHash: 4913488602916801083,
+          Hash: 11254684039468539015,
+          ParentHash: 9751442692034380744,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -188,11 +188,11 @@
         {
           EdgeTags: [
             direction:out,
-            topic:data-streams-batch-processing-2,
+            topic:data-streams-batch-processing-2-HandlesBatchProcessing,
             type:kafka
           ],
-          Hash: 9937680799879052874,
-          ParentHash: 9315422718960432191,
+          Hash: 13798769173313021740,
+          ParentHash: 11254684039468539015,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -202,11 +202,11 @@
           EdgeTags: [
             direction:in,
             group:Samples.DataStreams.Kafka.topic-2-consumer,
-            topic:data-streams-batch-processing-2,
+            topic:data-streams-batch-processing-2-HandlesBatchProcessing,
             type:kafka
           ],
-          Hash: 8667739576086808638,
-          ParentHash: 9937680799879052874,
+          Hash: 13395884887236079874,
+          ParentHash: 13798769173313021740,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,

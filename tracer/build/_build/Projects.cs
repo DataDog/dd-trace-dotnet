@@ -5,6 +5,7 @@ public static class Projects
     public const string ManagedLoader = "Datadog.Trace.ClrProfiler.Managed.Loader";
     public const string DatadogTraceAnnotations = "Datadog.Trace.Annotations";
     public const string DatadogTraceBundle = "Datadog.Trace.Bundle";
+    public const string DatadogAzureFunctions = "Datadog.AzureFunctions";
     public const string DatadogTraceMsBuild = "Datadog.Trace.MSBuild";
     public const string DatadogTraceBenchmarkDotNet = "Datadog.Trace.BenchmarkDotNet";
     public const string DatadogTraceOpenTracing = "Datadog.Trace.OpenTracing";
@@ -41,13 +42,6 @@ public static class Projects
     public const string DebuggerUnreferencedExternal = "Samples.Probes.Unreferenced.External";
 
     public const string RazorPages = "Samples.AspNetCoreRazorPages";
-
-    public static readonly string[] NativeFilesDependentTests = {
-        AppSecUnitTests,
-        ClrProfilerManagedTests,
-        TraceIntegrationTests,
-        TraceTests
-    };
 }
 
 public static class FileNames
