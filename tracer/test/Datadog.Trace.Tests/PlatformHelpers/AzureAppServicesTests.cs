@@ -194,48 +194,46 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             // AAS Tags are handled at serialization now. So no tags should be set on spans
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             var settings = new TracerSettings(vars);
-            await using (var tracer = TracerHelper.CreateWithFakeAgent(settings))
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            var spans = new List<ISpan>();
+            var iterations = 5;
+            var remaining = iterations;
+
+            while (remaining-- > 0)
             {
-                var spans = new List<ISpan>();
-                var iterations = 5;
-                var remaining = iterations;
-
-                while (remaining-- > 0)
+                using (var rootScope = tracer.StartActive("root"))
                 {
-                    using (var rootScope = tracer.StartActive("root"))
+                    spans.Add(rootScope.Span);
+
+                    using (var nestedScope = tracer.StartActive("nest-a"))
                     {
-                        spans.Add(rootScope.Span);
-
-                        using (var nestedScope = tracer.StartActive("nest-a"))
-                        {
-                            spans.Add(nestedScope.Span);
-                        }
-
-                        using (var nestedScope = tracer.StartActive("nest-b"))
-                        {
-                            spans.Add(nestedScope.Span);
-
-                            using (var doublyNestedScope = tracer.StartActive("nest-b-1"))
-                            {
-                                spans.Add(doublyNestedScope.Span);
-                            }
-                        }
+                        spans.Add(nestedScope.Span);
                     }
 
-                    Assert.NotEmpty(spans);
+                    using (var nestedScope = tracer.StartActive("nest-b"))
+                    {
+                        spans.Add(nestedScope.Span);
 
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteName) != null);
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteKind) != null);
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteType) != null);
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSubscriptionId) != null);
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceId) != null);
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceId) != null);
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceName) != null);
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesOperatingSystem) != null);
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesRuntime) != null);
-                    spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesExtensionVersion) != null);
+                        using (var doublyNestedScope = tracer.StartActive("nest-b-1"))
+                        {
+                            spans.Add(doublyNestedScope.Span);
+                        }
+                    }
                 }
+
+                Assert.NotEmpty(spans);
+
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteName) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteKind) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteType) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSubscriptionId) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceId) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceId) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceName) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesOperatingSystem) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesRuntime) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesExtensionVersion) != null);
             }
         }
     }

@@ -14,5 +14,6 @@ namespace Datadog.Trace.TestHelpers.TestTracer;
 
 public class ScopedTracerHelper
 {
-    internal static ScopedTracer BuildScopedTracer(TracerSettings settings = null, IAgentWriter agentWriter = null, ITraceSampler sampler = null, IScopeManager scopeManager = null, IDogStatsd statsd = null) => new(settings, agentWriter, sampler, scopeManager, statsd);
+    internal static ScopedTracer BuildScopedTracer(TracerSettings settings = null, IAgentWriter agentWriter = null, ITraceSampler sampler = null, IScopeManager scopeManager = null, IDogStatsd statsd = null)
+        => new(settings, agentWriter, sampler, scopeManager, statsd);
 }
