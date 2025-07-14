@@ -172,6 +172,8 @@ namespace Datadog.Trace.TestHelpers
             }
 
             Agent?.Dispose();
+
+            _currentOutput = null;
         }
 
         public HttpRequestMessage CreateRequest(HttpMethod method, string path)

@@ -15,7 +15,7 @@ namespace Datadog.Trace;
 
 internal sealed class TraceClock
 {
-    private static readonly CancellationTokenSource TokenSource;
+    private static readonly TaskCompletionSource<bool> ProcessExit = new();
     private static TraceClock _instance;
 
     private readonly DateTimeOffset _utcStart;
@@ -23,8 +23,7 @@ internal sealed class TraceClock
 
     static TraceClock()
     {
-        TokenSource = new CancellationTokenSource();
-        LifetimeManager.Instance.AddShutdownTask(_ => TokenSource.Cancel());
+        LifetimeManager.Instance.AddShutdownTask(_ => ProcessExit.SetResult(true));
         _instance = new TraceClock();
         _ = UpdateClockAsync();
     }
@@ -66,11 +65,11 @@ internal sealed class TraceClock
 
     private static async Task UpdateClockAsync()
     {
-        var token = TokenSource.Token;
+        var processExitTask = ProcessExit.Task;
         while (true)
         {
-            await Task.Delay(TimeSpan.FromMinutes(5), token).ConfigureAwait(false);
-            if (token.IsCancellationRequested)
+            await Task.WhenAny(processExitTask, Task.Delay(TimeSpan.FromMinutes(5))).ConfigureAwait(false);
+            if (processExitTask.IsCompleted)
             {
                 break;
             }

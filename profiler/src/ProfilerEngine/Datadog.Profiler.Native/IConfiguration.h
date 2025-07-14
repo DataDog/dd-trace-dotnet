@@ -75,8 +75,6 @@ public:
     virtual CpuProfilerType GetCpuProfilerType() const = 0;
     virtual std::chrono::milliseconds GetCpuProfilingInterval() const = 0;
     virtual std::chrono::milliseconds GetSsiLongLivedThreshold() const = 0;
-    virtual bool IsTelemetryToDiskEnabled() const = 0;
-    virtual bool IsSsiTelemetryEnabled() const = 0;
     virtual bool IsHttpProfilingEnabled() const = 0;
     virtual std::chrono::milliseconds GetHttpRequestDurationThreshold() const = 0;
     virtual bool ForceHttpSampling() const = 0;

@@ -1496,7 +1496,7 @@ partial class Build : NukeBuild
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
-                                     from globalInstall in new[] { false, true }
+                                     from globalInstall in new[] { false } // global install isn't currently supported
                                      let installCommand = globalInstall ? "enable-global-instrumentation" : "enable-iis-instrumentation"
                                      let dockerTag = $"{image.PublishFramework}_{platform}_{image.RuntimeTag}_{(globalInstall ? "global" : "iis")}".Replace('.', '_')
                                      select new

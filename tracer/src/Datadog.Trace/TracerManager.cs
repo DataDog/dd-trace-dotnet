@@ -399,7 +399,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instance.DefaultServiceName);
 
                     writer.WritePropertyName("agent_url");
-                    writer.WriteValue(instanceSettings.Exporter.AgentUri);
+                    writer.WriteValue(instanceSettings.Exporter.TraceAgentUriBase);
 
                     writer.WritePropertyName("agent_transport");
                     writer.WriteValue(instanceSettings.Exporter.TracesTransport.ToString());

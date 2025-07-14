@@ -146,7 +146,22 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
         public Uri AgentUri { get; }
 
-#pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
+        /// <summary>
+        /// Gets the base Uri where traces will be sent, taking the transport into account. It may be
+        /// different for statsd.
+        /// </summary>
+        /// <seealso cref="AgentUri"/>
+        public string TraceAgentUriBase => TracesTransport switch
+        {
+            // Only named pipes doesn't set this prefix on AgentUri, so we need to use the pipe name here
+            // Ideally, we would likely prefer to just have AgentUri include this prefix, but
+            // 1. That's not a valid Uri - we would need to use a custom Uri scheme (e.g. npipe://) and also
+            //    use / instead of \, i.e. @$"npipe:////./pipe/{TracesPipeName}"
+            // 2. AgentUri is exposed publicly, so we can't change it without potentially breaking behaviour
+            TracesTransportType.WindowsNamedPipe => $@"\\.\pipe\{TracesPipeName}",
+            _ => AgentUri.ToString()
+        };
+
         /// <summary>
         /// Gets the windows pipe name where the Tracer can connect to the Agent.
         /// Default is <c>null</c>.
