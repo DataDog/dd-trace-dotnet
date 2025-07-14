@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(QuartzCommon));
 
-        public static Scope? CreateScope(Tracer tracer, object arg, ISpanContext? parentContext = null, bool finishOnClose = true)
+        public static Scope? CreateScope(Tracer tracer, object quartzArgs, string operationName, ISpanContext? parentContext = null, bool finishOnClose = true)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -34,13 +34,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             try
             {
                 var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, QuartzServiceName);
-                scope = tracer.StartActiveInternal(OnJobExecuteOperation, parent: parentContext, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, serviceName: serviceName);
                 var span = scope.Span;
                 span.Type = QuartzType;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-                if (arg.TryDuckCast<IJobDiagnosticDataProxy>(out var typedArg))
+                if (quartzArgs.TryDuckCast<IJobDiagnosticDataProxy>(out var typedArg))
                 {
-                    PopulateJobSpanTags(scope, typedArg);
+                    PopulateJobSpanTags(scope, typedArg, operationName);
                 }
             }
             catch (Exception ex)
@@ -51,9 +51,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             return scope;
         }
 
-        internal static void PopulateJobSpanTags(IScope scope, IJobDiagnosticDataProxy jobDiagnosticData)
+        internal static void PopulateJobSpanTags(IScope scope, IJobDiagnosticDataProxy jobDiagnosticData, string operationName)
         {
-            scope.Span.SetTag("job.key", (string?)jobDiagnosticData.JobDetail.Key);
+            var resourceNameValue = operationName switch
+            {
+                OnJobExecuteOperation => $"execute {jobDiagnosticData.JobDetail.Key.Name}",
+                OnJobVetoOperation => $"veto {jobDiagnosticData.JobDetail.Key.Name}",
+                _ => jobDiagnosticData.JobDetail.ToString()
+            };
+
+            scope.Span.ResourceName = resourceNameValue;
+            scope.Span.SetTag("job.key", jobDiagnosticData.JobDetail.Key.ToString());
         }
     }
 }

@@ -67,18 +67,15 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     case "Quartz.Job.Execute.Start":
                     case "Quartz.Job.Veto.Start":
-                        OnJobExecutionStart(arg);
+                        OnStartSpan(arg);
                         break;
                     case "Quartz.Job.Execute.Stop":
                     case "Quartz.Job.Veto.Stop":
-                        OnJobExecutionStop(arg);
+                        OnStopSpan(arg);
                         break;
                     case "Quartz.Job.Execute.Exception":
                     case "Quartz.Job.Veto.Exception":
-                        OnJobExecutionException(arg);
-                        break;
-                    default:
-                        Log.Information("Unhandled Quartz event: {EventName}", eventName);
+                        OnException(arg);
                         break;
                 }
             }
@@ -88,41 +85,25 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private void OnJobExecutionStart(object arg)
+        private void OnStartSpan(object arg)
         {
             Log.Information("Quartz JobExecution.Start event received");
-            QuartzCommon.CreateScope(CurrentTracer, arg);
+            QuartzCommon.CreateScope(CurrentTracer, arg, QuartzCommon.OnJobExecuteOperation);
         }
 
-        private void OnJobExecutionStop(object arg)
+        private void OnStopSpan(object arg)
         {
             Log.Information("Quartz JobExecution.Stop event received");
             CurrentTracer.ActiveScope.Close();
         }
 
-        private void OnJobExecutionException(object arg)
+        private void OnException(object arg)
         {
             Log.Information("Quartz JobExecution.Exception event received");
-        }
-
-        private void OnJobSchedulingStart(object arg)
-        {
-            Log.Information("Quartz JobScheduling.Start event received");
-        }
-
-        private void OnJobSchedulingStop(object arg)
-        {
-            Log.Information("Quartz JobScheduling.Stop event received");
-        }
-
-        private void OnTriggerFiredStart(object arg)
-        {
-            Log.Information("Quartz TriggerFired.Start event received");
-        }
-
-        private void OnTriggerFiredStop(object arg)
-        {
-            Log.Information("Quartz TriggerFired.Stop event received");
+            if (arg is Exception exception)
+            {
+                CurrentTracer.ActiveScope.Span.SetException(exception);
+            }
         }
     }
 }

@@ -9,16 +9,9 @@ using Datadog.Trace.DuckTyping;
 /// <summary>
 /// DuckTyping interface for Quartz.Logging.JobDiagnosticData
 /// </summary>
-
-/// <summary>
-/// DuckTyping interface for Quartz.Logging.JobDiagnosticData
-/// </summary>
-/// <summary>
-/// DuckTyping interface for Quartz.Logging.JobDiagnosticData
-/// </summary>
 internal interface IJobDiagnosticDataProxy : IDuckType
 {
-    DuckTypeITriggerProxy Trigger { get; }
+    IITriggerProxy Trigger { get; }
 
     bool Recovering { get; }
 
@@ -28,7 +21,7 @@ internal interface IJobDiagnosticDataProxy : IDuckType
 
     object MergedJobDataMap { get; }
 
-    DuckTypeIJobDetailProxy JobDetail { get; }
+    IIJobDetailProxy JobDetail { get; }
 
     DateTimeOffset FireTimeUtc { get; }
 
@@ -50,110 +43,61 @@ internal interface IJobDiagnosticDataProxy : IDuckType
 }
 
 /// <summary>
-/// DuckTyping struct for Quartz.ITrigger
+/// DuckTyping interface for Quartz.ITrigger
 /// </summary>
-[DuckCopy]
-internal struct DuckTypeITriggerProxy
+internal interface IITriggerProxy : IDuckType
 {
-    // /// <summary>
-    // /// Gets a value of Quartz.TriggerKey
-    // /// </summary>
-    // private object key;
-    //
-    // /// <summary>
-    // /// Gets a value of Quartz.JobKey
-    // /// </summary>
-    // private object jobKey;
-    //
-    // /// <summary>
-    // /// Gets a value of System.String
-    // /// </summary>
-    // private string description;
-    //
-    // /// <summary>
-    // /// Gets a value of System.String
-    // /// </summary>
-    // private string calendarName;
-    //
-    // /// <summary>
-    // /// Gets a value of Quartz.JobDataMap
-    // /// </summary>
-    // private object jobDataMap;
-    //
-    // /// <summary>
-    // /// Gets a value of System.Nullable`1[System.DateTimeOffset]
-    // /// </summary>
-    // private DateTimeOffset? finalFireTimeUtc;
-    //
-    // /// <summary>
-    // /// Gets a value of System.Int32
-    // /// </summary>
-    // private int misfireInstruction;
-    //
-    // /// <summary>
-    // /// Gets a value of System.Nullable`1[System.DateTimeOffset]
-    // /// </summary>
-    // private DateTimeOffset? endTimeUtc;
-    //
-    // /// <summary>
-    // /// Gets a value of System.DateTimeOffset
-    // /// </summary>
-    // private DateTimeOffset startTimeUtc;
-    //
-    // /// <summary>
-    // /// Gets a value of System.Int32
-    // /// </summary>
-    // private int priority;
-    //
-    // /// <summary>
-    // /// Gets a value of System.Boolean
-    // /// </summary>
-    // private bool hasMillisecondPrecision;
+    IJobKeyProxy Key { get; }
+
+    object JobKey { get; }
+
+    string Description { get; }
+
+    string CalendarName { get; }
+
+    object JobDataMap { get; }
+
+    DateTimeOffset? FinalFireTimeUtc { get; }
+
+    int MisfireInstruction { get; }
+
+    DateTimeOffset? EndTimeUtc { get; }
+
+    DateTimeOffset StartTimeUtc { get; }
+
+    int Priority { get; set; }
+
+    bool HasMillisecondPrecision { get; }
 }
 
 /// <summary>
-/// DuckTyping struct for Quartz.IJobDetail
+/// DuckTyping interface for Quartz.IJobDetail
 /// </summary>
-[DuckCopy]
-internal struct DuckTypeIJobDetailProxy
+internal interface IIJobDetailProxy : IDuckType
 {
-    /// <summary>
-    /// Gets a value of Quartz.JobKey
-    /// </summary>
-    internal object Key;
+    IJobKeyProxy Key { get; }
 
-    // /// <summary>
-    // /// Gets a value of System.String
-    // /// </summary>
-    // private string description;
-    //
-    // /// <summary>
-    // /// Gets a value of System.Type
-    // /// </summary>
-    // private Type jobType;
-    //
-    // /// <summary>
-    // /// Gets a value of Quartz.JobDataMap
-    // /// </summary>
-    // private object jobDataMap;
-    //
-    // /// <summary>
-    // /// Gets a value of System.Boolean
-    // /// </summary>
-    // private bool durable;
-    //
-    // /// <summary>
-    // /// Gets a value of System.Boolean
-    // /// </summary>
-    // private bool persistJobDataAfterExecution;
-    //
-    // /// <summary>
-    // /// Gets a value of System.Boolean
-    // /// </summary>
-    // private bool concurrentExecutionDisallowed;
-    //
-    // /// <summary>
-    // /// Gets a value of System.Boolean
-    // /// </summary>
-    // private bool requestsRecovery;
+    string Description { get; }
+
+    Type JobType { get; }
+
+    object JobDataMap { get; }
+
+    bool Durable { get; }
+
+    bool PersistJobDataAfterExecution { get; }
+
+    bool ConcurrentExecutionDisallowed { get; }
+
+    bool RequestsRecovery { get; }
+}
+
+/// <summary>
+/// DuckTyping interface for Quartz.JobKey
+/// </summary>
+internal interface IJobKeyProxy : IDuckType
+{
+    string Name { get; }
+
+    string Group { get; }
 }
