@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -36,6 +37,23 @@ public static class Program
             .AddOtlpExporterIfEnvironmentVariablePresent()
             .Build();
 
+        var meterProviderBuilder = Sdk.CreateMeterProviderBuilder()
+                                      .ConfigureResource(r => r.AddService(serviceName))
+                                      .AddMeter(OpenTelemetryMetricsMeter.MeterName)
+                                      .AddConsoleExporter()
+                                      .AddOtlpExporter((exporterOptions, metricReaderOptions) =>
+                                       {
+                                           exporterOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                                           exporterOptions.Endpoint = new Uri("http://127.0.0.1:4318/v1/metrics");
+                                           exporterOptions.Headers = "dd-protocol=otlp,dd-otlp-path=agent";
+
+                                           metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 1000;
+                                           metricReaderOptions.TemporalityPreference = MetricReaderTemporalityPreference.Delta;
+                                       });
+
+        var meterProvider = meterProviderBuilder.Build();
+        meterProvider.ForceFlush();
+
         _tracer = tracerProvider.GetTracer(serviceName); // The version is omitted so the ActivitySource.Version / otel.library.version is not set
         var _otherLibraryTracer = tracerProvider.GetTracer(otherLibraryName, version: otherLibraryVersion);
 
@@ -51,6 +69,7 @@ public static class Program
             RunAddEventOverloads(span);
             RunSpanUpdateMethods(span);
             RunSpecialTagRemappers(span);
+            CreateSystemDiagnosticsMetrics();
 
             TelemetrySpan otherSpan = null;
             using (otherSpan = _otherLibraryTracer.StartActiveSpan("Response"))
@@ -101,6 +120,7 @@ public static class Program
             Thread.Sleep(100);
         }
 
+        meterProvider.Dispose();
     }
 
     private static async Task RunStartSpanOverloadsAsync(TelemetrySpan span)
@@ -307,5 +327,19 @@ public static class Program
         }
 
         _previousSpanContext = currentSpanContext;
+    }
+
+    private static void CreateSystemDiagnosticsMetrics()
+    {
+        OpenTelemetryMetricsMeter.LongCounter.Add(11L,
+                                                     new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
+        OpenTelemetryMetricsMeter.DoubleHistogram.Record(33L,
+                                                         new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
+        OpenTelemetryMetricsMeter.LongUpDownCounter.Add(55L,
+                                                        new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
+#if NET9_0_OR_GREATER
+        OpenTelemetryMetricsMeter.DoubleGauge.Record(77L,
+                                                     new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
+#endif
     }
 }
