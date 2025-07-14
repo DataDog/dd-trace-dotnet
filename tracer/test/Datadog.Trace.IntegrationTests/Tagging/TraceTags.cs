@@ -32,7 +32,7 @@ public class TraceTags
 
         var testApi = new MockApi();
         var agentWriter = new AgentWriter(testApi, statsAggregator: null, statsd: null);
-        await using var tracer = ScopedTracerHelper.BuildScopedTracer(settings, agentWriter);
+        await using var tracer = TracerHelper.Create(settings, agentWriter, null, null, null);
 
         using (var scope = tracer.StartActiveInternal("root"))
         {

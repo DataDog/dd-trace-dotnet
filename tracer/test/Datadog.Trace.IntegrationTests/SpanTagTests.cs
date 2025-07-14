@@ -230,7 +230,7 @@ namespace Datadog.Trace.IntegrationTests
         {
             var matchAllRule = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":1.0, \"max_per_second\":1000.0}]";
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, matchAllRule } });
-            return ScopedTracerHelper.BuildScopedTracer(settings, _writer, sampler: null, scopeManager: null, statsd: null);
+            return TracerHelper.Create(settings, _writer, null, null, null);
         }
     }
 }

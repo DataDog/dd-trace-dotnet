@@ -74,7 +74,7 @@ namespace Datadog.Trace.IntegrationTests
         {
             var settings = new TracerSettings();
             var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-            return ScopedTracerHelper.BuildScopedTracer(settings, agentWriter);
+            return TracerHelper.Create(settings, agentWriter, null, null, null);
         }
     }
 }
