@@ -2104,11 +2104,35 @@
       "Item3": 0
     },
     "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 6,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsKinesis",
+    "AssemblyName": "AWSSDK.Kinesis",
+    "TargetTypeName": "Amazon.Kinesis.AmazonKinesisClient",
+    "TargetMethodName": "PutRecord",
+    "TargetReturnType": "Amazon.Kinesis.Model.PutRecordResponse",
+    "TargetParameterTypes": [
+      "Amazon.Kinesis.Model.PutRecordRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 7,
+      "Item3": 0
+    },
+    "MaximumVersion": {
       "Item1": 4,
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordV3_7Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -2129,11 +2153,36 @@
       "Item3": 0
     },
     "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 6,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsKinesis",
+    "AssemblyName": "AWSSDK.Kinesis",
+    "TargetTypeName": "Amazon.Kinesis.AmazonKinesisClient",
+    "TargetMethodName": "PutRecordAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.PutRecordResponse]",
+    "TargetParameterTypes": [
+      "Amazon.Kinesis.Model.PutRecordRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 7,
+      "Item3": 0
+    },
+    "MaximumVersion": {
       "Item1": 4,
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordAsyncIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordAsyncV3_7Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -2153,11 +2202,35 @@
       "Item3": 0
     },
     "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 6,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsKinesis",
+    "AssemblyName": "AWSSDK.Kinesis",
+    "TargetTypeName": "Amazon.Kinesis.AmazonKinesisClient",
+    "TargetMethodName": "PutRecords",
+    "TargetReturnType": "Amazon.Kinesis.Model.PutRecordsResponse",
+    "TargetParameterTypes": [
+      "Amazon.Kinesis.Model.PutRecordsRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 7,
+      "Item3": 0
+    },
+    "MaximumVersion": {
       "Item1": 4,
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsV3_7Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -2178,11 +2251,36 @@
       "Item3": 0
     },
     "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 6,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsKinesis",
+    "AssemblyName": "AWSSDK.Kinesis",
+    "TargetTypeName": "Amazon.Kinesis.AmazonKinesisClient",
+    "TargetMethodName": "PutRecordsAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.PutRecordsResponse]",
+    "TargetParameterTypes": [
+      "Amazon.Kinesis.Model.PutRecordsRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 7,
+      "Item3": 0
+    },
+    "MaximumVersion": {
       "Item1": 4,
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsAsyncIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsAsyncV3_7Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -11608,6 +11706,55 @@
   {
     "IntegrationName": "NLog",
     "AssemblyName": "NLog",
+    "TargetTypeName": "NLog.Config.LoggingConfigurationFileLoader",
+    "TargetMethodName": "Load",
+    "TargetReturnType": "NLog.Config.LoggingConfiguration",
+    "TargetParameterTypes": [
+      "NLog.LogFactory",
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 6,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LoggingConfigurationFileLoaderLoadInstrumentation",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "NLog",
+    "AssemblyName": "NLog",
+    "TargetTypeName": "NLog.LogFactory",
+    "TargetMethodName": "ActivateLoggingConfiguration",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "NLog.Config.LoggingConfiguration"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 6,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryActivateLoggingConfigurationInstrumentation",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "NLog",
+    "AssemblyName": "NLog",
     "TargetTypeName": "NLog.LogFactory",
     "TargetMethodName": "BuildLoggerConfiguration",
     "TargetReturnType": "NLog.Internal.TargetWithFilterChain[]",
@@ -11725,7 +11872,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },

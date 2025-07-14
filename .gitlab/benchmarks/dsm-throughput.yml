@@ -1,0 +1,51 @@
+variables:
+  DSM_THROUGHPUT_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dd-trace-dotnet-dsm
+  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-3
+
+stages:
+  - check-azure-pipeline
+  - benchmarks
+
+check_azure_pipeline:
+  stage: check-azure-pipeline
+  image: $MACROBENCHMARKS_CI_IMAGE
+  script:
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - ./wait-for-pipeline.sh
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - artifacts/
+      - build-id.txt
+    expire_in: 3 months
+  tags: ["arch:amd64"]
+  timeout: 1h
+  rules:
+    - when: on_success
+
+dsm_throughput:
+  stage: benchmarks
+  tags: ["runner:apm-k8s-same-cpu"]
+  needs: ["check_azure_pipeline"]
+  image: $DSM_THROUGHPUT_CI_IMAGE
+  interruptible: true
+  timeout: 1h
+  script:
+    - source build-id.txt
+    - export ARTIFACTS_DIR="$(pwd)/artifacts" && (mkdir "${ARTIFACTS_DIR}" || :)
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/".insteadOf "https://github.com/DataDog/"
+    - git clone --branch dd-trace-dotnet/data-streams-monitoring https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - ./steps/setup-sut.sh
+    - bp-runner bp-runner.yml --debug
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - artifacts/
+    expire_in: 3 months
+  variables:
+    KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-dotnet
+    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+  rules:
+    - when: on_success

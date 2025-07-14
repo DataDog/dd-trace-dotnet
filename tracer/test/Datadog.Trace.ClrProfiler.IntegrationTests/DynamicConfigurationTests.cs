@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -43,9 +44,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task UpdateConfiguration()
         {
+            var logDir = Path.Combine(LogDirectory, nameof(UpdateConfiguration));
+            Directory.CreateDirectory(logDir);
+            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logDir, Output);
             using var sample = await StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
 
             try
@@ -102,9 +107,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task RestoreInitialConfiguration()
         {
+            var logDir = Path.Combine(LogDirectory, nameof(RestoreInitialConfiguration));
+            Directory.CreateDirectory(logDir);
+            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logDir, Output);
 
             SetEnvironmentVariable("DD_TRACE_SAMPLE_RATE", "0.9");
             using var sample = await StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
