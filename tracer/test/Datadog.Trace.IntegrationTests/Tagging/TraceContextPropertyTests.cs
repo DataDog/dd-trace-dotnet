@@ -17,16 +17,11 @@ namespace Datadog.Trace.IntegrationTests.Tagging;
 
 public class TraceContextPropertyTests
 {
-    private readonly ScopedTracer _tracer;
     private readonly MockApi _testApi;
 
     public TraceContextPropertyTests()
     {
         _testApi = new MockApi();
-
-        var settings = new TracerSettings();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        _tracer = ScopedTracerHelper.BuildScopedTracer(settings, agentWriter);
     }
 
     [Theory]
@@ -38,27 +33,25 @@ public class TraceContextPropertyTests
     [InlineData(100)]
     public async Task SamplingPriority(int samplingPriority)
     {
-        await using (_tracer)
+        await using var tracer = GetTracer();
+        using (var scope = CreateTrace(tracer))
         {
-            using (var scope = CreateTrace(_tracer))
-            {
-                scope.Span.Context.TraceContext.SetSamplingPriority(samplingPriority);
-            }
-
-            await _tracer.FlushAsync();
-            var traceChunks = _testApi.Wait();
-            var spans = traceChunks.SelectMany(s => s).ToArray();
-
-            spans.Where(s => s.ParentId > 0)
-                 .Should()
-                 .HaveCount(3)
-                 .And.OnlyContain(s => !s.Metrics.ContainsKey("_sampling_priority_v1"));
-
-            spans.Where(s => s.ParentId is null or 0)
-                 .Should()
-                 .HaveCount(1)
-                 .And.OnlyContain(s => s.Metrics["_sampling_priority_v1"] == samplingPriority);
+            scope.Span.Context.TraceContext.SetSamplingPriority(samplingPriority);
         }
+
+        await tracer.FlushAsync();
+        var traceChunks = _testApi.Wait();
+        var spans = traceChunks.SelectMany(s => s).ToArray();
+
+        spans.Where(s => s.ParentId > 0)
+             .Should()
+             .HaveCount(3)
+             .And.OnlyContain(s => !s.Metrics.ContainsKey("_sampling_priority_v1"));
+
+        spans.Where(s => s.ParentId is null or 0)
+             .Should()
+             .HaveCount(1)
+             .And.OnlyContain(s => s.Metrics["_sampling_priority_v1"] == samplingPriority);
     }
 
     [Theory]
@@ -69,14 +62,13 @@ public class TraceContextPropertyTests
     [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
     public async Task Env(string before, string after)
     {
-        await using (_tracer)
+        await using var tracer = GetTracer();
+        using (var scope = CreateTrace(tracer))
         {
-            using (var scope = CreateTrace(_tracer))
-            {
-                scope.Span.Context.TraceContext.Environment = before;
-            }
+            scope.Span.Context.TraceContext.Environment = before;
         }
 
+        await tracer.FlushAsync();
         await AssertTag("env", after);
     }
 
@@ -88,14 +80,13 @@ public class TraceContextPropertyTests
     [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
     public async Task Version(string before, string after)
     {
-        await using (_tracer)
+        await using var tracer = GetTracer();
+        using (var scope = CreateTrace(tracer))
         {
-            using (var scope = CreateTrace(_tracer))
-            {
-                scope.Span.Context.TraceContext.ServiceVersion = before;
-            }
+            scope.Span.Context.TraceContext.ServiceVersion = before;
         }
 
+        await tracer.FlushAsync();
         await AssertTag("version", after);
     }
 
@@ -107,14 +98,13 @@ public class TraceContextPropertyTests
     [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
     public async Task Origin(string before, string after)
     {
-        await using (_tracer)
+        await using var tracer = GetTracer();
+        using (var scope = CreateTrace(tracer))
         {
-            using (var scope = CreateTrace(_tracer))
-            {
-                scope.Span.Context.TraceContext.Origin = before;
-            }
+            scope.Span.Context.TraceContext.Origin = before;
         }
 
+        await tracer.FlushAsync();
         await AssertTag("_dd.origin", after);
     }
 
@@ -136,9 +126,8 @@ public class TraceContextPropertyTests
         return (Scope)rootScope;
     }
 
-    private async Task AssertTag(string key, string value)
+    private Task AssertTag(string key, string value)
     {
-        await _tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
         var spans = traceChunks.SelectMany(s => s).ToArray();
 
@@ -152,5 +141,14 @@ public class TraceContextPropertyTests
         {
             spans.Should().OnlyContain(s => s.Tags[key] == value);
         }
+
+        return Task.CompletedTask;
+    }
+
+    private ScopedTracer GetTracer()
+    {
+        var settings = new TracerSettings();
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        return ScopedTracerHelper.BuildScopedTracer(settings, agentWriter);
     }
 }

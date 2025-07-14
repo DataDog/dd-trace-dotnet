@@ -427,7 +427,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var configSource = new NameValueConfigurationSource(new NameValueCollection
             {
                 { ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, featureFlag.ToString() },
-                { ConfigurationKeys.ExpandRouteTemplatesEnabled, expandRouteParameters.ToString() }
+                { ConfigurationKeys.ExpandRouteTemplatesEnabled, expandRouteParameters.ToString() },
             });
             await using var tracer = GetTracer(writer, configSource);
 

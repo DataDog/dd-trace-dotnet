@@ -18,20 +18,6 @@ namespace Datadog.Trace.IntegrationTests.Tagging;
 
 public class TraceTags
 {
-    private readonly ScopedTracer _tracer;
-    private readonly MockApi _testApi;
-
-    public TraceTags()
-    {
-        // make it so all traces are initially dropped so we can override with keep,
-        // otherwise we can't change the sampling mechanism
-        var settings = TracerSettings.Create(new() { { ConfigurationKeys.GlobalSamplingRate, 0 } });
-
-        _testApi = new MockApi();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-        _tracer = ScopedTracerHelper.BuildScopedTracer(settings, agentWriter);
-    }
-
     [Theory]
     [InlineData(SamplingMechanism.Default)]
     [InlineData(SamplingMechanism.AgentRate)]
@@ -40,18 +26,23 @@ public class TraceTags
     [InlineData(SamplingMechanism.Asm)]
     public async Task SerializeSamplingMechanismTag(string samplingMechanism)
     {
-        await using (_tracer)
-        {
-            using (var scope = _tracer.StartActiveInternal("root"))
-            {
-                var traceContext = scope.Span.Context.TraceContext;
-                traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, samplingMechanism);
-            }
+        // make it so all traces are initially dropped so we can override with keep,
+        // otherwise we can't change the sampling mechanism
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.GlobalSamplingRate, 0 } });
 
-            await _tracer.FlushAsync();
-            var traceChunks = _testApi.Wait(TimeSpan.FromSeconds(3));
-            var deserializedSpan = traceChunks.Single().Single();
-            deserializedSpan.Tags.Should().Contain("_dd.p.dm", samplingMechanism);
+        var testApi = new MockApi();
+        var agentWriter = new AgentWriter(testApi, statsAggregator: null, statsd: null);
+        await using var tracer = ScopedTracerHelper.BuildScopedTracer(settings, agentWriter);
+
+        using (var scope = tracer.StartActiveInternal("root"))
+        {
+            var traceContext = scope.Span.Context.TraceContext;
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, samplingMechanism);
         }
+
+        await tracer.FlushAsync();
+        var traceChunks = testApi.Wait(TimeSpan.FromSeconds(3));
+        var deserializedSpan = traceChunks.Single().Single();
+        deserializedSpan.Tags.Should().Contain("_dd.p.dm", samplingMechanism);
     }
 }

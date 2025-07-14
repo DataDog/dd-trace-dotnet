@@ -17,60 +17,59 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class OriginTagSendTraces
     {
-        private readonly ScopedTracer _tracer;
         private readonly MockApi _testApi;
 
         public OriginTagSendTraces()
         {
-            var settings = new TracerSettings();
             _testApi = new MockApi();
-            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-            _tracer = ScopedTracerHelper.BuildScopedTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
         [SkippableFact]
         public async Task NormalSpan()
         {
-            await using (_tracer)
+            await using var tracer = GetTracer();
+            using (_ = tracer.StartActive("root"))
             {
-                using (_ = _tracer.StartActive("root"))
+                using (_ = tracer.StartActive("child"))
                 {
-                    using (_ = _tracer.StartActive("child"))
-                    {
-                    }
                 }
-
-                await _tracer.FlushAsync();
-                var traceChunks = _testApi.Wait();
-
-                traceChunks.SelectMany(s => s)
-                           .Should()
-                           .OnlyContain(s => !s.Tags.ContainsKey("_dd.origin"));
             }
+
+            await tracer.FlushAsync();
+            var traceChunks = _testApi.Wait();
+
+            traceChunks.SelectMany(s => s)
+                       .Should()
+                       .OnlyContain(s => !s.Tags.ContainsKey("_dd.origin"));
         }
 
         [SkippableFact]
         public async Task NormalOriginSpan()
         {
             const string originValue = "test-origin";
-            await using (_tracer)
+            await using var tracer = GetTracer();
+            using (var scope = (Scope)tracer.StartActive("root"))
             {
-                using (var scope = (Scope)_tracer.StartActive("root"))
+                scope.Span.Context.TraceContext.Origin = originValue;
+
+                using (_ = tracer.StartActive("child"))
                 {
-                    scope.Span.Context.TraceContext.Origin = originValue;
-
-                    using (_ = _tracer.StartActive("child"))
-                    {
-                    }
                 }
-
-                await _tracer.FlushAsync();
-                var traceChunks = _testApi.Wait();
-
-                traceChunks.SelectMany(s => s)
-                           .Should()
-                           .OnlyContain(s => s.Tags["_dd.origin"] == originValue);
             }
+
+            await tracer.FlushAsync();
+            var traceChunks = _testApi.Wait();
+
+            traceChunks.SelectMany(s => s)
+                       .Should()
+                       .OnlyContain(s => s.Tags["_dd.origin"] == originValue);
+        }
+
+        private ScopedTracer GetTracer()
+        {
+            var settings = new TracerSettings();
+            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+            return ScopedTracerHelper.BuildScopedTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
     }
 }
