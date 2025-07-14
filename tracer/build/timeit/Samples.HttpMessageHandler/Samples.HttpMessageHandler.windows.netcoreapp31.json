@@ -25,6 +25,7 @@
   "scenarios": [
     {
       "name": "Baseline",
+      "isBaseline": true,
       "environmentVariables": {
         "CORECLR_ENABLE_PROFILING": "0",
         "COR_ENABLE_PROFILING": "0"
@@ -67,5 +68,6 @@
     "runtime.version": "3.1",
     "benchmark.job.runtime.name": ".NET Core 3.1",
     "benchmark.job.runtime.moniker": "netcoreapp3.1"
-  }
+  },
+  "overheadThreshold": 5
 }
