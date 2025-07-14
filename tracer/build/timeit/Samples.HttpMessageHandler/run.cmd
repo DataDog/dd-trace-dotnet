@@ -7,7 +7,7 @@ IF EXIST results_Samples.HttpMessageHandler.windows.net80.json DEL /F results_Sa
 echo *********************
 echo Installing timeitsharp
 echo *********************
-dotnet tool update -g timeitsharp --version 0.4.0
+dotnet tool update -g timeitsharp --version 0.4.1
 
 echo *********************
 echo .NET Framework 4.6.1
