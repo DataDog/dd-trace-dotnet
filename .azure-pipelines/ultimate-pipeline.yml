@@ -1549,6 +1549,8 @@ stages:
             framework: net8.0
           net9.0:
             framework: net9.0
+          net10.0:
+            framework: net10.0
       pool:
         name: azure-managed-windows-x64-2
       steps:
