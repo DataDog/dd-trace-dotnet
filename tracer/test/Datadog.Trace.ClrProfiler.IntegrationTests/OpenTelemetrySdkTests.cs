@@ -204,8 +204,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
         public async Task SubmitsOtlpMetrics(string packageVersion)
         {
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-            SetEnvironmentVariable("DD_TRACE_OTEL_METRICS_ENABLED", "true");
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/metrics");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 
             using var agent = EnvironmentHelper.GetMockAgent(fixedPort: 4318);
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
@@ -214,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                           .Where(r => r.PathAndQuery.StartsWith("/v1/metrics"))
                                           .ToList();
 
-                metricRequests.Should().NotBeEmpty("No OTLP metric requests received");
+                metricRequests.Should().NotBeEmpty("No OTLP metric requests received.");
 
                 var snapshotPayload = new List<object>();
 
