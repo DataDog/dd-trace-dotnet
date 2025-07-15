@@ -304,6 +304,11 @@ partial class Build
                 : new Version(2, 17);
 
             ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
+
+            if (IsAlpine)
+            {
+                CompareNativeSymbolsSnapshot(dest, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
+            }
         });
 
     void ValidateNativeLibraryGlibcCompatibility(AbsolutePath libraryPath, Version expectedGlibcVersion, IEnumerable<string> allowedSymbols = null)
