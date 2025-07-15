@@ -1,4 +1,4 @@
-﻿FROM andrewlockdd/alpine-clang:1.0 as base
+﻿FROM andrewlockdd/alpine-clang:dotnet10 as base
 ARG DOTNETSDK_VERSION
 
 ENV \
