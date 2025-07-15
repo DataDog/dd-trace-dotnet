@@ -2,7 +2,7 @@ __assert_fail
 __environ
 __errno_location
 __stack_chk_fail
-__tls_get_addr
+__stack_chk_guard
 __xpg_strerror_r
 _exit
 _Unwind_Backtrace@GCC_3.3
@@ -144,7 +144,6 @@ socketpair
 sscanf
 stat
 stderr
-strchr
 strcmp
 strerror_r
 strlen

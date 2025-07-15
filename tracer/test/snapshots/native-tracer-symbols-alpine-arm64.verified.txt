@@ -2,12 +2,11 @@ __ctype_get_mb_cur_max
 __cxa_atexit
 __errno_location
 __stack_chk_fail
-__tls_get_addr
+__stack_chk_guard
 abort
 atexit
 bcmp
 btowc
-ceil
 clock_gettime
 close
 dl_iterate_phdr
@@ -20,7 +19,6 @@ fclose
 fdopen
 fflush
 fileno
-floorl
 fopen
 fprintf
 fputc
@@ -33,6 +31,7 @@ ftello
 fwrite
 get_nprocs
 getc
+getentropy
 getenv
 getpid
 gettimeofday
@@ -116,6 +115,7 @@ strerror
 strerror_r
 strftime
 strlen
+strncmp
 strrchr
 strstr
 strtod

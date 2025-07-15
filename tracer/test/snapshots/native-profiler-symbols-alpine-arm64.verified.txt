@@ -2,7 +2,7 @@ __ctype_get_mb_cur_max
 __cxa_atexit
 __errno_location
 __stack_chk_fail
-__tls_get_addr
+__stack_chk_guard
 abort
 aligned_alloc
 asprintf
@@ -14,8 +14,6 @@ bind
 blaze_read_elf_build_id
 btowc
 calloc
-ceil
-ceill
 clock_gettime
 close
 closedir
@@ -78,7 +76,6 @@ fclose
 fdopen
 fflush
 fileno
-floorl
 fopen
 fprintf
 fputc
@@ -93,6 +90,7 @@ get_nprocs
 getauxval
 getc
 getegid
+getentropy
 getenv
 geteuid
 getgid
@@ -121,7 +119,6 @@ isspace
 isupper
 iswctype
 isxdigit
-llround
 localtime_r
 logl
 lseek
