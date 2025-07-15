@@ -341,7 +341,7 @@ namespace Datadog.Trace.Configuration
             IsActivityListenerEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
                                        .AsBoolResult()
-                                       .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
+                                       .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: true);
 
             var disabledIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
                                                  .AsString()
