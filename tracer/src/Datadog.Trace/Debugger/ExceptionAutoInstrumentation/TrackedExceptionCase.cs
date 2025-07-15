@@ -89,9 +89,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             StartCollectingTime = DateTime.UtcNow;
         }
 
-        public bool Revert(int normalizedExceptionHash)
+        public bool Revert(int normalizedExceptionHash, TimeSpan rateLimit)
         {
-            if (ExceptionDebugging.Settings.RateLimit.TotalMilliseconds == 0)
+            if (rateLimit.TotalMilliseconds == 0)
             {
                 // No rate limit, avoid reverting
                 return false;

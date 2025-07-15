@@ -280,7 +280,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     assignIndex += 1;
                 }
 
-                _ = trackedExceptionCase.Revert(normalizedExHash);
+                _ = trackedExceptionCase.Revert(normalizedExHash, _rateLimit);
                 _cachedInvalidatedCases.Add(normalizedExHash);
                 _evaluateWithRootSpanCases.Remove(normalizedExHash);
             }
@@ -500,7 +500,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     Log.Information("Reverting an exception case for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
 
-                    if (trackedExceptionCase.Revert(normalizedExHash))
+                    if (trackedExceptionCase.Revert(normalizedExHash, _rateLimit))
                     {
                         CachedDoneExceptions.Add(normalizedExHash);
                         _exceptionsScheduler.Schedule(trackedExceptionCase, _rateLimit);
@@ -640,7 +640,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 try
                 {
-                    if (!trackedExceptionCase.Revert(0))
+                    if (!trackedExceptionCase.Revert(0, _rateLimit))
                     {
                         ExceptionCaseInstrumentationManager.Revert(trackedExceptionCase.ExceptionCase); // Force revert
                     }
