@@ -197,7 +197,6 @@ src/Datadog.Trace/Tagging/AzureServiceBusTags.cs
 src/Datadog.Trace/Tagging/CosmosDbTags.cs
 src/Datadog.Trace/Tagging/CouchbaseTags.cs
 src/Datadog.Trace/Tagging/GrpcTags.cs
-src/Datadog.Trace/Tagging/HangfireTags.cs
 src/Datadog.Trace/Tagging/HttpTags.cs
 src/Datadog.Trace/Tagging/IHasStatusCode.cs
 src/Datadog.Trace/Tagging/IItemProcessor.cs
@@ -466,7 +465,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/ErrorLocationStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/GraphQLCommonBase.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/GraphQLTags.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/OperationTypeProxy.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/IPerformingContextProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/CachedMessageHeadersHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/IConsumeException.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/IConsumeResult.cs
