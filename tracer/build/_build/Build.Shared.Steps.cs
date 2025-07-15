@@ -402,10 +402,15 @@ partial class Build
             return;
         }
 
+        // Print the expected values, so it's easier to copy-paste them into the snapshot file as required
+        Logger.Information("Received snapshot for {LibraryName}{Break}{Symbols}", libraryName, Environment.NewLine, received);
+
+        Logger.Information("Changed symbols for {LibraryName}:", libraryName);
+
         PrintDiff(diff);
 
-        throw new Exception($"Found differences in undefined symbols ({string.Join(",", changedSymbols)}) in {libraryName}. " +
-                            "Verify that these changes are expected, and will not cause problems. " +
+        throw new Exception($"Found differences in undefined symbols in {libraryName}. {Environment.NewLine} These are shown above as both a diff and the" +
+                            "full expected snapshot. Verify that these changes are expected, and will not cause problems. " +
                             "Removing symbols is generally a safe operation, but adding them could cause crashes. " +
                             $"If the new symbols are safe to add, update the snapshot file at {verifiedPath} with the " +
                             "new values");
