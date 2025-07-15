@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -21,6 +22,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class TransportTests : TestHelper
     {
+        private static readonly TestTransports[] Transports = new[]
+        {
+            TestTransports.Tcp,
+            TestTransports.WindowsNamedPipe,
+#if NETCOREAPP3_1_OR_GREATER
+            TestTransports.Uds,
+#endif
+        };
+
         private readonly ITestOutputHelper _output;
 
         // Using Telemetry sample as it's simple
@@ -31,52 +41,42 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public static IEnumerable<object[]> Data =>
-            Enum.GetValues(typeof(TracesTransportType))
-                .Cast<TracesTransportType>()
-#if !NETCOREAPP3_1_OR_GREATER
-                .Where(x => x != TracesTransportType.UnixDomainSocket)
-#endif
-                .Select(x => new object[] { x });
+            from transport in Transports
+            from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
+            select new object[] { transport, dataPipelineEnabled };
 
         [SkippableTheory]
         [MemberData(nameof(Data))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task TransportsWorkCorrectly(Enum transport)
+        [Flaky("Named pipes is flaky", maxRetries: 3)]
+        public async Task TransportsWorkCorrectly(TestTransports transport, bool dataPipelineEnabled)
         {
-            var transportType = (TracesTransportType)transport;
-            if (transportType != TracesTransportType.WindowsNamedPipe)
-            {
-                await RunTest(transportType);
-                return;
-            }
-
-            // The server implementation of named pipes is flaky so have 3 attempts
-            var attemptsRemaining = 3;
-            while (true)
-            {
-                try
-                {
-                    attemptsRemaining--;
-                    await RunTest(transportType);
-                    return;
-                }
-                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
-                {
-                    await ReportRetry(_output, attemptsRemaining, ex);
-                }
-            }
+            var transportType = TracesTransportTypeFromTestTransport(transport);
+            await RunTest(transportType, dataPipelineEnabled);
         }
 
-        private async Task RunTest(TracesTransportType transportType)
+        private TracesTransportType TracesTransportTypeFromTestTransport(TestTransports transport)
+        {
+            return transport switch
+            {
+                TestTransports.Tcp => TracesTransportType.Default,
+                TestTransports.WindowsNamedPipe => TracesTransportType.WindowsNamedPipe,
+                TestTransports.Uds => TracesTransportType.UnixDomainSocket,
+                _ => throw new InvalidOperationException($"Unknown transport {transport}"),
+            };
+        }
+
+        private async Task RunTest(TracesTransportType transportType, bool dataPipelineEnabled)
         {
             const int expectedSpanCount = 1;
 
             if (transportType == TracesTransportType.WindowsNamedPipe && !EnvironmentTools.IsWindows())
             {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+                throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
             EnvironmentHelper.EnableTransport(GetTransport(transportType));
 
             using var telemetry = this.ConfigureTelemetry();
@@ -89,14 +89,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 await VerifyHelper.VerifySpans(spans, VerifyHelper.GetSpanVerifierSettings())
                                   .DisableRequireUniquePrefix()
                                   .UseFileName("TransportTests");
             }
 
-            telemetry.AssertConfiguration(ConfigTelemetryData.AgentTraceTransport, transportType.ToString());
+            await telemetry.AssertConfigurationAsync(ConfigTelemetryData.AgentTraceTransport, transportType.ToString());
 
             MockTracerAgent GetAgent(TracesTransportType type)
                 => type switch

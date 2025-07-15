@@ -37,7 +37,6 @@ namespace Datadog.Trace.Sampling
             {
                 if (rule.IsMatch(span))
                 {
-                    // Note: GetSamplingRate() can adds tags like "_dd.agent_psr" or "_dd.rule_psr"
                     var sampleRate = rule.GetSamplingRate(span);
                     return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
                 }
@@ -106,23 +105,37 @@ namespace Datadog.Trace.Sampling
             return _rules;
         }
 
-        private SamplingDecision MakeSamplingDecision(Span span, float rate, int mechanism)
+        private SamplingDecision MakeSamplingDecision(Span span, float rate, string mechanism)
         {
             // make a sampling decision as a function of traceId and sampling rate.
             var sample = SamplingHelpers.SampleByRate(span.TraceId128, rate);
+            int priority;
+            float? limiterRate = null;
 
-            var priority = mechanism switch
-                           {
-                               // default sampling rule based on sampling rates from agent response or from a cold start.
-                               // if sampling decision was made automatically without any input from user, use AutoKeep/AutoReject.
-                               SamplingMechanism.AgentRate or SamplingMechanism.Default => sample ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject,
+            if (mechanism is SamplingMechanism.AgentRate or SamplingMechanism.Default)
+            {
+                // default sampling rule based on sampling rates from agent response or from a cold start.
+                // if sampling decision was made automatically without any input from user, use AutoKeep/AutoReject.
+                priority = sample ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject;
+            }
+            else
+            {
+                // sampling rule based on user configuration (DD_TRACE_SAMPLE_RATE, DD_TRACE_SAMPLING_RULES).
+                // if user influenced sampling decision in any way (manually, rules, rates, etc), use UserKeep/UserReject.
+                if (sample)
+                {
+                    priority = _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject;
 
-                               // sampling rule based on user configuration (DD_TRACE_SAMPLE_RATE, DD_TRACE_SAMPLING_RULES).
-                               // if user influenced sampling decision in any way (manually, rules, rates, etc), use UserKeep/UserReject.
-                               _ => sample && _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject
-                           };
+                    // report the rate limiter's effective rate if the rate limiter is used
+                    limiterRate = _limiter.GetEffectiveRate();
+                }
+                else
+                {
+                    priority = SamplingPriorityValues.UserReject;
+                }
+            }
 
-            return new SamplingDecision(priority, mechanism);
+            return new SamplingDecision(priority, mechanism, rate, limiterRate);
         }
     }
 }

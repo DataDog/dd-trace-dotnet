@@ -123,14 +123,14 @@ public class DataStreamsManagerTests
     }
 
     [Fact]
-    public void WhenEnabled_TimeInQueueIsNotUsedForSecondCheckpoint()
+    public async Task WhenEnabled_TimeInQueueIsNotUsedForSecondCheckpoint()
     {
         long latencyMs = 100;
         var latencyNs = latencyMs * 1_000_000;
 
         var dsm = GetDataStreamManager(true, out var writer);
         var parent = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "some-tags" }, 100, latencyMs);
-        Thread.Sleep(1);
+        await Task.Delay(1);
         dsm.SetCheckpoint(parentPathway: parent, CheckpointKind.Consume, new[] { "some-tags" }, 100, latencyMs);
 
         writer.Points.Should().HaveCount(2);
@@ -303,7 +303,8 @@ public class DataStreamsManagerTests
         return new DataStreamsManager(
             env: "foo",
             defaultServiceName: "bar",
-            writer);
+            writer,
+            isInDefaultState: false);
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter

@@ -150,6 +150,7 @@ docker-compose.serverless.yml                                                   
 # Serverless (Azure/GCP)
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/ServerlessMiniAgent.cs   @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
+/tracer/src/Datadog.AzureFunctions/                                                      @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/test/Datadog.Trace.Tests/ServerlessMiniAgentTests.cs                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/test/test-applications/azure-functions/                                          @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 
@@ -186,6 +187,9 @@ missing-nullability-files.csv             @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Configuration/IntegrationId.cs @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/MetricTags.cs @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs @DataDog/apm-dotnet
+
+# Native loader 
+/shared/src/Datadog.Trace.ClrProfiler.Native/                       @DataDog/profiling-dotnet @DataDog/apm-dotnet
 
 # Version Bump Related Files - overriding to have wider coverage
 

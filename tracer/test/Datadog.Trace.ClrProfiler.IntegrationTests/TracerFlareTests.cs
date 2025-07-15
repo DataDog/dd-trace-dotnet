@@ -41,7 +41,7 @@ public class TracerFlareTests : TestHelper
     {
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
         var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory, Output);
         using var sample = await StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
 
         try

@@ -617,6 +617,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks.OpenTelemetry.Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks.OpenTelemetry.InstrumentedApi", "tracer\test\benchmarks\Benchmarks.OpenTelemetry.InstrumentedApi\Benchmarks.OpenTelemetry.InstrumentedApi.csproj", "{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.AzureFunctions", "tracer\src\Datadog.AzureFunctions\Datadog.AzureFunctions.csproj", "{BB073E40-F46D-E52B-662E-395EED834111}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Hangfire", "tracer\test\test-applications\integrations\Samples.Hangfire\Samples.Hangfire.csproj", "{59A9EDCD-6892-4817-8957-54DE84BDCAFB}"
 EndProject
 Global
@@ -1491,6 +1493,10 @@ Global
 		{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB073E40-F46D-E52B-662E-395EED834111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB073E40-F46D-E52B-662E-395EED834111}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB073E40-F46D-E52B-662E-395EED834111}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB073E40-F46D-E52B-662E-395EED834111}.Release|Any CPU.Build.0 = Release|Any CPU
 		{59A9EDCD-6892-4817-8957-54DE84BDCAFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{59A9EDCD-6892-4817-8957-54DE84BDCAFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59A9EDCD-6892-4817-8957-54DE84BDCAFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1737,6 +1743,7 @@ Global
 		{4A74A771-F903-4A2E-AA97-902D64CD311A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{501AD343-1951-FF43-0C7F-3FE3FDF5A660} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
 		{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
+		{BB073E40-F46D-E52B-662E-395EED834111} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{59A9EDCD-6892-4817-8957-54DE84BDCAFB} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

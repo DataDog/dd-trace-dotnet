@@ -280,6 +280,26 @@ std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledPr
         emptyList = false;
     }
 
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::CpuGc))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "cpuGc";
+        emptyList = false;
+    }
+
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::ThreadsLifetime))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "threadsLifetime";
+        emptyList = false;
+    }
+
     return buffer.str();
 }
 
@@ -549,21 +569,7 @@ bool ProfileExporter::Export(bool lastCall)
         {
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
 
-            if (applicationInfo.Worker != nullptr)
-            {
-                applicationInfo.Worker->IncNumberOfProfiles(false);
-                if (lastCall)
-                    applicationInfo.Worker->IncNumberOfApplications();
-            }
-
             continue;
-        }
-
-        if (applicationInfo.Worker != nullptr)
-        {
-            applicationInfo.Worker->IncNumberOfProfiles(true);
-            if (lastCall)
-                applicationInfo.Worker->IncNumberOfApplications();
         }
 
         if (_exporter == nullptr)

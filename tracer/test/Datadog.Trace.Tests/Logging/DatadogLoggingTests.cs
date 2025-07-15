@@ -12,7 +12,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
-using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Util;
@@ -22,6 +21,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Logging
 {
@@ -29,12 +29,14 @@ namespace Datadog.Trace.Tests.Logging
     [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class DatadogLoggingTests : IDisposable
     {
+        private readonly ITestOutputHelper _output;
         private readonly ILogger _logger = null;
         private readonly CollectionSink _logEventSink;
         private IDisposable _clockDisposable;
 
-        public DatadogLoggingTests()
+        public DatadogLoggingTests(ITestOutputHelper output)
         {
+            _output = output;
             Environment.SetEnvironmentVariable(ConfigurationKeys.LogFileRetentionDays, "36");
 
             GlobalSettings.Reload();
@@ -301,14 +303,63 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
+        public void AllErrorsAreWrittenToFile()
+        {
+            var tempLogsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            _output.WriteLine($"Using temporary logs directory: {tempLogsDir}");
+            Directory.CreateDirectory(tempLogsDir);
+
+            var config = DatadogLoggingFactory.GetConfiguration(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.LogDirectory, tempLogsDir } }),
+                NullConfigurationTelemetry.Instance);
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(config, DomainMetadata.Instance);
+            logger.Should().NotBeNull();
+
+            const string DebugMessage = "Debug error is not written by default";
+            const string InfoMessage = "Info is written by default";
+            const string WarningMessage = "Warning is written by default";
+            const string ErrorMessage = "This error is written";
+            const string ErrorSkipTelemetryMessage = "This error is also written";
+
+            logger.Debug(DebugMessage);
+            logger.Information(InfoMessage);
+            logger.Warning(WarningMessage);
+            logger.Error(ErrorMessage);
+            logger.ErrorSkipTelemetry(ErrorSkipTelemetryMessage);
+            logger.CloseAndFlush();
+
+            var managedFiles = Directory.GetFiles(tempLogsDir, "dotnet-tracer-managed-*.log");
+            var managedFile = managedFiles.Should().ContainSingle().Subject;
+
+            var fileLines = File.ReadAllLines(managedFile);
+            fileLines.Should()
+                     .HaveCount(4)
+                     .And.NotContain(DebugMessage)
+                     .And.ContainSingle(str => str.Contains(InfoMessage))
+                     .And.ContainSingle(str => str.Contains(WarningMessage))
+                     .And.ContainSingle(str => str.Contains(ErrorMessage))
+                     .And.ContainSingle(str => str.Contains(ErrorSkipTelemetryMessage));
+
+            try
+            {
+                Directory.Delete(tempLogsDir, true);
+            }
+            catch
+            {
+                // cleanup isn't required, just avoiding clutter when the test passes
+            }
+        }
+
+        [Fact]
         public void RedactedErrorLogs_WritesErrorLogs()
         {
             var collector = new RedactedErrorLogCollector();
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
                 file: null,
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                console: null);
 
             var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
 
@@ -370,39 +421,103 @@ namespace Datadog.Trace.Tests.Logging
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void RedactedErrorLogs_ExcludesSpecificMessages(bool withException)
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithoutSinks(bool withException)
         {
             var collector = new RedactedErrorLogCollector();
 
             var config = new DatadogLoggingConfiguration(
                 rateLimit: 0,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
                 file: null,
-                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+                console: null);
 
-            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
 
             logger.Should().NotBeNull();
 
-            // These errors should not be written
+            // These errors should not be written to error log
             if (withException)
             {
-                logger.Error(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
+                logger.ErrorSkipTelemetry(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
             }
             else
             {
-                logger.Error(Api.FailedToSendMessageTemplate, "http://localhost:8126");
+                logger.ErrorSkipTelemetry(Api.FailedToSendMessageTemplate, "http://localhost:8126");
             }
 
-#if NETFRAMEWORK
+            collector.GetLogs().Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithFileSink(bool withException)
+        {
+            var collector = new RedactedErrorLogCollector();
+
+            var tempLogsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            _output.WriteLine($"Using temporary logs directory: {tempLogsDir}");
+            Directory.CreateDirectory(tempLogsDir);
+
+            var config = new DatadogLoggingConfiguration(
+                rateLimit: 0,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                file: new FileLoggingConfiguration(10 * 1024 * 1024, tempLogsDir, 1),
+                console: null);
+
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
+
+            logger.Should().NotBeNull();
+
+            // These errors should not be written to error log
             if (withException)
             {
-                logger.Error(new Exception(), PerformanceCountersListener.InsufficientPermissionsMessageTemplate);
+                logger.ErrorSkipTelemetry(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
             }
             else
             {
-                logger.Error(PerformanceCountersListener.InsufficientPermissionsMessageTemplate);
+                logger.ErrorSkipTelemetry(Api.FailedToSendMessageTemplate, "http://localhost:8126");
             }
-#endif
+
+            collector.GetLogs().Should().BeNull();
+
+            try
+            {
+                Directory.Delete(tempLogsDir, true);
+            }
+            catch
+            {
+                // cleanup isn't required, just avoiding clutter when the test passes
+            }
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet_WithConsoleSink(bool withException)
+        {
+            var collector = new RedactedErrorLogCollector();
+            var logsWriter = TextWriter.Null; // don't write logs to console (or anywhere else)
+
+            var config = new DatadogLoggingConfiguration(
+                rateLimit: 0,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector),
+                file: null,
+                console: new ConsoleLoggingConfiguration(DatadogLoggingFactory.DefaultConsoleQueueLimit, logsWriter));
+
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
+
+            logger.Should().NotBeNull();
+
+            // These errors should not be written to error log
+            if (withException)
+            {
+                logger.ErrorSkipTelemetry(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+            else
+            {
+                logger.ErrorSkipTelemetry(Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
 
             collector.GetLogs().Should().BeNull();
         }
@@ -412,7 +527,7 @@ namespace Datadog.Trace.Tests.Logging
 
         private class CollectionSink : ILogEventSink
         {
-            public List<LogEvent> Events { get; } = new List<LogEvent>();
+            public List<LogEvent> Events { get; } = [];
 
             public void Emit(LogEvent le)
             {

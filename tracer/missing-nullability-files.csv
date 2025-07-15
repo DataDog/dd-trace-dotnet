@@ -48,7 +48,6 @@ src/Datadog.Trace/Agent/IStreamFactory.cs
 src/Datadog.Trace/Agent/MovingAverageKeepRateCalculator.cs
 src/Datadog.Trace/Agent/NullStatsAggregator.cs
 src/Datadog.Trace/Agent/SpanBuffer.cs
-src/Datadog.Trace/Agent/SpanEventConverter.cs
 src/Datadog.Trace/Agent/StatsAggregationKey.cs
 src/Datadog.Trace/Agent/StatsAggregator.cs
 src/Datadog.Trace/Agent/StatsBucket.cs
@@ -195,7 +194,6 @@ src/Datadog.Trace/Tagging/AwsSnsTags.cs
 src/Datadog.Trace/Tagging/AwsSqsTags.cs
 src/Datadog.Trace/Tagging/AzureFunctionsTags.cs
 src/Datadog.Trace/Tagging/AzureServiceBusTags.cs
-src/Datadog.Trace/Tagging/CommonTags.cs
 src/Datadog.Trace/Tagging/CosmosDbTags.cs
 src/Datadog.Trace/Tagging/CouchbaseTags.cs
 src/Datadog.Trace/Tagging/GrpcTags.cs
@@ -233,6 +231,7 @@ src/Datadog.Trace/Util/IRandomIdGenerator.cs
 src/Datadog.Trace/Util/RandomIdGenerator.Net6.cs
 src/Datadog.Trace/Util/RuntimeId.cs
 src/Datadog.Trace/Util/SamplingHelpers.cs
+src/Datadog.Trace/Util/SpanEventConverter.cs
 src/Datadog.Trace/Util/StopwatchHelpers.cs
 src/Datadog.Trace/Util/System.Diagnostics.CodeAnalysis.Attributes.cs
 src/Datadog.Trace/Util/System.Runtime.CompilerServices.Attributes.cs
@@ -362,7 +361,6 @@ src/Datadog.Trace/Util/Http/HttpRequestUtils.cs
 src/Datadog.Trace/Util/Http/QueryStringManager.cs
 src/Datadog.Trace/AppSec/Waf/Initialization/LibraryLocationHelper.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/DdwafConfigStruct.cs
-src/Datadog.Trace/AppSec/Waf/NativeBindings/DdwafResultStruct.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/DDWAF_OBJ_TYPE.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/NativeLibrary.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/ReducedRegistryAccess.cs
@@ -431,7 +429,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSource.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSourceValueProvider.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/CompositeValueProvider.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/DefaultModelBindingContext.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/DefaultModelBindingContext_SetResult_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/ModelBindingResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/MvcOptionsIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/AwsConstants.cs

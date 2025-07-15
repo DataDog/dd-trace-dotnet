@@ -447,21 +447,12 @@ partial class Build
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
                 "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
-                "tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
-                "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
-                "tracer/src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj",
                 "tracer/src/Datadog.Tracer.Native/CMakeLists.txt",
                 "tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h",
                 "tracer/src/Datadog.Tracer.Native/Resource.rc",
-                "tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
-                "tracer/src/Datadog.Trace.BenchmarkDotNet/Datadog.Trace.BenchmarkDotNet.csproj",
-                "tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
-                "tracer/src/Datadog.Trace.Tools.dd_dotnet/Datadog.Trace.Tools.dd_dotnet.csproj",
-                "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
-                "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
+                "tracer/src/Directory.Build.props",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
-                "tracer/src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj",
             };
 
             if (ExpectChangelogUpdate)
@@ -1008,32 +999,6 @@ partial class Build
 
                 var stages = string.Join(", ", ssiStatuses.Select(x => x.Key));
                 Logger.Information("All gitlab build stages ({Stages}) completed successfully", stages);
-                
-                // assert that the docker image for the commit is present
-                var image = $"ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:{CommitSha}";
-                VerifyDockerImageExists(image);
-                
-                if(new Version(Version).Major < 3)
-                {
-                    image = $"{image}-musl";
-                    VerifyDockerImageExists(image);
-                }
-
-                static void VerifyDockerImageExists(string image)
-                {
-                    try
-                    {
-                        Logger.Information("Checking for presence of SSI image '{Image}'", image);
-                        DockerTasks.DockerManifest(
-                            s => s.SetCommand($"inspect")
-                                .SetProcessArgumentConfigurator(c => c.Add(image)));
-                        Logger.Information("SSI image '{Image}' exists", image);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception($"Error verifying SSI artifacts: '{image}' could not be found. Ensure GitLab has successfully built and pushed the image", ex);
-                    }
-                }
             });
 
     async Task ReplaceCommentInPullRequest(int prNumber, string title, string markdown)

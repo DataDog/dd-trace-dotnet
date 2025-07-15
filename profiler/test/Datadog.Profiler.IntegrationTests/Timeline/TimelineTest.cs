@@ -46,7 +46,9 @@ namespace Datadog.Profiler.IntegrationTests.Timeline
             {
                 foreach (var sample in profile.Sample)
                 {
-                    if (!sample.Labels(profile).Any(l => l.Name == "end_timestamp_ns"))
+                    if (!sample.Labels(profile).Any(l =>
+                        (l.Name == "end_timestamp_ns") ||
+                        (l.Name == "gc_cpu_sample"))) // only the GC CPU sample does not have a timestamp label
                     {
                         return false;
                     }

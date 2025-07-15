@@ -11,6 +11,17 @@ services:
     - TIMEOUT_LENGTH=120
     command: test-agent.windows:8126
 
+  start-test-agent.iis.windows:
+    build:
+      context: ./tracer/build/_build/docker/
+      dockerfile: wait-for-dependencies-windows.dockerfile
+    image: andrewlock/wait-for-dependencies-windows
+    depends_on:
+    - test-agent.iis.windows
+    environment:
+    - TIMEOUT_LENGTH=120
+    command: test-agent.iis.windows:8126
+
   test-agent.windows:
     build:
       context: ./tracer/build/_build/docker/
@@ -23,7 +34,25 @@ services:
     - "8126"
     environment:
     - SNAPSHOT_CI=1
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers #api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
+      # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers
+
+  test-agent.iis.windows:
+    build:
+      context: ./tracer/build/_build/docker/
+      dockerfile: test-agent.windows.dockerfile
+    image: dd-trace-dotnet/ddapm-test-agent-windows
+    volumes:
+    - ./tracer/build/smoke_test_snapshots:c:/snapshots
+    - ./artifacts/build_data/snapshots:c:/debug_snapshots
+    ports:
+    - "8126"
+    environment:
+    - SNAPSHOT_CI=1
+      # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
+      # The iis agent also ignores the _dd.appsec.waf.version because whether it appears in the 
+      # aspnet_core.request span is flaky
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,_dd.appsec.waf.version
 
   # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
   # and only after switching to run Windows containers
@@ -155,6 +184,27 @@ services:
     depends_on:
     - test-agent.windows
 
+  fleet-installer-smoke-tests-iis.windows:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.windows.iis.fleet-installer.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - CHANNEL=
+        # - TARGET_PLATFORM=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-windows-iis-fleet-installer-tester
+    volumes:
+    - ./:c:/project
+    - ./artifacts/build_data/logs:c:/logs
+    environment:
+    - dockerTag=${dockerTag:-unset}
+    - DD_TRACE_AGENT_URL=http://test-agent.iis.windows:8126
+    depends_on:
+    - test-agent.iis.windows
+
   fleet-installer-smoke-tests.windows:
     build:
       context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
@@ -164,8 +214,7 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
-        # - CHANNEL=
-        # - TARGET_PLATFORM=
+        # - CHANNEL_32_BIT=
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-fleet-installer-tester
     volumes:
     - ./:c:/project

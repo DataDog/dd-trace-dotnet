@@ -304,6 +304,7 @@ public class DiscoveryServiceTests
     }
 
     [Fact]
+    [Flaky("This is an inherently flaky test as it relies on time periods")]
     public async Task HandlesFailuresInApiWithBackoff()
     {
         var mutex = new ManualResetEventSlim(initialState: false, spinCount: 0);

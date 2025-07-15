@@ -81,9 +81,18 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         _apiRequestFactory = _testOptimization.TracerManagement!.GetRequestFactory(settings.TracerSettings, TimeSpan.FromSeconds(45));
         _eventPlatformProxySupport = settings.Agentless ? EventPlatformProxySupport.None : _testOptimization.TracerManagement.EventPlatformProxySupport;
 
-        _repositoryUrl = GetRepositoryUrl();
-        _commitSha = GetCommitSha();
-        _branchName = GetBranchName();
+        var ciValues = testOptimization.CIValues;
+        _repositoryUrl = ciValues.Repository ?? string.Empty;
+        _commitSha = ciValues.Commit ?? string.Empty;
+        _branchName = ciValues switch
+        {
+            // we try to get the branch name
+            { Branch: { Length: > 0 } branch } => branch,
+            // if not we try to use the tag (checkout over a tag)
+            { Tag: { Length: > 0 } tag } => tag,
+            // if is still empty we assume the customer just used a detached HEAD
+            _ => "auto:git-detached-head"
+        };
     }
 
     public static ITestOptimizationClient Create(string workingDirectory, ITestOptimization testOptimization)
@@ -124,53 +133,11 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         return customConfiguration;
     }
 
-    private string GetRepositoryUrl()
-    {
-        if (_testOptimization.CIValues.Repository is { Length: > 0 } repository)
-        {
-            return repository;
-        }
-
-        var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "config --get remote.origin.url", MetricTags.CIVisibilityCommands.GetRepository);
-        return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
-    }
-
-    private string GetBranchName()
-    {
-        if (_testOptimization.CIValues.Branch is { Length: > 0 } branch)
-        {
-            return branch;
-        }
-
-        var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
-        var res = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
-
-        if (string.IsNullOrEmpty(res))
-        {
-            Log.Warning("TestOptimizationClient: empty branch indicates a detached head at commit {Commit}", _commitSha);
-            res = $"auto:git-detached-head";
-        }
-
-        return res;
-    }
-
-    private string GetCommitSha()
-    {
-        var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
-        var gitSha = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
-        if (string.IsNullOrEmpty(gitSha) && _testOptimization.CIValues.Commit is { Length: > 0 } commitSha)
-        {
-            return commitSha;
-        }
-
-        return gitSha;
-    }
-
     private bool EnsureRepositoryUrl()
     {
         if (string.IsNullOrEmpty(_repositoryUrl))
         {
-            Log.Warning("TestOptimizationClient: 'git config --get remote.origin.url' command returned null or empty");
+            Log.Warning("TestOptimizationClient: Repository url cannot be retrieved, command returned null or empty");
             return false;
         }
 
@@ -181,7 +148,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     {
         if (string.IsNullOrEmpty(_branchName))
         {
-            Log.Warning("TestOptimizationClient: 'git branch --show-current' command returned null or empty");
+            Log.Warning("TestOptimizationClient: Branch name cannot be retrieved, command returned null or empty");
             return false;
         }
 
@@ -192,7 +159,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     {
         if (string.IsNullOrEmpty(_commitSha))
         {
-            Log.Warning("TestOptimizationClient: 'git rev-parse HEAD' command returned null or empty");
+            Log.Warning("TestOptimizationClient: Commit sha cannot be retrieved, command returned null or empty");
             return false;
         }
 

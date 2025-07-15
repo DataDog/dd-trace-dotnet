@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerTests.cs" company="Datadog">
+// <copyright file="TracerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,7 +29,7 @@ public class TracerTests : TestHelper
         EnvironmentHelper.CustomEnvironmentVariables["DD_TRACE_ENABLED"] = "0";
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
         var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory, Output);
         using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
 
         // Throws if the log entry is not found
@@ -37,6 +37,6 @@ public class TracerTests : TestHelper
 
         // Tracing is disabled, we shouldn't have spans, even though they wrote some
         agent.Spans.Should().BeEmpty();
-        agent.AssertConfiguration("DD_TRACE_ENABLED", false);
+        await agent.AssertConfigurationAsync("DD_TRACE_ENABLED", false);
     }
 }

@@ -14,6 +14,8 @@ using Config = Samples.Kafka.Config;
 var sw = new Stopwatch();
 sw.Start();
 
+var topicSuffix = args.Length > 0 ? args[0] : Guid.NewGuid().ToString();
+
 var runBatchProcessing = args.Contains("--batch-processing");
 var extractScopesManually = Environment.GetEnvironmentVariable("DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED") == "0";
 
@@ -24,9 +26,9 @@ async Task RunStandardPipelineScenario()
     // Create Topics
     var topicPrefix = "data-streams";
 
-    var topic1 = $"{topicPrefix}-1";
-    var topic2 = $"{topicPrefix}-2";
-    var topic3 = $"{topicPrefix}-3";
+    var topic1 = $"{topicPrefix}-1-{topicSuffix}";
+    var topic2 = $"{topicPrefix}-2-{topicSuffix}";
+    var topic3 = $"{topicPrefix}-3-{topicSuffix}";
     var allTopics = new[] { topic1, topic2, topic3 };
     var topic3ConsumeCount = 0;
 
@@ -124,8 +126,8 @@ async Task RunBatchProcessingScenario()
     // Create Topics
     var topicPrefix = "data-streams-batch-processing";
 
-    var topic1 = $"{topicPrefix}-1";
-    var topic2 = $"{topicPrefix}-2";
+    var topic1 = $"{topicPrefix}-1-{topicSuffix}";
+    var topic2 = $"{topicPrefix}-2-{topicSuffix}";
     var allTopics = new[] { topic1, topic2};
     var topic2ConsumeCount = 0;
 

@@ -25,9 +25,17 @@
   "scenarios": [
     {
       "name": "Baseline",
+      "isBaseline": true,
       "environmentVariables": {
         "CORECLR_ENABLE_PROFILING": "0",
         "COR_ENABLE_PROFILING": "0"
+      }
+    },
+    {
+      "name": "Bailout",
+      "environmentVariables": {
+        "DD_PROFILER_EXCLUDE_PROCESSES": "Samples.HttpMessageHandler.exe",
+        "DD_INJECTION_ENABLED": "tracing"
       }
     },
     {
@@ -60,5 +68,6 @@
     "runtime.version": "4.8",
     "benchmark.job.runtime.name": ".NET Framework 4.8",
     "benchmark.job.runtime.moniker": "net48"
-  }
+  },
+  "overheadThreshold": 10
 }

@@ -294,6 +294,12 @@ namespace Datadog.Trace.Configuration
         public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
 
         /// <summary>
+        /// Use libdatadog data pipeline to send traces.
+        /// Default value is <c>false</c> (disabled).
+        /// </summary>
+        public const string TraceDataPipelineEnabled = "DD_TRACE_DATA_PIPELINE_ENABLED";
+
+        /// <summary>
         /// Configuration key for when a standalone instance of the Trace Agent needs to be started.
         /// </summary>
         public const string TraceAgentPath = "DD_TRACE_AGENT_PATH";
@@ -544,6 +550,13 @@ namespace Datadog.Trace.Configuration
         /// Default value is true
         /// </summary>
         public const string SpanPointersEnabled = "DD_TRACE_AWS_ADD_SPAN_POINTERS";
+
+        /// <summary>
+        /// Configuration key for specifying which GraphQL error extensions to capture.
+        /// A comma-separated list of extension keys to capture. Empty or not present means no extensions are captured.
+        /// </summary>
+        /// <seealso cref="TracerSettings.GraphQLErrorExtensions"/>
+        public const string GraphQLErrorExtensions = "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.

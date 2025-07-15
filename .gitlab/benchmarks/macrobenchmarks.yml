@@ -60,7 +60,6 @@ update-bp-infra:
   rules:
     - when: manual
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
     AWS_REGION: "us-east-1"
     CLEANUP: "false"
     AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
@@ -81,6 +80,7 @@ update-bp-infra:
       - runner_system_failure
       - scheduler_failure
       - api_failure
+      - script_failure
   rules:
     - when: on_success
   image: $MACROBENCHMARKS_CI_IMAGE
@@ -97,8 +97,6 @@ update-bp-infra:
       - artifacts/
     expire_in: 3 months
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-
     K6_OPTIONS_WARMUP_RATE: 14000
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
@@ -263,6 +261,7 @@ profiler_cpu_timer_create:
       - runner_system_failure
       - scheduler_failure
       - api_failure
+      - script_failure
   rules:
     - when: on_success
   image: $MACROBENCHMARKS_CI_IMAGE
@@ -280,8 +279,6 @@ profiler_cpu_timer_create:
       - artifacts/
     expire_in: 3 months
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-
     K6_OPTIONS_WARMUP_RATE: 14000
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
@@ -450,7 +447,17 @@ profiler_cpu_timer_create-arm64:
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-macrobenchmarks
+  interruptible: true
   timeout: 2h
+  retry:
+    max: 2
+    when:
+      - unknown_failure
+      - data_integrity_failure
+      - runner_system_failure
+      - scheduler_failure
+      - api_failure
+      - script_failure
   rules:
     - when: on_success
   artifacts:
@@ -460,8 +467,6 @@ profiler_cpu_timer_create-arm64:
       - artifacts/
     expire_in: 3 months
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
 

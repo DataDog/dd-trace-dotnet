@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.StatsdClient;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 using FluentAssertions;
@@ -237,6 +238,7 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.AgentUri, $"http://127.0.0.1:{agent.Port}" },
                     { ConfigurationKeys.TracerMetricsEnabled, tracerMetricsEnabled },
                     { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                    { ConfigurationKeys.TraceDataPipelineEnabled, false },
                 });
 
                 await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);
@@ -247,7 +249,7 @@ namespace Datadog.Trace.Tests
                     await Task.Delay(5);
                 }
 
-                spans = agent.WaitForSpans(1);
+                spans = await agent.WaitForSpansAsync(1);
             }
 
             return spans;

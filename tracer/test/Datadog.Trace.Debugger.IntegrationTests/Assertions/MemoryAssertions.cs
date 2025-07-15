@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Debugger.IntegrationTests.Assertions;
 
@@ -32,15 +34,16 @@ internal class MemoryAssertions
     /// which can perform assertions on said snapshot.
     /// </summary>
     /// <param name="process">Process to capture snapshot of</param>
+    /// <param name="output">The test output helper</param>
     /// <returns>MemoryAssertions</returns>
-    public static MemoryAssertions CaptureSnapshotToAssertOn(Process process)
+    public static async Task<MemoryAssertions> CaptureSnapshotToAssertOn(Process process, ITestOutputHelper output)
     {
         if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
         {
             throw new NotSupportedException("Arm64 is not supported for memory assertions");
         }
 
-        var liveObjectsByTypes = DumpHeapLive.GetLiveObjectsByTypes(process);
+        var liveObjectsByTypes = await DumpHeapLive.GetLiveObjectsByTypes(process, output, TimeSpan.FromSeconds(30));
         return new MemoryAssertions(liveObjectsByTypes);
     }
 

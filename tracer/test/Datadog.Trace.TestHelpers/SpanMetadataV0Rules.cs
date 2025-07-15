@@ -400,7 +400,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("graphql.source")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "GraphQL")
-                .Matches("span.kind", "server"));
+                .Matches("span.kind", "server")
+                .IsOptional("events"));
 
         public static Result IsGrpcClientV0(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
             .WithMarkdownSection("gRPC Client")
@@ -457,7 +458,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("graphql.source")
                 .Matches("component", "HotChocolate")
                 .IsOptional("_dd.base_service")
-                .Matches("span.kind", "server"));
+                .Matches("span.kind", "server")
+                .IsOptional("events"));
 
         public static Result IsHttpMessageHandlerV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s

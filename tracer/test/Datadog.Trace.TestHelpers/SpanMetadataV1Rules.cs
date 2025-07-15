@@ -617,7 +617,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("graphql.source")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "GraphQL")
-                .Matches("span.kind", "server"));
+                .Matches("span.kind", "server")
+                .IsOptional("events"));
 
         public static Result IsGrpcClientV1(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
             .WithMarkdownSection("gRPC Client")

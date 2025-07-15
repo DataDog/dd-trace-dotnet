@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.17.0";
+    readonly string Version = "3.22.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -93,7 +93,7 @@ partial class Build : NukeBuild
 
     [Parameter("Enable or Disable fast developer loop")]
     readonly bool FastDevLoop;
-    
+
     [Parameter("The directory containing the tool .nupkg file")]
     readonly AbsolutePath ToolSource;
 
@@ -108,11 +108,11 @@ partial class Build : NukeBuild
 
     [Parameter("Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker.")]
     readonly bool AsUniversal = false;
-    
+
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }
-    
+
     public Build()
     {
         RuntimeIdentifier = GetDefaultRuntimeIdentifier(IsAlpine);
@@ -218,7 +218,7 @@ partial class Build : NukeBuild
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile)
         .DependsOn(RegenerateSolutions);
-    
+
     Target BuildManagedTracerHomeR2R => _ => _
         .Unlisted()
         .Description("Builds the native and managed src, and publishes the tracer home directory")
@@ -266,12 +266,17 @@ partial class Build : NukeBuild
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
 
-    Target BuildAndRunManagedUnitTests => _ => _
-        .Description("Builds the managed unit tests and runs them")
+    Target BuildManagedUnitTests => _ => _
+        .Description("Builds the managed unit tests")
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(BuildRunnerTool)
-        .DependsOn(CompileManagedUnitTests)
+        .DependsOn(CompileManagedUnitTests);
+
+    Target BuildAndRunManagedUnitTests => _ => _
+        .Description("Builds the managed unit tests and runs them")
+        .After(Clean, BuildTracerHome, BuildProfilerHome)
+        .DependsOn(BuildManagedUnitTests)
         .DependsOn(RunManagedUnitTests);
 
     Target RunNativeUnitTests => _ => _
@@ -286,6 +291,7 @@ partial class Build : NukeBuild
         .Description("Builds the integration tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAspNetIntegrationTests => _ => _
@@ -334,6 +340,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CopyServerlessArtifacts);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _
@@ -349,6 +356,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CopyServerlessArtifacts);
 
     Target BuildAndRunOsxIntegrationTests => _ => _
@@ -403,6 +411,20 @@ partial class Build : NukeBuild
                 .SetNoWarnDotNetCore3()
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "bundle")
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+        });
+
+    Target BuildAzureFunctionsNuget => _ => _
+        .Unlisted()
+        .After(CreateBundleHome, ExtractDebugInfoLinux)
+        .Executes(() =>
+        {
+            DotNetPack(x => x
+                .SetProject(Solution.GetProject(Projects.DatadogAzureFunctions))
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "azure-functions"));
         });
 
     Target BuildBenchmarkNuget => _ => _
@@ -545,11 +567,10 @@ partial class Build : NukeBuild
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {
-            var benchmarkProjectsWithSettings = new Tuple<string, string, Func<DotNetRunSettings, DotNetRunSettings>>[] {
-                new(Projects.BenchmarksTrace, "--iterationTime 200", s => s),
-                // new(Projects.BenchmarksOpenTelemetryApi, "--iterationTime 100", s => s),
+            var benchmarkProjectsWithSettings = new Tuple<string, Func<DotNetRunSettings, DotNetRunSettings>>[] {
+                new(Projects.BenchmarksTrace, s => s),
+                // new(Projects.BenchmarksOpenTelemetryApi, s => s),
                 new(Projects.BenchmarksOpenTelemetryInstrumentedApi,
-                    "--iterationTime 100",
                     s => s.SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
                           .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
                           .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
@@ -559,8 +580,7 @@ partial class Build : NukeBuild
             foreach (var tuple in benchmarkProjectsWithSettings)
             {
                 var benchmarkProjectName = tuple.Item1;
-                var benchmarkSettings = tuple.Item2;
-                var configureDotNetRunSettings = tuple.Item3;
+                var configureDotNetRunSettings = tuple.Item2;
 
                 var benchmarksProject = Solution.GetProject(benchmarkProjectName);
                 var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
@@ -587,7 +607,7 @@ partial class Build : NukeBuild
                         .SetFramework(framework)
                         .EnableNoRestore()
                         .EnableNoBuild()
-                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} {benchmarkSettings ?? string.Empty}")
+                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
                         .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                         .SetProcessEnvironmentVariable("DD_ENV", "CI")
                         .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)

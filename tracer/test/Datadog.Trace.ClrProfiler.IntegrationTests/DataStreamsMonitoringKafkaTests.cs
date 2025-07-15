@@ -73,13 +73,16 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     public async Task SubmitsDataStreams(bool enableConsumerScopeCreation, bool enableLegacyHeaders)
     {
+        // Create a unique suffix per test run to avoid flakiness due to existing topics
+        var topicSuffix = $"{nameof(SubmitsDataStreams)}-{(enableConsumerScopeCreation ? "1" : "0")}-{(enableLegacyHeaders ? "1" : "0")}";
+
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, enableConsumerScopeCreation ? "1" : "0");
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, enableLegacyHeaders ? "1" : "0");
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-        using var processResult = await RunSampleAndWaitForExit(agent);
+        using var processResult = await RunSampleAndWaitForExit(agent, arguments: topicSuffix);
 
         using var assertionScope = new AssertionScope();
         var payload = MockDataStreamsPayload.Normalize(agent.DataStreams);
@@ -88,7 +91,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
         settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
-                      .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(SubmitsDataStreams)}")
+                      .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(SubmitsDataStreams)}_scope={enableConsumerScopeCreation}_legacy={enableLegacyHeaders}")
                       .DisableRequireUniquePrefix();
     }
 
@@ -107,6 +110,8 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     public async Task HandlesBatchProcessing()
     {
+        var topicSuffix = $"{nameof(HandlesBatchProcessing)}";
+
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         // set variable to create short spans on receive instead of spans that last until the next consume
         SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, "0");
@@ -114,7 +119,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-        using var processResult = await RunSampleAndWaitForExit(agent, "--batch-processing");
+        using var processResult = await RunSampleAndWaitForExit(agent, $"{topicSuffix} --batch-processing");
 
         using var assertionScope = new AssertionScope();
 
@@ -134,14 +139,16 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     public async Task WhenDisabled_DoesNotSubmitDataStreams()
     {
+        var topicSuffix = "WhenDisabled";
+
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var processResult = await RunSampleAndWaitForExit(agent);
+        using var processResult = await RunSampleAndWaitForExit(agent, arguments: topicSuffix);
 
         using var assertionScope = new AssertionScope();
         // We don't expect any streams here, so no point waiting for ages
-        var dataStreams = agent.WaitForDataStreams(2, timeoutInMilliseconds: 2_000);
+        var dataStreams = await agent.WaitForDataStreamsAsync(2, timeoutInMilliseconds: 2_000);
         dataStreams.Should().BeEmpty();
     }
 
@@ -150,11 +157,13 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     public async Task WhenNotSupported_DoesNotSubmitDataStreams()
     {
+        var topicSuffix = "WhenNotSupported";
+
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
 
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration = new MockTracerAgent.AgentConfiguration { Endpoints = Array.Empty<string>() };
-        using var processResult = await RunSampleAndWaitForExit(agent);
+        using var processResult = await RunSampleAndWaitForExit(agent, arguments: topicSuffix);
 
         using var assertionScope = new AssertionScope();
         var dataStreams = agent.DataStreams;

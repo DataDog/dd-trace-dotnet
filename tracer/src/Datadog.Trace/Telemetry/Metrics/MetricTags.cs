@@ -526,6 +526,14 @@ internal static class MetricTags
         [Description("command:get_objects")] GetObjects,
         [Description("command:pack_objects")] PackObjects,
         [Description("command:diff")] Diff,
+        [Description("command:verify_branch_exists")] VerifyBranchExists,
+        [Description("command:get_symbolic_ref")] GetSymbolicRef,
+        [Description("command:show_ref")] ShowRef,
+        [Description("command:build_candidate_list")] BuildCandidateList,
+        [Description("command:merge_base")] MergeBase,
+        [Description("command:rev_list")] RevList,
+        [Description("command:ls_remote")] LsRemote,
+        [Description("command:fetch")] Fetch
     }
 
     public enum CIVisibilityExitCodes

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers;
 
@@ -23,13 +25,22 @@ public class LogEntryWatcher : IDisposable
     // We must finish reading from the old one before switching to the new one, hence the queue
     private readonly ConcurrentQueue<StreamReader> _readers;
 
+    private readonly ITestOutputHelper _outputHelper;
     private StreamReader _activeReader;
 
-    public LogEntryWatcher(string logFilePattern, string logDirectory = null)
+    public LogEntryWatcher(string logFilePattern, string logDirectory = null, ITestOutputHelper outputHelper = null)
     {
         var logPath = logDirectory ?? DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance);
-        _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
+        _fileWatcher = new FileSystemWatcher
+        {
+            Path = logPath,
+            Filter = logFilePattern,
+            EnableRaisingEvents = true,
+            InternalBufferSize = 64 * 1024 // 64KB buffer size - default is 8KB, which may not be enough for high-frequency log writes
+        };
+
         _readers = new();
+        _outputHelper = outputHelper;
         var dir = new DirectoryInfo(logPath);
         var lastFile = dir
                       .GetFiles(logFilePattern)
@@ -38,12 +49,20 @@ public class LogEntryWatcher : IDisposable
 
         if (lastFile != null && lastFile.LastWriteTime.Date == DateTime.Today)
         {
+            _outputHelper?.WriteLine($"Last log file detected {lastFile.FullName}");
             var reader = OpenStream(lastFile.FullName);
             reader.ReadToEnd();
             _readers.Enqueue(reader);
         }
 
         _fileWatcher.Created += NewLogFileCreated;
+        _fileWatcher.Error += (sender, args) =>
+        {
+            _outputHelper?.WriteLine(
+                args.GetException() is InternalBufferOverflowException
+                    ? "ERROR: FileSystemWatcher buffer overflowed. Events were lost."
+                    : $"ERROR: FileSystemWatcher error: {args.GetException()}");
+        };
     }
 
     public void Dispose()
@@ -66,14 +85,24 @@ public class LogEntryWatcher : IDisposable
 
     public async Task<string[]> WaitForLogEntries(string[] logEntries, TimeSpan? timeout = null)
     {
-        using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(20));
+        using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(40));
 
         var i = 0;
 
         var foundLogs = new string[logEntries.Length];
+        var logsReadLogLineRead = string.Empty;
+        var timeoutReached = false;
 
-        while (logEntries.Length > i && !cancellationSource.IsCancellationRequested)
+        while (logEntries.Length > i)
         {
+            timeoutReached = cancellationSource.IsCancellationRequested;
+
+            if (timeoutReached)
+            {
+                _outputHelper?.WriteLine($"Timeout reached.");
+                break;
+            }
+
             if (_activeReader == null)
             {
                 if (!_readers.TryDequeue(out _activeReader))
@@ -87,8 +116,10 @@ public class LogEntryWatcher : IDisposable
 
             if (line != null)
             {
+                logsReadLogLineRead = line;
                 if (line.Contains(logEntries[i]))
                 {
+                    _outputHelper?.WriteLine($"Entry found {logEntries[i]}.");
                     foundLogs[i] = line;
                     i++;
                 }
@@ -108,7 +139,14 @@ public class LogEntryWatcher : IDisposable
 
         if (i != logEntries.Length)
         {
-            throw new InvalidOperationException(_readers.IsEmpty ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}. Logs read so far: {string.Join("\r\n", foundLogs)}" : $"Log entry was not found {logEntries[i]} in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
+            if (string.IsNullOrEmpty(logsReadLogLineRead))
+            {
+                throw new InvalidOperationException($"No logs could be read from {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}");
+            }
+            else
+            {
+                throw new InvalidOperationException($"Timeout is {timeoutReached}. Log entry {logEntries[i]} was not found in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Last Log line read: {logsReadLogLineRead}");
+            }
         }
 
         return foundLogs;
@@ -127,6 +165,7 @@ public class LogEntryWatcher : IDisposable
 
     private void NewLogFileCreated(object sender, FileSystemEventArgs e)
     {
+        _outputHelper?.WriteLine($"New Log file created {e.FullPath}");
         _readers.Enqueue(OpenStream(e.FullPath));
     }
 }

@@ -148,7 +148,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Failed to load PDB info for assembly {AssemblyName}", asm.Location);
+                        Log.Error(ex, "Error while getting endpoints for assembly: {AssemblyName}", asm.Location);
                         return null;
                     }
                 });

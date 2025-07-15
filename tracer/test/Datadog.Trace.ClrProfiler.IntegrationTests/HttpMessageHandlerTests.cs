@@ -58,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [CombinatorialOrPairwiseData]
+        [Flaky("This test often fails with an ObjectDisposedException on shutdown. It seems tied to the HttpListener/WebServer implementation, but I couldn't figure out why")]
         public async Task HttpClient_SubmitsTraces(
             [CombinatorialMemberData(nameof(GetInstrumentationOptions))] InstrumentationOptions instrumentation,
             bool socketsHandlerEnabled,
@@ -99,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
 
                 agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 spans.Should().HaveCount(expectedSpanCount);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
@@ -124,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 // parse http headers from stdout
-                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput).ToList();
+                var headers = HeadersUtil.GetAllHeaders(processResult.StandardOutput).ToList();
 
                 var firstSpan = spans.First();
                 headers.FirstOrDefault(h => h.Key == HttpHeaderNames.TraceId).Value.Should().Be(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture));
@@ -156,11 +157,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 using var scope = new AssertionScope();
-                telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.HttpMessageHandler);
                 // ignore for now auto enabled for simplicity
-                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
+                await telemetry.AssertIntegrationAsync(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
+                await telemetry.AssertIntegrationAsync(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
+                await telemetry.AssertIntegrationAsync(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
                 VerifyInstrumentation(processResult.Process);
             }
             catch (ExitCodeException)
@@ -197,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.Spans.Should().NotContain(s => s.Type == SpanTypes.Http);
 
                 // parse http headers from stdout
-                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput).ToList();
+                var headers = HeadersUtil.GetAllHeaders(processResult.StandardOutput).ToList();
                 headers.Where(h => h.Key == HttpHeaderNames.TracingEnabled).Should().AllSatisfy(h => h.Value.Should().Be("false"));
 
                 // when tracing is disabled, we should not see any trace context or baggage headers
@@ -226,10 +227,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var scope = new AssertionScope();
                 // ignore auto enabled for simplicity
-                telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
-                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
+                await telemetry.AssertIntegrationDisabledAsync(IntegrationId.HttpMessageHandler);
+                await telemetry.AssertIntegrationAsync(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
+                await telemetry.AssertIntegrationAsync(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
+                await telemetry.AssertIntegrationAsync(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
                 VerifyInstrumentation(processResult.Process);
             }
             catch (ExitCodeException)

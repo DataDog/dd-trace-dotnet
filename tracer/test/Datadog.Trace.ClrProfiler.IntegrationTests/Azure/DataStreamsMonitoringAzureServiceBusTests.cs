@@ -48,7 +48,7 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
             agent.SpanFilters.Add(s => s.Tags.TryGetValue("messaging.system", out var value) && value == "servicebus"); // Exclude the Admin requests
-            var spans = agent.WaitForSpans(23);
+            var spans = await agent.WaitForSpansAsync(23);
             spans.Should().HaveCount(23);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -77,7 +77,7 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
             agent.SpanFilters.Add(s => s.Tags.TryGetValue("messaging.system", out var value) && value == "servicebus"); // Exclude the Admin requests
-            var spans = agent.WaitForSpans(23);
+            var spans = await agent.WaitForSpansAsync(23);
             spans.Should().HaveCount(23);
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
             taggedSpans.Should().HaveCount(9); // 4 messages published, 5 messages consumed
