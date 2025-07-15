@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -19,43 +20,39 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     private const int SamplingPriorityValue = 1;
 
     private readonly MockApi _testApi;
-    private readonly Tracer _tracer;
 
     public SamplingPriorityTests_MultipleChunksWithoutUpstreamService()
     {
         _testApi = new MockApi();
-
-        var settings = new TracerSettings();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Fact]
     public async Task SingleChunk()
     {
-        using (var rootScope = _tracer.StartActive("1"))
+        await using var tracer = GetTracer();
+        using (var rootScope = tracer.StartActive("1"))
         {
             ((Span)rootScope.Span).Context.TraceContext.SetSamplingPriority(SamplingPriorityValue);
 
-            using (_ = _tracer.StartActive("1.1"))
+            using (_ = tracer.StartActive("1.1"))
             {
             }
 
-            using (_ = _tracer.StartActive("1.2"))
+            using (_ = tracer.StartActive("1.2"))
             {
-                using (_ = _tracer.StartActive("1.2.1"))
+                using (_ = tracer.StartActive("1.2.1"))
                 {
                 }
             }
         }
 
-        await _tracer.FlushAsync();
+        await tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
 
         // expected chunks:
         // [ 1.1, 1.2, 1.2.1, 1 ]
 
-        traceChunks.Should().HaveCount(1);    // 1 trace chunk
+        traceChunks.Should().HaveCount(1); // 1 trace chunk
         traceChunks[0].Should().HaveCount(4); // 4 spans
 
         // root span should have the sampling priority
@@ -74,28 +71,29 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     [Fact]
     public async Task MultipleChunks_3_and_1_Spans()
     {
+        await using var tracer = GetTracer();
         ISpan span1;
         ISpan span11;
         ISpan span12;
         ISpan span121;
 
-        using (var scope1 = _tracer.StartActive("1"))
+        using (var scope1 = tracer.StartActive("1"))
         {
             span1 = scope1.Span;
 
             var traceContext = ((Scope)scope1).Span.Context.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
-            using (var scope11 = _tracer.StartActive("1.1"))
+            using (var scope11 = tracer.StartActive("1.1"))
             {
                 span11 = scope11.Span;
             }
 
-            using (var scope12 = _tracer.StartActive("1.2"))
+            using (var scope12 = tracer.StartActive("1.2"))
             {
                 span12 = scope12.Span;
 
-                using (var scope121 = _tracer.StartActive("1.2.1"))
+                using (var scope121 = tracer.StartActive("1.2.1"))
                 {
                     span121 = scope121.Span;
                 }
@@ -106,14 +104,14 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         }
 
         // send the remaining spans as another trace chunk
-        await _tracer.FlushAsync();
+        await tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
 
         // expected chunks:
         // [ 1.1, 1.2, 1.2.1 ]
         // [ 1 ]
 
-        traceChunks.Should().HaveCount(2);    // 2 trace chunks
+        traceChunks.Should().HaveCount(2); // 2 trace chunks
         traceChunks[0].Should().HaveCount(3); // 3 spans
         traceChunks[1].Should().HaveCount(1); // 1 span
 
@@ -145,28 +143,29 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     [Fact]
     public async Task MultipleChunks_2_and_2_Spans()
     {
+        await using var tracer = GetTracer();
         ISpan span1;
         ISpan span11;
         ISpan span12;
         ISpan span121;
 
-        using (var scope1 = _tracer.StartActive("1"))
+        using (var scope1 = tracer.StartActive("1"))
         {
             span1 = scope1.Span;
 
             var traceContext = ((Scope)scope1).Span.Context.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
-            using (var scope11 = _tracer.StartActive("1.1"))
+            using (var scope11 = tracer.StartActive("1.1"))
             {
                 span11 = scope11.Span;
             }
 
-            using (var scope12 = _tracer.StartActive("1.2"))
+            using (var scope12 = tracer.StartActive("1.2"))
             {
                 span12 = scope12.Span;
 
-                using (var scope121 = _tracer.StartActive("1.2.1"))
+                using (var scope121 = tracer.StartActive("1.2.1"))
                 {
                     span121 = scope121.Span;
                 }
@@ -177,14 +176,14 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         }
 
         // send the remaining spans as another trace chunk
-        await _tracer.FlushAsync();
+        await tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
 
         // expected chunks:
         // [ 1.1, 1.2.1 ]
         // [ 1.2, 1 ]
 
-        traceChunks.Should().HaveCount(2);    // 2 trace chunks
+        traceChunks.Should().HaveCount(2); // 2 trace chunks
         traceChunks[0].Should().HaveCount(2); // 2 spans
         traceChunks[1].Should().HaveCount(2); // 2 spans
 
@@ -220,14 +219,15 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         ISpan span12;
         ISpan span121;
 
-        using (var scope1 = _tracer.StartActive("1"))
+        await using var tracer = GetTracer();
+        using (var scope1 = tracer.StartActive("1"))
         {
             span1 = scope1.Span;
 
             var traceContext = ((Scope)scope1).Span.Context.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
-            using (var scope11 = _tracer.StartActive("1.1"))
+            using (var scope11 = tracer.StartActive("1.1"))
             {
                 span11 = scope11.Span;
             }
@@ -235,11 +235,11 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
             // send the finished spans as one trace chunk
             traceContext.WriteClosedSpans();
 
-            using (var scope12 = _tracer.StartActive("1.2"))
+            using (var scope12 = tracer.StartActive("1.2"))
             {
                 span12 = scope12.Span;
 
-                using (var scope121 = _tracer.StartActive("1.2.1"))
+                using (var scope121 = tracer.StartActive("1.2.1"))
                 {
                     span121 = scope121.Span;
                 }
@@ -247,14 +247,14 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         }
 
         // send the remaining spans as another trace chunk
-        await _tracer.FlushAsync();
+        await tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
 
         // expected chunks:
         // [ 1.1 ]
         // [ 1.2.1, 1.2, 1 ]
 
-        traceChunks.Should().HaveCount(2);    // 2 trace chunks
+        traceChunks.Should().HaveCount(2); // 2 trace chunks
         traceChunks[0].Should().HaveCount(1); // 1 span
         traceChunks[1].Should().HaveCount(3); // 3 spans
 
@@ -289,15 +289,15 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         ISpan span11;
         ISpan span12;
         ISpan span121;
-
-        using (var scope1 = _tracer.StartActive("1"))
+        await using var tracer = GetTracer();
+        using (var scope1 = tracer.StartActive("1"))
         {
             span1 = scope1.Span;
 
             var traceContext = ((Scope)scope1).Span.Context.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
-            using (var scope11 = _tracer.StartActive("1.1"))
+            using (var scope11 = tracer.StartActive("1.1"))
             {
                 span11 = scope11.Span;
             }
@@ -305,11 +305,11 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
             // send the finished spans as one trace chunk
             traceContext.WriteClosedSpans();
 
-            using (var scope12 = _tracer.StartActive("1.2"))
+            using (var scope12 = tracer.StartActive("1.2"))
             {
                 span12 = scope12.Span;
 
-                using (var scope121 = _tracer.StartActive("1.2.1"))
+                using (var scope121 = tracer.StartActive("1.2.1"))
                 {
                     span121 = scope121.Span;
                 }
@@ -323,7 +323,7 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         }
 
         // send the remaining spans as another trace chunk
-        await _tracer.FlushAsync();
+        await tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
 
         // expected chunks:
@@ -332,7 +332,7 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         // [ 1.2 ]
         // [ 1 ]
 
-        traceChunks.Should().HaveCount(4);                     // 4 trace chunks
+        traceChunks.Should().HaveCount(4); // 4 trace chunks
         traceChunks.Should().OnlyContain(tc => tc.Count == 1); // 1 span each
 
         // chunk 0, orphan span should have the sampling priority
@@ -358,5 +358,12 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         mockSpan1.SpanId.Should().Be(span1.SpanId);
         mockSpan1.ParentId.Should().BeNull();
         mockSpan1.Metrics.Should().Contain(SamplingPriorityName, SamplingPriorityValue);
+    }
+
+    private ScopedTracer GetTracer()
+    {
+        var settings = new TracerSettings();
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
+        return TracerHelper.Create(settings, agentWriter, null, null, null);
     }
 }

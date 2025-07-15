@@ -9,6 +9,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -44,7 +45,7 @@ internal readonly struct CharSlice : IDisposable
         }
         else
         {
-            var encoding = Encoding.UTF8;
+            var encoding = StringEncoding.UTF8;
             var maxBytesCount = encoding.GetMaxByteCount(str.Length);
             Ptr = Marshal.AllocHGlobal(maxBytesCount);
             unsafe
