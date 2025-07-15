@@ -71,9 +71,8 @@ internal class TraceExporter : SafeHandle, IApi
                         // TODO: replace GetBodyLen with a native function in order to avoid iterating over the response to get its length.
                         int len = GetBodyLen(responsePtr);
                         byte* body = (byte*)NativeInterop.ExporterResponse.GetBody(responsePtr);
-                        ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(body, len);
-
-                        var apiResponse = System.Text.Json.JsonSerializer.Deserialize<ApiResponse>(span);
+                        var response = StringEncoding.UTF8.GetString((byte*)Ptr, (int)Length);
+                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(response);
                         _updateSampleRates(apiResponse.RateByService);
                     }
                     catch (Exception ex)
