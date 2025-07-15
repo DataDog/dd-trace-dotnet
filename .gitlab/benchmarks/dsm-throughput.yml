@@ -1,4 +1,5 @@
 variables:
+  ddApiKey: $(DD_API_KEY_PROD)
   DSM_THROUGHPUT_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dd-trace-dotnet-dsm
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-3
 
@@ -47,5 +48,8 @@ dsm_throughput:
   variables:
     KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-dotnet
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+    DD_ENV: CI
+    DD_API_KEY: $(ddApiKey)
+    DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
   rules:
     - when: on_success
