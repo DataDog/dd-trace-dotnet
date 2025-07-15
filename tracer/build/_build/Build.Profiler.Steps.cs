@@ -834,16 +834,21 @@ partial class Build
             // Since the CLR requires them too, it seems safe to accept them.
             // For information, those symbols comes from libgcc and are exposed for compatibility
             var libdatadogAllowedSymbols = IsArm64 && IsAlpine ? new[] { "__register_frame_info@GLIBC_2.0", "__deregister_frame_info@GLIBC_2.0" } : null;
-            var filesAndVersion = new List<Tuple<string, Version, IEnumerable<string>>>
+            var filesAndVersion = new []
             {
-                new(FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null),
-                new("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 16), libdatadogAllowedSymbols)
+                (FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
+                ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 16), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
             };
 
-            foreach (var (file, expectedGlibcVersion, allowedSymbols) in filesAndVersion)
+            foreach (var (file, expectedGlibcVersion, allowedSymbols, snapshotPrefix) in filesAndVersion)
             {
                 var dest = ProfilerDeployDirectory / arch / $"{file}.{extension}";
                 ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion, allowedSymbols);
+
+                if (IsAlpine)
+                {
+                    CompareNativeSymbolsSnapshot(dest, snapshotPrefix);
+                }
             }
         });
 
