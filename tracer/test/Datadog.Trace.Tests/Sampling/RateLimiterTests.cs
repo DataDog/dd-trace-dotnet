@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Util;
 using Xunit;
 

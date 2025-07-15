@@ -5,10 +5,12 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -16,27 +18,23 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class SpanTagTests
     {
-        private readonly Tracer _tracer;
         private readonly AgentWriter _writer;
         private readonly MockApi _testApi;
 
         public SpanTagTests()
         {
             _testApi = new MockApi();
-            var matchAllRule = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":1.0, \"max_per_second\":1000.0}]";
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, matchAllRule } });
             _writer = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-            _tracer = new Tracer(settings, _writer, sampler: null, scopeManager: null, statsd: null);
         }
 
         [Fact]
-        public void SpanSampler_ShouldNotAddTags_OnSpanClose_ForKeptTrace()
+        public async Task SpanSampler_ShouldNotAddTags_OnSpanClose_ForKeptTrace()
         {
             var expectedRuleRate = 1.0f;
             var expectedMaxPerSecond = 1000.0f;
             var expectedSamplingMechanism = 8;
-
-            using (var scope = _tracer.StartActive("root"))
+            await using var tracer = GetTracer();
+            using (var scope = tracer.StartActive("root"))
             {
             }
 
@@ -51,13 +49,14 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
-        public void SpanSampler_ShouldTag_OnSpanFinish()
+        public async Task SpanSampler_ShouldTag_OnSpanFinish()
         {
             var expectedRuleRate = 1.0f;
             var expectedMaxPerSecond = 1000.0f;
             var expectedSamplingMechanism = 8;
 
-            using (var scope = _tracer.StartActive("root"))
+            await using var tracer = GetTracer();
+            using (var scope = tracer.StartActive("root"))
             {
                 // drop it
                 ((SpanContext)scope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
@@ -74,22 +73,22 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
-        public void SpanSampler_ShouldTagMultiple_OnSpanFinish()
+        public async Task SpanSampler_ShouldTagMultiple_OnSpanFinish()
         {
             var expectedRuleRate = 1.0f;
             var expectedMaxPerSecond = 1000.0f;
             var expectedSamplingMechanism = 8;
-
-            using (var rootScope = _tracer.StartActive("root"))
+            await using var tracer = GetTracer();
+            using (var rootScope = tracer.StartActive("root"))
             {
                 // drop it
                 ((SpanContext)rootScope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
 
-                using (var childScope = _tracer.StartActive("child1"))
+                using (var childScope = tracer.StartActive("child1"))
                 {
                 }
 
-                using (var childScope = _tracer.StartActive("child2"))
+                using (var childScope = tracer.StartActive("child2"))
                 {
                 }
             }
@@ -118,22 +117,22 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
-        public void SpanSampler_ShouldTagMultiple_OnSpanFinish_WhenSamplingPriorityChanges()
+        public async Task SpanSampler_ShouldTagMultiple_OnSpanFinish_WhenSamplingPriorityChanges()
         {
             var expectedRuleRate = 1.0f;
             var expectedMaxPerSecond = 1000.0f;
             var expectedSamplingMechanism = 8;
-
-            using (var rootScope = _tracer.StartActive("root"))
+            await using var tracer = GetTracer();
+            using (var rootScope = tracer.StartActive("root"))
             {
                 // keep it (should be kept by default, but enforcing it in this test)
                 ((SpanContext)rootScope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
 
-                using (var childScope = _tracer.StartActive("child1"))
+                using (var childScope = tracer.StartActive("child1"))
                 {
                 }
 
-                using (var childScope = _tracer.StartActive("child2"))
+                using (var childScope = tracer.StartActive("child2"))
                 {
                 }
 
@@ -165,19 +164,19 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
-        public void SpanSampler_ShouldNotTag_WhenSpansAreKept()
+        public async Task SpanSampler_ShouldNotTag_WhenSpansAreKept()
         {
             var expectedRuleRate = 1.0f;
             var expectedMaxPerSecond = 1000.0f;
             var expectedSamplingMechanism = 8;
-
-            using (var rootScope = _tracer.StartActive("root"))
+            await using var tracer = GetTracer();
+            using (var rootScope = tracer.StartActive("root"))
             {
-                using (var childScope = _tracer.StartActive("child1"))
+                using (var childScope = tracer.StartActive("child1"))
                 {
                 }
 
-                using (var childScope = _tracer.StartActive("child2"))
+                using (var childScope = tracer.StartActive("child2"))
                 {
                 }
             }
@@ -225,6 +224,13 @@ namespace Datadog.Trace.IntegrationTests
             writtenSpan.Metrics.Should().NotContain(Metrics.SingleSpanSampling.RuleRate, expectedRuleRate);
             writtenSpan.Metrics.Should().NotContain(Metrics.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
             writtenSpan.Metrics.Should().NotContain(Metrics.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+        }
+
+        private ScopedTracer GetTracer()
+        {
+            var matchAllRule = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":1.0, \"max_per_second\":1000.0}]";
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, matchAllRule } });
+            return TracerHelper.Create(settings, _writer, null, null, null);
         }
     }
 }

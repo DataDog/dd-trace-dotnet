@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;

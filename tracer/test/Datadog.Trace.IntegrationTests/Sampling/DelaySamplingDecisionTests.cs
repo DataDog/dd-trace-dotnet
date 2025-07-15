@@ -4,12 +4,14 @@
 // </copyright>
 
 using System.Collections.Specialized;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -19,7 +21,7 @@ namespace Datadog.Trace.IntegrationTests.Sampling;
 public class DelaySamplingDecisionTests
 {
     [Fact]
-    public void SamplingDecisionIsNotMadeUntilLastSpanEnds()
+    public async Task SamplingDecisionIsNotMadeUntilLastSpanEnds()
     {
         var settings = new TracerSettings();
         var agentWriter = new Mock<IAgentWriter>();
@@ -27,7 +29,7 @@ public class DelaySamplingDecisionTests
         var scopeManager = new AsyncLocalScopeManager();
         var statsd = new NoOpStatsd();
 
-        var tracer = new Tracer(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
+        await using var tracer = TracerHelper.Create(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
         TraceContext traceContext;
 
         using (var scope1 = (Scope)tracer.StartActive("operation"))
@@ -56,7 +58,7 @@ public class DelaySamplingDecisionTests
     }
 
     [Fact]
-    public void SamplingDecisionIsMadeWhenPropagating()
+    public async Task SamplingDecisionIsMadeWhenPropagating()
     {
         var settings = new TracerSettings();
         var agentWriter = new Mock<IAgentWriter>();
@@ -64,7 +66,7 @@ public class DelaySamplingDecisionTests
         var scopeManager = new AsyncLocalScopeManager();
         var statsd = new NoOpStatsd();
 
-        var tracer = new Tracer(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
+        await using var tracer = TracerHelper.Create(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
         TraceContext traceContext;
         int samplingPriority;
 
