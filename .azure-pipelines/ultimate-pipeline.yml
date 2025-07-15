@@ -939,7 +939,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome BuildNativeLoader
+    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome
       displayName: Build native-tracer
       retryCountOnTaskFailure: 1
 
@@ -959,7 +959,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    # The CreateTrimmingFile tasks expects the native loader but we build that in the other stage
+    # The CreateTrimmingFile tasks expects the managed loader but we build that in the other stage
     - script: ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateTrimmingFile
       displayName: Build managed tracer + native loader
       retryCountOnTaskFailure: 1

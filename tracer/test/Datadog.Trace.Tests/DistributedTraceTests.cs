@@ -5,6 +5,7 @@
 
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Xunit;
 
 namespace Datadog.Trace.Tests
