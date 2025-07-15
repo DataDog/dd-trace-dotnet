@@ -585,19 +585,16 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
-                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
-                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-buster-slim"),
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bionic"),
-                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-bionic"),
                             new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
                         },
                         installer: "datadog-dotnet-apm*_amd64.deb",
@@ -637,17 +634,16 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
-                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
-                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
                             new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
                         },
                         // currently we direct customers to the musl-specific package in the command line.
@@ -665,17 +661,16 @@ partial class Build : NukeBuild
                         "alpine_musl",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
-                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
-                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
                             new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
                         },
                         installer: "datadog-dotnet-apm*-musl.tar.gz",
@@ -773,6 +768,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble-chiseled"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble-chiseled-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
@@ -799,12 +796,13 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             // https://github.com/dotnet/runtime/issues/66707
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-focal", runCrashTest: false),
                         },
@@ -839,6 +837,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19-composite"),
@@ -869,6 +869,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble-chiseled"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble-chiseled-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
@@ -925,9 +927,10 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
-                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
@@ -962,6 +965,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
@@ -1024,13 +1029,14 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-focal", runCrashTest: false),
                         },
@@ -1044,6 +1050,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20"),
@@ -1097,9 +1105,10 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
-                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
@@ -1132,6 +1141,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
@@ -1191,13 +1202,13 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
-                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-focal", runCrashTest: false),
                         },
@@ -1210,9 +1221,11 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
-                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19-composite"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.18"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.18"),
@@ -1235,9 +1248,10 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
-                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
@@ -1253,6 +1267,7 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
@@ -1278,9 +1293,10 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
-                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                         },
                         installer: "datadog-dotnet-apm*_amd64.deb",
@@ -1296,6 +1312,8 @@ partial class Build : NukeBuild
                         "alpine_musl",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
@@ -1419,6 +1437,7 @@ partial class Build : NukeBuild
                     };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
@@ -1453,6 +1472,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
@@ -1521,6 +1541,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                     };
@@ -1552,6 +1573,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
@@ -1587,6 +1609,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
@@ -1629,9 +1652,11 @@ partial class Build : NukeBuild
                         { "macos-14_net6.0", new { vmImage = "macos-14", publishFramework = "net6.0" } },
                         { "macos-14_net8.0", new { vmImage = "macos-14", publishFramework = "net8.0" } },
                         { "macos-14_net9.0", new { vmImage = "macos-14", publishFramework = "net9.0" } },
+                        { "macos-14_net10.0", new { vmImage = "macos-14", publishFramework = "net10.0" } },
                         { "macos-15_net6.0", new { vmImage = "macos-15", publishFramework = "net6.0" } },
                         { "macos-15_net8.0", new { vmImage = "macos-15", publishFramework = "net8.0" } },
                         { "macos-15_net9.0", new { vmImage = "macos-15", publishFramework = "net9.0" } },
+                        { "macos-15_net10.0", new { vmImage = "macos-15", publishFramework = "net10.0" } },
                     };
 
                     Logger.Information($"Installer smoke tests dotnet-tool NuGet matrix MacOs");
