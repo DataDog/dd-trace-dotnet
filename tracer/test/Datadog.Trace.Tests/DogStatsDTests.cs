@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.StatsdClient;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 using FluentAssertions;
