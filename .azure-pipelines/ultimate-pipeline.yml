@@ -207,7 +207,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -233,7 +233,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -278,7 +278,7 @@ stages:
 
   - job: build
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -1000,7 +1000,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-managed-windows-x64-2
+    name: azure-managed-windows-x64-1
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1059,7 +1059,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1233,7 +1233,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1286,7 +1286,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-managed-windows-x64-2
+    name: azure-managed-windows-x64-1
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1511,7 +1511,7 @@ stages:
     - job: standalone
       timeoutInMinutes: 60 #default value
       pool:
-        name: azure-managed-windows-x64-2
+        name: azure-managed-windows-x64-1
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1560,7 +1560,7 @@ stages:
           net10.0:
             framework: net10.0
       pool:
-        name: azure-managed-windows-x64-2
+        name: azure-managed-windows-x64-1
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1632,7 +1632,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
     timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -1720,7 +1720,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_debugger_matrix'] ]
@@ -1785,7 +1785,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1849,7 +1849,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1977,7 +1977,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
     timeoutInMinutes: 60 #default value
 
     steps:
@@ -2052,7 +2052,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
     variables:
       relativeMsiOutputDirectory: /artifacts/msi/$(targetPlatform)/en-us
 
@@ -2132,7 +2132,7 @@ stages:
   - job: fleet_installer_tests
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
     variables:
       framework: net48
 
@@ -2655,7 +2655,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2862,7 +2862,7 @@ stages:
     condition: false
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -3268,7 +3268,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3420,7 +3420,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -3634,7 +3634,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -5957,7 +5957,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-windows-x64-2
+      name: azure-managed-windows-x64-1
 
     steps:
     - template: steps/install-docker-compose-v1.yml
