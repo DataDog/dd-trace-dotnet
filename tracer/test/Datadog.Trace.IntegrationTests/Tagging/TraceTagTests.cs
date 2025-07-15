@@ -6,9 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -16,24 +18,20 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class TraceTagTests
     {
-        private readonly Tracer _tracer;
         private readonly MockApi _testApi;
 
         public TraceTagTests()
         {
             _testApi = new MockApi();
-
-            var settings = new TracerSettings();
-            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-            _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
         [Fact]
-        public void SetTraceTagOnRootSpan()
+        public async Task SetTraceTagOnRootSpan()
         {
-            using (var rootScope = _tracer.StartActive("root"))
+            await using var tracer = GetTracer();
+            using (var rootScope = tracer.StartActive("root"))
             {
-                using (var childScope = _tracer.StartActive("child1"))
+                using (var childScope = tracer.StartActive("child1"))
                 {
                     // add a trace tag using the first child span
                     ((SpanContext)childScope.Span.Context).TraceContext.Tags.SetTag("key1", "value1");
@@ -42,7 +40,7 @@ namespace Datadog.Trace.IntegrationTests
                 // add a trace tag using the root span
                 ((SpanContext)rootScope.Span.Context).TraceContext.Tags.SetTag("key2", "value2");
 
-                using (var childScope = _tracer.StartActive("child2"))
+                using (var childScope = tracer.StartActive("child2"))
                 {
                     // add a trace tag using the second child span
                     ((SpanContext)childScope.Span.Context).TraceContext.Tags.SetTag("key3", "value3");
@@ -70,6 +68,13 @@ namespace Datadog.Trace.IntegrationTests
                 childSpan.Tags.Should().NotContainKey("key2");
                 childSpan.Tags.Should().NotContainKey("key3");
             }
+        }
+
+        private ScopedTracer GetTracer()
+        {
+            var settings = new TracerSettings();
+            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
+            return TracerHelper.Create(settings, agentWriter, null, null, null);
         }
     }
 }
