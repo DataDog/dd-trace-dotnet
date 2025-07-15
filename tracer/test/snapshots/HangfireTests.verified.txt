@@ -154,36 +154,5 @@ at Samples.Hangfire.TestJob.ThrowException(),
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
-  },
-  {
-    TraceId: Id_10,
-    SpanId: Id_11,
-    Name: Hangfire.onPerform,
-    Resource: JOB TestJob.ThrowException,
-    Service: Samples.Hangfire-Hangfire,
-    Type: Hangfire,
-    Error: 1,
-    Tags: {
-      component: Hangfire,
-      env: integration_tests,
-      error.msg: An exception occurred during performance of the job.,
-      error.stack:
-Hangfire.Server.JobPerformanceException: An exception occurred during performance of the job.
----> System.Exception: Exception of type 'System.Exception' was thrown.
-at Samples.Hangfire.TestJob.ThrowException(),
-      error.type: Hangfire.Server.JobPerformanceException,
-      job.CreatedAt: DateTimeOffset_3,
-      job.ID: Guid_4,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      _dd.base_service: Samples.Hangfire
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
   }
 ]

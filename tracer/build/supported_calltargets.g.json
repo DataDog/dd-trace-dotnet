@@ -8036,8 +8036,8 @@
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 1,
-      "Item2": 8,
-      "Item3": 18
+      "Item2": 7,
+      "Item3": 0
     },
     "MaximumVersion": {
       "Item1": 1,

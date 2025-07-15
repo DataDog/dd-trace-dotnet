@@ -3,11 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.IntegrationTests;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -39,8 +37,9 @@ public class HangfireTests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent))
         {
-            const int expectedSpanCount = 7;
-            var spans = agent.WaitForSpans(expectedSpanCount);
+            // Not testing for retry attempts
+            const int expectedSpanCount = 6;
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
             using var s = new AssertionScope();
             spans.Count.Should().Be(expectedSpanCount);
@@ -59,7 +58,7 @@ public class HangfireTests : TracingIntegrationTest
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(nameof(HangfireTests));
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.Hangfire);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Hangfire);
         }
     }
 }

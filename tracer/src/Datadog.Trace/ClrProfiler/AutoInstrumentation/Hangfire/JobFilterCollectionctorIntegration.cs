@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
     MethodName = ".ctor",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = [],
-    MinimumVersion = "1.8.18",
+    MinimumVersion = "1.7.0",
     MaximumVersion = "1.*.*",
     IntegrationName = nameof(IntegrationId.Hangfire))]
 [Browsable(false)]

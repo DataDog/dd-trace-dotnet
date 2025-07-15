@@ -17,7 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 
 internal static class HangfireCommon
 {
-    private const string Component = "Hangfire.Core";
     private const string HangfireServiceName = "Hangfire";
     private const string HangfireType = "Hangfire";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HangfireCommon));

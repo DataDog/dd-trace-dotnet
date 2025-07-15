@@ -2,7 +2,7 @@ using System;
 
 namespace Samples.Hangfire;
 
-internal class TestJob
+internal partial class TestJob
 {
     public void Execute()
     {

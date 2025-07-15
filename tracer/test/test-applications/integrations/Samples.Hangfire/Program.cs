@@ -1,43 +1,28 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Hangfire;
 using Hangfire.MemoryStorage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Samples.Hangfire
 {
-    internal class Program
+    public class Program
     {
-        static async Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            GlobalConfiguration.Configuration
-                .UseMemoryStorage()
-                .UseFilter(new AutomaticRetryAttribute
-                {
-                    Attempts = 1,
-                    DelaysInSeconds = new[] { 5 },
-                    OnAttemptsExceeded = AttemptsExceededAction.Fail
-                });
-
-            using var host = CreateHostBuilder().Build();
+            using var host = CreateHostBuilder(args).Build();
             await host.StartAsync();
 
-            // Simulate MVC request triggering a job
             await Should_Create_Distributed_Trace();
-
-            // Run other jobs
             await Should_Create_Span();
             await Should_Create_Span_With_Status_Error_When_Job_Failed();
 
-            using var server = new BackgroundJobServer();
-            Console.WriteLine("Hangfire Server started. Press Enter to exit...");
+            Console.WriteLine("App started. Press Enter to exit...");
             Console.ReadLine();
         }
 
@@ -48,13 +33,13 @@ namespace Samples.Hangfire
 
         public static async Task Should_Create_Span()
         {
-            var jobId = BackgroundJob.Enqueue<TestJob>(x => x.Execute());
+            BackgroundJob.Enqueue<TestJob>(x => x.Execute());
             await WaitJobProcessedAsync(1);
         }
 
         public static async Task Should_Create_Span_With_Status_Error_When_Job_Failed()
         {
-            var jobId = BackgroundJob.Enqueue<TestJob>(x => x.ThrowException());
+            BackgroundJob.Enqueue<TestJob>(x => x.ThrowException());
             await WaitJobProcessedAsync(1);
         }
 
@@ -71,14 +56,23 @@ namespace Samples.Hangfire
             await WaitJobProcessedAsync(1);
         }
 
-        public static IHostBuilder CreateHostBuilder() =>
-            Host.CreateDefaultBuilder()
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseUrls("http://localhost:5000");
                     webBuilder.ConfigureServices(services =>
                     {
-                        services.AddHangfire(config => config.UseMemoryStorage());
+                        services.AddHangfire(config =>
+                        {
+                            config.UseMemoryStorage();
+                            config.UseFilter(new AutomaticRetryAttribute
+                            {
+                                Attempts = 0,
+                                OnAttemptsExceeded = AttemptsExceededAction.Fail
+                            });
+                        });
+
                         services.AddHangfireServer();
                         services.AddControllers();
                     });
@@ -94,7 +88,8 @@ namespace Samples.Hangfire
                 });
     }
 
-    public class TraceController : Microsoft.AspNetCore.Mvc.Controller
+    [ApiController]
+    public class TraceController : ControllerBase
     {
         [HttpGet("/trace")]
         public IActionResult Trace()

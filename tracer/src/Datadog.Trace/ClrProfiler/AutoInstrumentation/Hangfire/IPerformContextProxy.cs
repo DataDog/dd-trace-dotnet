@@ -18,11 +18,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 public interface IPerformContextProxy : IDuckType
 {
     /// <summary>
-    /// Gets a value of Hangfire.JobStorage
-    /// </summary>
-    object Storage { get; }
-
-    /// <summary>
     /// Gets a value of System.Collections.Generic.IDictionary`2[System.String,System.Object]
     /// </summary>
     object Items { get; }
@@ -48,31 +43,6 @@ public interface IPerformContextProxy : IDuckType
     DateTime CreatedAt { get; }
 
     /// <summary>
-    /// Gets a value of Hangfire.IJobCancellationToken
-    /// </summary>
-    object CancellationToken { get; }
-
-    /// <summary>
-    /// Gets a value of Hangfire.Storage.IStorageConnection
-    /// </summary>
-    object Connection { get; }
-
-    /// <summary>
-    /// Gets a value of Hangfire.Profiling.IProfiler
-    /// </summary>
-    object Profiler { get; }
-
-    /// <summary>
-    /// Gets or sets a value of Hangfire.Server.IBackgroundJobPerformer
-    /// </summary>
-    object Performer { get; set; }
-
-    /// <summary>
-    /// Gets a value of System.String
-    /// </summary>
-    string ServerId { get; }
-
-    /// <summary>
     /// Calls method: System.Void Hangfire.Server.PerformContext::SetJobParameter(System.String,System.Object)
     /// </summary>
     void SetJobParameter(string name, object value);
@@ -81,9 +51,4 @@ public interface IPerformContextProxy : IDuckType
     /// Calls method: T Hangfire.Server.PerformContext::GetJobParameter[T](System.String)
     /// </summary>
     T GetJobParameter<T>(string name);
-
-    /// <summary>
-    /// Calls method: T Hangfire.Server.PerformContext::GetJobParameter[T](System.String,System.Boolean)
-    /// </summary>
-    T GetJobParameter<T>(string name, bool allowStale);
 }

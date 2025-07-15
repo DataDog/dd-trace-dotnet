@@ -17,16 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 internal interface ICreateContextProxy : IDuckType
 {
     /// <summary>
-    /// Gets a value of Hangfire.JobStorage
-    /// </summary>
-    object Storage { get; }
-
-    /// <summary>
-    /// Gets a value of Hangfire.Storage.IStorageConnection
-    /// </summary>
-    object Connection { get; }
-
-    /// <summary>
     /// Gets a value of System.Collections.Generic.IDictionary`2[System.String,System.Object]
     /// </summary>
     object Items { get; }
@@ -40,19 +30,4 @@ internal interface ICreateContextProxy : IDuckType
     /// Gets a value of Hangfire.Common.Job
     /// </summary>
     object Job { get; }
-
-    /// <summary>
-    /// Gets a value of Hangfire.States.IState
-    /// </summary>
-    object InitialState { get; }
-
-    /// <summary>
-    /// Gets a value of Hangfire.Profiling.IProfiler
-    /// </summary>
-    object Profiler { get; }
-
-    /// <summary>
-    /// Gets or sets a value of Hangfire.Client.IBackgroundJobFactory
-    /// </summary>
-    object Factory { get; set; }
 }
