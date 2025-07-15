@@ -473,7 +473,7 @@ stages:
         target: builder
         baseImage: "universal"
         useNativeSdkVersion: true
-        command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
+        command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)/linux-musl-x64
@@ -814,7 +814,7 @@ stages:
         target: builder
         baseImage: "universal"
         useNativeSdkVersion: true
-        command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
+        command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)/linux-musl-arm64

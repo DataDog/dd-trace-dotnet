@@ -140,6 +140,19 @@ partial class Build
             testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
         });
 
+    Target ValidateNativeLoaderSnapshotTestsLinux => _ => _
+        .Unlisted()
+        .After(CompileNativeLoaderLinux)
+        .Before(ExtractDebugInfoLinux)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            // Compare the symbols in the native loader with the snapshot
+            var libraryPath = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.so";
+            var snapshotName = $"native-loader-symbols-{UnixArchitectureIdentifier}";
+            CompareNativeSymbolsSnapshot(libraryPath, snapshotName);
+        });
+
     Target CompileNativeLoaderOsx => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsOsx)
