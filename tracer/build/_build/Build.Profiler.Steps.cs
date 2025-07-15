@@ -2,7 +2,6 @@ using System;
 using Nuke.Common;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
-using System.Net.Http;
 using System.Linq;
 using System.IO;
 using Nuke.Common.Tooling;
@@ -15,12 +14,8 @@ using Nuke.Common.Tools.NuGet;
 using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
-using Nuke.Common.Utilities;
 using System.Collections;
-using System.Threading.Tasks;
-using DiffMatchPatch;
 using Logger = Serilog.Log;
-using System.Runtime.CompilerServices;
 
 partial class Build
 {
@@ -158,73 +153,8 @@ partial class Build
         {
             var (arch, _) = GetUnixArchitectureAndExtension();
             var libraryPath = ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
-
-            var output = Nm.Value($"-D {libraryPath}").Select(x => x.Text).ToList();
-
-            // Gives output similar to this:
-            // 0000000000006bc8 D DdDotnetFolder
-            // 0000000000006bd0 D DdDotnetMuslFolder
-            //                  w _ITM_deregisterTMCloneTable
-            //                  w _ITM_registerTMCloneTable
-            //                  w __cxa_finalize
-            //                  w __deregister_frame_info
-            //                  U __errno_location
-            //                  U __tls_get_addr
-            // 0000000000002d1b T _fini
-            // 0000000000002d18 T _init
-            // 0000000000003d70 T accept
-            // 0000000000003e30 T accept4
-            //                  U access
-            //
-            // The types of symbols are:
-            // D: Data section symbol. These symbols are initialized global variables.
-            // w: Weak symbol. These symbols are weakly referenced and can be overridden by other symbols.
-            // U: Undefined symbol. These symbols are referenced in the file but defined elsewhere.
-            // T: Text section symbol. These symbols are functions or executable code.
-            // B: BSS (Block Started by Symbol) section symbol. These symbols are uninitialized global variables.
-            //
-            // We only care about the Undefined symbols - we don't want to accidentally add more of them
-
-            Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
-
-            var symbols = output
-                .Select(x => x.Trim())
-                .Where(x => x.StartsWith("U "))
-                .Select(x => x.TrimStart("U "))
-                .OrderBy(x => x)
-                .ToList();
-
-
-            var received = string.Join(Environment.NewLine, symbols);
-            var verifiedPath = TestsDirectory / "snapshots" / $"native-wrapper-symbols-{UnixArchitectureIdentifier}.verified.txt";
-            var verified = File.Exists(verifiedPath)
-                ? File.ReadAllText(verifiedPath)
-                : string.Empty;
-
-            Logger.Information("Comparing snapshot of Undefined symbols in the Native Wrapper library using {Path}...", verifiedPath);
-
-            var dmp = new diff_match_patch();
-            var diff = dmp.diff_main(verified, received);
-            dmp.diff_cleanupSemantic(diff);
-
-            var changedSymbols = diff
-                .Where(x => x.operation != Operation.EQUAL)
-                .Select(x => x.text.Trim())
-                .ToList();
-
-            if (changedSymbols.Count == 0)
-            {
-                Logger.Information("No changes found in Undefined symbols in the Native Wrapper library");
-                return;
-            }
-
-            PrintDiff(diff);
-
-            throw new Exception($"Found differences in undefined symbols ({string.Join(",", changedSymbols)}) in the Native Wrapper library. " +
-                                "Verify that these changes are expected, and will not cause problems. " +
-                                "Removing symbols is generally a safe operation, but adding them could cause crashes. " +
-                                $"If the new symbols are safe to add, update the snapshot file at {verifiedPath} with the " +
-                                "new values");
+            var snapshotName = $"native-wrapper-symbols-{UnixArchitectureIdentifier}";
+            CompareNativeSymbolsSnapshot(libraryPath, snapshotName);
         });
 
     Target CompileNativeWrapperNativeTests => _ => _
