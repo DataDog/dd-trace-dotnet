@@ -43,9 +43,10 @@ internal class TraceExporter : SafeHandle, IApi
     {
         _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 
+        var responsePtr = IntPtr.Zero;
         try
         {
-            var responsePtr = Send(traces, numberOfTraces);
+            Send(traces, numberOfTraces, ref responsePtr);
 
             try
             {
@@ -53,24 +54,24 @@ internal class TraceExporter : SafeHandle, IApi
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "An error ocurred deserializing the response.");
+                _log.Error(ex, "An error occurred deserializing the response.");
             }
-            finally
-            {
-                if (responsePtr != IntPtr.Zero)
-                {
-                    NativeInterop.ExporterResponse.Free(responsePtr);
-                }
-            }
+
+            _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
+            return Task.FromResult(true);
         }
         catch (Exception ex) when (ex is not TraceExporterException)
         {
             _log.Error(ex, "An error occurred while sending data to the agent.");
+            return Task.FromResult(false);
         }
-
-        _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
-
-        return Task.FromResult(true);
+        finally
+        {
+            if (responsePtr != IntPtr.Zero)
+            {
+                NativeInterop.ExporterResponse.Free(responsePtr);
+            }
+        }
     }
 
     public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
@@ -111,7 +112,7 @@ internal class TraceExporter : SafeHandle, IApi
         return len;
     }
 
-    private unsafe IntPtr Send(ArraySegment<byte> traces, int numberOfTraces)
+    private unsafe void Send(ArraySegment<byte> traces, int numberOfTraces, ref IntPtr responsePtr)
     {
         fixed (byte* ptr = traces.Array)
         {
@@ -121,7 +122,6 @@ internal class TraceExporter : SafeHandle, IApi
                 Len = (UIntPtr)traces.Count
             };
 
-            var responsePtr = IntPtr.Zero;
             using var error = NativeInterop.Exporter.Send(this, traceSlice, (UIntPtr)numberOfTraces, ref responsePtr);
             if (!error.IsInvalid)
             {
@@ -129,8 +129,6 @@ internal class TraceExporter : SafeHandle, IApi
                 _log.Error(ex, "An error occurred while sending data to the agent. Error Code: {ErrorCode}, Message: {Message}", ex.ErrorCode, ex.Message);
                 throw ex;
             }
-
-            return responsePtr;
         }
     }
 
@@ -138,7 +136,7 @@ internal class TraceExporter : SafeHandle, IApi
     {
         if (response == IntPtr.Zero)
         {
-            // If response is Null bail out inmediately.
+            // If response is Null bail out immediately.
             return;
         }
 
