@@ -53,8 +53,6 @@ if (-not (Test-Path "$installDir\dotnet.exe")) {
 $env:DOTNET_ROOT = $installDir
 $env:PATH = "$installDir;$env:PATH"
 
-Write-Output "Paths set."
-
 ###########################################################################
 # <<< END TEMPORARY .NET 10 INSTALLATION LOGIC <<<
 ###########################################################################
@@ -79,8 +77,7 @@ function ExecSafe([scriptblock] $cmd) {
 # No se reconoce el comando o el argumento "/property:Platform=AnyCPU"
 $env:DOTNET_CLI_UI_LANGUAGE="en"
 
-Write-Host "Using .NET SDK version:"
-dotnet --version
+Write-Output "Microsoft (R) .NET SDK version $(& $env:DOTNET_EXE --version)"
 
 ExecSafe { & $env:DOTNET_EXE build $BuildProjectFile /nodeReuse:false /p:UseSharedCompilation=false -nologo -clp:NoSummary --verbosity quiet }
 ExecSafe { & $env:DOTNET_EXE run --project $BuildProjectFile --no-build -- $BuildArguments }
