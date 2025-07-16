@@ -69,7 +69,7 @@ internal class TraceExporter : SafeHandle, IApi
         {
             if (responsePtr != IntPtr.Zero)
             {
-                NativeInterop.ExporterResponse.Free(responsePtr);
+                NativeInterop.Exporter.FreeResponse(responsePtr);
             }
         }
     }
@@ -141,7 +141,7 @@ internal class TraceExporter : SafeHandle, IApi
         }
 
         // TODO: replace GetBodyLen with a native function in order to avoid iterating over the response to get its length.
-        var body = NativeInterop.ExporterResponse.GetBody(response);
+        var body = NativeInterop.Exporter.GetResponseBody(response);
         var len = GetBodyLen(body);
         if (len <= 0)
         {
