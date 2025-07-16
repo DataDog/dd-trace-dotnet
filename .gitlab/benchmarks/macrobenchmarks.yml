@@ -60,7 +60,6 @@ update-bp-infra:
   rules:
     - when: manual
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
     AWS_REGION: "us-east-1"
     CLEANUP: "false"
     AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
@@ -98,8 +97,6 @@ update-bp-infra:
       - artifacts/
     expire_in: 3 months
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-
     K6_OPTIONS_WARMUP_RATE: 14000
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
@@ -282,8 +279,6 @@ profiler_cpu_timer_create:
       - artifacts/
     expire_in: 3 months
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-
     K6_OPTIONS_WARMUP_RATE: 14000
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
@@ -472,8 +467,6 @@ profiler_cpu_timer_create-arm64:
       - artifacts/
     expire_in: 3 months
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
 
