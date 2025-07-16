@@ -1634,6 +1634,9 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/restore-working-directory.yml
     - template: steps/download-samples.yml
+      parameters:
+        framework: $(framework)
+        includeMultiVersions: false
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
