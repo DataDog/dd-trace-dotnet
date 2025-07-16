@@ -205,8 +205,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task SubmitsOtlpMetrics(string packageVersion)
         {
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/metrics");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            // SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 

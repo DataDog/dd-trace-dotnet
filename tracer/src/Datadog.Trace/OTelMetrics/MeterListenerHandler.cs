@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.OTelMetrics.DuckTypes;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -25,9 +26,40 @@ namespace Datadog.Trace.OTelMetrics
 
         static MeterListenerHandler()
         {
-            foreach (string meterName in Tracer.Instance.Settings.EnabledMeters)
+            try
             {
-                EnabledMeters.Add(meterName);
+                var otelSdkType = Type.GetType("OpenTelemetry.Sdk, OpenTelemetry", throwOnError: false);
+                if (otelSdkType is null)
+                {
+                    Log.Error("The OpenTelemetry SDK type cannot be found.");
+                    return;
+                }
+
+                var otelSdkProxyResult = DuckType.GetOrCreateProxyType(typeof(IOtelSdk), otelSdkType);
+                var otelSdkProxyResultType = otelSdkProxyResult.ProxyType;
+                if (otelSdkProxyResultType is null)
+                {
+                    ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after ducktyping {otelSdkProxyResultType} is null");
+                }
+                else if (otelSdkProxyResult.Success)
+                {
+                    var otelSdkProxy = (IOtelSdk)otelSdkProxyResult.CreateInstance(null!);
+                    var meterProviderBuilder = otelSdkProxy.CreateMeterProviderBuilder();
+                    var builderProxy = meterProviderBuilder.DuckCast<IMeterProviderBuilder>();
+                    builderProxy.AddMeter("OpenTelemetryMetricsMeter")
+                                .AddConsoleExporter();
+
+                    var meterProvider = builderProxy.Build();
+                    AppDomain.CurrentDomain.ProcessExit += (_, _) => meterProvider.Dispose();
+
+                    // EnabledMeters.Add("OpenTelemetryMetricsMeter");
+                    Log.Debug("OpenTelemetryMetricsMeter is now enabled.");
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error("Exception when trying to get OpenTelemetry.Sdk type: {E}", e.ToString());
+                throw;
             }
         }
 
