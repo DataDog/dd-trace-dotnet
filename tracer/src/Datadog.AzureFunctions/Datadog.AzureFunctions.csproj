@@ -8,11 +8,6 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoDefaultExcludes>true</NoDefaultExcludes>
 
-    <!-- nuget version: move $Version to $VersionPrefix so we can add a prerelease suffix. -->
-    <VersionPrefix>$(Version)</VersionPrefix>
-    <VersionSuffix>preview</VersionSuffix>
-    <Version></Version>
-
     <!-- nuget package metadata -->
     <PackageId>Datadog.AzureFunctions</PackageId>
     <Description>Datadog instrumentation library for Azure Functions</Description>
