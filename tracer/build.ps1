@@ -44,14 +44,19 @@ if (-not (Test-Path "$installDir\dotnet.exe")) {
         -NoPath
 
     Remove-Item $dotnetInstallScript -Force
-	
-	Write-Output ".NET SDK has been installed."
 } else {
     Write-Output ".NET SDK already installed at $installDir"
 }
 
 $env:DOTNET_ROOT = $installDir
 $env:PATH = "$installDir;$env:PATH"
+
+# Use 'dotnet' from PATH instead of DOTNET_EXE to avoid NUKE validation issues
+$resolvedDotnet = Get-Command dotnet | Select-Object -ExpandProperty Source
+$dotnetVersion = dotnet --version
+Write-Output "Using .NET SDK version $dotnetVersion"
+Write-Output "Resolved dotnet CLI path: $resolvedDotnet"
+
 
 ###########################################################################
 # <<< END TEMPORARY .NET 10 INSTALLATION LOGIC <<<
