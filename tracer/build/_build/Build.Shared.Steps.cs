@@ -4,8 +4,10 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using System.Linq;
 using System.IO;
+using DiffMatchPatch;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.MSBuild;
+using Nuke.Common.Utilities;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
@@ -136,6 +138,19 @@ partial class Build
 
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
+        });
+
+    Target ValidateNativeLoaderSnapshotTestsLinux => _ => _
+        .Unlisted()
+        .After(CompileNativeLoaderLinux)
+        .Before(ExtractDebugInfoLinux)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            // Compare the symbols in the native loader with the snapshot
+            var libraryPath = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.so";
+            var snapshotName = $"native-loader-symbols-{UnixArchitectureIdentifier}";
+            CompareNativeSymbolsSnapshot(libraryPath, snapshotName);
         });
 
     Target CompileNativeLoaderOsx => _ => _
@@ -289,6 +304,11 @@ partial class Build
                 : new Version(2, 17);
 
             ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
+
+            if (IsAlpine)
+            {
+                CompareNativeSymbolsSnapshot(dest, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
+            }
         });
 
     void ValidateNativeLibraryGlibcCompatibility(AbsolutePath libraryPath, Version expectedGlibcVersion, IEnumerable<string> allowedSymbols = null)
@@ -336,5 +356,81 @@ partial class Build
               .Where(x => x.Contains("@GLIBC_") && allowedSymbols?.Any(y => x.Contains(y)) != true)
               .Select(x => System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
               .Max();
+    }
+
+    void CompareNativeSymbolsSnapshot(AbsolutePath libraryPath, string snapshotNamePrefix)
+    {
+        var output = Nm.Value($"-D {libraryPath}").Select(x => x.Text).ToList();
+
+        // Gives output similar to this:
+        // 0000000000006bc8 D DdDotnetFolder
+        // 0000000000006bd0 D DdDotnetMuslFolder
+        //                  w _ITM_deregisterTMCloneTable
+        //                  w _ITM_registerTMCloneTable
+        //                  w __cxa_finalize
+        //                  w __deregister_frame_info
+        //                  U __errno_location
+        //                  U __tls_get_addr
+        // 0000000000002d1b T _fini
+        // 0000000000002d18 T _init
+        // 0000000000003d70 T accept
+        // 0000000000003e30 T accept4
+        //                  U access
+        //
+        // The types of symbols are:
+        // D: Data section symbol. These symbols are initialized global variables.
+        // w: Weak symbol. These symbols are weakly referenced and can be overridden by other symbols.
+        // U: Undefined symbol. These symbols are referenced in the file but defined elsewhere.
+        // T: Text section symbol. These symbols are functions or executable code.
+        // B: BSS (Block Started by Symbol) section symbol. These symbols are uninitialized global variables.
+        //
+        // We only care about the Undefined symbols - we don't want to accidentally add more of them
+
+        Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
+
+        var symbols = output
+                     .Select(x => x.Trim())
+                     .Where(x => x.StartsWith("U "))
+                     .Select(x => x.TrimStart("U "))
+                     .OrderBy(x => x)
+                     .ToList();
+
+
+        var received = string.Join(Environment.NewLine, symbols);
+        var verifiedPath = TestsDirectory / "snapshots" / $"{snapshotNamePrefix}.verified.txt";
+        var verified = File.Exists(verifiedPath)
+                           ? File.ReadAllText(verifiedPath)
+                           : string.Empty;
+
+        var libraryName = Path.GetFileNameWithoutExtension(libraryPath);
+        Logger.Information("Comparing snapshot of Undefined symbols in the {LibraryName} using {Path}...", libraryName, verifiedPath);
+
+        var dmp = new diff_match_patch();
+        var diff = dmp.diff_main(verified, received);
+        dmp.diff_cleanupSemantic(diff);
+
+        var changedSymbols = diff
+                            .Where(x => x.operation != Operation.EQUAL)
+                            .Select(x => x.text.Trim())
+                            .ToList();
+
+        if (changedSymbols.Count == 0)
+        {
+            Logger.Information("No changes found in Undefined symbols in {LibraryName}", libraryName);
+            return;
+        }
+
+        // Print the expected values, so it's easier to copy-paste them into the snapshot file as required
+        Logger.Information("Received snapshot for {LibraryName}{Break}{Symbols}", libraryName, Environment.NewLine, received);
+
+        Logger.Information("Changed symbols for {LibraryName}:", libraryName);
+
+        PrintDiff(diff);
+
+        throw new Exception($"Found differences in undefined symbols in {libraryName}. {Environment.NewLine} These are shown above as both a diff and the" +
+                            "full expected snapshot. Verify that these changes are expected, and will not cause problems. " +
+                            "Removing symbols is generally a safe operation, but adding them could cause crashes. " +
+                            $"If the new symbols are safe to add, update the snapshot file at {verifiedPath} with the " +
+                            "new values");
     }
 }
