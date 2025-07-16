@@ -14,10 +14,10 @@
     <NukeExcludeDirectoryBuild>True</NukeExcludeDirectoryBuild>
     <NukeTasksEnabled>False</NukeTasksEnabled>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
-    <!-- We need to run with both the .NET 7 and .NET 9 SDKs, because .NET 7 is the -->
+    <!-- We need to run with both the .NET 7 and .NET 10 SDKs, because .NET 7 is the -->
     <!-- latest version we can use in CentOs 7 -->
     <LangVersion>11</LangVersion>
-    <!-- Required, otherwise we can run with .NET 8 -->
+    <!-- Required, otherwise we can't run with .NET 8 -->
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
 
@@ -46,7 +46,7 @@
     <PackageReference Include="Sep" Version="0.7.0" />
     <PackageReference Include="ByteSize" Version="2.1.0" />
     <!-- Enable binary serialization for .NET 9 -->
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="9.0.0" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="10.0.0-preview.5.25277.114" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
   </ItemGroup>
 
   <!-- On it's own, since windows only and just used for notifications -->
