@@ -1669,7 +1669,7 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled) -PrintDriveSpace true
       displayName: Build integration tests
       retryCountOnTaskFailure: 3
       env:
