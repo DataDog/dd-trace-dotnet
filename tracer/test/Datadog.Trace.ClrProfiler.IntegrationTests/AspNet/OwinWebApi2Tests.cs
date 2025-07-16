@@ -203,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var testStart = DateTimeOffset.UtcNow;
 
                 await SubmitRequest(output, path);
-                return Agent.WaitForSpans(count: expectedSpanCount, minDateTime: testStart, returnAllOperations: true);
+                return await Agent.WaitForSpansAsync(count: expectedSpanCount, minDateTime: testStart, returnAllOperations: true);
             }
 
             private async Task EnsureServerStarted(ITestOutputHelper output)
@@ -258,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         break;
                     }
 
-                    Thread.Sleep(intervalMilliseconds);
+                    await Task.Delay(intervalMilliseconds);
                 }
 
                 if (!serverReady)

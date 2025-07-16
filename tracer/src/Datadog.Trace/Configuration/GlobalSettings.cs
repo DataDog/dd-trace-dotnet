@@ -107,6 +107,8 @@ namespace Datadog.Trace.Configuration
                 DatadogLogging.UseDefaultLevel();
             }
 
+            LibDatadog.Logger.Instance.SetLogLevel(debugEnabled: enabled);
+
             TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }
 
@@ -119,6 +121,7 @@ namespace Datadog.Trace.Configuration
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_Reload);
             DatadogLogging.Reset();
+            LibDatadog.Logger.Instance.SetLogLevel(debugEnabled: false);
             GlobalConfigurationSource.Reload();
             Instance = CreateFromDefaultSources();
         }

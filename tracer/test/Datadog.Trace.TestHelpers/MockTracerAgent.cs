@@ -112,6 +112,8 @@ namespace Datadog.Trace.TestHelpers
 
         public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
 
+        public bool ConfigSent { get; set; } = false;
+
         /// <summary>
         /// Gets or sets a value indicating whether to skip deserialization of traces.
         /// </summary>
@@ -126,6 +128,23 @@ namespace Datadog.Trace.TestHelpers
 
         public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config, AgentConfiguration agentConfiguration = null) => new NamedPipeAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
 
+        public async Task<bool> WaitForConfigSentAsync(int timeoutInMilliseconds = 10000)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                if (ConfigSent)
+                {
+                    return true;
+                }
+
+                await Task.Delay(100);
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Wait for the given number of spans to appear.
         /// </summary>
@@ -136,7 +155,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
         /// <param name="assertExpectedCount">When true, asserts that the number of spans to return matches the count</param>
         /// <returns>The list of spans.</returns>
-        public IImmutableList<MockSpan> WaitForSpans(
+        public async Task<IImmutableList<MockSpan>> WaitForSpansAsync(
             int count,
             int timeoutInMilliseconds = 20000,
             string operationName = null,
@@ -180,7 +199,7 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                Thread.Sleep(500);
+                await Task.Delay(250);
             }
 
             if (assertExpectedCount)
@@ -240,7 +259,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="timeoutInMilliseconds">The timeout</param>
         /// <param name="sleepTime">The time between checks</param>
         /// <returns>The telemetry that satisfied <paramref name="hasExpectedValues"/></returns>
-        public object WaitForLatestTelemetry(
+        public async Task<object> WaitForLatestTelemetryAsync(
             Func<object, bool> hasExpectedValues,
             int timeoutInMilliseconds = 5000,
             int sleepTime = 200)
@@ -258,13 +277,13 @@ namespace Datadog.Trace.TestHelpers
                     }
                 }
 
-                Thread.Sleep(sleepTime);
+                await Task.Delay(sleepTime);
             }
 
             return null;
         }
 
-        public IImmutableList<MockClientStatsPayload> WaitForStats(
+        public async Task<IImmutableList<MockClientStatsPayload>> WaitForStatsAsync(
             int count,
             int timeoutInMilliseconds = 20000)
         {
@@ -281,13 +300,13 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                Thread.Sleep(500);
+                await Task.Delay(250);
             }
 
             return stats;
         }
 
-        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
             int timeoutInMilliseconds,
             Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
         {
@@ -304,17 +323,17 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                Thread.Sleep(500);
+                await Task.Delay(250);
             }
 
             return stats;
         }
 
-        public IImmutableList<MockDataStreamsPayload> WaitForDataStreamsPoints(
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsPointsAsync(
             int statsCount,
             int timeoutInMilliseconds = 20000)
         {
-            return WaitForDataStreams(
+            return await WaitForDataStreamsAsync(
                 timeoutInMilliseconds,
                 (stats) =>
                 {
@@ -322,11 +341,11 @@ namespace Datadog.Trace.TestHelpers
                 });
         }
 
-        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
             int payloadCount,
             int timeoutInMilliseconds = 20000)
         {
-            return WaitForDataStreams(
+            return await WaitForDataStreamsAsync(
                 timeoutInMilliseconds,
                 (stats) => stats.Count == payloadCount);
         }
@@ -554,7 +573,10 @@ namespace Datadog.Trace.TestHelpers
 
             return CustomResponses.TryGetValue(responseType, out var custom)
                        ? custom // custom response, use that
-                       : new MockTracerResponse(response ?? "{}");
+                       : new MockTracerResponse(response ?? "{}")
+                       {
+                           IsConfigResponse = responseType == MockTracerResponseType.Info,
+                       };
         }
 
         private void HandlePotentialTraces(MockHttpRequest request)
@@ -1251,6 +1273,7 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.ContentLength64 = buffer.LongLength;
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                                 ctx.Response.Close();
+                                ConfigSent |= mockTracerResponse.IsConfigResponse;
                             }
                         }
                         catch (Exception ex)

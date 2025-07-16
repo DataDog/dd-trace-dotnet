@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -36,7 +37,7 @@ namespace Datadog.Trace.IntegrationTests
                     { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
                     { ConfigurationKeys.TraceDataPipelineEnabled, "false" }
                 });
-                var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+                await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
 
                 using (var scope = tracer.StartActive("operationName"))
                 {
@@ -45,7 +46,7 @@ namespace Datadog.Trace.IntegrationTests
 
                 await tracer.FlushAsync();
 
-                var spans = agent.WaitForSpans(count: 1);
+                var spans = await agent.WaitForSpansAsync(count: 1);
                 Assert.Equal(expected: 1, spans.Count);
 
                 var headers = agent.TraceRequestHeaders.Should().ContainSingle().Subject;

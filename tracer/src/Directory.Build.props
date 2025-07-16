@@ -4,7 +4,7 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1;net6.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>3.20.0</Version>
+    <Version>3.22.0</Version>
 
     <!-- Code analysis -->
     <AnalysisLevel>latest</AnalysisLevel>
@@ -20,11 +20,15 @@
       Please note that Datadog does not support tracing (manual or automatic) in partial-trust environments.
     </PackageReleaseNotes>
     <PackageTags>Datadog;APM;tracing;profiling;instrumentation</PackageTags>
-    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <!-- override the RepositoryUrl because PublishRepositoryUrl generates different URLs locally and on CI which makes test PublicApiHasNotChanged fail -->
     <RepositoryUrl>https://github.com/DataDog/dd-trace-dotnet.git</RepositoryUrl>
     <Copyright>Copyright 2017 Datadog, Inc.</Copyright>
     <Company>Datadog</Company>
     <Authors>Datadog</Authors>
+    <Owners>Datadog</Owners>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <!-- Stop NuGet complaining about us targetting obsolete TFMs etc-->
     <NugetAudit>false</NugetAudit>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
@@ -32,7 +36,7 @@
 
   <ItemGroup>
     <!-- NuGet -->
-    <None Include="$(MSBuildThisFileDirectory)\..\..\datadog-logo-256x256.png" Pack="true" Visible="false" PackagePath="packageIcon.png" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\datadog-logo-256x256.png" Pack="true" Visible="false" PackagePath="packageIcon.png" />
 
     <!-- StyleCop -->
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />

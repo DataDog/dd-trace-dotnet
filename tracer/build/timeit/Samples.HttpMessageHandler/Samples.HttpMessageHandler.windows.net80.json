@@ -25,17 +25,24 @@
   "scenarios": [
     {
       "name": "Baseline",
+      "isBaseline": true,
       "environmentVariables": {
         "CORECLR_ENABLE_PROFILING": "0",
         "COR_ENABLE_PROFILING": "0"
       }
     },
     {
+      "name": "Bailout",
+      "environmentVariables": {
+        "DD_PROFILER_EXCLUDE_PROCESSES": "Samples.HttpMessageHandler.exe",
+        "DD_INJECTION_ENABLED": "tracing"
+      }
+    },
+    {
       "name": "CallTarget\u002BInlining\u002BNGEN"
     }
   ],
-  "processName": "dotnet",
-  "processArguments": ".\\Samples.HttpMessageHandler.dll",
+  "processName": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_net8.0\\Samples.HttpMessageHandler.exe",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_net8.0",
   "environmentVariables": {
@@ -61,5 +68,6 @@
     "runtime.version": "8.0",
     "benchmark.job.runtime.name": ".NET 8.0",
     "benchmark.job.runtime.moniker": "net8.0"
-  }
+  },
+  "overheadThreshold": 10
 }

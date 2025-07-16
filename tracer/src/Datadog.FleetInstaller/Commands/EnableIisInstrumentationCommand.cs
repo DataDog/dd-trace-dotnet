@@ -45,8 +45,44 @@ internal class EnableIisInstrumentationCommand : CommandBase
         return Task.CompletedTask;
     }
 
+    internal static ReturnCode Execute(ILogger log, TracerValues tracerInstallValues)
+        => ExecuteIIs(log, tracerInstallValues);
+
+    internal static ReturnCode ExecuteGlobal(ILogger log, TracerValues tracerInstallValues)
+    {
+        log.WriteInfo("Enabling instrumentation for .NET tracer");
+
+        if (!GlobalEnvVariableHelper.SetMachineEnvironmentVariables(log, tracerInstallValues, out var previousVariables))
+        {
+            log.WriteError("Failed to set global environment variables");
+            return ReturnCode.ErrorSettingGlobalEnvironmentVariables;
+        }
+
+        // We can't enable iis instrumentation if IIS is not available or it's too low of a version
+        if (!HasValidIIsVersion(out var errorMessage))
+        {
+            // nothing more to do in this case
+            log.WriteInfo("Skipping IIS instrumentation. " + errorMessage);
+            log.WriteInfo("Instrumentation complete");
+            return ReturnCode.Success;
+        }
+
+        var iisResult = ExecuteIIs(log, tracerInstallValues);
+        if (iisResult is ReturnCode.Success)
+        {
+            log.WriteInfo("Instrumentation complete");
+            return ReturnCode.Success;
+        }
+
+        log.WriteInfo("Reverting global environment variables after failed install");
+        GlobalEnvVariableHelper.RevertMachineEnvironmentVariables(log, previousVariables);
+
+        log.WriteError("Instrumentation failed");
+        return iisResult;
+    }
+
     // Internal for testing
-    internal static ReturnCode Execute(ILogger log, TracerValues tracerValues)
+    internal static ReturnCode ExecuteIIs(ILogger log, TracerValues tracerValues)
     {
         log.WriteInfo("Enabling IIS instrumentation for .NET tracer");
 

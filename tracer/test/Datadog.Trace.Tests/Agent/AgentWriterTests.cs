@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
@@ -47,7 +48,7 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
 
-            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
@@ -75,7 +76,7 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "*");
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
-            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
@@ -106,7 +107,7 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "*");
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
-            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null);
@@ -143,7 +144,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var settings = SpanSamplingRule("*", "operation");
             var agentWriter = new AgentWriter(api, statsAggregator.Object, statsd: null, automaticFlush: false);
-            var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null);

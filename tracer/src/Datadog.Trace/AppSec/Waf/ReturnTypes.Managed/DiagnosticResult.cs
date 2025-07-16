@@ -21,7 +21,7 @@ internal class DiagnosticResult
     private readonly DiagnosticFeatureResult? _rulesOverride;
     private readonly string _rulesetVersion = string.Empty;
 
-    public DiagnosticResult(DdwafObjectStruct diagObject)
+    public DiagnosticResult(in DdwafObjectStruct diagObject)
     {
         _diagnosticsData = diagObject.DecodeMap();
         _actions = DiagnosticFeatureResult.From("actions", _diagnosticsData);

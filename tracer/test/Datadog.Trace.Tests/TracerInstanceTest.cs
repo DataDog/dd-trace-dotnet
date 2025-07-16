@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -70,7 +71,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void ReplacingGlobalTracerManagerMidTraceWritesTheTrace()
+        public async Task ReplacingGlobalTracerManagerMidTraceWritesTheTrace()
         {
             var agentPort = TcpPortProvider.GetOpenPort();
 
@@ -102,7 +103,7 @@ namespace Datadog.Trace.Tests
 
                 scope.Dispose();
 
-                var spans = agent.WaitForSpans(count: 1);
+                var spans = await agent.WaitForSpansAsync(count: 1);
                 var received = spans.Should().ContainSingle().Subject;
                 received.Name.Should().Be("Test span");
                 received.Tags.Should().Contain("test-tag", "original-value");

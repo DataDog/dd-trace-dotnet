@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: true);
@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: false);
@@ -216,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.TraceId))
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.SpanId));
             VerifyInstrumentation(processResult.Process);
-            telemetry.AssertIntegrationEnabled(IntegrationId.Serilog);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Serilog);
         }
 
         private void SetSerilogConfiguration(bool loadFromConfig)

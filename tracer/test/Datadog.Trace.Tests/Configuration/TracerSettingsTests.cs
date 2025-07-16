@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -17,6 +18,7 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Moq;
@@ -40,14 +42,14 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(ConfigurationKeys.Environment, Tags.Env, "custom-env")]
         [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version, null)]
         [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version, "custom-version")]
-        public void ConfiguredTracerSettings_DefaultTagsSetFromEnvironmentVariable(string environmentVariableKey, string tagKey, string value)
+        public async Task ConfiguredTracerSettings_DefaultTagsSetFromEnvironmentVariable(string environmentVariableKey, string tagKey, string value)
         {
             var collection = new NameValueCollection { { environmentVariableKey, value } };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(tagKey), value);
@@ -56,7 +58,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Theory]
         [InlineData(ConfigurationKeys.Environment, Tags.Env)]
         [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version)]
-        public void DDVarTakesPrecedenceOverDDTags(string envKey, string tagKey)
+        public async Task DDVarTakesPrecedenceOverDDTags(string envKey, string tagKey)
         {
             string envValue = $"ddenv-custom-{tagKey}";
             string tagsLine = $"{tagKey}:ddtags-custom-{tagKey}";
@@ -65,7 +67,7 @@ namespace Datadog.Trace.Tests.Configuration
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(tagKey), envValue);
@@ -74,7 +76,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Theory]
         [InlineData(Tags.Env, "deployment.environment")]
         [InlineData(Tags.Version, "service.version")]
-        public void OtelTagsSetsServiceInformation(string ddTagKey, string otelTagKey)
+        public async Task OtelTagsSetsServiceInformation(string ddTagKey, string otelTagKey)
         {
             string expectedValue = $"ddtags-custom-{otelTagKey}";
             string tagsLine = $"{otelTagKey}=ddtags-custom-{otelTagKey}";
@@ -84,7 +86,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
             settings.GlobalTags.Should().NotContainKey(otelTagKey);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(ddTagKey), expectedValue);
@@ -93,7 +95,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Theory]
         [InlineData(Tags.Env, "deployment.environment")]
         [InlineData(Tags.Version, "service.version")]
-        public void DDTagsTakesPrecedenceOverOtelTags(string ddTagKey, string otelTagKey)
+        public async Task DDTagsTakesPrecedenceOverOtelTags(string ddTagKey, string otelTagKey)
         {
             string expectedValue = $"ddtags-custom-{ddTagKey}";
             string ddTagsLine = $"{ddTagKey}:ddtags-custom-{ddTagKey}";
@@ -104,7 +106,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
             settings.GlobalTags.Should().NotContainKey(otelTagKey);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(ddTagKey), expectedValue);
@@ -120,7 +122,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("0", "none", false, (int)Count.OpenTelemetryConfigHiddenByDatadogConfig)]
         [InlineData(null, "random", true, (int)Count.OpenTelemetryConfigInvalid)]
         [InlineData(null, "none", false, null)]
-        public void TraceEnabled(string value, string otelValue, bool areTracesEnabled, int? metric)
+        public async Task TraceEnabled(string value, string otelValue, bool areTracesEnabled, int? metric)
         {
             var settings = new NameValueCollection
             {
@@ -136,7 +138,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             _writerMock.Invocations.Clear();
 
-            var tracer = new Tracer(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("TestTracerDisabled");
             span.Dispose();
 
@@ -987,6 +989,18 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData("1", true)]
+        [InlineData("0", false)]
+        [InlineData(null, false)]
+        public void IsDataStreamsSchemaExtractionEnabled(string dataStreamsEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.Enabled, dataStreamsEnabled));
+            var settings = new TracerSettings(source);
+
+            settings.IsDataStreamsSchemaExtractionEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
         public void IsRareSamplerEnabled(string value, bool expected)
         {
@@ -1361,6 +1375,21 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.InferredProxySpansEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("", new string[0])]
+        [InlineData("code,status,path,line", new[] { "code", "status", "path", "line" })]
+        [InlineData("trailing_comma,code,status,", new[] { "trailing_comma", "code", "status" })]
+        [InlineData(",leading_comma,code,status", new[] { "leading_comma", "code", "status" })]
+        [InlineData(", with_whitespace  ,code,status,path", new[] { "with_whitespace", "code", "status", "path" })]
+        [InlineData("code,code,status ,path,path", new[] { "code", "status", "path" })] // Test deduplication
+        public void GraphQlErrorExtensions(string value, string[] expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.GraphQLErrorExtensions, value));
+            var settings = new TracerSettings(source);
+
+            settings.GraphQLErrorExtensions.Should().BeEquivalentTo(expected);
         }
 
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)

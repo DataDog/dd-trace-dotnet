@@ -427,10 +427,7 @@ namespace Datadog.Trace.Configuration
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(
-                        "{ConfigurationKey} is enabled, but {StatsComputationEnabled} is enabled. Disabling {TraceDataPipelineEnabled}.",
-                        ConfigurationKeys.TraceDataPipelineEnabled,
-                        ConfigurationKeys.StatsComputationEnabled,
-                        ConfigurationKeys.TraceDataPipelineEnabled);
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
 
@@ -440,9 +437,15 @@ namespace Datadog.Trace.Configuration
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(
-                        "{ConfigurationKey} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling {TraceDataPipelineEnabled}.",
-                        ConfigurationKeys.TraceDataPipelineEnabled,
-                        ConfigurationKeys.TraceDataPipelineEnabled);
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                if (!LibDatadog.NativeInterop.IsLibDatadogAvailable)
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
             }
@@ -768,7 +771,7 @@ namespace Datadog.Trace.Configuration
                 "dotnet_msi" => "env_var",
                 "windows_fleet_installer" => "ssi", // windows SSI on IIS
                 _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")) => "ssi", // "normal" ssi
-                _ => "unknown" // everything else
+                _ => "manual" // everything else
             };
 
             telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
@@ -779,6 +782,10 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigTelemetryData.CloudHosting, "Azure", recordValue: true, ConfigurationOrigins.Default);
                 telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
+
+            GraphQLErrorExtensions = TrimSplitString(
+                config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
+                commaSeparator);
 
             static void RecordDisabledIntegrationsTelemetry(IntegrationSettingsCollection integrations, IConfigurationTelemetry telemetry)
             {
@@ -1204,6 +1211,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsDataStreamsMonitoringInDefaultState => DynamicSettings.DataStreamsMonitoringEnabled == null && _isDataStreamsMonitoringInDefaultState;
 
         /// <summary>
+        /// Gets a value indicating whether data streams schema extraction is enabled or not.
+        /// </summary>
+        internal bool IsDataStreamsSchemaExtractionEnabled => IsDataStreamsMonitoringEnabled && !IsDataStreamsMonitoringInDefaultState;
+
+        /// <summary>
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
         /// </summary>
         internal bool IsDataStreamsLegacyHeadersEnabled { get; }
@@ -1316,6 +1328,12 @@ namespace Datadog.Trace.Configuration
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
+        /// Gets which GraphQL error extensions to capture.
+        /// A comma-separated list of extension keys to capture. Empty or not present means no extensions are captured.        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GraphQLErrorExtensions"/>
+        internal string[] GraphQLErrorExtensions { get; }
+
+        /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
         /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios.
         /// It may also be explicitly disabled
@@ -1419,7 +1437,11 @@ namespace Datadog.Trace.Configuration
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    list.Add(value.Trim());
+                    var trimmedValue = value.Trim();
+                    if (!list.Contains(trimmedValue))
+                    {
+                        list.Add(trimmedValue);
+                    }
                 }
             }
 

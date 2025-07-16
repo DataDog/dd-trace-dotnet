@@ -361,10 +361,25 @@ namespace Datadog.Trace
 
         private IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory, bool partialFlushEnabled)
         {
+            // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             if (settings.DataPipelineEnabled)
             {
                 try
                 {
+                    // If file logging is enabled, then enable logging in libdatadog
+                    // We assume that we can't go from pipeline enabled -> disabled, so we should never need to call logger.Disable()
+                    // Note that this _could_ fail if there's an issue in libdatadog, but we continue to _Try_ to initialize the exporter anyway
+                    // If this was previously initialized, it will be re-initialized with the new settings, which is fine
+                    if (Log.FileLoggingConfiguration is { } fileConfig)
+                    {
+                        var logger = LibDatadog.Logger.Instance;
+                        logger.Enable(fileConfig, DomainMetadata.Instance);
+
+                        // hacky to use the global setting, but about the only option we have atm
+                        logger.SetLogLevel(GlobalSettings.Instance.DebugEnabledInternal);
+                    }
+
+                    // TODO: we should refactor this so that we're not re-building the telemetry settings, and instead using the existing ones
                     var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
                     TelemetryClientConfiguration? telemetryClientConfiguration = null;
 
@@ -385,6 +400,7 @@ namespace Datadog.Trace
                     // when APM is disabled but ASM is enabled.
                     var clientComputedStats = !settings.StatsComputationEnabled && !settings.ApmTracingEnabled;
 
+                    var frameworkDescription = FrameworkDescription.Instance;
                     using var configuration = new TraceExporterConfiguration
                     {
                         Url = GetUrl(settings),
@@ -394,8 +410,8 @@ namespace Datadog.Trace
                         Service = settings.ServiceName,
                         Hostname = HostMetadata.Instance.Hostname,
                         Language = ".NET",
-                        LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-                        LanguageInterpreter = FrameworkDescription.Instance.Name,
+                        LanguageVersion = frameworkDescription.ProductVersion,
+                        LanguageInterpreter = frameworkDescription.Name,
                         ComputeStats = settings.StatsComputationEnabled,
                         TelemetryClientConfiguration = telemetryClientConfiguration,
                         ClientComputedStats = clientComputedStats
