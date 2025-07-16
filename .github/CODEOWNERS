@@ -150,6 +150,7 @@ docker-compose.serverless.yml                                                   
 # Serverless (Azure/GCP)
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/ServerlessMiniAgent.cs   @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
+/tracer/src/Datadog.AzureFunctions/                                                      @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/test/Datadog.Trace.Tests/ServerlessMiniAgentTests.cs                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/test/test-applications/azure-functions/                                          @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 

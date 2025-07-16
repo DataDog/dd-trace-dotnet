@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -16,16 +17,11 @@ namespace Datadog.Trace.IntegrationTests.Tagging;
 
 public class TraceContextPropertyTests
 {
-    private readonly Tracer _tracer;
     private readonly MockApi _testApi;
 
     public TraceContextPropertyTests()
     {
         _testApi = new MockApi();
-
-        var settings = new TracerSettings();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Theory]
@@ -37,12 +33,13 @@ public class TraceContextPropertyTests
     [InlineData(100)]
     public async Task SamplingPriority(int samplingPriority)
     {
-        using (var scope = CreateTrace(_tracer))
+        await using var tracer = GetTracer();
+        using (var scope = CreateTrace(tracer))
         {
             scope.Span.Context.TraceContext.SetSamplingPriority(samplingPriority);
         }
 
-        await _tracer.FlushAsync();
+        await tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
         var spans = traceChunks.SelectMany(s => s).ToArray();
 
@@ -65,11 +62,13 @@ public class TraceContextPropertyTests
     [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
     public async Task Env(string before, string after)
     {
-        using (var scope = CreateTrace(_tracer))
+        await using var tracer = GetTracer();
+        using (var scope = CreateTrace(tracer))
         {
             scope.Span.Context.TraceContext.Environment = before;
         }
 
+        await tracer.FlushAsync();
         await AssertTag("env", after);
     }
 
@@ -81,11 +80,13 @@ public class TraceContextPropertyTests
     [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
     public async Task Version(string before, string after)
     {
-        using (var scope = CreateTrace(_tracer))
+        await using var tracer = GetTracer();
+        using (var scope = CreateTrace(tracer))
         {
             scope.Span.Context.TraceContext.ServiceVersion = before;
         }
 
+        await tracer.FlushAsync();
         await AssertTag("version", after);
     }
 
@@ -97,11 +98,13 @@ public class TraceContextPropertyTests
     [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
     public async Task Origin(string before, string after)
     {
-        using (var scope = CreateTrace(_tracer))
+        await using var tracer = GetTracer();
+        using (var scope = CreateTrace(tracer))
         {
             scope.Span.Context.TraceContext.Origin = before;
         }
 
+        await tracer.FlushAsync();
         await AssertTag("_dd.origin", after);
     }
 
@@ -123,9 +126,8 @@ public class TraceContextPropertyTests
         return (Scope)rootScope;
     }
 
-    private async Task AssertTag(string key, string value)
+    private Task AssertTag(string key, string value)
     {
-        await _tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
         var spans = traceChunks.SelectMany(s => s).ToArray();
 
@@ -139,5 +141,14 @@ public class TraceContextPropertyTests
         {
             spans.Should().OnlyContain(s => s.Tags[key] == value);
         }
+
+        return Task.CompletedTask;
+    }
+
+    private ScopedTracer GetTracer()
+    {
+        var settings = new TracerSettings();
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        return TracerHelper.Create(settings, agentWriter, null, null, null);
     }
 }

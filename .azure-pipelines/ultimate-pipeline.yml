@@ -119,7 +119,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.21.0
+  ToolVersion: 3.22.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -939,7 +939,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome BuildNativeLoader
+    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome
       displayName: Build native-tracer
       retryCountOnTaskFailure: 1
 
@@ -959,7 +959,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    # The CreateTrimmingFile tasks expects the native loader but we build that in the other stage
+    # The CreateTrimmingFile tasks expects the managed loader but we build that in the other stage
     - script: ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateTrimmingFile
       displayName: Build managed tracer + native loader
       retryCountOnTaskFailure: 1
@@ -1304,8 +1304,14 @@ stages:
           targetBranch: $(targetBranch)
       - template: steps/restore-working-directory.yml
 
-      - script: tracer\build.cmd BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-        displayName: Build and Test
+      - script: tracer\build.cmd BuildManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+        displayName: Build unit tests
+        retryCountOnTaskFailure: 3
+        env:
+          DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+      - script: tracer\build.cmd RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+        displayName: Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -1354,8 +1360,14 @@ stages:
           artifact: build-macos-native_tracer
           path: $(monitoringHome)
 
-      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-        displayName: Build and Test
+      - script: ./tracer/build.sh BuildManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+        displayName: Build unit tests
+        retryCountOnTaskFailure: 3
+        env:
+          DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+      - script: ./tracer/build.sh RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+        displayName: Run unit tests
         retryCountOnTaskFailure: 1
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1404,7 +1416,15 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
+        command: "BuildManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/make-artifacts-uploadable.yml
@@ -3482,14 +3502,18 @@ stages:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
-    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
-      displayName: Build Bundle, Benchmark NuGet and tools
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildAzureFunctionsNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
+      displayName: Build tools and pack NuGet packages (Bundle, AzureFunctions, Benchmark)
       env:
         MSBUILDDISABLENODEREUSE: "1"
 
     - publish: $(artifacts)/nuget/bundle
-      displayName: Uploading Bundle package
+      displayName: Uploading Datadog.Trace.Bundle package
       artifact: bundle-nuget-package
+
+    - publish: $(artifacts)/nuget/azure-functions
+      displayName: Uploading Datadog.AzureFunctions package
+      artifact: azurefunctions-nuget-package
 
     - publish: $(artifacts)/nuget/benchmark
       displayName: Uploading Benchmark package
@@ -3950,6 +3974,11 @@ stages:
             artifact: bundle-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: azurefunctions-nuget-package
+            path: $(Build.ArtifactStagingDirectory)
+
 #        Don't include the Datadog.Trace.BenchmarkDotNet package in the release artifacts
 #        as it currently doesn't work with v3.
 #        - task: DownloadPipelineArtifact@2
@@ -4015,7 +4044,7 @@ stages:
             path: $(Build.ArtifactStagingDirectory)
 
         # Download the artifacts required by the serverless layer and create the zip file
-        # This exapands the directory - but we want a zip file, so re-zip it!
+        # This expands the directory - but we want a zip file, so re-zip it!
         - template: steps/download-artifact.yml
           parameters:
             artifact: serverless-artifacts

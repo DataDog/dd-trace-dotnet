@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -26,6 +27,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         private static readonly string SubscriptionId = "8c500027-5f00-400e-8f00-60000000000f";
         private static readonly string PlanResourceGroup = "apm-dotnet";
         private static readonly string SiteResourceGroup = "apm-dotnet-site-resource-group";
+
         private static readonly string ExpectedResourceId =
             $"/subscriptions/{SubscriptionId}/resourcegroups/{SiteResourceGroup}/providers/microsoft.web/sites/{DeploymentId}".ToLowerInvariant();
 
@@ -218,21 +220,21 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                         }
                     }
                 }
+
+                Assert.NotEmpty(spans);
+
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteName) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteKind) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteType) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSubscriptionId) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceId) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceId) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceName) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesOperatingSystem) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesRuntime) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesExtensionVersion) != null);
             }
-
-            Assert.NotEmpty(spans);
-
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteName) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteKind) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteType) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSubscriptionId) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceId) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceId) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceName) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesOperatingSystem) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesRuntime) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesExtensionVersion) != null);
         }
     }
 }

@@ -65,7 +65,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.25.1";
+    const string LibDdwafVersion = "1.26.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0", "1.23.0" };
 
@@ -444,7 +444,8 @@ partial class Build
             );
 
             var exclude = TracerDirectory.GlobFiles(
-                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
+                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",     // no code, used to generate nuget package
+                "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
                 "src/Datadog.AutoInstrumentation.Generator/*.csproj",

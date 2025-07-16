@@ -18,43 +18,43 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.0.14 -->
-    <PackageReference Include="AWSSDK.Core" Version="4.0.0.14" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.0.15 -->
+    <PackageReference Include="AWSSDK.Core" Version="4.0.0.15" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.2.1 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.2.1" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.2.2 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.2.2" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.2.1 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.2.1" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.2.2 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.2.2" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/4.0.2.11 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="4.0.2.11" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/4.0.2.12 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="4.0.2.12" />
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.4.1 -->
-    <PackageReference Include="AWSSDK.S3" Version="4.0.4.1" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.4.2 -->
+    <PackageReference Include="AWSSDK.S3" Version="4.0.4.2" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/4.0.0.12 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.0.12" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/4.0.0.13 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.0.13" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.0.13 -->
-    <PackageReference Include="AWSSDK.SQS" Version="4.0.0.13" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.0.14 -->
+    <PackageReference Include="AWSSDK.SQS" Version="4.0.0.14" />
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.0.12 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.0.12" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.0.13 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.0.13" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -195,28 +195,28 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!--    Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/9.0.6 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.6" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/9.0.7 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.7" />
 
     <!-- Integration: Microsoft.Extensions.Identity.Core -->
     <!--    Assembly: Microsoft.Extensions.Identity.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/9.0.6 -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.6" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/9.0.7 -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.7" />
 
     <!-- Integration: Microsoft.Extensions.Logging -->
     <!--    Assembly: Microsoft.Extensions.Logging -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging/9.0.6 -->
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging/9.0.7 -->
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
 
     <!-- Integration: Microsoft.Extensions.Logging.Abstractions -->
     <!--    Assembly: Microsoft.Extensions.Logging.Abstractions -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/9.0.6 -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/9.0.7 -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7" />
 
     <!-- Integration: Microsoft.Extensions.Telemetry -->
     <!--    Assembly: Microsoft.Extensions.Telemetry -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/9.6.0 -->
-    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="9.6.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/9.7.0 -->
+    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="9.7.0" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.TestFramework -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.TestFramework -->
@@ -253,7 +253,7 @@
     <!-- Integration: NLog -->
     <!--    Assembly: NLog -->
     <!-- Latest package https://www.nuget.org/packages/NLog/6.0.1 -->
-    <PackageReference Include="NLog" Version="5.5.0" />
+    <PackageReference Include="NLog" Version="6.0.1" />
 
     <!-- Integration: Npgsql -->
     <!--    Assembly: Npgsql -->
@@ -334,8 +334,8 @@
 
     <!-- Integration: System.Net.Http.WinHttpHandler -->
     <!--    Assembly: System.Net.Http.WinHttpHandler -->
-    <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/9.0.6 -->
-    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="9.0.6" />
+    <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/9.0.7 -->
+    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="9.0.7" />
 
     <!-- Integration: System.Net.Requests -->
     <!--    Assembly: System.Net.Requests -->

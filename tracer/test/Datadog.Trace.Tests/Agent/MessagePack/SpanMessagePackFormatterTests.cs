@@ -18,6 +18,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
@@ -212,13 +213,13 @@ public class SpanMessagePackFormatterTests
     [InlineData(true)]
     [InlineData(false)]
     [InlineData(null)]
-    public void SpanEvent_Tag_Serialization(bool? nativeSpanEventsEnabled)
+    public async Task SpanEvent_Tag_Serialization(bool? nativeSpanEventsEnabled)
     {
         var discoveryService = new DiscoveryServiceMock();
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new());
         var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, discoveryService);
+        await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null,  NullTelemetryController.Instance, discoveryService: discoveryService);
 
         tracer.TracerManager.Start();
 
@@ -447,7 +448,7 @@ public class SpanMessagePackFormatterTests
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, generate128BitTraceId } });
         var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+        await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (_ = tracer.StartActive("root"))
         {
@@ -488,7 +489,7 @@ public class SpanMessagePackFormatterTests
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false } });
         var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+        await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (var scope = tracer.StartActiveInternal("root"))
         {
