@@ -1,7 +1,7 @@
 ﻿# To build this file locally, starting from the root directory:
 # cd tracer/build/_build/docker/gitlab
-# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:latest .
-# docker push datadog/dd-trace-dotnet-docker-build:latest
+# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet10 .
+# docker push datadog/dd-trace-dotnet-docker-build:dotnet10
 
 ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019
 FROM ${BASE_IMAGE}
@@ -11,9 +11,9 @@ USER ContainerAdministrator
 
 # VS Build tool link found from https://learn.microsoft.com/en-gb/visualstudio/releases/2022/release-history#release-dates-and-build-numbers
 # You can grab the SHA for the downloaded file using (Get-FileHash -Algorithm SHA256 $out).Hash
-ENV VSBUILDTOOLS_VERSION="17.13.35931.197" \
-    VSBUILDTOOLS_SHA256="353141457ABCC59EB9C38B2F30084E7271C6BCFB4E185466D98161BADA905759" \
-    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/8fada5c7-8417-4239-acc3-bd499af09222/353141457abcc59eb9c38b2f30084e7271c6bcfb4e185466d98161bada905759/vs_BuildTools.exe" \
+ENV VSBUILDTOOLS_VERSION="17.14.36310.24" \
+    VSBUILDTOOLS_SHA256="A783199025439D65F310BFF041E278B966A6DBED8DBCD7FC96B55389F574EF41" \
+    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/ae7ac791-9759-4076-bba7-47ff510c57af/a783199025439d65f310bff041e278b966a6dbed8dbcd7fc96b55389f574ef41/vs_BuildTools.exe" \
     VSBUILDTOOLS_INSTALL_ROOT="c:\devtools\vstudio"
 
 # Install VS
@@ -29,7 +29,7 @@ RUN Powershell -Command .\install_net35.ps1
 COPY install_wix.ps1 .
 RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV:WIX_SHA256
 
-# Install .NET 9
+# Install .NET 10
 # To find these links, visit https://dotnet.microsoft.com/en-us/download, click the Windows, x64 installer, and grab the download url + SHA512 hash
 ENV DOTNET_VERSION="10.0.100-preview.5.25277.114" \
     DOTNET_DOWNLOAD_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100-preview.5.25277.114/dotnet-sdk-10.0.100-preview.5.25277.114-win-x64.exe" \
