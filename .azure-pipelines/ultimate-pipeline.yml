@@ -1634,7 +1634,9 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+    - script: tracer\build.cmd Info -PrintDriveSpace true
     - template: steps/restore-working-directory.yml
+    - script: tracer\build.cmd Info -PrintDriveSpace true
     - template: steps/download-samples.yml
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
