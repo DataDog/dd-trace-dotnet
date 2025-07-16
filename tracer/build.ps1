@@ -50,11 +50,10 @@ if (-not (Test-Path "$installDir\dotnet.exe")) {
 
 $env:DOTNET_ROOT = $installDir
 $env:PATH = "$installDir;$env:PATH"
+$env:DOTNET_EXE = Join-Path $installDir "dotnet"
 
-# Use 'dotnet' from PATH instead of DOTNET_EXE to avoid NUKE validation issues
-$resolvedDotnet = Get-Command dotnet | Select-Object -ExpandProperty Source
-Write-Output "Using .NET SDK version $(& dotnet --version)"
-Write-Output "Resolved dotnet CLI path: $resolvedDotnet"
+Write-Output "Using .NET SDK version $(& $env:DOTNET_EXE --version)"
+Write-Output "DOTNET_EXE path: $env:DOTNET_EXE"
 
 ###########################################################################
 # <<< END TEMPORARY .NET 10 INSTALLATION LOGIC <<<
