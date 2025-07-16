@@ -45,7 +45,7 @@ public class TraceExporterTests
         var udsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         using var agent = GetAgent();
         var settings = GetSettings();
-        var tracerSettings = TracerSettings.Create(settings);
+        var tracerSettings = TracerSettings.Create(settings, isLibDatadogAvailable: true);
         tracerSettings.DataPipelineEnabled.Should().BeTrue();
 
         agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse
@@ -117,7 +117,7 @@ public class TraceExporterTests
         {
             var settingsMap = new Dictionary<string, object>
             {
-                { ConfigurationKeys.StatsComputationEnabled, true },
+                { ConfigurationKeys.StatsComputationEnabled, false },
                 { ConfigurationKeys.ServiceName, "default-service" },
                 { ConfigurationKeys.ServiceVersion, "v1" },
                 { ConfigurationKeys.Environment, "test" },
