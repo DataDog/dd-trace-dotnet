@@ -1642,9 +1642,7 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - script: tracer\build.cmd Info -PrintDriveSpace true
     - template: steps/restore-working-directory.yml
-    - script: tracer\build.cmd Info -PrintDriveSpace true
     - template: steps/download-samples.yml
       parameters:
         framework: $(framework)
