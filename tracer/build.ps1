@@ -23,7 +23,7 @@ $env:DOTNET_NOLOGO = 1
 
 ###########################################################################
 # >>> BEGIN TEMPORARY .NET 10 INSTALLATION LOGIC <<<
-# Can be removed once .NET 10 SDK is preinstalled
+# Can be removed once .NET 10 SDK is preinstalled or managed via global.json
 ###########################################################################
 
 $env:DOTNET_ROLL_FORWARD_TO_PRERELEASE = 1
@@ -70,8 +70,7 @@ function ExecSafe([scriptblock] $cmd) {
 }
 
 # If dotnet CLI is installed globally and it matches requested version, use for execution
-#TODO: Uncomment after updating VMS
-#$env:DOTNET_EXE = (Get-Command "dotnet").Path
+$env:DOTNET_EXE = (Get-Command "dotnet").Path
 
 # Some commands apparently break unless this is set
 # e.g. "/property:Platform=AnyCPU" gives
