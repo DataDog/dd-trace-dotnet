@@ -43,52 +43,29 @@ internal class TraceExporter : SafeHandle, IApi
     {
         _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 
-        unsafe
+        try
         {
-            fixed (byte* ptr = traces.Array)
+            var responsePtr = Send(traces, numberOfTraces);
+
+            try
             {
-                var tracesSlice = new ByteSlice
+                ProcessResponse(responsePtr);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "An error ocurred deserializing the response.");
+            }
+            finally
+            {
+                if (responsePtr != IntPtr.Zero)
                 {
-                    Ptr = (IntPtr)ptr,
-                    Len = (UIntPtr)traces.Count
-                };
-
-                var responsePtr = IntPtr.Zero;
-                try
-                {
-                    using var error = NativeInterop.Exporter.Send(this, tracesSlice, (UIntPtr)numberOfTraces, ref responsePtr);
-                    if (!error.IsInvalid)
-                    {
-                        var ex = error.ToException();
-#pragma warning disable DDLOG004
-                        _log.Error(ex, "An error occurred while sending data to the agent. Error Code: " + ex.ErrorCode + ", message: {Message}", ex.Message);
-#pragma warning restore DDLOG004
-                        throw ex;
-                    }
-
-                    try
-                    {
-                        // TODO: replace GetBodyLen with a native function in order to avoid iterating over the response to get its length.
-                        int len = GetBodyLen(responsePtr);
-                        byte* body = (byte*)NativeInterop.ExporterResponse.GetBody(responsePtr);
-                        var response = System.Text.Encoding.UTF8.GetString((byte*)body, (int)len);
-                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(response);
-                        _updateSampleRates(apiResponse.RateByService);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error(ex, "An error ocurred deserializing the response.");
-                    }
-                    finally
-                    {
-                        NativeInterop.ExporterResponse.Free(responsePtr);
-                    }
-                }
-                catch (Exception ex) when (ex is not TraceExporterException)
-                {
-                    _log.Error(ex, "An error occurred while sending data to the agent.");
+                    NativeInterop.ExporterResponse.Free(responsePtr);
                 }
             }
+        }
+        catch (Exception ex) when (ex is not TraceExporterException)
+        {
+            _log.Error(ex, "An error occurred while sending data to the agent.");
         }
 
         _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
@@ -121,7 +98,7 @@ internal class TraceExporter : SafeHandle, IApi
     {
         if (body == IntPtr.Zero)
         {
-            throw new ArgumentNullException(nameof(body));
+            return 0;
         }
 
         byte* p = (byte*)body;
@@ -132,5 +109,45 @@ internal class TraceExporter : SafeHandle, IApi
         }
 
         return len;
+    }
+
+    private unsafe IntPtr Send(ArraySegment<byte> traces, int numberOfTraces)
+    {
+        fixed (byte* ptr = traces.Array)
+        {
+            var traceSlice = new ByteSlice
+            {
+                Ptr = (IntPtr)ptr,
+                Len = (UIntPtr)traces.Count
+            };
+
+            var responsePtr = IntPtr.Zero;
+            using var error = NativeInterop.Exporter.Send(this, traceSlice, (UIntPtr)numberOfTraces, ref responsePtr);
+            if (!error.IsInvalid)
+            {
+                var ex = error.ToException();
+                _log.Error(ex, "An error occurred while sending data to the agent. Error Code: {ErrorCode}, Message: {Message}", ex.ErrorCode, ex.Message);
+                throw ex;
+            }
+
+            return responsePtr;
+        }
+    }
+
+    private unsafe void ProcessResponse(IntPtr response)
+    {
+        if (response == IntPtr.Zero)
+        {
+            // If response is Null bail out inmediately.
+            return;
+        }
+
+        // TODO: replace GetBodyLen with a native function in order to avoid iterating over the response to get its length.
+        int len = GetBodyLen(response);
+        byte* body = (byte*)NativeInterop.ExporterResponse.GetBody(response);
+        var json = System.Text.Encoding.UTF8.GetString(body, len);
+        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
+
+        _updateSampleRates(apiResponse.RateByService);
     }
 }
