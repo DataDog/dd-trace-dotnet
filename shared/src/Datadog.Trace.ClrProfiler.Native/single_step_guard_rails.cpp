@@ -22,6 +22,9 @@ SingleStepGuardRails::SingleStepGuardRails()
     const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
 
     m_isRunningInSingleStep = !isSingleStepVariable.empty(); 
+    m_injectResult = "";
+    m_injectResultReason = "";
+    m_injectResultClass = "";
 }
 
 SingleStepGuardRails::~SingleStepGuardRails()
@@ -76,6 +79,7 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
                 const auto runtime = std::to_string(runtimeInformation.major_version) + "." +
                                      std::to_string(runtimeInformation.minor_version) + "." +
                                      std::to_string(runtimeInformation.build_version);
+                SetInjectResult("abort", ".NET 6.0.12 and earlier have known crashing bugs", "incompatible_runtime");
                 return HandleUnsupportedNetCoreVersion(eol, runtime, false); // not eol, just incompatible
             }
 
@@ -84,6 +88,7 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
             {
                 // supported
                 Log::Debug("SingleStepGuardRails::CheckRuntime: Supported .NET runtime version detected, continuing with single step instrumentation");
+                SetInjectResult("success", "Successfully configured ddtrace package", "success");
                 return S_OK;
             }
 
@@ -133,9 +138,11 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetCoreVersion(const std::string&
 {
     if(ShouldForceInstrumentationOverride(unsupportedDescription, isEol))
     {
+        SetInjectResult("success", unsupportedDescription, "success_forced");
         return S_OK;
     }
 
+    SetInjectResult("abort", unsupportedDescription, "incompatible_runtime");
     SendAbortTelemetry(NetCoreRuntime, runtimeVersion, isEol);
     return E_FAIL;
 }
@@ -144,9 +151,11 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetFrameworkVersion(const std::st
 {
     if(ShouldForceInstrumentationOverride(unsupportedDescription, isEol))
     {
+        SetInjectResult("success", unsupportedDescription, "success_forced");
         return S_OK;
     }
 
+    SetInjectResult("abort", unsupportedDescription, "incompatible_library");
     SendAbortTelemetry(NetFrameworkRuntime, runtimeVersion, isEol);
     return E_FAIL;
 }
@@ -156,6 +165,7 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
     // Should only be called when we have an incompatible runtime
     Log::Warn(
         "SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime ", eolDescription);
+    SetInjectResult("skipped", eolDescription, "incompatible_runtime");
 
     // Are we supposed to override the EOL check?
     const auto forceEolInstrumentationVariable = GetEnvironmentValue(EnvironmentVariables::ForceEolInstrumentation);
@@ -171,12 +181,14 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
             "SingleStepGuardRails::ShouldForceInstrumentationOverride: ",
             EnvironmentVariables::ForceEolInstrumentation,
             " enabled, allowing unsupported runtimes and continuing");
+        SetInjectResult("success", "Force instrumentation enabled", "success_forced");
         return true;
     }
 
     const std::string reason = isEol ? "eol_runtime" : "incompatible_runtime";
     Log::Warn(
         "SingleStepGuardRails::HandleUnsupportedNetCoreVersion: Aborting application instrumentation due to ", reason);
+    SetInjectResult("abort", reason, "incompatible_runtime");
     return false;
 }
 
@@ -195,6 +207,7 @@ void SingleStepGuardRails::RecordBootstrapError(const RuntimeInformation& runtim
     const auto runtimeName = runtimeInformation.is_core() ? NetCoreRuntime : NetFrameworkRuntime;
     const auto runtimeVersion = runtimeInformation.description();
 
+    SetInjectResult("error", errorType, "internal_error");
     RecordBootstrapError(runtimeName, runtimeVersion, errorType);
 }
 
@@ -248,6 +261,13 @@ void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, co
     SendTelemetry(runtimeName, runtimeVersion, points);
 }
 
+void SingleStepGuardRails::SetInjectResult(const std::string& result, const std::string& resultReason, const std::string& resultClass)
+{
+    m_injectResult = result;
+    m_injectResultReason = resultReason;
+    m_injectResultClass = resultClass;
+}
+
 void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const std::string& runtimeVersion,
                                          const std::string& points) const
 {
@@ -257,11 +277,14 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         return;
     }
 
+    SetInjectResult("success", "Attempting to send telemetry to forwarder", "success");
     auto forwarderPath = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath);
     if (forwarderPath.empty())
     {
         Log::Info("SingleStepGuardRails::SendTelemetry: Unable to send telemetry, ",
                   EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath, " is not set");
+        SetInjectResult("failed", "SingleStepGuardRails::SendTelemetry: Unable to send telemetry, ", 
+                  EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath, " is not set", "incorrect_installation");
         return;
     }
 
@@ -271,6 +294,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         Log::Info("SingleStepGuardRails::SendTelemetry: Unable to send telemetry, ",
                   EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath, " path does not exist:",
                   forwarderPath);
+        SetInjectResult("failed", "Telemetry forwarder path does not exist: " + ToString(forwarderPath), "incorrect_installation");
         return;
     }
 
@@ -289,7 +313,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     const std::vector args = {initialArg};
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , metadata);
-
+    SetInjectResult("success", "Invoking telemetry forwarder with injection metadata", "success");
     // Increment the reference count to prevent the loader from being unloaded while sending telemetry
 
 #ifdef _WIN32
@@ -321,10 +345,12 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
             if (success)
             {
                 Log::Debug("SingleStepGuardRails::SendTelemetry: Telemetry sent to forwarder");
+                SetInjectResult("success", "Successfully configured ddtrace package", "success");
             }
             else
             {
                 Log::Warn("SingleStepGuardRails::SendTelemetry: Error calling telemetry forwarder");
+                SetInjectResult("error", "Error calling telemetry forwarder", "internal_error");
             }
 
 #ifdef _WIN32
@@ -336,6 +362,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     else
     {
         Log::Warn("SingleStepGuardRails::SendTelemetry: Skipping the telemetry forwarder because it can't be safely invoked");
+        SetInjectResult("abort", "Cannot safely invoke telemetry forwarder", "internal_error");
     }
 }
 } // namespace datadog::shared::nativeloader
