@@ -346,13 +346,13 @@ namespace Datadog.Trace.ClrProfiler
             {
                 if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
                 {
-                    Log.Debug("Initializing OTel Metrics listener.");
-                    OTelMetrics.MeterListener.Initialize();
+                    Log.Debug("Initializing OTel Metrics Exporter.");
+                    OTelMetrics.OtlpMetricsExporter.Initialize();
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error initializing OTel Metrics listener");
+                Log.Error(ex, "Error initializing OTel Metrics Exporter");
             }
 #else
             if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)

@@ -811,6 +811,11 @@ namespace Datadog.Trace.Configuration
             public const string OpenTelemetryMetricsEnabled = "DD_METRICS_OTEL_ENABLED";
 
             /// <summary>
+            /// List of meters to add to the metrics exporter for the experimental OpenTelemetry Metrics API support.
+            /// </summary>
+            public const string EnabledMeters = "DD_TRACE_ENABLED_METERS";
+
+            /// <summary>
             /// Enables generating 128-bit trace ids instead of 64-bit trace ids.
             /// Note that a 128-bit trace id may be received from an upstream service or from
             /// an Activity even if we are not generating them ourselves.

@@ -749,6 +749,9 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled)
                                     .AsBool(defaultValue: false);
 
+            var enabledMeters = config.WithKeys(ConfigurationKeys.FeatureFlags.EnabledMeters).AsString();
+            EnabledMeters = !string.IsNullOrEmpty(enabledMeters) ? TrimSplitString(enabledMeters, commaSeparator) : [];
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -883,6 +886,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled"/>
         internal bool OpenTelemetryMetricsEnabled { get; }
+
+        /// Gets the names of enabled Meters.
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.EnabledMeters"/>
+        internal string[] EnabledMeters { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.

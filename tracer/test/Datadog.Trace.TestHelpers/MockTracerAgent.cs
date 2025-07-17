@@ -964,7 +964,6 @@ namespace Datadog.Trace.TestHelpers
             var body = request.ReadStreamBody();
             if (body == null || body.Length == 0)
             {
-                Output?.WriteLine("[OTLP] Skipped request: empty body");
                 return;
             }
 

@@ -198,20 +198,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+#if  NET6_0_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
         public async Task SubmitsOtlpMetrics(string packageVersion)
         {
+            var initialAgentPort = TcpPortProvider.GetOpenPort();
+
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/metrics");
-            // SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("DD_TRACE_ENABLED_METERS", "OpenTelemetryMetricsMeter");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 
-            using var agent = EnvironmentHelper.GetMockAgent(fixedPort: 4318);
+            using var agent = EnvironmentHelper.GetMockAgent(fixedPort: initialAgentPort);
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var metricRequests = agent.OtlpRequests
@@ -229,11 +232,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_timeUnixNanoRegexMetrics, @"TimeUnixNano"": <DateTimeOffset.Now>");
+
                 await Verifier.Verify(snapshotPayload, settings)
+#if NET9_0_OR_GREATER
                               .UseFileName($"{nameof(OpenTelemetrySdkTests)}.OtlpMetrics{GetSuffix(packageVersion)}")
+#else
+                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.OtlpMetrics{GetSuffix(packageVersion)}.Pre_NET_9")
+#endif
                               .DisableRequireUniquePrefix();
             }
         }
+#endif
 
         private static string GetSuffix(string packageVersion)
         {
