@@ -277,14 +277,11 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         return;
     }
 
-    SetInjectResult("success", "Attempting to send telemetry to forwarder", "success");
     auto forwarderPath = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath);
     if (forwarderPath.empty())
     {
         Log::Info("SingleStepGuardRails::SendTelemetry: Unable to send telemetry, ",
                   EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath, " is not set");
-        SetInjectResult("failed", "SingleStepGuardRails::SendTelemetry: Unable to send telemetry, ", 
-                  EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath, " is not set", "incorrect_installation");
         return;
     }
 
@@ -294,7 +291,6 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         Log::Info("SingleStepGuardRails::SendTelemetry: Unable to send telemetry, ",
                   EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath, " path does not exist:",
                   forwarderPath);
-        SetInjectResult("failed", "Telemetry forwarder path does not exist: " + ToString(forwarderPath), "incorrect_installation");
         return;
     }
 
@@ -304,7 +300,10 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         + "\",\"language_name\": \"dotnet\",\"language_version\": \"" + runtimeVersion
         + "\",\"tracer_version\": \"" + PROFILER_VERSION
         + "\",\"pid\":" + std::to_string(GetPID())
-        + "},\"points\": " + points + "}";
+        + "\",\"inject_result\": \"" + m_injectResult
+        + "\",\"inject_result_reason\": \"" + m_injectResultReason
+        + "\",\"inject_result_class\": \"" + m_injectResultClass
+        + "\"},\"points\": " + points + "}";
 
     const auto processPath = ToString(forwarderPath);
 
@@ -313,7 +312,6 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     const std::vector args = {initialArg};
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , metadata);
-    SetInjectResult("success", "Invoking telemetry forwarder with injection metadata", "success");
     // Increment the reference count to prevent the loader from being unloaded while sending telemetry
 
 #ifdef _WIN32
@@ -345,12 +343,10 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
             if (success)
             {
                 Log::Debug("SingleStepGuardRails::SendTelemetry: Telemetry sent to forwarder");
-                SetInjectResult("success", "Successfully configured ddtrace package", "success");
             }
             else
             {
                 Log::Warn("SingleStepGuardRails::SendTelemetry: Error calling telemetry forwarder");
-                SetInjectResult("error", "Error calling telemetry forwarder", "internal_error");
             }
 
 #ifdef _WIN32
@@ -362,7 +358,6 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     else
     {
         Log::Warn("SingleStepGuardRails::SendTelemetry: Skipping the telemetry forwarder because it can't be safely invoked");
-        SetInjectResult("abort", "Cannot safely invoke telemetry forwarder", "internal_error");
     }
 }
 } // namespace datadog::shared::nativeloader
