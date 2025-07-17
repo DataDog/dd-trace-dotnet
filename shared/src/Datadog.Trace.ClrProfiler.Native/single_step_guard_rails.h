@@ -31,5 +31,6 @@ public:
     void RecordBootstrapError(const RuntimeInformation& runtimeInformation, const std::string& errorType) const;
     void RecordBootstrapSuccess(const RuntimeInformation& runtimeInformation) const;
     void SetInjectResult(const std::string& result, const std::string& resultReason, const std::string& resultClass);
+
 };
 } // namespace datadog::shared::nativeloader

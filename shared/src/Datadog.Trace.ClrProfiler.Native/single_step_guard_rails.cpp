@@ -300,10 +300,10 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         + "\",\"language_name\": \"dotnet\",\"language_version\": \"" + runtimeVersion
         + "\",\"tracer_version\": \"" + PROFILER_VERSION
         + "\",\"pid\":" + std::to_string(GetPID())
+        + "\"},\"points\": " + points + "}"
         + "\",\"inject_result\": \"" + m_injectResult
         + "\",\"inject_result_reason\": \"" + m_injectResultReason
-        + "\",\"inject_result_class\": \"" + m_injectResultClass
-        + "\"},\"points\": " + points + "}";
+        + "\",\"inject_result_class\": \"" + m_injectResultClass;
 
     const auto processPath = ToString(forwarderPath);
 
@@ -312,6 +312,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     const std::vector args = {initialArg};
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , metadata);
+   
     // Increment the reference count to prevent the loader from being unloaded while sending telemetry
 
 #ifdef _WIN32
