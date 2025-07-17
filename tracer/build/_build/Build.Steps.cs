@@ -2546,7 +2546,7 @@ partial class Build
 
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
-                             && libdatadogFiles.Count > 0
+                             // && libdatadogFiles.Count > 0 Libdatadog exporter is off by default, so we don't require it to be there
                              && nativeTracerFiles.Count > 0
                              && (nativeProfilerFiles.Count > 0 || IsOsx || IsArm64) // profiler doesn't support mac or ARM64
                              && nativeLoaderFiles.Count > 0);
