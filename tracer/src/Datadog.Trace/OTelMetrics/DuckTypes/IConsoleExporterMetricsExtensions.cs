@@ -1,4 +1,4 @@
-// <copyright file="IMeterProviderBuilder.cs" company="Datadog">
+// <copyright file="IConsoleExporterMetricsExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,12 +11,9 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.OTelMetrics.DuckTypes
 {
-    internal interface IMeterProviderBuilder : IDuckType
+    internal interface IConsoleExporterMetricsExtensions : IDuckType
     {
-        [Duck(ParameterTypeNames = new[] { "System.String[]" })]
-        IMeterProviderBuilder AddMeter(params string[] names);
-
-        IMeterProvider Build();
+        IMeterProviderBuilder AddConsoleExporter(IMeterProviderBuilder builder);
     }
 }
 #endif

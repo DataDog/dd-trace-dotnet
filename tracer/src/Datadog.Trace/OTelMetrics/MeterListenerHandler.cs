@@ -44,16 +44,53 @@ namespace Datadog.Trace.OTelMetrics
                 else if (otelSdkProxyResult.Success)
                 {
                     var otelSdkProxy = (IOtelSdk)otelSdkProxyResult.CreateInstance(null!);
-                    var meterProviderBuilder = otelSdkProxy.CreateMeterProviderBuilder();
-                    var builderProxy = meterProviderBuilder.DuckCast<IMeterProviderBuilder>();
-                    builderProxy.AddMeter("OpenTelemetryMetricsMeter")
-                                .AddConsoleExporter();
 
-                    var meterProvider = builderProxy.Build();
-                    AppDomain.CurrentDomain.ProcessExit += (_, _) => meterProvider.Dispose();
+                    if (otelSdkProxy is null)
+                    {
+                        Console.WriteLine("otelSdkProxy is null");
+                    }
+                    else
+                    {
+                        var meterProviderBuilder = otelSdkProxy.CreateMeterProviderBuilder();
+                        var builderProxy = meterProviderBuilder.DuckCast<IMeterProviderBuilder>();
+                        builderProxy.AddMeter("OpenTelemetryMetricsMeter");
 
-                    // EnabledMeters.Add("OpenTelemetryMetricsMeter");
-                    Log.Debug("OpenTelemetryMetricsMeter is now enabled.");
+                        try
+                        {
+                            var consoleExporterType = Type.GetType("OpenTelemetry.Metrics.ConsoleExporterMetricsExtensions, OpenTelemetry.Exporter.Console", throwOnError: false);
+
+                            if (consoleExporterType is not null)
+                            {
+                                Log.Debug("consoleExporterType found is ==== {ConsoleExporterType}", consoleExporterType);
+                                var consoleExporterProxyResult = DuckType.GetOrCreateProxyType(typeof(IConsoleExporterMetricsExtensions), consoleExporterType);
+
+                                if (consoleExporterProxyResult.Success)
+                                {
+                                    var consoleExporterProxy = (IConsoleExporterMetricsExtensions)consoleExporterProxyResult.CreateInstance(null!);
+                                    consoleExporterProxy.AddConsoleExporter(builderProxy);
+                                    Log.Debug("Successfully added console exporter for metrics");
+                                }
+                                else
+                                {
+                                    Log.Error("Failed to create console exporter proxy");
+                                }
+                            }
+                            else
+                            {
+                                Log.Error("Console exporter type not found for metrics");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("Console exporter not available for metrics: {E}", ex.Message);
+                        }
+
+                        var meterProvider = builderProxy.Build();
+                        AppDomain.CurrentDomain.ProcessExit += (_, _) => meterProvider.Dispose();
+
+                        // EnabledMeters.Add("OpenTelemetryMetricsMeter");
+                        Log.Debug("OpenTelemetryMetricsMeter is now enabled.");
+                    }
                 }
             }
             catch (Exception e)
