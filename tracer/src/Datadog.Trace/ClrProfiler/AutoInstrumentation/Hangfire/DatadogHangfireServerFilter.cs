@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData).MergeBaggageInto(Baggage.Current);
             parentContext = propagationContext.SpanContext;
 
-            Scope? scope = HangfireCommon.CreateScope(Tracer.Instance, new HangfireTags(SpanKinds.Server), performingContext, parentContext);
+            Scope? scope = HangfireCommon.CreateScope(Tracer.Instance, new HangfireTags(), performingContext, parentContext);
             ((Dictionary<string, object?>)performingContext.Items)?.Add(HangfireConstants.DatadogScopeKey, scope);
         }
 

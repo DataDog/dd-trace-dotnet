@@ -90,7 +90,7 @@
       job.ID: Guid_2,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
+      span.kind: internal,
       _dd.base_service: Samples.Hangfire
     },
     Metrics: {
@@ -114,7 +114,7 @@
       job.ID: Guid_3,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
+      span.kind: internal,
       _dd.base_service: Samples.Hangfire
     },
     Metrics: {
@@ -145,7 +145,7 @@ at Samples.Hangfire.TestJob.ThrowException(),
       job.ID: Guid_4,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
+      span.kind: internal,
       _dd.base_service: Samples.Hangfire
     },
     Metrics: {

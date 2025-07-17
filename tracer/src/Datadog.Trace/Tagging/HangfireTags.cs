@@ -14,15 +14,14 @@ namespace Datadog.Trace.Tagging
     {
         private const string ComponentName = "Hangfire";
 
-        public HangfireTags(string spanKind)
+        public HangfireTags()
         {
-            SpanKind = spanKind;
         }
 
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
 
         [Tag(Trace.Tags.SpanKind)]
-        public override string SpanKind { get; }
+        public override string SpanKind => SpanKinds.Internal;
     }
 }

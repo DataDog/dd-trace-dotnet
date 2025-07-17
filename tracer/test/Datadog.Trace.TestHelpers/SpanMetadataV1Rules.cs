@@ -664,7 +664,7 @@ namespace Datadog.Trace.TestHelpers
                     .Matches(Type, "Hangfire"))
            .Tags(s => s
                      .Matches("component", "Hangfire")
-                     .Matches("span.kind", "server")
+                     .Matches("span.kind", "internal")
                      .IsOptional("_dd.base_service")
                      .IsOptional("job.ID")
                      .IsOptional("job.CreatedAt"));
