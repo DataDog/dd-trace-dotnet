@@ -2544,9 +2544,9 @@ partial class Build
                              && (nativeProfilerFiles.Count > 0 || IsOsx || IsArm64) // profiler doesn't support mac or ARM64
                              && nativeLoaderFiles.Count > 0);
         var hasErrors = managedErrors.Count != 0
-                     && nativeTracerErrors.Count != 0
-                     && nativeProfilerErrors.Count != 0
-                     && nativeLoaderErrors.Count != 0;
+                     || nativeTracerErrors.Count != 0
+                     || nativeProfilerErrors.Count != 0
+                     || nativeLoaderErrors.Count != 0;
 
         if (hasRequiredFiles && !hasErrors)
         {
