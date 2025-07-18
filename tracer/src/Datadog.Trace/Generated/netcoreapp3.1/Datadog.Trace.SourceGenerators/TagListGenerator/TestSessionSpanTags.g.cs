@@ -40,6 +40,8 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> CIJobUrlBytes => new byte[] { 170, 99, 105, 46, 106, 111, 98, 46, 117, 114, 108 };
         // CIJobNameBytes = MessagePack.Serialize("ci.job.name");
         private static ReadOnlySpan<byte> CIJobNameBytes => new byte[] { 171, 99, 105, 46, 106, 111, 98, 46, 110, 97, 109, 101 };
+        // CIJobIdBytes = MessagePack.Serialize("ci.job.id");
+        private static ReadOnlySpan<byte> CIJobIdBytes => new byte[] { 169, 99, 105, 46, 106, 111, 98, 46, 105, 100 };
         // StageNameBytes = MessagePack.Serialize("ci.stage.name");
         private static ReadOnlySpan<byte> StageNameBytes => new byte[] { 173, 99, 105, 46, 115, 116, 97, 103, 101, 46, 110, 97, 109, 101 };
         // CIWorkspacePathBytes = MessagePack.Serialize("ci.workspace_path");
@@ -101,6 +103,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "ci.pipeline.url" => CIPipelineUrl,
                 "ci.job.url" => CIJobUrl,
                 "ci.job.name" => CIJobName,
+                "ci.job.id" => CIJobId,
                 "ci.stage.name" => StageName,
                 "ci.workspace_path" => CIWorkspacePath,
                 "git.repository_url" => GitRepository,
@@ -163,6 +166,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "ci.job.name": 
                     CIJobName = value;
+                    break;
+                case "ci.job.id": 
+                    CIJobId = value;
                     break;
                 case "ci.stage.name": 
                     StageName = value;
@@ -299,6 +305,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (CIJobName is not null)
             {
                 processor.Process(new TagItem<string>("ci.job.name", CIJobName, CIJobNameBytes));
+            }
+
+            if (CIJobId is not null)
+            {
+                processor.Process(new TagItem<string>("ci.job.id", CIJobId, CIJobIdBytes));
             }
 
             if (StageName is not null)
@@ -497,6 +508,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("ci.job.name (tag):")
                   .Append(CIJobName)
+                  .Append(',');
+            }
+
+            if (CIJobId is not null)
+            {
+                sb.Append("ci.job.id (tag):")
+                  .Append(CIJobId)
                   .Append(',');
             }
 

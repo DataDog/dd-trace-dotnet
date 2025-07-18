@@ -242,6 +242,8 @@ namespace Datadog.Trace.TestHelpers
                   // no matter what. That means we have unstable snapshot results.
                   // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
                   .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha && kvp.Key != Tags.LastParentId)
+                  // remove the CIJobId tag, as it is not stable across runs and also it's an optional tag
+                 .Where(kvp => kvp.Key != Trace.Ci.Tags.CommonTags.CIJobId)
                   .Select(
                        kvp => kvp.Key switch
                        {

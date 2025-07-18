@@ -107,6 +107,11 @@ internal static class CommonTags
     public const string CIJobName = "ci.job.name";
 
     /// <summary>
+    /// CI Job id
+    /// </summary>
+    public const string CIJobId = "ci.job.id";
+
+    /// <summary>
     /// CI Node Name
     /// </summary>
     public const string CINodeName = "ci.node.name";

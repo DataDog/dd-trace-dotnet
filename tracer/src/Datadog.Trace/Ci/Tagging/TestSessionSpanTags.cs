@@ -60,6 +60,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
     [Tag(CommonTags.CIJobName)]
     public string? CIJobName { get; set; }
 
+    [Tag(CommonTags.CIJobId)]
+    public string? CIJobId { get; set; }
+
     [Tag(CommonTags.StageName)]
     public string? StageName { get; set; }
 
@@ -138,6 +141,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
             CIPipelineName = environmentValues.PipelineName;
             CIPipelineNumber = environmentValues.PipelineNumber;
             CIPipelineUrl = environmentValues.PipelineUrl;
+            CIJobId = environmentValues.JobId;
             CIJobName = environmentValues.JobName;
             CIJobUrl = environmentValues.JobUrl;
             StageName = environmentValues.StageName;
