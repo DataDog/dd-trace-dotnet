@@ -57,23 +57,24 @@ public class TraceExporterTests
                        """
         };
 
-        var discovery = DiscoveryService.Create(tracerSettings.Exporter);
-        await using var tracer = TracerHelper.Create(tracerSettings, discoveryService: discovery);
-
         var testMetaStruct = new TestMetaStruct
         {
             Foo = "foo",
             Bar = 1,
         };
         var metaStructBytes = MetaStructHelper.ObjectToByteArray(testMetaStruct.ToDictionary());
-        using (var span = tracer.StartSpan("operationName"))
+
+        var discovery = DiscoveryService.Create(tracerSettings.Exporter);
+        await using (var tracer = TracerHelper.Create(tracerSettings, discoveryService: discovery))
         {
-            span.ResourceName = "resourceName";
-            span.Type = "test";
-            span.SetMetaStruct("test-meta-struct", metaStructBytes);
+            using (var span = tracer.StartSpan("operationName"))
+            {
+                span.ResourceName = "resourceName";
+                span.Type = "test";
+                span.SetMetaStruct("test-meta-struct", metaStructBytes);
+            }
         }
 
-        await tracer.TracerManager.ShutdownAsync();
         var recordedSpans = await agent.WaitForSpansAsync(1);
         recordedSpans.Should().ContainSingle();
 
