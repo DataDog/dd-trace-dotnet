@@ -664,7 +664,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: azure-managed-linux-arm64-2
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -707,7 +707,7 @@ stages:
     dependsOn: []
 
     pool:
-      name: azure-managed-linux-arm64-2
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -757,7 +757,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: azure-managed-linux-arm64-2
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -799,7 +799,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-arm64-2
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -847,7 +847,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: azure-managed-linux-arm64-2
+      name: azure-managed-linux-arm64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1147,7 +1147,7 @@ stages:
           artifactSuffix: linux-musl-arm64
 
     pool:
-      name: azure-managed-linux-arm64-2
+      name: azure-managed-linux-arm64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1248,7 +1248,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-arm64-2
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -1457,7 +1457,7 @@ stages:
         matrix:
           $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_arm64_matrix'] ]
       pool:
-        name: azure-managed-linux-arm64-2
+        name: azure-managed-linux-arm64-1
       workspace:
         clean: all
       steps:
@@ -3004,7 +3004,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: azure-managed-linux-arm64-2
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -3074,7 +3074,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: azure-managed-linux-arm64-2
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -3187,7 +3187,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: azure-managed-linux-arm64-2
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -3728,12 +3728,12 @@ stages:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
-          poolname: azure-managed-linux-arm64-2
+          poolname: azure-managed-linux-arm64-1
           targetArch: arm64
         alpine_arm64:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
-          poolname: azure-managed-linux-arm64-2
+          poolname: azure-managed-linux-arm64-1
           targetArch: arm64
 
     pool:
@@ -5333,7 +5333,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-arm64-2
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -5416,7 +5416,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-arm64-2
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -5489,7 +5489,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-arm64-2
+      name: azure-managed-linux-arm64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -5579,7 +5579,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-arm64-2
+      name: azure-managed-linux-arm64-1
 
     steps:
     - template: steps/download-artifact.yml
@@ -6293,7 +6293,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-arm64-2
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
