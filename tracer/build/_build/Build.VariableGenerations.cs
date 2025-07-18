@@ -582,7 +582,8 @@ partial class Build : NukeBuild
 
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
@@ -602,6 +603,22 @@ partial class Build : NukeBuild
                         linuxArtifacts: "linux-packages-linux-x64",
                         runtimeId: "linux-x64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET9_0, "trixie-9.0"),
+                            new (publishFramework: TargetFramework.NET8_0, "trixie-8.0"),
+                        },
+                        installer: "datadog-dotnet-apm*_amd64.deb",
+                        installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
+                        dockerName: "andrewlock/dotnet-debian"
                     );
 
                     AddToLinuxSmokeTestsMatrix(
@@ -791,9 +808,10 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
@@ -811,6 +829,22 @@ partial class Build : NukeBuild
                         linuxArtifacts: "linux-packages-linux-arm64",
                         runtimeId: "linux-arm64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET9_0, "trixie-9.0"),
+                            new (publishFramework: TargetFramework.NET8_0, "trixie-8.0"),
+                        },
+                        installer: "datadog-dotnet-apm_*_arm64.deb",
+                        installCmd: "dpkg -i ./datadog-dotnet-apm_*_arm64.deb",
+                        linuxArtifacts: "linux-packages-linux-arm64",
+                        runtimeId: "linux-arm64",
+                        dockerName: "andrewlock/dotnet-debian"
                     );
 
                     AddToLinuxSmokeTestsMatrix(
