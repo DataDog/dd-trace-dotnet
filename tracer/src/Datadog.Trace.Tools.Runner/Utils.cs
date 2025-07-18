@@ -396,7 +396,14 @@ namespace Datadog.Trace.Tools.Runner
             return defaultValue;
         }
 
-        public static async Task<(AgentConfiguration Configuration, DiscoveryService DiscoveryService)> CheckAgentConnectionAsync(string agentUrl)
+        public static async Task<AgentConfiguration> CheckAgentConnectionAsync(string agentUrl)
+        {
+            var (configuration, discoveryService) = await GetDiscoveryServiceAndCheckConnectionAsync(agentUrl).ConfigureAwait(false);
+            await discoveryService.DisposeAsync().ConfigureAwait(false);
+            return configuration;
+        }
+
+        public static async Task<(AgentConfiguration Configuration, DiscoveryService DiscoveryService)> GetDiscoveryServiceAndCheckConnectionAsync(string agentUrl)
         {
             var env = new NameValueCollection();
             if (!string.IsNullOrWhiteSpace(agentUrl))
