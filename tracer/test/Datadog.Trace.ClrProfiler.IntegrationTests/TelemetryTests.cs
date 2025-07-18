@@ -186,7 +186,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             EnvironmentHelper.EnableUnixDomainSockets();
             EnableDependencies(enableDependencies);
-            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: true);
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");

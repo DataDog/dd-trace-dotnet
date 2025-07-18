@@ -177,7 +177,7 @@ public abstract class AzureFunctionsTests : TestHelper
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces()
         {
-            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: true);
             using (await RunAzureFunctionAndWaitForExit(agent, framework: "net6.0"))
             {
                 const int expectedSpanCount = 21;

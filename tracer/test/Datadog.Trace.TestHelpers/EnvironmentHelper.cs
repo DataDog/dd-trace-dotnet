@@ -92,6 +92,8 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeFrameworkDescription.Contains("core") || IsNet5();
         }
 
+        public static bool CanUseStatsD(TestTransports transport) => !(transport == TestTransports.Uds && EnvironmentTools.IsWindows());
+
         public static bool IsAlpine() => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine"));
 
         public static string GetMonitoringHomePath()
@@ -279,6 +281,14 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables["DD_APPSEC_WAF_TIMEOUT"] = 10_000_000.ToString();
             }
+
+#if NET9_0_OR_GREATER || NETFRAMEWORK
+            if (!environmentVariables.ContainsKey(ConfigurationKeys.RuntimeMetricsEnabled))
+            {
+                // enable runtime metrics by default on CI first
+                environmentVariables[ConfigurationKeys.RuntimeMetricsEnabled] = "1";
+            }
+#endif
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {
