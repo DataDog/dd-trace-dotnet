@@ -234,10 +234,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddRegexScrubber(_timeUnixNanoRegexMetrics, @"TimeUnixNano"": <DateTimeOffset.Now>");
 
                 await Verifier.Verify(snapshotPayload, settings)
-#if NET9_0_OR_GREATER
+#if NET8_0_OR_GREATER
                               .UseFileName($"{nameof(OpenTelemetrySdkTests)}.OtlpMetrics{GetSuffix(packageVersion)}")
 #else
-                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.OtlpMetrics{GetSuffix(packageVersion)}.Pre_NET_9")
+                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.OtlpMetrics{GetSuffix(packageVersion)}.NET{Environment.Version.Major}")
 #endif
                               .DisableRequireUniquePrefix();
             }
