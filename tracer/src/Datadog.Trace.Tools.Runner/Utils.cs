@@ -431,7 +431,6 @@ namespace Datadog.Trace.Tools.Runner
                        }))
             {
                 var configuration = await tcs.Task.ConfigureAwait(false);
-                await discoveryService.DisposeAsync().ConfigureAwait(false);
                 return (configuration, discoveryService);
             }
         }
