@@ -72,6 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
         private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
+        private readonly Regex _timeUnixNanoRegexMetrics = new(@"TimeUnixNano: ([0-9]{10}[0-9]+)");
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
@@ -196,6 +197,52 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await telemetry.AssertIntegrationDisabledAsync(IntegrationId.OpenTelemetry);
             }
         }
+
+#if  NET6_0_OR_GREATER
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
+        public async Task SubmitsOtlpMetrics(string packageVersion)
+        {
+            var initialAgentPort = TcpPortProvider.GetOpenPort();
+
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_ENABLED_METERS", "OpenTelemetryMetricsMeter");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
+
+            using var agent = EnvironmentHelper.GetMockAgent(fixedPort: initialAgentPort);
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var metricRequests = agent.OtlpRequests
+                                          .Where(r => r.PathAndQuery.StartsWith("/v1/metrics"))
+                                          .ToList();
+
+                metricRequests.Should().NotBeEmpty("No OTLP metric requests received.");
+
+                var snapshotPayload = new List<object>();
+
+                foreach (var req in metricRequests)
+                {
+                    snapshotPayload.Add(req.DeserializedData);
+                }
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.AddRegexScrubber(_timeUnixNanoRegexMetrics, @"TimeUnixNano"": <DateTimeOffset.Now>");
+
+                await Verifier.Verify(snapshotPayload, settings)
+#if NET8_0_OR_GREATER
+                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.OtlpMetrics{GetSuffix(packageVersion)}")
+#else
+                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.OtlpMetrics{GetSuffix(packageVersion)}.NET{Environment.Version.Major}")
+#endif
+                              .DisableRequireUniquePrefix();
+            }
+        }
+#endif
 
         private static string GetSuffix(string packageVersion)
         {

@@ -8,6 +8,7 @@
     <PackageReference Include="HttpMultipartParser" Version="5.1.0" />
     <PackageReference Include="PublicApiGenerator" Version="10.2.0" />
     <PackageReference Include="DiffPlex" Version="1.7.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.25.1" />
   </ItemGroup>
 
   <ItemGroup>
