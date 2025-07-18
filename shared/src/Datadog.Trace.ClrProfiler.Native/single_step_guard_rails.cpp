@@ -193,7 +193,7 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
 }
 
 void SingleStepGuardRails::RecordBootstrapError(const RuntimeInformation& runtimeInformation,
-    const std::string& errorType) const
+    const std::string& errorType)
 {
     if(!m_isRunningInSingleStep)
     {
@@ -312,7 +312,6 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     const std::vector args = {initialArg};
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , metadata);
-   
     // Increment the reference count to prevent the loader from being unloaded while sending telemetry
 
 #ifdef _WIN32
