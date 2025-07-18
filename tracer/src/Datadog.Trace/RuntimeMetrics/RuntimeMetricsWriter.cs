@@ -144,7 +144,6 @@ namespace Datadog.Trace.RuntimeMetrics
             _listener?.Dispose();
 #endif
             _exceptionCounts.Clear();
-            _statsd.Dispose();
         }
 
         internal void PushEvents()
