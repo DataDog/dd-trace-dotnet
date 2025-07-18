@@ -78,7 +78,7 @@ namespace Datadog.Trace.Debugger.Caching
             _environmentChecker = environmentChecker ?? DefaultEnvironmentChecker.Instance;
             _memoryChecker = memoryChecker ?? DefaultMemoryChecker.Instance;
             _capacity = capacity ?? DetermineCapacity();
-            Logger.Information("Cache capacity is: {Capacity}", (object)_capacity);
+            Logger.Debug("ConcurrentAdaptiveCache capacity is: {Capacity}", (object)_capacity);
             _timeProvider = timeProvider ?? new DefaultTimeProvider();
             _cache = new Dictionary<TKey, CacheItem<TValue>>(_capacity, comparer);
             _lock = new ReaderWriterLockSlim();
