@@ -333,7 +333,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -396,7 +396,7 @@ stages:
       timeoutInMinutes: 60 #default value
       dependsOn: []
       pool:
-        name: azure-managed-linux-x64-1
+        name: azure-managed-linux-x64-2
       
       steps:
         - template: steps/clone-repo.yml
@@ -459,7 +459,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -510,7 +510,7 @@ stages:
           artifactSuffix: linux-musl-x64
           useNativeSdkVersion: ""
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -572,7 +572,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1100,7 +1100,7 @@ stages:
           artifactSuffix: linux-musl-x64
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1197,7 +1197,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
       - template: steps/clone-repo.yml
@@ -1400,7 +1400,7 @@ stages:
       matrix:
         $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_x64_matrix'] ]
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1918,7 +1918,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2002,7 +2002,7 @@ stages:
   - job: Linux
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2186,7 +2186,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2262,7 +2262,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2378,7 +2378,7 @@ stages:
           publishTargetFramework: "net9.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9"
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2557,7 +2557,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2719,7 +2719,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2810,7 +2810,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2891,7 +2891,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     steps:
 
@@ -3272,7 +3272,7 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: azure-managed-linux-x64-2
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3666,12 +3666,12 @@ stages:
         x64:
           baseImage: debian
           artifactSuffix: linux-x64
-          poolName: azure-managed-linux-x64-1
+          poolName: azure-managed-linux-x64-2
           targetArch: x64
         alpine_x64:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolName: azure-managed-linux-x64-1
+          poolName: azure-managed-linux-x64-2
           targetArch: x64
         arm64:
           baseImage: debian
