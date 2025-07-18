@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.Metrics;
+﻿#if NET6_0_OR_GREATER
+
+using System.Diagnostics.Metrics;
 
 namespace Samples.OpenTelemetrySdk;
 
@@ -17,3 +19,4 @@ public static class OpenTelemetryMetricsMeter
     public static ObservableUpDownCounter<long> AsyncLongUpDownCounter = _meter.CreateObservableUpDownCounter<long>("example.async.upDownCounter", () => 66L);
     public static ObservableGauge<double> AsyncGauge = _meter.CreateObservableGauge<double>("example.async.gauge", () => 88L);
 }
+#endif

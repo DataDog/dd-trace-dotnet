@@ -983,11 +983,11 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var metricsData = MetricsData.Parser.ParseFrom(body);
-                    var resource = metricsData.ResourceMetrics[0];
+                    var resource = metricsData.ResourceMetrics;
 
-                    if (resource.ScopeMetrics[0] is not null)
+                    if (resource is not null)
                     {
-                        deserializedData = resource.ScopeMetrics[0];
+                        deserializedData = resource;
                     }
                 }
                 catch (Exception ex)

@@ -51,8 +51,9 @@ public static class Program
             RunAddEventOverloads(span);
             RunSpanUpdateMethods(span);
             RunSpecialTagRemappers(span);
+#if NET6_0_OR_GREATER
             CreateSystemDiagnosticsMetrics();
-
+#endif
             TelemetrySpan otherSpan = null;
             using (otherSpan = _otherLibraryTracer.StartActiveSpan("Response"))
             {
@@ -309,6 +310,7 @@ public static class Program
         _previousSpanContext = currentSpanContext;
     }
 
+#if NET6_0_OR_GREATER
     private static void CreateSystemDiagnosticsMetrics()
     {
         OpenTelemetryMetricsMeter.LongCounter.Add(11L,
@@ -322,4 +324,6 @@ public static class Program
                                                      new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
 #endif
     }
+#endif
 }
+
