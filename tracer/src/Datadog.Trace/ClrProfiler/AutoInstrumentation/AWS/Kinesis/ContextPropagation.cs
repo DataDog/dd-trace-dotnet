@@ -41,8 +41,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, Scope? scope, string? streamName)
             where TRecordRequest : IContainsData
         {
+            if (scope is null)
+            {
+                return;
+            }
+
             Dictionary<string, object> propagatedContext = new Dictionary<string, object>();
-            if (scope?.Span.Context != null && !string.IsNullOrEmpty(streamName))
+            if (scope.Span.Context != null && !string.IsNullOrEmpty(streamName))
             {
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
