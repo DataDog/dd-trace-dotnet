@@ -33,6 +33,7 @@ internal sealed class CircleCiEnvironmentValues<TValueProvider>(TValueProvider v
         PipelineName = ValueProvider.GetValue(Constants.CircleCIProjectRepoName);
         PipelineUrl = $"https://app.circleci.com/pipelines/workflows/{PipelineId}";
         JobName = ValueProvider.GetValue(Constants.CircleCIJob);
+        JobId = ValueProvider.GetValue(Constants.CircleCIBuildNum);
         JobUrl = ValueProvider.GetValue(Constants.CircleCIBuildUrl);
 
         VariablesToBypass = new Dictionary<string, string?>();

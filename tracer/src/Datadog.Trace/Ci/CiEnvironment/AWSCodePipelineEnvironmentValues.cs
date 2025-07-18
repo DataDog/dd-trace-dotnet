@@ -20,6 +20,7 @@ internal sealed class AWSCodePipelineEnvironmentValues<TValueProvider>(TValuePro
         Provider = "awscodepipeline";
         MetricTag = MetricTags.CIVisibilityTestSessionProvider.AwsCodePipeline;
         PipelineId = ValueProvider.GetValue(Constants.AWSCodePipelineId);
+        JobId = ValueProvider.GetValue(Constants.AWSCodePipelineActionExecutionId);
 
         VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(

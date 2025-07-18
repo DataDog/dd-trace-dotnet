@@ -38,6 +38,7 @@ internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider val
         PipelineUrl = ValueProvider.GetValue(Constants.GitlabPipelineUrl);
 
         JobUrl = ValueProvider.GetValue(Constants.GitlabJobUrl);
+        JobId = ValueProvider.GetValue(Constants.GitlabJobId);
         JobName = ValueProvider.GetValue(Constants.GitlabJobName);
         StageName = ValueProvider.GetValue(Constants.GitlabJobStage);
 

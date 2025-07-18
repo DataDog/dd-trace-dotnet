@@ -62,6 +62,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         }
 
         JobUrl = $"{serverUrl}/{ValueProvider.GetValue(Constants.GitHubRepository)}/commit/{Commit}/checks";
+        JobId = ValueProvider.GetValue(Constants.GitHubJob);
         JobName = ValueProvider.GetValue(Constants.GitHubJob);
 
         VariablesToBypass = new Dictionary<string, string?>();

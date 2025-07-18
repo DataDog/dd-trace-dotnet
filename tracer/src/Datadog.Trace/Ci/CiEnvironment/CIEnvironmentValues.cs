@@ -78,6 +78,8 @@ internal abstract class CIEnvironmentValues
 
     public string? JobName { get; protected set; }
 
+    public string? JobId { get; protected set; }
+
     public string? StageName { get; protected set; }
 
     public string? WorkspacePath { get; protected set; }
@@ -186,6 +188,7 @@ internal abstract class CIEnvironmentValues
         SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineUrl, PipelineUrl);
         SetTagIfNotNullOrEmpty(span, CommonTags.CIJobUrl, JobUrl);
         SetTagIfNotNullOrEmpty(span, CommonTags.CIJobName, JobName);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CIJobId, JobId);
         SetTagIfNotNullOrEmpty(span, CommonTags.CINodeName, NodeName);
         if (NodeLabels is { } nodeLabels)
         {
@@ -226,6 +229,7 @@ internal abstract class CIEnvironmentValues
         PipelineUrl = null;
         JobUrl = null;
         JobName = null;
+        JobId = null;
         StageName = null;
         WorkspacePath = null;
         Repository = null;
