@@ -65,6 +65,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                 " When running aspnetcore in IIS, make sure to disable managed code in the application pool settings.",
                 " https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/advanced?view=aspnetcore-9.0#create-the-iis-site");
         }
+
+        // Exit immediately so that the first registered CLR instance will have a functional profiler
+        // In the case where a .NET Core app is hosted in a .NET Framework IIS app pool,
+        // the .NET Core runtime will be loaded first and the runtime information will be recorded as .NET Core,
+        // so when injecting the managed loader, we'll use the NETCOREAPP20_MANAGED_ENTRYPOINT_DLL resource.
+        // Then when the .NET Framework runtime is loaded, it will be ignored instead of overriding the previous runtime information
+        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
     }
 
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
