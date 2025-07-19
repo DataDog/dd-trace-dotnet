@@ -6,9 +6,11 @@ project("Datadog.Profiler.Native.Linux" VERSION 3.22.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
+option(RUN_TSAN "Build with Clang Thread Sanitizer" OFF)
 
 message(STATUS "Run Clang Address Sanitizer: " ${RUN_ASAN})
 message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
+message(STATUS "Run Clang Thread Sanitizer: " ${RUN_TSAN})
 
 # ******************************************************
 # Compiler options
@@ -29,6 +31,10 @@ endif()
 
 if (RUN_UBSAN)
     add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
+endif()
+
+if (RUN_TSAN)
+    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS)
 endif()
 
 if(ISLINUX)
@@ -119,7 +125,7 @@ if (RUN_ASAN)
     target_link_libraries(${PROFILER_STATIC_LIB_NAME} -fsanitize=address)
 endif()
 
-if (NOT RUN_ASAN AND NOT RUN_UBSAN)
+if (NOT RUN_ASAN AND NOT RUN_UBSAN AND NOT RUN_TSAN)
     target_link_libraries(${PROFILER_STATIC_LIB_NAME} -Wl,--no-undefined)
 endif()
 
