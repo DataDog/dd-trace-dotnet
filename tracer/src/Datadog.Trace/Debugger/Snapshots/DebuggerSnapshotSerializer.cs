@@ -290,76 +290,118 @@ namespace Datadog.Trace.Debugger.Snapshots
            CancellationTokenSource cts,
            CaptureLimitInfo limitInfo)
         {
+            IEnumerator enumerator = null;
             try
             {
-                var isDictionary = Redaction.IsSupportedDictionary(source);
-                if (source is ICollection collection)
+                if (source is not ICollection collection)
                 {
-                    jsonWriter.WritePropertyName("type");
-                    jsonWriter.WriteValue(type.Name);
-                    jsonWriter.WritePropertyName("size");
-                    jsonWriter.WriteValue(collection.Count);
-                    jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
-                    jsonWriter.WriteStartArray();
+                    return;
+                }
 
-                    var itemIndex = 0;
-                    var enumerator = enumerable.GetEnumerator();
+                var isDictionary = Redaction.IsSupportedDictionary(source);
+                jsonWriter.WritePropertyName("type");
+                jsonWriter.WriteValue(type.Name);
+                jsonWriter.WritePropertyName("size");
+                jsonWriter.WriteValue(collection.Count);
+                jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
+                jsonWriter.WriteStartArray();
 
-                    while (itemIndex < limitInfo.MaxCollectionSize && enumerator.MoveNext())
+                var itemIndex = 0;
+                enumerator = enumerable.GetEnumerator();
+
+                bool hasNext = false;
+                while (itemIndex < limitInfo.MaxCollectionSize)
+                {
+                    if (cts.IsCancellationRequested)
                     {
-                        cts.Token.ThrowIfCancellationRequested();
-                        if (enumerator.Current == null)
-                        {
-                            break;
-                        }
+                        break;
+                    }
 
-                        bool serialized;
-                        if (isDictionary)
-                        {
-                            serialized = SerializeKeyValuePair(enumerator.Current, jsonWriter, cts, currentDepth, limitInfo);
-                        }
-                        else
-                        {
-                            serialized = SerializeInternal(
-                                enumerator.Current,
-                                enumerator.Current.GetType(),
-                                jsonWriter,
-                                cts,
-                                currentDepth,
-                                variableName: null,
-                                fieldsOnly: false,
-                                limitInfo);
-                        }
-
-                        itemIndex++;
-                        if (!serialized)
+                    try
+                    {
+                        hasNext = enumerator.MoveNext();
+                        if (!hasNext)
                         {
                             break;
                         }
                     }
-
-                    jsonWriter.WriteEndArray();
-
-                    if (enumerator.MoveNext())
+                    catch (InvalidOperationException e)
                     {
-                        WriteNotCapturedReason(jsonWriter, NotCapturedReason.collectionSize);
+                        Log.Error(e, "Error serializing enumerable when calling MoveNext. Error={Error}. Depth={CurrentDepth}", e.Message, property1: currentDepth);
+                        break;
+                    }
+
+                    object current = null;
+                    try
+                    {
+                        current = enumerator.Current;
+                    }
+                    catch (InvalidOperationException e)
+                    {
+                        Log.Error(e, "Error serializing enumerable when calling Current. Error={Error}. Depth={CurrentDepth}", e.Message, property1: currentDepth);
+                        break;
+                    }
+
+                    if (current == null)
+                    {
+                        // skipping null element
+                        continue;
+                    }
+
+                    bool serialized;
+                    if (isDictionary)
+                    {
+                        serialized = SerializeKeyValuePair(current, jsonWriter, cts, currentDepth, limitInfo);
+                    }
+                    else
+                    {
+                        serialized = SerializeInternal(
+                            current,
+                            current.GetType(),
+                            jsonWriter,
+                            cts,
+                            currentDepth,
+                            variableName: null,
+                            fieldsOnly: false,
+                            limitInfo);
+                    }
+
+                    itemIndex++;
+                    if (!serialized)
+                    {
+                        break;
                     }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                WriteNotCapturedReason(jsonWriter, NotCapturedReason.timeout);
+
                 jsonWriter.WriteEndArray();
+
+                if (cts.IsCancellationRequested)
+                {
+                    WriteNotCapturedReason(jsonWriter, NotCapturedReason.timeout);
+                }
+                else if (hasNext && itemIndex >= limitInfo.MaxCollectionSize)
+                {
+                    WriteNotCapturedReason(jsonWriter, NotCapturedReason.collectionSize);
+                }
             }
             catch (InvalidOperationException e)
             {
-                // Collection was modified, enumeration operation may not execute
-                Log.Error<int>(e, "Error serializing enumerable (Collection was modified) Depth={CurrentDepth}", currentDepth);
-                jsonWriter.WriteEndArray();
+                Log.Error(e, "Error serializing enumerable: Enumerator initialization failed. Collection may have been modified.");
+            }
+            catch (OperationCanceledException e)
+            {
+                Log.Error(e, "Error serializing enumerable: Operation was canceled during enumeration setup.");
             }
             catch (Exception e)
             {
-                Log.Error<int>(e, "Error serializing enumerable Depth={CurrentDepth}", currentDepth);
+                Log.Error(e, "Error serializing enumerable: {Error} Depth={CurrentDepth}", e.Message, property1: currentDepth);
+            }
+            finally
+            {
+                if (enumerator is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
             }
         }
 
