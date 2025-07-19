@@ -49,10 +49,12 @@ namespace Datadog.Trace.Debugger.Upload
 
             var request = _apiRequestFactory.Create(new Uri(uri));
 
+            Log.Debug("SnapshotUploadApi: Sending snapshots to {Uri}", uri);
             using var response = await request.PostAsync(data, MimeTypes.Json).ConfigureAwait(false);
 
             if (response.StatusCode is >= 200 and <= 299)
             {
+                Log.Debug<string?, int>("Successfully sent snapshots to {Uri}: {StatusCode}", uri, response.StatusCode);
                 return true;
             }
 
