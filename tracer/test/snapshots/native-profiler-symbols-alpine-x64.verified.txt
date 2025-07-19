@@ -15,7 +15,6 @@ blaze_read_elf_build_id
 btowc
 calloc
 ceil
-ceill
 clock_gettime
 close
 closedir
@@ -78,7 +77,6 @@ fclose
 fdopen
 fflush
 fileno
-floorl
 fopen
 fprintf
 fputc
@@ -93,6 +91,7 @@ get_nprocs
 getauxval
 getc
 getegid
+getentropy
 getenv
 geteuid
 getgid
