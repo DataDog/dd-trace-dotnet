@@ -55,7 +55,6 @@ getenv
 gethostname
 getpeername
 getpid
-getppid
 getsockname
 getsockopt
 ioctl
