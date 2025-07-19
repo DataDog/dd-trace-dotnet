@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind => SpanKinds.Client;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; }
+        public override string InstrumentationName { get; set; }
 
         [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }

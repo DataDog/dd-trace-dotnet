@@ -40,6 +40,8 @@ namespace Datadog.Trace
         /// </summary>
         public const string InstrumentationName = "component";
 
+        internal const string DdIntegrationName = "_dd.integration";
+
         /// <summary>
         /// The name of the method that was instrumented to generate the span.
         /// </summary>

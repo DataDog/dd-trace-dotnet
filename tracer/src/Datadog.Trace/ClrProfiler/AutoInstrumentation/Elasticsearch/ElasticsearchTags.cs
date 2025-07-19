@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
         public override string SpanKind => SpanKinds.Client;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => ElasticsearchNetCommon.ComponentValue;
+        public override string InstrumentationName { get; set; } = ElasticsearchNetCommon.ComponentValue;
 
         [Tag(Trace.Tags.ElasticsearchAction)]
         public string Action { get; set; }

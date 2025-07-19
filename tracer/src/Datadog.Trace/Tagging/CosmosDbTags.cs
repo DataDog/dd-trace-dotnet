@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind => SpanKinds.Client;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => nameof(IntegrationId.CosmosDb);
+        public override string InstrumentationName { get; set; } = nameof(IntegrationId.CosmosDb);
 
         [Tag(Trace.Tags.DbType)]
         public string DbType => "cosmosdb";

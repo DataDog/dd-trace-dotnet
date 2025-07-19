@@ -45,6 +45,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "aas.function.name": 
                     ShortName = value;
                     break;
@@ -58,7 +61,6 @@ namespace Datadog.Trace.Tagging
                     TriggerType = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AzureFunctionsTags));
                     break;
                 default: 

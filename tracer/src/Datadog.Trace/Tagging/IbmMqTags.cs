@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind { get; }
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => "ibmmq";
+        public override string InstrumentationName { get; set; } = "ibmmq";
 
         [Tag(Trace.Tags.TopicName)]
         public string? TopicName { get; set; }

@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tagging
         public string DbType { get; set; }
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; }
+        public override string InstrumentationName { get; set; }
 
         [Tag(Trace.Tags.DbName)]
         public string DbName { get; set; }
