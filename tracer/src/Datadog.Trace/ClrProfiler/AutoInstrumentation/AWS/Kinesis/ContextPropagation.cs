@@ -47,18 +47,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return;
             }
 
-            var context = new PropagationContext(scope.Span.Context, Baggage.Current);
-            if (record.Data is null)
-            {
-                return;
-            }
-
-            var jsonData = ParseDataObject(record.Data);
-            if (jsonData is null || jsonData.Count == 0)
-            {
-                return;
-            }
-
             var propagatedContext = new Dictionary<string, object>();
             if (scope.Span.Context != null && !string.IsNullOrEmpty(streamName))
             {
@@ -83,6 +71,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
                     propagatedContext = adapter.GetDictionary();
                 }
+            }
+
+            var context = new PropagationContext(scope.Span.Context, Baggage.Current);
+            if (record.Data is null)
+            {
+                return;
+            }
+
+            var jsonData = ParseDataObject(record.Data);
+            if (jsonData is null || jsonData.Count == 0)
+            {
+                return;
             }
 
             try
