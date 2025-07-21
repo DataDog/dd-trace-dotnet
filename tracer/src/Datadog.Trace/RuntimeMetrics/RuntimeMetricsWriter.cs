@@ -136,8 +136,19 @@ namespace Datadog.Trace.RuntimeMetrics
                 return;
             }
 
-            Log.Debug("Disposing Runtime Metrics");
-            _timer.Dispose();
+            Log.Debug("Disposing Runtime Metrics timer");
+            using (var manualResetEvent = new ManualResetEvent(false))
+            {
+                if (_timer.Dispose(manualResetEvent))
+                {
+                    if (!manualResetEvent.WaitOne(30000))
+                    {
+                        Log.Warning("Failed to dispose Runtime Metrics timer after 30 seconds");
+                    }
+                }
+            }
+
+            Log.Debug("Disposing other resources for Runtime Metrics");
             AppDomain.CurrentDomain.FirstChanceException -= FirstChanceException;
             // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
 #if NETFRAMEWORK
@@ -260,7 +271,6 @@ namespace Datadog.Trace.RuntimeMetrics
 #if NETCOREAPP
             return new RuntimeEventListener(statsd, delay);
 #elif NETFRAMEWORK
-
             try
             {
                 return new MemoryMappedCounters(statsd);
