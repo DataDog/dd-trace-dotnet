@@ -1003,6 +1003,12 @@ namespace Datadog.Trace.TestHelpers
                    .Append(Version);
             }
 
+            // The state header is used to indicate if the agent config (i.e. the data at /info) has changed
+            sb
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Datadog-Agent-State: ")
+               .Append(Configuration?.GetHashCode().ToString() ?? "0");
+
             var responseBody = Encoding.UTF8.GetBytes(body);
             var contentLength64 = responseBody.LongLength;
             sb
@@ -1038,7 +1044,7 @@ namespace Datadog.Trace.TestHelpers
             public MockTracerResponse Response { get; set; }
         }
 
-        public class AgentConfiguration
+        public record AgentConfiguration
         {
             [JsonProperty("endpoints")]
             public string[] Endpoints { get; set; } = DiscoveryService.AllSupportedEndpoints.Select(s => s.StartsWith("/") ? s : "/" + s).ToArray();
@@ -1188,6 +1194,9 @@ namespace Datadog.Trace.TestHelpers
                             {
                                 ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
+
+                            // The state header is used to indicate if the agent config (i.e. the data at /info) has changed
+                            ctx.Response.AddHeader("Datadog-Agent-State", Configuration?.GetHashCode().ToString() ?? "0");
 
                             var request = MockHttpRequest.Create(ctx.Request);
 
