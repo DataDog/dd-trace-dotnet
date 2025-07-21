@@ -4,15 +4,20 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.LibDatadog;
@@ -41,7 +46,8 @@ public class TraceExporterTests
         var udsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         using var agent = GetAgent();
         var settings = GetSettings();
-        var tracerSettings = TracerSettings.Create(settings);
+        var tracerSettings = TracerSettings.Create(settings, isLibDatadogAvailable: true);
+        tracerSettings.DataPipelineEnabled.Should().BeTrue();
 
         agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse
         {
@@ -57,23 +63,38 @@ public class TraceExporterTests
                        """
         };
 
-        var discovery = DiscoveryService.Create(tracerSettings.Exporter);
-        await using var tracer = TracerHelper.Create(tracerSettings, discoveryService: discovery);
-
         var testMetaStruct = new TestMetaStruct
         {
             Foo = "foo",
             Bar = 1,
         };
         var metaStructBytes = MetaStructHelper.ObjectToByteArray(testMetaStruct.ToDictionary());
-        using (var span = tracer.StartSpan("operationName"))
+
+        var sampleRateResponses = new ConcurrentQueue<Dictionary<string, float>>();
+
+        var discovery = DiscoveryService.Create(tracerSettings.Exporter);
+        var statsd = new NoOpStatsd();
+
+        // We have to replace the agent writer so that we can intercept the sample rate responses
+        var exporter = TracerManagerFactory.GetApi(
+            tracerSettings,
+            statsd,
+            rates => sampleRateResponses.Enqueue(rates),
+            new Mock<IApiRequestFactory>().Object);
+        exporter.Should().BeOfType<TraceExporter>();
+
+        var agentWriter = new AgentWriter(exporter, new NullStatsAggregator(), statsd, tracerSettings);
+
+        await using (var tracer = TracerHelper.Create(tracerSettings, agentWriter: agentWriter, statsd: statsd, discoveryService: discovery))
         {
-            span.ResourceName = "resourceName";
-            span.Type = "test";
-            span.SetMetaStruct("test-meta-struct", metaStructBytes);
+            using (var span = tracer.StartSpan("operationName"))
+            {
+                span.ResourceName = "resourceName";
+                span.Type = "test";
+                span.SetMetaStruct("test-meta-struct", metaStructBytes);
+            }
         }
 
-        await tracer.TracerManager.ShutdownAsync();
         var recordedSpans = await agent.WaitForSpansAsync(1);
         recordedSpans.Should().ContainSingle();
 
@@ -86,11 +107,20 @@ public class TraceExporterTests
         var recordedMetaStructBytes = recordedSpan.MetaStruct["test-meta-struct"];
         recordedMetaStructBytes.Should().BeEquivalentTo(metaStructBytes);
 
+        var expectedRates = new Dictionary<string, float>
+        {
+            { "service:default-service,env:test", 1.0f },
+            { "service:,env:", 0.8f },
+        };
+        sampleRateResponses.Should()
+                           .NotBeEmpty()
+                           .And.AllSatisfy(rates => rates.Should().BeEquivalentTo(expectedRates));
+
         Dictionary<string, object> GetSettings()
         {
             var settingsMap = new Dictionary<string, object>
             {
-                { ConfigurationKeys.StatsComputationEnabled, true },
+                { ConfigurationKeys.StatsComputationEnabled, false },
                 { ConfigurationKeys.ServiceName, "default-service" },
                 { ConfigurationKeys.ServiceVersion, "v1" },
                 { ConfigurationKeys.Environment, "test" },
