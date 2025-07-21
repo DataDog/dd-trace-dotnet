@@ -205,6 +205,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
         public async Task SubmitsOtlpMetrics(string packageVersion)
         {
+            if (string.IsNullOrWhiteSpace(packageVersion))
+            {
+                throw new SkipException("No OpenTelemetry package version was provided.");
+            }
+
             var parsedVersion = Version.Parse(packageVersion);
             var runtimeMajor = Environment.Version.Major;
 
