@@ -499,11 +499,12 @@ profiler_cpu_timer_create-arm64:
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 500
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2000
   script:
-    - source build-id.txt
-    - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=igoragoli/windows-benchmarks-github-requests
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
-    - ./ephemeral-infra/run-windows-benchmarks.sh
+    - pulumi plugin ls
+    # - source build-id.txt
+    # - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
+    # - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=igoragoli/windows-benchmarks-github-requests
+    # - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    # - ./ephemeral-infra/run-windows-benchmarks.sh
   after_script:
     - source "./platform/ephemeral-infra/setup-credentials.sh"
     - |
