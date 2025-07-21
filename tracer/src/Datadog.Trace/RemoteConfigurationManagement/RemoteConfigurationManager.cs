@@ -33,6 +33,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private readonly TaskCompletionSource<bool> _processExit = new();
 
+        private int _disposed = 0;
         private int _isPollingStarted;
         private bool _isRcmEnabled;
         private bool _gitMetadataAddedToRequestTags;
@@ -114,8 +115,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public void Dispose()
         {
-            _discoveryService.RemoveSubscription(SetRcmEnabled);
-            _processExit.SetResult(true);
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                _discoveryService.RemoveSubscription(SetRcmEnabled);
+                _processExit.SetResult(true);
+            }
+            else
+            {
+                // Double dispose in prod shouldn't happen, and should be avoided, so logging for follow-up
+                Log.Debug($"{nameof(RemoteConfigurationManager)} is already disposed, skipping further disposal.");
+            }
         }
 
         private async Task StartPollingAsync()
