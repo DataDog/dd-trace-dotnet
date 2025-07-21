@@ -88,6 +88,9 @@ internal class NativeInterop
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_client_computed_stats")]
         internal static extern TraceExporterErrorHandle SetClientComputedStats(SafeHandle config, bool clientComputedStats);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_rates_payload_version")]
+        internal static extern TraceExporterErrorHandle SetRatesPayloadVersioning(SafeHandle config, bool isEnabled);
     }
 
     internal static class Logger

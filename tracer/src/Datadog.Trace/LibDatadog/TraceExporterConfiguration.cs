@@ -19,6 +19,7 @@ internal class TraceExporterConfiguration : SafeHandle
     private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<TraceExporterConfiguration>();
 
     private IntPtr _telemetryConfigPtr;
+    private bool _cachedRatesPayloadVersioning;
 
     public TraceExporterConfiguration()
         : base(IntPtr.Zero, true)
@@ -147,6 +148,18 @@ internal class TraceExporterConfiguration : SafeHandle
         init
         {
             using var error = NativeInterop.Config.SetClientComputedStats(this, value);
+            error.ThrowIfError();
+        }
+    }
+
+    public bool RatesPayloadVersion
+    {
+        get => _cachedRatesPayloadVersioning;
+
+        init
+        {
+            _cachedRatesPayloadVersioning = value;
+            using var error = NativeInterop.Config.SetRatesPayloadVersioning(this, value);
             error.ThrowIfError();
         }
     }
