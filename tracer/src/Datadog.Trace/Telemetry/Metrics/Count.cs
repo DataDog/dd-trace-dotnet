@@ -111,7 +111,6 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.ContextHeaderMalformed>("context_header.malformed")] ContextHeaderMalformed,
 
-
     /// <summary>
     /// The number of requests sent to the stats endopint in the agent, regardless of success
     /// </summary>
