@@ -195,25 +195,22 @@ internal static class DatadogLoggingFactory
         //   - Path.GetTempPath
         if (string.IsNullOrEmpty(logDirectory))
         {
-#if NETFRAMEWORK
-            logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
-#else
             var isWindows = FrameworkDescription.Instance.IsWindows();
 
-            if (ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry))
+            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry) ||
+                ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry))
             {
                 return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
             }
-            else if (isWindows)
+
+            if (isWindows)
             {
                 logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
             }
             else
             {
-                // Linux or GCP Functions
                 logDirectory = "/var/log/datadog/dotnet";
             }
-#endif
         }
 
         if (!Directory.Exists(logDirectory))
