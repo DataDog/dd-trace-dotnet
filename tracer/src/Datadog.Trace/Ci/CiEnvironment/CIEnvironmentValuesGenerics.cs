@@ -287,11 +287,6 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 return true;
             }
 
-            if (string.IsNullOrEmpty(defaultValue))
-            {
-                Log.Warning("The Pull Request git commit sha couldn't be automatically extracted.");
-            }
-
             // If not set use the default value
             return false;
         });
