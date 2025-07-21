@@ -1,8 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.0.0</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.0.0</ApiVersion>
+    <!-- xunit.v3 1.x.x supports net6.0+   -->
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks Condition="$(ApiVersion) &lt; 2.0.0">net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
     <MicrosoftTestSDKVersion>17.12.0</MicrosoftTestSDKVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
