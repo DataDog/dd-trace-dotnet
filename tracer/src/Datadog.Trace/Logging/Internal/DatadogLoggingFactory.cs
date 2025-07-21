@@ -173,6 +173,7 @@ internal static class DatadogLoggingFactory
     {
         var configurationBuilder = new ConfigurationBuilder(source, telemetry);
         var logDirectory = configurationBuilder.WithKeys(ConfigurationKeys.LogDirectory).AsString();
+
         if (string.IsNullOrEmpty(logDirectory))
         {
             // todo, handle in phase 2 with deprecations
@@ -187,17 +188,33 @@ internal static class DatadogLoggingFactory
             }
         }
 
-        return GetDefaultLogDirectory(source, telemetry, logDirectory);
+        if (string.IsNullOrEmpty(logDirectory))
+        {
+            logDirectory = GetDefaultLogDirectory(source, telemetry);
+        }
+
+        if (Directory.Exists(logDirectory) || TryCreateLogDirectory(logDirectory))
+        {
+            return logDirectory;
+        }
+
+        // Last effort at writing logs
+        return Path.GetTempPath();
     }
 
-    private static string GetDefaultLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry, string? logDirectory)
+    private static string GetDefaultLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
         // because of the following API calls
         //   - Directory.Exists
+        //   - Directory.CreateDirectory
         //   - Environment.GetFolderPath
         //   - Path.GetTempPath
-        if (string.IsNullOrEmpty(logDirectory))
+        string logDirectory;
+        var isWindows = FrameworkDescription.Instance.IsWindows();
+
+        if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry) ||
+            ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry))
         {
             var isWindows = FrameworkDescription.Instance.IsWindows();
 
@@ -232,22 +249,32 @@ internal static class DatadogLoggingFactory
             }
         }
 
-        if (!Directory.Exists(logDirectory))
+        if (isWindows)
         {
-            try
-            {
-                Directory.CreateDirectory(logDirectory);
-            }
-            catch
-            {
-                // Unable to create the directory meaning that the user
-                // will have to create it on their own.
-                // Last effort at writing logs
-                logDirectory = Path.GetTempPath();
-            }
+            var commonApplicationDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            logDirectory = Path.Combine(commonApplicationDataFolder, "Datadog .NET Tracer", "logs");
+        }
+        else
+        {
+            logDirectory = "/var/log/datadog/dotnet";
         }
 
-        return logDirectory!;
+        return logDirectory;
+    }
+
+    private static bool TryCreateLogDirectory(string logDirectory)
+    {
+        try
+        {
+            Directory.CreateDirectory(logDirectory);
+            return true;
+        }
+        catch
+        {
+            // Unable to create the directory meaning that the user
+            // will have to create it on their own.
+            return false;
+        }
     }
 
     private static FileLoggingConfiguration? GetFileLoggingConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
