@@ -2964,7 +2964,7 @@ stages:
         target: builder
         baseImage: centos7
         useNativeSdkVersion: true
-        command: "BuildProfilerTsanTest -Framework net7.0"
+        command: "BuildProfilerTsanTest RunUnitTestsWithTsanLinux -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data

@@ -784,7 +784,6 @@ partial class Build
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
         .Before(PublishProfiler)
-        .Triggers(RunUnitTestsWithTsanLinux)
         .Executes(() =>
         {
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
