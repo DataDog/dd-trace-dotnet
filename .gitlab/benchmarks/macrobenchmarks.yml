@@ -451,7 +451,7 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-macrobenchmarks
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-macrobenchmarks_211553
   interruptible: true
   timeout: 2h
   retry:
