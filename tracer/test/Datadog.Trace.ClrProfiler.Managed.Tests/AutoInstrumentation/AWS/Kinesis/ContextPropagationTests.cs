@@ -13,7 +13,6 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Moq;
@@ -142,11 +141,13 @@ public class ContextPropagationTests
         var extracted = dataDictionary.TryGetValue(DatadogKey, out var datadogDictionary);
         extracted.Should().BeTrue();
 
-        // Cast into a Dictionary<string, string> so we can read it properly
-        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
+        // Cast into a Dictionary<string, object> so we can read it properly
+        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(datadogDictionary?.ToString() ?? string.Empty);
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope.Span.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope.Span.TraceId.ToString());
+        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope?.Span.SpanId.ToString());
+        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope?.Span.TraceId.ToString());
+        extractedTraceContext["dd-pathway-ctx-base64"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
+        extractedTraceContext["dd-pathway-ctx"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
     }
 
     [Fact]
@@ -194,11 +195,14 @@ public class ContextPropagationTests
         var extracted = dataDictionary.TryGetValue(DatadogKey, out var datadogDictionary);
         extracted.Should().BeTrue();
 
-        // Cast into a Dictionary<string, string> so we can read it properly
-        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
+        // Cast into a Dictionary<string, object> so we can read it properly
+        datadogDictionary.Should().NotBeNull();
+        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(datadogDictionary?.ToString() ?? string.Empty);
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope.Span.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope.Span.TraceId.ToString());
+        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope?.Span.SpanId.ToString());
+        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope?.Span.TraceId.ToString());
+        extractedTraceContext["dd-pathway-ctx-base64"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
+        extractedTraceContext["dd-pathway-ctx"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
     }
 
     [Fact]
