@@ -32,6 +32,12 @@ echo *********************
 dotnet timeit Samples.FakeDbCommand.windows.net60.json
 IF ERRORLEVEL 1 set FAILED=1
 
+echo *********************
+echo .NET Core .0
+echo *********************
+dotnet timeit Samples.FakeDbCommand.windows.net80.json
+IF ERRORLEVEL 1 set FAILED=1
+
 IF "!FAILED!"=="1" (
     echo One or more benchmarks failed.
     exit /b 1
