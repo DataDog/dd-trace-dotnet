@@ -528,7 +528,8 @@ namespace Datadog.Trace
         {
             try
             {
-                if (settings.IsRunningInAzureAppService && settings.AzureAppServiceMetadata?.SiteName is { } siteName)
+                if ((settings.IsRunningInAzureAppService || settings.IsRunningInAzureFunctions) &&
+                    settings.AzureAppServiceMetadata?.SiteName is { } siteName)
                 {
                     return siteName;
                 }
