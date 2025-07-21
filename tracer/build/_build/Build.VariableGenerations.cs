@@ -1643,11 +1643,9 @@ partial class Build : NukeBuild
                         { "macos-14_net6.0", new { vmImage = "macos-14", publishFramework = "net6.0" } },
                         { "macos-14_net8.0", new { vmImage = "macos-14", publishFramework = "net8.0" } },
                         { "macos-14_net9.0", new { vmImage = "macos-14", publishFramework = "net9.0" } },
-                        { "macos-14_net10.0", new { vmImage = "macos-14", publishFramework = "net10.0" } },
                         { "macos-15_net6.0", new { vmImage = "macos-15", publishFramework = "net6.0" } },
                         { "macos-15_net8.0", new { vmImage = "macos-15", publishFramework = "net8.0" } },
                         { "macos-15_net9.0", new { vmImage = "macos-15", publishFramework = "net9.0" } },
-                        { "macos-15_net10.0", new { vmImage = "macos-15", publishFramework = "net10.0" } },
                     };
 
                     Logger.Information($"Installer smoke tests dotnet-tool NuGet matrix MacOs");
