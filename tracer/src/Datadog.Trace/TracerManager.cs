@@ -741,7 +741,7 @@ namespace Datadog.Trace
                     }
 
                     instance.RuntimeMetrics?.Dispose();
-                    instance.Statsd.Dispose();
+                    instance.Statsd?.Dispose();
 
                     Log.Debug("Finished waiting for disposals.");
                 }
