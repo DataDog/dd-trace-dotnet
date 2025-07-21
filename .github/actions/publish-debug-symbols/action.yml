@@ -34,29 +34,18 @@ runs:
       shell: bash
       run: npm install -g @datadog/datadog-ci@3.15.0
 
-    - name: Push ELF debug symbols
+    - name: Push debug symbols
       shell: bash
       run: |
         if [ -n "${{ inputs.prod_key }}" ]; then
           echo "Push symbols to prod env"
           DATADOG_API_KEY="${{ inputs.prod_key }}" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload ${{inputs.symbols_folder}}
-        fi
-
-        if [ -n "${{ inputs.preprod_key }}" ]; then
-          echo "Push symbols to staging env"
-          DATADOG_API_KEY="${{ inputs.preprod_key }}" DATADOG_SITE="datad0g.com" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload ${{inputs.symbols_folder}}
-        fi
-
-    - name: Push PE debug symbols
-      shell: bash
-      run: |
-        if [ -n "${{ inputs.prod_key }}" ]; then
-          echo "Push symbols to prod env"
           DATADOG_API_KEY="${{ inputs.prod_key }}" DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload ${{inputs.symbols_folder}}
         fi
 
         if [ -n "${{ inputs.preprod_key }}" ]; then
           echo "Push symbols to staging env"
+          DATADOG_API_KEY="${{ inputs.preprod_key }}" DATADOG_SITE="datad0g.com" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload ${{inputs.symbols_folder}}
           DATADOG_API_KEY="${{ inputs.preprod_key }}" DATADOG_SITE="datad0g.com" DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload ${{inputs.symbols_folder}}
         fi
 

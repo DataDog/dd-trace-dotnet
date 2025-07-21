@@ -24,17 +24,18 @@ jobs:
       - name: Download Windows native symbols v${{ github.event.inputs.version }}
         shell: bash
         run: |
-          curl -OL https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/windows-native-symbols.zip
-          unzip windows-native-symbols.zip -d debug_symbols
+          curl -s -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/windows-native-symbols.zip | busybox unzip -d debug_symbols -
           # datadog-ci needs the dll to check if we can send the PDB files
-          curl -s -OL https://github.com/DataDog/dd-trace-dotnet/releases/download/v3.21.0/windows-tracer-home.zip
-          unzip windows-tracer-home.zip -d debug_symbols
-          pushd debug_symbols
-          # Remove all directories except the ones we want to keep
-          find . -maxdepth 1 -type d ! -name '.' ! -name dd-dotnet-win-x64  ! -name win-x64  ! -name win-x86 -exec rm -rf {} +
-          popd
-          rm windows-tracer-home.zip
-          rm windows-native-symbols.zip
+          curl -s -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/windows-tracer-home.zip | busybox unzip -d debug_symbols -
+          # Remove all directories except the ones containing native symbols
+          # Linux symbols are extracted in the `symbols` directory
+          find debug_symbols -maxdepth 1 -type d \
+            ! -name debug_symbols \
+            ! -name dd-dotnet-win-x64 \
+            ! -name win-x64 \
+            ! -name win-x86 \
+            ! -name 'symbols' \
+            -exec rm -rf {} +
 
       - name: 'Push debug symbols to datadog'
         uses: ./.github/actions/publish-debug-symbols
