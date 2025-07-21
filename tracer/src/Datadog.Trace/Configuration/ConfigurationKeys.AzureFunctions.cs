@@ -16,22 +16,22 @@ internal partial class ConfigurationKeys
         /// The version of the functions runtime to use in this function app.
         /// Reference: https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_extension_version
         /// </summary>
-        internal const string FunctionsExtensionVersionKey = "FUNCTIONS_EXTENSION_VERSION";
+        internal const string FunctionsExtensionVersion = "FUNCTIONS_EXTENSION_VERSION";
 
         /// <summary>
         /// This variable is only present in Azure Functions.
         /// In this context, valid values are "dotnet" and "dotnet-isolated".
         /// Reference: https://learn.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_worker_runtime
         /// </summary>
-        internal const string FunctionsWorkerRuntimeKey = "FUNCTIONS_WORKER_RUNTIME";
+        internal const string FunctionsWorkerRuntime = "FUNCTIONS_WORKER_RUNTIME";
 
         // "FUNCTIONS_WORKER_RUNTIME_VERSION=8.0",
-        internal const string FunctionsWorkerRuntimeVersionKey = "FUNCTIONS_WORKER_RUNTIME_VERSION";
+        internal const string FunctionsWorkerRuntimeVersion = "FUNCTIONS_WORKER_RUNTIME_VERSION";
 
         // "FUNCTIONS_APPLICATION_DIRECTORY=/home/site/wwwroot",
-        internal const string FunctionsApplicationDirectoryKey = "FUNCTIONS_APPLICATION_DIRECTORY";
+        internal const string FunctionsApplicationDirectory = "FUNCTIONS_APPLICATION_DIRECTORY";
 
         // "FUNCTIONS_WORKER_DIRECTORY=/azure-functions-host/workers/dotnet-isolated",
-        internal const string FunctionsWorkerDirectoryKey = "FUNCTIONS_WORKER_DIRECTORY";
+        internal const string FunctionsWorkerDirectory = "FUNCTIONS_WORKER_DIRECTORY";
     }
 }
