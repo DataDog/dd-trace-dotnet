@@ -171,88 +171,107 @@ internal static class DatadogLoggingFactory
 
     private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
+        // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
+        // because of the following API calls
+        // - Directory.Exists
+        // - Directory.CreateDirectory
+        // - Environment.GetFolderPath
+        // - Path.GetTempPath
+
+        // try reading from DD_TRACE_LOG_DIRECTORY
         var configurationBuilder = new ConfigurationBuilder(source, telemetry);
         var logDirectory = configurationBuilder.WithKeys(ConfigurationKeys.LogDirectory).AsString();
-        if (string.IsNullOrEmpty(logDirectory))
+
+        if (StringUtil.IsNullOrEmpty(logDirectory))
         {
+            // fallback #1: try getting the directory from DD_TRACE_LOG_PATH
             // todo, handle in phase 2 with deprecations
-// TraceLogPath is deprecated but still supported. For now, we bypass the WithKeys analyzer, but later (config registry v2) we want to pull deprecations differently as part of centralized file
+            // TraceLogPath is deprecated but still supported. For now, we bypass the WithKeys analyzer, but later (config registry v2) we want to pull deprecations differently as part of centralized file
 #pragma warning disable DD0008, 618
             var nativeLogFile = configurationBuilder.WithKeys(ConfigurationKeys.TraceLogPath).AsString();
 #pragma warning restore DD0008, 618
 
-            if (!string.IsNullOrEmpty(nativeLogFile))
+            if (!StringUtil.IsNullOrEmpty(nativeLogFile))
             {
                 logDirectory = Path.GetDirectoryName(nativeLogFile);
             }
         }
 
-        return GetDefaultLogDirectory(source, telemetry, logDirectory);
+        if (StringUtil.IsNullOrEmpty(logDirectory))
+        {
+            // fallback #2: use the default log directory
+            logDirectory = GetDefaultLogDirectory(source, telemetry);
+        }
+
+        // try creating the directory if it doesn't exist
+        if (logDirectory != null && (Directory.Exists(logDirectory) || TryCreateLogDirectory(logDirectory)))
+        {
+            return logDirectory;
+        }
+
+        // fallback #3: use the temp path
+        return Path.GetTempPath();
     }
 
-    private static string GetDefaultLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry, string? logDirectory)
+    private static string GetDefaultLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
-        // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
-        // because of the following API calls
-        //   - Directory.Exists
-        //   - Environment.GetFolderPath
-        //   - Path.GetTempPath
-        if (string.IsNullOrEmpty(logDirectory))
+        var isWindows = FrameworkDescription.Instance.IsWindows();
+
+        if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
         {
-            var isWindows = FrameworkDescription.Instance.IsWindows();
+            return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
+        }
 
-            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry) ||
-                ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry))
-            {
-                return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
-            }
+        string logDirectory;
 
-            if (isWindows)
+        if (isWindows)
+        {
+            // On Nano Server, this returns "", so we fall back to reading from the env var set in the base image instead
+            // - https://github.com/dotnet/runtime/issues/22690
+            // - https://github.com/dotnet/runtime/issues/21430
+            // - https://github.com/dotnet/runtime/pull/109673
+            // If _that_ fails, we just hard code it to "C:\ProgramData", which is what the native components do anyway
+            var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            if (string.IsNullOrEmpty(programData))
             {
-                // On Nano Server, this returns "", so we fallback to reading from the env var set in the base image instead
-                // - https://github.com/dotnet/runtime/issues/22690
-                // - https://github.com/dotnet/runtime/issues/21430
-                // - https://github.com/dotnet/runtime/pull/109673
-                // If _that_ fails, we just hard code it to "C:\ProgramData", which is what the native components do anyway
-                var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                // fallback #1: try reading from the env var
+                programData = EnvironmentHelpersNoLogging.ProgramData();
                 if (string.IsNullOrEmpty(programData))
                 {
-                    programData = EnvironmentHelpersNoLogging.ProgramData();
-                    if (string.IsNullOrEmpty(programData))
-                    {
-                        programData = @"C:\ProgramData";
-                    }
+                    // fallback #2: hard-coded
+                    programData = @"C:\ProgramData";
                 }
+            }
 
-                logDirectory = Path.Combine(programData, "Datadog .NET Tracer", "logs");
-            }
-            else
-            {
-                logDirectory = "/var/log/datadog/dotnet";
-            }
+            logDirectory = Path.Combine(programData, "Datadog .NET Tracer", "logs");
         }
-
-        if (!Directory.Exists(logDirectory))
+        else
         {
-            try
-            {
-                Directory.CreateDirectory(logDirectory);
-            }
-            catch
-            {
-                // Unable to create the directory meaning that the user
-                // will have to create it on their own.
-                // Last effort at writing logs
-                logDirectory = Path.GetTempPath();
-            }
+            logDirectory = "/var/log/datadog/dotnet";
         }
 
-        return logDirectory!;
+        return logDirectory;
+    }
+
+    private static bool TryCreateLogDirectory(string logDirectory)
+    {
+        try
+        {
+            Directory.CreateDirectory(logDirectory);
+            return true;
+        }
+        catch
+        {
+            // Unable to create the directory meaning that the user
+            // will have to create it on their own.
+            return false;
+        }
     }
 
     private static FileLoggingConfiguration? GetFileLoggingConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         string? logDirectory = null;
+
         try
         {
             logDirectory = GetLogDirectory(source, telemetry);
