@@ -40,6 +40,8 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> CIJobUrlBytes => new byte[] { 170, 99, 105, 46, 106, 111, 98, 46, 117, 114, 108 };
         // CIJobNameBytes = MessagePack.Serialize("ci.job.name");
         private static ReadOnlySpan<byte> CIJobNameBytes => new byte[] { 171, 99, 105, 46, 106, 111, 98, 46, 110, 97, 109, 101 };
+        // CIJobIdBytes = MessagePack.Serialize("ci.job.id");
+        private static ReadOnlySpan<byte> CIJobIdBytes => new byte[] { 169, 99, 105, 46, 106, 111, 98, 46, 105, 100 };
         // StageNameBytes = MessagePack.Serialize("ci.stage.name");
         private static ReadOnlySpan<byte> StageNameBytes => new byte[] { 173, 99, 105, 46, 115, 116, 97, 103, 101, 46, 110, 97, 109, 101 };
         // CIWorkspacePathBytes = MessagePack.Serialize("ci.workspace_path");
@@ -78,12 +80,14 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestEnabledBytes => new byte[] { 184, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 101, 110, 97, 98, 108, 101, 100 };
         // EarlyFlakeDetectionTestAbortReasonBytes = MessagePack.Serialize("test.early_flake.abort_reason");
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestAbortReasonBytes => new byte[] { 189, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 97, 98, 111, 114, 116, 95, 114, 101, 97, 115, 111, 110 };
-        // GitHeadCommitBytes = MessagePack.Serialize("git.commit.head_sha");
-        private static ReadOnlySpan<byte> GitHeadCommitBytes => new byte[] { 179, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 95, 115, 104, 97 };
+        // GitHeadCommitBytes = MessagePack.Serialize("git.commit.head.sha");
+        private static ReadOnlySpan<byte> GitHeadCommitBytes => new byte[] { 179, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 115, 104, 97 };
         // GitPrBaseCommitBytes = MessagePack.Serialize("git.pull_request.base_branch_sha");
         private static ReadOnlySpan<byte> GitPrBaseCommitBytes => new byte[] { 217, 32, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104, 95, 115, 104, 97 };
         // GitPrBaseBranchBytes = MessagePack.Serialize("git.pull_request.base_branch");
         private static ReadOnlySpan<byte> GitPrBaseBranchBytes => new byte[] { 188, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104 };
+        // PrNumberBytes = MessagePack.Serialize("pr.number");
+        private static ReadOnlySpan<byte> PrNumberBytes => new byte[] { 169, 112, 114, 46, 110, 117, 109, 98, 101, 114 };
 
         public override string? GetTag(string key)
         {
@@ -101,6 +105,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "ci.pipeline.url" => CIPipelineUrl,
                 "ci.job.url" => CIJobUrl,
                 "ci.job.name" => CIJobName,
+                "ci.job.id" => CIJobId,
                 "ci.stage.name" => StageName,
                 "ci.workspace_path" => CIWorkspacePath,
                 "git.repository_url" => GitRepository,
@@ -120,9 +125,10 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.itr.tests_skipping.type" => IntelligentTestRunnerSkippingType,
                 "test.early_flake.enabled" => EarlyFlakeDetectionTestEnabled,
                 "test.early_flake.abort_reason" => EarlyFlakeDetectionTestAbortReason,
-                "git.commit.head_sha" => GitHeadCommit,
+                "git.commit.head.sha" => GitHeadCommit,
                 "git.pull_request.base_branch_sha" => GitPrBaseCommit,
                 "git.pull_request.base_branch" => GitPrBaseBranch,
+                "pr.number" => PrNumber,
                 _ => base.GetTag(key),
             };
         }
@@ -163,6 +169,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "ci.job.name": 
                     CIJobName = value;
+                    break;
+                case "ci.job.id": 
+                    CIJobId = value;
                     break;
                 case "ci.stage.name": 
                     StageName = value;
@@ -221,7 +230,7 @@ namespace Datadog.Trace.Ci.Tagging
                 case "test.early_flake.abort_reason": 
                     EarlyFlakeDetectionTestAbortReason = value;
                     break;
-                case "git.commit.head_sha": 
+                case "git.commit.head.sha": 
                     GitHeadCommit = value;
                     break;
                 case "git.pull_request.base_branch_sha": 
@@ -229,6 +238,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "git.pull_request.base_branch": 
                     GitPrBaseBranch = value;
+                    break;
+                case "pr.number": 
+                    PrNumber = value;
                     break;
                 case "library_version": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(TestSessionSpanTags));
@@ -299,6 +311,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (CIJobName is not null)
             {
                 processor.Process(new TagItem<string>("ci.job.name", CIJobName, CIJobNameBytes));
+            }
+
+            if (CIJobId is not null)
+            {
+                processor.Process(new TagItem<string>("ci.job.id", CIJobId, CIJobIdBytes));
             }
 
             if (StageName is not null)
@@ -398,7 +415,7 @@ namespace Datadog.Trace.Ci.Tagging
 
             if (GitHeadCommit is not null)
             {
-                processor.Process(new TagItem<string>("git.commit.head_sha", GitHeadCommit, GitHeadCommitBytes));
+                processor.Process(new TagItem<string>("git.commit.head.sha", GitHeadCommit, GitHeadCommitBytes));
             }
 
             if (GitPrBaseCommit is not null)
@@ -409,6 +426,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (GitPrBaseBranch is not null)
             {
                 processor.Process(new TagItem<string>("git.pull_request.base_branch", GitPrBaseBranch, GitPrBaseBranchBytes));
+            }
+
+            if (PrNumber is not null)
+            {
+                processor.Process(new TagItem<string>("pr.number", PrNumber, PrNumberBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -497,6 +519,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("ci.job.name (tag):")
                   .Append(CIJobName)
+                  .Append(',');
+            }
+
+            if (CIJobId is not null)
+            {
+                sb.Append("ci.job.id (tag):")
+                  .Append(CIJobId)
                   .Append(',');
             }
 
@@ -635,7 +664,7 @@ namespace Datadog.Trace.Ci.Tagging
 
             if (GitHeadCommit is not null)
             {
-                sb.Append("git.commit.head_sha (tag):")
+                sb.Append("git.commit.head.sha (tag):")
                   .Append(GitHeadCommit)
                   .Append(',');
             }
@@ -651,6 +680,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("git.pull_request.base_branch (tag):")
                   .Append(GitPrBaseBranch)
+                  .Append(',');
+            }
+
+            if (PrNumber is not null)
+            {
+                sb.Append("pr.number (tag):")
+                  .Append(PrNumber)
                   .Append(',');
             }
 

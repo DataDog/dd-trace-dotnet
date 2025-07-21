@@ -91,5 +91,8 @@ internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider va
         SetVariablesIfNotEmpty(
             VariablesToBypass,
             Constants.JenkinsCustomTraceId);
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.JenkinsChangeTarget);
+        PrNumber = ValueProvider.GetValue(Constants.JenkinsChangeId);
     }
 }
