@@ -95,6 +95,19 @@ namespace Datadog.Trace.Configuration
         /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
         /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
+            : this(source, telemetry, errorLog, LibDatadog.NativeInterop.IsLibDatadogAvailable)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TracerSettings"/> class.
+        /// The "main" constructor for <see cref="TracerSettings"/> that should be used internally in the library.
+        /// </summary>
+        /// <param name="source">The configuration source. If <c>null</c> is provided, uses <see cref="NullConfigurationSource"/> </param>
+        /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
+        /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
+        /// <param name="isLibDatadogAvailable">Used to check whether the libdatadog library is available. Useful for integration tests</param>
+        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog, bool isLibDatadogAvailable)
         {
             var commaSeparator = new[] { ',' };
             source ??= NullConfigurationSource.Instance;
@@ -441,7 +454,7 @@ namespace Datadog.Trace.Configuration
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
 
-                if (!LibDatadog.NativeInterop.IsLibDatadogAvailable)
+                if (!isLibDatadogAvailable)
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(
@@ -1562,7 +1575,10 @@ namespace Datadog.Trace.Configuration
         }
 
         internal static TracerSettings Create(Dictionary<string, object?> settings)
-            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new());
+            => Create(settings, LibDatadog.NativeInterop.IsLibDatadogAvailable);
+
+        internal static TracerSettings Create(Dictionary<string, object?> settings, bool isLibDatadogAvailable)
+            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new(), isLibDatadogAvailable);
 
         internal void CollectTelemetry(IConfigurationTelemetry destination)
         {
