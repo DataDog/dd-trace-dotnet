@@ -85,10 +85,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             var context = new SpanContext(null, null, null);
             var time = DateTimeOffset.UtcNow;
+            var testIndex = -1;
             foreach (var testItem in jsonData.Data)
             {
                 var envData = testItem[0];
                 var spanData = testItem[1];
+                testIndex++;
 
                 var span = new Span(context, time);
                 CIEnvironmentValues.Create(envData).DecorateSpan(span);
@@ -133,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         continue;
                     }
 
-                    Assert.Equal(spanDataItem.Value, value);
+                    value.Should().Be(spanDataItem.Value, $"for {jsonData.Name}[{testIndex}]\\{spanDataItem.Key}");
                 }
             }
         }

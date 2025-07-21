@@ -132,6 +132,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
     [Tag(CommonTags.GitPrBaseBranch)]
     public string? GitPrBaseBranch { get; set; }
 
+    [Tag(CommonTags.PrNumber)]
+    public string? PrNumber { get; set; }
+
     public void SetCIEnvironmentValues(CIEnvironmentValues environmentValues)
     {
         if (environmentValues is not null)
@@ -161,6 +164,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
             GitHeadCommit = environmentValues.HeadCommit;
             GitPrBaseCommit = environmentValues.PrBaseCommit;
             GitPrBaseBranch = environmentValues.PrBaseBranch;
+            PrNumber = environmentValues.PrNumber;
 
             if (environmentValues.VariablesToBypass is { } variablesToBypass)
             {

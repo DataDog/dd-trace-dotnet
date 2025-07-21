@@ -41,5 +41,7 @@ internal sealed class CircleCiEnvironmentValues<TValueProvider>(TValueProvider v
             VariablesToBypass,
             Constants.CircleCIWorkflowId,
             Constants.CircleCIBuildNum);
+
+        PrNumber = ValueProvider.GetValue(Constants.CircleCIPrNumber);
     }
 }

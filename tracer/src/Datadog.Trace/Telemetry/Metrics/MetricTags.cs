@@ -612,6 +612,7 @@ internal static class MetricTags
         [Description("provider:travisci")] TravisCi,
         [Description("provider:buddyci")] BuddyCi,
         [Description("provider:aws")] AwsCodePipeline,
+        [Description("provider:drone")] Drone,
     }
 
     public enum CIVisibilityTestSessionType

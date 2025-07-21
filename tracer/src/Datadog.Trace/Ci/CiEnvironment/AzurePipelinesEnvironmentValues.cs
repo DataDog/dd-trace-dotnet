@@ -68,5 +68,6 @@ internal sealed class AzurePipelinesEnvironmentValues<TValueProvider>(TValueProv
             Constants.AzureSystemJobId);
 
         PrBaseBranch = ValueProvider.GetValue(Constants.AzureSystemPullRequestTargetBranch);
+        PrNumber = ValueProvider.GetValue(Constants.AzureSystemPullRequestNumber);
     }
 }

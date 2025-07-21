@@ -204,7 +204,7 @@ internal static class CommonTags
     /// <summary>
     /// GIT Head commit hash
     /// </summary>
-    public const string GitHeadCommit = "git.commit.head_sha";
+    public const string GitHeadCommit = "git.commit.head.sha";
 
     /// <summary>
     /// GIT PR Base commit hash
@@ -215,6 +215,11 @@ internal static class CommonTags
     /// GIT PR Base branch name
     /// </summary>
     public const string GitPrBaseBranch = "git.pull_request.base_branch";
+
+    /// <summary>
+    /// PR Number
+    /// </summary>
+    public const string PrNumber = "pr.number";
 
     /// <summary>
     /// Defines if the service is a user provided test service
