@@ -13,8 +13,7 @@ namespace Datadog.Trace.OTelMetrics.DuckTypes
 {
     internal interface IMeterProviderBuilder : IDuckType
     {
-        [Duck(ParameterTypeNames = new[] { "System.String[]" })]
-        IMeterProviderBuilder AddMeter(params string[] names);
+        IMeterProviderBuilder AddMeter(string[] names);
 
         IMeterProvider Build();
     }

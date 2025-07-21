@@ -17,7 +17,7 @@ public static class OpenTelemetryMetricsMeter
     public static UpDownCounter<long> LongUpDownCounter = _meter.CreateUpDownCounter<long>("example.upDownCounter");
     public static ObservableUpDownCounter<long> AsyncLongUpDownCounter = _meter.CreateObservableUpDownCounter<long>("example.async.upDownCounter", () => 66L);
 #endif
-#if NET8_0_OR_GREATER
+#if NET9_0_OR_GREATER
     public static Gauge<double> DoubleGauge = _meter.CreateGauge<double>("example.gauge");
 #endif
 }

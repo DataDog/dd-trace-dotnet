@@ -198,17 +198,43 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-#if  NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
         public async Task SubmitsOtlpMetrics(string packageVersion)
         {
+            var parsedVersion = Version.Parse(packageVersion);
+            var runtimeMajor = Environment.Version.Major;
+
+            if (parsedVersion <= new Version(1, 0, 1))
+            {
+                throw new SkipException("OTel version does not support metrics.");
+            }
+
+            if ((runtimeMajor == 7 || runtimeMajor == 8) && parsedVersion < new Version(1, 4, 0))
+            {
+                throw new SkipException("UpDownCounter requires OTel 1.4.0+.");
+            }
+
+            if (runtimeMajor == 9 && parsedVersion < new Version(1, 10, 0))
+            {
+                throw new SkipException("Gauge<T> in .NET 9 requires OTel 1.10.0+.");
+            }
+
+            var snapshotName = (runtimeMajor, packageVersion) switch
+            {
+                (6, "1.3.2") => "NET_6",
+                (7 or 8, "1.5.1") => "NET_7_8",
+                (>= 9, "1.12.0") => string.Empty,
+                _ => throw new SkipException($"Unnecessary test: runtime {runtimeMajor}, OTel {packageVersion}")
+            };
+
             var initialAgentPort = TcpPortProvider.GetOpenPort();
 
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
-            SetEnvironmentVariable("DD_TRACE_ENABLED_METERS", "OpenTelemetryMetricsMeter");
+            SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
@@ -221,24 +247,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                           .Where(r => r.PathAndQuery.StartsWith("/v1/metrics"))
                                           .ToList();
 
-                metricRequests.Should().NotBeEmpty("No OTLP metric requests received.");
+                metricRequests.Should().NotBeEmpty("Expected OTLP metric requests were not received.");
 
-                var snapshotPayload = new List<object>();
-
-                foreach (var req in metricRequests)
-                {
-                    snapshotPayload.Add(req.DeserializedData);
-                }
+                var snapshotPayload = metricRequests
+                    .Select(r => r.DeserializedData)
+                    .ToList();
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_timeUnixNanoRegexMetrics, @"TimeUnixNano"": <DateTimeOffset.Now>");
 
+                var suffix = GetSuffix(packageVersion);
+                var fileName = string.IsNullOrEmpty(snapshotName)
+                    ? $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpMetrics{suffix}"
+                    : $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpMetrics{suffix}.{snapshotName}";
+
                 await Verifier.Verify(snapshotPayload, settings)
-#if NET8_0_OR_GREATER
-                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.OtlpMetrics{GetSuffix(packageVersion)}")
-#else
-                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.OtlpMetrics{GetSuffix(packageVersion)}.NET{Environment.Version.Major}")
-#endif
+                              .UseFileName(fileName)
                               .DisableRequireUniquePrefix();
             }
         }

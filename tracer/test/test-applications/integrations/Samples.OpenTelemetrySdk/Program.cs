@@ -321,7 +321,7 @@ public static class Program
         OpenTelemetryMetricsMeter.LongUpDownCounter.Add(55L,
                                                         new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
 #endif
-#if NET8_0_OR_GREATER
+#if NET9_0_OR_GREATER
         OpenTelemetryMetricsMeter.DoubleGauge.Record(77L,
                                                      new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
 #endif
