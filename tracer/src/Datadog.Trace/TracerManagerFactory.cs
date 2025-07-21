@@ -528,9 +528,9 @@ namespace Datadog.Trace
         {
             try
             {
-                if (settings.IsRunningInAzureAppService)
+                if (settings.IsRunningInAzureAppService && settings.AzureAppServiceMetadata?.SiteName is { } siteName)
                 {
-                    return settings.AzureAppServiceMetadata.SiteName;
+                    return siteName;
                 }
 
                 if (settings.LambdaMetadata is { IsRunningInLambda: true, ServiceName: var serviceName })
@@ -540,7 +540,7 @@ namespace Datadog.Trace
 
                 try
                 {
-                    if (TryLoadAspNetSiteName(out var siteName))
+                    if (TryLoadAspNetSiteName(out siteName))
                     {
                         return siteName;
                     }
