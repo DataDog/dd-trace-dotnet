@@ -102,7 +102,8 @@ public class SpanContextInjectorExtractorTests
     [Fact]
     public void NoDsmInjectionIsDisabled()
     {
-        // DSM is disabled by default
+        // DSM is enabled by default
+        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, false } }));
 
         var injector = new SpanContextInjector();
         var headers = new Dictionary<string, string>();
