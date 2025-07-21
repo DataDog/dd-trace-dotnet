@@ -88,6 +88,9 @@ internal class NativeInterop
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_client_computed_stats")]
         internal static extern TraceExporterErrorHandle SetClientComputedStats(SafeHandle config, bool clientComputedStats);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_connection_timeout")]
+        internal static extern TraceExporterErrorHandle SetConnectionTimeout(SafeHandle config, ulong timeout_ms);
     }
 
     internal static class Logger
