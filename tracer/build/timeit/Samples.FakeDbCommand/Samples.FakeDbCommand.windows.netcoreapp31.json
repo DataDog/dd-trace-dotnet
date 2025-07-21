@@ -70,5 +70,5 @@
     "benchmark.job.runtime.name": ".NET Core 3.1",
     "benchmark.job.runtime.moniker": "netcoreapp3.1"
   },
-  "overheadThreshold": 10
+  "overheadThreshold": 8.83
 }
