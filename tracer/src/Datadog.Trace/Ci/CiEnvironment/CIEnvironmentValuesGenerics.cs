@@ -230,7 +230,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 if (value is not null)
                 {
                     value = value.Trim();
-                    if (value.Length < 40 || !IsHex(value))
+                    if (value.Length != 40 || !IsHex(value))
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
@@ -269,7 +269,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
             if (value is not null)
             {
                 value = value.Trim();
-                if (value.Length < 40 || !IsHex(value))
+                if (value.Length != 40 || !IsHex(value))
                 {
                     if (string.IsNullOrEmpty(defaultValue))
                     {

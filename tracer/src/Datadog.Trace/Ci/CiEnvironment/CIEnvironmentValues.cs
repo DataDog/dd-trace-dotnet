@@ -177,7 +177,7 @@ internal abstract class CIEnvironmentValues
         return true;
     }
 
-    private static string? CleanTagValue(string? tag)
+    internal static string? CleanTagValue(string? tag)
     {
         try
         {
@@ -204,7 +204,7 @@ internal abstract class CIEnvironmentValues
         return tag;
     }
 
-    private static Tuple<string?, string?> CleanBranchValue(string? branch)
+    internal static Tuple<string?, string?> CleanBranchValue(string? branch)
     {
         string? tag = null;
         try
