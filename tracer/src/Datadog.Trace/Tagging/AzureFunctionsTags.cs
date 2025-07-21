@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tagging
             {
                 aspNetTags.InstrumentationName = ComponentName;
             }
-            else if (tags.GetTag(Tags.InstrumentationName) is { })
+            else if (tags.GetTag(Tags.InstrumentationName) is null)
             {
                 // not already set, so should be safe to set it as not readonly
                 tags.SetTag(Tags.InstrumentationName, ComponentName);
