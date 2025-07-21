@@ -249,16 +249,6 @@ profiler_cpu_timer_create:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-    
-runtime-metrics:
-  extends: .benchmarks
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_RUNTIME_METRICS_ENABLED: 1
-    ENDPOINT: "hello"
 
 .benchmarks-arm64:
   stage: benchmarks
@@ -455,18 +445,6 @@ profiler_cpu_timer_create-arm64:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-runtime-metrics-arm64:
-  tags: ["runner:apm-k8s-arm-metal"]
-  extends: .benchmarks-arm64
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_RUNTIME_METRICS_ENABLED: 1
-    ENDPOINT: "hello"
-
-
 .benchmarks-win:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
@@ -630,12 +608,4 @@ profiler_cpu_timer_create-win:
     DD_PROFILING_WALLTIME_ENABLED: 0
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
-    ENDPOINT: "hello"
-    
-runtime-metrics-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_RUNTIME_METRICS_ENABLED: 1
     ENDPOINT: "hello"
