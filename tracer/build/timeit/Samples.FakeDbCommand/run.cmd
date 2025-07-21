@@ -15,7 +15,7 @@ dotnet tool update -g timeitsharp --version 0.4.3
 IF ERRORLEVEL 1 set FAILED=1
 
 echo *********************
-echo .NET Framework 4.6.1
+echo .NET Framework 4.8
 echo *********************
 dotnet timeit Samples.FakeDbCommand.windows.net48.json
 IF ERRORLEVEL 1 set FAILED=1
