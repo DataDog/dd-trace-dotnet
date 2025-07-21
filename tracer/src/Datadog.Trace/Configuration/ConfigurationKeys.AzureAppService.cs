@@ -41,14 +41,14 @@ namespace Datadog.Trace.Configuration
             /// The version of the functions runtime to use in this function app.
             /// Reference: https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_extension_version
             /// </summary>
-            internal const string FunctionsExtensionVersionKey = AzureFunctions.FunctionsExtensionVersionKey;
+            internal const string FunctionsExtensionVersionKey = AzureFunctions.FunctionsExtensionVersion;
 
             /// <summary>
             /// This variable is only present in Azure Functions.
             /// In this context, valid values are "dotnet" and "dotnet-isolated".
             /// Reference: https://learn.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_worker_runtime
             /// </summary>
-            internal const string FunctionsWorkerRuntimeKey = AzureFunctions.FunctionsWorkerRuntimeKey;
+            internal const string FunctionsWorkerRuntimeKey = AzureFunctions.FunctionsWorkerRuntime;
 
             /// <summary>
             /// The instance name in Azure where the traced application is running.

@@ -134,7 +134,8 @@ namespace Datadog.Trace.Configuration
 
             LambdaMetadata = LambdaMetadata.Create();
 
-            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
+            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry);
+            IsRunningInAzureFunctions = ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry);
             IsRunningMiniAgentInAzureFunctions = ImmutableAzureAppServiceSettings.GetIsFunctionsAppUsingMiniAgent(source, telemetry);
 
             if (IsRunningInAzureAppService)
@@ -1230,9 +1231,14 @@ namespace Datadog.Trace.Configuration
         internal bool IsRareSamplerEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the tracer is running in AAS
+        /// Gets a value indicating whether the tracer is running in AzureAppServices (AAS).
         /// </summary>
         internal bool IsRunningInAzureAppService { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in Azure Functions.
+        /// </summary>
+        internal bool IsRunningInAzureFunctions { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in an Azure Function on a

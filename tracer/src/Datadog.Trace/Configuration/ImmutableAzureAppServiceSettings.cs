@@ -221,9 +221,51 @@ namespace Datadog.Trace.Configuration
             return isFunctionApp && (Environment.OSVersion.Platform == PlatformID.Unix || websiteSKU is "Dynamic" or null);
         }
 
-        public static bool GetIsAzureAppService(IConfigurationSource source, IConfigurationTelemetry telemetry)
-            => new ConfigurationBuilder(source, telemetry)
-              .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
-              .AsBool(false);
+        /// <summary>
+        /// Returns <c>true</c> if the app is running in Azure App Services.
+        /// Checks for the presence of "WEBSITE_SITE_NAME" in the configuration.
+        /// </summary>
+        public static bool IsRunningInAzureAppServices(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        {
+            var siteName = new ConfigurationBuilder(source, telemetry)
+                           .WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey)
+                           .AsString();
+
+            return !string.IsNullOrEmpty(siteName);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the app is running in Azure Functions.
+        /// Checks for the presence of "FUNCTIONS_WORKER_RUNTIME" and "FUNCTIONS_EXTENSION_VERSION" in the configuration.
+        /// </summary>
+        public static bool IsRunningInAzureFunctions(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        {
+            var workerRuntime = new ConfigurationBuilder(source, telemetry)
+                           .WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime)
+                           .AsString();
+
+            var extensionVersion = new ConfigurationBuilder(source, telemetry)
+                           .WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion)
+                           .AsString();
+
+            return !string.IsNullOrEmpty(workerRuntime) && !string.IsNullOrEmpty(extensionVersion);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the app is instrumented using the Azure App Services Site Extension.
+        /// Checks for the presence of "DD_AZURE_APP_SERVICES=1" and "DD_AAS_DOTNET_EXTENSION_VERSION" in the configuration.
+        /// </summary>
+        public static bool IsUsingAzureAppServicesSiteExtension(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        {
+            var flag = new ConfigurationBuilder(source, telemetry)
+                       .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
+                       .AsBool(false);
+
+            var siteExtensionVersion = new ConfigurationBuilder(source, telemetry)
+                                       .WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey)
+                                       .AsString();
+
+            return flag && !string.IsNullOrEmpty(siteExtensionVersion);
+        }
     }
 }
