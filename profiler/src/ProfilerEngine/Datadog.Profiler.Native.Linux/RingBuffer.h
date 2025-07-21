@@ -25,7 +25,7 @@ class RingBuffer
 private:
     struct RingBufferImpl;
 public:
-    RingBuffer(std::size_t size);
+    RingBuffer(std::size_t capacity, std::size_t sampleSize);
     ~RingBuffer() = default;
 
     RingBuffer(RingBuffer const&) = delete;
@@ -46,7 +46,7 @@ public:
         Writer(Writer&&) = default;
         Writer& operator=(Writer&&) = default;
 
-        Buffer Reserve(std::size_t size, bool* timeout = nullptr) const;
+        Buffer Reserve(bool* timeout = nullptr) const;
         void Commit(Buffer);
         void Discard(Buffer);
 
@@ -69,15 +69,15 @@ public:
         Reader& operator=(Reader&&) = default;
 
         // sampleSize allows to compute the number of samples hold by the reader
-        std::size_t AvailableSamples(std::size_t sampleSize) const;
-        ConstBuffer Read();
+        std::size_t AvailableSamples() const;
+        ConstBuffer GetNext();
 
     private:
         friend class RingBuffer;
         explicit Reader(RingBufferImpl* rb);
 
         RingBufferImpl* _rb;
-        uint64_t _head;
+        uint64_t _tail;
     };
 
     Writer GetWriter();
@@ -91,7 +91,7 @@ public:
 
 private:
     using RingBufferUniquePtr = std::unique_ptr<RingBufferImpl, std::function<void(RingBufferImpl*)>>;
-    static std::pair<RingBufferUniquePtr, std::string> Create(std::size_t size);
+    static std::pair<RingBufferUniquePtr, std::string> Create(std::size_t capacity, std::size_t sampleSize);
 
     static std::atomic<std::uint8_t> NbRingBuffers;
 

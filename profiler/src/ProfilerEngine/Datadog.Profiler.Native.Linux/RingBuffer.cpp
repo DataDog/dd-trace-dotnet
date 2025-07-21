@@ -36,7 +36,7 @@ public:
     std::uint64_t intermediate_reader_pos; // intermediate_reader_pos > reader_pos,
                                            // part read by reader but not yet reflected
                                            // to the writer
-
+    std::size_t sample_size; // size of a sample, used to compute the number of samples
     SpinningMutex* spinlock;
     int mapfd;
 };
@@ -87,10 +87,10 @@ std::size_t get_mask_from_size(size_t size)
     return (size - 1);
 }
 
-RingBuffer::RingBuffer(std::size_t size)
+RingBuffer::RingBuffer(std::size_t capacity, std::size_t sampleSize)
 {
     std::string errorStr;
-    std::tie(_impl, errorStr) = Create(size);
+    std::tie(_impl, errorStr) = Create(capacity, sampleSize);
     if (_impl == nullptr)
     {
         Log::Error("Failed to create ring buffer: ", std::move(errorStr));
@@ -101,7 +101,7 @@ static inline int memfd_create(const char *name, unsigned int flags) {
   return syscall(SYS_memfd_create, name, flags);
 }
 
-std::pair<RingBuffer::RingBufferUniquePtr, std::string> RingBuffer::Create(std::size_t requestedSize)
+std::pair<RingBuffer::RingBufferUniquePtr, std::string> RingBuffer::Create(std::size_t requestedSize, std::size_t sampleSize)
 {
     auto rb = RingBufferUniquePtr(
         new RingBuffer::RingBufferImpl(),
@@ -200,6 +200,7 @@ std::pair<RingBuffer::RingBufferUniquePtr, std::string> RingBuffer::Create(std::
     rb->writer_pos = &meta->writer_pos;
     rb->intermediate_reader_pos = 0;
     rb->spinlock = new (&meta->spinlock) SpinningMutex();
+    rb->sample_size = sampleSize;
 
     return {std::move(rb), ""};
 }
@@ -243,15 +244,15 @@ SpinningMutex* RingBuffer::GetLock()
 }
 #endif // DD_TEST
 
-struct RingBufferHeader
+struct BufferHeader
 {
     uint64_t size;
     static constexpr uint64_t k_discard_bit = 1UL << 62;
-    static constexpr uint64_t k_busy_bit = 1UL << 63;
+    static constexpr uint64_t k_reserved_bit = 1UL << 63;
 
-    static bool is_busy(uint64_t size)
+    static bool is_reserved(uint64_t size)
     {
-        return size & k_busy_bit;
+        return size & k_reserved_bit;
     }
     static bool is_discarded(uint64_t size)
     {
@@ -262,23 +263,6 @@ struct RingBufferHeader
     {
         return size & ~k_discard_bit;
     }
-
-    void set_busy()
-    {
-        size |= k_busy_bit;
-    }
-    void set_discarded()
-    {
-        size |= k_discard_bit;
-    }
-    [[nodiscard]] bool is_busy() const
-    {
-        return size & k_busy_bit;
-    }
-    [[nodiscard]] bool is_discarded() const
-    {
-        return size & k_discard_bit;
-    }
 };
 
 inline constexpr size_t RingBufferAlignment{8};
@@ -288,10 +272,11 @@ RingBuffer::Writer::Writer(RingBufferImpl* rb) :
 {
 }
 
-Buffer RingBuffer::Writer::Reserve(std::size_t size, bool* timeout) const
+Buffer RingBuffer::Writer::Reserve(bool* timeout) const
 {
+    auto const size = _rb->sample_size;
     std::size_t const n2 =
-        align_up(size + sizeof(RingBufferHeader), RingBufferAlignment);
+        align_up(size + sizeof(BufferHeader), RingBufferAlignment);
     if (n2 == 0)
     {
         return {};
@@ -316,18 +301,18 @@ Buffer RingBuffer::Writer::Reserve(std::size_t size, bool* timeout) const
     std::uint64_t const new_writer_pos = writer_pos + n2;
 
     // Check that there is enough free space
-    std::uint64_t tail = __atomic_load_n(_rb->reader_pos, __ATOMIC_ACQUIRE);
-    if (rb->mask < new_writer_pos - tail)
+    std::uint64_t head = __atomic_load_n(_rb->reader_pos, __ATOMIC_ACQUIRE);
+    if (rb->mask < new_writer_pos - head)
     {
         return {};
     }
 
     uint64_t const head_linear = writer_pos & rb->mask;
     auto* hdr =
-        reinterpret_cast<RingBufferHeader*>(rb->data + head_linear);
+        reinterpret_cast<BufferHeader*>(rb->data + head_linear);
 
-    // Mark the sample as busy
-    hdr->size = size | RingBufferHeader::k_busy_bit;
+    // Mark the sample as reserved
+    hdr->size = size | BufferHeader::k_reserved_bit;
 
     // Atomic operation required to synchronize with reader load_acquire
     __atomic_store_n(rb->writer_pos, new_writer_pos, __ATOMIC_RELEASE);
@@ -337,10 +322,10 @@ Buffer RingBuffer::Writer::Reserve(std::size_t size, bool* timeout) const
 
 void RingBuffer::Writer::Commit(Buffer buf)
 {
-    auto* hdr = reinterpret_cast<RingBufferHeader*>(buf.data()) - 1;
+    auto* hdr = reinterpret_cast<BufferHeader*>(buf.data()) - 1;
 
     // Clear busy bit
-    std::uint64_t new_size = hdr->size ^ RingBufferHeader::k_busy_bit;
+    std::uint64_t new_size = hdr->size ^ BufferHeader::k_reserved_bit;
     // Needs release ordering to make sure that all previous writes are
     // visible to the reader once reader acquires `hdr->size`.
     __atomic_store_n(&hdr->size, new_size, __ATOMIC_RELEASE);
@@ -348,11 +333,11 @@ void RingBuffer::Writer::Commit(Buffer buf)
 
 void RingBuffer::Writer::Discard(Buffer buf)
 {
-    auto* hdr = reinterpret_cast<RingBufferHeader*>(buf.data()) - 1;
+    auto* hdr = reinterpret_cast<BufferHeader*>(buf.data()) - 1;
 
     // Clear busy bit
-    std::uint64_t new_size = hdr->size ^ RingBufferHeader::k_busy_bit;
-    new_size |= RingBufferHeader::k_discard_bit;
+    std::uint64_t new_size = hdr->size ^ BufferHeader::k_reserved_bit;
+    new_size |= BufferHeader::k_discard_bit;
     // Needs release ordering to make sure that all previous writes are
     // visible to the reader once reader acquires `hdr->size`.
     __atomic_store_n(&hdr->size, new_size, __ATOMIC_RELEASE);
@@ -361,8 +346,8 @@ void RingBuffer::Writer::Discard(Buffer buf)
 RingBuffer::Reader::Reader(RingBufferImpl* rb) :
     _rb(rb)
 {
-    _head = __atomic_load_n(_rb->writer_pos, __ATOMIC_ACQUIRE);
-    assert(rb->intermediate_reader_pos <= _head);
+    _tail = __atomic_load_n(_rb->writer_pos, __ATOMIC_ACQUIRE);
+    assert(rb->intermediate_reader_pos <= _tail);
     assert(_rb->intermediate_reader_pos == *_rb->reader_pos);
 }
 
@@ -375,40 +360,42 @@ RingBuffer::Reader::~Reader()
     }
 }
 
-std::size_t RingBuffer::Reader::AvailableSamples(std::size_t sampleSize) const
+// todo add a test with _sampleSize + BufferHeader size not aligned
+std::size_t RingBuffer::Reader::AvailableSamples() const
 {
-    return (_head - _rb->intermediate_reader_pos) / (sizeof(RingBufferHeader) + sampleSize);
+    const auto n2 = align_up(sizeof(BufferHeader) + _rb->sample_size, RingBufferAlignment);
+    return (_tail - _rb->intermediate_reader_pos) / n2;
 }
 
-ConstBuffer RingBuffer::Reader::Read()
+ConstBuffer RingBuffer::Reader::GetNext()
 {
     auto* rb = _rb;
-    auto const head = _head;
+    auto const tail = _tail;
     while (true)
     {
-        auto tail = rb->intermediate_reader_pos;
+        auto head = rb->intermediate_reader_pos;
         if (head == tail)
         {
             return {};
         }
 
-        uint64_t const tail_linear = tail & rb->mask;
-        std::byte* start = rb->data + tail_linear;
-        auto* hdr = reinterpret_cast<RingBufferHeader*>(start);
+        uint64_t const head_linear = head & rb->mask;
+        std::byte* start = rb->data + head_linear;
+        auto* hdr = reinterpret_cast<BufferHeader*>(start);
         uint64_t const sz = __atomic_load_n(&hdr->size, __ATOMIC_ACQUIRE);
 
         // Sample not committed yet, bail out
-        if (RingBufferHeader::is_busy(sz)) [[unlikely]]
+        if (BufferHeader::is_reserved(sz)) [[unlikely]]
         {
             return {};
         }
 
         rb->intermediate_reader_pos +=
-            align_up((sz & ~RingBufferHeader::k_discard_bit) +
-                         sizeof(RingBufferHeader),
+            align_up((sz & ~BufferHeader::k_discard_bit) +
+                         sizeof(BufferHeader),
                      RingBufferAlignment);
 
-        if (RingBufferHeader::is_discarded(sz)) [[unlikely]]
+        if (BufferHeader::is_discarded(sz)) [[unlikely]]
         {
             continue;
         }

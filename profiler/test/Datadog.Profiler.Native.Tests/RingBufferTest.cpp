@@ -21,7 +21,7 @@ TEST(RingBufferTest, CheckRingBufferSizing)
     auto metadataSize = GetPageSize();
     for (int i = 0; i <= pageSize; i++)
     {
-        auto rb = RingBuffer(i);
+        auto rb = RingBuffer(i, 1);
         ASSERT_EQ(rb.GetSize(), pageSize + metadataSize);
     }
 
@@ -29,7 +29,7 @@ TEST(RingBufferTest, CheckRingBufferSizing)
     // check that we keep that size
     for (int i = pageSize; i < 1 << 15; i *= 2)
     {
-        auto rb = RingBuffer(i);
+        auto rb = RingBuffer(i, 1);
         ASSERT_EQ(rb.GetSize(), metadataSize + i);
     }
 
@@ -37,18 +37,18 @@ TEST(RingBufferTest, CheckRingBufferSizing)
     // check we use the bigger one
     for (int i = 4097, j = 8192; i < 1 << 15; i *= 2, j *= 2)
     {
-        auto rb = RingBuffer(i);
+        auto rb = RingBuffer(i, 1);
         ASSERT_EQ(rb.GetSize(), metadataSize + j);
     }
 }
 
 TEST(RingBufferTest, CheckByteBuffer)
 {
-    auto rb = RingBuffer(1);
+    auto sampleSize = 25;
+    auto rb = RingBuffer(1, sampleSize);
     auto w = rb.GetWriter();
 
-    auto sampleSize = 25;
-    auto buffer = w.Reserve(sampleSize);
+    auto buffer = w.Reserve();
     ASSERT_EQ(buffer.size(), sampleSize);
     ASSERT_NE(buffer.data(), nullptr);
 
@@ -60,9 +60,9 @@ TEST(RingBufferTest, CheckByteBuffer)
     w.Commit(buffer);
 
     auto r = rb.GetReader();
-    ASSERT_EQ(r.AvailableSamples(sampleSize), 1);
+    ASSERT_EQ(r.AvailableSamples(), 1);
 
-    auto readBuffer = r.Read();
+    auto readBuffer = r.GetNext();
     ASSERT_EQ(readBuffer.size(), sampleSize);
     ASSERT_NE(readBuffer.data(), nullptr);
 
@@ -86,12 +86,12 @@ TEST(RingBufferTest, AddFakeSamplesAsMuchAsPossible)
     // in a page we can store 102 samples (one sample = sizeof(FakeSample) + header size, all
     // of this aligned on 8 bytes)
     auto nbSamples = 102;
-    auto rb = RingBuffer(4096);
+    auto rb = RingBuffer(4096, sizeof(FakeSample));
 
     for (int i = 0, j = 0; i < nbSamples; i++, j = 0)
     {
         auto w = rb.GetWriter();
-        auto buffer = w.Reserve(sizeof(FakeSample));
+        auto buffer = w.Reserve();
         ASSERT_FALSE(buffer.empty());
 
         auto sample = new (buffer.data()) FakeSample();
@@ -106,7 +106,7 @@ TEST(RingBufferTest, AddFakeSamplesAsMuchAsPossible)
             auto r = rb.GetReader();
             // even though the writer did not commit, the current sample
             // exist in the ring buffer but marked as 'busy'
-            ASSERT_EQ(r.AvailableSamples(sizeof(FakeSample)), i + 1);
+            ASSERT_EQ(r.AvailableSamples(), i + 1);
         }
 
         w.Commit(buffer);
@@ -115,16 +115,16 @@ TEST(RingBufferTest, AddFakeSamplesAsMuchAsPossible)
     // make sure we cannot add more sample
     {
         auto w = rb.GetWriter();
-        auto buffer = w.Reserve(sizeof(FakeSample));
+        auto buffer = w.Reserve();
         ASSERT_TRUE(buffer.empty());
     }
 
     auto r = rb.GetReader();
-    ASSERT_EQ(r.AvailableSamples(sizeof(FakeSample)), nbSamples);
+    ASSERT_EQ(r.AvailableSamples(), nbSamples);
 
     for (int i = 0, j = 0; i < nbSamples; i++, j = 0)
     {
-        auto buffer = r.Read();
+        auto buffer = r.GetNext();
         auto const* sample = reinterpret_cast<FakeSample const*>(buffer.data());
 
         auto rank = i * 10;
@@ -136,29 +136,29 @@ TEST(RingBufferTest, AddFakeSamplesAsMuchAsPossible)
         std::destroy_at(const_cast<FakeSample*>(sample));
     }
 
-    ASSERT_EQ(r.AvailableSamples(sizeof(FakeSample)), 0);
+    ASSERT_EQ(r.AvailableSamples(), 0);
 }
 
 TEST(RingBufferTest, StaleLock)
 {
-    auto rb = RingBuffer(42);
+    auto rb = RingBuffer(42, 4);
     auto w = rb.GetWriter();
 
     rb.GetLock()->lock();
     auto timeout = false;
 
-    ASSERT_TRUE(w.Reserve(4, &timeout).empty());
+    ASSERT_TRUE(w.Reserve(&timeout).empty());
     ASSERT_TRUE(timeout);
 }
 
 
 TEST(RingBufferTest, CheckDiscard)
 {
-    auto rb = RingBuffer(1);
     auto sampleSize = 25;
+    auto rb = RingBuffer(1, sampleSize);
     {
         auto w = rb.GetWriter();
-        auto buffer = w.Reserve(sampleSize);
+        auto buffer = w.Reserve();
         ASSERT_EQ(buffer.size(), sampleSize);
         ASSERT_NE(buffer.data(), nullptr);
 
@@ -170,16 +170,16 @@ TEST(RingBufferTest, CheckDiscard)
         w.Discard(buffer);
 
         auto r = rb.GetReader();
-        // even if the sample was discard, it's still present in the ring buffer
-        ASSERT_EQ(r.AvailableSamples(sampleSize), 1);
+        // even if the sample was discarded, it's still present in the ring buffer
+        ASSERT_EQ(r.AvailableSamples(), 1);
         // But reading into it will return an empty buffer
-        ASSERT_TRUE(r.Read().empty());
+        ASSERT_TRUE(r.GetNext().empty());
     }
 
     // Make sure we still can reserve and use the ring buffer
     {
         auto w = rb.GetWriter();
-        auto buffer = w.Reserve(sampleSize);
+        auto buffer = w.Reserve();
         ASSERT_EQ(buffer.size(), sampleSize);
         ASSERT_NE(buffer.data(), nullptr);
 
@@ -191,7 +191,7 @@ TEST(RingBufferTest, CheckDiscard)
         w.Commit(buffer);
 
         auto r = rb.GetReader();
-        ASSERT_EQ(r.AvailableSamples(sampleSize), 1);
+        ASSERT_EQ(r.AvailableSamples(), 1);
     }
 }
 
@@ -211,7 +211,7 @@ void writer_fun(RingBuffer* rb, std::uint64_t nbElements, std::size_t producerId
         do
         {
             w = rb->GetWriter();
-            buffer = w.Reserve(sizeof(MyStruct));
+            buffer = w.Reserve();
             if (!buffer.empty())
             {
                 break;
@@ -240,7 +240,7 @@ void reader_fun(RingBuffer* rb, std::uint64_t nbElements, std::uint64_t nbProduc
     {
         auto r = rb->GetReader();
 
-        for (auto buffer = r.Read(); !buffer.empty(); buffer = r.Read())
+        for (auto buffer = r.GetNext(); !buffer.empty(); buffer = r.GetNext())
         {
             auto* item = reinterpret_cast<const MyStruct*>(buffer.data());
 
@@ -260,7 +260,7 @@ TEST(RingBufferTest, MultipleProducersSingleConsumer)
     auto nbElements = 1000;
     auto nbProducers = 8;
 
-    auto rb = RingBuffer(4096);
+    auto rb = RingBuffer(4096, sizeof(MyStruct));
     std::vector<std::thread> threads;
     for (auto i = 0; i < nbProducers; i++)
     {
