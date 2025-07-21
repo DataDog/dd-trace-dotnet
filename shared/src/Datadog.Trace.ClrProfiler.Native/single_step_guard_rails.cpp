@@ -300,10 +300,10 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         + "\",\"language_name\": \"dotnet\",\"language_version\": \"" + runtimeVersion
         + "\",\"tracer_version\": \"" + PROFILER_VERSION
         + "\",\"pid\":" + std::to_string(GetPID())
-        + "},\"points\": " + points + "}"
-        + "\",\"inject_result\": \"" + m_injectResult
+        + ",\"inject_result\": \"" + m_injectResult
         + "\",\"inject_result_reason\": \"" + m_injectResultReason
-        + "\",\"inject_result_class\": \"" + m_injectResultClass;
+        + "\",\"inject_result_class\": \"" + m_injectResultClass
+        + "\"},\"points\": " + points + "}";
 
     const auto processPath = ToString(forwarderPath);
 
