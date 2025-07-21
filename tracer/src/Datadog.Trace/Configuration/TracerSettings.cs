@@ -254,7 +254,7 @@ namespace Datadog.Trace.Configuration
 
             var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
             var serviceName = config
-                                 .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                                 .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME", ConfigurationKeys.AzureAppService.SiteNameKey)
                                  .AsStringResult()
                                  .OverrideWith(in otelServiceName, ErrorLog);
 
