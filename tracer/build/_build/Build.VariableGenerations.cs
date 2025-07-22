@@ -602,6 +602,21 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
+                    // Non-lts versions of ubuntu (official Microsoft versions only provide LTS-based images)
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "ubuntu_interim",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET9_0, "25.04-9.0"),
+                        },
+                        installer: "datadog-dotnet-apm*_amd64.deb",
+                        installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
+                        dockerName: "andrewlock/dotnet-ubuntu"
+                    );
+
                     // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
@@ -818,6 +833,21 @@ partial class Build : NukeBuild
                         linuxArtifacts: "linux-packages-linux-arm64",
                         runtimeId: "linux-arm64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    // Non-lts versions of ubuntu (official Microsoft versions only provide LTS-based images)
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "ubuntu_interim",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET9_0, "25.04-9.0"),
+                        },
+                        installer: "datadog-dotnet-apm_*_arm64.deb",
+                        installCmd: "dpkg -i ./datadog-dotnet-apm_*_arm64.deb",
+                        linuxArtifacts: "linux-packages-linux-arm64",
+                        runtimeId: "linux-arm64",
+                        dockerName: "andrewlock/dotnet-ubuntu"
                     );
 
                     // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
@@ -1643,11 +1673,9 @@ partial class Build : NukeBuild
                         { "macos-14_net6.0", new { vmImage = "macos-14", publishFramework = "net6.0" } },
                         { "macos-14_net8.0", new { vmImage = "macos-14", publishFramework = "net8.0" } },
                         { "macos-14_net9.0", new { vmImage = "macos-14", publishFramework = "net9.0" } },
-                        { "macos-14_net10.0", new { vmImage = "macos-14", publishFramework = "net10.0" } },
                         { "macos-15_net6.0", new { vmImage = "macos-15", publishFramework = "net6.0" } },
                         { "macos-15_net8.0", new { vmImage = "macos-15", publishFramework = "net8.0" } },
                         { "macos-15_net9.0", new { vmImage = "macos-15", publishFramework = "net9.0" } },
-                        { "macos-15_net10.0", new { vmImage = "macos-15", publishFramework = "net10.0" } },
                     };
 
                     Logger.Information($"Installer smoke tests dotnet-tool NuGet matrix MacOs");

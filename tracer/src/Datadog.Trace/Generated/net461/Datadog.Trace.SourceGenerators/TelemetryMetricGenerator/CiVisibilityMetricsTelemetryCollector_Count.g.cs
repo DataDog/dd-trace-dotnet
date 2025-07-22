@@ -80,6 +80,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountContextHeaderMalformed(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderMalformed tag, int increment = 1)
+    {
+    }
+
     public void RecordCountStatsApiRequests(int increment = 1)
     {
     }
