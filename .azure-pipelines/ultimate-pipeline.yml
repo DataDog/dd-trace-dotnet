@@ -2929,6 +2929,50 @@ stages:
       condition: always()
       continueOnError: false
 
+- stage: tsan_profiler_tests
+  #thread sanitizer tests
+  condition: >
+    and(
+      succeeded(), 
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [merge_commit_id, generate_variables]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux]
+      allowSkipped: true
+
+  - job: Linux
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      name: azure-managed-linux-x64-1
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "BuildProfilerTsanTest RunUnitTestsWithTsanLinux -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: profiler/build_data
+      displayName: Uploading Thread sanitizer test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
+      condition: always()
+      continueOnError: false
+
 - stage: integration_tests_arm64
   dependsOn: [build_arm64_tracer, build_arm64_universal, build_arm64_profiler, generate_variables, merge_commit_id, build_samples]
   variables:

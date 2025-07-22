@@ -11,6 +11,8 @@ add_compile_options(-fPIC -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++20-extensions -DDD_TEST)
 
+target_compile_options(Datadog.Profiler.Native.static PRIVATE -DDD_TEST)
+
 if (IS_ALPINE)
     add_compile_options(-DDD_ALPINE)
 endif()
@@ -21,6 +23,10 @@ endif()
 
 if (RUN_UBSAN)
     add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
+endif()
+
+if (RUN_TSAN)
+    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS)
 endif()
 
 if(ISLINUX)
@@ -71,6 +77,10 @@ endif()
 
 if (RUN_UBSAN)
     target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=undefined)
+endif()
+
+if (RUN_TSAN)
+    target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=thread)
 endif()
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}
