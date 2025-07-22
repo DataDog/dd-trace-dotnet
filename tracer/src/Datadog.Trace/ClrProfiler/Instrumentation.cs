@@ -25,6 +25,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -439,7 +440,10 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
-            if (Tracer.Instance.Settings.AzureAppServiceMetadata?.IsFunctionsApp is true)
+            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
+            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
+
+            if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
             {
                 // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for Azure Functions.
                 // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal
