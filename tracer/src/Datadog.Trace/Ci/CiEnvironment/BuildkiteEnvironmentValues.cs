@@ -31,6 +31,7 @@ internal sealed class BuildkiteEnvironmentValues<TValueProvider>(TValueProvider 
         PipelineNumber = ValueProvider.GetValue(Constants.BuildKiteBuildNumber);
         PipelineName = ValueProvider.GetValue(Constants.BuildKitePipelineSlug);
         PipelineUrl = ValueProvider.GetValue(Constants.BuildKiteBuildUrl);
+        JobId = ValueProvider.GetValue(Constants.BuildKiteJobId);
         JobUrl = string.Format("{0}#{1}", ValueProvider.GetValue(Constants.BuildKiteBuildUrl), ValueProvider.GetValue(Constants.BuildKiteJobId));
 
         Message = ValueProvider.GetValue(Constants.BuildKiteMessage);
@@ -64,5 +65,6 @@ internal sealed class BuildkiteEnvironmentValues<TValueProvider>(TValueProvider 
             Constants.BuildKiteJobId);
 
         PrBaseBranch = ValueProvider.GetValue(Constants.BuildKitePullRequestBaseBranch);
+        PrNumber = ValueProvider.GetValue(Constants.BuildKitePullRequestNumber);
     }
 }

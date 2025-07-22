@@ -85,10 +85,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             var context = new SpanContext(null, null, null);
             var time = DateTimeOffset.UtcNow;
+            var testIndex = -1;
             foreach (var testItem in jsonData.Data)
             {
                 var envData = testItem[0];
                 var spanData = testItem[1];
+                testIndex++;
 
                 var span = new Span(context, time);
                 CIEnvironmentValues.Create(envData).DecorateSpan(span);
@@ -133,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         continue;
                     }
 
-                    Assert.Equal(spanDataItem.Value, value);
+                    value.Should().Be(spanDataItem.Value, $"for {jsonData.Name}[{testIndex}]\\{spanDataItem.Key}");
                 }
             }
         }
@@ -172,6 +174,100 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             reloadEnvironmentData?.Invoke(githubEnvVars, null);
             githubEnvVars.PrBaseBranch.Should().Be("my-custom-branch");
+        }
+
+        /*
+         *  Test matrix
+         *  ───────────
+         *  1.   refs/heads/tags/<tag>     → Group 1
+         *  2.   refs/heads/<branch>       → Group 2
+         *  3.   refs/tags/<tag>           → Group 3
+         *  4.   refs/<anything>           → Group 4
+         *  5.   origin/tags/<tag>         → Group 5
+         *  6.   origin/<branch>           → Group 6  (not surfaced by the method – returns “ ”)
+         *  7.   Empty / null input        → Pass-through
+         *  8.   String that doesn’t match → Pass-through
+         */
+
+        [Theory]
+        // refs/heads/tags/…
+        [InlineData("refs/heads/tags/v1.0.0",         "v1.0.0")]
+        [InlineData("refs/heads/tags/release-2025",   "release-2025")]
+
+        // refs/heads/…
+        [InlineData("refs/heads/main",                "main")]
+        [InlineData("refs/heads/feature/add-login",   "feature/add-login")]
+
+        // refs/tags/…
+        [InlineData("refs/tags/v2.3.4",               "v2.3.4")]
+
+        // refs/…
+        [InlineData("refs/release/2025-07-21",        "release/2025-07-21")]
+
+        // origin/tags/…
+        [InlineData("origin/tags/v3.0.0-beta",        "v3.0.0-beta")]
+
+        // origin/…   (group 6 → not surfaced, so output is empty string)
+        [InlineData("origin/hotfix-42",               "")]
+
+        // Edge & negative cases
+        [InlineData("",                              "")]          // empty input
+        [InlineData(null,                            null)]         // null input
+        [InlineData("foo/bar",                       "foo/bar")]    // pattern not matched → passthrough
+        public void CleanTagValue_Should_Return_Expected_Result(string input, string expected)
+        {
+            var actual = CIEnvironmentValues.CleanTagValue(input);
+            actual.Should().Be(expected);
+        }
+
+        /*
+         *  Extraction rules recap
+         *  ──────────────────────
+         *  Branch  ← first non-empty of groups 2, 4, 6
+         *  Tag     ← first non-empty of groups 1, 3, 5
+         *
+         *  Test matrix
+         *  ───────────
+         *  1. refs/heads/tags/<tag>      → tag only
+         *  2. refs/heads/<branch>        → branch only
+         *  3. refs/tags/<tag>            → tag only
+         *  4. refs/<anything>            → branch only
+         *  5. origin/tags/<tag>          → tag only
+         *  6. origin/<branch>            → branch only
+         *  7. Empty / null input         → pass-through
+         *  8. Pattern miss               → pass-through (branch untouched, tag null)
+         */
+
+        [Theory]
+        // refs/heads/tags/…  (group 1)
+        [InlineData("refs/heads/tags/v1.0.0",            "",               "v1.0.0")]
+        [InlineData("refs/heads/tags/release-2025",      "",               "release-2025")]
+
+        // refs/heads/…        (group 2)
+        [InlineData("refs/heads/main",                   "main",          "")]
+        [InlineData("refs/heads/feature/add-login",      "feature/add-login", "")]
+
+        // refs/tags/…          (group 3)
+        [InlineData("refs/tags/v2.3.4",                  "",               "v2.3.4")]
+
+        // refs/…               (group 4)
+        [InlineData("refs/release/2025-07-21",           "release/2025-07-21", "")]
+
+        // origin/tags/…        (group 5)
+        [InlineData("origin/tags/v3.0.0-beta",           "",               "v3.0.0-beta")]
+
+        // origin/…             (group 6)
+        [InlineData("origin/hotfix-42",                  "hotfix-42",     "")]
+
+        // Edge & negative cases
+        [InlineData("",                                   "",              null)]    // empty input
+        [InlineData(null,                                 null,            null)]    // null input
+        [InlineData("foo/bar",                            "foo/bar",       null)]    // pattern not matched
+        public void CleanBranchValue_Should_Return_Expected(string input, string expectedBranch, string expectedTag)
+        {
+            var result = CIEnvironmentValues.CleanBranchValue(input);
+            result.Item1.Should().Be(expectedBranch);   // branch
+            result.Item2.Should().Be(expectedTag);      // tag
         }
 
         public class JsonDataItem : IXunitSerializable

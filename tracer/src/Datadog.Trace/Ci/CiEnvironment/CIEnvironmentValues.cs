@@ -23,6 +23,7 @@ internal abstract class CIEnvironmentValues
     internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)?(\/)?";
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
     private static readonly Lazy<CIEnvironmentValues> LazyInstance = new(Create);
+    private static readonly Regex BranchOrTagsRegex = new(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$", RegexOptions.Compiled);
 
     private string? _gitSearchFolder = null;
 
@@ -78,6 +79,8 @@ internal abstract class CIEnvironmentValues
 
     public string? JobName { get; protected set; }
 
+    public string? JobId { get; protected set; }
+
     public string? StageName { get; protected set; }
 
     public string? WorkspacePath { get; protected set; }
@@ -91,6 +94,8 @@ internal abstract class CIEnvironmentValues
     public string? PrBaseCommit { get; protected set; }
 
     public string? PrBaseBranch { get; protected set; }
+
+    public string? PrNumber { get; protected set; }
 
     public CodeOwners? CodeOwners { get; protected set; }
 
@@ -172,6 +177,63 @@ internal abstract class CIEnvironmentValues
         return true;
     }
 
+    internal static string? CleanTagValue(string? tag)
+    {
+        try
+        {
+            // Clean tag name
+            if (!string.IsNullOrEmpty(tag))
+            {
+                var match = BranchOrTagsRegex.Match(tag);
+                if (match is { Success: true, Groups.Count: 7 })
+                {
+                    tag =
+                        !string.IsNullOrWhiteSpace(match.Groups[1].Value) ? match.Groups[1].Value :
+                        !string.IsNullOrWhiteSpace(match.Groups[3].Value) ? match.Groups[3].Value :
+                        !string.IsNullOrWhiteSpace(match.Groups[5].Value) ? match.Groups[5].Value :
+                        !string.IsNullOrWhiteSpace(match.Groups[2].Value) ? match.Groups[2].Value :
+                                                                            match.Groups[4].Value;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error fixing tag name: {TagName}", tag);
+        }
+
+        return tag;
+    }
+
+    internal static Tuple<string?, string?> CleanBranchValue(string? branch)
+    {
+        string? tag = null;
+        try
+        {
+            // Clean branch name
+            if (!string.IsNullOrEmpty(branch))
+            {
+                var match = BranchOrTagsRegex.Match(branch);
+                if (match is { Success: true, Groups.Count: 7 })
+                {
+                    branch =
+                        !string.IsNullOrWhiteSpace(match.Groups[2].Value) ? match.Groups[2].Value :
+                        !string.IsNullOrWhiteSpace(match.Groups[4].Value) ? match.Groups[4].Value :
+                                                                            match.Groups[6].Value;
+                    tag =
+                        !string.IsNullOrWhiteSpace(match.Groups[1].Value) ? match.Groups[1].Value :
+                        !string.IsNullOrWhiteSpace(match.Groups[3].Value) ? match.Groups[3].Value :
+                                                                            match.Groups[5].Value;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error fixing branch name: {BranchName}", branch);
+        }
+
+        return Tuple.Create(branch, tag);
+    }
+
     public void DecorateSpan(Span span)
     {
         if (span == null)
@@ -180,20 +242,6 @@ internal abstract class CIEnvironmentValues
         }
 
         SetTagIfNotNullOrEmpty(span, CommonTags.CIProvider, Provider);
-        SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineId, PipelineId);
-        SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineName, PipelineName);
-        SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineNumber, PipelineNumber);
-        SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineUrl, PipelineUrl);
-        SetTagIfNotNullOrEmpty(span, CommonTags.CIJobUrl, JobUrl);
-        SetTagIfNotNullOrEmpty(span, CommonTags.CIJobName, JobName);
-        SetTagIfNotNullOrEmpty(span, CommonTags.CINodeName, NodeName);
-        if (NodeLabels is { } nodeLabels)
-        {
-            SetTagIfNotNullOrEmpty(span, CommonTags.CINodeLabels, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(nodeLabels));
-        }
-
-        SetTagIfNotNullOrEmpty(span, CommonTags.StageName, StageName);
-        SetTagIfNotNullOrEmpty(span, CommonTags.CIWorkspacePath, WorkspacePath);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitRepository, Repository);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitCommit, Commit);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitBranch, Branch);
@@ -206,6 +254,26 @@ internal abstract class CIEnvironmentValues
         SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitCommitterDate, CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
         SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitMessage, Message);
         SetTagIfNotNullOrEmpty(span, CommonTags.BuildSourceRoot, SourceRoot);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineId, PipelineId);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineName, PipelineName);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineNumber, PipelineNumber);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineUrl, PipelineUrl);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CIJobUrl, JobUrl);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CIJobName, JobName);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CIJobId, JobId);
+        SetTagIfNotNullOrEmpty(span, CommonTags.StageName, StageName);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CIWorkspacePath, WorkspacePath);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CINodeName, NodeName);
+        if (NodeLabels is { } nodeLabels)
+        {
+            SetTagIfNotNullOrEmpty(span, CommonTags.CINodeLabels, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(nodeLabels));
+        }
+
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommit, HeadCommit);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitPrBaseCommit, PrBaseCommit);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitPrBaseBranch, PrBaseBranch);
+        SetTagIfNotNullOrEmpty(span, CommonTags.PrNumber, PrNumber);
+
         if (VariablesToBypass is { } variablesToBypass)
         {
             span.SetTag(CommonTags.CiEnvVars, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass));
@@ -226,6 +294,7 @@ internal abstract class CIEnvironmentValues
         PipelineUrl = null;
         JobUrl = null;
         JobName = null;
+        JobId = null;
         StageName = null;
         WorkspacePath = null;
         Repository = null;
@@ -296,57 +365,15 @@ internal abstract class CIEnvironmentValues
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void CleanBranchAndTag()
     {
-        var regex = new Regex(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$");
-
-        try
+        Tag = CleanTagValue(Tag);
+        var branchTag = CleanBranchValue(Branch);
+        Branch = branchTag.Item1;
+        if (string.IsNullOrEmpty(Tag))
         {
-            // Clean tag name
-            if (!string.IsNullOrEmpty(Tag))
-            {
-                var match = regex.Match(Tag);
-                if (match.Success && match.Groups.Count == 7)
-                {
-                    Tag =
-                        !string.IsNullOrWhiteSpace(match.Groups[1].Value) ? match.Groups[1].Value :
-                        !string.IsNullOrWhiteSpace(match.Groups[3].Value) ? match.Groups[3].Value :
-                        !string.IsNullOrWhiteSpace(match.Groups[5].Value) ? match.Groups[5].Value :
-                        !string.IsNullOrWhiteSpace(match.Groups[2].Value) ? match.Groups[2].Value :
-                                                                            match.Groups[4].Value;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Error fixing tag name: {TagName}", Tag);
+            Tag = branchTag.Item2;
         }
 
-        try
-        {
-            // Clean branch name
-            if (!string.IsNullOrEmpty(Branch))
-            {
-                var match = regex.Match(Branch);
-                if (match.Success && match.Groups.Count == 7)
-                {
-                    Branch =
-                        !string.IsNullOrWhiteSpace(match.Groups[2].Value) ? match.Groups[2].Value :
-                        !string.IsNullOrWhiteSpace(match.Groups[4].Value) ? match.Groups[4].Value :
-                                                                            match.Groups[6].Value;
-
-                    if (string.IsNullOrEmpty(Tag))
-                    {
-                        Tag =
-                            !string.IsNullOrWhiteSpace(match.Groups[1].Value) ? match.Groups[1].Value :
-                            !string.IsNullOrWhiteSpace(match.Groups[3].Value) ? match.Groups[3].Value :
-                                                                                match.Groups[5].Value;
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Error fixing branch name: {BranchName}", Branch);
-        }
+        PrBaseBranch = CleanBranchValue(PrBaseBranch).Item1;
 
         if (string.IsNullOrEmpty(Tag))
         {
@@ -356,6 +383,11 @@ internal abstract class CIEnvironmentValues
         if (string.IsNullOrEmpty(Branch))
         {
             Branch = null;
+        }
+
+        if (string.IsNullOrEmpty(PrBaseBranch))
+        {
+            PrBaseBranch = null;
         }
     }
 
@@ -419,6 +451,7 @@ internal abstract class CIEnvironmentValues
         public const string TravisJobWebUrl = "TRAVIS_JOB_WEB_URL";
         public const string TravisCommitMessage = "TRAVIS_COMMIT_MESSAGE";
         public const string TravisPullRequestSha = "TRAVIS_PULL_REQUEST_SHA";
+        public const string TravisPullRequestNumber = "TRAVIS_PULL_REQUEST";
 
         // Circle CI Environment variables
         public const string CircleCI = "CIRCLECI";
@@ -432,6 +465,7 @@ internal abstract class CIEnvironmentValues
         public const string CircleCIProjectRepoName = "CIRCLE_PROJECT_REPONAME";
         public const string CircleCIJob = "CIRCLE_JOB";
         public const string CircleCIBuildUrl = "CIRCLE_BUILD_URL";
+        public const string CircleCIPrNumber = "CIRCLE_PR_NUMBER";
 
         // Jenkins Environment variables
         public const string JenkinsUrl = "JENKINS_URL";
@@ -447,6 +481,8 @@ internal abstract class CIEnvironmentValues
         public const string JenkinsJobName = "JOB_NAME";
         public const string JenkinsNodeName = "NODE_NAME";
         public const string JenkinsNodeLabels = "NODE_LABELS";
+        public const string JenkinsChangeTarget = "CHANGE_TARGET";
+        public const string JenkinsChangeId = "CHANGE_ID";
 
         // Gitlab Environment variables
         public const string GitlabCI = "GITLAB_CI";
@@ -473,6 +509,7 @@ internal abstract class CIEnvironmentValues
         public const string GitlabMergeRequestSourceBranchSha = "CI_MERGE_REQUEST_SOURCE_BRANCH_SHA";
         public const string GitlabMergeRequestTargetBranchSha = "CI_MERGE_REQUEST_TARGET_BRANCH_SHA";
         public const string GitlabMergeRequestTargetBranchName = "CI_MERGE_REQUEST_TARGET_BRANCH_NAME";
+        public const string GitlabMergeRequestId = "CI_MERGE_REQUEST_IID";
 
         // Appveyor CI Environment variables
         public const string Appveyor = "APPVEYOR";
@@ -483,6 +520,8 @@ internal abstract class CIEnvironmentValues
         public const string AppveyorBuildId = "APPVEYOR_BUILD_ID";
         public const string AppveyorBuildNumber = "APPVEYOR_BUILD_NUMBER";
         public const string AppveyorPullRequestHeadRepoBranch = "APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH";
+        public const string AppveyorPullRequestHeadCommit = "APPVEYOR_PULL_REQUEST_HEAD_COMMIT";
+        public const string AppveyorPullRequestNumber = "APPVEYOR_PULL_REQUEST_NUMBER";
         public const string AppveyorRepoTagName = "APPVEYOR_REPO_TAG_NAME";
         public const string AppveyorRepoBranch = "APPVEYOR_REPO_BRANCH";
         public const string AppveyorRepoCommitMessage = "APPVEYOR_REPO_COMMIT_MESSAGE";
@@ -513,6 +552,7 @@ internal abstract class CIEnvironmentValues
         public const string AzureBuildRequestedForId = "BUILD_REQUESTEDFORID";
         public const string AzureBuildRequestedForEmail = "BUILD_REQUESTEDFOREMAIL";
         public const string AzureSystemPullRequestTargetBranch = "SYSTEM_PULLREQUEST_TARGETBRANCH";
+        public const string AzureSystemPullRequestNumber = "SYSTEM_PULLREQUEST_PULLREQUESTNUMBER";
 
         // BitBucket CI Environment variables
         public const string BitBucketCommit = "BITBUCKET_COMMIT";
@@ -525,6 +565,7 @@ internal abstract class CIEnvironmentValues
         public const string BitBucketBuildNumber = "BITBUCKET_BUILD_NUMBER";
         public const string BitBucketRepoFullName = "BITBUCKET_REPO_FULL_NAME";
         public const string BitBucketPullRequestDestinationBranch = "BITBUCKET_PR_DESTINATION_BRANCH";
+        public const string BitBucketPullRequestNumber = "BITBUCKET_PR_ID";
 
         // GitHub CI Environment variables
         public const string GitHubSha = "GITHUB_SHA";
@@ -545,6 +586,8 @@ internal abstract class CIEnvironmentValues
         public const string TeamCityVersion = "TEAMCITY_VERSION";
         public const string TeamCityBuildConfName = "TEAMCITY_BUILDCONF_NAME";
         public const string TeamCityBuildUrl = "BUILD_URL";
+        public const string TeamCityPrNumber = "TEAMCITY_PULLREQUEST_NUMBER";
+        public const string TeamCityPrTargetBranch = "TEAMCITY_PULLREQUEST_TARGET_BRANCH";
 
         // BuildKite CI Environment variables
         public const string BuildKite = "BUILDKITE";
@@ -566,6 +609,7 @@ internal abstract class CIEnvironmentValues
         public const string BuildKiteAgentId = "BUILDKITE_AGENT_ID";
         public const string BuildKiteAgentMetadata = "BUILDKITE_AGENT_META_DATA_";
         public const string BuildKitePullRequestBaseBranch = "BUILDKITE_PULL_REQUEST_BASE_BRANCH";
+        public const string BuildKitePullRequestNumber = "BUILDKITE_PULL_REQUEST";
 
         // Bitrise CI Environment variables
         public const string BitriseBuildSlug = "BITRISE_BUILD_SLUG";
@@ -585,6 +629,7 @@ internal abstract class CIEnvironmentValues
         public const string BitriseCloneCommitCommiterName = "GIT_CLONE_COMMIT_COMMITER_NAME";
         public const string BitriseCloneCommitCommiterEmail = "GIT_CLONE_COMMIT_COMMITER_EMAIL";
         public const string BitrisePullRequestHeadBranch = "BITRISEIO_PULL_REQUEST_HEAD_BRANCH";
+        public const string BitrisePullRequestNumber = "BITRISE_PULL_REQUEST";
 
         // Buddy CI Environment variables
         public const string Buddy = "BUDDY";
@@ -600,6 +645,7 @@ internal abstract class CIEnvironmentValues
         public const string BuddyExecutionRevisionCommitterName = "BUDDY_EXECUTION_REVISION_COMMITTER_NAME";
         public const string BuddyExecutionRevisionCommitterEmail = "BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL";
         public const string BuddyPullRequestBaseBranch = "BUDDY_RUN_PR_BASE_BRANCH";
+        public const string BuddyPullRequestNumber = "BUDDY_RUN_PR_NO";
 
         // Codefresh CI Environment variables
         public const string CodefreshBuildId = "CF_BUILD_ID";
@@ -608,12 +654,30 @@ internal abstract class CIEnvironmentValues
         public const string CodefreshStepName = "CF_STEP_NAME";
         public const string CodefreshBranch = "CF_BRANCH";
         public const string CodefreshPullRequestTarget = "CF_PULL_REQUEST_TARGET";
+        public const string CodefreshPullRequestNumber = "CF_PULL_REQUEST_NUMBER";
 
         // AWS CodePipeline
         public const string AWSCodePipelineId = "DD_PIPELINE_EXECUTION_ID";
         public const string AWSCodePipelineBuildInitiator = "CODEBUILD_INITIATOR";
         public const string AWSCodePipelineBuildArn = "CODEBUILD_BUILD_ARN";
         public const string AWSCodePipelineActionExecutionId = "DD_ACTION_EXECUTION_ID";
+
+        // Drone CI
+        public const string Drone = "DRONE";
+        public const string DroneBranch = "DRONE_BRANCH";
+        public const string DroneBuildLink = "DRONE_BUILD_LINK";
+        public const string DroneBuildNumber = "DRONE_BUILD_NUMBER";
+        public const string DroneCommitAuthorEmail = "DRONE_COMMIT_AUTHOR_EMAIL";
+        public const string DroneCommitAuthorName = "DRONE_COMMIT_AUTHOR_NAME";
+        public const string DroneCommitMessage = "DRONE_COMMIT_MESSAGE";
+        public const string DroneCommitSha = "DRONE_COMMIT_SHA";
+        public const string DroneGitHttpUrl = "DRONE_GIT_HTTP_URL";
+        public const string DroneStageName = "DRONE_STAGE_NAME";
+        public const string DroneStepName = "DRONE_STEP_NAME";
+        public const string DroneTag = "DRONE_TAG";
+        public const string DroneWorkspace = "DRONE_WORKSPACE";
+        public const string DronePullRequest = "DRONE_PULL_REQUEST";
+        public const string DroneTargetBranch = "DRONE_TARGET_BRANCH";
 
         // Datadog Custom CI Environment variables
         public const string DDGitBranch = "DD_GIT_BRANCH";
@@ -627,5 +691,7 @@ internal abstract class CIEnvironmentValues
         public const string DDGitCommitCommiterName = "DD_GIT_COMMIT_COMMITTER_NAME";
         public const string DDGitCommitCommiterEmail = "DD_GIT_COMMIT_COMMITTER_EMAIL";
         public const string DDGitCommitCommiterDate = "DD_GIT_COMMIT_COMMITTER_DATE";
+        public const string DDGitPullRequestBaseBranch = "DD_GIT_PULL_REQUEST_BASE_BRANCH";
+        public const string DDGitPullRequestBaseBranchSha = "DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA";
     }
 }

@@ -45,5 +45,6 @@ internal sealed class BitriseEnvironmentValues<TValueProvider>(TValueProvider va
         }
 
         PrBaseBranch = ValueProvider.GetValue(Constants.BitriseGitBranchDest);
+        PrNumber = ValueProvider.GetValue(Constants.BitrisePullRequestNumber);
     }
 }

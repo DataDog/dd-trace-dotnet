@@ -92,9 +92,10 @@ internal static class CiUtils
         else
         {
             Log.Debug("RunCiCommand: Agent-based mode has been enabled. Checking agent connection to {AgentUrl}.", agentUrl);
-            (agentConfiguration, discoveryService) = await Utils.CheckAgentConnectionAsync(agentUrl).ConfigureAwait(false);
+            (agentConfiguration, discoveryService) = await Utils.GetDiscoveryServiceAndCheckConnectionAsync(agentUrl).ConfigureAwait(false);
             if (agentConfiguration is null)
             {
+                await discoveryService.DisposeAsync().ConfigureAwait(false);
                 Log.Error("RunCiCommand: Agent configuration cannot be retrieved.");
                 context.ExitCode = 1;
                 return new InitResults(false, lstArguments, profilerEnvironmentVariables, false, false, Task.CompletedTask);
@@ -224,6 +225,11 @@ internal static class CiUtils
                     testOptimization.Log.Warning(ex, "Error getting ITR settings from configuration api");
                 }
             }
+        }
+        else
+        {
+            // Didn't use the discovery service, so we need to dispose it
+            await discoveryService.DisposeAsync().ConfigureAwait(false);
         }
 
         Log.Debug("RunCiCommand: CodeCoverageEnabled = {Value}", codeCoverageEnabled);
