@@ -216,7 +216,7 @@ namespace Datadog.Trace.Debugger
 
                 if (manuallyDisabled)
                 {
-                    Log.Information("Dynamic Instrumentation is disabled by environment variable. To enable it, please set {DynamicInstrumentationEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
+                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
                     return;
                 }
 
@@ -343,7 +343,7 @@ namespace Datadog.Trace.Debugger
 
             if (ex != null)
             {
-                Log.Error(ex, "Shutdown task for DebuggerManager is running with exception");
+                Log.Warning(ex, "Shutdown task for DebuggerManager is running with exception");
             }
 
             SafeDisposal.New()

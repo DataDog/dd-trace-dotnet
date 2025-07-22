@@ -17,6 +17,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Iast.Settings;
@@ -432,7 +433,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             await using var tracer = GetTracer(writer, configSource);
             var security = new AppSec.Security();
             var iast = new Iast.Iast(new IastSettings(configSource, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, null) };
+            var co = GetSpanCodeOrigin();
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, co) };
 
             using (var diagnosticManager = new DiagnosticManager(observers))
             {
@@ -537,6 +539,17 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var samplerMock = new Mock<ITraceSampler>();
 
             return new ScopedTracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
+        }
+
+        private static SpanCodeOrigin GetSpanCodeOrigin()
+        {
+            var settings = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "0" },
+            });
+
+            var co = new SpanCodeOrigin(new DebuggerSettings(settings, new NullConfigurationTelemetry()));
+            return co;
         }
 
         private class AgentWriterStub : IAgentWriter
