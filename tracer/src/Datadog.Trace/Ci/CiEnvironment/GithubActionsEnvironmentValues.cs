@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -105,7 +106,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
                 var number = githubEventObject["number"]?.Value<int>();
                 if (number is > 0)
                 {
-                    PrNumber = number.ToString(CultureInfo.InvariantCulture);
+                    PrNumber = number.Value.ToString(CultureInfo.InvariantCulture);
                 }
 
                 var pullRequestObject = githubEventObject["pull_request"];
