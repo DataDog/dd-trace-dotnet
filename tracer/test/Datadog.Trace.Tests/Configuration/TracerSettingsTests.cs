@@ -1011,13 +1011,30 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
+        [InlineData("value", true)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
         public void IsRunningInAzureAppService(string value, bool expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, value));
             var settings = new TracerSettings(source);
 
             settings.IsRunningInAzureAppService.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("value", true)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
+        public void IsRunningInAzureFunctions(string value, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, value),
+                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, value));
+
+            var settings = new TracerSettings(source);
+
+            settings.IsRunningInAzureFunctions.Should().Be(expected);
         }
 
         [Fact]
