@@ -41,7 +41,7 @@ public class SpanContextExtractorExtractIncludingDsmIntegration
         var extractor = new SafeExtractor<TCarrier>(extract);
 
         var tracer = Datadog.Trace.Tracer.Instance;
-        var extracted = SpanContextExtractor.ExtractInternal(tracer, carrier, extractor.SafeExtract, messageType, source);
+        var extracted = SpanContextExtractor.Extract(tracer, carrier, extractor.SafeExtract, messageType, source);
         return new CallTargetState(scope: null, extracted);
     }
 

@@ -41,7 +41,7 @@ public class SpanContextInjectorInjectIncludingDsmIntegration
             var inject = (Action<TCarrier, string, string>)(object)setter!;
             var injector = new SafeInjector<TCarrier>(inject);
             var tracer = Datadog.Trace.Tracer.Instance;
-            SpanContextInjector.InjectInternal(tracer, carrier, injector.SafeInject, spanContext, messageType, target);
+            SpanContextInjector.Inject(tracer, carrier, injector.SafeInject, spanContext, messageType, target);
         }
 
         return CallTargetState.GetDefault();

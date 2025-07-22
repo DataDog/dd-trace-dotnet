@@ -18,7 +18,7 @@ namespace Datadog.Trace
     /// </summary>
     public class SpanContextInjector
     {
-        internal static void InjectInternal<TCarrier>(Tracer tracer, TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext? context, string? messageType = null, string? target = null)
+        internal static void Inject<TCarrier>(Tracer tracer, TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext? context, string? messageType = null, string? target = null)
         {
             if (messageType != null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
             else if (messageType == null && target != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }

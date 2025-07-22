@@ -24,7 +24,7 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextExtractor>();
 
-        internal static SpanContext? ExtractInternal<TCarrier>(Tracer tracer, TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string? messageType = null, string? source = null)
+        internal static SpanContext? Extract<TCarrier>(Tracer tracer, TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string? messageType = null, string? source = null)
         {
             if (messageType != null && source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
             else if (messageType == null && source != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
