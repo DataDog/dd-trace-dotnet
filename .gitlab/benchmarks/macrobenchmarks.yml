@@ -503,7 +503,7 @@ profiler_cpu_timer_create-arm64:
   after_script:
     - source "./platform/ephemeral-infra/setup-credentials.sh"
     - |
-      infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \
+      bp-infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \
         --region "${AWS_REGION}" \
         --bypass-stack-destroy
 
