@@ -105,7 +105,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
                 var number = githubEventObject["number"]?.Value<int>();
                 if (number is > 0)
                 {
-                    PrNumber = number.ToString();
+                    PrNumber = number.ToString(CultureInfo.InvariantCulture);
                 }
 
                 var pullRequestObject = githubEventObject["pull_request"];
