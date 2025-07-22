@@ -135,6 +135,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V3InProcess", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~3");
         }
 
         [SkippableFact]
@@ -167,6 +168,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4InProcess", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
         [SkippableFact]
@@ -200,6 +202,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4Isolated.SdkV1", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~1");
         }
 
         [SkippableFact]
@@ -229,6 +232,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4Isolated.AspNetCore.SdkV1", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~1");
         }
 
         [SkippableFact]
@@ -264,6 +268,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4Isolated", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
         [SkippableFact]
@@ -295,6 +300,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4Isolated.AspNetCore", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
         [SkippableFact]
