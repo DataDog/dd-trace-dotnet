@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
@@ -17,7 +16,7 @@ using Datadog.Trace.Telemetry.Metrics;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators;
 
 /// <summary>
-/// Instrumentation for <see cref="SpanContextExtractor.ExtractIncludingDsm{TCarrier}"/>
+/// Instrumentation for <c>SpanContextExtractor.ExtractIncludingDsm{TCarrier}</c>
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.Trace.Manual",
@@ -41,7 +40,8 @@ public class SpanContextExtractorExtractIncludingDsmIntegration
         var extract = (Func<TCarrier, string, IEnumerable<string?>>)(object)getter!;
         var extractor = new SafeExtractor<TCarrier>(extract);
 
-        var extracted = SpanContextExtractor.ExtractInternal(carrier, extractor.SafeExtract, messageType, source);
+        var tracer = Datadog.Trace.Tracer.Instance;
+        var extracted = SpanContextExtractor.ExtractInternal(tracer, carrier, extractor.SafeExtract, messageType, source);
         return new CallTargetState(scope: null, extracted);
     }
 
