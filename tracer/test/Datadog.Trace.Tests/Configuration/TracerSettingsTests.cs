@@ -1040,7 +1040,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void DisableTracerIfNoApiKeyInAas()
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"));
+            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
             var settings = new TracerSettings(source);
 
             settings.TraceEnabled.Should().BeFalse();
