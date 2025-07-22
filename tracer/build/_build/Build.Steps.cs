@@ -2540,12 +2540,20 @@ partial class Build
                                   .Where(IsProblematic)
                                   .ToList();
 
+        var libdatadogFiles = logDirectory.GlobFiles("**/dotnet-tracer-libdatadog-*");
+        var libdatadogErrors = libdatadogFiles
+                              .SelectMany(ParseLibdatadogLogFiles) // native loader has same format as profiler
+                              .Where(IsProblematic)
+                              .ToList();
+
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
+                             // && libdatadogFiles.Count > 0 Libdatadog exporter is off by default, so we don't require it to be there
                              && nativeTracerFiles.Count > 0
                              && (nativeProfilerFiles.Count > 0 || IsOsx || IsArm64) // profiler doesn't support mac or ARM64
                              && nativeLoaderFiles.Count > 0);
         var hasErrors = managedErrors.Count != 0
+                     || libdatadogErrors.Count != 0
                      || nativeTracerErrors.Count != 0
                      || nativeProfilerErrors.Count != 0
                      || nativeLoaderErrors.Count != 0;
@@ -2559,14 +2567,15 @@ partial class Build
         if (!hasRequiredFiles)
         {
             Logger.Error(
-                "Some log files were missing: managed: {ManagedFiles}, native tracer: {NativeTracerFiles}, native profiler: {NativeProfilerFiles}, native loader: {NativeLoaderFiles}",
-                managedFiles.Count, nativeTracerFiles.Count, nativeProfilerFiles.Count, nativeLoaderFiles.Count);
+                "Some log files were missing: managed: {ManagedFiles}, native tracer: {NativeTracerFiles}, native profiler: {NativeProfilerFiles}, native loader: {NativeLoaderFiles}, libdatadog {LibdatadogFiles}",
+                managedFiles.Count, nativeTracerFiles.Count, nativeProfilerFiles.Count, nativeLoaderFiles.Count, libdatadogFiles.Count);
         }
 
         if (hasErrors)
         {
             Logger.Warning("Found the following problems in log files:");
             var allErrors = managedErrors
+                           .Concat(libdatadogErrors)
                            .Concat(nativeTracerErrors)
                            .Concat(nativeProfilerErrors)
                            .Concat(nativeLoaderErrors)
@@ -2753,6 +2762,34 @@ partial class Build
             return allLogs;
         }
 
+        static List<ParsedLogLine> ParseLibdatadogLogFiles(AbsolutePath logFile)
+        {
+            var logs = new List<ParsedLogLine>();
+            using var reader = new StreamReader(logFile);
+            while (reader.ReadLine() is { } line)
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                var log = LibdatadogLogParser.ParseEntry(line);
+                if (log is null)
+                {
+                    continue;
+                }
+
+                logs.Add(new ParsedLogLine(
+                             log.Timestamp,
+                             ParseLibdatadogLogLevel(log.Level),
+                             string.Join(", ", log.Fields.Select(kvp => $"{kvp.Key}:{kvp.Value}")),
+                             logFile));
+
+            }
+
+            return logs;
+        }
+
         static LogLevel ParseManagedLogLevel(string value)
             => value switch
             {
@@ -2773,6 +2810,17 @@ partial class Build
                 "warning" => LogLevel.Warning,
                 "error" => LogLevel.Error,
                 _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
+            };
+
+        static LogLevel ParseLibdatadogLogLevel(string value)
+            => value switch
+            {
+                "TRACE" => LogLevel.Trace,
+                "DEBUG" => LogLevel.Trace,
+                "INFO" => LogLevel.Normal,
+                "WARN" => LogLevel.Warning,
+                "ERROR" => LogLevel.Error,
+                _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown log level")
             };
     }
 
@@ -2995,5 +3043,40 @@ partial class Build
         CompressionTasks.UncompressZip(vcpkgZip, parentFolder);
 
         RenameDirectory(parentFolder / $"vcpkg-{vcpkgVersion}", destinationFolder.Name);
+    }
+
+    public static class LibdatadogLogParser
+    {
+        private static readonly JsonSerializerOptions Options = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+        };
+
+        public static LogEntry ParseEntry(string json)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<LogEntry>(json, Options);
+            }
+            catch (JsonException ex)
+            {
+                Console.Error.WriteLine($"Failed to parse JSON: {ex.Message}");
+                return null;
+            }
+        }
+
+        public record LogEntry(
+            DateTimeOffset Timestamp,
+            string Level,
+            Dictionary<string, object> Fields,
+            string Target,
+            string Filename,
+            // ReSharper disable once InconsistentNaming
+            int? Line_number,
+            string ThreadName,
+            string ThreadId
+        );
     }
 }
