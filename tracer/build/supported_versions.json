@@ -1403,10 +1403,10 @@
         "name": "xunit.v3",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "1.0.0",
-        "minVersionTestedInclusive": "1.1.0",
+        "minVersionTestedInclusive": "2.0.3",
         "maxVersionSupportedInclusive": "2.0.3",
         "maxVersionAvailableInclusive": "3.0.0",
-        "maxVersionTestedInclusive": "2.0.3"
+        "maxVersionTestedInclusive": "3.0.0"
       }
     ]
   }
