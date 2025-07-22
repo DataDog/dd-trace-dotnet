@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Specialized;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Tests.PlatformHelpers;
@@ -46,24 +47,25 @@ public static class AzureAppServiceHelper
         if (addContextKey)
         {
             vars.Add(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1");
+            vars.Add(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey, "3.0.0");
         }
 
         vars.Add(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, $"{subscriptionId}+{planResourceGroup}-EastUSwebspace");
         vars.Add(ConfigurationKeys.AzureAppService.ResourceGroupKey, siteResourceGroup);
         vars.Add(ConfigurationKeys.AzureAppService.SiteNameKey, deploymentId);
-        vars.Add(ConfigurationKeys.AzureAppService.OperatingSystemKey, "windows");
+        vars.Add(ConfigurationKeys.AzureAppService.OperatingSystemKey, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" : "linux");
         vars.Add(ConfigurationKeys.AzureAppService.InstanceIdKey, "instance_id");
         vars.Add(ConfigurationKeys.AzureAppService.InstanceNameKey, "instance_name");
         vars.Add(ConfigurationKeys.DebugEnabled, ddTraceDebug);
 
         if (functionsVersion != null)
         {
-            vars.Add(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, functionsVersion);
+            vars.Add(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, functionsVersion);
         }
 
         if (functionsRuntime != null)
         {
-            vars.Add(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, functionsRuntime);
+            vars.Add(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, functionsRuntime);
         }
 
         vars.Add(ConfigurationKeys.AzureAppService.AasEnableCustomTracing, enableCustomTracing ?? "false");
