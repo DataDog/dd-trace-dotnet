@@ -1,140 +1,126 @@
-﻿using System;
-using System.Threading.Tasks;
-using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using OpenTelemetry;
+﻿using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Logging;
-using OpenTelemetry;
-using OpenTelemetry.Trace;
-using OpenTelemetry.Instrumentation.Quartz;
 
-namespace QuartzSampleApp
+namespace QuartzSampleApp;
+
+public class Program
 {
-    public class Program
+    private static async Task Main(string[] args)
     {
-        private static async Task Main(string[] args)
+        var tracerProvider = Sdk.CreateTracerProviderBuilder()
+                                .AddQuartzInstrumentation()
+                                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("QuartzSampleApp"))
+                                .AddConsoleExporter(options =>
+                                 {
+                                     options.Targets = OpenTelemetry.Exporter.ConsoleExporterOutputTargets.Console;
+                                 })
+                                .AddOtlpExporter(otlpOptions =>
+                                 {
+                                     otlpOptions.Endpoint = new Uri("http://localhost:4318/v1/traces");
+                                     otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                                 })
+                                .Build();
+
+        LogProvider.SetCurrentLogProvider(new ConsoleLogProvider());
+
+        StdSchedulerFactory factory = new StdSchedulerFactory();
+        IScheduler scheduler = await factory.GetScheduler();
+
+        await scheduler.Start();
+
+        // HelloJob: logs a greeting
+        IJobDetail helloJob = JobBuilder.Create<HelloJob>()
+                                        .WithIdentity("helloJob", "group1")
+                                        .Build();
+
+        ITrigger helloTrigger = TriggerBuilder.Create()
+                                              .WithIdentity("helloTrigger", "group1")
+                                              .StartNow()
+                                              .WithSimpleSchedule(x => x
+                                                                     .WithIntervalInSeconds(60))
+                                              .Build();
+
+        await scheduler.ScheduleJob(helloJob, helloTrigger);
+
+        // ExceptionJob: throws an exception
+        IJobDetail exceptionJob = JobBuilder.Create<ExceptionJob>()
+                                            .WithIdentity("exceptionJob", "group2")
+                                            .Build();
+
+        ITrigger exceptionTrigger = TriggerBuilder.Create()
+                                                  .WithIdentity("exceptionTrigger", "group2")
+                                                  .StartNow()
+                                                  .WithSimpleSchedule(x => x
+                                                                          .WithIntervalInSeconds(15)
+                                                                          .RepeatForever())
+                                                  .Build();
+
+        await scheduler.ScheduleJob(exceptionJob, exceptionTrigger);
+
+        await Task.Delay(TimeSpan.FromSeconds(60));
+
+        await scheduler.Shutdown();
+
+        Console.WriteLine("Press any key to close the application");
+        Console.ReadKey();
+
+        tracerProvider?.Dispose();
+    }
+
+    private class ConsoleLogProvider : ILogProvider
+    {
+        public Logger GetLogger(string name)
         {
-            var tracerProvider = Sdk.CreateTracerProviderBuilder()
-                                    .AddQuartzInstrumentation()
-                                    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("QuartzSampleApp"))
-                                    .AddConsoleExporter(options =>
-                                     {
-                                         options.Targets = OpenTelemetry.Exporter.ConsoleExporterOutputTargets.Console;
-                                     })
-                                    .AddOtlpExporter(otlpOptions =>
-                                     {
-                                         otlpOptions.Endpoint = new Uri("http://localhost:4318/v1/traces");
-                                         otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-                                     })
-                                    .Build();
-
-            LogProvider.SetCurrentLogProvider(new ConsoleLogProvider());
-
-            StdSchedulerFactory factory = new StdSchedulerFactory();
-            IScheduler scheduler = await factory.GetScheduler();
-
-            await scheduler.Start();
-
-            // HelloJob: logs a greeting
-            IJobDetail helloJob = JobBuilder.Create<HelloJob>()
-                .WithIdentity("helloJob", "group1")
-                .Build();
-
-            ITrigger helloTrigger = TriggerBuilder.Create()
-                .WithIdentity("helloTrigger", "group1")
-                .StartNow()
-                .WithSimpleSchedule(x => x
-                    .WithIntervalInSeconds(10)
-                    .RepeatForever())
-                .Build();
-
-            await scheduler.ScheduleJob(helloJob, helloTrigger);
-
-            // ExceptionJob: throws an exception
-            IJobDetail exceptionJob = JobBuilder.Create<ExceptionJob>()
-                .WithIdentity("exceptionJob", "group2")
-                .Build();
-
-            ITrigger exceptionTrigger = TriggerBuilder.Create()
-                .WithIdentity("exceptionTrigger", "group2")
-                .StartNow()
-                .WithSimpleSchedule(x => x
-                    .WithIntervalInSeconds(15)
-                    .RepeatForever())
-                .Build();
-
-            await scheduler.ScheduleJob(exceptionJob, exceptionTrigger);
-
-            await Task.Delay(TimeSpan.FromSeconds(60));
-
-            await scheduler.Shutdown();
-
-            Console.WriteLine("Press any key to close the application");
-            Console.ReadKey();
-
-            tracerProvider?.Dispose();
-        }
-
-        private class ConsoleLogProvider : ILogProvider
-        {
-            public Logger GetLogger(string name)
+            return (level, func, exception, parameters) =>
             {
-                return (level, func, exception, parameters) =>
+                if (level >= LogLevel.Info && func != null)
                 {
-                    if (level >= LogLevel.Info && func != null)
-                    {
-                        Console.WriteLine("[" + DateTime.Now.ToLongTimeString() + "] [" + level + "] " + func(), parameters);
-                    }
-                    return true;
-                };
-            }
+                    Console.WriteLine("[" + DateTime.Now.ToLongTimeString() + "] [" + level + "] " + func(), parameters);
+                }
+                return true;
+            };
+        }
 
-            public IDisposable OpenNestedContext(string message)
-            {
-                throw new NotImplementedException();
-            }
+        public IDisposable OpenNestedContext(string message)
+        {
+            throw new NotImplementedException();
+        }
 
-            public IDisposable OpenMappedContext(string key, object value, bool destructure = false)
-            {
-                throw new NotImplementedException();
-            }
+        public IDisposable OpenMappedContext(string key, object value, bool destructure = false)
+        {
+            throw new NotImplementedException();
         }
     }
+}
 
-    // The original HelloJob
-    public class HelloJob : IJob
+// The original HelloJob
+public class HelloJob : IJob
+{
+    public async Task Execute(IJobExecutionContext context)
     {
-        public async Task Execute(IJobExecutionContext context)
-        {
-            await Console.Out.WriteLineAsync("Greetings from HelloJob!");
-        }
+        await Console.Out.WriteLineAsync("Greetings from HelloJob!");
     }
+}
 
-    // A new job that throws an exception
-    public class ExceptionJob : IJob
+// A new job that throws an exception
+public class ExceptionJob : IJob
+{
+    public async Task Execute(IJobExecutionContext context)
     {
-        public async Task Execute(IJobExecutionContext context)
+        try
         {
-            await Console.Out.WriteLineAsync("Executing ExceptionJob...");
-
-            try
-            {
-                TriggerException();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Error] Exception caught in ExceptionJob: {ex.Message}");
-            }
+            // Normal work that might blow up
+            await Console.Out.WriteLineAsync("Doing work...");
+            throw new InvalidOperationException("Something went wrong");
         }
-
-        private void TriggerException()
+        catch (Exception ex)
         {
-            throw new InvalidOperationException("This is a test exception thrown by ExceptionJob.");
-        }
+            // Let Quartz decide what to do next
+            throw new JobExecutionException(ex, refireImmediately: false);
+        }                              // set true to retry instantly
     }
 }
