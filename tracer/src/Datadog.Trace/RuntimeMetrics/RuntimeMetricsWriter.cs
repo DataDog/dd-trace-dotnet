@@ -137,14 +137,15 @@ namespace Datadog.Trace.RuntimeMetrics
             }
 
             Log.Debug("Disposing Runtime Metrics timer");
+            // Callbacks can occur after the Dispose() method overload has been called,
+            // because the timer queues callbacks for execution by thread pool threads.
+            // Using the Dispose(WaitHandle) method overload to waits until all callbacks have completed.
+            // ManualResetEventSlim doesn't do well with Timer so need to use ManualResetEvent
             using (var manualResetEvent = new ManualResetEvent(false))
             {
-                if (_timer.Dispose(manualResetEvent))
+                if (_timer.Dispose(manualResetEvent) && !manualResetEvent.WaitOne(5_000))
                 {
-                    if (!manualResetEvent.WaitOne(30000))
-                    {
-                        Log.Warning("Failed to dispose Runtime Metrics timer after 30 seconds");
-                    }
+                    Log.Warning("Failed to dispose Runtime Metrics timer after 5 seconds");
                 }
             }
 
