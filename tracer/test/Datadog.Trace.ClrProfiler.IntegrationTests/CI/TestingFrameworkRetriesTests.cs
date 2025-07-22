@@ -37,7 +37,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
     protected virtual bool UseDotnetExec => false;
 
-    public virtual async Task FlakyRetries(string packageVersion)
+    public virtual async Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
     {
         EnvironmentHelper.EnableDefaultTransport();
         var tests = new List<MockCIVisibilityTest>();
@@ -132,7 +132,57 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
             throw;
         }
 
-        await Task.CompletedTask;
+        return tests;
+    }
+
+    public virtual async Task FlakyRetriesWithExceptionReplay(string packageVersion)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.RateLimitSeconds, "0");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.UploadFlushInterval, "1000");
+        var tests = await FlakyRetries(packageVersion);
+
+        // AlwaysFails => 1 + 5 retries
+        var alwaysFailsTests = tests.Where(t => t.Resource == AlwaysFails).ToList();
+        alwaysFailsTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
+        alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._er"));
+        alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._eh"));
+        alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("error.debug_info_captured"));
+        alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_hash"));
+        alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_id"));
+
+        // AlwaysPasses => 1
+        var alwaysPassesTests = tests.Where(t => t.Resource == AlwaysPasses).ToList();
+        alwaysPassesTests.Should().HaveCount(1);
+        alwaysPassesTests.Should().OnlyContain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
+        alwaysPassesTests.Should().NotContain(t => t.Meta.ContainsKey("_dd.di._er"));
+        alwaysPassesTests.Should().NotContain(t => t.Meta.ContainsKey("_dd.di._eh"));
+        alwaysPassesTests.Should().NotContain(t => t.Meta.ContainsKey("error.debug_info_captured"));
+        alwaysPassesTests.Should().NotContain(t => t.Meta.ContainsKey("_dd.debug.error.exception_hash"));
+        alwaysPassesTests.Should().NotContain(t => t.Meta.ContainsKey("_dd.debug.error.exception_id"));
+
+        // TrueAtLastRetry => 1 + 5 retries
+        var trueAtLastRetryTests = tests.Where(t => t.Resource == TrueAtLastRetry).ToList();
+        trueAtLastRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
+        trueAtLastRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
+        trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._er"));
+        trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._eh"));
+        trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("error.debug_info_captured"));
+        trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_hash"));
+        trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_id"));
+
+        // TrueAtThirdRetry => 1 + 3 retries
+        var trueAtThirdRetryTests = tests.Where(t => t.Resource == TrueAtThirdRetry).ToList();
+        trueAtThirdRetryTests.Should().HaveCount(1 + 3);
+        trueAtThirdRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
+        trueAtThirdRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
+        trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._er"));
+        trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._eh"));
+        trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("error.debug_info_captured"));
+        trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_hash"));
+        trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_id"));
     }
 }
 #endif
