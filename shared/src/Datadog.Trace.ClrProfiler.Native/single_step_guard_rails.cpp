@@ -193,7 +193,7 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
 }
 
 void SingleStepGuardRails::RecordBootstrapError(const RuntimeInformation& runtimeInformation,
-    const std::string& errorType) const
+    const std::string& errorType)
 {
     if(!m_isRunningInSingleStep)
     {
