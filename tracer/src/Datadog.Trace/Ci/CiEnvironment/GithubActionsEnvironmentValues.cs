@@ -102,6 +102,12 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
             {
                 var githubEvent = File.ReadAllText(githubEventPath);
                 var githubEventObject = JObject.Parse(githubEvent);
+                var number = githubEventObject["number"]?.Value<int>();
+                if (number is > 0)
+                {
+                    PrNumber = number.ToString();
+                }
+
                 var pullRequestObject = githubEventObject["pull_request"];
                 if (pullRequestObject is not null)
                 {
