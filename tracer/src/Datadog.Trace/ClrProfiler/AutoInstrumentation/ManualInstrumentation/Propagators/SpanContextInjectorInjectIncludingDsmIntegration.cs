@@ -32,7 +32,7 @@ public class SpanContextInjectorInjectIncludingDsmIntegration
     {
         // The Injector.Inject method currently _only_ works with SpanContext objects
         // Therefore, there's no point calling inject unless we can remap it to a SpanContext
-        TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Inject);
+        TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_InjectIncludingDsm);
 
         if (SpanContextHelper.GetContext(context) is { } spanContext)
         {
