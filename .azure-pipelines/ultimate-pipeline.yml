@@ -1473,7 +1473,15 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
+            command: "BuildManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
+            apiKey: $(DD_LOGGER_DD_API_KEY)
+            retryCountForRunCommand: 3
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: $(baseImage)
+            command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - template: steps/make-artifacts-uploadable.yml

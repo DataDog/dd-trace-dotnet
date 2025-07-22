@@ -68,11 +68,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion, bool dataPipelineEnabled)
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-
             EnvironmentHelper.EnableTransport(transportType);
             SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
 
-            using var agent = EnvironmentHelper.GetMockAgent();
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: EnvironmentHelper.CanUseStatsD(transportType));
             var customResponse = behaviour switch
             {
                 AgentBehaviour.Return404 => new MockTracerResponse { StatusCode = 404 },
