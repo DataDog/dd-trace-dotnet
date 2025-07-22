@@ -31,7 +31,6 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
-        private string _comment;
         private int _isFinished;
 
         internal Span(SpanContext context, DateTimeOffset? start)
@@ -42,7 +41,6 @@ namespace Datadog.Trace
         internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
         {
             Tags = tags ?? new TagsList();
-            _comment = CreatedRandomString(1024);
             Block(100);
 
             Context = context;
@@ -595,19 +593,6 @@ namespace Datadog.Trace
                     break;
                 }
             }
-        }
-
-        private string CreatedRandomString(int size)
-        {
-            const string chars = "ExtraString";
-            string randomString = string.Empty;
-
-            for (int i = 0; i < size; i++)
-            {
-                randomString += chars[i % chars.Length];
-            }
-
-            return randomString;
         }
     }
 }
