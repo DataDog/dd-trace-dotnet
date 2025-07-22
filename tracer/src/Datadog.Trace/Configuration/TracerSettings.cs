@@ -592,7 +592,8 @@ namespace Datadog.Trace.Configuration
 
             BaggageTagKeys = config
                             .WithKeys(ConfigurationKeys.BaggageTagKeys)
-                            .AsString(defaultValue: "user.id,session.id,account.id");
+                            .AsString(defaultValue: "user.id,session.id,account.id")
+                            ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? [];
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
 
@@ -1064,7 +1065,7 @@ namespace Datadog.Trace.Configuration
         /// Default value is "user.id,session.id,account.id".
         /// </summary>
         /// <seealso cref="ConfigurationKeys.BaggageTagKeys"/>
-        internal string BaggageTagKeys { get; }
+        internal string[] BaggageTagKeys { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics

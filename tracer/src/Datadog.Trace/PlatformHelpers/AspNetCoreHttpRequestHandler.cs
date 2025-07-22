@@ -98,13 +98,13 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        private void AddBaggageTagsToSpan(ISpan span, Baggage? baggage, Tracer tracer)
+        private void AddBaggageTagsToSpan(ISpan span, Baggage baggage, Tracer tracer)
         {
             if (baggage != null)
             {
                 try
                 {
-                    SpanContextPropagator.Instance.AddBaggageToSpanAsTags(span, baggage);
+                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, baggage);
                 }
                 catch (Exception ex)
                 {
