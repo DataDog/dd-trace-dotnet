@@ -46,6 +46,8 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly IBatchUploadApi _api;
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
+        private readonly object _disposeLock = new();
+        private volatile bool _disposed = false;
         private IDiscoveryService? _discoveryService;
         private byte[]? _payload;
         private string? _symDbEndpoint;
@@ -78,12 +80,6 @@ namespace Datadog.Trace.Debugger.Symbols
             _subscription = new Subscription(Callback, RcmProducts.LiveDebuggingSymbolDb);
             _subscriptionManager = remoteConfigurationManager;
             _subscriptionManager.SubscribeToChanges(_subscription);
-            LifetimeManager.Instance.AddShutdownTask(Shutdown);
-        }
-
-        private void Shutdown(Exception? obj)
-        {
-            Dispose();
         }
 
         private ApplyDetails[] Callback(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)
@@ -160,7 +156,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task ProcessItemAsync(Assembly assembly)
         {
-            if (!_isSymDbEnabled)
+            if (!_isSymDbEnabled || _disposed)
             {
                 return;
             }
@@ -173,7 +169,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 await _assemblySemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
                 semaphoreAcquired = true;
 
-                if (!_isSymDbEnabled || _cancellationToken.IsCancellationRequested)
+                if (!_isSymDbEnabled || _cancellationToken.IsCancellationRequested || _disposed)
                 {
                     return;
                 }
@@ -184,6 +180,10 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 // Handle cancellation gracefully
             }
+            catch (ObjectDisposedException)
+            {
+                // Handle disposal gracefully
+            }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error processing assembly {Assembly}", assembly);
@@ -192,7 +192,14 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 if (semaphoreAcquired)
                 {
-                    _assemblySemaphore.Release();
+                    try
+                    {
+                        _assemblySemaphore.Release();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Semaphore already disposed, ignore
+                    }
                 }
             }
         }
@@ -405,41 +412,98 @@ namespace Datadog.Trace.Debugger.Symbols
                 return true;
             }
 
-            await Task.Yield();
-            await _discoveryServiceSemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
-            _discoveryServiceSemaphore.Dispose();
-            if (_cancellationToken.IsCancellationRequested)
+            if (_disposed || _cancellationToken.IsCancellationRequested)
             {
                 return false;
             }
 
-            if (!string.IsNullOrEmpty(Volatile.Read(ref _symDbEndpoint)))
-            {
-                return true;
-            }
+            await Task.Yield();
 
-            return false;
+            try
+            {
+                await _discoveryServiceSemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
+                _discoveryServiceSemaphore.Dispose();
+
+                if (_cancellationToken.IsCancellationRequested || _disposed)
+                {
+                    return false;
+                }
+
+                return !string.IsNullOrEmpty(Volatile.Read(ref _symDbEndpoint));
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
         }
 
         private async Task<bool> WaitForEnablementAsync()
         {
-            await Task.Yield();
-            await _enablementSemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
-            if (_cancellationToken.IsCancellationRequested)
+            if (_disposed || _cancellationToken.IsCancellationRequested)
             {
                 return false;
             }
 
-            return true;
+            await Task.Yield();
+
+            try
+            {
+                await _enablementSemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
+                if (_cancellationToken.IsCancellationRequested || _disposed)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
         }
 
         public void Dispose()
         {
-            _subscriptionManager.Unsubscribe(_subscription);
-            _cancellationToken.Cancel();
-            _cancellationToken.Dispose();
-            _assemblySemaphore.Dispose();
-            _enablementSemaphore.Dispose();
+            if (_disposed)
+            {
+                return;
+            }
+
+            lock (_disposeLock)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _subscriptionManager.Unsubscribe(_subscription);
+
+                try
+                {
+                    if (!_cancellationToken.IsCancellationRequested)
+                    {
+                        _cancellationToken.Cancel();
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Already disposed, ignore
+                }
+
+                _cancellationToken.Dispose();
+                _assemblySemaphore.Dispose();
+                _enablementSemaphore.Dispose();
+                _discoveryServiceSemaphore.Dispose();
+                _disposed = true;
+            }
         }
     }
 }
