@@ -62,6 +62,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
 
             scope.Span.ResourceName = resourceNameValue;
             scope.Span.SetTag("job.key", jobDiagnosticData.JobDetail.Key.ToString());
+            scope.Span.SetTag("scheduler.name", jobDiagnosticData.SchedulerName);
+            scope.Span.SetTag("scheduler.id", jobDiagnosticData.SchedulerId);
+            scope.Span.SetTag("trigger.name", jobDiagnosticData.Trigger.Key.Name);
+            scope.Span.SetTag("trigger.group", jobDiagnosticData.Trigger.Key.Group);
         }
     }
 }
