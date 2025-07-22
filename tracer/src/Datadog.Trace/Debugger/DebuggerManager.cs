@@ -343,7 +343,7 @@ namespace Datadog.Trace.Debugger
 
             if (ex != null)
             {
-                Log.Warning(ex, "Shutdown task for DebuggerManager is running with exception");
+                Log.Debug(ex, "Shutdown task for DebuggerManager is running with exception");
             }
 
             SafeDisposal.New()
