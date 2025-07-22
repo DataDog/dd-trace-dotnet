@@ -22,9 +22,9 @@ SingleStepGuardRails::SingleStepGuardRails()
     const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
 
     m_isRunningInSingleStep = !isSingleStepVariable.empty(); 
-    m_injectResult = "";
-    m_injectResultReason = "";
-    m_injectResultClass = "";
+    m_injectResult = "unknown";
+    m_injectResultReason = "unknown";
+    m_injectResultClass = "unknown";
 }
 
 SingleStepGuardRails::~SingleStepGuardRails()
@@ -181,7 +181,7 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
             "SingleStepGuardRails::ShouldForceInstrumentationOverride: ",
             EnvironmentVariables::ForceEolInstrumentation,
             " enabled, allowing unsupported runtimes and continuing");
-        SetInjectResult("success", "Force instrumentation enabled", "success_forced");
+        SetInjectResult("success", "Force instrumentation enabled, incompatible runtime", "success_forced");
         return true;
     }
 
@@ -193,7 +193,7 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
 }
 
 void SingleStepGuardRails::RecordBootstrapError(const RuntimeInformation& runtimeInformation,
-    const std::string& errorType)
+    const std::string& errorType) const
 {
     if(!m_isRunningInSingleStep)
     {
