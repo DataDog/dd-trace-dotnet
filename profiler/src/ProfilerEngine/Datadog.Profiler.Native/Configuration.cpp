@@ -67,8 +67,10 @@ Configuration::Configuration()
     _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
     _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
-    _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled, false);
-    _isThreadLifetimeEnabled = GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeEnabled, false);
+    _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled,
+                                  GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeInternalEnabled, true), true);
+    _isThreadLifetimeEnabled = GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeEnabled,
+                                GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeInternalEnabled, true), true);
     _gitRepositoryUrl = GetEnvironmentValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
     _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);
@@ -97,9 +99,12 @@ Configuration::Configuration()
     _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();
     _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
-    _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
-    _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
-    _isHttpProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HttpProfilingEnabled, false);
+    _isHttpProfilingEnabled =
+        GetEnvironmentValue(
+            EnvironmentVariables::HttpProfilingEnabled,
+            GetEnvironmentValue(EnvironmentVariables::HttpProfilingInternalEnabled, false // support previous internal env var
+            )
+        );
     _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
     _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
@@ -760,16 +765,6 @@ std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
     if (value < 0ms)
         return defaultValue;
     return std::chrono::milliseconds(value);
-}
-
-bool Configuration::IsTelemetryToDiskEnabled() const
-{
-    return _isTelemetryToDiskEnabled;
-}
-
-bool Configuration::IsSsiTelemetryEnabled() const
-{
-    return _isSsiTelemetryEnabled;
 }
 
 bool Configuration::IsHttpProfilingEnabled() const

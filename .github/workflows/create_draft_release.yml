@@ -18,7 +18,10 @@ jobs:
       actions: read # read secrets
       issues: write # change milestones 
     env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      # Have to use external token with explicit workflow permissions because we are creating
+      # a release from an arbitrary SHA. For "reasons", the built-in token does not _always_
+      # work in that scenario, so using an external token is required. See issue
+      # https://github.com/cli/cli/issues/9514 for more details.
       AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
 
     steps:
@@ -67,11 +70,19 @@ jobs:
           echo "Push succeeded, cleaning up"
           rm Datadog.Trace.Annotations.1.0.0.nupkg
 
+      - name: Generate GitHub App Token
+        id: generate-token
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: "Check GitLab status"
         if: ${{ !github.event.inputs.ignore_gitlab_failures }}
         run: ./tracer/build.sh VerifyReleaseReadiness
         env:
           CommitSha: "${{ steps.set_sha.outputs.sha }}"
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: "Get current version"
         id: versions
@@ -83,12 +94,14 @@ jobs:
         env:
           TargetBranch: ${{ github.event.ref }}
           CommitSha: "${{ steps.set_sha.outputs.sha }}"
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: "Generate release notes"
         id: release_notes
         run: ./tracer/build.sh GenerateReleaseNotes
         env:
           PIPELINE_ARTIFACTS_LINK: ${{steps.assets.outputs.artifacts_link}}
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: "Rename vNext milestone"
         id: rename
@@ -97,18 +110,16 @@ jobs:
         run: ./tracer/build.sh RenameVNextMilestone
         env:
           Version: ${{steps.versions.outputs.full_version}}
-
-      - name: "Create and push git tag"
-        run: |
-          git tag "v${{steps.versions.outputs.full_version}}"
-          git push origin "v${{steps.versions.outputs.full_version}}"
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: Create Release
-        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v1.0.0
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v1.0.0
         with:
+          token: "${{ steps.generate-token.outputs.token }}"
           draft: true
           name: "${{steps.versions.outputs.full_version}}"
           tag_name: "v${{steps.versions.outputs.full_version}}"
+          target_commitish: "${{steps.set_sha.outputs.sha}}"
           prerelease: ${{steps.versions.outputs.isprerelease}}
           body: ${{steps.release_notes.outputs.release_notes}}
           fail_on_unmatched_files: true

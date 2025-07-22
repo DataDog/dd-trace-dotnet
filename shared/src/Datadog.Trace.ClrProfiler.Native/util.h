@@ -23,8 +23,12 @@ const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
 
 // Note that this list should be kept in sync with the values in tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h
 // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
+// FIXME: this should also take into account case insensitivity, but that is not yet supported
+// https://devblogs.microsoft.com/oldnewthing/20241007-00/?p=110345
 const shared::WSTRING default_exclude_assemblies[]{
+    WStr("aspnet_compiler.exe"),
     WStr("aspnet_state.exe"),
+    WStr("CollectGuestLogs.exe"), // https://github.com/Azure/WindowsVMAgent
     WStr("csc.exe"),
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
@@ -36,6 +40,9 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("MsDtsSrvr.exe"),
     WStr("msvsmon.exe"),
     WStr("PerfWatson2.exe"),
+    WStr("powershell.exe"),
+    WStr("pwsh.exe"),
+    WStr("pwsh"),
     WStr("ServiceHub.DataWarehouseHost.exe"),
     WStr("ServiceHub.Host.CLR.exe"),
     WStr("ServiceHub.Host.CLR.x86.exe"),
@@ -51,6 +58,9 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("VBCSCompiler.exe"),
     WStr("vsdbg"),
     WStr("vsdbg.exe"),
+    WStr("WaAppAgent.exe"),            // https://github.com/Azure/WindowsVMAgent
+    WStr("WerFault.exe"),              // WER = Windows Error Reporting - can kick in when a process crashes
+    WStr("WindowsAzureGuestAgent.exe") // https://github.com/Azure/WindowsVMAgent
 };
 
 inline static const ::shared::WSTRING datadog_logs_folder_path = WStr(R"(Datadog .NET Tracer\logs)");
@@ -175,15 +185,5 @@ inline std::string GetCurrentOsArch(bool isRunningOnAlpine)
 
 #else
 #error "currentOsArch not defined."
-#endif
-}
-
-inline bool IsRunningOnAlpine()
-{
-#if LINUX
-    std::error_code ec; // fs::exists might throw if no error_code parameter is provided
-    return fs::exists("/etc/alpine-release", ec);
-#else
-    return false;
 #endif
 }

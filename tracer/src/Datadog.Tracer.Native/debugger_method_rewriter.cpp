@@ -1630,7 +1630,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     if (hr != S_OK)
     {
         Logger::Info("Failed to apply Method Probe on Async Method due to failure in the lookup of the isReEntry field in the state machine. module id:", module_id, " method: ", caller->type.name, ".", caller->name);
-        return S_OK; // We do not fail the whole instrumentation as there could be Line Probes that we want to emit. They do not suffer from the absence of the IsReEntry field.
+        return E_NOTIMPL; // We do not fail the whole instrumentation as there could be Line Probes that we want to emit. They do not suffer from the absence of the IsReEntry field.
     }
 
     LogDebugCallerInfo(caller, instrumentedMethodIndex);

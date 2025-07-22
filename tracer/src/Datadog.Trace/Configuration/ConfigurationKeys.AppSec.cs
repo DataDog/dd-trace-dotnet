@@ -132,6 +132,11 @@ namespace Datadog.Trace.Configuration
             internal const string ApiSecurityEndpointCollectionMessageLimit = "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT";
 
             /// <summary>
+            /// Enables the parsing of the response body in the API Security module. Defaults to true
+            /// </summary>
+            internal const string ApiSecurityParseResponseBody = "DD_API_SECURITY_PARSE_RESPONSE_BODY";
+
+            /// <summary>
             /// Use new unsafe encoder for the waf
             /// </summary>
             internal const string UseUnsafeEncoder = "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER";

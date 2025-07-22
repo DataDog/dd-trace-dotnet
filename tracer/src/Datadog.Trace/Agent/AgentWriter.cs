@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -63,6 +64,11 @@ namespace Datadog.Trace.Agent
         private long _droppedP0Spans;
 
         private long _droppedTraces;
+
+        public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, TracerSettings settings)
+            : this(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled)
+        {
+        }
 
         public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true)
         : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, apmTracingEnabled)
@@ -184,6 +190,11 @@ namespace Datadog.Trace.Agent
             if (_statsAggregator != null)
             {
                 await _statsAggregator.DisposeAsync().ConfigureAwait(false);
+            }
+
+            if (_api is IDisposable disposableApi)
+            {
+                disposableApi.Dispose();
             }
 
             if (!success)
@@ -450,21 +461,10 @@ namespace Datadog.Trace.Agent
                 TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.Default, spans.Count);
             }
 
-            // Add the current keep rate to the root span
-            var rootSpan = spans.Array![spans.Offset].Context.TraceContext?.RootSpan;
-
-            if (rootSpan is not null)
+            // Add the current keep rate to trace
+            if (spans.Array![spans.Offset].Context.TraceContext is { } trace)
             {
-                var currentKeepRate = _traceKeepRateCalculator.GetKeepRate();
-
-                if (rootSpan.Tags is CommonTags commonTags)
-                {
-                    commonTags.TracesKeepRate = currentKeepRate;
-                }
-                else
-                {
-                    rootSpan.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
-                }
+                trace.TracesKeepRate = _traceKeepRateCalculator.GetKeepRate();
             }
 
             // We use a double-buffering mechanism

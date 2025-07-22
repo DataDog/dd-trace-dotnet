@@ -93,7 +93,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             if (!probeData.Processor.ShouldProcess(in probeData))
             {
-                Log.Warning("BeginMethod_StartMarker: Skipping the instrumentation. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
                 return CreateInvalidatedDebuggerState();
             }
 

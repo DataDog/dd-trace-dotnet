@@ -60,14 +60,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
                 Assert.Empty(spans);
 
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+                var traceId = HeadersUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = HeadersUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var tracingEnabled = HeadersUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
 
                 Assert.Null(traceId);
                 Assert.Null(parentSpanId);
                 Assert.Equal("false", tracingEnabled);
-                telemetry.AssertIntegrationDisabled(IntegrationId.WebRequest);
+                await telemetry.AssertIntegrationDisabledAsync(IntegrationId.WebRequest);
                 VerifyInstrumentation(processResult.Process);
             }
         }
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
 
-            var allSpans = agent.WaitForSpans(expectedAllSpansCount, assertExpectedCount: false).OrderBy(s => s.Start).ToList();
+            var allSpans = (await agent.WaitForSpansAsync(expectedAllSpansCount, assertExpectedCount: false)).OrderBy(s => s.Start).ToList();
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 #if NET9_0_OR_GREATER
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var httpSpans = allSpans.Where(s => s.Type == SpanTypes.Http).ToList();
             ValidateIntegrationSpans(httpSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.WebRequest);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.WebRequest);
             VerifyInstrumentation(processResult.Process);
         }
     }

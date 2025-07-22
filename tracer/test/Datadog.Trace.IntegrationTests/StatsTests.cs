@@ -15,6 +15,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Stats;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -54,10 +55,13 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.ServiceVersion, "v1" },
                 { ConfigurationKeys.Environment, "test" },
                 { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+                { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
             });
 
             var discovery = DiscoveryService.Create(settings.Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
+            // and this was easiest to retrofit without changing the test structure too much.
+            var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
             Span span;
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
@@ -105,10 +109,10 @@ namespace Datadog.Trace.IntegrationTests
             CreateDefaultSpan(httpStatusCode: "99");
             CreateDefaultSpan(httpStatusCode: "600");
 
-            await tracer.TracerManager.ShutdownAsync(); // Flushes and closes both traces and stats
+            await tracer.DisposeAsync(); // Flushes and closes both traces and stats
 
-            var statsPayload = agent.WaitForStats(1);
-            var spans = agent.WaitForSpans(13);
+            var statsPayload = await agent.WaitForStatsAsync(1);
+            var spans = await agent.WaitForSpansAsync(13);
 
             statsPayload.Should().HaveCount(1);
             statsPayload[0].Stats.Should().HaveCount(1);
@@ -198,10 +202,13 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.ServiceVersion, "v1" },
                 { ConfigurationKeys.Environment, "test" },
                 { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+                { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
             });
 
             var discovery = DiscoveryService.Create(settings.Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
+            // and this was easiest to retrofit without changing the test structure too much.
+            var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
@@ -216,10 +223,10 @@ namespace Datadog.Trace.IntegrationTests
             CreateDefaultSpan(type: "redis", resource: "SET le_key le_value");
             CreateDefaultSpan(type: "redis", resource: "SET another_key another_value");
 
-            await tracer.TracerManager.ShutdownAsync(); // Flushes and closes both traces and stats
+            await tracer.DisposeAsync(); // Flushes and closes both traces and stats
 
-            var statsPayload = agent.WaitForStats(1);
-            var spans = agent.WaitForSpans(6);
+            var statsPayload = await agent.WaitForStatsAsync(1);
+            var spans = await agent.WaitForSpansAsync(6);
 
             statsPayload.Should().HaveCount(1);
             statsPayload[0].Stats.Should().HaveCount(1);
@@ -356,10 +363,13 @@ namespace Datadog.Trace.IntegrationTests
                         { ConfigurationKeys.ServiceVersion, "V" },
                         { ConfigurationKeys.Environment, "Test" },
                         { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+                        { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
                     }));
 
             var discovery = DiscoveryService.Create(settings.Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
+            // and this was easiest to retrofit without changing the test structure too much.
+            var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             if (expectStats)
@@ -461,13 +471,13 @@ namespace Datadog.Trace.IntegrationTests
             await tracer.FlushAsync();
 
             // Flush and close both traces and stats
-            await tracer.TracerManager.ShutdownAsync();
+            await tracer.DisposeAsync();
             WaitForStats(statsWaitEvent, expectStats);
             WaitForTraces(tracesWaitEvent, finishSpansOnClose); // The last span was an error, so we expect to receive it as long as it closed
 
             if (expectStats)
             {
-                var payload = agent.WaitForStats(1);
+                var payload = await agent.WaitForStatsAsync(1);
                 payload.Should().HaveCount(1);
 
                 var stats1 = payload[0];
@@ -486,7 +496,7 @@ namespace Datadog.Trace.IntegrationTests
             if (finishSpansOnClose)
             {
                 var numberOfSpans = expectAllTraces ? spansCount : spansCount - p0DroppedSpansCount;
-                var payload = agent.WaitForSpans(numberOfSpans);
+                var payload = await agent.WaitForSpansAsync(numberOfSpans);
                 payload.Should().HaveCount(numberOfSpans);
 
                 AssertTraces(payload, expectStats);

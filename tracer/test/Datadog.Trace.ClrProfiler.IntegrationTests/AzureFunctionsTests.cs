@@ -149,7 +149,7 @@ public abstract class AzureFunctionsTests : TestHelper
             using (await RunAzureFunctionAndWaitForExit(agent))
             {
                 const int expectedSpanCount = 21;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
@@ -177,11 +177,11 @@ public abstract class AzureFunctionsTests : TestHelper
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces()
         {
-            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: true);
             using (await RunAzureFunctionAndWaitForExit(agent, framework: "net6.0"))
             {
                 const int expectedSpanCount = 21;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
 
                 using var s = new AssertionScope();
@@ -214,7 +214,7 @@ public abstract class AzureFunctionsTests : TestHelper
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 21;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
 
@@ -243,7 +243,7 @@ public abstract class AzureFunctionsTests : TestHelper
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 26;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 var filteredSpans = FilterOutSocketsHttpHandler(spans);
 
@@ -278,7 +278,7 @@ public abstract class AzureFunctionsTests : TestHelper
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 21;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
 
@@ -309,7 +309,7 @@ public abstract class AzureFunctionsTests : TestHelper
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 26;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 // There are _additional_ spans created for these compared to the non-AspNetCore version
                 // These are http-client-handler-type: System.Net.Http.SocketsHttpHandler that come in around

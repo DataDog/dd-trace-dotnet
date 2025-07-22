@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
@@ -66,9 +67,36 @@ internal static class AwsMessageAttributesHeadersAdapters
         {
             // IDictionary returns null if the key is not present
             var json = messageAttributes?[ContextPropagation.InjectionKey]?.DuckCast<IMessageAttributeValue>();
-            if (json != null && json.StringValue != null)
+            if (json != null)
             {
-                _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
+                string? jsonString = null;
+                if (json.StringValue != null)
+                {
+                    jsonString = json.StringValue;
+                }
+                else if (json.BinaryValue != null)
+                {
+                    // SNS encodes the json string in base64
+                    if (json.BinaryValue.TryGetBuffer(out var bytes))
+                    {
+                        jsonString = StringEncoding.UTF8.GetString(bytes.Array!, bytes.Offset, bytes.Count);
+                    }
+                    else
+                    {
+                        using var reader = new System.IO.StreamReader(
+                            json.BinaryValue,
+                            Encoding.UTF8,
+                            detectEncodingFromByteOrderMarks: false,
+                            bufferSize: 1024,
+                            leaveOpen: true);
+                        jsonString = reader.ReadToEnd();
+                    }
+                }
+
+                if (jsonString != null)
+                {
+                    _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+                }
             }
         }
 

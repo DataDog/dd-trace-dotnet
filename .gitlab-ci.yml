@@ -104,8 +104,8 @@ download-single-step-artifacts:
   rules:
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/' # Manually triggered as artifacts are from the Github release
-      when: manual
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: on_success # Artifacts are downloaded from the GitHub release, which creates the tag on publish
       allow_failure: false
     - when: on_success # Artifacts come from Azure pipeline, but as we already depend on build, we already have a delayed start
   script:
@@ -133,7 +133,7 @@ generate-lib-init-pinned-tag-values:
 
 configure_system_tests:
   variables:
-    SYSTEM_TESTS_SCENARIOS_GROUPS: "simple_onboarding,simple_onboarding_profiling,lib-injection"
+    SYSTEM_TESTS_SCENARIOS_GROUPS: "simple_onboarding,simple_onboarding_profiling,simple_onboarding_appsec,lib-injection"
 
 deploy_to_reliability_env:
   rules:
@@ -147,8 +147,8 @@ download-serverless-artifacts:
   rules:
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/' # Manually triggered as artifacts are from the Github release
-      when: manual
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: on_success # Artifacts are downloaded from the GitHub release, which creates the tag on publish
       allow_failure: false
     - when: delayed # Artifacts come from Azure pipeline, wait a reasonable time before polling
       start_in: 15 minutes
@@ -219,4 +219,9 @@ microbenchmarks:
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
   allow_failure: true
-    
+
+dsm_throughput:
+  stage: benchmarks
+  trigger:
+    include: .gitlab/benchmarks/dsm-throughput.yml
+  allow_failure: true

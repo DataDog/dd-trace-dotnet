@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Moq;
@@ -21,6 +22,8 @@ using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Tests.Telemetry;
 
+[Collection(nameof(EnvironmentVariablesTestCollection))]
+[EnvironmentRestorer("DD_INJECTION_ENABLED", "DD_INJECT_FORCE")]
 public class ConfigurationTelemetryCollectorTests
 {
     public static IEnumerable<object[]> GetPropagatorConfigurations()
@@ -238,6 +241,23 @@ public class ConfigurationTelemetryCollectorTests
         GetLatestValueFromConfig(data, "DD_TRACE_HEADER_TAGS", ConfigurationOrigins.Default).Should().Be(string.Empty);
         GetLatestValueFromConfig(data, "DD_LOGS_INJECTION", ConfigurationOrigins.Default).Should().Be(false);
         GetLatestValueFromConfig(data, "DD_TRACE_SAMPLE_RATE", ConfigurationOrigins.Default).Should().Be(1.0);
+        GetLatestValueFromConfig(data, "instrumentation_source").Should().Be("manual");
+    }
+
+    [Fact]
+    public void ConfigurationDataShouldReportSSIValues()
+    {
+        Environment.SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+        Environment.SetEnvironmentVariable("DD_INJECT_FORCE", "true");
+
+        var collector = new ConfigurationTelemetry();
+        var source = new NameValueConfigurationSource(new NameValueCollection());
+        _ = new TracerSettings(source, collector, new OverrideErrorLog());
+        _ = new SecuritySettings(source, collector);
+        var data = collector.GetData();
+        GetLatestValueFromConfig(data, ConfigTelemetryData.SsiInjectionEnabled).Should().Be("tracer");
+        GetLatestValueFromConfig(data, ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled).Should().Be("true");
+        GetLatestValueFromConfig(data, ConfigTelemetryData.InstrumentationSource).Should().Be("ssi");
     }
 
 #if NETFRAMEWORK

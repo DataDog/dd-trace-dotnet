@@ -1030,6 +1030,7 @@
       <type fullname="System.Threading.EventWaitHandle" />
       <type fullname="System.Threading.Interlocked" />
       <type fullname="System.Threading.LazyInitializer" />
+      <type fullname="System.Threading.ManualResetEvent" />
       <type fullname="System.Threading.ManualResetEventSlim" />
       <type fullname="System.Threading.Monitor" />
       <type fullname="System.Threading.Mutex" />
@@ -1056,6 +1057,7 @@
       <type fullname="System.Threading.ParameterizedThreadStart" />
       <type fullname="System.Threading.Thread" />
       <type fullname="System.Threading.ThreadAbortException" />
+      <type fullname="System.Threading.ThreadState" />
    </assembly>
    <assembly fullname="System.Threading.ThreadPool">
       <type fullname="System.Threading.ThreadPool" />

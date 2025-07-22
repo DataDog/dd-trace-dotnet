@@ -23,15 +23,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private static readonly Regex StackRegex = new(@"      error.stack:(\n|\r){1,2}.*(\n|\r){1,2}.*,(\r|\n){1,2}");
         private static readonly Regex ErrorMsgRegex = new(@"      error.msg:.*,(\r|\n){1,2}");
-        private static readonly TestTransports[] Transports = new[]
-        {
-            TestTransports.Tcp,
-            TestTransports.WindowsNamedPipe,
-#if NETCOREAPP3_1_OR_GREATER
-            TestTransports.Uds,
-#endif
-        };
-
         private readonly ITestOutputHelper _output;
 
         public AgentMalfunctionTests(ITestOutputHelper output)
@@ -43,24 +34,44 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> TestData
             => from behaviour in (AgentBehaviour[])Enum.GetValues(typeof(AgentBehaviour))
-               from transportType in Transports
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new object[] { behaviour, transportType, metadataSchemaVersion };
+               from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
+               select new object[] { behaviour, metadataSchemaVersion, dataPipelineEnabled };
 
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion)
+        [Flaky("Named pipes is flaky", maxRetries: 3)]
+        public Task NamedPipes_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
+        {
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+            return SubmitsTraces(behaviour, TestTransports.WindowsNamedPipe, metadataSchemaVersion, dataPipelineEnabled);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public Task Tcp_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
+            => SubmitsTraces(behaviour, TestTransports.Tcp, metadataSchemaVersion, dataPipelineEnabled);
+
+#if NETCOREAPP3_1_OR_GREATER
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public Task Uds_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
+            => SubmitsTraces(behaviour, TestTransports.Uds, metadataSchemaVersion, dataPipelineEnabled);
+#endif
+
+        private async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion, bool dataPipelineEnabled)
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-            if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
-            {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
-            }
-
             EnvironmentHelper.EnableTransport(transportType);
-            using var agent = EnvironmentHelper.GetMockAgent();
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
+
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: EnvironmentHelper.CanUseStatsD(transportType));
             var customResponse = behaviour switch
             {
                 AgentBehaviour.Return404 => new MockTracerResponse { StatusCode = 404 },
@@ -78,25 +89,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.CustomResponses[MockTracerResponseType.RemoteConfig] = cr;
             }
 
-            // The server implementation of named pipes is flaky so have 3 attempts
-            var attemptsRemaining = 3;
-            while (true)
-            {
-                try
-                {
-                    attemptsRemaining--;
-                    await TestInstrumentation(agent, metadataSchemaVersion);
-                    return;
-                }
-                catch (Exception ex) when (transportType == TestTransports.WindowsNamedPipe && attemptsRemaining > 0 && ex is not SkipException)
-                {
-                    await ReportRetry(_output, attemptsRemaining, ex);
-                }
-            }
-        }
-
-        private async Task TestInstrumentation(MockTracerAgent agent, string metadataSchemaVersion)
-        {
             // 3 on non-windows because of SecureString
             var expectedSpanCount = EnvironmentTools.IsWindows() ? 5 : 3;
 
@@ -106,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var process = await RunSampleAndWaitForExit(agent);
 
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName, timeoutInMilliseconds: 40000);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName, timeoutInMilliseconds: 40000);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(StackRegex, string.Empty);

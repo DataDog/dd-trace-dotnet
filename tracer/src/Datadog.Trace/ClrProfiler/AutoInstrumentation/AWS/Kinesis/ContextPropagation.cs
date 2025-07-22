@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
         public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, Scope? scope, string? streamName)
-            where TRecordsRequest : IPutRecordsRequest
+            where TRecordsRequest : IContainsRecords
         {
             // request.Records is not null and has at least one element
             if (request.Records is not { Count: > 0 })
@@ -41,8 +41,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, Scope? scope, string? streamName)
             where TRecordRequest : IContainsData
         {
+            if (scope is null)
+            {
+                return;
+            }
+
             Dictionary<string, object> propagatedContext = new Dictionary<string, object>();
-            if (scope?.Span.Context != null && !string.IsNullOrEmpty(streamName))
+            if (scope.Span.Context != null && !string.IsNullOrEmpty(streamName))
             {
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)

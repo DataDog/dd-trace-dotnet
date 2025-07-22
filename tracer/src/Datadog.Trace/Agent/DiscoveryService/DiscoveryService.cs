@@ -35,10 +35,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly int _initialRetryDelayMs;
         private readonly int _maxRetryDelayMs;
         private readonly int _recheckIntervalMs;
-        private readonly CancellationTokenSource _processExit = new();
+        private readonly TaskCompletionSource<bool> _processExit = new();
         private readonly List<Action<AgentConfiguration>> _agentChangeCallbacks = new();
         private readonly object _lock = new();
         private readonly Task _discoveryTask;
+        private int _disposed = 0;
         private AgentConfiguration? _configuration;
 
         /// <summary>
@@ -168,7 +169,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
             int? sleepDuration = null;
 
-            while (!_processExit.IsCancellationRequested)
+            while (!_processExit.Task.IsCompleted)
             {
                 try
                 {
@@ -194,7 +195,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
                 try
                 {
-                    await Task.Delay(sleepDuration ?? _recheckIntervalMs, _processExit.Token).ConfigureAwait(false);
+                    await Task.WhenAny(_processExit.Task, Task.Delay(sleepDuration ?? _recheckIntervalMs)).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -312,7 +313,17 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public Task DisposeAsync()
         {
-            _processExit.Cancel();
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                // First dispose, so mark the process exit as completed
+                _processExit.SetResult(true);
+            }
+            else
+            {
+                // Double dispose in prod shouldn't happen, and should be avoided, so logging for follow-up
+                Log.Debug($"{nameof(DiscoveryService)} is already disposed, skipping further disposal.");
+            }
+
             return _discoveryTask;
         }
     }

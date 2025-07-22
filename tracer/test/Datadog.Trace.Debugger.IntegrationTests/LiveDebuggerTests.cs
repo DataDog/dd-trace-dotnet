@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -39,9 +40,12 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    [Flaky("The explicitly disabled tests often hang on x86 .NET and .NET 8, when the debugger is disabled. Needs investigation.")]
     public async Task LiveDebuggerDisabled_DebuggerDisabledByDefault_NoDebuggerTypesCreated()
     {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
         await RunTest();
     }
 
@@ -50,21 +54,29 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    [Flaky("The explicitly disabled tests often hang on x86 .NET and .NET 8, when the debugger is disabled. Needs investigation.")]
     public async Task LiveDebuggerDisabled_DebuggerExplicitlyDisabled_NoDebuggerTypesCreated()
     {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "0");
         await RunTest();
     }
 
-    private async Task RunTest()
+    private async Task RunTest([CallerMemberName] string testName = null)
     {
+        // Create a subdirectory for the logs based on the test name and suffix
+        // And write logs there instead
+        var logPath = Path.Combine(LogDirectory, $"{testName}");
+        Directory.CreateDirectory(logPath);
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logPath);
+
         var testType = DebuggerTestHelper.SpecificTestDescription(typeof(AsyncVoid));
 
         using var agent = EnvironmentHelper.GetMockAgent();
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
-        var logPath = Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), nameof(LiveDebuggerTests) + "Logs");
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath);
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath, Output);
         using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
         await logEntryWatcher.WaitForLogEntry(LiveDebuggerDisabledLogEntry);
 

@@ -1,20 +1,24 @@
 parameters:
   - name: 'framework'
     type: 'string'
-    default: ''
+  - name: 'includeMultiVersions'
+    type: 'boolean'
+    default: true
 
 steps:
-- task: DownloadPipelineArtifact@2
-  displayName: Download standalone samples
-  inputs:
+- template: download-artifact.yml
+  parameters:
     artifact: samples-standalone
     path: $(outputDir)/bin
-  retryCountOnTaskFailure: 5
+    # Filter down to just the framework samples that we need, to reduce the size of the download
+    # Assumes we always build in release mode (we should)
+    patterns: |
+      */release_${{ parameters.framework }}/**
+      */release/**
 
-- ${{ if ne(parameters.framework, '') }}:
-  - task: DownloadPipelineArtifact@2
-    displayName: Download multi-version samples
-    inputs:
+- ${{ if eq(parameters.includeMultiVersions, true) }}:
+  - template: download-artifact.yml
+    parameters:
       artifact: samples-multi-version-${{ parameters.framework }}
       path: $(outputDir)/publish
-    retryCountOnTaskFailure: 5
+      retryCountOnTaskFailure: 5

@@ -66,7 +66,7 @@ public class LogAnalyzer : DiagnosticAnalyzer
         }
 
         // is it an IDatadogLogger logging method?
-        if (method.Name is not "Debug" and not "Information" and not "Warning" and not "Error")
+        if (method.Name is not "Debug" and not "Information" and not "Warning" and not "Error" and not "ErrorSkipTelemetry")
         {
             return;
         }

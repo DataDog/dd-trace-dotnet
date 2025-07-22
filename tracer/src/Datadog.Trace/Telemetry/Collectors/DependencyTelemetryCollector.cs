@@ -42,6 +42,7 @@ namespace Datadog.Trace.Telemetry
             if (assemblyName is null or ""
              || assembly.Version is null
              || IsTempPathPattern(assemblyName)
+             || IsCompiledRazorViewPattern(assemblyName)
              || (assemblyName[0] == 'A'
               && (assemblyName.StartsWith("App_Web_", StringComparison.Ordinal)
                || assemblyName.StartsWith("App_Theme_", StringComparison.Ordinal)
@@ -123,6 +124,34 @@ namespace Datadog.Trace.Telemetry
                 && IsBase32Char(assemblyName[9])
                 && IsBase32Char(assemblyName[10])
                 && IsBase32Char(assemblyName[11]);
+        }
+
+        private static bool IsCompiledRazorViewPattern(string assemblyName)
+        {
+            // Pattern: xxxxxxxx.xxx.cshtml (19 characters total)
+            // e.g. 01234abc.def.cshtml
+            // where "x" is a base32 character (a-z, 0-5) and "." is a literal dot
+            // Note: This is very similar to the temp path pattern, keeping it separate for now though
+            return assemblyName.Length == 19
+                   && assemblyName[8] == '.'
+                   && assemblyName[12] == '.'
+                   && assemblyName[13] == 'c'
+                   && assemblyName[14] == 's'
+                   && assemblyName[15] == 'h'
+                   && assemblyName[16] == 't'
+                   && assemblyName[17] == 'm'
+                   && assemblyName[18] == 'l'
+                   && IsBase32Char(assemblyName[0])
+                   && IsBase32Char(assemblyName[1])
+                   && IsBase32Char(assemblyName[2])
+                   && IsBase32Char(assemblyName[3])
+                   && IsBase32Char(assemblyName[4])
+                   && IsBase32Char(assemblyName[5])
+                   && IsBase32Char(assemblyName[6])
+                   && IsBase32Char(assemblyName[7])
+                   && IsBase32Char(assemblyName[9])
+                   && IsBase32Char(assemblyName[10])
+                   && IsBase32Char(assemblyName[11]);
         }
 
         private static bool IsZxPattern(string assemblyName)

@@ -97,6 +97,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
             return new AWSCodePipelineEnvironmentValues<TValueProvider>(valueProvider);
         }
 
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Drone)))
+        {
+            return new DroneEnvironmentValues<TValueProvider>(valueProvider);
+        }
+
         return new UnsupportedCIEnvironmentValues<TValueProvider>(valueProvider);
     }
 
@@ -181,11 +186,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, and the Git repository could not be automatically extracted");
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an empty value, and the Git repository could not be automatically extracted");
                         }
                         else
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{Default}'", defaultValue);
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{Default}'", defaultValue);
                         }
 
                         return false;
@@ -195,11 +200,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), and the Git repository could not be automatically extracted", value);
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), and the Git repository could not be automatically extracted", value);
                         }
                         else
                         {
-                            Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), defaulting to '{Default}'", value, defaultValue);
+                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), defaulting to '{Default}'", value, defaultValue);
                         }
 
                         return false;
@@ -225,7 +230,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 if (value is not null)
                 {
                     value = value.Trim();
-                    if (value.Length < 40 || !IsHex(value))
+                    if (value.Length != 40 || !IsHex(value))
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
@@ -258,6 +263,33 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         CommitterName = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterName, CommitterName);
         CommitterEmail = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterEmail, CommitterEmail);
         CommitterDate = GetDateTimeOffsetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterDate, CommitterDate);
+        PrBaseBranch = GetVariableIfIsNotEmpty(Constants.DDGitPullRequestBaseBranch, PrBaseBranch);
+        PrBaseCommit = GetVariableIfIsNotEmpty(Constants.DDGitPullRequestBaseBranchSha, PrBaseCommit, (value, defaultValue) =>
+        {
+            if (value is not null)
+            {
+                value = value.Trim();
+                if (value.Length != 40 || !IsHex(value))
+                {
+                    if (string.IsNullOrEmpty(defaultValue))
+                    {
+                        Log.Error("DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA must be a full-length git SHA, and the The Git commit sha couldn't be automatically extracted.");
+                    }
+                    else
+                    {
+                        Log.Error("DD_GIT_CODD_GIT_PULL_REQUEST_BASE_BRANCH_SHAMMIT_SHA must be a full-length git SHA, defaulting to '{Default}", defaultValue);
+                    }
+
+                    return false;
+                }
+
+                // All ok!
+                return true;
+            }
+
+            // If not set use the default value
+            return false;
+        });
 
         Message = Message?.Trim();
     }

@@ -13,6 +13,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.ClrProfiler;
@@ -51,6 +52,7 @@ namespace Datadog.Trace.Configuration
         private readonly bool _traceEnabled;
         private readonly bool _apmTracingEnabled;
         private readonly bool _isDataStreamsMonitoringEnabled;
+        private readonly bool _isDataStreamsMonitoringInDefaultState;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
         private readonly ReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly ReadOnlyDictionary<string, string> _globalTags;
@@ -93,6 +95,19 @@ namespace Datadog.Trace.Configuration
         /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
         /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
+            : this(source, telemetry, errorLog, LibDatadog.NativeInterop.IsLibDatadogAvailable)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TracerSettings"/> class.
+        /// The "main" constructor for <see cref="TracerSettings"/> that should be used internally in the library.
+        /// </summary>
+        /// <param name="source">The configuration source. If <c>null</c> is provided, uses <see cref="NullConfigurationSource"/> </param>
+        /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
+        /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
+        /// <param name="isLibDatadogAvailable">Used to check whether the libdatadog library is available. Useful for integration tests</param>
+        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog, bool isLibDatadogAvailable)
         {
             var commaSeparator = new[] { ',' };
             source ??= NullConfigurationSource.Instance;
@@ -413,6 +428,41 @@ namespace Datadog.Trace.Configuration
                                    .AsBoolResult()
                                    .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
 
+            DataPipelineEnabled = config
+                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
+                                  .AsBool(defaultValue: false);
+
+            if (DataPipelineEnabled)
+            {
+                // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
+                // as it may lead to different stats results than the managed one.
+                if (StatsComputationEnabled)
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
+                // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
+                if (Exporter.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                if (!isLibDatadogAvailable)
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+            }
+
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
 
@@ -623,6 +673,9 @@ namespace Datadog.Trace.Configuration
             _isDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(false);
+            _isDataStreamsMonitoringInDefaultState = config
+                                                    .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
+                                                    .AsBool() == null;
 
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
@@ -723,12 +776,30 @@ namespace Datadog.Trace.Configuration
             telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
             telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
 
+            var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
+
+            var instrumentationSource = installType switch
+            {
+                "dd_dotnet_launcher" => "cmd_line",
+                "dd_trace_tool" => "cmd_line",
+                "dotnet_msi" => "env_var",
+                "windows_fleet_installer" => "ssi", // windows SSI on IIS
+                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")) => "ssi", // "normal" ssi
+                _ => "manual" // everything else
+            };
+
+            telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
+
             if (AzureAppServiceMetadata is not null)
             {
                 telemetry.Record(ConfigTelemetryData.AasConfigurationError, AzureAppServiceMetadata.IsUnsafeToTrace, ConfigurationOrigins.Default);
                 telemetry.Record(ConfigTelemetryData.CloudHosting, "Azure", recordValue: true, ConfigurationOrigins.Default);
                 telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
+
+            GraphQLErrorExtensions = TrimSplitString(
+                config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
+                commaSeparator);
 
             static void RecordDisabledIntegrationsTelemetry(IntegrationSettingsCollection integrations, IConfigurationTelemetry telemetry)
             {
@@ -1074,6 +1145,12 @@ namespace Datadog.Trace.Configuration
         internal bool RuntimeMetricsEnabled => DynamicSettings.RuntimeMetricsEnabled ?? _runtimeMetricsEnabled;
 
         /// <summary>
+        /// Gets a value indicating whether libdatadog data pipeline
+        /// is enabled.
+        /// </summary>
+        internal bool DataPipelineEnabled { get; }
+
+        /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlSubstrings"/>
@@ -1142,6 +1219,16 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
         internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
+
+        /// <summary>
+        /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
+        /// </summary>
+        internal bool IsDataStreamsMonitoringInDefaultState => DynamicSettings.DataStreamsMonitoringEnabled == null && _isDataStreamsMonitoringInDefaultState;
+
+        /// <summary>
+        /// Gets a value indicating whether data streams schema extraction is enabled or not.
+        /// </summary>
+        internal bool IsDataStreamsSchemaExtractionEnabled => IsDataStreamsMonitoringEnabled && !IsDataStreamsMonitoringInDefaultState;
 
         /// <summary>
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
@@ -1256,6 +1343,12 @@ namespace Datadog.Trace.Configuration
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
+        /// Gets which GraphQL error extensions to capture.
+        /// A comma-separated list of extension keys to capture. Empty or not present means no extensions are captured.        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GraphQLErrorExtensions"/>
+        internal string[] GraphQLErrorExtensions { get; }
+
+        /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
         /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios.
         /// It may also be explicitly disabled
@@ -1359,7 +1452,11 @@ namespace Datadog.Trace.Configuration
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    list.Add(value.Trim());
+                    var trimmedValue = value.Trim();
+                    if (!list.Contains(trimmedValue))
+                    {
+                        list.Add(trimmedValue);
+                    }
                 }
             }
 
@@ -1490,7 +1587,10 @@ namespace Datadog.Trace.Configuration
         }
 
         internal static TracerSettings Create(Dictionary<string, object?> settings)
-            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new());
+            => Create(settings, LibDatadog.NativeInterop.IsLibDatadogAvailable);
+
+        internal static TracerSettings Create(Dictionary<string, object?> settings, bool isLibDatadogAvailable)
+            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new(), isLibDatadogAvailable);
 
         internal void CollectTelemetry(IConfigurationTelemetry destination)
         {

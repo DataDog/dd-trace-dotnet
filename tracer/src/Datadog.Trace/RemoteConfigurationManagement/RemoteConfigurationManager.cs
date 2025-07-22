@@ -31,8 +31,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly TimeSpan _pollInterval;
         private readonly IRcmSubscriptionManager _subscriptionManager;
 
-        private readonly CancellationTokenSource _cancellationSource;
+        private readonly TaskCompletionSource<bool> _processExit = new();
 
+        private int _disposed = 0;
         private int _isPollingStarted;
         private bool _isRcmEnabled;
         private bool _gitMetadataAddedToRequestTags;
@@ -52,7 +53,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _gitMetadataTagsProvider = gitMetadataTagsProvider;
 
             _subscriptionManager = subscriptionManager;
-            _cancellationSource = new CancellationTokenSource();
             discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
@@ -115,8 +115,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public void Dispose()
         {
-            _discoveryService.RemoveSubscription(SetRcmEnabled);
-            _cancellationSource.Cancel();
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                _discoveryService.RemoveSubscription(SetRcmEnabled);
+                _processExit.SetResult(true);
+            }
+            else
+            {
+                // Double dispose in prod shouldn't happen, and should be avoided, so logging for follow-up
+                Log.Debug($"{nameof(RemoteConfigurationManager)} is already disposed, skipping further disposal.");
+            }
         }
 
         private async Task StartPollingAsync()
@@ -127,7 +135,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 return;
             }
 
-            while (!_cancellationSource.IsCancellationRequested)
+            while (!_processExit.Task.IsCompleted)
             {
                 var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
 
@@ -147,7 +155,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
                 try
                 {
-                    await Task.Delay(_pollInterval, _cancellationSource.Token).ConfigureAwait(false);
+                    await Task.WhenAny(_processExit.Task, Task.Delay(_pollInterval)).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {

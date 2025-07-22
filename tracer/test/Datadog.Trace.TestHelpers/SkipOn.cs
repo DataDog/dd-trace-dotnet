@@ -57,49 +57,59 @@ public static class SkipOn
 
     public static void PlatformAndArchitecture(PlatformValue platform, ArchitectureValue architecture)
     {
-#if NETCOREAPP
-        if ((platform == PlatformValue.Linux && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ||
-            (platform == PlatformValue.Windows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) ||
-            (platform == PlatformValue.MacOs && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)))
+        if (IsPlatform(platform) && IsArchitecture(architecture))
         {
-            if ((architecture == ArchitectureValue.X64 && RuntimeInformation.ProcessArchitecture == Architecture.X64) ||
-                (architecture == ArchitectureValue.X86 && RuntimeInformation.ProcessArchitecture == Architecture.X86) ||
-                (architecture == ArchitectureValue.ARM64 && RuntimeInformation.ProcessArchitecture == Architecture.Arm64))
-            {
                 throw new SkipException($"Platform '{platform}' with Architecture '{architecture}' is not supported by this test.");
-            }
         }
-#else
-        if ((platform == PlatformValue.Linux && FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux) ||
-            (platform == PlatformValue.Windows && FrameworkDescription.Instance.OSPlatform == OSPlatformName.Windows) ||
-            (platform == PlatformValue.MacOs && FrameworkDescription.Instance.OSPlatform == OSPlatformName.MacOS))
-        {
-            if ((architecture == ArchitectureValue.X64 && FrameworkDescription.Instance.ProcessArchitecture == "x64") ||
-                (architecture == ArchitectureValue.X86 && FrameworkDescription.Instance.ProcessArchitecture == "x86") ||
-                (architecture == ArchitectureValue.ARM64 && FrameworkDescription.Instance.ProcessArchitecture == "arm64"))
-            {
-                throw new SkipException($"Platform '{platform}' with Architecture '{architecture}' is not supported by this test.");
-            }
-        }
-#endif
     }
 
     public static void Platform(PlatformValue platform)
     {
+        if (IsPlatform(platform))
+        {
+            throw new SkipException($"Platform '{platform}' is not supported by this test.");
+        }
+    }
+
+    public static void AllExcept(PlatformValue platform)
+    {
+        if (!IsPlatform(platform))
+        {
+            throw new SkipException($"Only platform '{platform}' is supported by this test.");
+        }
+    }
+
+    public static void AllExcept(PlatformValue platform, ArchitectureValue architecture)
+    {
+        if (!IsPlatform(platform) || !IsArchitecture(architecture))
+        {
+            throw new SkipException($"Only platform '{platform}' with Architecture '{architecture}' is supported by this test.");
+        }
+    }
+
+    private static bool IsPlatform(PlatformValue platform)
+    {
 #if NETCOREAPP
-        if ((platform == PlatformValue.Linux && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ||
-            (platform == PlatformValue.Windows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) ||
-            (platform == PlatformValue.MacOs && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)))
-        {
-            throw new SkipException($"Platform '{platform}' is not supported by this test.");
-        }
+        return (platform == PlatformValue.Linux && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ||
+               (platform == PlatformValue.Windows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) ||
+               (platform == PlatformValue.MacOs && RuntimeInformation.IsOSPlatform(OSPlatform.OSX));
 #else
-        if ((platform == PlatformValue.Linux && FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux) ||
-            (platform == PlatformValue.Windows && FrameworkDescription.Instance.OSPlatform == OSPlatformName.Windows) ||
-            (platform == PlatformValue.MacOs && FrameworkDescription.Instance.OSPlatform == OSPlatformName.MacOS))
-        {
-            throw new SkipException($"Platform '{platform}' is not supported by this test.");
-        }
+        return (platform == PlatformValue.Linux && FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux) ||
+               (platform == PlatformValue.Windows && FrameworkDescription.Instance.OSPlatform == OSPlatformName.Windows) ||
+               (platform == PlatformValue.MacOs && FrameworkDescription.Instance.OSPlatform == OSPlatformName.MacOS);
+#endif
+    }
+
+    private static bool IsArchitecture(ArchitectureValue architecture)
+    {
+#if NETCOREAPP
+        return (architecture == ArchitectureValue.X64 && RuntimeInformation.ProcessArchitecture == Architecture.X64) ||
+               (architecture == ArchitectureValue.X86 && RuntimeInformation.ProcessArchitecture == Architecture.X86) ||
+               (architecture == ArchitectureValue.ARM64 && RuntimeInformation.ProcessArchitecture == Architecture.Arm64);
+#else
+        return (architecture == ArchitectureValue.X64 && FrameworkDescription.Instance.ProcessArchitecture == "x64") ||
+               (architecture == ArchitectureValue.X86 && FrameworkDescription.Instance.ProcessArchitecture == "x86") ||
+               (architecture == ArchitectureValue.ARM64 && FrameworkDescription.Instance.ProcessArchitecture == "arm64");
 #endif
     }
 }

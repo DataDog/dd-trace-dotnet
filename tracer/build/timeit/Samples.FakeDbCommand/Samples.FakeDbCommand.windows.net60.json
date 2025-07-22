@@ -25,17 +25,25 @@
   "scenarios": [
     {
       "name": "Baseline",
+      "isBaseline": true,
       "environmentVariables": {
         "CORECLR_ENABLE_PROFILING": "0",
         "COR_ENABLE_PROFILING": "0"
       }
     },
     {
+      "name": "Bailout",
+      "environmentVariables": {
+        "DD_PROFILER_EXCLUDE_PROCESSES": "Samples.FakeDbCommand.exe",
+        "DD_INJECTION_ENABLED": "tracing"
+      }
+    },
+    {
       "name": "CallTarget\u002BInlining\u002BNGEN"
     }
   ],
-  "processName": "dotnet",
-  "processArguments": ".\\Samples.FakeDbCommand.dll no-wait",
+  "processName": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.FakeDbCommand\\release_net6.0\\Samples.FakeDbCommand.exe",
+  "processArguments": "no-wait",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.FakeDbCommand\\release_net6.0",
   "environmentVariables": {
@@ -61,5 +69,6 @@
     "runtime.version": "6.0",
     "benchmark.job.runtime.name": ".NET 6.0",
     "benchmark.job.runtime.moniker": "net6.0"
-  }
+  },
+  "overheadThreshold": 9.47
 }

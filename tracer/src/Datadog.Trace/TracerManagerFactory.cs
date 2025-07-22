@@ -15,9 +15,11 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Iast;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -30,6 +32,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
+using NativeInterop = Datadog.Trace.ContinuousProfiler.NativeInterop;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace
@@ -349,11 +352,95 @@ namespace Datadog.Trace
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.Exporter.PartialFlushEnabled);
+            var api = GetApi(settings, statsd, updateSampleRates, apiRequestFactory);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled);
+            return new AgentWriter(api, statsAggregator, statsd, settings);
+        }
+
+        // Internal for testing
+        internal static IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory)
+        {
+            // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
+            if (settings.DataPipelineEnabled)
+            {
+                try
+                {
+                    // If file logging is enabled, then enable logging in libdatadog
+                    // We assume that we can't go from pipeline enabled -> disabled, so we should never need to call logger.Disable()
+                    // Note that this _could_ fail if there's an issue in libdatadog, but we continue to _Try_ to initialize the exporter anyway
+                    // If this was previously initialized, it will be re-initialized with the new settings, which is fine
+                    if (Log.FileLoggingConfiguration is { } fileConfig)
+                    {
+                        var logger = LibDatadog.Logger.Instance;
+                        logger.Enable(fileConfig, DomainMetadata.Instance);
+
+                        // hacky to use the global setting, but about the only option we have atm
+                        logger.SetLogLevel(GlobalSettings.Instance.DebugEnabledInternal);
+                    }
+
+                    // TODO: we should refactor this so that we're not re-building the telemetry settings, and instead using the existing ones
+                    var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
+                    TelemetryClientConfiguration? telemetryClientConfiguration = null;
+
+                    // We don't know how to handle telemetry in Agentless mode yet
+                    // so we disable telemetry in this case
+                    if (telemetrySettings.TelemetryEnabled && telemetrySettings.Agentless == null)
+                    {
+                        telemetryClientConfiguration = new TelemetryClientConfiguration
+                        {
+                            Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
+                            RuntimeId = new CharSlice(Tracer.RuntimeId),
+                            DebugEnabled = telemetrySettings.DebugEnabled
+                        };
+                    }
+
+                    // When APM is disabled, we don't want to compute stats at all
+                    // A common use case is in Application Security Monitoring (ASM) scenarios:
+                    // when APM is disabled but ASM is enabled.
+                    var clientComputedStats = !settings.StatsComputationEnabled && !settings.ApmTracingEnabled;
+
+                    var frameworkDescription = FrameworkDescription.Instance;
+                    using var configuration = new TraceExporterConfiguration
+                    {
+                        Url = GetUrl(settings),
+                        TraceVersion = TracerConstants.AssemblyVersion,
+                        Env = settings.Environment,
+                        Version = settings.ServiceVersion,
+                        Service = settings.ServiceName,
+                        Hostname = HostMetadata.Instance.Hostname,
+                        Language = ".NET",
+                        LanguageVersion = frameworkDescription.ProductVersion,
+                        LanguageInterpreter = frameworkDescription.Name,
+                        ComputeStats = settings.StatsComputationEnabled,
+                        TelemetryClientConfiguration = telemetryClientConfiguration,
+                        ClientComputedStats = clientComputedStats
+                    };
+
+                    return new TraceExporter(configuration, updateSampleRates);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to create native Trace Exporter, falling back to managed API");
+                }
+            }
+
+            return new Api(apiRequestFactory, statsd, updateSampleRates, settings.Exporter.PartialFlushEnabled);
+        }
+
+        private static string GetUrl(TracerSettings settings)
+        {
+            switch (settings.Exporter.TracesTransport)
+            {
+                case TracesTransportType.WindowsNamedPipe:
+                    return $"windows://./pipe/{settings.Exporter.TracesPipeName}";
+                case TracesTransportType.UnixDomainSocket:
+                    return $"unix://{settings.Exporter.TracesUnixDomainSocketPath}";
+                case TracesTransportType.Default:
+                default:
+                    return settings.Exporter.AgentUri.ToString();
+            }
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)

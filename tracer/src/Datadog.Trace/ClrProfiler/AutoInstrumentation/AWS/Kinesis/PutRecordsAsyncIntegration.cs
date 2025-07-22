@@ -16,7 +16,7 @@ using Datadog.Trace.Propagators;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
-    /// AWSSDK.Kinesis PutRecordsAsync CallTarget instrumentation
+    /// AWSSDK.Kinesis PutRecordsAsync CallTarget instrumentation for SDK versions 3.0.0-3.6.x
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "AWSSDK.Kinesis",
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.PutRecordsResponse]",
         ParameterTypeNames = new[] { "Amazon.Kinesis.Model.PutRecordsRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
-        MaximumVersion = "4.*.*",
+        MaximumVersion = "3.6.*",
         IntegrationName = AwsKinesisCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

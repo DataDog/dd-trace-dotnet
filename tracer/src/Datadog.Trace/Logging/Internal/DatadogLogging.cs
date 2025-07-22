@@ -18,8 +18,8 @@ namespace Datadog.Trace.Logging
 {
     internal static class DatadogLogging
     {
+        internal const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new(DefaultLogLevel);
-        private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly IDatadogLogger SharedLogger;
 
         static DatadogLogging()

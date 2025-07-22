@@ -17,10 +17,11 @@ using Datadog.FleetInstaller.Commands;
 // args = ["uninstall-product"];
 // args = [];
 
-var rootCommand = new CommandWithExamples(CommandWithExamples.Command);
+var rootCommand = new CommandWithExamples(CommandWithExamples.Command, "Windows SSI fleet-installer command line tool");
 
 var builder = new CommandLineBuilder(rootCommand)
     .UseHelp()
+    .UseVersionOption()
     .UseCustomErrorReporting()
     .CancelOnProcessTermination();
 
@@ -36,11 +37,15 @@ rootCommand.AddExample("""
 rootCommand.AddExample("""
                        remove-iis-instrumentation"
                        """);
+rootCommand.AddExample("""
+                       available-commands"
+                       """);
 
 rootCommand.AddCommand(new InstallVersionCommand());
 rootCommand.AddCommand(new UninstallVersionCommand());
 rootCommand.AddCommand(new EnableIisInstrumentationCommand());
-rootCommand.AddCommand(new RemoveIisInstrumentation());
+rootCommand.AddCommand(new RemoveIisInstrumentationCommand());
+rootCommand.AddCommand(new AvailableCommandsCommand(rootCommand));
 
 return builder.Build().Invoke(args);
 

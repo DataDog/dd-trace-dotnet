@@ -70,29 +70,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "LinuxUnsupported")]
         [Trait("RunOnWindows", "True")]
+        [Flaky("Named pipes is flaky", maxRetries: 3)]
         public async Task NamedPipesSubmitsMetrics()
         {
             if (!EnvironmentTools.IsWindows())
             {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+                throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
             EnvironmentHelper.EnableWindowsNamedPipes();
-            // The server implementation of named pipes is flaky so have 3 attempts
-            var attemptsRemaining = 3;
-            while (true)
-            {
-                try
-                {
-                    attemptsRemaining--;
-                    await RunTest();
-                    return;
-                }
-                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
-                {
-                    await ReportRetry(_output, attemptsRemaining, ex);
-                }
-            }
+            await RunTest();
         }
 
         private async Task RunTest()

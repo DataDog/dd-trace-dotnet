@@ -8,17 +8,19 @@
 using System;
 using System.Globalization;
 using System.IO;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.Internal;
 using Datadog.Trace.Logging.Internal.Configuration;
-using Datadog.Trace.RuntimeMetrics;
+using Datadog.Trace.Logging.Internal.Sinks;
+using Datadog.Trace.Logging.Internal.TextFormatters;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Vendors.Serilog.Filters;
 
 namespace Datadog.Trace.Logging;
 
@@ -28,18 +30,22 @@ internal static class DatadogLoggingFactory
     private const int DefaultRateLimit = 0;
     private const int DefaultMaxLogFileSize = 10 * 1024 * 1024;
 
+    internal const int DefaultConsoleQueueLimit = 1024;
+
     public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         var logSinkOptions = new ConfigurationBuilder(source, telemetry)
-                            .WithKeys(ConfigurationKeys.LogSinks)
-                            .AsString()
-                           ?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                             .WithKeys(ConfigurationKeys.LogSinks)
+                             .AsString("file")
+                             .Split([','], StringSplitOptions.RemoveEmptyEntries);
 
-        FileLoggingConfiguration? fileConfig = null;
-        if (logSinkOptions is null || Contains(logSinkOptions, LogSinkOptions.File))
-        {
-            fileConfig = GetFileLoggingConfiguration(source, telemetry);
-        }
+        var fileConfig = Contains(logSinkOptions, LogSinkOptions.File) ?
+            GetFileLoggingConfiguration(source, telemetry) :
+            null;
+
+        var consoleConfig = Contains(logSinkOptions, LogSinkOptions.Console) ?
+            GetConsoleLoggingConfiguration(source) :
+            (ConsoleLoggingConfiguration?)null;
 
         var redactedErrorLogsConfig = GetRedactedErrorTelemetryConfiguration(source, telemetry);
 
@@ -48,23 +54,13 @@ internal static class DatadogLoggingFactory
                        .AsInt32(DefaultRateLimit, x => x >= 0)
                        .Value;
 
-        return new DatadogLoggingConfiguration(rateLimit, fileConfig, redactedErrorLogsConfig);
+        return new DatadogLoggingConfiguration(rateLimit, redactedErrorLogsConfig, fileConfig, consoleConfig);
 
-        static bool Contains(string?[]? array, string toMatch)
+        static bool Contains(string[] items, string value)
         {
-            if (array is null)
+            foreach (var item in items)
             {
-                return false;
-            }
-
-            foreach (var value in array)
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    continue;
-                }
-
-                if (string.Equals(value!.Trim(), toMatch))
+                if (item.AsSpan().Trim().Equals(value.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -74,11 +70,20 @@ internal static class DatadogLoggingFactory
         }
     }
 
+    private static ConsoleLoggingConfiguration GetConsoleLoggingConfiguration(IConfigurationSource? source)
+    {
+        // Since we are writing from a background thread, we can use the synchronized Console.Out
+        // instead of Console.OpenStandardOutput() without blocking the main thread. By using Console.Out we honor
+        // any previous call to Console.SetOut() and we don't have to worry about writing the UTF-8 BOM to the output stream
+        // or mangling the output by writing to the console from multiple threads.
+        return new ConsoleLoggingConfiguration(DefaultConsoleQueueLimit, Console.Out);
+    }
+
     public static IDatadogLogger? CreateFromConfiguration(
         in DatadogLoggingConfiguration config,
         DomainMetadata domainMetadata)
     {
-        if (config is { File: null, ErrorLogging: null })
+        if (config is { File: null, ErrorLogging: null, Console: null })
         {
             // no enabled sinks
             return null;
@@ -96,7 +101,7 @@ internal static class DatadogLoggingFactory
                .WriteTo.Logger(
                     lc => lc
                          .MinimumLevel.Error()
-                         .Filter.ByExcluding(log => IsExcludedMessage(log.MessageTemplate.Text))
+                         .Filter.ByExcluding(Matching.WithProperty(DatadogSerilogLogger.SkipTelemetryProperty))
                          .WriteTo.Sink(new RedactedErrorLogSink(telemetry.Collector)));
         }
 
@@ -105,13 +110,25 @@ internal static class DatadogLoggingFactory
             var managedLogPath = Path.Combine(fileConfig.LogDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-{domainMetadata.ProcessId.ToString(CultureInfo.InvariantCulture)}.log");
 
             loggerConfiguration
-               .WriteTo.File(
-                    managedLogPath,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
-                    rollingInterval: RollingInterval.Infinite, // don't do daily rolling, rely on the file size limit for rolling instead
-                    rollOnFileSizeLimit: true,
-                    fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
-                    shared: true);
+               .WriteTo.Logger(
+                    lc => lc
+                          .Enrich.With(new RemovePropertyEnricher(LogEventLevel.Error, DatadogSerilogLogger.SkipTelemetryProperty))
+                          .WriteTo.File(
+                               managedLogPath,
+                               outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
+                               rollingInterval: RollingInterval.Infinite, // don't do daily rolling, rely on the file size limit for rolling instead
+                               rollOnFileSizeLimit: true,
+                               fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
+                               shared: true));
+        }
+
+        if (config.Console is { } consoleConfig)
+        {
+            loggerConfiguration
+               .WriteTo.Logger(
+                   lc => lc
+                         .Enrich.With(new RemovePropertyEnricher(LogEventLevel.Error, DatadogSerilogLogger.SkipTelemetryProperty))
+                         .WriteTo.Sink(new AsyncTextWriterSink(new SingleLineTextFormatter(), consoleConfig.TextWriter, consoleConfig.BufferSize)));
         }
 
         try
@@ -144,15 +161,8 @@ internal static class DatadogLoggingFactory
             rateLimiter = new NullLogRateLimiter();
         }
 
-        return new DatadogSerilogLogger(internalLogger, rateLimiter, config.File?.LogDirectory);
+        return new DatadogSerilogLogger(internalLogger, rateLimiter, config.File);
     }
-
-    private static bool IsExcludedMessage(string messageTemplateText)
-        => ReferenceEquals(messageTemplateText, Api.FailedToSendMessageTemplate)
-#if NETFRAMEWORK
-        || ReferenceEquals(messageTemplateText, PerformanceCountersListener.InsufficientPermissionsMessageTemplate)
-#endif
-    ;
 
     // Internal for testing
     internal static string GetLogDirectory(IConfigurationTelemetry telemetry)
@@ -275,5 +285,19 @@ internal static class DatadogLoggingFactory
 
         // If telemetry is disabled
         return null;
+    }
+
+    private class RemovePropertyEnricher(LogEventLevel minLevel, string propertyName) : ILogEventEnricher
+    {
+        private readonly LogEventLevel _minLevel = minLevel;
+        private readonly string _propertyName = propertyName;
+
+        public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+        {
+            if (logEvent.Level >= _minLevel)
+            {
+                logEvent.RemovePropertyIfPresent(_propertyName);
+            }
+        }
     }
 }
