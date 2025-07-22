@@ -15,7 +15,7 @@ namespace Datadog.Trace.Debugger.Helpers
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SafeDisposal));
 
         internal static void TryDispose<T>(T? disposable, string? component = null)
-            where T : IDisposable
+            where T : class, IDisposable
         {
             if (disposable == null)
             {
