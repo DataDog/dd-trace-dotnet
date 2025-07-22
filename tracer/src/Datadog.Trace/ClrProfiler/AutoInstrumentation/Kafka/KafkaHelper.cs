@@ -345,7 +345,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
                     // DSM context should NOT be injected state if the message value size is <= DSM header size (~34 bytes).
-                    // This is needed to avoid situations when DSM context injection causes a significant 
+                    // This is needed to avoid situations when DSM context injection causes a significant
                     // percentage increase in overall message size, leading to capacity issues on the kafka server.
                     if (dataStreamsManager.IsInDefaultState && MessageSizeHelper.TryGetSize(message.Value) <= 34)
                     {

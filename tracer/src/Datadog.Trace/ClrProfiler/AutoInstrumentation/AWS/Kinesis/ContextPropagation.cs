@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     {
         private const string KinesisKey = "_datadog";
         private const int MaxKinesisDataSize = 1024 * 1024; // 1MB
-        private const int MaxDSMHeaderSize = 34;
+        private const int MaxDsmHeaderSize = 34;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
         public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, Scope? scope, string? streamName)
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
                     var adapter = new KinesisContextAdapter();
                     // we should not inject context if its size is comparable to the message size itself
-                    if (payloadSize > MaxDSMHeaderSize)
+                    if (payloadSize > MaxDsmHeaderSize)
                     {
                         dataStreamsManager.InjectPathwayContext(scope.Span.Context.PathwayContext, adapter);
                     }
