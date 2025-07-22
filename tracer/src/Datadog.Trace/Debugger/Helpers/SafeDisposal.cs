@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.Helpers
         internal static void TryDispose<T>(T? disposable, string? component = null)
             where T : IDisposable
         {
-            if (disposable == null)
+            if (disposable is null)
             {
                 return;
             }
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Debugger.Helpers
 
         internal static void TryExecute(Action? action, string actionDescription)
         {
-            if (action == null)
+            if (action is null)
             {
                 return;
             }
