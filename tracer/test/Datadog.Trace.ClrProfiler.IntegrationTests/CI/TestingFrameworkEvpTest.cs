@@ -431,8 +431,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         {
             using var logsIntake = new MockLogsIntakeForCiVisibility();
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
-
-            using var agent = EnvironmentHelper.GetMockAgent();
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
             const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
