@@ -88,7 +88,7 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
             {
                 // supported
                 Log::Debug("SingleStepGuardRails::CheckRuntime: Supported .NET runtime version detected, continuing with single step instrumentation");
-                SetInjectResult("success", "Successfully configured ddtrace package", "success");
+                SetInjectResult("success", "Successfully configured automatic instrumentation", "success");
                 return S_OK;
             }
 
