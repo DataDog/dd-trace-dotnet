@@ -10,5 +10,5 @@ namespace Datadog.Trace.Ci;
 
 internal interface ITestOptimizationDynamicInstrumentationFeature : ITestOptimizationFeature
 {
-    Task WaitForExceptionInstrumentation();
+    Task WaitForExceptionInstrumentation(int timeout);
 }

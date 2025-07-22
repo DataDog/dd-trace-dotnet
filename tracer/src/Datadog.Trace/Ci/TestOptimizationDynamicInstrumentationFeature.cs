@@ -42,7 +42,7 @@ internal class TestOptimizationDynamicInstrumentationFeature : ITestOptimization
         if (Enabled)
         {
             settings.SetDynamicInstrumentationEnabled(true);
-            ExceptionTrackManager.ExceptionCaseInstrumented += (exceptionIdentifier) =>
+            ExceptionTrackManager.ExceptionCaseInstrumented += exceptionIdentifier =>
             {
                 Log.Debug("TestOptimizationDynamicInstrumentationFeature: Exception instrumentation completed for {ExceptionIdentifier}", exceptionIdentifier);
                 var tcs = Interlocked.Exchange(ref _doneTaskSource, new(TaskCreationOptions.RunContinuationsAsynchronously));
@@ -60,7 +60,7 @@ internal class TestOptimizationDynamicInstrumentationFeature : ITestOptimization
     public static ITestOptimizationDynamicInstrumentationFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
         => new TestOptimizationDynamicInstrumentationFeature(settings, clientSettingsResponse);
 
-    public Task WaitForExceptionInstrumentation()
+    public Task WaitForExceptionInstrumentation(int timeout)
     {
         if (!Enabled)
         {
@@ -68,7 +68,7 @@ internal class TestOptimizationDynamicInstrumentationFeature : ITestOptimization
         }
 
         var dts = _doneTaskSource;
-        var tcs = Interlocked.CompareExchange(ref _doneTaskSource, dts, dts);
-        return Task.WhenAny(tcs.Task, Task.Delay(1_500));
+        dts = Interlocked.CompareExchange(ref _doneTaskSource, dts, dts);
+        return Task.WhenAny(dts.Task, Task.Delay(timeout));
     }
 }

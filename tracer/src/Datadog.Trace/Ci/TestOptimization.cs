@@ -242,7 +242,7 @@ internal class TestOptimization : ITestOptimization
             getDiscoveryServiceFunc: static s => DiscoveryService.Create(
                 s.TracerSettings.Exporter,
                 tcpTimeout: TimeSpan.FromSeconds(5),
-                initialRetryDelayMs: 200,
+                initialRetryDelayMs: 100,
                 maxRetryDelayMs: 1000,
                 recheckIntervalMs: int.MaxValue),
             useLockedTracerManager: DefaultUseLockedTracerManager);
