@@ -492,7 +492,7 @@ namespace Foo
                                "tags": ["injection_forced:false"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Successfully configured ddtrace package", "success");
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Successfully configured automatic instrumentation", "success");
         }
 
         [SkippableFact]
