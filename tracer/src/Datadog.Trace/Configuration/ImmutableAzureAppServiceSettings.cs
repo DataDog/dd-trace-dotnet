@@ -129,9 +129,9 @@ namespace Datadog.Trace.Configuration
 
         public string? ResourceId { get; }
 
-        public AzureContext AzureContext { get; private set; } = AzureContext.AzureAppService;
+        public AzureContext AzureContext { get; }
 
-        public bool IsFunctionsApp { get; private set; }
+        public bool IsFunctionsApp { get; }
 
         public bool IsRunningMiniAgentInAzureFunctions { get; }
 
