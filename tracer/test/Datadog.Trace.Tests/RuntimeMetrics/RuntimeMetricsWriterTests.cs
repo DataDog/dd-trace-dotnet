@@ -181,7 +181,13 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             var writer = new RuntimeMetricsWriter(statsd.Object, TimeSpan.FromMilliseconds(Timeout.Infinite), false, (statsd, timeSpan, inAppContext) => listener.Object);
             writer.Dispose();
 
+#if  NETFRAMEWORK
             listener.Verify(l => l.Dispose(), Times.Once);
+#else
+            listener.Verify(l => l.Dispose(), Times.Never);
+#endif
+            writer.PushEvents();
+            listener.Verify(l => l.Refresh(), Times.Never);
 
             // Make sure that the writer unsubscribed from the global exception handler
             try

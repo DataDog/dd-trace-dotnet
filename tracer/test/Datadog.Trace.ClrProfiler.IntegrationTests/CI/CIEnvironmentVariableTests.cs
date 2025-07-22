@@ -163,6 +163,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             githubEnvVars.HeadCommit.Should().Be("df289512a51123083a8e6931dd6f57bb3883d4c4");
             githubEnvVars.PrBaseCommit.Should().Be("52e0974c74d41160a03d59ddc73bb9f5adab054b");
             githubEnvVars.PrBaseBranch.Should().Be("main");
+            githubEnvVars.PrNumber.Should().Be("1");
 
             // Let's test now the `GITHUB_BASE_REF` environment variable.
             githubEnvVars = new GithubActionsEnvironmentValues<DictionaryValuesProvider>(
