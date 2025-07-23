@@ -9,10 +9,6 @@ using System.Linq;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 #nullable enable
 
@@ -28,59 +24,11 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextExtractor>();
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContextExtractor"/> class
-        /// </summary>
-        [PublicApi]
-        public SpanContextExtractor()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Ctor);
-        }
-
-        internal SpanContextExtractor(bool unusedParamNotToUsePublicApi)
-        {
-            // unused parameter is to give us a non-public API we can use
-        }
-
-        /// <summary>
-        /// Given a SpanContext carrier and a function to access the values, this method will extract the <see cref="ISpanContext"/> if any.
-        /// </summary>
-        /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
-        /// <param name="getter">Given a key name, returns values from the carrier. Should return an empty collection if the requested key is not present.</param>
-        /// <typeparam name="TCarrier">Type of the carrier</typeparam>
-        /// <returns>A potentially null Datadog <see cref="ISpanContext"/></returns>
-        [PublicApi]
-        public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Extract);
-            return ExtractInternal(carrier, getter);
-        }
-
-        /// <summary>
-        /// Given a SpanContext carrier and a function to access the values, this method will extract the SpanContext
-        /// and the PathwayContext, and will set a DataStreams Monitoring checkpoint if enabled.
-        /// You should only call <see cref="ExtractIncludingDsm{TCarrier}"/> once on the message <paramref name="carrier"/>. Calling
-        /// multiple times may lead to incorrect stats when using Data Streams Monitoring.
-        /// </summary>
-        /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
-        /// <param name="getter">Given a key name, returns values from the carrier. Should return an empty collection if the requested key is not present.</param>
-        /// <param name="messageType">For Data Streams Monitoring: The type of messaging system where the message is coming from.</param>
-        /// <param name="source">For Data Streams Monitoring: The queue or topic where the message is coming from.</param>
-        /// <typeparam name="TCarrier">Type of the carrier</typeparam>
-        /// <returns>A potentially null Datadog SpanContext</returns>
-        [PublicApi]
-        public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_ExtractIncludingDsm);
-            return ExtractInternal(carrier, getter, messageType, source);
-        }
-
-        internal static SpanContext? ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string? messageType = null, string? source = null)
+        internal static SpanContext? Extract<TCarrier>(Tracer tracer, TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string? messageType = null, string? source = null)
         {
             if (messageType != null && source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
             else if (messageType == null && source != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
-            var tracer = Tracer.Instance;
             var context = tracer.TracerManager.SpanContextPropagator.Extract(carrier, getter);
 
             // DSM

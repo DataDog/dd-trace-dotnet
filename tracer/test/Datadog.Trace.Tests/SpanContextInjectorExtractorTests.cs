@@ -6,10 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -17,20 +18,18 @@ namespace Datadog.Trace.Tests;
 
 extern alias DatadogTraceManual;
 
-[Collection(nameof(TracerInstanceTestCollection))]
-[TracerRestorer]
 public class SpanContextInjectorExtractorTests
 {
     [Fact]
-    public void BasicInjectionInDict()
+    public async Task BasicInjectionInDict()
     {
-        var injector = new SpanContextInjector();
+        await using var tracer = TracerHelper.Create();
         var headers = new Dictionary<string, string>();
         const ulong traceId = 123456789101112;
         const ulong spanId = 109876543210;
         var context = new SpanContext(traceId, spanId);
 
-        injector.Inject(headers, (h, k, v) => h[k] = v, context);
+        SpanContextInjector.Inject(tracer, headers, (h, k, v) => h[k] = v, context);
 
         headers.Should().BeEquivalentTo(new Dictionary<string, string>
         {
@@ -42,14 +41,14 @@ public class SpanContextInjectorExtractorTests
     }
 
     [Fact]
-    public void BasicInjectionInStringBuilder()
+    public async Task BasicInjectionInStringBuilder()
     {
-        var injector = new SpanContextInjector();
+        await using var tracer = TracerHelper.Create();
         var headers = new StringBuilder();
         var context = new SpanContext(traceId: 123456789101112, spanId: 109876543210);
 
         headers.Append("{");
-        injector.Inject(headers, (h, k, v) => h.Append("{" + k + "," + v + "},"), context);
+        SpanContextInjector.Inject(tracer, headers, (h, k, v) => h.Append("{" + k + "," + v + "},"), context);
         headers.Length--;
         headers.Append("}");
 
@@ -57,29 +56,28 @@ public class SpanContextInjectorExtractorTests
     }
 
     [Fact]
-    public void ShouldNotInjectIfSpanNotOurs()
+    public async Task ShouldNotInjectIfSpanNotOurs()
     {
-        var injector = new SpanContextInjector();
+        await using var tracer = TracerHelper.Create();
         var headers = new Dictionary<string, string>();
         // type of context is not a Datadog.Trace.SpanContext
         var context = new ReadOnlySpanContext(new TraceId(), spanId: 1, "myService");
 
-        injector.Inject(headers, (h, k, v) => h[k] = v, context);
+        SpanContextInjector.Inject(tracer, headers, (h, k, v) => h[k] = v, context);
 
         headers.Count.Should().Be(expected: 0);
     }
 
     [Fact]
-    public void InjectionWithDsm()
+    public async Task InjectionWithDsm()
     {
         // enable DSM
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
-
-        var injector = new SpanContextInjector();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } });
+        await using var tracer = TracerHelper.Create(settings);
         var headers = new Dictionary<string, string>();
         var context = new SpanContext(traceId: 1, spanId: 2);
 
-        injector.InjectIncludingDsm(headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
+        SpanContextInjector.Inject(tracer, headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
 
         headers.Keys.Should().BeEquivalentTo(
         [
@@ -100,15 +98,15 @@ public class SpanContextInjectorExtractorTests
     }
 
     [Fact]
-    public void NoDsmInjectionIsDisabled()
+    public async Task NoDsmInjectionIsDisabled()
     {
         // DSM is disabled by default
-
-        var injector = new SpanContextInjector();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, false } });
+        await using var tracer = TracerHelper.Create(settings);
         var headers = new Dictionary<string, string>();
         var context = new SpanContext(traceId: 1, spanId: 2);
 
-        injector.InjectIncludingDsm(headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
+        SpanContextInjector.Inject(tracer, headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
 
         headers.Keys.Should().BeEquivalentTo(
         [
@@ -121,17 +119,16 @@ public class SpanContextInjectorExtractorTests
     }
 
     [Fact]
-    public void CanExtractAfterInjection()
+    public async Task CanExtractAfterInjection()
     {
-        var injector = new SpanContextInjector();
+        await using var tracer = TracerHelper.Create();
         var headers = new Dictionary<string, string>();
         var context = new SpanContext(traceId: 123, spanId: 456);
 
-        injector.Inject(headers, (h, k, v) => h[k] = v, context);
+        SpanContextInjector.Inject(tracer, headers, (h, k, v) => h[k] = v, context);
 
-        var extractor = new SpanContextExtractor();
-
-        var newContext = extractor.Extract(
+        var newContext = SpanContextExtractor.Extract(
+            tracer,
             headers,
             (h, k) =>
             {
@@ -151,20 +148,18 @@ public class SpanContextInjectorExtractorTests
     }
 
     [Fact]
-    public void CanExtractDsmAfterDsmInjection()
+    public async Task CanExtractDsmAfterDsmInjection()
     {
         // enable DSM
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
-
-        var injector = new SpanContextInjector();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } });
+        await using var tracer = TracerHelper.Create(settings);
         var headers = new Dictionary<string, string>();
         var context = new SpanContext(traceId: 123, spanId: 456);
 
-        injector.InjectIncludingDsm(headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
+        SpanContextInjector.Inject(tracer, headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
 
-        var extractor = new SpanContextExtractor();
-
-        var extractedContext = extractor.ExtractIncludingDsm(
+        var extractedContext = SpanContextExtractor.Extract(
+            tracer,
             headers,
             (h, k) =>
             {
@@ -188,11 +183,11 @@ public class SpanContextInjectorExtractorTests
     }
 
     [Fact]
-    public void ShouldReadPathwaySetByKafkaIntegrationOnExtract()
+    public async Task ShouldReadPathwaySetByKafkaIntegrationOnExtract()
     {
         // enable DSM
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
-
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } });
+        await using var tracer = TracerHelper.Create(settings);
         var headers = new Dictionary<string, string>
         {
             { "x-datadog-trace-id", "1" },
@@ -202,9 +197,8 @@ public class SpanContextInjectorExtractorTests
             { "tracestate", string.Empty },
             { DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, "VGhlIHF1aWMWIGJyb3duIGZveCBqdW1wcyBvdmVyIDEzIGxhenkgZG9ncy4=" } // it's a semi-random base64 string that's good enough to pass the parsing checks
         };
-        var extractor = new SpanContextExtractor();
 
-        var newContext = extractor.Extract(headers, (h, k) => [h.GetValueOrDefault(k)]);
+        var newContext = SpanContextExtractor.Extract(tracer, headers, (h, k) => [h.GetValueOrDefault(k)]);
 
         newContext.Should().NotBeNull();
         ((SpanContext)newContext).PathwayContext.Should().NotBeNull();
