@@ -668,7 +668,9 @@ namespace Datadog.Trace.Configuration
             // DSM is now enabled by default in non-serverless environments
             _isDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
-                                            .AsBool(!EnvironmentHelpers.IsServerlessEnvironment());
+                                            .AsBool(
+                                                  !EnvironmentHelpers.IsServerlessEnvironment() &&
+                                                  !IsRunningInAzureAppService);
             _isDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                                     .AsBool() == null;
