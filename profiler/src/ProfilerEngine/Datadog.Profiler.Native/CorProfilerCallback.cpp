@@ -224,7 +224,7 @@ void CorProfilerCallback::InitializeServices()
             std::size_t rbSize = std::ceil(nbSamplesCollectorTick * cpuAllocated * RawSampleCollectorBase<RawCpuSample>::SampleSize);
             Log::Info("RingBuffer size estimate (bytes): ", rbSize);
             auto ringBuffer = std::make_unique<RingBuffer>(rbSize, CpuSampleProvider::SampleSize);
-            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer));
+            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer), _metricsRegistry);
         }
 #else // WINDOWS
         _pCpuTimeProvider = RegisterService<CpuTimeProvider>(

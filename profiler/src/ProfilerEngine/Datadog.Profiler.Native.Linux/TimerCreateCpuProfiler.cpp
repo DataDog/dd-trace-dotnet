@@ -217,9 +217,6 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     auto rawCpuSample = _pProvider->GetRawSample();
     if (!rawCpuSample)
     {
-        // maybe timedout, maybe space :shrugge: 
-        // keep it for now for a reminder to add a metric
-        _discardMetrics->Incr<DiscardReason::UnsufficientSpace>();
         return false;
     }
 

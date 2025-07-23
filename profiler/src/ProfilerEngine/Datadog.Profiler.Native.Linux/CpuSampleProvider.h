@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "MetricsRegistry.h"
 #include "RawSampleCollectorBase.h"
 #include "RawCpuSample.h"
 #include "RingBuffer.h"
@@ -22,5 +23,6 @@ public:
     CpuSampleProvider(
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        std::unique_ptr<RingBuffer> ringBuffer);
+        std::unique_ptr<RingBuffer> ringBuffer,
+        MetricsRegistry& metricsRegistry);
 };

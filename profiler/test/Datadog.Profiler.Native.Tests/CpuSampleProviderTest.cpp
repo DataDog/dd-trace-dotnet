@@ -30,8 +30,9 @@ TEST(CpuSampleProviderTest, WriteAndReadSample)
     auto valueTypes = SampleValueTypeProvider();
 
     auto const nbSamples = 11;
+    auto metricRegistry = MetricsRegistry();
     auto rb = std::make_unique<RingBuffer>(CpuSampleProvider::SampleSize * nbSamples, CpuSampleProvider::SampleSize);
-    auto provider = CpuSampleProvider(valueTypes, &rawSampleTransformer, std::move(rb));
+    auto provider = CpuSampleProvider(valueTypes, &rawSampleTransformer, std::move(rb), metricRegistry);
 
     provider.Start();
 
