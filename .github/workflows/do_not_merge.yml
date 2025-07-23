@@ -10,8 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Fail if 'status:do-not-merge' label is present
+        env:
+          LABELS_JSON: ${{ toJson(github.event.pull_request.labels) }}
         run: |
-          if echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q '"name":"status:do-not-merge"'; then
+          echo $LABELS_JSON | jq -e '.[] | select(.name == "status:do-not-merge")' > /dev/null
+          if [ $? -eq 0 ]; then
             echo "Label 'status:do-not-merge' is present. Failing the job."
             exit 1
           else
