@@ -1348,13 +1348,14 @@ namespace Datadog.Trace.Configuration
         /// RCM requires the "full" Go agent (not just the trace agent, and not the Rust agents),
         /// so is not available in some scenarios. It may also be explicitly disabled.
         /// </summary>
+        // NOTE: when we clean this up, see also EnvironmentHelpers.IsServerlessEnvironment()
         internal bool IsRemoteConfigurationAvailable =>
             RemoteConfigurationEnabled &&
-            !(IsRunningInAzureAppService
-           || IsRunningInAzureFunctions
-           || IsRunningMiniAgentInAzureFunctions
-           || IsRunningInGCPFunctions
-           || LambdaMetadata.IsRunningInLambda);
+            !IsRunningInAzureAppService &&
+            !IsRunningInAzureFunctions &&
+            !IsRunningMiniAgentInAzureFunctions &&
+            !IsRunningInGCPFunctions &&
+            !LambdaMetadata.IsRunningInLambda;
 
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
