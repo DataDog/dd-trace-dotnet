@@ -23,39 +23,6 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-    static LambdaCommon()
-    {
-        Log("Lambda container starting - registering shutdown handler", debug: false);
-        try
-        {
-            // Register Lambda shutdown handler
-            LifetimeManager.Instance.AddAsyncShutdownTask(async (exception) =>
-            {
-                Log("Lambda shutdown signal received - starting final flush", debug: false);
-                try
-                {
-                    Log("Attempting final flush during shutdown", debug: false);
-                    await Task.WhenAll(
-                        Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
-                            .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)),
-                        Tracer.Instance.TracerManager.DataStreamsManager.DisposeAsync()
-                            .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)))
-                        .ConfigureAwait(false);
-                    Log("Final flush completed successfully", debug: false);
-                }
-                catch (Exception ex)
-                {
-                    Log("Could not flush during Lambda shutdown", ex, false);
-                }
-            });
-            Log("Lambda shutdown handler registered successfully", debug: false);
-        }
-        catch (Exception ex)
-        {
-            Log("Failed to register Lambda shutdown handler", ex, false);
-        }
-    }
-
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
         Log("Creating placeholder scope for Lambda invocation", debug: true);
@@ -113,7 +80,7 @@ internal abstract class LambdaCommon
             await Task.WhenAll(
                 Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
                     .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)),
-                Tracer.Instance.TracerManager.DataStreamsManager.DisposeAsync()
+                Tracer.Instance.TracerManager.DataStreamsManager.FlushAsync()
                     .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)))
                 .ConfigureAwait(false);
             Log("Successfully flushed for current invocation", debug: false);
@@ -173,10 +140,7 @@ internal abstract class LambdaCommon
 
     internal static void Log(string message, Exception ex = null, bool debug = true)
     {
-        if (!debug || EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName)?.ToLower() == "debug")
-        {
-            Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} [DD_TRACE_DOTNET] {message} {ex?.ToString().Replace("\n", "\\n")}");
-        }
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} [DD_TRACE_DOTNET] {message} {ex?.ToString().Replace("\n", "\\n")}");
     }
 }
 #endif
