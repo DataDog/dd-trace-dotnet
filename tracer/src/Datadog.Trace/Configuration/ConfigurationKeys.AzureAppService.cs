@@ -10,14 +10,14 @@ namespace Datadog.Trace.Configuration
         internal class AzureAppService
         {
             /// <summary>
-            /// Configuration key which is used as a flag to tell us whether we are running in the context of Azure App Services.
-            /// This is set within the applicationHost.xdt file of the Azure Site Extension.
+            /// Configuration key which is used as a flag to tell us whether we are instrumenting an Azure App Service
+            /// using the AAS Site Extension. This env var is set using the <c>applicationHost.xdt</c> file.
             /// </summary>
             internal const string AzureAppServicesContextKey = "DD_AZURE_APP_SERVICES";
 
             /// <summary>
-            /// Configuration key which has the running version of the Azure Site Extension.
-            /// This is set within the applicationHost.xdt file.
+            /// Configuration key which has the running version of the Azure App Services Site Extension.
+            /// This env var is set in the <c>applicationHost.xdt</c> file.
             /// </summary>
             internal const string SiteExtensionVersionKey = "DD_AAS_DOTNET_EXTENSION_VERSION";
 
