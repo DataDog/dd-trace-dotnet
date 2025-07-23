@@ -143,7 +143,6 @@ src/Datadog.Trace/Iast/SourceType.cs
 src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
 src/Datadog.Trace/PlatformHelpers/AzureContext.cs
 src/Datadog.Trace/PlatformHelpers/ContainerMetadata.cs
-src/Datadog.Trace/PlatformHelpers/PlatformStrategy.cs
 src/Datadog.Trace/PlatformHelpers/ServiceFabric.cs
 src/Datadog.Trace/Processors/ITagProcessor.cs
 src/Datadog.Trace/Processors/NormalizerTraceProcessor.cs
@@ -257,7 +256,6 @@ src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
-src/Datadog.Trace/ClrProfiler/Helpers/HttpBypassHelper.cs
 src/Datadog.Trace/ClrProfiler/Helpers/Interception.cs
 src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/LambdaMetadata.cs
 src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/ServerlessMiniAgent.cs
