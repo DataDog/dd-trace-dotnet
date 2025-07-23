@@ -351,11 +351,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    // iast stuff
-
-    bool isRaspEnabled = IsRaspEnabled();
-    bool isIastEnabled = IsIastEnabled();
-
+    // CallSite stuff
     _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
 
     // we're in!
