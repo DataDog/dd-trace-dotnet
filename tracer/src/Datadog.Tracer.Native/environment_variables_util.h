@@ -58,6 +58,9 @@ bool IsAzureAppServices();
 bool IsTraceAnnotationEnabled();
 bool IsAzureFunctionsEnabled();
 bool IsVersionCompatibilityEnabled();
+bool IsIastEnabled();
+bool IsRaspEnabled();
+bool IsCallSiteManagedActivationEnabled();
 bool IsEditAndContinueEnabled();
 bool IsSkipMethodBodyEnabled();
 

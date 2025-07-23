@@ -352,7 +352,31 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // CallSite stuff
-    _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+    if (IsCallSiteManagedActivationEnabled())
+    {
+        _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+    }
+    else
+    {
+        Logger::Info("Callsite managed activation is disabled.");
+        bool isRaspEnabled = IsRaspEnabled();
+        bool isIastEnabled = IsIastEnabled();
+
+        Logger::Info(isIastEnabled ? "IAST Callsite instrumentation is enabled."
+                                   : "IAST Callsite instrumentation is disabled.");
+
+        Logger::Info(isRaspEnabled ? "RASP Callsite instrumentation is enabled."
+                                   : "RASP Callsite instrumentation is disabled.");
+
+        if (isIastEnabled || isRaspEnabled)
+        {
+            _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+        }
+        else
+        {
+            Logger::Info("Callsite instrumentation is disabled.");
+        }
+    }
 
     // we're in!
     Logger::Info("Profiler filepath: ", currentModuleFileName);

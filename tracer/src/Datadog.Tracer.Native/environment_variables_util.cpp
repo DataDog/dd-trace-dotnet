@@ -48,6 +48,31 @@ bool IsVersionCompatibilityEnabled()
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::internal_version_compatibility), true);
 }
 
+bool IsIastEnabled()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::iast_enabled), false);
+}
+
+bool IsAsmSettingEnabled()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::asm_enabled), false);
+}
+
+bool IsRaspSettingEnabled()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::rasp_enabled), true);
+}
+
+bool IsRaspEnabled()
+{
+    return IsRaspSettingEnabled() && IsAsmSettingEnabled();
+}
+
+bool IsCallSiteManagedActivationEnabled()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::callsite_managed_activation_enabled), true);
+}
+
 bool IsEditAndContinueEnabledCore()
 {
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::ide_edit_and_continue_core), false);
