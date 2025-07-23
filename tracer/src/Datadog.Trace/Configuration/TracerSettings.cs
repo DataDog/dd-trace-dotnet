@@ -136,7 +136,6 @@ namespace Datadog.Trace.Configuration
 
             IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry);
             IsRunningInAzureFunctions = ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry);
-            IsRunningMiniAgentInAzureFunctions = ImmutableAzureAppServiceSettings.GetIsFunctionsAppUsingMiniAgent(source, telemetry);
 
             if (IsRunningInAzureAppService)
             {
@@ -1244,7 +1243,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in an Azure Function on a
         /// consumption plan
         /// </summary>
-        internal bool IsRunningMiniAgentInAzureFunctions { get; }
+        internal bool IsRunningMiniAgentInAzureFunctions => AzureAppServiceMetadata?.IsRunningMiniAgentInAzureFunctions ?? false;
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions

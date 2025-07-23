@@ -126,7 +126,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases))]
         public void FunctionsWorkerRuntime(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.FunctionsWorkerRuntime.Should().Be(expected);
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases))]
         public void FunctionsExtensionVersion(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.FunctionsExtensionVersion.Should().Be(expected);
@@ -149,20 +149,11 @@ namespace Datadog.Trace.Tests.Configuration
         public void AzureContext(string functionsWorkerRuntime, string functionsExtensionVersion, object expected)
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, functionsWorkerRuntime),
-                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, functionsExtensionVersion));
+                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, functionsWorkerRuntime),
+                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, functionsExtensionVersion));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.AzureContext.Should().Be((AzureContext)expected);
-        }
-
-        [Fact]
-        public void Runtime()
-        {
-            var source = CreateConfigurationSource();
-            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-
-            settings.Runtime.Should().Be(FrameworkDescription.Instance.Name);
         }
 
         [Theory]
@@ -206,8 +197,8 @@ namespace Datadog.Trace.Tests.Configuration
         public void GetIsRunningMiniAgentInAzureFunctionsFalseWhenNotConsumptionPlan()
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
-                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
+                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "value"),
+                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "value"),
                 (ConfigurationKeys.AzureAppService.WebsiteSKU, "basic"));
 
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
@@ -219,8 +210,8 @@ namespace Datadog.Trace.Tests.Configuration
         public void GetIsRunningMiniAgentInAzureFunctionsTrueWhenConsumptionPlanWithNoSKU()
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
-                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"));
+                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "value"),
+                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "value"));
 
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
             settings.IsRunningMiniAgentInAzureFunctions.Should().BeTrue();
@@ -230,8 +221,8 @@ namespace Datadog.Trace.Tests.Configuration
         public void GetIsRunningMiniAgentInAzureFunctionsTrueWhenConsumptionPlanWithDynamicSKU()
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
-                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
+                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "value"),
+                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "value"),
                 (ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic"));
 
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);

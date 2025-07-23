@@ -52,55 +52,42 @@ namespace Datadog.Trace.Configuration
             // TODO: This is retrieved from other places too... need to work out how to not replace config
             var config = new ConfigurationBuilder(source, telemetry);
             var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+
             if (string.IsNullOrEmpty(apiKey))
             {
                 Log.Error("The Azure Site Extension will not work if you have not configured DD_API_KEY.");
                 IsUnsafeToTrace = true;
             }
 
-            // Azure App Services Basis
             SubscriptionId = GetSubscriptionId(source, telemetry);
             ResourceGroup = config.WithKeys(ConfigurationKeys.AzureAppService.ResourceGroupKey).AsString();
             SiteName = config.WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey).AsString();
-            ResourceId = CompileResourceId();
-
+            ResourceId = CompileResourceId(subscriptionId: SubscriptionId, siteName: SiteName, resourceGroup: ResourceGroup);
             InstanceId = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceIdKey).AsString("unknown");
             InstanceName = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceNameKey).AsString("unknown");
             OperatingSystem = config.WithKeys(ConfigurationKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
             SiteExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
+            WebsiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
 
             FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
             FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
 
-            WebsiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
-
             if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
             {
                 AzureContext = AzureContext.AzureFunctions;
+                IsFunctionsApp = true;
+                SiteKind = "functionapp";
+                SiteType = "function";
+                IsRunningMiniAgentInAzureFunctions = GetIsFunctionsAppUsingMiniAgent(isFunctionsApp: true, websiteSku: WebsiteSKU);
+                IsIsolatedFunctionsApp = FunctionsWorkerRuntime?.EndsWith("-isolated", StringComparison.OrdinalIgnoreCase) == true;
+                PlatformStrategy.ShouldSkipClientSpan = ShouldSkipClientSpanWithinFunctions;
             }
-
-            switch (AzureContext)
+            else
             {
-                case AzureContext.AzureFunctions:
-                    SiteKind = "functionapp";
-                    SiteType = "function";
-                    IsFunctionsApp = true;
-                    IsRunningMiniAgentInAzureFunctions = GetIsFunctionsAppUsingMiniAgent(source, telemetry);
-                    IsIsolatedFunctionsApp = FunctionsWorkerRuntime?.EndsWith("-isolated", StringComparison.OrdinalIgnoreCase) == true;
-                    PlatformStrategy.ShouldSkipClientSpan = ShouldSkipClientSpanWithinFunctions;
-                    break;
-                case AzureContext.AzureAppService:
-                    SiteKind = "app";
-                    SiteType = "app";
-                    IsFunctionsApp = false;
-                    break;
-                default:
-                    SiteKind = "unknown";
-                    SiteType = "unknown";
-                    break;
+                SiteKind = "app";
+                SiteType = "app";
+                IsFunctionsApp = false;
             }
-
-            Runtime = FrameworkDescription.Instance.Name;
 
             DebugModeEnabled = config.WithKeys(Configuration.ConfigurationKeys.DebugEnabled).AsBool(false);
             CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
@@ -149,43 +136,33 @@ namespace Datadog.Trace.Configuration
 
         public string OperatingSystem { get; }
 
-        public string Runtime { get; }
-
         private static bool ShouldSkipClientSpanWithinFunctions(Scope? scope)
         {
             // Ignore isolated client spans within azure functions
             return scope == null;
         }
 
-        private string? CompileResourceId()
+        private static string? CompileResourceId(string? subscriptionId, string? siteName, string? resourceGroup)
         {
-            string? resourceId = null;
-
-            var success = true;
-            if (SubscriptionId == null)
+            if (subscriptionId == null)
             {
-                success = false;
                 Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
+                return null;
             }
 
-            if (SiteName == null)
+            if (siteName == null)
             {
-                success = false;
                 Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", ConfigurationKeys.AzureAppService.SiteNameKey);
+                return null;
             }
 
-            if (ResourceGroup == null)
+            if (resourceGroup == null)
             {
-                success = false;
                 Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", ConfigurationKeys.AzureAppService.ResourceGroupKey);
+                return null;
             }
 
-            if (success)
-            {
-                resourceId = $"/subscriptions/{SubscriptionId}/resourcegroups/{ResourceGroup}/providers/microsoft.web/sites/{SiteName}".ToLowerInvariant();
-            }
-
-            return resourceId;
+            return $"/subscriptions/{subscriptionId}/resourcegroups/{resourceGroup}/providers/microsoft.web/sites/{siteName}".ToLowerInvariant();
         }
 
         private string? GetSubscriptionId(IConfigurationSource source, IConfigurationTelemetry telemetry)
@@ -206,19 +183,13 @@ namespace Datadog.Trace.Configuration
             return null;
         }
 
-        public static bool GetIsFunctionsAppUsingMiniAgent(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        public static bool GetIsFunctionsAppUsingMiniAgent(bool isFunctionsApp, string? websiteSku)
         {
-            var config = new ConfigurationBuilder(source, telemetry);
-
-            var functionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
-            var functionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
-            var isFunctionApp = functionsExtensionVersion is not null || functionsWorkerRuntime is not null;
-
-            var websiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
+            // NOTE: the mini-agent is deprecated, but keep the code for now for backward compatibility.
 
             // Start mini agent on all Linux function apps and only Windows function apps on consumption plans
             // Windows function apps on non-consumption plans do not use the mini agent and instead use the .NET APM Extension which packages the Datadog agent
-            return isFunctionApp && (Environment.OSVersion.Platform == PlatformID.Unix || websiteSKU is "Dynamic" or null);
+            return isFunctionsApp && (Environment.OSVersion.Platform == PlatformID.Unix || websiteSku is "Dynamic" or null);
         }
 
         /// <summary>

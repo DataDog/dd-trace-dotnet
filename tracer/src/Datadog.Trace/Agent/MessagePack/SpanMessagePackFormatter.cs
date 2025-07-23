@@ -700,7 +700,7 @@ namespace Datadog.Trace.Agent.MessagePack
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesRuntime, azureAppServiceSettings.Runtime);
+                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesRuntime, FrameworkDescription.Instance.Name);
 
                     if (tagBytes is not null)
                     {
