@@ -7,9 +7,6 @@ using System;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 #nullable enable
 
@@ -21,51 +18,7 @@ namespace Datadog.Trace
     /// </summary>
     public class SpanContextInjector
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContextInjector"/> class
-        /// </summary>
-        [PublicApi]
-        public SpanContextInjector()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Ctor);
-        }
-
-        /// <summary>
-        /// Given a SpanContext carrier and a function to set a value, this method will inject a SpanContext.
-        /// You should only call <see cref="Inject{TCarrier}"/> once on the message <paramref name="carrier"/>. Calling
-        /// multiple times may lead to incorrect behaviors.
-        /// </summary>
-        /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
-        /// <param name="setter">Given a key name and value, sets the value in the carrier</param>
-        /// <param name="context">The context you want to inject</param>
-        /// <typeparam name="TCarrier">Type of the carrier</typeparam>
-        [PublicApi]
-        public void Inject<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Inject);
-            InjectInternal(carrier, setter, context);
-        }
-
-        /// <summary>
-        /// Given a SpanContext carrier and a function to set a value, this method will inject a SpanContext.
-        /// You should only call <see cref="Inject{TCarrier}"/> once on the message <paramref name="carrier"/>. Calling
-        /// multiple times may lead to incorrect behaviors.
-        /// This method also sets a data streams monitoring checkpoint (if enabled).
-        /// </summary>
-        /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
-        /// <param name="setter">Given a key name and value, sets the value in the carrier</param>
-        /// <param name="context">The context you want to inject</param>
-        /// <param name="messageType">For Data Streams Monitoring: The type of messaging system where the data being injected will be sent.</param>
-        /// <param name="target">For Data Streams Monitoring: The queue or topic where the data being injected will be sent.</param>
-        /// <typeparam name="TCarrier">Type of the carrier</typeparam>
-        [PublicApi]
-        public void InjectIncludingDsm<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string messageType, string target)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_InjectIncludingDsm);
-            InjectInternal(carrier, setter, context, messageType, target);
-        }
-
-        internal static void InjectInternal<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext? context, string? messageType = null, string? target = null)
+        internal static void Inject<TCarrier>(Tracer tracer, TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext? context, string? messageType = null, string? target = null)
         {
             if (messageType != null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
             else if (messageType == null && target != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
@@ -75,7 +28,6 @@ namespace Datadog.Trace
                 return;
             }
 
-            var tracer = Tracer.Instance;
             tracer.TracerManager.SpanContextPropagator.Inject(
                 new PropagationContext(spanContext, baggage: null),
                 carrier,
