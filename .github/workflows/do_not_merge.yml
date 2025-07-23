@@ -13,7 +13,9 @@ jobs:
         env:
           LABELS_JSON: ${{ toJson(github.event.pull_request.labels) }}
         run: |
-          echo $LABELS_JSON | jq -e '.[] | select(.name == "status:do-not-merge")' > /dev/null
+          set -x
+
+          echo $LABELS_JSON | jq -e '.[] | select(.name == "status:do-not-merge")'
           if [ $? -eq 0 ]; then
             echo "Label 'status:do-not-merge' is present. Failing the job."
             exit 1
