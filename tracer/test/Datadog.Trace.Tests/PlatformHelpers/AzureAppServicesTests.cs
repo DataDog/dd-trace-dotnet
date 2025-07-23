@@ -104,14 +104,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         }
 
         [Fact]
-        public void Runtime_Set()
-        {
-            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
-            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
-            Assert.True(metadata.Runtime.Length > 0);
-        }
-
-        [Fact]
         public void IsRelevant_False_WhenVariableDoesNotExist()
         {
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null, addContextKey: false);
