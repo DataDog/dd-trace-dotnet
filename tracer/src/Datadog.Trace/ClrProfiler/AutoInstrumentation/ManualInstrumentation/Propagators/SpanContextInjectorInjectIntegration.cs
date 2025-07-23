@@ -40,7 +40,8 @@ public class SpanContextInjectorInjectIntegration
             // so we wrap the method in a try/catch to ensure we don't throw
             var inject = (Action<TCarrier, string, string>)(object)setter!;
             var injector = new SafeInjector<TCarrier>(inject);
-            SpanContextInjector.InjectInternal(carrier, injector.SafeInject, spanContext);
+            var tracer = Datadog.Trace.Tracer.Instance;
+            SpanContextInjector.Inject(tracer, carrier, injector.SafeInject, spanContext);
         }
 
         return CallTargetState.GetDefault();
