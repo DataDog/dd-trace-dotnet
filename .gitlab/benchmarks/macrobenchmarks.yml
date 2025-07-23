@@ -278,7 +278,7 @@ profiler_cpu_timer_create-x86:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     K6_OPTIONS_WARMUP_RATE: 14000
@@ -466,7 +466,7 @@ profiler_cpu_timer_create-arm64:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     # Whether to cleanup ephemeral instances after benchmarks are run
