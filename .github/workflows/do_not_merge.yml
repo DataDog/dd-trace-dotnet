@@ -6,12 +6,19 @@ on:
 
 jobs:
   do-not-merge:
-    name: Check status
+    name: Blocked by label
     runs-on: ubuntu-latest
     steps:
       - name: Fail if 'status:do-not-merge' label is present
+        env:
+          LABELS_JSON: ${{ toJson(github.event.pull_request.labels) }}
         run: |
-          if echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q '"name":"status:do-not-merge"'; then
+          set -x
+
+          # The multiline string needs to be reformed into 'real' JSON again
+          MATCH=$(jq -Rs 'fromjson | map(select(.name == "status:do-not-merge")) | length' <<<"$LABELS_JSON")
+
+          if [ "$MATCH" -gt 0 ]; then
             echo "Label 'status:do-not-merge' is present. Failing the job."
             exit 1
           else
