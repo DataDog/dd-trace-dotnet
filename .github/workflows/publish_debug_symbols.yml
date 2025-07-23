@@ -10,6 +10,8 @@ on:
 jobs:
   publish_native_debug_symbols:
     runs-on: ubuntu-latest
+    env:
+      ARTIFACTS_PATH: ${{ github.workspace }}/artifacts
 
     steps:
       - name: Checkout
@@ -19,27 +21,17 @@ jobs:
       - name: Download Linux native symbols v${{ github.event.inputs.version }}
         shell: bash
         run: |
-          mkdir debug_symbols
-          curl -s -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/linux-native-symbols.tar.gz | tar zxvf - -C debug_symbols
+          curl --create-dirs -s -OL --output-dir "$ARTIFACTS_PATH" https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/linux-native-symbols.tar.gz
       - name: Download Windows native symbols v${{ github.event.inputs.version }}
         shell: bash
         run: |
-          curl -s -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/windows-native-symbols.zip | busybox unzip -d debug_symbols -
+          curl --create-dirs -s -OL --output-dir "$ARTIFACTS_PATH" https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/windows-native-symbols.zip
           # datadog-ci needs the dll to check if we can send the PDB files
-          curl -s -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/windows-tracer-home.zip | busybox unzip -d debug_symbols -
-          # Remove all directories except the ones containing native symbols
-          # Linux symbols are extracted in the `symbols` directory
-          find debug_symbols -maxdepth 1 -type d \
-            ! -name debug_symbols \
-            ! -name dd-dotnet-win-x64 \
-            ! -name win-x64 \
-            ! -name win-x86 \
-            ! -name 'symbols' \
-            -exec rm -rf {} +
+          curl --create-dirs -s -OL --output-dir "$ARTIFACTS_PATH" https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/windows-tracer-home.zip
 
       - name: 'Push debug symbols to datadog'
         uses: ./.github/actions/publish-debug-symbols
         with:
-          symbols_folder: "debug_symbols"
+          artifacts_path: ${{ env.ARTIFACTS_PATH }}
           preprod_key: "${{ secrets.DD_PREPROD_API_KEY }}"
-          prod_key: "${{ secrets.DD_PUBLIC_SYMBOL_API_KEY }}"
+          public_symbols_key: "${{ secrets.DD_PUBLIC_SYMBOL_API_KEY }}"
