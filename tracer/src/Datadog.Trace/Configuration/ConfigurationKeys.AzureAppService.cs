@@ -34,6 +34,7 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// This is the unique name of the website instance within Azure App Services.
+            /// Its presence is used to determine if we are running in Azure App Services.
             /// </summary>
             internal const string SiteNameKey = "WEBSITE_SITE_NAME";
 
