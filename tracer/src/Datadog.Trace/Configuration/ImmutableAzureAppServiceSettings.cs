@@ -69,8 +69,8 @@ namespace Datadog.Trace.Configuration
             OperatingSystem = config.WithKeys(ConfigurationKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
             SiteExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
 
-            FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString();
-            FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString();
+            FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
+            FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
 
             WebsiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
 
@@ -210,8 +210,8 @@ namespace Datadog.Trace.Configuration
         {
             var config = new ConfigurationBuilder(source, telemetry);
 
-            var functionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString();
-            var functionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString();
+            var functionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
+            var functionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
             var isFunctionApp = functionsExtensionVersion is not null || functionsWorkerRuntime is not null;
 
             var websiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
