@@ -13,6 +13,7 @@ enum class DiscardReason
     UnsufficientSpace,
     EmptyBacktrace,
     FailedAcquiringLock,
+    TimedOut, // This is used when we cannot reserve a buffer in the ring buffer
 
     // This item must be the last one
     GuardItem
@@ -45,6 +46,8 @@ static const char* to_string(DiscardReason type)
             return "_empty_backtrace";
         case DiscardReason::FailedAcquiringLock:
             return "_failed_acquiring_lock";
+        case DiscardReason::TimedOut:
+            return "_timed_out";
         case DiscardReason::GuardItem:
             // pass through
             break;

@@ -4,6 +4,8 @@
 #pragma once
 
 #include "Callstack.h"
+#include "DiscardMetrics.h"
+#include "MetricsRegistry.h"
 #include "RingBuffer.h"
 #include "ProviderBase.h"
 #include "ServiceBase.h"
@@ -11,6 +13,7 @@
 #include "SampleValueTypeProvider.h"
 #include "RawSampleTransformer.h"
 
+#include <memory>
 
 template <typename TRawSample>
 class RawSampleCollectorBase : public ServiceBase,
@@ -22,16 +25,25 @@ public:
     class SampleHolder
     {
     public:
-        explicit SampleHolder(RingBuffer* ringBuffer) : _rbw{ringBuffer->GetWriter()}, _sample{nullptr}, _discard{false}
+        explicit SampleHolder(RingBuffer* ringBuffer, DiscardMetrics* failedReservationMetric)
+            : _rbw{ringBuffer->GetWriter()}, _sample{nullptr}, _discard{false}
         {
-            bool timedout = false;
-            _buffer = _rbw.Reserve(&timedout);
-            // TODO create metric if Reserve timed out
-            if (!timedout && !_buffer.empty())
+            bool timedOut = false;
+            _buffer = _rbw.Reserve(&timedOut);
+            if (!timedOut && !_buffer.empty())
             {
                 _sample = new(_buffer.data()) TRawSample();
                 _sample->Stack = Callstack(shared::span<std::uintptr_t>(
                     reinterpret_cast<std::uintptr_t*>(_sample + 1), Callstack::MaxFrames));
+            }
+
+            if (timedOut)
+            {
+                failedReservationMetric->Incr<DiscardReason::TimedOut>();
+            }
+            if (_buffer.empty())
+            {
+                failedReservationMetric->Incr<DiscardReason::UnsufficientSpace>();
             }
         }
         ~SampleHolder()
@@ -84,11 +96,13 @@ public:
         const char* name,
         std::vector<SampleValueTypeProvider::Offset> valueOffsets,
         RawSampleTransformer* rawSampleTransformer,
-        std::unique_ptr<RingBuffer> ringBuffer) :
+        std::unique_ptr<RingBuffer> ringBuffer,
+        MetricsRegistry& metricsRegistry) :
         ProviderBase(name),
         _valueOffsets{std::move(valueOffsets)},
         _rawSampleTransformer{rawSampleTransformer},
-        _collectedSamples{std::move(ringBuffer)}
+        _collectedSamples{std::move(ringBuffer)},
+        _failedReservationMetric{metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_raw_sample_failed_allocation")}
     {
     }
 
@@ -96,7 +110,7 @@ public:
 
     SampleHolder GetRawSample()
     {
-        return SampleHolder(_collectedSamples.get());
+        return SampleHolder(_collectedSamples.get(), _failedReservationMetric.get());
     }
     
     const char* GetName() override
@@ -169,4 +183,5 @@ private:
     std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
     RawSampleTransformer* _rawSampleTransformer;
     std::unique_ptr<RingBuffer> _collectedSamples;
+    std::shared_ptr<DiscardMetrics> _failedReservationMetric;
 };
