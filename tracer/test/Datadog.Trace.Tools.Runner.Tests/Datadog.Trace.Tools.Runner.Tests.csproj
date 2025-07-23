@@ -4,6 +4,7 @@
 
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>NU1608;NU1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+    <PackageReference Include="Verify.Xunit" Version="20.8.2" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
   </ItemGroup>
   
