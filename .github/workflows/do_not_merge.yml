@@ -6,12 +6,15 @@ on:
 
 jobs:
   do-not-merge:
-    if: ${{ contains(github.event.*.labels.*.name, 'do-not-merge') }}
-    name: Prevent Merging
+    name: Check status
     runs-on: ubuntu-latest
     steps:
-      - name: Check for label
+      - name: Fail if 'status:do-not-merge' label is present
         run: |
-          echo "Pull request is labeled as 'do not merge'"
-          echo "This workflow fails so that the pull request cannot be merged"
-          exit 1
+          if echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q '"name":"status:do-not-merge"'; then
+            echo "Label 'status:do-not-merge' is present. Failing the job."
+            exit 1
+          else
+            echo "Label 'status:do-not-merge' is NOT present. Passing."
+            exit 0
+          fi
