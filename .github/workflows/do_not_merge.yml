@@ -16,7 +16,7 @@ jobs:
           set -x
 
           # The multiline string needs to be reformed into 'real' JSON again
-          echo $LABELS_JSON | jq -Rs 'fromjson | .[] | select(.name == "status:do-not-merge")' > /dev/null
+          jq -Rs 'fromjson | .[] | select(.name == "status:do-not-merge")'<<<"$LABELS_JSON"
           if [ $? -eq 0 ]; then
             echo "Label 'status:do-not-merge' is present. Failing the job."
             exit 1
