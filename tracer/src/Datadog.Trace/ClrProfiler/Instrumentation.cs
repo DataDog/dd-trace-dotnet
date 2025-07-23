@@ -440,14 +440,16 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
+            // get environment variables directly so we don't access Trace.Instance yet
             var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
             var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
 
             if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
             {
-                // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for Azure Functions.
-                // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal
-                // This is because user code is loaded within the functions host in a separate context
+                // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for in-process Azure Functions.
+                // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal.
+                // This is because user code is loaded within the functions host in a separate context.
+                // Even in isolated functions, we don't want the AspNetCore spans to be created.
                 Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions.");
             }
             else
