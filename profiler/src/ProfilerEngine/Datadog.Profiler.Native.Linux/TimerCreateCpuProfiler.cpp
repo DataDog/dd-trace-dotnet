@@ -220,7 +220,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         return false;
     }
 
-    auto buffer = rawCpuSample->Stack.AsView();
+    auto buffer = rawCpuSample->Stack.AsSpan();
     auto* context = reinterpret_cast<unw_context_t*>(ctx);
     auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
     rawCpuSample->Stack.SetCount(count);

@@ -23,8 +23,8 @@ TEST(CallstackTest, CheckMoveAssignmentOperator)
 
     ASSERT_EQ(s.Size(), 0);
     ASSERT_EQ(s.Capacity(), 0);
-    ASSERT_EQ(s.Data().data(), nullptr);
-    ASSERT_EQ(s.Data().size(), 0);
+    ASSERT_EQ(s.AsSpan().data(), nullptr);
+    ASSERT_EQ(s.AsSpan().size(), 0);
 
     ASSERT_EQ(s2.Capacity(), Callstack::MaxFrames);
 
@@ -65,7 +65,7 @@ TEST(CallstackTest, CheckBufferSetCountApi)
 
     ASSERT_EQ(s.Size(), 0);
 
-    auto buffer = s.Data();
+    auto buffer = s.AsSpan();
     buffer[0] = 0;
     buffer[1] = 1;
     buffer[2] = 2;
