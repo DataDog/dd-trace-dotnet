@@ -138,7 +138,7 @@ inline bool StackSnapshotResultBuffer::AddFakeFrame()
 
 inline shared::span<uintptr_t> StackSnapshotResultBuffer::Data()
 {
-    return _callstack.Data();
+    return _callstack.AsSpan();
 }
 
 inline Callstack StackSnapshotResultBuffer::GetCallstack()

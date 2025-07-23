@@ -70,7 +70,7 @@ public:
 
     bool Add(std::uintptr_t ip);
 
-    shared::span<std::uintptr_t> Data() const;
+    shared::span<std::uintptr_t> AsSpan() const;
     void SetCount(std::size_t count);
 
     std::size_t Size() const;
@@ -81,11 +81,6 @@ public:
     std::uintptr_t* end() const;
 
     void CopyFrom(Callstack const& other);
-
-    shared::span<std::uintptr_t> AsView()
-    {
-        return _buffer;
-    }
 
 private:
     shared::pmr::memory_resource* _memoryResource;
