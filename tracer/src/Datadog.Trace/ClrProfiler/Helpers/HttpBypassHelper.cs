@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
 namespace Datadog.Trace.ClrProfiler.Helpers
@@ -11,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Helpers
     {
         public static bool UriContainsAnyOf(Uri requestUri, string[] substrings)
         {
-            if (requestUri == null || substrings == null || substrings.Length == 0)
+            if (requestUri == null! || substrings == null! || substrings.Length == 0)
             {
                 return false;
             }
