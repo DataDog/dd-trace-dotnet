@@ -1345,12 +1345,13 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
-        /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios.
-        /// It may also be explicitly disabled
+        /// RCM requires the "full" Go agent (not just the trace agent, and not the Rust agents),
+        /// so is not available in some scenarios. It may also be explicitly disabled.
         /// </summary>
         internal bool IsRemoteConfigurationAvailable =>
             RemoteConfigurationEnabled &&
             !(IsRunningInAzureAppService
+           || IsRunningInAzureFunctions
            || IsRunningMiniAgentInAzureFunctions
            || IsRunningInGCPFunctions
            || LambdaMetadata.IsRunningInLambda);
