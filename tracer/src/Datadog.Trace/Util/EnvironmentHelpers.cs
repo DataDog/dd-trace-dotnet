@@ -98,8 +98,10 @@ namespace Datadog.Trace.Util
 
         internal static bool IsServerlessEnvironment()
         {
+            // NOTE: this returns false in Azure App Services
             return !string.IsNullOrEmpty(GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT")) ||
-                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion)) ||
                    !string.IsNullOrEmpty(GetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar)) ||
                    !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey)) ||
                    !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey)) ||
