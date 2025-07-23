@@ -6,7 +6,7 @@ on:
 
 jobs:
   do-not-merge:
-    name: Check status
+    name: Blocked by label
     runs-on: ubuntu-latest
     steps:
       - name: Fail if 'status:do-not-merge' label is present
