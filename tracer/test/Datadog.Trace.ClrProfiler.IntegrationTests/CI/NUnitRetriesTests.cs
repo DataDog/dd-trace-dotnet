@@ -46,10 +46,7 @@ public class NUnitRetriesTests : TestingFrameworkRetriesTests
     [Trait("Category", "FlakyRetries")]
     public override Task FlakyRetriesWithExceptionReplay(string packageVersion)
     {
-        // This is not yet implemented, I'm missing the span.SetException() call in the NUnit integration.
-        // return base.FlakyRetriesWithExceptionReplay(packageVersion);
-        _ = packageVersion;
-        return Task.CompletedTask;
+        return base.FlakyRetriesWithExceptionReplay(packageVersion);
     }
 }
 
