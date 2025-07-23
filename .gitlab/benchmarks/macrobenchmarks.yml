@@ -32,6 +32,8 @@ check_azure_pipeline:
   timeout: 1h
   rules:
     - when: on_success
+  variables:
+    CI_COMMIT_REF_NAME: "master" # TODO: Remove after testing is done
 
 update-bp-infra:
   stage: infra-update
