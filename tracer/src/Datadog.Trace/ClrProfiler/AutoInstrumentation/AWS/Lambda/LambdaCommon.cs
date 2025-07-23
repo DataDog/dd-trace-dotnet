@@ -67,7 +67,7 @@ internal abstract class LambdaCommon
         }
     }
 
-    internal static async Task EndInvocationAsync(string returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
+    internal static async Task FlushTracesAsync()
     {
         try
         {
@@ -79,6 +79,11 @@ internal abstract class LambdaCommon
         {
             Log("Could not flush to the extension", ex, false);
         }
+    }
+
+    internal static async Task EndInvocationAsync(string returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
+    {
+        await FlushTracesAsync().ConfigureAwait(false);
 
         try
         {
