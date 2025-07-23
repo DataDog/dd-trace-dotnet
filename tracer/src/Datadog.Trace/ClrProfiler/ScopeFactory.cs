@@ -7,7 +7,6 @@ using System;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -76,7 +75,16 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="startTime">The start time that should be applied to the span</param>
         /// <param name="addToTraceContext">Set to false if the span is meant to be discarded. In that case, the span won't be added to the TraceContext.</param>
         /// <returns>A new pre-populated scope.</returns>
-        internal static Span CreateInactiveOutboundHttpSpan(Tracer tracer, string httpMethod, Uri requestUri, IntegrationId integrationId, out HttpTags tags, TraceId traceId, ulong spanId, DateTimeOffset? startTime, bool addToTraceContext)
+        internal static Span CreateInactiveOutboundHttpSpan(
+            Tracer tracer,
+            string httpMethod,
+            Uri requestUri,
+            IntegrationId integrationId,
+            out HttpTags tags,
+            TraceId traceId,
+            ulong spanId,
+            DateTimeOffset? startTime,
+            bool addToTraceContext)
         {
             tags = null;
 
