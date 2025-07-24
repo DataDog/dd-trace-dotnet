@@ -177,7 +177,7 @@ namespace Datadog.Trace.Debugger
             get =>
                 (InternalDynamicInstrumentationEnabled == true && DynamicSettings.DynamicInstrumentationEnabled == null)
              || (InternalDynamicInstrumentationEnabled == null && DynamicSettings.DynamicInstrumentationEnabled == true);
-            init => DynamicInstrumentationEnabled = value;
+            init { }
         }
 
         public bool SymbolDatabaseUploadEnabled { get; }
@@ -217,7 +217,7 @@ namespace Datadog.Trace.Debugger
             get =>
                 (InternalCodeOriginForSpansEnabled == true && DynamicSettings.CodeOriginEnabled == null)
              || (InternalCodeOriginForSpansEnabled == null && DynamicSettings.CodeOriginEnabled == true);
-            init => CodeOriginForSpansEnabled = value;
+            init { }
         }
 
         public int CodeOriginMaxUserFrames { get; }
