@@ -23,7 +23,22 @@ namespace Datadog.Trace.Configuration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ImmutableAzureAppServiceSettings));
 
-        public static readonly string DefaultHttpClientExclusions = "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin, /azure-webjobs-hosts/".ToUpperInvariant();
+        /// <summary>
+        /// The http client paths we don't want to trace when running in AAS or Azure Functions.
+        /// </summary>
+        /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpClientExcludedUrlSubstrings"/>
+        public const string DefaultHttpClientExclusions =
+#pragma warning disable SA1025 // CodeMustNotContainMultipleWhitespaceInARow
+            ".LOGS.DATADOGHQ.," +
+            ".SERVICES.VISUALSTUDIO.," +
+            ".APPLICATIONINSIGHTS.AZURE.," +
+            ".MONITOR.AZURE.," +
+            ".BLOB.CORE.WINDOWS.NET/AZURE-WEBJOBS," +                   // no trailing slash, /azure-webjobs-hosts/*, /azure-webjobs-secrets/*, etc
+            ".TABLE.CORE.WINDOWS.NET/TABLES," +                         // no trailing slash, /Tables, /Tables('AzureFunctionsDiagnosticEventsCheck')
+            ".TABLE.CORE.WINDOWS.NET/AZUREFUNCTIONSDIAGNOSTICEVENTS," + // no trailing slash, /AzureFunctionsDiagnosticEvents202507()?$format=...
+            ".AZUREWEBSITES.NET/ADMIN/," +                              // trailing slash, /admin/*
+            "CDN.FUNCTIONS.AZURE.COM/PUBLIC/";                          // trailing slash, /public/*
+#pragma warning restore SA1025                                          // CodeMustNotContainMultipleWhitespaceInARow
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableAzureAppServiceSettings"/> class
