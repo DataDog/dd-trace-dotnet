@@ -294,15 +294,19 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         return;
     }
 
+    const std::string injectResult = m_injectResult.empty() ? "unknown" : m_injectResult;
+    const std::string injectResultReason = m_injectResultReason.empty() ? "unknown" : m_injectResultReason;
+    const std::string injectResultClass = m_injectResultClass.empty() ? "unknown" : m_injectResultClass;
+
     const std::string metadata =
         "{\"metadata\":{\"runtime_name\": \"" + runtimeName
         + "\",\"runtime_version\": \"" + runtimeVersion
         + "\",\"language_name\": \"dotnet\",\"language_version\": \"" + runtimeVersion
         + "\",\"tracer_version\": \"" + PROFILER_VERSION
         + "\",\"pid\":" + std::to_string(GetPID())
-        + ",\"inject_result\": \"" + m_injectResult
-        + "\",\"inject_result_reason\": \"" + m_injectResultReason
-        + "\",\"inject_result_class\": \"" + m_injectResultClass
+        + ",\"inject_result\": \"" + injectResult
+        + "\",\"inject_result_reason\": \"" + injectResultReason
+        + "\",\"inject_result_class\": \"" + injectResultClass
         + "\"},\"points\": " + points + "}";
 
     const auto processPath = ToString(forwarderPath);
