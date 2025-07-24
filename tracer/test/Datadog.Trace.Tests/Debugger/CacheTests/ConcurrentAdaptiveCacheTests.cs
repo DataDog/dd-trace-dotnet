@@ -207,7 +207,7 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
         }
 
         [Fact]
-        public void Cache_Should_Be_Thread_Safe()
+        public async Task Cache_Should_Be_Thread_Safe()
         {
             using var cache = new ConcurrentAdaptiveCache<int, string>(capacity: 1000);
 
@@ -231,7 +231,7 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
                     }
                 });
 
-            Task.WaitAll(addTask, readTask);
+            await Task.WhenAll(addTask, readTask);
             Assert.Equal(1000, cache.Count);
         }
 
@@ -418,7 +418,7 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
         }
 
         [Fact]
-        public void Adaptive_Cleanup_Should_Adjust_Interval_Based_On_Expired_Items()
+        public async Task Adaptive_Cleanup_Should_Adjust_Interval_Based_On_Expired_Items()
         {
             var mockTimeProvider = new Mock<ITimeProvider>();
             var currentTime = DateTime.UtcNow;
@@ -443,7 +443,7 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
             // Advance time beyond expiration
             currentTime = currentTime.Add(expiration.Add(TimeSpan.FromMilliseconds(1500)));
 
-            timeUpdated.Task.Wait(TimeSpan.FromMilliseconds(250));
+            await timeUpdated.Task.WaitAsync(TimeSpan.FromMilliseconds(250));
 
             cache.PerformCleanup();
 
