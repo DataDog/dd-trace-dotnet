@@ -48,6 +48,8 @@ namespace Datadog.Trace.Debugger
                                _ => ParsingResult<bool?>.Failure()
                            });
 
+            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(false);
+
             SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
 
             MaximumDepthOfMembersToCopy = config
@@ -156,6 +158,8 @@ namespace Datadog.Trace.Debugger
                                _ => ParsingResult<bool?>.Failure()
                            });
 
+            CodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(false);
+
             CodeOriginMaxUserFrames = config
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
                                          .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
@@ -168,9 +172,13 @@ namespace Datadog.Trace.Debugger
 
         internal bool? InternalDynamicInstrumentationEnabled { get; }
 
-        public bool DynamicInstrumentationEnabled =>
-            (InternalDynamicInstrumentationEnabled == true && DynamicSettings.DynamicInstrumentationEnabled == null)
-         || (InternalDynamicInstrumentationEnabled == null && DynamicSettings.DynamicInstrumentationEnabled == true);
+        public bool DynamicInstrumentationEnabled
+        {
+            get =>
+                (InternalDynamicInstrumentationEnabled == true && DynamicSettings.DynamicInstrumentationEnabled == null)
+             || (InternalDynamicInstrumentationEnabled == null && DynamicSettings.DynamicInstrumentationEnabled == true);
+            init => DynamicInstrumentationEnabled = value;
+        }
 
         public bool SymbolDatabaseUploadEnabled { get; }
 
@@ -204,9 +212,13 @@ namespace Datadog.Trace.Debugger
 
         internal bool? InternalCodeOriginForSpansEnabled { get; }
 
-        public bool CodeOriginForSpansEnabled =>
-            (InternalCodeOriginForSpansEnabled == true && DynamicSettings.CodeOriginEnabled == null)
-         || (InternalCodeOriginForSpansEnabled == null && DynamicSettings.CodeOriginEnabled == true);
+        public bool CodeOriginForSpansEnabled
+        {
+            get =>
+                (InternalCodeOriginForSpansEnabled == true && DynamicSettings.CodeOriginEnabled == null)
+             || (InternalCodeOriginForSpansEnabled == null && DynamicSettings.CodeOriginEnabled == true);
+            init => CodeOriginForSpansEnabled = value;
+        }
 
         public int CodeOriginMaxUserFrames { get; }
 
