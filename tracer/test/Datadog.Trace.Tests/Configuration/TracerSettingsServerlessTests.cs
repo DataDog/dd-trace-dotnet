@@ -48,8 +48,6 @@ public class TracerSettingsServerlessTests : SettingsTestsBase
         }
     }
 
-    // These tests rely on Lambda.Create() which uses environment variables
-    // See TracerSettingsTests for tests which don't rely on any environment variables
     [Theory]
     [InlineData("test1,, ,test2", false, new[] { "TEST1", "TEST2" })]
     [InlineData("test1,, ,test2", true, new[] { "TEST1", "TEST2" })]
