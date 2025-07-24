@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var process = await RunSampleAndWaitForExit(agent);
             var spans = agent.Spans; // no spans expected
 
-            Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+            spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
             await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Process);
         }
 

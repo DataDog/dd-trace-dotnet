@@ -53,10 +53,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [Trait("Category", "LinuxUnsupported")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(Data))]
-        public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
+        public async Task MeetsAllAspNetCoreMvcExpectations(string path, int statusCode)
         {
             // We actually sometimes expect 2, but waiting for 1 is good enough
-            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount: 1);
+            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, (HttpStatusCode)statusCode, expectedSpanCount: 1);
             foreach (var span in spans)
             {
                 var result = ValidateIntegrationSpan(span, metadataSchemaVersion: "v0");

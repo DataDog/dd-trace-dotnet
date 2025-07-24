@@ -40,7 +40,7 @@ public abstract class AspNetCoreIpCollectionTests : AspNetCoreMvcTestBase
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [MemberData(nameof(IpData), MemberType = typeof(AspNetCoreIpCollectionTests))]
-    public async Task CollectsIpWhenEnabled(string path, HttpStatusCode statusCode)
+    public async Task CollectsIpWhenEnabled(string path, int statusCode)
     {
         await Fixture.TryStartApp(this);
 

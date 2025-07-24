@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(Data))]
-        public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
+        public async Task MeetsAllAspNetCoreMvcExpectations(string path, int statusCode)
         {
             await Fixture.TryStartApp(this);
 
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer

@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(Data))]
-        public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
+        public async Task MeetsAllAspNetCoreMvcExpectations(string path, int statusCode)
         {
             await Fixture.TryStartApp(this);
 
