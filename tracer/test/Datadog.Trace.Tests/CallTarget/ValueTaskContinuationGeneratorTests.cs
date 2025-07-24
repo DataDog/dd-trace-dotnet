@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests.CallTarget
         }
 
         [Fact]
-        public async ValueTask SuccessTest()
+        public async Task SuccessTest()
         {
             var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask>();
             var state = CallTargetState.GetDefault();

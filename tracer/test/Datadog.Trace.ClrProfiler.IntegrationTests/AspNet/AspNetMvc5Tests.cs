@@ -255,13 +255,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
+        public async Task SubmitsTraces(string path, int statusCode)
         {
             // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
             var toLowerPath = path.ToLower();
             if (_testName.Contains(".Classic") && toLowerPath.Contains("badrequest") && toLowerPath.Contains("transferrequest"))
             {
-                statusCode = (HttpStatusCode)500;
+                statusCode = 500;
             }
 
             var expectedSpanCount = _enableInferredProxySpans ? 3 : 2;
@@ -270,7 +270,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 path: _iisFixture.VirtualApplicationPath + path, // Append virtual directory to the actual request
                 agent: _iisFixture.Agent,
                 httpPort: _iisFixture.HttpPort,
-                expectedHttpStatusCode: statusCode,
+                expectedHttpStatusCode: (HttpStatusCode)statusCode,
                 expectedSpanCount: expectedSpanCount,
                 filterServerSpans: !_enableInferredProxySpans);
 
@@ -279,7 +279,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ValidateIntegrationSpans(serverSpans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
@@ -342,16 +342,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
+        public async Task SubmitsTraces(string path, int statusCode)
         {
             // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
             if (_testName.Contains(".Classic") && path.ToLowerInvariant().Contains("transferrequest"))
             {
-                statusCode = (HttpStatusCode)500;
+                statusCode = 500;
             }
 
             // Append virtual directory if there is one
-            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount: 1);
+            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, (HttpStatusCode)statusCode, expectedSpanCount: 1);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 
