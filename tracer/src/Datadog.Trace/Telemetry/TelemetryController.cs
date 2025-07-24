@@ -390,7 +390,8 @@ internal class TelemetryController : ITelemetryController
 
                 // check for Azure Functions first because it's a subset of Azure App Service
                 { IsRunningInAzureFunctions: true } => ",azf",
-                // IsRunningInAzureFunctions: true is handled above, but it doesn't hurt to be safe
+                // IsRunningInAzureFunctions: true is handled above, but it doesn't hurt to be safe,
+                // so test for IsRunningInAzureFunctions: false
                 { IsRunningInAzureAppService: true, IsRunningInAzureFunctions: false } => ",aas",
                 _ => null,
             };
