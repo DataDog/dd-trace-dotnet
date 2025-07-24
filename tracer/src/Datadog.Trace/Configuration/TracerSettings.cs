@@ -682,11 +682,19 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationEnabled = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningMiniAgentInAzureFunctions));
-            if (!ApmTracingEnabled && StatsComputationEnabled)
+                                     .AsBool(false); // default is false, but user config can be overridden below
+
+            if (StatsComputationEnabled && !ApmTracingEnabled)
             {
-                telemetry.Record(ConfigurationKeys.StatsComputationEnabled, false, ConfigurationOrigins.Calculated);
+                // if APM is not enabled, disable stats computation (override user config)
+                telemetry.Record(ConfigurationKeys.StatsComputationEnabled, value: false, ConfigurationOrigins.Calculated);
                 StatsComputationEnabled = false;
+            }
+            else if (!StatsComputationEnabled && ApmTracingEnabled && (IsRunningInGCPFunctions || IsRunningInAzureFunctions))
+            {
+                // if APM is enabled, and we're running in GCP or Azure Functions, enable stats computation (override user config)
+                telemetry.Record(ConfigurationKeys.StatsComputationEnabled, value: true, ConfigurationOrigins.Calculated);
+                StatsComputationEnabled = true;
             }
 
             var urlSubstringSkips = config
