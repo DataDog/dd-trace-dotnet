@@ -37,7 +37,7 @@ namespace Datadog.Trace.Configuration
             ".TABLE.CORE.WINDOWS.NET/TABLES," +                         // no trailing slash, /Tables, /Tables('AzureFunctionsDiagnosticEventsCheck')
             ".TABLE.CORE.WINDOWS.NET/AZUREFUNCTIONSDIAGNOSTICEVENTS," + // no trailing slash, /AzureFunctionsDiagnosticEvents202507()?$format=...
             ".AZUREWEBSITES.NET/ADMIN/," +                              // trailing slash, /admin/*
-            "CDN.FUNCTIONS.AZURE.COM/PUBLIC/";                          // trailing slash, /public/*
+            "CDN.FUNCTIONS.AZURE.COM/PUBLIC/EXTENSIONBUNDLES/";         // trailing slash, /public/ExtensionBundles*
 #pragma warning restore SA1025                                          // CodeMustNotContainMultipleWhitespaceInARow
 
         /// <summary>
