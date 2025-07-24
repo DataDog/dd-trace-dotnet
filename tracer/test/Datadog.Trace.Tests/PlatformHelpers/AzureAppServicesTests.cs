@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
@@ -39,7 +38,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
-            Assert.Equal(expected: AzureContext.AzureAppService, actual: metadata.AzureContext);
+            Assert.False(metadata.IsFunctionsApp);
             Assert.Equal(expected: AppServiceKind, actual: metadata.SiteKind);
             Assert.Equal(expected: AppServiceType, actual: metadata.SiteType);
         }
@@ -56,7 +55,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                 functionsRuntime: FunctionsRuntime);
 
             var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
-            Assert.Equal(expected: AzureContext.AzureFunctions, actual: metadata.AzureContext);
+            Assert.True(metadata.IsFunctionsApp);
             Assert.Equal(expected: FunctionKind, actual: metadata.SiteKind);
             Assert.Equal(expected: FunctionType, actual: metadata.SiteType);
         }
