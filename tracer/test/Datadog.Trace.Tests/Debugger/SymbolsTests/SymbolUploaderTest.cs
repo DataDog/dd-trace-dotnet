@@ -78,7 +78,7 @@ public class SymbolUploaderTest
             Assert.NotNull(root1);
             var assembly = root1.Scopes?[0];
             Assert.NotNull(assembly);
-            var classesScope = assembly.Value.Scopes;
+            var classesScope = assembly!.Value.Scopes;
             Assert.NotNull(root1.Scopes);
             Assert.NotNull(root.Scopes);
             Assert.NotNull(classesScope);
