@@ -5,14 +5,37 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.Tests.PlatformHelpers;
+namespace Datadog.Trace.TestHelpers.PlatformHelpers;
 
 public static class AzureAppServiceHelper
 {
+    public static IConfigurationSource CreateMinimalAzureAppServiceConfiguration(string siteName)
+    {
+        var dict = new Dictionary<string, string>
+        {
+            { "WEBSITE_SITE_NAME", siteName }
+        };
+
+        return new DictionaryConfigurationSource(dict);
+    }
+
+    public static IConfigurationSource CreateMinimalAzureFunctionsConfiguration(string siteName, string functionsWorkerRuntime, string functionsExtensionVersion)
+    {
+        var dict = new Dictionary<string, string>
+        {
+            { "WEBSITE_SITE_NAME", siteName },
+            { "FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated" },
+            { "FUNCTIONS_EXTENSION_VERSION", "dotnet-isolated" }
+        };
+
+        return new DictionaryConfigurationSource(dict);
+    }
+
     public static IConfigurationSource GetRequiredAasConfigurationValues(
         string subscriptionId,
         string deploymentId,
