@@ -7,7 +7,7 @@
   "context": "../tracer/build/_build",
   "build": {
     "args": {
-      "DOTNETSDK_VERSION": "10.0.100-preview.5.25277.114"
+      "DOTNETSDK_VERSION": "10.0.100-preview.6.25358.103"
     }
   },
   // Allow access to host machine
