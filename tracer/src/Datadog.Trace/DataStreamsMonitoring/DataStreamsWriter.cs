@@ -30,6 +30,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
+    private readonly bool _isInDefaultState;
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private MemoryStream? _serializationBuffer;
@@ -42,11 +43,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private bool _isInitialized;
 
     public DataStreamsWriter(
+        TracerSettings settings,
         DataStreamsAggregator aggregator,
         IDataStreamsApi api,
         long bucketDurationMs,
         IDiscoveryService discoveryService)
     {
+        _isInDefaultState = settings.IsDataStreamsMonitoringInDefaultState;
         _aggregator = aggregator;
         _api = api;
         _discoveryService = discoveryService;
@@ -70,6 +73,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         IDiscoveryService discoveryService,
         string defaultServiceName)
         => new(
+            settings,
             new DataStreamsAggregator(
                 new DataStreamsMessagePackFormatter(settings, defaultServiceName),
                 bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
@@ -289,9 +293,16 @@ internal class DataStreamsWriter : IDataStreamsWriter
             }
             else
             {
-                Log.Warning(
-                    "Data streams monitoring was enabled but is not supported by the Agent. Disabling Data streams. " +
-                    "Consider upgrading your Datadog Agent to at least version 7.34.0+");
+                const string msg = "Data streams monitoring was enabled but is not supported by the Agent. Disabling Data streams. " +
+                          "Consider upgrading your Datadog Agent to at least version 7.34.0+";
+                if (_isInDefaultState)
+                {
+                    Log.Information(msg);
+                }
+                else
+                {
+                    Log.Warning(msg);
+                }
             }
         }
     }

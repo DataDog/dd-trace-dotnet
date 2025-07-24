@@ -342,6 +342,7 @@ public class DataStreamsWriterTests
         discoveryService = new DiscoveryServiceMock();
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.Environment, Environment } });
         return new DataStreamsWriter(
+            settings,
             new DataStreamsAggregator(
                 new DataStreamsMessagePackFormatter(settings, Service),
                 bucketDurationMs),
