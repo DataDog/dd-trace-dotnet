@@ -73,6 +73,6 @@ public class WeakCipherTests : TestHelper
         using var process = await RunSampleAndWaitForExit(agent);
         var spans = agent.Spans; // we expect no spans
 
-        Assert.Empty(spans.Where(s => s.Name.Equals(ExpectedOperationName)));
+        spans.Where(s => s.Name.Equals(ExpectedOperationName)).Should().BeEmpty();
     }
 }
