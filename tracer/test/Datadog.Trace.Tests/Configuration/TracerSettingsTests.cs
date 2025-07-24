@@ -1029,6 +1029,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void IsRunningInAzureFunctions(string value, bool expected)
         {
             var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.SiteNameKey, value),
                 (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, value),
                 (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, value));
 
