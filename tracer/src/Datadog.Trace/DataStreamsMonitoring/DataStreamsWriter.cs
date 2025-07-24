@@ -80,6 +80,55 @@ internal class DataStreamsWriter : IDataStreamsWriter
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
             discoveryService);
 
+    public async Task FlushAsync()
+    {
+        Console.WriteLine("[FlushAsync] Starting flush request");
+        var actualTimeout = TimeSpan.FromSeconds(5);
+
+        if (_processExit.Task.IsCompleted)
+        {
+            Console.WriteLine("[FlushAsync] Writer is disposed/disposing - returning early");
+            return;
+        }
+
+        Console.WriteLine("[FlushAsync] Setting up TaskCompletionSource and event handler");
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        EventHandler<EventArgs>? handler = null;
+        handler = (_, _) =>
+        {
+            Console.WriteLine("[FlushAsync] FlushComplete event received - removing handler and setting result");
+            FlushComplete -= handler;
+            tcs.TrySetResult(true);
+        };
+
+        try
+        {
+            Console.WriteLine("[FlushAsync] Subscribing to FlushComplete event");
+            FlushComplete += handler;
+
+            Console.WriteLine("[FlushAsync] Requesting flush via RequestFlush()");
+            RequestFlush();
+
+            Console.WriteLine("[FlushAsync] Waiting for completion or timeout ({0}ms)", actualTimeout.TotalMilliseconds);
+            var completedTask = await Task.WhenAny(
+                tcs.Task,
+                Task.Delay(actualTimeout)).ConfigureAwait(false);
+
+            Console.WriteLine("[FlushAsync] Completed - TimedOut: {0}", completedTask != tcs.Task);
+            return;
+        }
+        finally
+        {
+            Console.WriteLine("[FlushAsync] Finally block - cleaning up event handler");
+            if (handler != null)
+            {
+                FlushComplete -= handler;
+            }
+
+            tcs.TrySetResult(false);
+        }
+    }
+
     public void Add(in StatsPoint point)
     {
         if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
