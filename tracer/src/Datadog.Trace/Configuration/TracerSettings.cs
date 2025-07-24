@@ -691,9 +691,7 @@ namespace Datadog.Trace.Configuration
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
-                                   .AsString(
-                                        IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
-                                        LambdaMetadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : string.Empty);
+                                   .AsString(GetDefaultHttpClientExclusions());
 
             if (isRunningInCiVisibility)
             {
@@ -1550,6 +1548,21 @@ namespace Datadog.Trace.Configuration
             var integrationSettings = Integrations[integration];
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
+        }
+
+        internal string GetDefaultHttpClientExclusions()
+        {
+            if (IsRunningInAzureAppService)
+            {
+                return ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions;
+            }
+
+            if (LambdaMetadata.IsRunningInLambda)
+            {
+                return LambdaMetadata.DefaultHttpClientExclusions;
+            }
+
+            return string.Empty;
         }
 
         private static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)

@@ -124,6 +124,9 @@ namespace environment
     // Enables ASM.
     const shared::WSTRING asm_enabled = WStr("DD_APPSEC_ENABLED");
 
+    // Enables CallSite initialization from Stable Config in the managed library.
+    const shared::WSTRING callsite_managed_activation_enabled = WStr("DD_CALLSITE_MANAGED_ACTIVATION_ENABLED");
+
     // Enables the workaround for dotnet issue 77973 (https://github.com/dotnet/runtime/issues/77973)
     const shared::WSTRING internal_workaround_77973_enabled = WStr("DD_INTERNAL_WORKAROUND_77973_ENABLED");
 
