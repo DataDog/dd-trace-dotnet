@@ -31,9 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Verify.Xunit" Version="14.13.1" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <None Update="datadogConfig.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
