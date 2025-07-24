@@ -62,10 +62,6 @@ public class TracerSettingsServerlessTests : SettingsTestsBase
 
         if (isRunningInAppService)
         {
-            // TODO: remove this once we don't rely on "DD_AZURE_APP_SERVICES" to determine if we're running in Azure App Services
-            // because it's only set by the AAS Site Extension. Use "WEBSITE_SITE_NAME" instead.
-            configPairs.Add((ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"));
-
             configPairs.Add((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
         }
 
