@@ -232,7 +232,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4Isolated.AspNetCore.SdkV1", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
-            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~1");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
         [SkippableFact]
