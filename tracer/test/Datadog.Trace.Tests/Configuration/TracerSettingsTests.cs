@@ -1098,18 +1098,25 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [PairwiseData]
-        public void IsRemoteConfigurationAvailable(bool? overrideValue, bool? isRunningInAas)
+        public void IsRemoteConfigurationAvailable_AzureAppService(bool? overrideValue, bool isRunningInAas)
         {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, AsString(isRunningInAas)),
-                (ConfigurationKeys.Rcm.RemoteConfigurationEnabled, AsString(overrideValue)));
-            var settings = new TracerSettings(source);
+            var configPairs = new List<(string, string)>();
+
+            if (overrideValue != null)
+            {
+                configPairs.Add((ConfigurationKeys.Rcm.RemoteConfigurationEnabled, overrideValue.Value ? "1" : "0"));
+            }
+
+            if (isRunningInAas)
+            {
+                configPairs.Add((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
+            }
+
+            var settings = new TracerSettings(CreateConfigurationSource(configPairs.ToArray()));
 
             // Default is "rcm is enabled" and "we're not in AAS"
-            var expected = (overrideValue ?? true) && !(isRunningInAas ?? false);
+            var expected = (overrideValue ?? true) && !isRunningInAas;
             settings.IsRemoteConfigurationAvailable.Should().Be(expected);
-
-            static string AsString(bool? value) => value.HasValue ? (value.Value ? "1" : "0") : string.Empty;
         }
 
         [Fact]
