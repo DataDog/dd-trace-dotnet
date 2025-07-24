@@ -6,7 +6,6 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -143,17 +142,19 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("value", null, Trace.PlatformHelpers.AzureContext.AzureFunctions)]
-        [InlineData(null, "value", Trace.PlatformHelpers.AzureContext.AzureFunctions)]
-        [InlineData(null, null, Trace.PlatformHelpers.AzureContext.AzureAppService)]
-        public void AzureContext(string functionsWorkerRuntime, string functionsExtensionVersion, object expected)
+        [InlineData("value", null, false)]
+        [InlineData(null, "value", false)]
+        [InlineData(null, null, false)]
+        [InlineData("value", "value", true)]
+
+        public void IsFunctionsApp(string functionsWorkerRuntime, string functionsExtensionVersion, bool expected)
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, functionsWorkerRuntime),
                 (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, functionsExtensionVersion));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.AzureContext.Should().Be((AzureContext)expected);
+            settings.IsFunctionsApp.Should().Be(expected);
         }
 
         [Theory]
