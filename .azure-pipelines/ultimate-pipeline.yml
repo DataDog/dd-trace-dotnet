@@ -4808,7 +4808,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: azure-managed-linux-smoke-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -4890,7 +4890,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-smoke
+        name: azure-managed-linux-smoke-2
       
       steps:
         - template: steps/clone-repo.yml
@@ -4963,7 +4963,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: azure-managed-linux-smoke-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -5052,7 +5052,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-smoke
+        name: azure-managed-linux-smoke-2
 
       steps:
         - template: steps/clone-repo.yml
@@ -5125,7 +5125,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: azure-managed-linux-smoke-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -5189,7 +5189,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: azure-managed-linux-smoke-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -5261,7 +5261,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      name: azure-managed-linux-smoke
+      name: azure-managed-linux-smoke-2
 
     steps:
     - template: steps/clone-repo.yml
