@@ -134,6 +134,8 @@ Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 
 # Serverless (General)
 /tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/                         @DataDog/tracing-dotnet @DataDog/apm-serverless
+/tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/HttpBypassTests.cs                  @DataDog/tracing-dotnet @DataDog/apm-serverless
+/tracer/test/Datadog.Trace.Tests/Configuration/TracerSettingsServerlessTests.cs          @DataDog/tracing-dotnet @DataDog/apm-serverless
 
 # Serverless (AWS)
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/                           @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
@@ -150,8 +152,10 @@ docker-compose.serverless.yml                                                   
 # Serverless (Azure/GCP)
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/ServerlessMiniAgent.cs   @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
+/tracer/src/Datadog.Trace/Configuration/ImmutableAzureAppServiceSettings.cs              @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/src/Datadog.AzureFunctions/                                                      @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/test/Datadog.Trace.Tests/ServerlessMiniAgentTests.cs                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AzureFunctionsTests.cs           @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/test/test-applications/azure-functions/                                          @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 
 # Shared code we could move to the root folder
@@ -188,7 +192,7 @@ missing-nullability-files.csv             @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/MetricTags.cs @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs @DataDog/apm-dotnet
 
-# Native loader 
+# Native loader
 /shared/src/Datadog.Trace.ClrProfiler.Native/                       @DataDog/profiling-dotnet @DataDog/apm-dotnet
 
 # Version Bump Related Files - overriding to have wider coverage
