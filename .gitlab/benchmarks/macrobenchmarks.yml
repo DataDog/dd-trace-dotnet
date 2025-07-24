@@ -122,7 +122,7 @@ update-bp-infra:
     KUBERNETES_MEMORY_REQUEST: "4Gi"
     KUBERNETES_MEMORY_LIMIT: "4Gi"
 
-baseline-x86:
+baseline-x86-1:
   extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
@@ -131,129 +131,87 @@ baseline-x86:
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
 
-calltarget_ngen-x86:
-  extends: .benchmarks-x86
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_CLR_ENABLE_INLINING: 1
-    DD_CLR_ENABLE_NGEN: 1
-    ENDPOINT: "hello"
-
-trace_stats-x86:
-  extends: .benchmarks-x86
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_CLR_ENABLE_INLINING: 1
-    DD_CLR_ENABLE_NGEN: 1
-    DD_TRACE_STATS_COMPUTATION_ENABLED: 1
-    ENDPOINT: "hello"
-
-manual_only-x86:
+baseline-x86-2:
   extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
-    DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
     ENDPOINT: "hello"
 
-manual_and_automatic-x86:
-  extends: .benchmarks-x86
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
-    ENDPOINT: "hello"
-
-ddtraceenabled_false-x86:
-  extends: .benchmarks-x86
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_TRACE_ENABLED: 0
-    ENDPOINT: "hello"
-
-profiler_exceptions_baseline-x86:
+baseline-x86-3:
   extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
-    ENDPOINT: "hello/Exception"
-
-profiler-x86:
-  extends: .benchmarks-x86
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-profiler_walltime-x86:
+baseline-x86-4:
   extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
-    DD_PROFILING_WALLTIME_ENABLED: 1
-    DD_PROFILING_CPU_ENABLED: 0
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
 
-profiler_exceptions-x86:
+baseline-x86-5:
   extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    DD_PROFILING_EXCEPTION_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
-    ENDPOINT: "hello/Exception"
-
-profiler_cpu-x86:
-  extends: .benchmarks-x86
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    DD_PROFILING_WALLTIME_ENABLED: 0
-    DD_PROFILING_CPU_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
 
-profiler_cpu_timer_create-x86:
+baseline-x86-6:
   extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    DD_PROFILING_WALLTIME_ENABLED: 0
-    DD_PROFILING_CPU_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
+
+baseline-x86-7:
+  extends: .benchmarks-x86
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    ENDPOINT: "hello"
+
+baseline-x86-8:
+  extends: .benchmarks-x86
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    ENDPOINT: "hello"
+
+baseline-x86-9:
+  extends: .benchmarks-x86
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    ENDPOINT: "hello"
+
+baseline-x86-10:
+  extends: .benchmarks-x86
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    ENDPOINT: "hello"
+
 
 .benchmarks-arm64:
   stage: benchmarks
@@ -317,32 +275,7 @@ baseline-arm64:
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
 
-calltarget_ngen-arm64:
-  extends: .benchmarks-arm64
-  tags: ["runner:apm-k8s-arm-metal"]
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_CLR_ENABLE_INLINING: 1
-    DD_CLR_ENABLE_NGEN: 1
-    ENDPOINT: "hello"
-
-trace_stats-arm64:
-  extends: .benchmarks-arm64
-  tags: ["runner:apm-k8s-arm-metal"]
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_CLR_ENABLE_INLINING: 1
-    DD_CLR_ENABLE_NGEN: 1
-    DD_TRACE_STATS_COMPUTATION_ENABLED: 1
-    ENDPOINT: "hello"
-
-manual_only-arm64:
+baseline-arm64-1:
   extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
@@ -350,106 +283,96 @@ manual_only-arm64:
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
-    DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
     ENDPOINT: "hello"
 
-manual_and_automatic-arm64:
+baseline-arm64-2:
   extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
-    ENDPOINT: "hello"
-
-ddtraceenabled_false-arm64:
-  extends: .benchmarks-arm64
-  tags: ["runner:apm-k8s-arm-metal"]
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_TRACE_ENABLED: 0
-    ENDPOINT: "hello"
-
-profiler_exceptions_baseline-arm64:
-  tags: ["runner:apm-k8s-arm-metal"]
-  extends: .benchmarks-arm64
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
-    ENDPOINT: "hello/Exception"
-
-profiler-arm64:
-  tags: ["runner:apm-k8s-arm-metal"]
-  extends: .benchmarks-arm64
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-profiler_walltime-arm64:
-  tags: ["runner:apm-k8s-arm-metal"]
+baseline-arm64-3:
   extends: .benchmarks-arm64
+  tags: ["runner:apm-k8s-arm-metal"]
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
-    DD_PROFILING_WALLTIME_ENABLED: 1
-    DD_PROFILING_CPU_ENABLED: 0
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
 
-profiler_exceptions-arm64:
-  tags: ["runner:apm-k8s-arm-metal"]
+baseline-arm64-4:
   extends: .benchmarks-arm64
+  tags: ["runner:apm-k8s-arm-metal"]
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    DD_PROFILING_EXCEPTION_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
-    ENDPOINT: "hello/Exception"
-
-profiler_cpu-arm64:
-  tags: ["runner:apm-k8s-arm-metal"]
-  extends: .benchmarks-arm64
-  variables:
-    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
-    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    DD_PROFILING_WALLTIME_ENABLED: 0
-    DD_PROFILING_CPU_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
 
-profiler_cpu_timer_create-arm64:
-  tags: ["runner:apm-k8s-arm-metal"]
+baseline-arm64-5:
   extends: .benchmarks-arm64
+  tags: ["runner:apm-k8s-arm-metal"]
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    DD_PROFILING_WALLTIME_ENABLED: 0
-    DD_PROFILING_CPU_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    ENDPOINT: "hello"
+
+baseline-arm64-6:
+  extends: .benchmarks-arm64
+  tags: ["runner:apm-k8s-arm-metal"]
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    ENDPOINT: "hello"
+
+baseline-arm64-7:
+  extends: .benchmarks-arm64
+  tags: ["runner:apm-k8s-arm-metal"]
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    ENDPOINT: "hello"
+
+baseline-arm64-8:
+  extends: .benchmarks-arm64
+  tags: ["runner:apm-k8s-arm-metal"]
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    ENDPOINT: "hello"
+
+baseline-arm64-9:
+  extends: .benchmarks-arm64
+  tags: ["runner:apm-k8s-arm-metal"]
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    ENDPOINT: "hello"
+
+baseline-arm64-10:
+  extends: .benchmarks-arm64
+  tags: ["runner:apm-k8s-arm-metal"]
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
 
 .benchmarks-win:
