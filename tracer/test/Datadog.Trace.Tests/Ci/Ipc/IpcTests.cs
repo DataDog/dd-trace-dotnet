@@ -71,7 +71,7 @@ public class IpcTests
 
         var delayTask = Task.Delay(30_000);
         var ipcTasks = Task.WhenAll(serverTaskCompletion.Task, clientTaskCompletion.Task);
-        if (await Task.WhenAny(ipcTasks, delayTask).ConfigureAwait(false) == delayTask)
+        if (await Task.WhenAny(ipcTasks, delayTask) == delayTask)
         {
             throw new TimeoutException($"Timeout waiting for messages. Values went up to [{finalValue?.ServerValue}, {finalValue?.ClientValue}]");
         }
