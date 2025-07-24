@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -101,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
-            Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+            spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
             await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Sqlite);
         }
     }
