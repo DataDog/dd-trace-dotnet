@@ -119,6 +119,9 @@ update-bp-infra:
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 2
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2
 
+    KUBERNETES_MEMORY_REQUEST: "4Gi"
+    KUBERNETES_MEMORY_LIMIT: "4Gi"
+
 baseline-x86:
   extends: .benchmarks-x86
   variables:
@@ -300,6 +303,9 @@ profiler_cpu_timer_create-x86:
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 2
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2
+
+    KUBERNETES_MEMORY_REQUEST: "4Gi"
+    KUBERNETES_MEMORY_LIMIT: "4Gi"
 
 baseline-arm64:
   extends: .benchmarks-arm64
