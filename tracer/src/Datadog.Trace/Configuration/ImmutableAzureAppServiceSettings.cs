@@ -21,7 +21,7 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     internal class ImmutableAzureAppServiceSettings
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ImmutableAzureAppServiceSettings));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ImmutableAzureAppServiceSettings>();
 
         /// <summary>
         /// The http client paths we don't want to trace when running in AAS or Azure Functions.
