@@ -47,7 +47,7 @@ namespace Datadog.Trace.IntegrationTests
                 await tracer.FlushAsync();
 
                 var spans = await agent.WaitForSpansAsync(count: 1);
-                Assert.Equal(expected: 1, spans.Count);
+                Assert.Single(spans);
 
                 var headers = agent.TraceRequestHeaders.Should().ContainSingle().Subject;
 

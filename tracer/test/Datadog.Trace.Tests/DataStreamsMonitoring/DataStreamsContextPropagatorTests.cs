@@ -1,4 +1,4 @@
-﻿// <copyright file="DataStreamsContextPropagatorTests.cs" company="Datadog">
+// <copyright file="DataStreamsContextPropagatorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -143,7 +143,7 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
                 var binaryAsBase64 = Encoding.UTF8.GetString(binaryHeaderValueBytes);
                 Convert.FromBase64String(binaryAsBase64);
                 // If no exception then the binary header was incorrectly Base64-encoded
-                Assert.False(true, "Binary header should not be Base64-encoded.");
+                Assert.Fail("Binary header should not be Base64-encoded.");
             }
             catch (FormatException)
             {
