@@ -80,15 +80,15 @@ internal class DataStreamsWriter : IDataStreamsWriter
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
             discoveryService);
 
-    public async Task<bool> FlushAsync()
+    public async Task FlushAsync()
     {
         Console.WriteLine("[FlushAsync] Starting flush request");
         var actualTimeout = TimeSpan.FromSeconds(5);
 
         if (_processExit.Task.IsCompleted)
         {
-            Console.WriteLine("[FlushAsync] Writer is disposed/disposing - returning false");
-            return false;
+            Console.WriteLine("[FlushAsync] Writer is disposed/disposing - returning early");
+            return;
         }
 
         Console.WriteLine("[FlushAsync] Setting up TaskCompletionSource and event handler");
@@ -114,9 +114,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 tcs.Task,
                 Task.Delay(actualTimeout)).ConfigureAwait(false);
 
-            var result = completedTask == tcs.Task && await tcs.Task.ConfigureAwait(false);
-            Console.WriteLine("[FlushAsync] Completed - Result: {0} (TimedOut: {1})", result, completedTask != tcs.Task);
-            return result;
+            Console.WriteLine("[FlushAsync] Completed - TimedOut: {0}", completedTask != tcs.Task);
+            return;
         }
         finally
         {
