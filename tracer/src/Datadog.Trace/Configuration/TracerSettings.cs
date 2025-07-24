@@ -1349,7 +1349,6 @@ namespace Datadog.Trace.Configuration
             RemoteConfigurationEnabled &&
             !IsRunningInAzureAppService &&
             !IsRunningInAzureFunctions &&
-            !IsRunningMiniAgentInAzureFunctions &&
             !IsRunningInGCPFunctions &&
             !LambdaMetadata.IsRunningInLambda;
 
