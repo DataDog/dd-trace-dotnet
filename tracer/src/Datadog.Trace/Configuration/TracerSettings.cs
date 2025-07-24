@@ -134,10 +134,7 @@ namespace Datadog.Trace.Configuration
 
             LambdaMetadata = LambdaMetadata.Create();
 
-            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry);
-            IsRunningInAzureFunctions = ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry);
-
-            if (IsRunningInAzureAppService)
+            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
@@ -1232,12 +1229,12 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether the tracer is running in AzureAppServices (AAS).
         /// </summary>
-        internal bool IsRunningInAzureAppService { get; }
+        internal bool IsRunningInAzureAppService => AzureAppServiceMetadata is not null;
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in Azure Functions.
         /// </summary>
-        internal bool IsRunningInAzureFunctions { get; }
+        internal bool IsRunningInAzureFunctions => AzureAppServiceMetadata?.IsFunctionsApp ?? false;
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in an Azure Function on a

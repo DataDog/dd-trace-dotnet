@@ -72,9 +72,8 @@ namespace Datadog.Trace.Configuration
             FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
             FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
 
-            if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
+            if (FunctionsWorkerRuntime is not null && FunctionsExtensionVersion is not null)
             {
-                AzureContext = AzureContext.AzureFunctions;
                 IsFunctionsApp = true;
                 SiteKind = "functionapp";
                 SiteType = "function";
@@ -84,12 +83,12 @@ namespace Datadog.Trace.Configuration
             }
             else
             {
+                IsFunctionsApp = false;
                 SiteKind = "app";
                 SiteType = "app";
-                IsFunctionsApp = false;
             }
 
-            DebugModeEnabled = config.WithKeys(Configuration.ConfigurationKeys.DebugEnabled).AsBool(false);
+            DebugModeEnabled = config.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
             CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
             NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
         }
@@ -115,8 +114,6 @@ namespace Datadog.Trace.Configuration
         public string? SiteName { get; }
 
         public string? ResourceId { get; }
-
-        public AzureContext AzureContext { get; }
 
         public bool IsFunctionsApp { get; }
 
