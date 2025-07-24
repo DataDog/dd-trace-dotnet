@@ -56,10 +56,10 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 10.0.100-preview.5.25277.114
+  dotnetCoreSdkLatestVersion: 10.0.100-preview.6.25358.103
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 10.0.100-preview.5
+  dotnetCoreSdkLatestVersionShort: 10.0.100-preview.6
   nativeBuildDotnetSdkVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
