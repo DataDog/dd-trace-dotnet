@@ -97,7 +97,7 @@ namespace environment
     const shared::WSTRING trace_annotations_enabled = WStr("DD_TRACE_ANNOTATIONS_ENABLED");
 
     // Determine whether to instrument within azure functions.
-    // Default is false until official support is announced.
+    // Default is true.
     const shared::WSTRING azure_functions_enabled = WStr("DD_TRACE_AZURE_FUNCTIONS_ENABLED");
 
     // Enable the profiler to dump the IL original code and modification to the log.
