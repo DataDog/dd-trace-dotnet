@@ -35,6 +35,7 @@ check_azure_pipeline:
   variables:
     USE_MASTER_BUILD: 1 # TODO: Remove after testing is done
 
+
 update-bp-infra:
   stage: infra-update
   tags: ["arch:amd64"]
