@@ -111,7 +111,9 @@ namespace Datadog.Trace.Tests.CallTarget
             var cTask = tcg.SetContinuation(this, GetPreviousTask(tcs.Task), null, in state).AsTask();
 
             tcs.TrySetResult(true);
+#pragma warning disable xUnit1031 // Test methods should not use Blocking operations
             Task.WaitAny(cTask, synchronizationContext.Task);
+#pragma warning restore xUnit1031
 
             // If preserving context, the continuation should be posted to the synchronization context and cTask should never complete
             // If not, the cTask should complete without using the synchronization context
@@ -219,7 +221,9 @@ namespace Datadog.Trace.Tests.CallTarget
 
             // After setting the continuation, we resolve the task completion source.
             tcs.TrySetResult(true);
+#pragma warning disable xUnit1031 // Test methods should not use Blocking operations
             Task.WaitAny(cTask, synchronizationContext.Task);
+#pragma warning restore
 
             // If preserving context, the continuation should be posted to the synchronization context and cTask should never complete
             // If not, the cTask should complete without using the synchronization context

@@ -36,6 +36,18 @@ namespace Datadog.Trace.TestHelpers
                 { string.Empty, defaultValue },
             };
 
+        public static TheoryData<string, bool?> NullableBooleanTestCases(bool? defaultValue)
+            => new()
+            {
+                { "true", true },
+                { "1", true },
+                { "false", false },
+                { "0", false },
+                { "A", defaultValue },
+                { null, defaultValue },
+                { string.Empty, defaultValue },
+            };
+
         public static TheoryData<string, int> Int32TestCases(int defaultValue)
             => new()
             {

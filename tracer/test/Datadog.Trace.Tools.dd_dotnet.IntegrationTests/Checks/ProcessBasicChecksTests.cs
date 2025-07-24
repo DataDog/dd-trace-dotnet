@@ -348,7 +348,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     [InlineData("1", true)]
     [InlineData("0", true)]
     [InlineData(null, true)]
-    public async Task DetectContinuousProfilerState(string enabled, bool? ssiInjectionEnabled)
+    public async Task DetectContinuousProfilerState(string? enabled, bool? ssiInjectionEnabled)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         var ssiInjection = ssiInjectionEnabled is null
