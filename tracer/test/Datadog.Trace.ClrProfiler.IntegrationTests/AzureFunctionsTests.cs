@@ -317,7 +317,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
                 // There are _additional_ spans created for these compared to the non-AspNetCore version
                 // These are http-client-handler-type: System.Net.Http.SocketsHttpHandler that come in around
-                // the same time as some of the `azure-functions.invoke` spans
+                // the same time as some of the `azure_functions.invoke` spans
                 // because of this they cause a lot of flake in the snapshots where they shift places
                 // opting to just scrub them from the snapshots - we also don't think that the spans provide much
                 // value so they may be removed from being traced.
