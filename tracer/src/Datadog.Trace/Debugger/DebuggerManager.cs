@@ -147,7 +147,7 @@ namespace Datadog.Trace.Debugger
 
                 if (manuallyDisabled)
                 {
-                    Log.Information("Code Origin for Spans is disabled by environment variable. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
+                    Log.Information("Code Origin for Spans is disabled by environment variable. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
                     return;
                 }
 
@@ -161,6 +161,10 @@ namespace Datadog.Trace.Debugger
                 if ((manuallyEnabled || dynamicallyEnabled) && CodeOrigin == null)
                 {
                     CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(DebuggerSettings);
+                }
+                else
+                {
+                    Log.Information("Code Origin for Spans is disabled by. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
                 }
             }
             catch (Exception ex)
@@ -180,7 +184,7 @@ namespace Datadog.Trace.Debugger
 
                 if (manuallyDisabled)
                 {
-                    Log.Information("Exception Replay is disabled by environment variable. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled);
+                    Log.Information("Exception Replay is disabled by environment variable. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.ExceptionReplayEnabled);
                     return;
                 }
 
@@ -198,6 +202,10 @@ namespace Datadog.Trace.Debugger
                     var exceptionReplay = ExceptionDebugging.Create(ExceptionReplaySettings);
                     exceptionReplay.Initialize();
                     ExceptionReplay = exceptionReplay;
+                }
+                else
+                {
+                    Log.Information("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.ExceptionReplayEnabled);
                 }
             }
             catch (Exception ex)
