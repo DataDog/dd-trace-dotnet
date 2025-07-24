@@ -60,8 +60,9 @@ public class TelemetryControllerLogTagBuilderTests
 
         builder.Update(TracerSettings.Create(new()
         {
+            { "WEBSITE_SITE_NAME", "site-name" },
             { "FUNCTIONS_EXTENSION_VERSION", "~4" },
-            { "FunctionsWorkerRuntime", "dotnet-isolated" }
+            { "FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated" }
         }));
 
         builder.GetLogTags().Should().Be("ci:0,asm:0,prof:0,dyn:0,azf");
@@ -71,7 +72,12 @@ public class TelemetryControllerLogTagBuilderTests
     public void TagBuilder_AddsEverything()
     {
         var builder = new TelemetryController.TagBuilder();
-        builder.Update(TracerSettings.Create(new() { { "FUNCTIONS_EXTENSION_VERSION", "true" } }));
+        builder.Update(TracerSettings.Create(new()
+        {
+            { "WEBSITE_SITE_NAME", "site-name" },
+            { "FUNCTIONS_EXTENSION_VERSION", "~4" },
+            { "FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated" }
+        }));
         builder.Update(TelemetryProductType.Profiler, enabled: true);
         builder.Update(TelemetryProductType.DynamicInstrumentation, enabled: true);
         builder.Update(TelemetryProductType.AppSec, enabled: true);
