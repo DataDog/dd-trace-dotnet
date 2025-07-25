@@ -3,65 +3,21 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
+using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources;
 
-internal class HandsOffConfigurationSource : IConfigurationSource
+internal class HandsOffConfigurationSource(IDictionary<string, ConfigurationEntry> configurations, ConfigurationOrigins origin)
+    : StringConfigurationSource
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HandsOffConfigurationSource));
+    private readonly IDictionary<string, ConfigurationEntry> _configurations = configurations;
+    private readonly ConfigurationOrigins _origin = origin;
 
-    public HandsOffConfigurationSource()
-    {
-        // read from libdatadog_conf
-    }
+    internal override ConfigurationOrigins Origin => _origin;
 
-    public bool IsPresent(string key)
-    {
-        throw new NotImplementedException();
-    }
-
-    public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool> validator, bool recordValue)
-    {
-        throw new NotImplementedException();
-    }
-
-    public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool> validator)
-    {
-        throw new NotImplementedException();
-    }
-
-    public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool> validator)
-    {
-        throw new NotImplementedException();
-    }
-
-    public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool> validator)
-    {
-        throw new NotImplementedException();
-    }
-
-    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool> validator)
-    {
-        throw new NotImplementedException();
-    }
-
-    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool> validator, bool allowOptionalMappings, char separator)
-    {
-        throw new NotImplementedException();
-    }
-
-    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool> validator, Func<string, IDictionary<string, string>> parser)
-    {
-        throw new NotImplementedException();
-    }
-
-    public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool> validator, bool recordValue)
-    {
-        throw new NotImplementedException();
-    }
+    protected override string? GetString(string key) => _configurations.TryGetValue(key, out var configuration) ? configuration.Value : null;
 }
