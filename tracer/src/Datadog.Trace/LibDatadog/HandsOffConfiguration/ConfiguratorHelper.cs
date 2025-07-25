@@ -16,12 +16,12 @@ internal struct ConfiguratorHelper
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfiguratorHelper>();
 
-    internal static ConfigurationResult? GetConfiguration(bool debugEnabled, string? handsOffLocalConfigPath, string? handsOffFleetConfigPath, bool? isLibdatadogAvailable = null)
+    internal static ConfigurationResult GetConfiguration(bool debugEnabled, string? handsOffLocalConfigPath, string? handsOffFleetConfigPath, bool? isLibdatadogAvailable = null)
     {
         if (isLibdatadogAvailable is false || (isLibdatadogAvailable is null && !NativeInterop.IsLibDatadogAvailable))
         {
             Log.Debug("Skipping hands-off configuration: as libdatadog is not available.");
-            return null;
+            return new ConfigurationResult(null, "libdatadog is not available");
         }
 
         try
@@ -43,11 +43,14 @@ internal struct ConfiguratorHelper
 
             var configurationResult = NativeInterop.LibraryConfig.ConfiguratorGet(configHandle);
             var result = configurationResult.Result;
-            ConfigurationResult? configurationResultReturned = null;
+            ConfigurationResult configurationResultReturned;
             if (configurationResult.Tag == ResultTag.Err)
             {
-                Log.Error("Failed to get hands-off configuration through libdatadog with message: {Error}", result.Error.Message.ToUtf8String());
+                var error = result.Error.Message.ToUtf8String();
+                Log.Error("Failed to get hands-off configuration through libdatadog with message: {Error}", error);
+
                 NativeInterop.Common.DropError(ref result.Error);
+                configurationResultReturned = new ConfigurationResult(null, error);
             }
             else
             {
@@ -79,7 +82,7 @@ internal struct ConfiguratorHelper
                 NativeInterop.LibraryConfig.LibraryConfigDrop(configurationResultRef.Ok);
                 localPath?.Dispose();
                 fleetPath?.Dispose();
-                configurationResultReturned = new ConfigurationResult(configEntriesLocal, configEntriesRemote);
+                configurationResultReturned = new ConfigurationResult(new ConfigurationSuccessResult(configEntriesLocal, configEntriesRemote), null);
             }
 
             if (configHandle != IntPtr.Zero)
@@ -92,7 +95,7 @@ internal struct ConfiguratorHelper
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to get hands-off configuration.");
-            return null;
+            return new ConfigurationResult(null, ex.Message);
         }
     }
 }

@@ -5,13 +5,11 @@
 
 #nullable enable
 
-using System.Collections.Generic;
-
 namespace Datadog.Trace.LibDatadog.HandsOffConfiguration;
 
-internal readonly struct ConfigurationResult(IDictionary<string, string> configEntriesLocal, IDictionary<string, string> configEntriesFleet)
+internal readonly struct ConfigurationResult(ConfigurationSuccessResult? configurationSuccessResult, string? errorMessage)
 {
-    public IDictionary<string, string> ConfigEntriesLocal { get; } = configEntriesLocal;
+    public ConfigurationSuccessResult? ConfigurationSuccessResult { get; } = configurationSuccessResult;
 
-    public IDictionary<string, string> ConfigEntriesFleet { get; } = configEntriesFleet;
+    public string? ErrorMessage { get; } = errorMessage;
 }

@@ -25,6 +25,9 @@
     <None Update="Configuration\HandsOffConfigData\application_monitoring_fleet.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Configuration\HandsOffConfigData\corrupt_file.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

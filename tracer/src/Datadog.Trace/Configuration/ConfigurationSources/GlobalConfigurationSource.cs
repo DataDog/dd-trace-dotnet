@@ -43,8 +43,8 @@ internal class GlobalConfigurationSource
         if (applicationMonitoringConfigFileEnabled)
         {
             // stable configuration: fleet managed
-            var configs = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(debugEnabled, handsOffLocalConfigPath, handsOffFleetConfigPath, isLibdatadogAvailable);
-            if (configs is { } configsValue)
+            var configsResult = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(debugEnabled, handsOffLocalConfigPath, handsOffFleetConfigPath, isLibdatadogAvailable);
+            if (configsResult is { ConfigurationSuccessResult: { } configsValue })
             {
                 configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesFleet, false));
                 configurationSource.Add(environmentSource);

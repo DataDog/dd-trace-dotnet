@@ -61,9 +61,9 @@ public class GlobalConfigurationSourceTests
     [Fact]
     public void TestErrorHandsOffConfigFile()
     {
-        var source = GlobalConfigurationSource.CreateDefaultConfigurationSource(
-            handsOffLocalConfigPath: Path.Combine("Configuration", "HandsOffConfigData", "corrupt_file.yml"),
-            handsOffFleetConfigPath: Path.Combine("Configuration", "HandsOffConfigData", "corrupt_file.yml"),
-            isLibdatadogAvailable: true);
+        var handsOffErrorPath = Path.Combine("Configuration", "HandsOffConfigData", "corrupt_file.yml");
+        var result = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(debugEnabled: true, handsOffLocalConfigPath: handsOffErrorPath, handsOffFleetConfigPath: handsOffErrorPath, isLibdatadogAvailable: true);
+        result.ConfigurationSuccessResult.Should().BeNull();
+        result.ErrorMessage.Should().NotBeNull();
     }
 }
