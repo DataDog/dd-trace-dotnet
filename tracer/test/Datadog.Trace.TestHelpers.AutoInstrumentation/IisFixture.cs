@@ -76,6 +76,9 @@ namespace Datadog.Trace.TestHelpers
                     // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
                 }
 
+                // The ProcessHelper doesn't dispose the process automatically, so we need to do it manually
+                IisExpress.Process.Process.Dispose();
+
                 try
                 {
                     File.Delete(IisExpress.ConfigFile);
