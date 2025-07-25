@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var spans = await agent.WaitForSpansAsync(1, returnAllOperations: true);
 
                 Assert.NotEmpty(spans);
-                Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+                spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
                 await telemetry.AssertIntegrationDisabledAsync(IntegrationId.AwsStepFunctions);
             }
         }
