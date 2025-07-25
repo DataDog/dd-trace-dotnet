@@ -546,7 +546,7 @@ void CorProfilerCallback::InitializeServices()
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
-        _pConfiguration->IsCpuProfilingEnabled() &&
+        _pConfiguration->IsCpuProfilingEnabled() && // CPU profiling must be enabled
         _pRuntimeInfo->GetMajorVersion() >= 5)
     {
         _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(valueTypeProvider, _rawSampleTransformer.get(), _metricsRegistry);

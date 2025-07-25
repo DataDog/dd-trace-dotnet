@@ -54,13 +54,13 @@ public:
             }
 
             _sample = nullptr;
-            if (!_discard)
+            if (_discard)
             {
-                _rbw.Commit(_buffer);
+                _rbw.Discard(_buffer);
             }
             else
             {
-                _rbw.Discard(_buffer);
+                _rbw.Commit(_buffer);
             }
         }
 
