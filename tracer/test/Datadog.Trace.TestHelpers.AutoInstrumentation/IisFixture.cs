@@ -15,7 +15,7 @@ namespace Datadog.Trace.TestHelpers
     [CollectionDefinition("IisTests", DisableParallelization = false)]
     public sealed class IisFixture : GacFixture, IDisposable
     {
-        public (Process Process, string ConfigFile) IisExpress { get; private set; }
+        public (ProcessHelper Process, string ConfigFile) IisExpress { get; private set; }
 
         public MockTracerAgent Agent { get; private set; }
 
@@ -65,22 +65,16 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    if (!IisExpress.Process.HasExited)
-                    {
-                        // sending "Q" to standard input does not work because
-                        // iisexpress is scanning console key press, so just kill it.
-                        // maybe try this in the future:
-                        // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
-                        IisExpress.Process.Kill();
-                        IisExpress.Process.WaitForExit(8000);
-                    }
+                    // sending "Q" to standard input does not work because
+                    // iisexpress is scanning console key press, so just kill it.
+                    // maybe try this in the future:
+                    // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
+                    IisExpress.Process.Dispose(8000);
                 }
                 catch
                 {
                     // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
                 }
-
-                IisExpress.Process.Dispose();
 
                 try
                 {
