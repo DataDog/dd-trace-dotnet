@@ -104,7 +104,7 @@ namespace Datadog.Trace.PlatformHelpers
             {
                 try
                 {
-                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, baggage);
+                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(tracer, span, baggage);
                 }
                 catch (Exception ex)
                 {

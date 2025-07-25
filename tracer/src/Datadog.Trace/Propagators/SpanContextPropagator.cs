@@ -310,14 +310,14 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal void AddBaggageToSpanAsTags(ISpan span, Baggage? baggage)
+        internal void AddBaggageToSpanAsTags(Tracer tracer, ISpan span, Baggage? baggage)
         {
             if (baggage is null or { Count: 0 })
             {
                 return;
             }
 
-            var settings = Tracer.Instance.Settings;
+            var settings = tracer.Settings;
             var baggageTagKeys = settings.BaggageTagKeys;
 
             if (baggageTagKeys.Length == 0)
@@ -331,7 +331,7 @@ namespace Datadog.Trace.Propagators
                 // add all baggage items as tags
                 foreach (var item in baggage)
                 {
-                    span.SetTag(item.Key, item.Value);
+                    span.SetTag("baggage." + item.Key, item.Value);
                 }
 
                 return;
@@ -342,7 +342,7 @@ namespace Datadog.Trace.Propagators
             {
                 if (baggage.TryGetValue(key, out var value))
                 {
-                    span.SetTag(key, value);
+                    span.SetTag("baggage." + key, value);
                 }
             }
         }
