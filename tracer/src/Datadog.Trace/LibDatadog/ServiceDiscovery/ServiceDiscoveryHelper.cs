@@ -82,6 +82,6 @@ internal class ServiceDiscoveryHelper
         using var serviceEnvCharSlice = new CharSlice(serviceEnv);
         using var serviceVersionCharSlice = new CharSlice(serviceVersion);
 
-        return NativeInterop.Common.StoreTracerMetadata(schemaVersion, runtimeIdCharSlice, tracerLanguageCharSlice, tracerVersionCharSlice, hostnameCharSlice, serviceNameCharSlice, serviceEnvCharSlice, serviceVersionCharSlice);
+        return NativeInterop.LibraryConfig.StoreTracerMetadata(schemaVersion, runtimeIdCharSlice, tracerLanguageCharSlice, tracerVersionCharSlice, hostnameCharSlice, serviceNameCharSlice, serviceEnvCharSlice, serviceVersionCharSlice);
     }
 }

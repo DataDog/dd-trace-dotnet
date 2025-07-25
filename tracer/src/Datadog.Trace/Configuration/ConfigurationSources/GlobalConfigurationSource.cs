@@ -8,7 +8,9 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration;
@@ -18,21 +20,46 @@ namespace Datadog.Trace.Configuration;
 /// </summary>
 internal class GlobalConfigurationSource
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GlobalConfigurationSource));
+
     /// <summary>
     /// Gets the configuration source instance.
     /// </summary>
-    internal static IConfigurationSource Instance { get; private set;  } = CreateDefaultConfigurationSource();
+    internal static IConfigurationSource Instance { get; private set; } = CreateDefaultConfigurationSource();
 
     /// <summary>
     /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
     /// AppSettings where available, and a local datadog.json file, if present.
     /// </summary>
     /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
-    internal static CompositeConfigurationSource CreateDefaultConfigurationSource()
+    internal static CompositeConfigurationSource CreateDefaultConfigurationSource(string? handsOffLocalConfigPath = null, string? handsOffFleetConfigPath = null, bool? isLibdatadogAvailable = null)
     {
         // env > AppSettings > datadog.json
         var configurationSource = new CompositeConfigurationSource();
-        configurationSource.Add(new EnvironmentConfigurationSource());
+        var environmentSource = new EnvironmentConfigurationSource();
+        var configBuilder = new ConfigurationBuilder(environmentSource, TelemetryFactory.Config);
+        var applicationMonitoringConfigFileEnabled = configBuilder.WithKeys(ConfigurationKeys.ApplicationMonitoringConfigFileEnabled).AsBool(true);
+        var debugEnabled = configBuilder.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
+        if (applicationMonitoringConfigFileEnabled)
+        {
+            // stable configuration: fleet managed
+            var configsResult = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(debugEnabled, handsOffLocalConfigPath, handsOffFleetConfigPath, isLibdatadogAvailable);
+            if (configsResult is { ConfigurationSuccessResult: { } configsValue })
+            {
+                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesFleet, false));
+                configurationSource.Add(environmentSource);
+                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesLocal, true));
+            }
+            else
+            {
+                configurationSource.Add(environmentSource);
+            }
+        }
+        else
+        {
+            Log.Debug("As {ApplicationMonitoringConfigFileEnabled} is disabled, not using hands-off configuration", ConfigurationKeys.ApplicationMonitoringConfigFileEnabled);
+            configurationSource.Add(environmentSource);
+        }
 
 #if NETFRAMEWORK
         // on .NET Framework only, also read from app.config/web.config
