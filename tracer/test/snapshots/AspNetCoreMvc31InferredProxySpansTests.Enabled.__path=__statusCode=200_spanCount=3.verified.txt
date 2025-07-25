@@ -20,33 +20,6 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_4,
-    Name: aws.apigateway,
-    Resource: GET /api/test/?,
-    Service: test.api.com,
-    Type: web,
-    ParentId: Id_5,
-    Tags: {
-      component: aws-apigateway,
-      env: integration_tests,
-      http.method: GET,
-      http.response.headers.sample_correlation_identifier: 0000-0000-0000,
-      http.response.headers.server: Kestrel,
-      http.route: /api/test/?,
-      http.status_code: 200,
-      http.url: test.api.com/api/test/1,
-      language: dotnet,
-      span.kind: internal,
-      stage: prod,
-      _dd.base_service: Samples.AspNetCoreMvc31
-    },
-    Metrics: {
-      _dd.inferred_span: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet_core.request,
     Resource: GET /home/index,
@@ -75,6 +48,36 @@
     },
     Metrics: {
       _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: aws.apigateway,
+    Resource: GET /api/test/?,
+    Service: test.api.com,
+    Type: web,
+    Tags: {
+      component: aws-apigateway,
+      env: integration_tests,
+      http.method: GET,
+      http.response.headers.sample_correlation_identifier: 0000-0000-0000,
+      http.response.headers.server: Kestrel,
+      http.route: /api/test/?,
+      http.status_code: 200,
+      http.url: test.api.com/api/test/1,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: internal,
+      stage: prod,
+      _dd.base_service: Samples.AspNetCoreMvc31
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.inferred_span: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   }
 ]
