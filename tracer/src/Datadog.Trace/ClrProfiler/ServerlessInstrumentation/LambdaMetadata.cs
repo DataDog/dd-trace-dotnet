@@ -16,6 +16,11 @@ internal class LambdaMetadata
     internal const string FunctionNameEnvVar = "AWS_LAMBDA_FUNCTION_NAME";
     internal const string HandlerEnvVar = "_HANDLER";
 
+    /// <summary>
+    /// Gets the paths we don't want to trace when running in Lambda
+    /// </summary>
+    public const string DefaultHttpClientExclusions = "/2018-06-01/RUNTIME/INVOCATION/";
+
     private LambdaMetadata(bool isRunningInLambda, string functionName, string handlerName, string serviceName)
     {
         IsRunningInLambda = isRunningInLambda;
@@ -31,11 +36,6 @@ internal class LambdaMetadata
     public string HandlerName { get; }
 
     public string ServiceName { get; }
-
-    /// <summary>
-    /// Gets the paths we don't want to trace when running in Lambda
-    /// </summary>
-    internal string DefaultHttpClientExclusions => "/2018-06-01/RUNTIME/INVOCATION/";
 
     public static LambdaMetadata Create(string extensionPath = ExtensionFullPath)
     {
