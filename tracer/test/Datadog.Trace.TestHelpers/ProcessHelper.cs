@@ -130,6 +130,8 @@ namespace Datadog.Trace.TestHelpers
                     // Ignore exceptions when killing the process, as it may have already exited
                 }
             }
+
+            Process.Dispose();
         }
     }
 }
