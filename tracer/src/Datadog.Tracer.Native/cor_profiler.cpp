@@ -971,6 +971,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             RewritingPInvokeMaps(module_metadata, libdatadog_exporter_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, libdatadog_config_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, libdatadog_logger_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, libdatadog_libraryconfig_nativemethods_type, libdatadog_filepath);
         }
         else
         {

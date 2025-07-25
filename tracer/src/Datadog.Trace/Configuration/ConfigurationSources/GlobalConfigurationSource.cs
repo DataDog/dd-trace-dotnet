@@ -6,9 +6,13 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using Datadog.Trace;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration;
@@ -21,7 +25,7 @@ internal class GlobalConfigurationSource
     /// <summary>
     /// Gets the configuration source instance.
     /// </summary>
-    internal static IConfigurationSource Instance { get; private set;  } = CreateDefaultConfigurationSource();
+    internal static IConfigurationSource Instance { get; private set; } = CreateDefaultConfigurationSource();
 
     /// <summary>
     /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
@@ -32,8 +36,19 @@ internal class GlobalConfigurationSource
     {
         // env > AppSettings > datadog.json
         var configurationSource = new CompositeConfigurationSource();
-        configurationSource.Add(new EnvironmentConfigurationSource());
 
+        // stable configuration: fleet managed
+        var configs = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration();
+        if (configs is { } configsValue)
+        {
+            configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesFleet, ConfigurationOrigins.FleetStableConfig));
+            configurationSource.Add(new EnvironmentConfigurationSource());
+            configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesLocal, ConfigurationOrigins.LocalStableConfig));
+        }
+        else
+        {
+            configurationSource.Add(new EnvironmentConfigurationSource());
+        }
 #if NETFRAMEWORK
         // on .NET Framework only, also read from app.config/web.config
         configurationSource.Add(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings, ConfigurationOrigins.AppConfig));
