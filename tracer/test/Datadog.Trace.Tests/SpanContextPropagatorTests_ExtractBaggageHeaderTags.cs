@@ -85,8 +85,8 @@ namespace Datadog.Trace.Tests
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(tracer, scope.Span, baggage);
 
             // With wildcard, all baggage items should be added as tags
-            scope.Span.GetTag("custom.key").Should().Be("custom-value");
-            scope.Span.GetTag("session.id").Should().Be("test-session");
+            scope.Span.GetTag("baggage.custom.key").Should().Be("custom-value");
+            scope.Span.GetTag("baggage.session.id").Should().Be("test-session");
         }
 
         [Fact]
@@ -111,8 +111,8 @@ namespace Datadog.Trace.Tests
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(tracer, scope.Span, baggage);
 
             // Only configured keys should be added as tags
-            scope.Span.GetTag("custom.id").Should().Be("my-custom-id");
-            scope.Span.GetTag("tenant.id").Should().Be("my-tenant");
+            scope.Span.GetTag("baggage.custom.id").Should().Be("my-custom-id");
+            scope.Span.GetTag("baggage.tenant.id").Should().Be("my-tenant");
             scope.Span.GetTag("user.id").Should().BeNull(); // not in config, so not added
         }
 
