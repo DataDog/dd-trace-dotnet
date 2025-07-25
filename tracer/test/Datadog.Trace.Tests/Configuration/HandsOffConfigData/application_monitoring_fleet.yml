@@ -1,0 +1,5 @@
+config_id: a1
+apm_configuration_default:
+  DD_TRACE_DEBUG: true
+  DD_ENV: "fleet_file_env"
+  DD_SERVICE: "fleet_file_service"

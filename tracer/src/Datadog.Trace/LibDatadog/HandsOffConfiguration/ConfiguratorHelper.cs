@@ -16,17 +16,37 @@ internal struct ConfiguratorHelper
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfiguratorHelper>();
 
-    internal static ConfigurationResult? GetConfiguration(bool debugEnabled)
+    internal static ConfigurationResult? GetConfiguration(bool debugEnabled, string? handsOffLocalConfigPath, string? handsOffFleetConfigPath, bool? isLibdatadogAvailable = null)
     {
+        if (isLibdatadogAvailable is false || (isLibdatadogAvailable is null && !NativeInterop.IsLibDatadogAvailable))
+        {
+            Log.Debug("Skipping hands-off configuration: as libdatadog is not available.");
+            return null;
+        }
+
         try
         {
-            ConfigurationResult? configurationResultReturned = null;
-            var configHandle = NativeInterop.LibraryConfig.ConfiguratorNew(debugEnabled ? (byte)1 : (byte)0, new CharSlice("dotnet"));
+            var configHandle = NativeInterop.LibraryConfig.ConfiguratorNew(debugEnabled ? (byte)1 : (byte)0, new CharSlice(TracerConstants.Language));
+            CString? localPath = null;
+            CString? fleetPath = null;
+            if (handsOffLocalConfigPath is not null)
+            {
+                localPath = new CString(handsOffLocalConfigPath);
+                NativeInterop.LibraryConfig.ConfiguratorWithLocalPath(configHandle, localPath!.Value);
+            }
+
+            if (handsOffFleetConfigPath is not null)
+            {
+                fleetPath = new CString(handsOffFleetConfigPath);
+                NativeInterop.LibraryConfig.ConfiguratorWithFleetPath(configHandle, fleetPath!.Value);
+            }
+
             var configurationResult = NativeInterop.LibraryConfig.ConfiguratorGet(configHandle);
             var result = configurationResult.Result;
+            ConfigurationResult? configurationResultReturned = null;
             if (configurationResult.Tag == ResultTag.Err)
             {
-                Log.Error("Failed to store tracer metadata with message: {Error}", result.Error.Message.ToUtf8String());
+                Log.Error("Failed to get hands-off configuration through libdatadog with message: {Error}", result.Error.Message.ToUtf8String());
                 NativeInterop.Common.DropError(ref result.Error);
             }
             else
@@ -34,8 +54,8 @@ internal struct ConfiguratorHelper
                 ref var configurationResultRef = ref configurationResult.Result;
                 var libraryConfigs = result.Ok;
                 var configsLength = (int)libraryConfigs.Length;
-                var configEntriesLocal = new Dictionary<string, ConfigurationEntry>();
-                var configEntriesRemote = new Dictionary<string, ConfigurationEntry>();
+                var configEntriesLocal = new Dictionary<string, string>();
+                var configEntriesRemote = new Dictionary<string, string>();
                 var structSize = Marshal.SizeOf<LibraryConfig>();
                 for (var i = 0; i < configsLength; i++)
                 {
@@ -43,19 +63,22 @@ internal struct ConfiguratorHelper
                     {
                         var ptr = new IntPtr(libraryConfigs.Ptr + (structSize * i));
                         var libraryConfig = (LibraryConfig*)ptr;
-                        var confEntry = new ConfigurationEntry(libraryConfig->Name.ToUtf8String(), libraryConfig->Value.ToUtf8String());
+                        var name = libraryConfig->Name.ToUtf8String();
+                        var value = libraryConfig->Value.ToUtf8String();
                         if (libraryConfig->Source == LibraryConfigSource.FleetStableConfig)
                         {
-                            configEntriesRemote.Add(confEntry.Key, confEntry);
+                            configEntriesRemote.Add(name, value);
                         }
                         else if (libraryConfig->Source == LibraryConfigSource.LocalStableConfig)
                         {
-                            configEntriesLocal.Add(confEntry.Key, confEntry);
+                            configEntriesLocal.Add(name, value);
                         }
                     }
                 }
 
                 NativeInterop.LibraryConfig.LibraryConfigDrop(configurationResultRef.Ok);
+                localPath?.Dispose();
+                fleetPath?.Dispose();
                 configurationResultReturned = new ConfigurationResult(configEntriesLocal, configEntriesRemote);
             }
 

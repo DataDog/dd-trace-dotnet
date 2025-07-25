@@ -134,6 +134,12 @@ internal class NativeInterop
         [DllImport(DllName, EntryPoint = "ddog_library_configurator_new")]
         internal static extern IntPtr ConfiguratorNew(byte debugLogs, CharSlice language);
 
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_with_local_path")]
+        internal static extern IntPtr ConfiguratorWithLocalPath(IntPtr configurator, CString localPath);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_with_fleet_path")]
+        internal static extern IntPtr ConfiguratorWithFleetPath(IntPtr configurator, CString fleetPath);
+
         [DllImport(DllName, EntryPoint = "ddog_library_configurator_get")]
         internal static extern LibraryConfigResult ConfiguratorGet(IntPtr configurator);
 

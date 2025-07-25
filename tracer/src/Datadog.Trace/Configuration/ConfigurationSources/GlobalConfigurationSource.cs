@@ -6,13 +6,10 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using Datadog.Trace;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 
@@ -35,7 +32,7 @@ internal class GlobalConfigurationSource
     /// AppSettings where available, and a local datadog.json file, if present.
     /// </summary>
     /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
-    internal static CompositeConfigurationSource CreateDefaultConfigurationSource()
+    internal static CompositeConfigurationSource CreateDefaultConfigurationSource(string? handsOffLocalConfigPath = null, string? handsOffFleetConfigPath = null, bool? isLibdatadogAvailable = null)
     {
         // env > AppSettings > datadog.json
         var configurationSource = new CompositeConfigurationSource();
@@ -46,12 +43,12 @@ internal class GlobalConfigurationSource
         if (applicationMonitoringConfigFileEnabled)
         {
             // stable configuration: fleet managed
-            var configs = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(debugEnabled);
+            var configs = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(debugEnabled, handsOffLocalConfigPath, handsOffFleetConfigPath, isLibdatadogAvailable);
             if (configs is { } configsValue)
             {
-                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesFleet, ConfigurationOrigins.FleetStableConfig));
+                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesFleet, false));
                 configurationSource.Add(environmentSource);
-                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesLocal, ConfigurationOrigins.LocalStableConfig));
+                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesLocal, true));
             }
             else
             {
