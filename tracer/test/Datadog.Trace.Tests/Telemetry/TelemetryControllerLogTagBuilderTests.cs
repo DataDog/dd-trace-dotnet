@@ -41,30 +41,43 @@ public class TelemetryControllerLogTagBuilderTests
     }
 
     [Fact]
-    public void TagBuilder_UpdateCloudTag()
+    public void TagBuilder_UpdateAzureAppServicesTag()
     {
         var builder = new TelemetryController.TagBuilder();
-        builder.Update(TracerSettings.Create(new() { { "DD_AZURE_APP_SERVICES", "true" } }));
+
+        builder.Update(TracerSettings.Create(new()
+        {
+            { "WEBSITE_SITE_NAME", "site-name" }
+        }));
+
         builder.GetLogTags().Should().Be("ci:0,asm:0,prof:0,dyn:0,aas");
+    }
+
+    [Fact]
+    public void TagBuilder_UpdateAzureFunctionsTag()
+    {
+        var builder = new TelemetryController.TagBuilder();
+
+        builder.Update(TracerSettings.Create(new()
+        {
+            { "WEBSITE_SITE_NAME", "site-name" },
+            { "FUNCTIONS_EXTENSION_VERSION", "~4" },
+            { "FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated" }
+        }));
+
+        builder.GetLogTags().Should().Be("ci:0,asm:0,prof:0,dyn:0,azf");
     }
 
     [Fact]
     public void TagBuilder_AddsEverything()
     {
         var builder = new TelemetryController.TagBuilder();
-        builder.Update(TracerSettings.Create(new() { { "FUNCTIONS_EXTENSION_VERSION", "true" } }));
-        builder.Update(TelemetryProductType.Profiler, enabled: true);
-        builder.Update(TelemetryProductType.DynamicInstrumentation, enabled: true);
-        builder.Update(TelemetryProductType.AppSec, enabled: true);
-        builder.Update(new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), enabled: true);
-        builder.GetLogTags().Should().Be("ci:1,asm:1,prof:1,dyn:1,azf");
-    }
-
-    [Fact]
-    public void TagBuilder_WhenAdded()
-    {
-        var builder = new TelemetryController.TagBuilder();
-        builder.Update(TracerSettings.Create(new() { { "FUNCTIONS_EXTENSION_VERSION", "true" } }));
+        builder.Update(TracerSettings.Create(new()
+        {
+            { "WEBSITE_SITE_NAME", "site-name" },
+            { "FUNCTIONS_EXTENSION_VERSION", "~4" },
+            { "FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated" }
+        }));
         builder.Update(TelemetryProductType.Profiler, enabled: true);
         builder.Update(TelemetryProductType.DynamicInstrumentation, enabled: true);
         builder.Update(TelemetryProductType.AppSec, enabled: true);

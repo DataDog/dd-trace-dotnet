@@ -24,6 +24,8 @@ internal class DefaultEnvironmentChecker : IEnvironmentChecker
     private bool CheckServerlessEnvironment()
     {
         // Checking serverless environment based on environment variables
-        return EnvironmentHelpers.IsServerlessEnvironment();
+        return EnvironmentHelpers.IsAwsLambda() ||
+               EnvironmentHelpers.IsAzureFunctions() ||
+               EnvironmentHelpers.IsGoogleCloudFunctions();
     }
 }

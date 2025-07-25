@@ -3,18 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
-namespace Datadog.Trace.PlatformHelpers
-{
-    internal static class PlatformStrategy
-    {
-        private static Func<Scope, bool> _shouldSkipClientSpan = (s) => false;
+namespace Datadog.Trace.PlatformHelpers;
 
-        public static Func<Scope, bool> ShouldSkipClientSpan
-        {
-            get { return _shouldSkipClientSpan; }
-            set { _shouldSkipClientSpan = value; }
-        }
-    }
+internal static class PlatformStrategy
+{
+    public static Func<Scope?, bool> ShouldSkipClientSpan { get; set; } = _ => false;
 }

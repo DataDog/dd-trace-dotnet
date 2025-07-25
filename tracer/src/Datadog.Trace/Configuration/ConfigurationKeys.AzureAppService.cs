@@ -10,14 +10,14 @@ namespace Datadog.Trace.Configuration
         internal class AzureAppService
         {
             /// <summary>
-            /// Configuration key which is used as a flag to tell us whether we are running in the context of Azure App Services.
-            /// This is set within the applicationHost.xdt file of the Azure Site Extension.
+            /// Configuration key which is used as a flag to tell us whether we are instrumenting an Azure App Service
+            /// using the AAS Site Extension. This env var is set using the <c>applicationHost.xdt</c> file.
             /// </summary>
             internal const string AzureAppServicesContextKey = "DD_AZURE_APP_SERVICES";
 
             /// <summary>
-            /// Configuration key which has the running version of the Azure Site Extension.
-            /// This is set within the applicationHost.xdt file.
+            /// Configuration key which has the running version of the Azure App Services Site Extension.
+            /// This env var is set in the <c>applicationHost.xdt</c> file.
             /// </summary>
             internal const string SiteExtensionVersionKey = "DD_AAS_DOTNET_EXTENSION_VERSION";
 
@@ -34,22 +34,9 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// This is the unique name of the website instance within Azure App Services.
+            /// Its presence is used to determine if we are running in Azure App Services.
             /// </summary>
             internal const string SiteNameKey = "WEBSITE_SITE_NAME";
-
-            /// <summary>
-            /// The version of the functions runtime to use in this function app.
-            /// Reference: https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_extension_version
-            /// </summary>
-            internal const string FunctionsExtensionVersionKey = "FUNCTIONS_EXTENSION_VERSION";
-
-            /// <summary>
-            /// This variable is only present in Azure Functions.
-            /// Valid values are dotnet, node, java, powershell, and python.
-            /// In this context, we will only ever see dotnet.
-            /// Reference: https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_extension_version
-            /// </summary>
-            internal const string FunctionsWorkerRuntimeKey = "FUNCTIONS_WORKER_RUNTIME";
 
             /// <summary>
             /// The instance name in Azure where the traced application is running.

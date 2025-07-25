@@ -107,7 +107,7 @@ internal readonly struct TraceChunkModel
                 if (tracer.Settings is { } settings)
                 {
                     IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
-                    AzureAppServiceSettings = settings.AzureAppServiceMetadata ?? null;
+                    AzureAppServiceSettings = settings.AzureAppServiceMetadata;
                     IsApmEnabled = settings.ApmTracingEnabled;
                 }
 

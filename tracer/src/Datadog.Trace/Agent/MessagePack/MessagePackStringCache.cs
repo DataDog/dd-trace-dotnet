@@ -32,6 +32,8 @@ internal static class MessagePackStringCache
     [ThreadStatic]
     private static CachedBytes _service;
 
+    // NOTE: all of these can be cached in SpanMessagePackFormatter as static byte[]
+    // since they never change over the lifetime of a process
     private static CachedBytes _gitCommitSha;
     private static CachedBytes _gitRepositoryUrl;
     private static CachedBytes _aasSiteNameBytes;
