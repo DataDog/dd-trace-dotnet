@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: azure_functions.invoke,
     Resource: Timer TriggerAllTimer,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     Tags: {
       aas.environment.extension_version: unknown,
@@ -37,7 +37,7 @@
     SpanId: Id_3,
     Name: http.request,
     Resource: GET localhost:00000/api/trigger,
-    Service: azurefunctionsalltriggers-http-client,
+    Service: AzureFunctionsAllTriggers-http-client,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -64,7 +64,7 @@
     SpanId: Id_4,
     Name: azure_functions.invoke,
     Resource: GET /api/trigger,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     ParentId: Id_3,
     Tags: {
@@ -102,7 +102,7 @@
     SpanId: Id_5,
     Name: azure_functions.invoke,
     Resource: Http TriggerCaller,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     ParentId: Id_4,
     Tags: {
@@ -115,9 +115,9 @@
   {
     TraceId: Id_1,
     SpanId: Id_6,
-    Name: Manual_inside_Trigger,
+    Name: Manual inside Trigger,
     Resource: Manual inside Trigger,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     ParentId: Id_5,
     Tags: {
       aas.site.name: AzureFunctionsAllTriggers,
@@ -131,7 +131,7 @@
     SpanId: Id_7,
     Name: http.request,
     Resource: GET localhost:00000/api/simple,
-    Service: azurefunctionsalltriggers-http-client,
+    Service: AzureFunctionsAllTriggers-http-client,
     Type: http,
     ParentId: Id_6,
     Tags: {
@@ -158,7 +158,7 @@
     SpanId: Id_8,
     Name: http.request,
     Resource: GET localhost:00000/api/exception,
-    Service: azurefunctionsalltriggers-http-client,
+    Service: AzureFunctionsAllTriggers-http-client,
     Type: http,
     ParentId: Id_6,
     Tags: {
@@ -185,7 +185,7 @@
     SpanId: Id_9,
     Name: http.request,
     Resource: GET localhost:00000/api/error,
-    Service: azurefunctionsalltriggers-http-client,
+    Service: AzureFunctionsAllTriggers-http-client,
     Type: http,
     ParentId: Id_6,
     Tags: {
@@ -212,7 +212,7 @@
     SpanId: Id_10,
     Name: http.request,
     Resource: GET localhost:00000/api/badrequest,
-    Service: azurefunctionsalltriggers-http-client,
+    Service: AzureFunctionsAllTriggers-http-client,
     Type: http,
     ParentId: Id_6,
     Error: 1,
@@ -241,7 +241,7 @@
     SpanId: Id_11,
     Name: azure_functions.invoke,
     Resource: GET /api/simple,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     ParentId: Id_7,
     Tags: {
@@ -279,7 +279,7 @@
     SpanId: Id_12,
     Name: azure_functions.invoke,
     Resource: GET /api/exception,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     ParentId: Id_8,
     Error: 1,
@@ -324,7 +324,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequest req, ILo
     SpanId: Id_13,
     Name: azure_functions.invoke,
     Resource: GET /api/error,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     ParentId: Id_9,
     Error: 1,
@@ -364,7 +364,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequest req, ILo
     SpanId: Id_14,
     Name: azure_functions.invoke,
     Resource: GET /api/badrequest,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     ParentId: Id_10,
     Tags: {
@@ -402,7 +402,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequest req, ILo
     SpanId: Id_15,
     Name: azure_functions.invoke,
     Resource: Http SimpleHttpTrigger,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     ParentId: Id_11,
     Tags: {
@@ -417,7 +417,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequest req, ILo
     SpanId: Id_16,
     Name: azure_functions.invoke,
     Resource: Http Exception,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     ParentId: Id_12,
     Error: 1,
@@ -439,7 +439,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequest req, ILo
     SpanId: Id_17,
     Name: azure_functions.invoke,
     Resource: Http ServerError,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     ParentId: Id_13,
     Tags: {
@@ -454,7 +454,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequest req, ILo
     SpanId: Id_18,
     Name: azure_functions.invoke,
     Resource: Http BadRequest,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     Type: serverless,
     ParentId: Id_14,
     Tags: {
@@ -467,9 +467,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequest req, ILo
   {
     TraceId: Id_1,
     SpanId: Id_19,
-    Name: Manual_inside_Simple,
+    Name: Manual inside Simple,
     Resource: Manual inside Simple,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     ParentId: Id_15,
     Tags: {
       aas.site.name: AzureFunctionsAllTriggers,
@@ -481,9 +481,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequest req, ILo
   {
     TraceId: Id_1,
     SpanId: Id_20,
-    Name: Manual_inside_Exception,
+    Name: Manual inside Exception,
     Resource: Manual inside Exception,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     ParentId: Id_16,
     Tags: {
       aas.site.name: AzureFunctionsAllTriggers,
@@ -495,9 +495,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequest req, ILo
   {
     TraceId: Id_1,
     SpanId: Id_21,
-    Name: Manual_inside_ServerError,
+    Name: Manual inside ServerError,
     Resource: Manual inside ServerError,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     ParentId: Id_17,
     Tags: {
       aas.site.name: AzureFunctionsAllTriggers,
@@ -509,9 +509,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequest req, ILo
   {
     TraceId: Id_1,
     SpanId: Id_22,
-    Name: Manual_inside_BadRequest,
+    Name: Manual inside BadRequest,
     Resource: Manual inside BadRequest,
-    Service: azurefunctionsalltriggers,
+    Service: AzureFunctionsAllTriggers,
     ParentId: Id_18,
     Tags: {
       aas.site.name: AzureFunctionsAllTriggers,
