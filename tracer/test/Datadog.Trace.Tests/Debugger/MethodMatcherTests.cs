@@ -354,7 +354,9 @@ public class MethodMatcherTests
         // Arrange
         try
         {
+#pragma warning disable xUnit1031 // Test methods should not use Blocking operations
             AsyncMethodWithGenerics<int, string>(42, "test").GetAwaiter().GetResult();
+#pragma warning restore xUnit1031
         }
         catch (Exception ex)
         {
