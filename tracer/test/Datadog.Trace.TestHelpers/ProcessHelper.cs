@@ -111,19 +111,27 @@ namespace Datadog.Trace.TestHelpers
                 && _errorTask.Task.Wait(timeout);
         }
 
-        public virtual void Dispose()
+        public virtual void Dispose() => Dispose(0);
+
+        public virtual void Dispose(int waitForExitTimeout)
         {
             if (!Process.HasExited)
             {
                 try
                 {
                     Process.Kill();
+                    if (waitForExitTimeout > 0)
+                    {
+                        Process.WaitForExit(waitForExitTimeout);
+                    }
                 }
                 catch
                 {
                     // Ignore exceptions when killing the process, as it may have already exited
                 }
             }
+
+            Process.Dispose();
         }
     }
 }
