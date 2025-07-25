@@ -1,7 +1,5 @@
-# Datadog Instrumentation Library for .NET Azure Functions [Preview]
+# Datadog Instrumentation Library for .NET Azure Functions
 ## `Datadog.AzureFunctions`
-
-**Note: This is an unsupported pre-release version of this package.**
 
 Add this package to your Azure Functions project to enable Datadog APM tracing.
 Further configuration is required for your Azure Functions to send instrumentation data to Datadog.
