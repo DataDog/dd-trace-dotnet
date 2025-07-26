@@ -43,7 +43,7 @@ public class TrieTests
         {
             var trie = new Trie();
             trie.Insert("cs.ArrayExtensions/ExtensionMethods/Datadog.Trace/src/tracer/dd-trace-dotnet");
-            trie.Insert("cs.LiveDebugger/Debugger/Datadog.Trace/src/tracer/dd-trace-dotnet/dev");
+            trie.Insert("cs.DynamicInstrumentation/Debugger/Datadog.Trace/src/tracer/dd-trace-dotnet/dev");
             Assert.EndsWith(
                 "cs.ArrayExtensions/ExtensionMethods/Datadog.Trace/src/tracer/dd-trace-dotnet",
                 trie.GetStringStartingWith("cs.ArrayExtensions/ExtensionMethods/Datadog.Trace/src"));

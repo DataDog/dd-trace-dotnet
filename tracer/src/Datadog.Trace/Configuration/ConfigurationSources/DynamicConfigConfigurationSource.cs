@@ -27,7 +27,10 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             { ConfigurationKeys.CustomSamplingRules, "tracing_sampling_rules" },
             // { ConfigurationKeys.SpanSamplingRules, "span_sampling_rules" },
             // { ConfigurationKeys.DataStreamsMonitoring.Enabled, "data_streams_enabled" },
-            { ConfigurationKeys.GlobalTags, "tracing_tags" }
+            { ConfigurationKeys.GlobalTags, "tracing_tags" },
+            { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "dynamic_instrumentation_enabled" },
+            { ConfigurationKeys.Debugger.ExceptionReplayEnabled, "exception_replay_enabled" },
+            { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "code_origin_enabled" },
         };
 
         internal DynamicConfigConfigurationSource(string json, ConfigurationOrigins origin)
