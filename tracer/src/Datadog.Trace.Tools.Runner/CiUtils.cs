@@ -120,6 +120,7 @@ internal static class CiUtils
         var flakyRetryEnabled = testOptimizationSettings.FlakyRetryEnabled == true;
         var impactedTestsDetectionEnabled = testOptimizationSettings.ImpactedTestsDetectionEnabled == true;
         var testManagementEnabled = testOptimizationSettings.TestManagementEnabled == true;
+        var dynamicInstrumentationEnabled = testOptimizationSettings.DynamicInstrumentationEnabled == true;
 
         var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint);
         if (agentless || hasEvpProxy)
@@ -189,6 +190,7 @@ internal static class CiUtils
                  testOptimizationSettings.KnownTestsEnabled == null ||
                  testOptimizationSettings.EarlyFlakeDetectionEnabled == null ||
                  testOptimizationSettings.FlakyRetryEnabled == null ||
+                 testOptimizationSettings.DynamicInstrumentationEnabled == null ||
                  testOptimizationSettings.ImpactedTestsDetectionEnabled == null ||
                  testOptimizationSettings.TestManagementEnabled == null))
             {
@@ -216,6 +218,7 @@ internal static class CiUtils
                     flakyRetryEnabled = flakyRetryEnabled || itrSettings.FlakyTestRetries == true;
                     impactedTestsDetectionEnabled = impactedTestsDetectionEnabled || itrSettings.ImpactedTestsEnabled == true;
                     testManagementEnabled = testManagementEnabled || itrSettings.TestManagement.Enabled == true;
+                    dynamicInstrumentationEnabled = dynamicInstrumentationEnabled || itrSettings.DynamicInstrumentationEnabled == true;
                 }
                 catch (Exception ex)
                 {
@@ -234,18 +237,21 @@ internal static class CiUtils
         Log.Debug("RunCiCommand: KnownTestsEnabled = {Value}", knownTestsEnabled);
         Log.Debug("RunCiCommand: EarlyFlakeDetectionEnabled = {Value}", earlyFlakeDetectionEnabled);
         Log.Debug("RunCiCommand: FlakyRetryEnabled = {Value}", flakyRetryEnabled);
+        Log.Debug("RunCiCommand: DynamicInstrumentationEnabled = {Value}", dynamicInstrumentationEnabled);
         Log.Debug("RunCiCommand: ImpactedTestsDetectionEnabled = {Value}", impactedTestsDetectionEnabled);
         Log.Debug("RunCiCommand: TestManagementEnabled = {Value}", testManagementEnabled);
         testOptimizationSettings.SetCodeCoverageEnabled(codeCoverageEnabled);
         testOptimizationSettings.SetKnownTestsEnabled(knownTestsEnabled);
         testOptimizationSettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
         testOptimizationSettings.SetFlakyRetryEnabled(flakyRetryEnabled);
+        testOptimizationSettings.SetDynamicInstrumentationEnabled(dynamicInstrumentationEnabled);
         testOptimizationSettings.SetImpactedTestsEnabled(impactedTestsDetectionEnabled);
         testOptimizationSettings.SetTestManagementEnabled(testManagementEnabled);
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.KnownTestsEnabled] = knownTestsEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.FlakyRetryEnabled] = flakyRetryEnabled ? "1" : "0";
+        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled] = dynamicInstrumentationEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled] = impactedTestsDetectionEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestManagementEnabled] = testManagementEnabled ? "1" : "0";
 
@@ -255,6 +261,14 @@ internal static class CiUtils
             // If is not disabled we need to query the backend again in the child process with more runtime info.
             testOptimizationSettings.SetTestsSkippingEnabled(testSkippingEnabled);
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled] = "0";
+        }
+
+        // If dynamic instrumentation is enabled, we set the environment variable
+        if (dynamicInstrumentationEnabled)
+        {
+            profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled] = "1";
+            profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.RateLimitSeconds] = "0";
+            profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.UploadFlushInterval] = "1000";
         }
 
         // Let's set the code coverage datacollector if the code coverage is enabled

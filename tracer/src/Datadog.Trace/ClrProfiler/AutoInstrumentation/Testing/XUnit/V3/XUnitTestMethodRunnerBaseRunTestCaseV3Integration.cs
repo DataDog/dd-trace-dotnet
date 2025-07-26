@@ -199,6 +199,15 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
                     if (doRetry)
                     {
+                        // check if is the first execution and the dynamic instrumentation feature is enabled
+                        if (isFlakyRetryEnabled && isFirstExecution && testCaseMetadata.HasAnException && testOptimization.DynamicInstrumentationFeature?.Enabled == true)
+                        {
+                            // let's wait for the instrumentation of an exception has been done
+                            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: First execution with an exception detected. Waiting for the exception instrumentation.");
+                            await testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(1_500).ConfigureAwait(false);
+                            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Exception instrumentation was set or timed out.");
+                        }
+
                         // Let's execute the retry
                         var retryNumber = testCaseMetadata.ExecutionIndex + 1;
 
