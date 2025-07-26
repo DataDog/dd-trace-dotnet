@@ -13,7 +13,7 @@ TEST(DiscardMetricsTest, CheckDefaultValue)
 
     auto m = registry.GetOrRegister<DiscardMetrics>("my_discard_");
     auto metrics = m->GetMetrics();
-    ASSERT_EQ(metrics.size(), 8);
+    ASSERT_EQ(metrics.size(), 9);
 
     for (auto [name, value] : m->GetMetrics())
     {
@@ -60,10 +60,11 @@ TEST(DiscardMetricsTest, CheckAllDiscardReasons)
         m->Incr<DiscardReason::UnsufficientSpace>();
         m->Incr<DiscardReason::EmptyBacktrace>();
         m->Incr<DiscardReason::FailedAcquiringLock>();
+        m->Incr<DiscardReason::TimedOut>();
     }
 
     auto metrics = m->GetMetrics();
-    ASSERT_EQ(8, metrics.size());
+    ASSERT_EQ(9, metrics.size());
 
     for (auto const& [_, value] : metrics)
     {
