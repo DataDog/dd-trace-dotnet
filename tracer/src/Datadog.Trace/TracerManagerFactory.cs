@@ -40,6 +40,7 @@ namespace Datadog.Trace
     internal class TracerManagerFactory
     {
         private const string UnknownServiceName = "UnknownService";
+        private const ulong DefaultTimeoutMs = 100_000;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerManagerFactory>();
 
         public static readonly TracerManagerFactory Instance = new();
@@ -415,7 +416,8 @@ namespace Datadog.Trace
                         LanguageInterpreter = frameworkDescription.Name,
                         ComputeStats = settings.StatsComputationEnabled,
                         TelemetryClientConfiguration = telemetryClientConfiguration,
-                        ClientComputedStats = clientComputedStats
+                        ClientComputedStats = clientComputedStats,
+                        ConnectionTimeoutMs = DefaultTimeoutMs
                     };
 
                     return new TraceExporter(configuration, updateSampleRates);
