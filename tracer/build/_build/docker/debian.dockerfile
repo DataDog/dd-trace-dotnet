@@ -26,8 +26,14 @@ ENV \
     # Disable LTTng tracing with QUIC
     QUIC_LTTng=0
 
+    # Replace the old buster repositories with archived versions so that we can see pull
+    # It would be better to update the base image, but that would mean a new glibc version,
+    # which would break some users. We will likely need to do this at some point.
     # Add nfpm source
-RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
+RUN sed -i '/buster\/updates/d; /buster-updates/d' /etc/apt/sources.list \
+    && sed -i 's|http://[^ ]*debian\.org[^ ]*|http://archive.debian.org/debian|g' /etc/apt/sources.list \
+    && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until \
+    && echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
     && apt-get update \
     && apt-get -y upgrade \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
@@ -106,6 +112,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 
