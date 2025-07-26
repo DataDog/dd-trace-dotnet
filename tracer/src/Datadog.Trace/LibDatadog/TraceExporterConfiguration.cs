@@ -151,6 +151,15 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
+    public ulong ConnectionTimeoutMs
+    {
+        init
+        {
+            using var error = NativeInterop.Config.SetConnectionTimeout(this, value);
+            error.ThrowIfError();
+        }
+    }
+
     protected override bool ReleaseHandle()
     {
         if (_telemetryConfigPtr != IntPtr.Zero)
