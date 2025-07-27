@@ -18,43 +18,43 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.0.16 -->
-    <PackageReference Include="AWSSDK.Core" Version="4.0.0.16" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.0.18 -->
+    <PackageReference Include="AWSSDK.Core" Version="4.0.0.18" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.3 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.3" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.3.1 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.3.1" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.3 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.3" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.3.1 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.3.1" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/4.0.2.13 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="4.0.2.13" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/4.0.2.14 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="4.0.2.14" />
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.6 -->
-    <PackageReference Include="AWSSDK.S3" Version="4.0.6" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.6.2 -->
+    <PackageReference Include="AWSSDK.S3" Version="4.0.6.2" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/4.0.0.14 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.0.14" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/4.0.0.15 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.0.15" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.0.15 -->
-    <PackageReference Include="AWSSDK.SQS" Version="4.0.0.15" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.0.17 -->
+    <PackageReference Include="AWSSDK.SQS" Version="4.0.0.17" />
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.0.16 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.0.16" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.0.17 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.0.17" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -105,8 +105,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.1.7 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.7" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.1.8 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.8" />
 
     <!-- Integration: amqmdnetstd -->
     <!--    Assembly: amqmdnetstd -->
@@ -190,8 +190,8 @@
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!--    Assembly: Microsoft.Data.SqlClient -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/6.0.2 -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/6.1.0 -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.0" />
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!--    Assembly: Microsoft.Data.Sqlite -->
@@ -227,8 +227,8 @@
     <!--    Assembly: MongoDB.Driver -->
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.4.1 -->
-    <PackageReference Include="MongoDB.Driver" Version="3.4.1" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.4.2 -->
+    <PackageReference Include="MongoDB.Driver" Version="3.4.2" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
@@ -242,8 +242,8 @@
 
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
-    <!-- Latest package https://www.nuget.org/packages/MySql.Data/9.3.0 -->
-    <PackageReference Include="MySql.Data" Version="9.3.0" />
+    <!-- Latest package https://www.nuget.org/packages/MySql.Data/9.4.0 -->
+    <PackageReference Include="MySql.Data" Version="9.4.0" />
 
     <!-- Integration: MySqlConnector -->
     <!--    Assembly: MySqlConnector -->
@@ -252,8 +252,8 @@
 
     <!-- Integration: NLog -->
     <!--    Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/6.0.1 -->
-    <PackageReference Include="NLog" Version="6.0.1" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/6.0.2 -->
+    <PackageReference Include="NLog" Version="6.0.2" />
 
     <!-- Integration: Npgsql -->
     <!--    Assembly: Npgsql -->
@@ -302,8 +302,8 @@
 
     <!-- Integration: StackExchange.Redis -->
     <!--    Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.8.47 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.8.47" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.8.58 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.8.58" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!--    Assembly: StackExchange.Redis.StrongName -->
