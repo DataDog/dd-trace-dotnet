@@ -500,7 +500,7 @@ namespace Foo
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", ".NET 10 or higher", "success_forced");
         }
 
         [SkippableFact]
@@ -533,7 +533,7 @@ namespace Foo
                                "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "abort", ".NET 10 or higher", "incompatible_runtime");
         }
 
         [SkippableFact]
