@@ -75,6 +75,12 @@ internal class DataStreamsManager
 
     public async Task FlushAsync()
     {
+        if (!IsEnabled)
+        {
+            Console.WriteLine("[FlushAsync] DataStreamsManager is disabled, not flushing");
+            return;
+        }
+
         var writer = Volatile.Read(ref _writer);
         if (writer is null)
         {
