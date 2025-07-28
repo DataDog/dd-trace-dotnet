@@ -165,10 +165,10 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         // **********
         // Get all head commit information.
         // **********
-        if (!string.IsNullOrEmpty(HeadCommit))
+        if (!StringUtil.IsNullOrEmpty(HeadCommit))
         {
             // fetching commit data from head commit
-            if (GitCommandHelper.FetchCommitData(WorkspacePath ?? Environment.CurrentDirectory, HeadCommit!) is { } commitData &&
+            if (GitCommandHelper.FetchCommitData(WorkspacePath ?? Environment.CurrentDirectory, HeadCommit) is { } commitData &&
                 commitData.CommitSha == HeadCommit)
             {
                 HeadAuthorDate = commitData.AuthorDate;
