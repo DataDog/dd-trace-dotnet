@@ -22,39 +22,39 @@ internal class DataStreamsWriter : IDataStreamsWriter
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
+    private readonly object _initLock = new();
+    private readonly long _bucketDurationMs;
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
     private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
-    private readonly Task _processTask;
-    private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
-    private readonly Timer _flushTimer;
+    private readonly bool _isInDefaultState;
+
+    private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
+    private Task? _processTask;
+    private Timer? _flushTimer;
+
     private int _isSupported = SupportState.Unknown;
+    private bool _isInitialized;
 
     public DataStreamsWriter(
+        TracerSettings settings,
         DataStreamsAggregator aggregator,
         IDataStreamsApi api,
         long bucketDurationMs,
         IDiscoveryService discoveryService)
     {
+        _isInDefaultState = settings.IsDataStreamsMonitoringInDefaultState;
         _aggregator = aggregator;
         _api = api;
         _discoveryService = discoveryService;
         _discoveryService.SubscribeToChanges(HandleConfigUpdate);
-
-        _processTask = Task.Run(ProcessQueueLoopAsync);
-        _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
-
-        _flushTimer = new Timer(
-            x => ((DataStreamsWriter)x!).RequestFlush(),
-            this,
-            dueTime: bucketDurationMs,
-            period: bucketDurationMs);
+        _bucketDurationMs = bucketDurationMs;
     }
 
     /// <summary>
@@ -72,7 +72,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
         TracerSettings settings,
         IDiscoveryService discoveryService,
         string defaultServiceName)
-        => new DataStreamsWriter(
+        => new(
+            settings,
             new DataStreamsAggregator(
                 new DataStreamsMessagePackFormatter(settings, defaultServiceName),
                 bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
@@ -80,10 +81,36 @@ internal class DataStreamsWriter : IDataStreamsWriter
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
             discoveryService);
 
+    private void Initialize()
+    {
+        lock (_initLock)
+        {
+            if (_processTask != null)
+            {
+                return;
+            }
+
+            _processTask = Task.Run(ProcessQueueLoopAsync);
+            _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
+            _flushTimer = new Timer(
+                x => ((DataStreamsWriter)x!).RequestFlush(),
+                this,
+                dueTime: _bucketDurationMs,
+                period: _bucketDurationMs);
+
+            Volatile.Write(ref _isInitialized, true);
+        }
+    }
+
     public void Add(in StatsPoint point)
     {
         if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
         {
+            if (!Volatile.Read(ref _isInitialized))
+            {
+                Initialize();
+            }
+
             if (_buffer.TryEnqueue(point))
             {
                 return;
@@ -95,6 +122,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public void AddBacklog(in BacklogPoint point)
     {
+        if (!Volatile.Read(ref _isInitialized))
+        {
+            Initialize();
+        }
+
         if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
         {
             if (_backlogBuffer.TryEnqueue(point))
@@ -110,9 +142,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
     {
         _discoveryService.RemoveSubscription(HandleConfigUpdate);
 #if NETCOREAPP3_1_OR_GREATER
-        await _flushTimer.DisposeAsync().ConfigureAwait(false);
+        if (_flushTimer != null)
+        {
+            await _flushTimer.DisposeAsync().ConfigureAwait(false);
+        }
 #else
-        _flushTimer.Dispose();
+        _flushTimer?.Dispose();
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
     }
@@ -120,6 +155,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private async Task FlushAndCloseAsync()
     {
         if (!_processExit.TrySetResult(true))
+        {
+            return;
+        }
+
+        // nothing else to do, since the writer was not fully initialized
+        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
         {
             return;
         }
@@ -252,8 +293,16 @@ internal class DataStreamsWriter : IDataStreamsWriter
             }
             else
             {
-                Log.Warning("Data streams monitoring was enabled but is not supported by the Agent. Disabling Data streams. " +
-                            "Consider upgrading your Datadog Agent to at least version 7.34.0+");
+                const string msg = "Data streams monitoring was enabled but is not supported by the Agent. Disabling Data streams. " +
+                          "Consider upgrading your Datadog Agent to at least version 7.34.0+";
+                if (_isInDefaultState)
+                {
+                    Log.Information(msg);
+                }
+                else
+                {
+                    Log.Warning(msg);
+                }
             }
         }
     }

@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: Timer TriggerAllTimer,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
@@ -61,7 +61,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: GET /api/trigger,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
@@ -98,7 +98,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: Http TriggerCaller,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
@@ -255,7 +255,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_11,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: GET /api/simple,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
@@ -292,7 +292,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_12,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: GET /api/exception,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
@@ -338,7 +338,7 @@ at Samples.AzureFunctions.V4Isolated.AspNetCore.DirectFunctionExecutor.ExecuteAs
   {
     TraceId: Id_1,
     SpanId: Id_13,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: GET /api/error,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
@@ -377,7 +377,7 @@ at Samples.AzureFunctions.V4Isolated.AspNetCore.DirectFunctionExecutor.ExecuteAs
   {
     TraceId: Id_1,
     SpanId: Id_14,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: GET /api/badrequest,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
@@ -414,7 +414,7 @@ at Samples.AzureFunctions.V4Isolated.AspNetCore.DirectFunctionExecutor.ExecuteAs
   {
     TraceId: Id_1,
     SpanId: Id_15,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: Http SimpleHttpTrigger,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
@@ -447,7 +447,7 @@ at Samples.AzureFunctions.V4Isolated.AspNetCore.DirectFunctionExecutor.ExecuteAs
   {
     TraceId: Id_1,
     SpanId: Id_16,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: Http Exception,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
@@ -486,7 +486,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
   {
     TraceId: Id_1,
     SpanId: Id_17,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: Http ServerError,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
@@ -519,7 +519,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
   {
     TraceId: Id_1,
     SpanId: Id_18,
-    Name: azure-functions.invoke,
+    Name: azure_functions.invoke,
     Resource: Http BadRequest,
     Service: AzureFunctionsAllTriggers,
     Type: serverless,

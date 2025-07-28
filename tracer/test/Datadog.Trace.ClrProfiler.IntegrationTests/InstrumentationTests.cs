@@ -425,7 +425,7 @@ namespace Foo
                                "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson,  "abort", ".NET Framework 4.6.0 or lower", "incompatible_library");
         }
 
         [SkippableFact]
@@ -456,7 +456,7 @@ namespace Foo
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime", "success_forced");
         }
 
 #endif
@@ -492,7 +492,7 @@ namespace Foo
                                "tags": ["injection_forced:false"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Successfully configured automatic instrumentation", "success");
         }
 
         [SkippableFact]
@@ -681,7 +681,7 @@ namespace Foo
             nativeLoaderLogFiles.Should().Contain(log => log.Contains(requiredLog));
         }
 
-        private void AssertHasExpectedTelemetry(string echoLogFileName, ProcessResult processResult, string pointsJson)
+        private void AssertHasExpectedTelemetry(string echoLogFileName, ProcessResult processResult, string pointsJson, string injectResult, string injectResultReason, string injectResultClass)
         {
             using var s = new AssertionScope();
             File.Exists(echoLogFileName).Should().BeTrue();
@@ -713,7 +713,10 @@ namespace Foo
                                             "language_name": "dotnet",
                                             "language_version": "{{runtimeVersion}}",
                                             "tracer_version": "{{TracerConstants.ThreePartVersion}}",
-                                            "pid": {{processResult.Process.Id}}
+                                            "pid": {{processResult.Process.Id}},
+                                            "inject_result": "{{injectResult}}",
+                                            "inject_result_reason": "{{injectResultReason}}",
+                                            "inject_result_class": "{{injectResultClass}}"
                                           },
                                           "points": {{pointsJson}}
                                       }
