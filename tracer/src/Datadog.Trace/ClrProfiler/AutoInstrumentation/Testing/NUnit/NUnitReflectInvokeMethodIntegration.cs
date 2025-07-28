@@ -5,7 +5,6 @@
 #nullable enable
 using System;
 using System.ComponentModel;
-using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
