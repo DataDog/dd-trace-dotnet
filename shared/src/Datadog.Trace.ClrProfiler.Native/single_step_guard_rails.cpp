@@ -22,9 +22,7 @@ SingleStepGuardRails::SingleStepGuardRails()
     const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
 
     m_isRunningInSingleStep = !isSingleStepVariable.empty(); 
-    m_injectResult = "unknown";
-    m_injectResultReason = "unknown";
-    m_injectResultClass = "unknown";
+    m_forcedRuntimeDescription = "";
 }
 
 SingleStepGuardRails::~SingleStepGuardRails()
@@ -75,12 +73,11 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
                 // https://github.com/dotnet/runtime/pull/78670
                 Log::Debug("SingleStepGuardRails::CheckRuntime: Known faulty .NET runtime version detected, aborting instrumentation");
 
-                const auto eol = ".NET 6.0.12 and earlier have known crashing bugs";
+                const auto description = ".NET 6.0.12 and earlier have known crashing bugs";
                 const auto runtime = std::to_string(runtimeInformation.major_version) + "." +
                                      std::to_string(runtimeInformation.minor_version) + "." +
                                      std::to_string(runtimeInformation.build_version);
-                SetInjectResult("abort", ".NET 6.0.12 and earlier have known crashing bugs", "incompatible_runtime");
-                return HandleUnsupportedNetCoreVersion(eol, runtime, false); // not eol, just incompatible
+                return HandleUnsupportedNetCoreVersion(description, runtime, false); // not eol, just incompatible
             }
 
             // .NET Core 3.1+, but is it _too_ high?
@@ -88,7 +85,6 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
             {
                 // supported
                 Log::Debug("SingleStepGuardRails::CheckRuntime: Supported .NET runtime version detected, continuing with single step instrumentation");
-                SetInjectResult("success", "Successfully configured automatic instrumentation", "success");
                 return S_OK;
             }
 
@@ -138,12 +134,10 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetCoreVersion(const std::string&
 {
     if(ShouldForceInstrumentationOverride(unsupportedDescription, isEol))
     {
-        SetInjectResult("success", unsupportedDescription, "success_forced");
         return S_OK;
     }
 
-    SetInjectResult("abort", unsupportedDescription, "incompatible_runtime");
-    SendAbortTelemetry(NetCoreRuntime, runtimeVersion, isEol);
+    SendAbortTelemetry(NetCoreRuntime, runtimeVersion, isEol, unsupportedDescription);
     return E_FAIL;
 }
 
@@ -151,12 +145,10 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetFrameworkVersion(const std::st
 {
     if(ShouldForceInstrumentationOverride(unsupportedDescription, isEol))
     {
-        SetInjectResult("success", unsupportedDescription, "success_forced");
         return S_OK;
     }
 
-    SetInjectResult("abort", unsupportedDescription, "incompatible_library");
-    SendAbortTelemetry(NetFrameworkRuntime, runtimeVersion, isEol);
+    SendAbortTelemetry(NetFrameworkRuntime, runtimeVersion, isEol, unsupportedDescription);
     return E_FAIL;
 }
 
@@ -165,7 +157,6 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
     // Should only be called when we have an incompatible runtime
     Log::Warn(
         "SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime ", eolDescription);
-    SetInjectResult("skipped", eolDescription, "incompatible_runtime");
 
     // Are we supposed to override the EOL check?
     const auto forceEolInstrumentationVariable = GetEnvironmentValue(EnvironmentVariables::ForceEolInstrumentation);
@@ -176,24 +167,23 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
         && forceEolInstrumentation)
     {
         m_isForcedExecution = true;
+        m_forcedRuntimeDescription = eolDescription;
         
         Log::Info(
             "SingleStepGuardRails::ShouldForceInstrumentationOverride: ",
             EnvironmentVariables::ForceEolInstrumentation,
             " enabled, allowing unsupported runtimes and continuing");
-        SetInjectResult("success", "Force instrumentation enabled, incompatible runtime", "success_forced");
         return true;
     }
 
     const std::string reason = isEol ? "eol_runtime" : "incompatible_runtime";
     Log::Warn(
         "SingleStepGuardRails::HandleUnsupportedNetCoreVersion: Aborting application instrumentation due to ", reason);
-    SetInjectResult("abort", reason, "incompatible_runtime");
     return false;
 }
 
 void SingleStepGuardRails::RecordBootstrapError(const RuntimeInformation& runtimeInformation,
-    const std::string& errorType)
+    const std::string& errorType) const
 {
     if(!m_isRunningInSingleStep)
     {
@@ -207,7 +197,6 @@ void SingleStepGuardRails::RecordBootstrapError(const RuntimeInformation& runtim
     const auto runtimeName = runtimeInformation.is_core() ? NetCoreRuntime : NetFrameworkRuntime;
     const auto runtimeVersion = runtimeInformation.description();
 
-    SetInjectResult("error", errorType, "internal_error");
     RecordBootstrapError(runtimeName, runtimeVersion, errorType);
 }
 
@@ -221,7 +210,7 @@ void SingleStepGuardRails::RecordBootstrapError(const std::string& runtimeName, 
 
     const std::string points = "[{\"name\": \"library_entrypoint.error\", \"tags\": [\"error_type:"
                               + errorType + "\"]}]";
-    SendTelemetry(runtimeName, runtimeVersion, points);
+    SendTelemetry(runtimeName, runtimeVersion, points, "error", errorType, "internal_error");
 }
 
 void SingleStepGuardRails::RecordBootstrapSuccess(const RuntimeInformation& runtimeInformation) const
@@ -240,10 +229,17 @@ void SingleStepGuardRails::RecordBootstrapSuccess(const RuntimeInformation& runt
     const std::string points = "[{\"name\": \"library_entrypoint.complete\", \"tags\": [\"injection_forced:"
                               + isForced + "\"]}]";
 
-    SendTelemetry(runtimeName, runtimeVersion, points);
+    const std::string resultClass = m_isForcedExecution ? "success_forced" : "success";
+    const std::string resultReason = m_isForcedExecution
+    ? ( m_forcedRuntimeDescription.empty()
+        ? "Force instrumentation enabled, incompatible runtime"
+         : "Force instrumentation enabled, incompatible runtime, " + m_forcedRuntimeDescription)
+       : "Successfully configured automatic instrumentation";
+
+    SendTelemetry(runtimeName, runtimeVersion, points, "success", resultReason, resultClass);
 }
 
-void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, const std::string& runtimeVersion, const bool isEol) const
+void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, const std::string& runtimeVersion, const bool isEol, const std::string& unsupportedDescription) const
 {
     if(!m_isRunningInSingleStep)
     {
@@ -258,18 +254,12 @@ void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, co
     
     const std::string points = "[" + abort + "," + abort_runtime + "]";
 
-    SendTelemetry(runtimeName, runtimeVersion, points);
-}
-
-void SingleStepGuardRails::SetInjectResult(const std::string& result, const std::string& resultReason, const std::string& resultClass)
-{
-    m_injectResult = result;
-    m_injectResultReason = resultReason;
-    m_injectResultClass = resultClass;
+    SendTelemetry(runtimeName, runtimeVersion, points, "abort", unsupportedDescription, "incompatible_runtime");
 }
 
 void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const std::string& runtimeVersion,
-                                         const std::string& points) const
+    const std::string& points, const std::string& injectResult,
+    const std::string& injectResultReason, const std::string& injectResultClass) const
 {
     if(!m_isRunningInSingleStep)
     {
@@ -293,10 +283,6 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
                   forwarderPath);
         return;
     }
-
-    const std::string injectResult = m_injectResult.empty() ? "unknown" : m_injectResult;
-    const std::string injectResultReason = m_injectResultReason.empty() ? "unknown" : m_injectResultReason;
-    const std::string injectResultClass = m_injectResultClass.empty() ? "unknown" : m_injectResultClass;
 
     const std::string metadata =
         "{\"metadata\":{\"runtime_name\": \"" + runtimeName
