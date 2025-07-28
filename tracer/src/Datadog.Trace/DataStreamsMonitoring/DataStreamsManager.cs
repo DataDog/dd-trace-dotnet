@@ -77,7 +77,6 @@ internal class DataStreamsManager
     {
         if (!IsEnabled)
         {
-            Console.WriteLine("[FlushAsync] DataStreamsManager is disabled, not flushing");
             return;
         }
 

@@ -33,6 +33,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly bool _isInDefaultState;
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
@@ -83,50 +84,49 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public async Task FlushAsync()
     {
-        Console.WriteLine("[FlushAsync] Starting flush request");
-        var actualTimeout = TimeSpan.FromSeconds(5);
-
-        if (_processExit.Task.IsCompleted)
-        {
-            Console.WriteLine("[FlushAsync] Writer is disposed/disposing - returning early");
-            return;
-        }
-
-        Console.WriteLine("[FlushAsync] Setting up TaskCompletionSource and event handler");
-        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        EventHandler<EventArgs>? handler = null;
-        handler = (_, _) =>
-        {
-            Console.WriteLine("[FlushAsync] FlushComplete event received - removing handler and setting result");
-            FlushComplete -= handler;
-            tcs.TrySetResult(true);
-        };
-
+        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
         try
         {
-            Console.WriteLine("[FlushAsync] Subscribing to FlushComplete event");
-            FlushComplete += handler;
+            var actualTimeout = TimeSpan.FromSeconds(5);
 
-            Console.WriteLine("[FlushAsync] Requesting flush via RequestFlush()");
-            RequestFlush();
+            if (_processExit.Task.IsCompleted)
+            {
+                return;
+            }
 
-            Console.WriteLine("[FlushAsync] Waiting for completion or timeout ({0}ms)", actualTimeout.TotalMilliseconds);
-            var completedTask = await Task.WhenAny(
-                tcs.Task,
-                Task.Delay(actualTimeout)).ConfigureAwait(false);
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            EventHandler<EventArgs>? handler = null;
+            handler = (_, _) =>
+            {
+                FlushComplete -= handler;
+                tcs.TrySetResult(true);
+            };
 
-            Console.WriteLine("[FlushAsync] Completed - TimedOut: {0}", completedTask != tcs.Task);
-            return;
+            try
+            {
+                FlushComplete += handler;
+
+                RequestFlush();
+
+                var completedTask = await Task.WhenAny(
+                    tcs.Task,
+                    Task.Delay(actualTimeout)).ConfigureAwait(false);
+
+                return;
+            }
+            finally
+            {
+                if (handler != null)
+                {
+                    FlushComplete -= handler;
+                }
+
+                tcs.TrySetResult(false);
+            }
         }
         finally
         {
-            Console.WriteLine("[FlushAsync] Finally block - cleaning up event handler");
-            if (handler != null)
-            {
-                FlushComplete -= handler;
-            }
-
-            tcs.TrySetResult(false);
+            _flushSemaphore.Release();
         }
     }
 
@@ -199,6 +199,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         _flushTimer?.Dispose();
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
+        _flushSemaphore.Dispose();
     }
 
     private async Task FlushAndCloseAsync()
@@ -271,8 +272,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
             {
                 Log.Warning("Error flushing {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", data.Count, dropCount);
             }
-
-            Console.WriteLine("[WriteToApiAsync] Flushed {Count}bytes to data streams intake. {Dropped} points were dropped since last flush. Success: {Success}", data.Count, dropCount, success);
         }
     }
 
