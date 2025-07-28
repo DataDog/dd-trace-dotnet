@@ -202,10 +202,15 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Returns <c>true</c> if the app is running in Azure Functions.
-        /// Checks for the presence of "FUNCTIONS_WORKER_RUNTIME" and "FUNCTIONS_EXTENSION_VERSION" in the configuration.
+        /// Checks for the presence of "WEBSITE_SITE_NAME", "FUNCTIONS_WORKER_RUNTIME",
+        /// and "FUNCTIONS_EXTENSION_VERSION" in the configuration.
         /// </summary>
         public static bool IsRunningInAzureFunctions(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
+            var siteName = new ConfigurationBuilder(source, telemetry)
+                           .WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey)
+                           .AsString();
+
             // "dotnet", "dotnet-isolated"
             var workerRuntime = new ConfigurationBuilder(source, telemetry)
                            .WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime)
@@ -216,7 +221,9 @@ namespace Datadog.Trace.Configuration
                            .WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion)
                            .AsString();
 
-            return !string.IsNullOrEmpty(workerRuntime) && !string.IsNullOrEmpty(extensionVersion);
+            return !string.IsNullOrEmpty(siteName) &&
+                   !string.IsNullOrEmpty(workerRuntime) &&
+                   !string.IsNullOrEmpty(extensionVersion);
         }
 
         /// <summary>
