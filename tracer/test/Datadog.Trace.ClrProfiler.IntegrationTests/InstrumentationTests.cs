@@ -425,7 +425,7 @@ namespace Foo
                                "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson,  "abort", ".NET Framework 4.6.0 or lower", "incompatible_library");
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson,  "abort", ".NET Core 3.0 or lower", "incompatible_runtime");
         }
 
         [SkippableFact]
@@ -456,7 +456,7 @@ namespace Foo
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime", "success_forced");
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET Core 3.0 or lower", "success_forced");
         }
 
 #endif
