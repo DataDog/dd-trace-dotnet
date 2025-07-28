@@ -9,6 +9,7 @@ using System;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -80,7 +81,8 @@ namespace Datadog.Trace.Configuration
 
                 // NOTE: the mini-agent is deprecated, but keep the code for now for backward compatibility.
                 // Start mini agent on all Linux function apps and only Windows function apps on consumption plans
-                // Windows function apps on non-consumption plans do not use the mini agent and instead use the .NET APM Extension which packages the Datadog agent
+                // Windows function apps on non-consumption plans do not use the mini agent and instead use
+                // the AAS Site Extension which packages the Go trace agent.
                 IsRunningMiniAgentInAzureFunctions = Environment.OSVersion.Platform == PlatformID.Unix || WebsiteSKU is "Dynamic" or null;
 
                 IsIsolatedFunctionsApp = FunctionsWorkerRuntime?.EndsWith("-isolated", StringComparison.OrdinalIgnoreCase) == true;
