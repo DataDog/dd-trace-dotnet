@@ -5,6 +5,7 @@
 #nullable enable
 using System;
 using System.ComponentModel;
+using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
@@ -32,6 +33,13 @@ public static class NUnitReflectInvokeMethodIntegration
         {
             // Use the inner exception if available
             exception = exception.InnerException ?? exception;
+            var exceptionType = exception.GetType();
+            if (exceptionType.Name is "IgnoreException" or "InconclusiveException" or "SuccessException")
+            {
+                // IgnoreException, InconclusiveException and SuccessException are not failures, so we don't report them
+                return new CallTargetReturn<object>(returnValue);
+            }
+
             Common.Log.Debug("Reflect.InvokeMethod threw an exception: {ExceptionMessage}, reporting it to the test span", exception.ToString());
             Test.Current?.SetErrorInfo(exception);
         }
