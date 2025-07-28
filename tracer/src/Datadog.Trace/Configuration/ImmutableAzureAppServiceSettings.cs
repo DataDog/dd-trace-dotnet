@@ -204,10 +204,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public static bool IsRunningInAzureFunctions(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
+            // "dotnet", "dotnet-isolated"
             var workerRuntime = new ConfigurationBuilder(source, telemetry)
                            .WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime)
                            .AsString();
 
+            // "~4", "~1"
             var extensionVersion = new ConfigurationBuilder(source, telemetry)
                            .WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion)
                            .AsString();
