@@ -162,7 +162,7 @@ namespace Datadog.Trace.Configuration
             return $"/subscriptions/{subscriptionId}/resourcegroups/{resourceGroup}/providers/microsoft.web/sites/{siteName}".ToLowerInvariant();
         }
 
-        private string? GetSubscriptionId(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        private static string? GetSubscriptionId(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var websiteOwner = new ConfigurationBuilder(source, telemetry)
                               .WithKeys(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey)
