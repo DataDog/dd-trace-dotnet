@@ -13,9 +13,16 @@ namespace Datadog.Trace.ClrProfiler.Helpers
     internal static class HttpBypassHelper
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool UriContainsAnyOf(Uri requestUri, string[] substrings)
+        public static bool UriContainsAnyOf(Uri? requestUri, string[]? substrings)
         {
-            return substrings.Length > 0 && UriContainsAnyOfSlow(requestUri, substrings);
+            if (requestUri == null || substrings == null || substrings.Length == 0)
+            {
+                // fast path which covers the most common case:
+                // DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS is not set so substrings is an empty array
+                return false;
+            }
+
+            return UriContainsAnyOfSlow(requestUri, substrings);
         }
 
         private static bool UriContainsAnyOfSlow(Uri requestUri, string[] substrings)
