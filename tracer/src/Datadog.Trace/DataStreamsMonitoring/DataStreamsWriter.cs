@@ -98,7 +98,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
             EventHandler<EventArgs>? handler = null;
             handler = (_, _) =>
             {
-                FlushComplete -= handler;
                 tcs.TrySetResult(true);
             };
 
