@@ -217,19 +217,13 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Returns <c>true</c> if the app is instrumented using the Azure App Services Site Extension.
-        /// Checks for the presence of "DD_AZURE_APP_SERVICES=1" and "DD_AAS_DOTNET_EXTENSION_VERSION" in the configuration.
+        /// Checks for the presence of "DD_AZURE_APP_SERVICES=1".
         /// </summary>
         public static bool IsUsingAzureAppServicesSiteExtension(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
-            var flag = new ConfigurationBuilder(source, telemetry)
-                       .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
-                       .AsBool(false);
-
-            var siteExtensionVersion = new ConfigurationBuilder(source, telemetry)
-                                       .WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey)
-                                       .AsString();
-
-            return flag && !string.IsNullOrEmpty(siteExtensionVersion);
+            return new ConfigurationBuilder(source, telemetry)
+                   .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
+                   .AsString() == "1";
         }
     }
 }

@@ -122,13 +122,12 @@ namespace Datadog.Trace.Util
 
         /// <summary>
         /// Check if the current environment is using Azure App Services Site Extension
-        /// by checking for the presence of "DD_AZURE_APP_SERVICES=1" and "DD_AAS_DOTNET_EXTENSION_VERSION".
+        /// by checking for the presence of "DD_AZURE_APP_SERVICES=1".
         /// This method reads environment variables directly and bypasses the configuration system.
         /// </summary>
         public static bool IsUsingAzureAppServicesSiteExtension()
         {
-            return GetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1" &&
-                   EnvironmentVariableExists(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey);
+            return GetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1";
         }
 
         /// <summary>
