@@ -473,7 +473,7 @@ internal static class GitCommandHelper
 
             // 3. Get commit details via `git show`
             Log.Debug("GitCommandHelper.FetchCommitData: fetching commit details for {Commit}", commitSha);
-            var showArgs = $"show {commitSha}" + """-s --format='%H|,|%at|,|%an|,|%ae|,|%ct|,|%cn|,|%ce|,|%B'""";
+            var showArgs = $"""show {commitSha} -s --format='%H|,|%at|,|%an|,|%ae|,|%ct|,|%cn|,|%ce|,|%B'""";
             var showOutput = RunGitCommand(
                 workingDirectory,
                 showArgs,
@@ -542,6 +542,8 @@ internal static class GitCommandHelper
     /// <summary>
     /// Determines whether the repository located at <paramref name="workingDirectory"/> is a shallow clone.
     /// </summary>
+    /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <returns>True if the repository is a shallow clone; otherwise, false.</returns>
     public static bool IsShallowCloneRepository(string workingDirectory)
     {
         // We need to check if the git clone is a shallow one before uploading anything.
@@ -563,6 +565,8 @@ internal static class GitCommandHelper
     /// <summary>
     /// Parses and returns the git version (major, minor, patch) as reported by <c>git --version</c>.
     /// </summary>
+    /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <returns>VersionInfo containing the major, minor, and patch version numbers.</returns>
     public static VersionInfo GetGitVersion(string workingDirectory)
     {
         var output = RunGitCommand(
@@ -589,6 +593,8 @@ internal static class GitCommandHelper
     /// Attempts to obtain the default remote name for the repository located at <paramref name="workingDirectory"/>.
     /// Falls back to <c>origin</c> when no remote could be detected.
     /// </summary>
+    /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <returns>Remote name, or <c>origin</c> if not set.</returns>
     public static string GetRemoteName(string workingDirectory)
     {
         var output = RunGitCommand(
@@ -597,6 +603,23 @@ internal static class GitCommandHelper
             MetricTags.CIVisibilityCommands.GetRemote);
 
         return output?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
+    }
+
+    /// <summary>
+    /// Retrieves a list of local commits from the repository located at <paramref name="workingDirectory"/>.
+    /// </summary>
+    /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <returns>String array containing commit SHAs, or an empty array if no commits are found.</returns>
+    public static string[] GetLocalCommits(string workingDirectory)
+    {
+        var gitLogOutput = RunGitCommand(workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits);
+        if (gitLogOutput is null)
+        {
+            Log.Warning("TestOptimizationClient: 'git log...' command is null");
+            return [];
+        }
+
+        return gitLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
     }
 
     private static void CheckAndFetchBranch(string workingDirectory, string branch, string remoteName)
