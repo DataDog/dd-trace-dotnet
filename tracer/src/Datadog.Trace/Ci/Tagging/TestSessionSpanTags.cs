@@ -60,6 +60,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
     [Tag(CommonTags.CIJobName)]
     public string? CIJobName { get; set; }
 
+    [Tag(CommonTags.CIJobId)]
+    public string? CIJobId { get; set; }
+
     [Tag(CommonTags.StageName)]
     public string? StageName { get; set; }
 
@@ -129,6 +132,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
     [Tag(CommonTags.GitPrBaseBranch)]
     public string? GitPrBaseBranch { get; set; }
 
+    [Tag(CommonTags.PrNumber)]
+    public string? PrNumber { get; set; }
+
     public void SetCIEnvironmentValues(CIEnvironmentValues environmentValues)
     {
         if (environmentValues is not null)
@@ -138,6 +144,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
             CIPipelineName = environmentValues.PipelineName;
             CIPipelineNumber = environmentValues.PipelineNumber;
             CIPipelineUrl = environmentValues.PipelineUrl;
+            CIJobId = environmentValues.JobId;
             CIJobName = environmentValues.JobName;
             CIJobUrl = environmentValues.JobUrl;
             StageName = environmentValues.StageName;
@@ -157,6 +164,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
             GitHeadCommit = environmentValues.HeadCommit;
             GitPrBaseCommit = environmentValues.PrBaseCommit;
             GitPrBaseBranch = environmentValues.PrBaseBranch;
+            PrNumber = environmentValues.PrNumber;
 
             if (environmentValues.VariablesToBypass is { } variablesToBypass)
             {

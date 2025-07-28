@@ -13,7 +13,6 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Moq;
@@ -69,6 +68,56 @@ public class ContextPropagationTests
     }
 
     [Fact]
+    public void InjectTraceIntoData_WithAwsSdkDisabled_SkipsAddingTraceContext()
+    {
+        var request = GeneratePutRecordsRequest(
+            new List<MemoryStream>
+            {
+                ContextPropagation.DictionaryToMemoryStream(PersonDictionary),
+                ContextPropagation.DictionaryToMemoryStream(PokemonDictionary)
+            });
+
+        var proxy = request.DuckCast<IPutRecordsRequest>();
+
+        var tracer = GetAwsSdkDisabledTracer();
+        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out var tags);
+        ContextPropagation.InjectTraceIntoRecords(proxy, scope, "streamname");
+
+        var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
+
+        // Naively deserialize in order to not use tracer extraction logic
+        var jsonString = Encoding.UTF8.GetString(firstRecord.Data.ToArray());
+        var dataDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+        var extracted = dataDictionary.TryGetValue(DatadogKey, out var datadogDictionary);
+        extracted.Should().BeFalse();
+    }
+
+    [Fact]
+    public void InjectTraceIntoData_WithAwsKinesisDisabled_SkipsAddingTraceContext()
+    {
+        var request = GeneratePutRecordsRequest(
+            new List<MemoryStream>
+            {
+                ContextPropagation.DictionaryToMemoryStream(PersonDictionary),
+                ContextPropagation.DictionaryToMemoryStream(PokemonDictionary)
+            });
+
+        var proxy = request.DuckCast<IPutRecordsRequest>();
+
+        var tracer = GetAwsKinesisDisabledTracer();
+        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out var tags);
+        ContextPropagation.InjectTraceIntoRecords(proxy, scope, "streamname");
+
+        var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
+
+        // Naively deserialize in order to not use tracer extraction logic
+        var jsonString = Encoding.UTF8.GetString(firstRecord.Data.ToArray());
+        var dataDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+        var extracted = dataDictionary.TryGetValue(DatadogKey, out var datadogDictionary);
+        extracted.Should().BeFalse();
+    }
+
+    [Fact]
     public void InjectTraceIntoRecords_WithJsonString_AddsTraceContext()
     {
         var request = GeneratePutRecordsRequest(
@@ -92,11 +141,13 @@ public class ContextPropagationTests
         var extracted = dataDictionary.TryGetValue(DatadogKey, out var datadogDictionary);
         extracted.Should().BeTrue();
 
-        // Cast into a Dictionary<string, string> so we can read it properly
-        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
+        // Cast into a Dictionary<string, object> so we can read it properly
+        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(datadogDictionary?.ToString() ?? string.Empty);
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope.Span.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope.Span.TraceId.ToString());
+        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope?.Span.SpanId.ToString());
+        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope?.Span.TraceId.ToString());
+        extractedTraceContext["dd-pathway-ctx-base64"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
+        extractedTraceContext["dd-pathway-ctx"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
     }
 
     [Fact]
@@ -144,11 +195,14 @@ public class ContextPropagationTests
         var extracted = dataDictionary.TryGetValue(DatadogKey, out var datadogDictionary);
         extracted.Should().BeTrue();
 
-        // Cast into a Dictionary<string, string> so we can read it properly
-        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
+        // Cast into a Dictionary<string, object> so we can read it properly
+        datadogDictionary.Should().NotBeNull();
+        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(datadogDictionary?.ToString() ?? string.Empty);
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope.Span.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope.Span.TraceId.ToString());
+        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope?.Span.SpanId.ToString());
+        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope?.Span.TraceId.ToString());
+        extractedTraceContext["dd-pathway-ctx-base64"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
+        extractedTraceContext["dd-pathway-ctx"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
     }
 
     [Fact]
@@ -216,6 +270,28 @@ public class ContextPropagationTests
     private static Tracer GetTracer(string schemaVersion = "v1")
     {
         var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
+        IConfigurationSource source = new NameValueConfigurationSource(collection);
+        var settings = new TracerSettings(source);
+        var writerMock = new Mock<IAgentWriter>();
+        var samplerMock = new Mock<ITraceSampler>();
+
+        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+    }
+
+    private static Tracer GetAwsSdkDisabledTracer(string schemaVersion = "v1")
+    {
+        var collection = new NameValueCollection { { "DD_TRACE_AwsSdk_ENABLED", "false" } };
+        IConfigurationSource source = new NameValueConfigurationSource(collection);
+        var settings = new TracerSettings(source);
+        var writerMock = new Mock<IAgentWriter>();
+        var samplerMock = new Mock<ITraceSampler>();
+
+        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+    }
+
+    private static Tracer GetAwsKinesisDisabledTracer(string schemaVersion = "v1")
+    {
+        var collection = new NameValueCollection { { "DD_TRACE_AwsKinesis_ENABLED", "false" } };
         IConfigurationSource source = new NameValueConfigurationSource(collection);
         var settings = new TracerSettings(source);
         var writerMock = new Mock<IAgentWriter>();

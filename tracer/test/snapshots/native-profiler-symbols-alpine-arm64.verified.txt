@@ -85,6 +85,7 @@ free
 fseeko
 fstat
 ftello
+ftruncate
 fwrite
 get_nprocs
 getauxval
@@ -175,7 +176,6 @@ readlink
 realloc
 remove
 rename
-sched_yield
 sendto
 setenv
 setlocale

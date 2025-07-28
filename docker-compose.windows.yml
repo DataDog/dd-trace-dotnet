@@ -52,7 +52,7 @@ services:
       # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
       # The iis agent also ignores the _dd.appsec.waf.version because whether it appears in the 
       # aspnet_core.request span is flaky
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,_dd.appsec.waf.version
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,meta._dd.appsec.waf.version
 
   # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
   # and only after switching to run Windows containers

@@ -352,14 +352,15 @@ namespace Datadog.Trace
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = GetApi(settings, statsd, updateSampleRates, apiRequestFactory, settings.Exporter.PartialFlushEnabled);
+            var api = GetApi(settings, statsd, updateSampleRates, apiRequestFactory);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled);
+            return new AgentWriter(api, statsAggregator, statsd, settings);
         }
 
-        private IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory, bool partialFlushEnabled)
+        // Internal for testing
+        internal static IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory)
         {
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             if (settings.DataPipelineEnabled)
@@ -417,7 +418,7 @@ namespace Datadog.Trace
                         ClientComputedStats = clientComputedStats
                     };
 
-                    return new TraceExporter(configuration);
+                    return new TraceExporter(configuration, updateSampleRates);
                 }
                 catch (Exception ex)
                 {
@@ -425,10 +426,10 @@ namespace Datadog.Trace
                 }
             }
 
-            return new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled);
+            return new Api(apiRequestFactory, statsd, updateSampleRates, settings.Exporter.PartialFlushEnabled);
         }
 
-        private string GetUrl(TracerSettings settings)
+        private static string GetUrl(TracerSettings settings)
         {
             switch (settings.Exporter.TracesTransport)
             {

@@ -23,8 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal const string EnableDeliveryReportsField = "dotnet.producer.enable.delivery.reports";
         private const string MessagingType = "kafka";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
+        private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
         private static bool _headersInjectionEnabled = true;
-        private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
 
         internal static Scope? CreateProducerScope(
             Tracer tracer,
@@ -280,7 +280,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             try
             {
                 if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
-                    || !tracer.Settings.KafkaCreateConsumerScopeEnabled)
+                 || !tracer.Settings.KafkaCreateConsumerScopeEnabled)
                 {
                     // integration disabled, skip this trace
                     return;
@@ -339,11 +339,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (dataStreamsManager.IsEnabled)
                 {
                     var edgeTags = string.IsNullOrEmpty(topic)
-                        ? defaultProduceEdgeTags
-                        : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
+                                       ? DefaultProduceEdgeTags
+                                       : ["direction:out", $"topic:{topic}", "type:kafka"];
                     var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
+                    // DSM context should NOT be injected state if the message value size is <= DSM header size (~34 bytes).
+                    // This is needed to avoid situations when DSM context injection causes a significant
+                    // percentage increase in overall message size, leading to capacity issues on the kafka server.
+                    if (dataStreamsManager.IsInDefaultState && MessageSizeHelper.TryGetSize(message.Value) <= 34)
+                    {
+                        return;
+                    }
+
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
                 }
             }

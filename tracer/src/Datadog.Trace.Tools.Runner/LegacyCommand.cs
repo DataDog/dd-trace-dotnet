@@ -114,7 +114,7 @@ namespace Datadog.Trace.Tools.Runner
                                 return;
                             }
                         }
-                        else if (AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(agentUrl)).Configuration is null)
+                        else if (AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(agentUrl)) is null)
                         {
                             context.ExitCode = 1;
                             return;

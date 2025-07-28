@@ -19,7 +19,6 @@
         "http.status_code": "404",
         "network.client.ip": "::1",
         "http.client_ip": "::1",
-        "_dd.appsec.waf.version": "1.26.0",
         "_dd.p.dm": "-5",
         "_dd.p.tid": "67a4e73b00000000",
         "runtime-id": "05dff020-c9cc-4b50-9395-e1fe88603312",
