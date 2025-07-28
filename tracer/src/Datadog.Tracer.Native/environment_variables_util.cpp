@@ -68,11 +68,6 @@ bool IsRaspEnabled()
     return IsRaspSettingEnabled() && IsAsmSettingEnabled();
 }
 
-bool IsCallSiteManagedActivationEnabled()
-{
-    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::callsite_managed_activation_enabled), true);
-}
-
 bool IsEditAndContinueEnabledCore()
 {
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::ide_edit_and_continue_core), false);
