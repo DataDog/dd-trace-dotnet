@@ -1,0 +1,27 @@
+﻿name: Do Not Merge
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened, labeled, unlabeled]
+
+jobs:
+  do-not-merge:
+    name: Blocked by label
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if 'status:do-not-merge' label is present
+        env:
+          LABELS_JSON: ${{ toJson(github.event.pull_request.labels) }}
+        run: |
+          set -x
+
+          # The multiline string needs to be reformed into 'real' JSON again
+          MATCH=$(jq -Rs 'fromjson | map(select(.name == "status:do-not-merge")) | length' <<<"$LABELS_JSON")
+
+          if [ "$MATCH" -gt 0 ]; then
+            echo "Label 'status:do-not-merge' is present. Failing the job."
+            exit 1
+          else
+            echo "Label 'status:do-not-merge' is NOT present. Passing."
+            exit 0
+          fi

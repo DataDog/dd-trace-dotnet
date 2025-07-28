@@ -969,7 +969,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
+        [MemberData(nameof(BooleanTestCases), true)]
         public void IsDataStreamsMonitoringEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.Enabled, value));

@@ -77,12 +77,26 @@ internal abstract class LambdaCommon
         try
         {
             Log("Attempting to flush for current invocation", debug: false);
-            await Task.WhenAll(
-                Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
-                    .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)),
-                Tracer.Instance.TracerManager.DataStreamsManager.FlushAsync()
-                    .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)))
-                .ConfigureAwait(false);
+
+            var useDsmFlushLogic = Environment.GetEnvironmentVariable("USE_DSM_FLUSH_LOGIC");
+            if (string.Equals(useDsmFlushLogic, "true", StringComparison.OrdinalIgnoreCase))
+            {
+                Log("Flushing with DSM", debug: false);
+                await Task.WhenAll(
+                    Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                        .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)),
+                    Tracer.Instance.TracerManager.DataStreamsManager.FlushAsync()
+                        .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)))
+                    .ConfigureAwait(false);
+            }
+            else
+            {
+                Log("Flushing without DSM", debug: false);
+                await Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                    .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime))
+                    .ConfigureAwait(false);
+            }
+
             Log("Successfully flushed for current invocation", debug: false);
         }
         catch (Exception ex)
