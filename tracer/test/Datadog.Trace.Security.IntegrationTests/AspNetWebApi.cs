@@ -8,6 +8,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.TestHelpers;
@@ -90,6 +91,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+            FilterConnectionHeader(settings);
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
         }
 
@@ -103,6 +105,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url = "/api/Health";
 
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            FilterConnectionHeader(settings);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
 
@@ -117,6 +120,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+            FilterConnectionHeader(settings);
 
             var expectedSpans = test == AddressesConstants.RequestPathParams ? 1 : 2;
 
@@ -136,6 +140,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url2 = "/api/home/null-action-async/pathparam/appscan_fingerprint";
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseTextForParameters($"scenario=null-action");
+            FilterConnectionHeader(settings);
             var dateTime = DateTime.UtcNow;
             var res = await SubmitRequest(url, null, null);
             var res2 = await SubmitRequest(url2, null, null);
@@ -153,6 +158,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         public Task DisposeAsync() => Task.CompletedTask;
 
         protected override string GetTestName() => _testName;
+
+        private static void FilterConnectionHeader(VerifyTests.VerifySettings settings)
+        {
+            Regex appSecConnectionHeader0 = new(@"_dd.appsec.fp.http.header: hdr-0\d", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            Regex appSecConnectionHeader1 = new(@"_dd.appsec.fp.http.header: hdr-1\d", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            settings.AddRegexScrubber(appSecConnectionHeader0, "_dd.appsec.fp.http.header: hdr-0X");
+            settings.AddRegexScrubber(appSecConnectionHeader1, "_dd.appsec.fp.http.header: hdr-1X");
+        }
     }
 }
 #endif
