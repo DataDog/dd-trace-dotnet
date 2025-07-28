@@ -33,6 +33,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetWebApi2;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetWebApi2Integration));
 
+        private static void AddBaggageTagsToSpan(ISpan span, Baggage baggage, Tracer tracer)
+        {
+            if (baggage != null)
+            {
+                try
+                {
+                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(tracer, span, baggage);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error adding baggage tags to span.");
+                }
+            }
+        }
+
         internal static Scope CreateScope(IHttpControllerContext controllerContext, out AspNetTags tags)
         {
             Scope scope = null;
@@ -103,6 +118,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headersCollection.Value, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());
                 }
+
+                AddBaggageTagsToSpan(scope.Span, extractedContext.Baggage, tracer);
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
