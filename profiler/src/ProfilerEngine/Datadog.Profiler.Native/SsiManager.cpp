@@ -26,8 +26,8 @@ SsiManager::SsiManager(IConfiguration* pConfiguration, ISsiLifetime* pSsiLifetim
     _pSsiLifetime(pSsiLifetime),
     _hasSpan{false},
     _isLongLived{false},
+    _pConfiguration(pConfiguration),
     _deploymentMode{pConfiguration->GetDeploymentMode()},
-    _enablementStatus{pConfiguration->GetEnablementStatus()},
     _longLivedThreshold{pConfiguration->GetSsiLongLivedThreshold()}
 {
 }
@@ -37,10 +37,23 @@ SsiManager::~SsiManager()
     _stopTimerPromise.set_value();
 }
 
+EnablementStatus SsiManager::GetCurrentEnabledStatus()
+{
+    return _pConfiguration->GetEnablementStatus();
+}
+
+
 void SsiManager::OnShortLivedEnds()
 {
     _isLongLived = true;
-    if (_hasSpan && ((_enablementStatus == EnablementStatus::SsiEnabled) || (_enablementStatus == EnablementStatus::Auto)))
+
+    auto enablementStatus = GetCurrentEnabledStatus();
+    if (enablementStatus == EnablementStatus::Standby)
+    {
+        return;  // still waiting for enablement configuration from managed layer
+    }
+
+    if (_hasSpan && ((enablementStatus == EnablementStatus::SsiEnabled) || (enablementStatus == EnablementStatus::Auto)))
     {
         StartProfiling(_pSsiLifetime);
     }
@@ -49,7 +62,14 @@ void SsiManager::OnShortLivedEnds()
 void SsiManager::OnSpanCreated()
 {
     _hasSpan = true;
-    if (_isLongLived && ((_enablementStatus == EnablementStatus::SsiEnabled) || (_enablementStatus == EnablementStatus::Auto)))
+
+    auto enablementStatus = GetCurrentEnabledStatus();
+    if (enablementStatus == EnablementStatus::Standby)
+    {
+        return; // still waiting for enablement configuration from managed layer
+    }
+
+    if (_isLongLived && ((enablementStatus == EnablementStatus::SsiEnabled) || (enablementStatus == EnablementStatus::Auto)))
     {
         StartProfiling(_pSsiLifetime);
     }
@@ -68,21 +88,32 @@ bool SsiManager::IsLongLived() const
 // the profiler is enabled if either:
 //     - the profiler is enabled in the configuration (including "auto")
 //  or - the profiler is deployed via SSI and DD_INJECTION_ENABLED contains "profiling"
+//
+// WARNING: with Stable Configuration, the enablement status is set to Standby until the managed layer notifies the profiler
+// that it is enabled or disabled. So this function should not be used BEFORE the managed layer sets the enablement status.
 bool SsiManager::IsProfilerEnabled()
 {
-    return _enablementStatus == EnablementStatus::ManuallyEnabled ||
-           _enablementStatus == EnablementStatus::Auto ||
+    auto enablementStatus = GetCurrentEnabledStatus();
+    return enablementStatus == EnablementStatus::ManuallyEnabled ||
+           enablementStatus == EnablementStatus::Auto ||
            // in the future, users will be able to enable the profiler via SSI at agent installation time
-           _enablementStatus == EnablementStatus::SsiEnabled;
+           enablementStatus == EnablementStatus::SsiEnabled;
 }
 
-// the profiler is activated either if:
-//     - the profiler is enabled in the configuration
-//  or - is enabled via SSI + runs for more than 30 seconds + has at least one span
+// the profiler is activated (i.e. its providers services are started) either if:
+//     - the profiler is enabled in the configuration (without Stable Configuration)
+//  or - Stable Configuration enabled status is provided by managed layer + is enabled via SSI + runs for more than 30 seconds + has at least one span
 bool SsiManager::IsProfilerStarted()
 {
-    return _enablementStatus == EnablementStatus::ManuallyEnabled ||
-           (((_enablementStatus == EnablementStatus::Auto) || (_enablementStatus == EnablementStatus::SsiEnabled)) && IsLongLived() && IsSpanCreated());
+    auto enablementStatus = GetCurrentEnabledStatus();
+    if (enablementStatus == EnablementStatus::Standby)
+    {
+        // still waiting for enablement configuration from managed layer
+        return false;
+    }
+
+    return (enablementStatus == EnablementStatus::ManuallyEnabled) ||
+           (((enablementStatus == EnablementStatus::Auto) || (enablementStatus == EnablementStatus::SsiEnabled)) && IsLongLived() && IsSpanCreated());
 }
 
 void SsiManager::ProcessStart()

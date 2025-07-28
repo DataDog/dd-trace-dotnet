@@ -660,6 +660,52 @@ void CorProfilerCallback::OnStartDelayedProfiling()
     }
 }
 
+// This function is called from managed code to enable/disable/auto the profiler + provide per runtimeID details
+// The enablement is taken into account only for the first call and for the others, only runtimeID details are updated.
+bool CorProfilerCallback::SetConfiguration(SharedConfig config)
+{
+    if (!_IsManagedConfigurationSet)
+    {
+        // TODO: take into account the enablement computed by the managed layer
+        if (config.profilingEnabled == ProfilingEnabled::ProfilingAuto)
+        {
+        }
+        else
+        if (config.profilingEnabled == ProfilingEnabled::ProfilingEnabledTrue)
+        {
+        }
+        else
+        if (config.profilingEnabled == ProfilingEnabled::ProfilingDisabled)
+        {
+        }
+        else
+        {
+            Log::Error("Invalid profiling enablement value received from Managed layer: ", config.profilingEnabled, ". Profiler is disabled");
+        }
+
+        _IsManagedConfigurationSet = true;
+    }
+
+    // take into account per runtimeID if possible
+    if (!GetClrLifetime()->IsRunning())
+    {
+        return false;
+    }
+
+    if (config.runtimeId != nullptr)
+    {
+        GetApplicationStore()->SetApplicationInfo(
+            config.runtimeId,
+            config.serviceName ? config.serviceName : std::string(),
+            config.environment ? config.environment : std::string(),
+            config.version ? config.version : std::string());
+    }
+
+
+    return true;
+}
+
+
 void CorProfilerCallback::StartEtwCommunication()
 {
     _isETWStarted = true;

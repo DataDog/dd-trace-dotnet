@@ -8,6 +8,28 @@
 #include <mutex>
 #include <winerror.h>
 
+
+enum ProfilingEnabled
+{
+    ProfilingDisabled = 0,
+    ProfilingEnabledTrue = 1,
+    ProfilingAuto = 2
+};
+
+struct SharedConfig
+{
+    ProfilingEnabled profilingEnabled;
+    bool tracingEnabled;
+    bool iastEnabled;
+    bool raspEnabled;
+    bool dynamicInstrumentationEnabled;
+
+    const char* runtimeId;
+    const char* environment;
+    const char* serviceName;
+    const char* version;
+};
+
 /*
    TL;DR When returning a boolean value to the managed part, we must use a C BOOL type instead of C++ bool type.
 
@@ -41,3 +63,5 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext();
 extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version);
 
 extern "C" void __stdcall FlushProfile();
+
+extern "C" bool SetConfiguration(SharedConfig config);

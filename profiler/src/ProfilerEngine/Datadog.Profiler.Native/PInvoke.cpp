@@ -169,7 +169,6 @@ extern "C" void __stdcall SetGitMetadataForApplication(const char* runtimeId, co
     );
 }
 
-
 extern "C" void __stdcall FlushProfile()
 {
     const auto profiler = CorProfilerCallback::GetInstance();
@@ -187,4 +186,19 @@ extern "C" void __stdcall FlushProfile()
 
     Log::Debug("FlushProfile called by Managed code");
     profiler->GetSamplesCollector()->Export();
+}
+
+extern "C" bool SetConfiguration(SharedConfig config)
+{
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("SetConfiguration is called BEFORE CLR initialize");
+        return false;
+    }
+
+    Log::Debug("SetConfiguration called by Managed code");
+
+    return profiler->SetConfiguration(config);
 }
