@@ -173,17 +173,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
-    public abstract class AspNetMvc5TestsWithBaggage : AspNetMvc5Tests
+    [UsesVerify]
+    public abstract class AspNetMvc5TestsWithBaggage : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
+        private readonly IisFixture _iisFixture;
+        private readonly string _testName;
+        private readonly bool _classicMode;
+        private readonly bool _enableInferredProxySpans;
+
         protected AspNetMvc5TestsWithBaggage(IisFixture iisFixture, ITestOutputHelper output)
-            : base(
-                iisFixture,
-                output,
-                classicMode: false,
-                enableRouteTemplateResourceNames: true,
-                testName: $"{nameof(AspNetMvc5Tests)}.WithBaggage")
+            : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
+            SetServiceVersion("1.0.0");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, true.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, false.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, false.ToString());
+
+            _classicMode = false;
+            _enableInferredProxySpans = false;
+            _iisFixture = iisFixture;
+            _iisFixture.ShutdownPath = "/home/shutdown";
+
+            _testName = $"{nameof(AspNetMvc5Tests)}.WithBaggage";
         }
+
+        public static TheoryData<string, int> Data => new()
+        {
+            { "/", 200 },
+            { "/Home/Index", 200 },
+            { "/badrequest", 500 },
+        };
+
+        protected virtual string ExpectedServiceName => "sample";
 
         /// <summary>
         /// Override <see cref="CreateHttpRequestMessage"/> to add baggage headers to the request.
@@ -229,6 +251,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .UseMethodName("_withBaggage")
                           .UseTypeName(_testName);
         }
+
+        public async Task InitializeAsync()
+        {
+            await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 
     [Collection("IisTests")]
