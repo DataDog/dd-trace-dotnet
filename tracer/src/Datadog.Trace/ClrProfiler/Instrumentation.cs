@@ -52,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler
 
         /// <summary>
         /// Gets a value indicating whether Datadog's profiler is attached to the current process.
+        /// Should not log anything. Logging here could be an issue as this is accessed before Configuration objects are built. Logging here could create a loop where Configuration building tests if profiler is attached to access libdatadog, the test wants to log, the Logger being created for the first time tried to access the Configuration object.
         /// </summary>
         /// <value>
         ///   <c>true</c> if the profiler is currently attached; <c>false</c> otherwise.

@@ -19,14 +19,14 @@ internal class ServiceDiscoveryHelper
         Success,
         Skipped,
         Error,
-        Exception,
+        Exception
     }
 
     internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings)
     {
         var platformIsSupported = FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess;
-        var deploymentIsSupported = LibDatadog.NativeInterop.IsLibDatadogAvailable;
-        if (platformIsSupported && deploymentIsSupported)
+        var deploymentIsSupported = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
+        if (platformIsSupported && deploymentIsSupported.IsAvailable)
         {
             try
             {
@@ -61,6 +61,11 @@ internal class ServiceDiscoveryHelper
             "Skipping storage of tracer metadata with LibDatadog: Platform supported: {PlatformIsSupported}, Deployment supported: {DeploymentIsSupported}",
             platformIsSupported,
             deploymentIsSupported);
+        if (deploymentIsSupported.Exception is not null)
+        {
+            Log.Warning(deploymentIsSupported.Exception, "An exception happened when trying to see if libdatadog was available");
+        }
+
         return StoreMetadataResult.Skipped;
     }
 
@@ -82,6 +87,6 @@ internal class ServiceDiscoveryHelper
         using var serviceEnvCharSlice = new CharSlice(serviceEnv);
         using var serviceVersionCharSlice = new CharSlice(serviceVersion);
 
-        return NativeInterop.Common.StoreTracerMetadata(schemaVersion, runtimeIdCharSlice, tracerLanguageCharSlice, tracerVersionCharSlice, hostnameCharSlice, serviceNameCharSlice, serviceEnvCharSlice, serviceVersionCharSlice);
+        return NativeInterop.LibraryConfig.StoreTracerMetadata(schemaVersion, runtimeIdCharSlice, tracerLanguageCharSlice, tracerVersionCharSlice, hostnameCharSlice, serviceNameCharSlice, serviceEnvCharSlice, serviceVersionCharSlice);
     }
 }

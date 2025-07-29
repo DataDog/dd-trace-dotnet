@@ -6,8 +6,7 @@
 #nullable enable
 using System;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -25,40 +24,9 @@ internal static class LibDatadogAvailaibilityHelper
     // We should add or remove conditions from here as our deployment requirements change.
     private static readonly Lazy<LibDatadogAvailableResult> LibDatadogAvailable = new(() =>
     {
-        var res = IsServerlessEnvironment();
-        var isServerless = res.Item1;
-        var possibleException = res.Item2;
-        return new(!isServerless && Instrumentation.ProfilerAttached, possibleException);
+        var isServerless = EnvironmentHelpersNoLogging.IsServerlessEnvironment(out var possibleException);
+        return new(!isServerless && NativeMethods.IsProfilerAttached(), possibleException);
     });
 
     public static LibDatadogAvailableResult IsLibDatadogAvailable => LibDatadogAvailable.Value;
-
-    private static Tuple<bool, Exception?> IsServerlessEnvironment()
-    {
-        Exception? exception = null;
-        if (EnvVarExistsNoLogging(LambdaMetadata.FunctionNameEnvVar)
-         || (EnvVarExistsNoLogging(ConfigurationKeys.AzureAppService.SiteNameKey) && !EnvVarExistsNoLogging(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey))
-         || (EnvVarExistsNoLogging(ConfigurationKeys.GCPFunction.FunctionNameKey) && EnvVarExistsNoLogging(ConfigurationKeys.GCPFunction.FunctionTargetKey))
-         || (EnvVarExistsNoLogging(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey) && EnvVarExistsNoLogging(ConfigurationKeys.GCPFunction.DeprecatedProjectKey)))
-        {
-            return new Tuple<bool, Exception?>(true, exception);
-        }
-
-        return new Tuple<bool, Exception?>(false, null);
-
-        bool EnvVarExistsNoLogging(string key)
-        {
-            string? value = null;
-            try
-            {
-                value = Environment.GetEnvironmentVariable(key);
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-
-            return !string.IsNullOrEmpty(value);
-        }
-    }
 }
