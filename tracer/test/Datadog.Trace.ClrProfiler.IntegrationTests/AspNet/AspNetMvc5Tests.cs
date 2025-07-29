@@ -173,6 +173,73 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    public abstract class AspNetMvc5TestsWithBaggage : AspNetMvc5Tests
+    {
+        protected AspNetMvc5TestsWithBaggage(IisFixture iisFixture, ITestOutputHelper output)
+            : base(
+                iisFixture,
+                output,
+                classicMode: false,
+                enableRouteTemplateResourceNames: true,
+                testName: $"{nameof(AspNetMvc5Tests)}.WithBaggage")
+        {
+        }
+
+        /// <summary>
+        /// Override <see cref="CreateHttpRequestMessage"/> to add baggage headers to the request.
+        /// </summary>
+        protected override HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string path, DateTimeOffset testStart)
+        {
+            var request = base.CreateHttpRequestMessage(method, path, testStart);
+            request.Headers.Add("baggage", "user.id=doggo");
+            return request;
+        }
+
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [MemberData(nameof(Data))]
+        public async Task BaggageInSpanTags(string path, HttpStatusCode statusCode)
+        {
+            // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
+            var toLowerPath = path.ToLower();
+            if (_testName.Contains(".Classic") && toLowerPath.Contains("badrequest") && toLowerPath.Contains("transferrequest"))
+            {
+                statusCode = (HttpStatusCode)500;
+            }
+
+            var expectedSpanCount = _enableInferredProxySpans ? 3 : 2;
+
+            var spans = await GetWebServerSpans(
+                path: _iisFixture.VirtualApplicationPath + path, // Append virtual directory to the actual request
+                agent: _iisFixture.Agent,
+                httpPort: _iisFixture.HttpPort,
+                expectedHttpStatusCode: statusCode,
+                expectedSpanCount: expectedSpanCount,
+                filterServerSpans: !_enableInferredProxySpans);
+
+            var serverSpans = spans.Where(s => s.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server);
+            ValidateIntegrationSpans(serverSpans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+
+            await Verifier.Verify(spans, settings)
+                          .UseMethodName("_withBaggage")
+                          .UseTypeName(_testName);
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5TestsWithBaggageEnabled : AspNetMvc5TestsWithBaggage
+    {
+        public AspNetMvc5TestsWithBaggageEnabled(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output)
+        {
+        }
+    }
+
     [UsesVerify]
     public abstract class AspNetMvc5Tests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
@@ -287,6 +354,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .UseMethodName("_")
                           .UseTypeName(_testName);
         }
+
+
 
         public async Task InitializeAsync()
         {
