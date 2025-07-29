@@ -89,13 +89,27 @@ internal abstract class CIEnvironmentValues
 
     public string[]? NodeLabels { get; protected set; }
 
-    public string? HeadCommit { get; protected set; }
-
     public string? PrBaseCommit { get; protected set; }
 
     public string? PrBaseBranch { get; protected set; }
 
     public string? PrNumber { get; protected set; }
+
+    public string? HeadCommit { get; protected set; }
+
+    public string? HeadAuthorName { get; protected set; }
+
+    public string? HeadAuthorEmail { get; protected set; }
+
+    public DateTimeOffset? HeadAuthorDate { get; protected set; }
+
+    public string? HeadCommitterName { get; protected set; }
+
+    public string? HeadCommitterEmail { get; protected set; }
+
+    public DateTimeOffset? HeadCommitterDate { get; protected set; }
+
+    public string? HeadMessage { get; protected set; }
 
     public CodeOwners? CodeOwners { get; protected set; }
 
@@ -269,10 +283,17 @@ internal abstract class CIEnvironmentValues
             SetTagIfNotNullOrEmpty(span, CommonTags.CINodeLabels, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(nodeLabels));
         }
 
-        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommit, HeadCommit);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitPrBaseCommit, PrBaseCommit);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitPrBaseBranch, PrBaseBranch);
         SetTagIfNotNullOrEmpty(span, CommonTags.PrNumber, PrNumber);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommit, HeadCommit);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitAuthorDate, HeadAuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitAuthorName, HeadAuthorName);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitAuthorEmail, HeadAuthorEmail);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitCommitterDate, HeadCommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitCommitterName, HeadCommitterName);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitCommitterEmail, HeadCommitterEmail);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitMessage, HeadMessage);
 
         if (VariablesToBypass is { } variablesToBypass)
         {

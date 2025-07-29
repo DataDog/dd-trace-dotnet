@@ -180,7 +180,8 @@ namespace Datadog.Trace.Configuration
         public const string BufferSize = "DD_TRACE_BUFFER_SIZE";
 
         /// <summary>
-        /// Configuration key for setting the batch interval in milliseconds for the serialization queue
+        /// Configuration key for setting the batch interval in milliseconds for the serialization queue.
+        /// Set to 0 to disable.
         /// </summary>
         public const string SerializationBatchInterval = "DD_TRACE_BATCH_INTERVAL";
 
