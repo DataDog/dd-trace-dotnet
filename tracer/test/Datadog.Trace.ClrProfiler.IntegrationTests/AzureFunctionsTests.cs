@@ -8,10 +8,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -137,6 +135,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V3InProcess", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~3");
         }
 
         [SkippableFact]
@@ -169,6 +168,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4InProcess", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
         [SkippableFact]
@@ -202,6 +202,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4Isolated.SdkV1", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
         [SkippableFact]
@@ -231,6 +232,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4Isolated.AspNetCore.SdkV1", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
         [SkippableFact]
@@ -266,6 +268,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4Isolated", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
         [SkippableFact]
@@ -297,6 +300,7 @@ public abstract class AzureFunctionsTests : TestHelper
             : base("AzureFunctions.V4Isolated.AspNetCore", output)
         {
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
         [SkippableFact]
@@ -313,7 +317,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
                 // There are _additional_ spans created for these compared to the non-AspNetCore version
                 // These are http-client-handler-type: System.Net.Http.SocketsHttpHandler that come in around
-                // the same time as some of the `azure-functions.invoke` spans
+                // the same time as some of the `azure_functions.invoke` spans
                 // because of this they cause a lot of flake in the snapshots where they shift places
                 // opting to just scrub them from the snapshots - we also don't think that the spans provide much
                 // value so they may be removed from being traced.

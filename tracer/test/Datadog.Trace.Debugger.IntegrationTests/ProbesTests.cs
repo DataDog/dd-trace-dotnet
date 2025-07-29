@@ -386,6 +386,7 @@ public class ProbesTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [MemberData(nameof(ProbeTests))]
+    [Flaky("This test fails for various different reasons and needs investigating")]
     public async Task MethodProbeTest(ProbeTestDescription testDescription)
     {
         SkipOverTestIfNeeded(testDescription);

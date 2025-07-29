@@ -2497,7 +2497,6 @@ partial class Build
 
            // glibc TLS-reuse bug warnings
            knownPatterns.Add(new(@".*GLIBC version 2.34-2.36 has a TLS-reuse bug.*", RegexOptions.Compiled));
-
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
 
