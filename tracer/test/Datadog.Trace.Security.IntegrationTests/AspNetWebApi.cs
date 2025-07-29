@@ -158,14 +158,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         public Task DisposeAsync() => Task.CompletedTask;
 
         protected override string GetTestName() => _testName;
-
-        private static void FilterConnectionHeader(VerifyTests.VerifySettings settings)
-        {
-            Regex appSecConnectionHeader0 = new(@"_dd.appsec.fp.http.header: hdr-0\d", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-            Regex appSecConnectionHeader1 = new(@"_dd.appsec.fp.http.header: hdr-1\d", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-            settings.AddRegexScrubber(appSecConnectionHeader0, "_dd.appsec.fp.http.header: hdr-0X");
-            settings.AddRegexScrubber(appSecConnectionHeader1, "_dd.appsec.fp.http.header: hdr-1X");
-        }
     }
 }
 #endif
