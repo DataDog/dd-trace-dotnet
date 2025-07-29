@@ -24,6 +24,94 @@
 
 
 
+
+## [Release 3.22.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.22.0)
+
+## Summary
+
+- [Azure Functions] Support for Azure Functions is GA
+- [Azure Functions] Optimized support for Azure Functions with the `Datadog.AzureFunctions` NuGet package
+- [TestOptimization] Add support for `pr.number` and additional CI variables
+- [TestOptimization] Add support for `xunit.v3` version 3.x.x
+- [Data Streams Monitoring] Initial support for the default experience
+
+## Changes
+
+### Tracer
+* Integrations: Disable AWS Kinesis injection when the integration is disabled (#7239)
+* Refactor `SpanContextInjector` and `SpanContextExtractor` and improve tests (#7258)
+
+### CI Visibility
+* [TestOptimization] Update the CI Environment Values parser (#7242)
+* Add support for `xunit.v3` v3 (#7245)
+* [Test Optimization] Add pr.number tag to Github provider (#7262)
+
+### ASM
+* [AAP] Update WAF to V1.26 (#7216)
+
+### Continuous Profiler
+* [Profiler] Add ringbuffer (#7025)
+
+### Debugger
+* Reduce log level for `ConcurrentAdaptiveCache` capacity (#7213)
+
+### Serverless
+* [Serverless] Remove "preview" version suffix from `Datadog.AzureFunctions` (#7229)
+* [Azure Functions] Bump `Datadog.Serverless.Compat` package reference version (#7238)
+* [Azure Functions] Fixes, refactoring, and clean-up (#7256)
+* [Azure Functions] Ignore additional URLs in outgoing HTTP client requests (#7271)
+* [Azure Functions] Fix operation name (#7272)
+* [Serverless] add serverless teams as co-owners on additional files (#7273)
+* [Serverless] GA nuget package `Datadog.AzureFunctions` (#7283)
+
+### Miscellaneous
+* Add documentation on how to perform a major version update (#7152)
+* [IAST] Added compatibility for stable config (#7164)
+* Only enable Schema extraction when DSM explicitly enabled (#7175)
+* remove redundant dependency check for dynamic assemblies (#7222)
+* Bump libdatadog from 19.0.1 to 19.1.0. (#7232)
+* feat: add injection metadata fields to telemetry forwarder (#7237)
+* DSM default state reversal (#7244)
+* chore: add malformed baggage header telemetry (#7254)
+* Fix SSI injection telemetry (#7288)
+* Increase rejit timeout from 100ms to 150ms (#7289)
+* Add agent response handling to native interop (#7201)
+* Prevent and remove double-disposal in `DiscoveryService` and `RemoteConfigurationManager` (#7240)
+* Use `TrySetResult` instead of `SetResult` (#7265)
+
+### Build / Test
+* Activate runtime metrics by default on CI (#7017)
+* Alternative approach to fixing flaky DSM Kafka tests (#7211)
+* [Test Package Versions Bump] Updating package versions (#7215)
+* Add `[Flaky]` attribute to `EnumerateAssemblyReferencesTest` (#7219)
+* Use `ScopedTracer` in more places (#7220)
+* Bump timeitsharp to 0.4.1 (#7221)
+* Disable legacy Gitlab exec in order to fix jobs failing with green status (#7223)
+* Add snapshot tests to document the symbols we depend on in alpine and native loader (#7224)
+* Stop building the native loader twice on macos (#7225)
+* Bump timeitsharp to 0.4.2 (#7226)
+* Only download samples for the framework that we're testing (#7227)
+* Check for errors in the libdatadog log files (#7231)
+* ci: update one pipeline reference (#7233)
+* Update smoke tests for `debian:trixie` (#7234)
+* Fix the log check error (#7235)
+* Bump timeitsharp to v0.4.3 (#7236)
+* Add xunit.runner.json to Datadog.Trace.IntegrationTests (#7241)
+* [Test Package Versions Bump] Updating package versions (#7243)
+* [Tracer/Profiler] Publish .NET Windows Native symbols (#7246)
+* Fix smoke tests (#7247)
+* Fix execution benchmarks (#7248)
+* Fix fleet smoke tests... again (#7250)
+* Add retry for build of unit tests on arm64 (#7259)
+* Refactor the debug symbols folder setup (#7263)
+* Mark some debugger tests flaky (#7264)
+* Add a `do-not-merge action` to block merging (#7266)
+* Fix the do-not-merge action (#7267)
+* Revert "[Serverless] Remove "preview" version suffix from `Datadog.AzureFunctions` (#7229)" (#7278)
+
+
+[Changes since 3.21.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.21.0...v3.22.0)
+
 ## [Release 3.21.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.21.0)
 
 ## Summary
