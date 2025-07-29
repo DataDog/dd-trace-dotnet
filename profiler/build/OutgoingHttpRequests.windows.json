@@ -5,6 +5,7 @@
   "scenarios": [
     {
       "name": "Baseline_outgoinghttprequests",
+      "isBaseline": true,
       "environmentVariables": {
         "CORECLR_ENABLE_PROFILING": "0",
         "COR_ENABLE_PROFILING": "0"
@@ -56,5 +57,6 @@
     "benchmark.job.runtime.name": ".NET 9.0",
     "benchmark.job.runtime.moniker": "net9.0"
   },
-  "metricsFilePath": "*metrics.json"
+  "metricsFilePath": "*metrics.json",
+  "overheadThreshold": 100
 }
