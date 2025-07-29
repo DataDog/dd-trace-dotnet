@@ -73,7 +73,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        [MemberData(nameof(Data))]
+        [InlineData("/", 200)]
+        [InlineData("/not-found", 404)]
+        [InlineData("/bad-request", 500)]
         public async Task BaggageInSpanTags(string path, HttpStatusCode statusCode)
         {
             SetInstrumentationVerification();
