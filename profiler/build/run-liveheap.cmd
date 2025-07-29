@@ -2,9 +2,6 @@
 
 call install_timeit.cmd
 
-:: Run x64
-dotnet timeit LiveHeap.windows.json --variable arch=x64
+call run_timeit.cmd LiveHeap.windows.json
 
-:: Run x86
-dotnet timeit LiveHeap.windows.json --variable arch=x86
-
+exit /b %ERRORLEVEL%
