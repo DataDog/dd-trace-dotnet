@@ -119,8 +119,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 {
                     FlushComplete -= handler;
                 }
-
-                tcs.TrySetResult(false);
             }
         }
         finally
