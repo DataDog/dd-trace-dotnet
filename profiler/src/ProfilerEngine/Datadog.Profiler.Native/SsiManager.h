@@ -25,6 +25,7 @@ public:
 
 public:
     // Inherited via ISsiManager
+    void OnStableConfiguration() override;
     void OnSpanCreated() override;
     bool IsSpanCreated() const override;
     bool IsLongLived() const override;
@@ -49,6 +50,7 @@ private:
 private:
     ISsiLifetime* _pSsiLifetime;
     IConfiguration* _pConfiguration;
+    bool _isStableConfigurationSet;
     bool _hasSpan;
     bool _isLongLived;
     std::future<void> _longLivedTimerFuture;

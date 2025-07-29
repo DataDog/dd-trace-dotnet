@@ -51,8 +51,8 @@ bool IsProfilingEnabled(Configuration const& configuration)
     // If we are in this function, then the user has already configured profiling by setting CORECLR_ENABLE_PROFILING to 1
     // and by correctly pointing the CORECLR_PROFILER_XXX variables.
     //
-    // TODO: With Stable Configuration, there is a kill switch to read the env vars instead of waiting for the managed layer
-    //       to decide if the profiler should be disabled/enabled/auto
+    // With Stable Configuration, there is a kill switch to read the env vars instead of waiting for the managed layer
+    // to decide if the profiler should be disabled/enabled/auto
     if (configuration.IsManagedActivationEnabled())
     {
         Log::Info("Waiting for managed configuration to enable/disable the profiler");

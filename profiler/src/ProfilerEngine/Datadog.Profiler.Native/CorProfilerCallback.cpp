@@ -648,15 +648,19 @@ void CorProfilerCallback::OnStartDelayedProfiling()
         return;
     }
 
-    if (StartServices())
+    auto started = StartServices();
+    if (!started)
+    {
+        Log::Error("One or multiple services failed to start after a delay. Stopping all services.");
+        StopServices();
+
+        Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler.");
+    }
+    else
     {
         Log::Info("Profiler is started after a delay.");
 
         StartEtwCommunication();
-    }
-    else
-    {
-        Log::Error("Profiler failed to start after a delay.");
     }
 }
 
@@ -666,28 +670,51 @@ bool CorProfilerCallback::SetConfiguration(SharedConfig config)
 {
     if (!_IsManagedConfigurationSet)
     {
-        // TODO: take into account the enablement computed by the managed layer
+        _IsManagedConfigurationSet = true;
+
+        // Take into account the enablement computed by the managed layer:
+        Log::Info("Managed layer provides Stable Configuration.");
+
         if (config.profilingEnabled == ProfilingEnabled::ProfilingAuto)
         {
+            Log::Info("Profiler is enabled via SSI. Services will be started later.");
         }
         else
         if (config.profilingEnabled == ProfilingEnabled::ProfilingEnabledTrue)
         {
+            Log::Info("Profiler is enabled.");
+
+            // same as what is done in Initialize()
+            auto started = StartServices();
+            if (!started)
+            {
+                Log::Error("One or multiple services failed to start. Stopping all services.");
+                StopServices();
+
+                Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
+            }
+            else
+            {
+                Log::Info("Profiler is started after a delay.");
+
+                StartEtwCommunication();
+            }
         }
         else
         if (config.profilingEnabled == ProfilingEnabled::ProfilingDisabled)
         {
+            Log::Info("Profiler is disabled via Stable Configuration");
+            return true;
         }
         else
         {
-            Log::Error("Invalid profiling enablement value received from Managed layer: ", config.profilingEnabled, ". Profiler is disabled");
+            Log::Error("Invalid profiling enablement value received from Managed layer: ", config.profilingEnabled, ". Profiler is disabled.");
+            return false;
         }
-
-        _IsManagedConfigurationSet = true;
     }
 
-    // take into account per runtimeID if possible
-    if (!GetClrLifetime()->IsRunning())
+    // take into account per runtimeID only AFTER CorProfiler has been initialized
+    if (!GetClrLifetime()->IsInitialized())
     {
         return false;
     }
@@ -700,7 +727,11 @@ bool CorProfilerCallback::SetConfiguration(SharedConfig config)
             config.environment ? config.environment : std::string(),
             config.version ? config.version : std::string());
     }
-
+    else
+    {
+        Log::Error("Null runtimeID provided by the managed layer so don't take service '", config.serviceName, "', environment '", config.environment, "' and version '", config.version,"' into account.");
+        return false;
+    }
 
     return true;
 }
@@ -1479,6 +1510,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // the Tracer needs to know that the Profiler is here to enable code hotspots
     _isInitialized.store(true);
     ProfilerEngineStatus::WriteIsProfilerEngineActive(true);
+
+    // For Stable Configuration support, delay the decision to start services AFTER the managed layer sets the configuration
+    if (_pConfiguration->IsManagedActivationEnabled() && !_IsManagedConfigurationSet)
+    {
+        Log::Info("Waiting for Stable Configuration to be set to decide whether or not the Profiler should be enabled.");
+        return S_OK;
+    }
 
     if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation &&
         _pConfiguration->GetEnablementStatus() != EnablementStatus::ManuallyEnabled)

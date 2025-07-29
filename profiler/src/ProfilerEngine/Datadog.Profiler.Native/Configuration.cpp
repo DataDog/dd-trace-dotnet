@@ -95,7 +95,7 @@ Configuration::Configuration()
 
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, true, true);
     _isManagedActivationEnabled = GetEnvironmentValue(EnvironmentVariables::ManagedActivationEnabled, true, true);
-    _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
+    _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual, true);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();

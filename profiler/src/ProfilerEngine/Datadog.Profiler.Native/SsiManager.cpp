@@ -42,6 +42,39 @@ EnablementStatus SsiManager::GetCurrentEnabledStatus()
     return _pConfiguration->GetEnablementStatus();
 }
 
+void SsiManager::OnStableConfiguration()
+{
+    // Stable Configuration has been set by managed layer
+    // check that it is not done more than once
+    if (_isStableConfigurationSet)
+    {
+        Log::Warn("Stable configuration has already been set.");
+        return;
+    }
+
+    _isStableConfigurationSet = true;
+
+    auto enablementStatus = GetCurrentEnabledStatus();
+    if (enablementStatus == EnablementStatus::ManuallyEnabled)
+    {
+        Log::Info("Profiler manually enabled");
+        StartProfiling(_pSsiLifetime);
+    }
+    else
+    if (
+        (enablementStatus == EnablementStatus::Auto) ||
+        (enablementStatus == EnablementStatus::SsiEnabled)
+        )
+    {
+        Log::Info("Profiler enabled by SSI");
+
+        // start services if heuristics have already been fulfilled
+        if (_isLongLived &&_hasSpan)
+        {
+            StartProfiling(_pSsiLifetime);
+        }
+    }
+}
 
 void SsiManager::OnShortLivedEnds()
 {
@@ -90,10 +123,15 @@ bool SsiManager::IsLongLived() const
 //  or - the profiler is deployed via SSI and DD_INJECTION_ENABLED contains "profiling"
 //
 // WARNING: with Stable Configuration, the enablement status is set to Standby until the managed layer notifies the profiler
-// that it is enabled or disabled. So this function should not be used BEFORE the managed layer sets the enablement status.
+// that it is enabled or disabled. So this function will return false BEFORE the managed layer sets the enablement status.
 bool SsiManager::IsProfilerEnabled()
 {
     auto enablementStatus = GetCurrentEnabledStatus();
+    if (enablementStatus == EnablementStatus::Standby)
+    {
+        return false;
+    }
+
     return enablementStatus == EnablementStatus::ManuallyEnabled ||
            enablementStatus == EnablementStatus::Auto ||
            // in the future, users will be able to enable the profiler via SSI at agent installation time

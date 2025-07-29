@@ -33,7 +33,7 @@ extern "C" void* __stdcall GetNativeProfilerIsReadyPtr()
         return nullptr;
     }
 
-    if (!profiler->GetClrLifetime()->IsRunning())
+    if (!profiler->GetClrLifetime()->IsInitialized())
     {
         return nullptr;
     }
@@ -51,7 +51,7 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext()
         return nullptr;
     }
 
-    if (!profiler->GetClrLifetime()->IsRunning())
+    if (!profiler->GetClrLifetime()->IsInitialized())
     {
         return nullptr;
     }
@@ -82,7 +82,7 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
         return;
     }
 
-    if (!profiler->GetClrLifetime()->IsRunning())
+    if (!profiler->GetClrLifetime()->IsInitialized())
     {
         return;
     }
@@ -104,7 +104,7 @@ extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t tr
         return;
     }
 
-    if (!profiler->GetClrLifetime()->IsRunning())
+    if (!profiler->GetClrLifetime()->IsInitialized())
     {
         return;
     }
@@ -146,7 +146,7 @@ extern "C" void __stdcall SetGitMetadataForApplication(const char* runtimeId, co
         return;
     }
 
-    if (!profiler->GetClrLifetime()->IsRunning())
+    if (!profiler->GetClrLifetime()->IsInitialized())
     {
         return;
     }
@@ -179,7 +179,7 @@ extern "C" void __stdcall FlushProfile()
         return;
     }
 
-    if (!profiler->GetClrLifetime()->IsRunning())
+    if (!profiler->GetClrLifetime()->IsInitialized())
     {
         return;
     }
