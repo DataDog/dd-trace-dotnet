@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using FluentAssertions;
 using Xunit;
 
@@ -24,14 +25,14 @@ public class GlobalConfigurationSourceTests
         // 2. env var
         // 3. local file
 
-        // Environment: defined in fleet file: this should be ignored
-        Environment.SetEnvironmentVariable(ConfigurationKeys.Environment, "local_env_var", EnvironmentVariableTarget.Process);
+        // KEY1: defined in fleet file: this should be ignored
+        Environment.SetEnvironmentVariable("KEY1", "local_env_var", EnvironmentVariableTarget.Process);
 
-        // DebugEnabled: defined false in local file: this should be applied over the local file
-        Environment.SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "true", EnvironmentVariableTarget.Process);
+        // KEY2: defined false in local file: this should be applied over the local file
+        Environment.SetEnvironmentVariable("KEY2", "true", EnvironmentVariableTarget.Process);
 
-        // ApmTracingEnabled: only defined in env var, should prevail
-        Environment.SetEnvironmentVariable(ConfigurationKeys.ApmTracingEnabled, "false", EnvironmentVariableTarget.Process);
+        // KEY2: only defined in env var, should prevail
+        Environment.SetEnvironmentVariable("KEY3", "false", EnvironmentVariableTarget.Process);
         var result = GlobalConfigurationSource.CreateDefaultConfigurationSource(
             handsOffLocalConfigPath: Path.Combine("Configuration", "HandsOffConfigData", "application_monitoring.yml"),
             handsOffFleetConfigPath: Path.Combine("Configuration", "HandsOffConfigData", "application_monitoring_fleet.yml"),
@@ -39,24 +40,33 @@ public class GlobalConfigurationSourceTests
 
         var source = result.ConfigurationSource;
         // env var
-        var apmTracingEnabled = source.GetBool(ConfigurationKeys.ApmTracingEnabled, new NullConfigurationTelemetry(), null);
-        apmTracingEnabled.IsPresent.Should().BeTrue();
-        apmTracingEnabled.Result.Should().Be(false);
+        var key3 = source.GetBool("KEY3", new NullConfigurationTelemetry(), null);
+        key3.IsPresent.Should().BeTrue();
+        key3.Result.Should().Be(false);
 
         // fleet file
-        var environment = source.GetString(ConfigurationKeys.Environment, new NullConfigurationTelemetry(), null, false);
+        var environment = source.GetString("KEY1", new NullConfigurationTelemetry(), null, false);
         environment.IsPresent.Should().BeTrue();
         environment.Result.Should().Be("fleet_file_env");
 
         // local file
-        var dataStreamEnabled = source.GetBool(ConfigurationKeys.DataStreamsMonitoring.Enabled, new NullConfigurationTelemetry(), null);
+        var dataStreamEnabled = source.GetBool("KEY4", new NullConfigurationTelemetry(), null);
         dataStreamEnabled.IsPresent.Should().BeTrue();
         dataStreamEnabled.Result.Should().Be(true);
 
         // fleet file
-        var service = source.GetString(ConfigurationKeys.ServiceName, new NullConfigurationTelemetry(), null, false);
+        var service = source.GetString("KEY5", new NullConfigurationTelemetry(), null, false);
         service.IsPresent.Should().BeTrue();
         service.Result.Should().Be("fleet_file_service");
+
+        // KEY1: defined in fleet file: this should be ignored
+        Environment.SetEnvironmentVariable("KEY1", null, EnvironmentVariableTarget.Process);
+
+        // KEY2: defined false in local file: this should be applied over the local file
+        Environment.SetEnvironmentVariable("KEY2", null, EnvironmentVariableTarget.Process);
+
+        // KEY2: only defined in env var, should prevail
+        Environment.SetEnvironmentVariable("KEY2", null, EnvironmentVariableTarget.Process);
     }
 
     [Fact]
@@ -66,5 +76,6 @@ public class GlobalConfigurationSourceTests
         var result = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(debugEnabled: true, handsOffLocalConfigPath: handsOffErrorPath, handsOffFleetConfigPath: handsOffErrorPath, isLibdatadogAvailable: true);
         result.ConfigurationSuccessResult.Should().BeNull();
         result.ErrorMessage.Should().NotBeNull();
+        result.ErrorMessage.Should().Be("apm_configuration_default: invalid type: string \"DD_TRACE_DEBUG': true, DD_ENV: \", expected struct ConfigMap(HashMap<String, String>) at line 3 column 3");
     }
 }

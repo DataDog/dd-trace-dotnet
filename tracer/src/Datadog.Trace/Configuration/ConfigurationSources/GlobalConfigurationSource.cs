@@ -23,7 +23,7 @@ internal class GlobalConfigurationSource
 {
     static GlobalConfigurationSource()
     {
-        var result = CreateDefaultConfigurationSource(isLibdatadogAvailable: LibDatadogAvailaibilityHelper.IsLibDatadogAvailable.IsAvailable);
+        var result = CreateDefaultConfigurationSource();
         Instance = result.ConfigurationSource;
     }
 
