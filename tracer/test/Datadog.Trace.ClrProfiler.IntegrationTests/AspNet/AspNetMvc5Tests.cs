@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -207,15 +208,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected virtual string ExpectedServiceName => "sample";
 
-        /// <summary>
-        /// Override <see cref="CreateHttpRequestMessage"/> to add baggage headers to the request.
-        /// </summary>
-        protected override HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string path, DateTimeOffset testStart)
-        {
-            var request = base.CreateHttpRequestMessage(method, path, testStart);
-            request.Headers.Add("baggage", "user.id=doggo");
-            return request;
-        }
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Name switch
+            {
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion, excludeTags: new HashSet<string> { "baggage.user.id" }),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion, excludeTags: new HashSet<string> { "baggage.user.id" }),
+                _ => Result.DefaultSuccess,
+            };
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -258,6 +257,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public Task DisposeAsync() => Task.CompletedTask;
+
+        /// <summary>
+        /// Override <see cref="CreateHttpRequestMessage"/> to add baggage headers to the request.
+        /// </summary>
+        protected override HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string path, DateTimeOffset testStart)
+        {
+            var request = base.CreateHttpRequestMessage(method, path, testStart);
+            request.Headers.Add("baggage", "user.id=doggo");
+            return request;
+        }
     }
 
     [Collection("IisTests")]
@@ -341,8 +350,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Name switch
             {
-                "aspnet.request" => span.IsAspNet(metadataSchemaVersion, excludeTags: new HashSet<string> { "baggage.user.id" }),
-                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion, excludeTags: new HashSet<string> { "baggage.user.id" }),
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion),
                 _ => Result.DefaultSuccess,
             };
 
@@ -383,8 +392,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .UseMethodName("_")
                           .UseTypeName(_testName);
         }
-
-
 
         public async Task InitializeAsync()
         {

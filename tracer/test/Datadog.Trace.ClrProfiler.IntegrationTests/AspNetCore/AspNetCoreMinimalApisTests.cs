@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [InlineData("/", 200)]
         [InlineData("/not-found", 404)]
         [InlineData("/bad-request", 500)]
-        public async Task BaggageInSpanTags(string path, HttpStatusCode statusCode)
+        public async Task BaggageInSpanTags(string path, int statusCode)
         {
             SetInstrumentationVerification();
 
@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.AspNetCoreMinimalApis", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
