@@ -211,16 +211,69 @@ public sealed class Test
             tags.SourceFile = ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
-
             _testOptimization.ImpactedTestsDetectionFeature?.ImpactedTestsAnalyzer.Analyze(this);
 
-            if (ciValues.CodeOwners is { } codeOwners)
+            SetStringOrArray(
+                tags,
+                Suite.Tags,
+                testTags => testTags.SourceFile,
+                suiteTags => suiteTags.SourceFile,
+                (suiteTags, value) => suiteTags.SourceFile = value);
+
+            if (ciValues.CodeOwners is { } codeOwners &&
+                codeOwners.Match("/" + tags.SourceFile) is { } match)
             {
-                var match = codeOwners.Match("/" + ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
-                if (match is not null)
+                tags.CodeOwners = "[\"" + string.Join("\",\"", match) + "\"]";
+
+                var suiteTags = Suite.Tags;
+                if (StringUtil.IsNullOrEmpty(suiteTags.CodeOwners))
                 {
-                    tags.CodeOwners = "[\"" + string.Join("\",\"", match) + "\"]";
+                    suiteTags.CodeOwners = tags.CodeOwners;
                 }
+                else if (!string.Equals(suiteTags.CodeOwners, tags.CodeOwners, StringComparison.OrdinalIgnoreCase))
+                {
+                    var suiteCodeOwners = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTags.CodeOwners) ?? [];
+                    suiteCodeOwners.AddRange(match);
+                    suiteTags.CodeOwners = "[\"" + string.Join("\",\"", suiteCodeOwners.Distinct()) + "\"]";
+                }
+            }
+        }
+    }
+
+    private void SetStringOrArray(TestSpanTags testTags, TestSuiteSpanTags suiteTags, Func<TestSpanTags, string?> getTestTag, Func<TestSuiteSpanTags, string?> getSuiteTag, Action<TestSuiteSpanTags, string?> setSuiteTag)
+    {
+        // If the value is not set, we set it to the current test tag
+        // If it is set, we check if it is an array and add the current test tag to it
+        // If it is not an array, we create a new array with both values
+        // This is to support multiple values in a single tag
+        var suiteTagValue = getSuiteTag(suiteTags);
+        var testTagValue = getTestTag(testTags);
+        if (StringUtil.IsNullOrEmpty(testTagValue))
+        {
+            return;
+        }
+
+        if (StringUtil.IsNullOrEmpty(suiteTagValue))
+        {
+            setSuiteTag(suiteTags, testTagValue);
+        }
+        else if (!string.Equals(suiteTagValue, testTagValue, StringComparison.OrdinalIgnoreCase))
+        {
+            if (suiteTagValue.StartsWith("[", StringComparison.OrdinalIgnoreCase) &&
+                suiteTagValue.EndsWith("]", StringComparison.OrdinalIgnoreCase))
+            {
+                // If the source file is an array, we add the new source file to it
+                var files = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTagValue);
+                if (files is not null && !files.Contains(testTagValue))
+                {
+                    files.Add(testTagValue);
+                    setSuiteTag(suiteTags, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(files));
+                }
+            }
+            else
+            {
+                // If the source file is not an array, we create a new one with both values
+                setSuiteTag(suiteTags, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(new List<string> { suiteTagValue, testTagValue }));
             }
         }
     }
