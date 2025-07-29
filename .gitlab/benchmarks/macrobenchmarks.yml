@@ -102,7 +102,7 @@ update-bp-infra:
     # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
-    K6_OPTIONS_WARMUP_MAX_VUS: 2
+    K6_OPTIONS_WARMUP_VUS: 2
 
     K6_OPTIONS_NORMAL_OPERATION_RATE: 5000
     K6_OPTIONS_NORMAL_OPERATION_DURATION: 10m
@@ -112,7 +112,7 @@ update-bp-infra:
 
     K6_OPTIONS_HIGH_LOAD_DURATION: 5m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2
+    K6_OPTIONS_HIGH_LOAD_VUS: 2
 
 baseline-x86:
   extends: .benchmarks-x86
@@ -281,7 +281,7 @@ profiler_cpu_timer_create-x86:
     # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
-    K6_OPTIONS_WARMUP_MAX_VUS: 2
+    K6_OPTIONS_WARMUP_VUS: 2
 
     K6_OPTIONS_NORMAL_OPERATION_RATE: 4000
     K6_OPTIONS_NORMAL_OPERATION_DURATION: 10m
@@ -291,7 +291,7 @@ profiler_cpu_timer_create-x86:
 
     K6_OPTIONS_HIGH_LOAD_DURATION: 5m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2
+    K6_OPTIONS_HIGH_LOAD_VUS: 2
 
 baseline-arm64:
   extends: .benchmarks-arm64
@@ -469,7 +469,7 @@ profiler_cpu_timer_create-arm64:
     # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
-    K6_OPTIONS_WARMUP_MAX_VUS: 2
+    K6_OPTIONS_WARMUP_VUS: 2
 
     K6_OPTIONS_NORMAL_OPERATION_RATE: 13000
     K6_OPTIONS_NORMAL_OPERATION_DURATION: 10m
@@ -479,7 +479,7 @@ profiler_cpu_timer_create-arm64:
 
     K6_OPTIONS_HIGH_LOAD_DURATION: 5m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2
+    K6_OPTIONS_HIGH_LOAD_VUS: 2
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
