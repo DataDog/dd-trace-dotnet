@@ -64,4 +64,16 @@ public enum ConfigurationOrigins
     /// </summary>
     [Description("unknown")]
     Unknown,
+
+    /// <summary>
+    /// Set when it comes from configurations defined in a user-managed file
+    /// </summary>
+    [Description("local_stable_config")]
+    LocalStableConfig,
+
+    /// <summary>
+    /// Set when it comes from configurations defined in a fleet-managed file
+    /// </summary>
+    [Description("fleet_stable_config")]
+    FleetStableConfig
 }

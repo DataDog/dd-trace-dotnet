@@ -17,7 +17,7 @@ internal static partial class ConfigurationOriginsExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 8;
+    public const int Length = 10;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins"/> value.
@@ -38,6 +38,8 @@ internal static partial class ConfigurationOriginsExtensions
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Default => "default",
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Calculated => "calculated",
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Unknown => "unknown",
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.LocalStableConfig => "local_stable_config",
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.FleetStableConfig => "fleet_stable_config",
             _ => value.ToString(),
         };
 
@@ -59,6 +61,8 @@ internal static partial class ConfigurationOriginsExtensions
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Default,
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Calculated,
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Unknown,
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.LocalStableConfig,
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.FleetStableConfig,
         };
 
     /// <summary>
@@ -80,6 +84,8 @@ internal static partial class ConfigurationOriginsExtensions
             nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Default),
             nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Calculated),
             nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Unknown),
+            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.LocalStableConfig),
+            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.FleetStableConfig),
         };
 
     /// <summary>
@@ -101,5 +107,7 @@ internal static partial class ConfigurationOriginsExtensions
             "default",
             "calculated",
             "unknown",
+            "local_stable_config",
+            "fleet_stable_config",
         };
 }
