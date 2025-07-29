@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -15,6 +16,7 @@ using Xunit;
 namespace Datadog.Trace.Tests.Configuration;
 
 [Collection(nameof(EnvironmentVariablesTestCollection))]
+[EnvironmentRestorer(LambdaMetadata.FunctionNameEnvVar, LambdaMetadata.HandlerEnvVar, LambdaMetadata.ExtensionPathEnvVar)]
 public class TracerSettingsServerlessTests : SettingsTestsBase
 {
     // These tests rely on Lambda.Create() which uses environment variables
@@ -23,29 +25,21 @@ public class TracerSettingsServerlessTests : SettingsTestsBase
     [InlineData("test1,, ,test2", false, new[] { "TEST1", "TEST2" })]
     [InlineData("test1,, ,test2", true, new[] { "TEST1", "TEST2" })]
     [InlineData(null, true, new[] { "/2018-06-01/RUNTIME/INVOCATION/" })] // default value for AWS Lambda, see LambdaMetadata.DefaultHttpClientExclusions
-    [InlineData(null, false, new string[0])] // empty
-    [InlineData("", true, new string[0])]    // empty
-    public void HttpClientExcludedUrlSubstrings_AwsLambda(string value,  bool isRunningInLambda, string[] expected)
+    [InlineData(null, false, new string[0])]                              // empty
+    [InlineData("", true, new string[0])]                                 // empty
+    public void HttpClientExcludedUrlSubstrings_AwsLambda(string value, bool isRunningInLambda, string[] expected)
     {
-        var previous = isRunningInLambda
-                           ? SetLambdaEnvironmentForTests("functionName", "serviceName::handlerName")
-                           : SetLambdaEnvironmentForTests(null, null);
-        try
+        if (isRunningInLambda)
         {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.HttpClientExcludedUrlSubstrings, value));
-
-            var settings = new TracerSettings(source);
-
-            settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
+            Environment.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, "functionName");
+            Environment.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, "serviceName::handlerName");
+            Environment.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, GetCallerFilePath());
         }
-        finally
-        {
-            foreach (var kvp in previous)
-            {
-                System.Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
-            }
-        }
+
+        var source = CreateConfigurationSource((ConfigurationKeys.HttpClientExcludedUrlSubstrings, value));
+        var settings = new TracerSettings(source);
+
+        settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
     }
 
     [Theory]
@@ -68,10 +62,6 @@ public class TracerSettingsServerlessTests : SettingsTestsBase
 
         if (isRunningInAppService)
         {
-            // TODO: remove this once we don't rely on "DD_AZURE_APP_SERVICES" to determine if we're running in Azure App Services
-            // because it's only set by the AAS Site Extension. Use "WEBSITE_SITE_NAME" instead.
-            configPairs.Add((ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"));
-
             configPairs.Add((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
         }
 
@@ -80,19 +70,9 @@ public class TracerSettingsServerlessTests : SettingsTestsBase
         settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
     }
 
-    private Dictionary<string, string> SetLambdaEnvironmentForTests(
-        string functionName, string handlerName, [CallerFilePath] string extensionPath = null)
+    private static string GetCallerFilePath([CallerFilePath] string callerFilePath = null)
     {
-        var previous = new Dictionary<string, string>
-        {
-            { LambdaMetadata.FunctionNameEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar) },
-            { LambdaMetadata.HandlerEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.HandlerEnvVar) },
-            { LambdaMetadata.ExtensionPathEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar) },
-        };
-
-        System.Environment.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, functionName);
-        System.Environment.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, handlerName);
-        System.Environment.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, extensionPath);
-        return previous;
+        // using [CallerFilePath] to ensure we can a file path that exists
+        return callerFilePath!;
     }
 }

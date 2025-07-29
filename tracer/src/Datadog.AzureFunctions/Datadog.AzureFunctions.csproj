@@ -8,11 +8,6 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoDefaultExcludes>true</NoDefaultExcludes>
 
-    <!-- nuget version: move $Version to $VersionPrefix so we can add a prerelease suffix. -->
-    <VersionPrefix>$(Version)</VersionPrefix>
-    <VersionSuffix>preview</VersionSuffix>
-    <Version></Version>
-
     <!-- nuget package metadata -->
     <PackageId>Datadog.AzureFunctions</PackageId>
     <Description>Datadog instrumentation library for Azure Functions</Description>
@@ -36,7 +31,7 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
 
     <!-- Use PrivateAssets="none" to stop excluding content files by default -->
-    <PackageReference Include="Datadog.Serverless.Compat" Version="0.6.0-preview" PrivateAssets="none" />
+    <PackageReference Include="Datadog.Serverless.Compat" Version="1.0.0" PrivateAssets="none" />
 
     <!-- managed assemblies -->
     <None Include="$(SourcePath)/net6.0/Datadog.Trace.dll" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/net6.0/">
