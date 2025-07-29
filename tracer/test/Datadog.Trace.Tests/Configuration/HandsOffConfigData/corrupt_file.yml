@@ -1,0 +1,6 @@
+config_id: a1
+apm_configuration_default:
+  "DD_TRACE_DEBUG': true,
+  DD_ENV: "local_file_env",3
+  DD_SERVICE: "local_file_service",
+  DD_DATA_STREAMS_ENABLED: "true"
