@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
@@ -40,7 +39,8 @@ public class SpanContextExtractorExtractIntegration
         var extract = (Func<TCarrier, string, IEnumerable<string?>>)(object)getter!;
         var extractor = new SafeExtractor<TCarrier>(extract);
 
-        var extracted = SpanContextExtractor.ExtractInternal(carrier, extractor.SafeExtract);
+        var tracer = Datadog.Trace.Tracer.Instance;
+        var extracted = SpanContextExtractor.Extract(tracer, carrier, extractor.SafeExtract);
         return new CallTargetState(scope: null, state: extracted);
     }
 

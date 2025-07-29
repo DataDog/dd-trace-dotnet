@@ -77,10 +77,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
-            EnvironmentHelper.EnableTransport(GetTransport(transportType));
+            var transportTypeGeneral = GetTransport(transportType);
+            EnvironmentHelper.EnableTransport(transportTypeGeneral);
 
             using var telemetry = this.ConfigureTelemetry();
-            using var agent = GetAgent(transportType);
+            var canUseDogStatsD = EnvironmentHelper.CanUseStatsD(transportTypeGeneral);
+            using var agent = GetAgent(transportType, canUseDogStatsD);
             agent.Output = Output;
 
             int httpPort = TcpPortProvider.GetOpenPort();
@@ -97,15 +99,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             await telemetry.AssertConfigurationAsync(ConfigTelemetryData.AgentTraceTransport, transportType.ToString());
-
-            MockTracerAgent GetAgent(TracesTransportType type)
+            MockTracerAgent GetAgent(TracesTransportType type, bool canUseDogStatsd)
                 => type switch
                 {
-                    TracesTransportType.Default => MockTracerAgent.Create(Output),
-                    TracesTransportType.WindowsNamedPipe => MockTracerAgent.Create(Output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}")),
+                    TracesTransportType.Default => MockTracerAgent.Create(Output, useStatsd: canUseDogStatsd),
+                    TracesTransportType.WindowsNamedPipe => MockTracerAgent.Create(Output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = canUseDogStatsd }),
 #if NETCOREAPP3_1_OR_GREATER
                     TracesTransportType.UnixDomainSocket
-                        => MockTracerAgent.Create(Output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null)),
+                        => MockTracerAgent.Create(Output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), canUseDogStatsd ? Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()) : null) { UseDogstatsD = canUseDogStatsd }),
 #endif
                     _ => throw new InvalidOperationException("Unsupported transport type " + type),
                 };

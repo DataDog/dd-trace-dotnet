@@ -16,18 +16,15 @@ using namespace std::chrono;
 
 namespace iast
 {
-static const WSTRING LastEntry = WStr("-");
-static const WSTRING _fixedAppDomainIncludeFilters[] = {
-    LastEntry, // Can't have an empty array
+static std::vector<WSTRING> _domainIncludeFilters = {
 };
-static const WSTRING _fixedAppDomainExcludeFilters[] = {
-    WStr("DD*"), WStr("DataDog*"),
-    LastEntry, // Can't have an empty array. This must be the last element
+static std::vector<WSTRING> _domainExcludeFilters = {
+    WStr("DD*"), 
+    WStr("DataDog*"),
 };
-static const WSTRING _fixedAssemblyIncludeFilters[] = {
-    LastEntry, // Can't have an empty array. This must be the last element
+static std::vector<WSTRING> _assemblyIncludeFilters = {
 };
-static const WSTRING _fixedAssemblyExcludeFilters[] = {
+static std::vector<WSTRING> _assemblyExcludeFilters = {
     WStr("System*"),
     WStr("Datadog.*"),
     WStr("Kudu*"),
@@ -84,25 +81,23 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("FluentValidation*"),
     WStr("NHibernate*"),
     WStr("Npgsql*"),
-    WStr("Grpc.Net.Client"),    
-    WStr("Amazon.Runtime*"),    
+    WStr("Grpc.Net.Client"),
+    WStr("Amazon.Runtime*"),
     WStr("App.Metrics.Concurrency*"),
     WStr("AWSSDK.SimpleEmail"),
     WStr("AWSSDK.Core"),
     WStr("MailKit"),
     WStr("MimeKit"),
-    LastEntry, // Can't have an empty array. This must be the last element
 };
-static const WSTRING _fixedMethodIncludeFilters[] = {
+static std::vector<WSTRING> _methodIncludeFilters = {
     WStr("System.Web.Mvc.ControllerActionInvoker::InvokeAction*"),
     WStr("System.Web.Mvc.Async.AsyncControllerActionInvoker*"),
     WStr("System.Web.Http.Controllers.ReflectedHttpActionDescriptor::ExecuteAsync*"),
     WStr("System.Net.Http.HttpRequestMessage*"),
     WStr("System.ServiceModel.Dispatcher*"),
     WStr("MongoDB.Bson.Serialization.Serializers.StringSerializer*"),
-    LastEntry, // Can't have an empty array. This must be the last element
 };
-static const WSTRING _fixedMethodExcludeFilters[] = {
+static std::vector<WSTRING> _methodExcludeFilters = {
     WStr("DataDog*"),
     WStr("System.Web.Mvc*"),
     WStr("System.Web.PrefixContainer*"),
@@ -118,11 +113,11 @@ static const WSTRING _fixedMethodExcludeFilters[] = {
     WStr("MongoDB.*"),
     WStr("JetBrains*"),
     WStr("RestSharp.Extensions.StringExtensions::UrlEncode*"),
-    LastEntry, // Can't have an empty array. This must be the last element
 };
-static const WSTRING _fixedMethodAttributeExcludeFilters[] = {
+static std::vector<WSTRING> _methodAttributeIncludeFilters = {
     WStr("DelegateDecompiler.ComputedAttribute"),
-    LastEntry, // Can't have an empty array. This must be the last element
+};
+static std::vector<WSTRING> _methodAttributeExcludeFilters = {
 };
 
 ModuleAspects::ModuleAspects(Dataflow* dataflow, ModuleInfo* module)
@@ -188,95 +183,16 @@ Dataflow::~Dataflow()
     Destroy();
 }
 
-HRESULT Dataflow::Init()
+void Dataflow::Destroy()
 {
     if (_initialized)
     {
-        return S_FALSE;
-    }
-    if (_profiler == nullptr)
-    {
-        return E_FAIL;
-    }
-    HRESULT hr = S_OK;
-    try
-    {
-        // Init config
-        // Domain filters
-        for (int x = 0; _fixedAppDomainIncludeFilters[x] != LastEntry; x++)
-        {
-            _domainIncludeFilters.push_back(_fixedAppDomainIncludeFilters[x]);
-        }
-        for (int x = 0; _fixedAppDomainExcludeFilters[x] != LastEntry; x++)
-        {
-            _domainExcludeFilters.push_back(_fixedAppDomainExcludeFilters[x]);
-        }
-
-        // Assembly filters
-        for (int x = 0; _fixedAssemblyIncludeFilters[x] != LastEntry; x++)
-        {
-            _assemblyIncludeFilters.push_back(_fixedAssemblyIncludeFilters[x]);
-        }
-        for (int x = 0; _fixedAssemblyExcludeFilters[x] != LastEntry; x++)
-        {
-            _assemblyExcludeFilters.push_back(_fixedAssemblyExcludeFilters[x]);
-        }
-
-        // Method filters
-        for (int x = 0; _fixedMethodIncludeFilters[x] != LastEntry; x++)
-        {
-            _methodIncludeFilters.push_back(_fixedMethodIncludeFilters[x]);
-        }
-        for (int x = 0; _fixedMethodExcludeFilters[x] != LastEntry; x++)
-        {
-            _methodExcludeFilters.push_back(_fixedMethodExcludeFilters[x]);
-        }
-
-        // Method attribute filters
-        for (int x = 0; _fixedMethodAttributeExcludeFilters[x] != LastEntry; x++)
-        {
-            _methodAttributeExcludeFilters.push_back(_fixedMethodAttributeExcludeFilters[x]);
-        }
-    }
-    catch (std::exception& err)
-    {
-        trace::Logger::Error("ERROR: ", err.what());
-        hr = E_FAIL;
-    }
-    catch (...)
-    {
-        trace::Logger::Error("ERROR initializing dataflow");
-        hr = E_FAIL;
-    }
-    if (SUCCEEDED(hr))
-    {
-        _initialized = true;
-    }
-    else
-    {
-        REL(_profiler);
         _initialized = false;
+        REL(_profiler);
+        DEL_MAP_VALUES(_modules);
+        DEL_MAP_VALUES(_appDomains);
+        DEL_MAP_VALUES(_moduleAspects);
     }
-    return hr;
-}
-HRESULT Dataflow::Destroy()
-{
-    if (!_initialized)
-    {
-        return S_FALSE;
-    }
-    _initialized = false;
-    HRESULT hr = S_OK;
-    REL(_profiler);
-    DEL_MAP_VALUES(_modules);
-    DEL_MAP_VALUES(_appDomains);
-    DEL_MAP_VALUES(_moduleAspects);
-    return hr;
-}
-
-bool Dataflow::IsInitialized()
-{
-    return _initialized;
 }
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)

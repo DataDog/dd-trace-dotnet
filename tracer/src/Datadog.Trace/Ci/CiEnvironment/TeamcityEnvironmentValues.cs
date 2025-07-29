@@ -20,5 +20,7 @@ internal sealed class TeamcityEnvironmentValues<TValueProvider>(TValueProvider v
         MetricTag = MetricTags.CIVisibilityTestSessionProvider.Teamcity;
         JobName = ValueProvider.GetValue(Constants.TeamCityBuildConfName);
         JobUrl = ValueProvider.GetValue(Constants.TeamCityBuildUrl);
+        PrBaseBranch = ValueProvider.GetValue(Constants.TeamCityPrTargetBranch);
+        PrNumber = ValueProvider.GetValue(Constants.TeamCityPrNumber);
     }
 }

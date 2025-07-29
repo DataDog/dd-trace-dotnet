@@ -25,7 +25,7 @@ check_azure_pipeline:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
       - build-id.txt
     expire_in: 3 months
   tags: ["arch:amd64"]
@@ -90,11 +90,13 @@ update-bp-infra:
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
+  after_script:
+    - mv /var/log/datadog/dotnet/* platform/artifacts
   artifacts:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     K6_OPTIONS_WARMUP_RATE: 14000
@@ -123,7 +125,7 @@ baseline:
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
-
+    
 calltarget_ngen:
   extends: .benchmarks
   variables:
@@ -272,11 +274,12 @@ profiler_cpu_timer_create:
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.arm.yml --debug
+  after_script: !reference [.benchmarks, after_script]
   artifacts:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     K6_OPTIONS_WARMUP_RATE: 14000
@@ -464,7 +467,7 @@ profiler_cpu_timer_create-arm64:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
     # Whether to cleanup ephemeral instances after benchmarks are run

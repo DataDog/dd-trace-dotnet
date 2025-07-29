@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.TestHelpers;
 using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
@@ -28,6 +29,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        [Flaky("This test sporadically fails due to invalid json e.g. Unexpected end of content while loading JObject. Path 'debugger', line 1, position 12313")]
         public async Task SnapshotBiggerThanMaxSize_OneLevel_LevelSliced()
         {
             var snapshot = SnapshotHelper.GenerateSnapshot(new ComplexClass(), false);
@@ -39,6 +41,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        [Flaky("This test sporadically fails due to invalid json e.g. Unexpected end of content while loading JObject. Path 'debugger', line 1, position 12313")]
         public async Task SnapshotBiggerThanMaxSize_TwoLevel_OneSliced()
         {
             var snapshot = SnapshotHelper.GenerateSnapshot(new VeryComplexClass() { ComplexClass = new ComplexClass() { SimpleClass = new SimpleClass() } }, false);
@@ -50,6 +53,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        [Flaky("This test sporadically fails due to invalid json e.g. Unexpected end of content while loading JObject. Path 'debugger', line 1, position 20557")]
         public async Task SnapshotBiggerThanMaxSize_ThreeLevel_AllSliced()
         {
             var snapshot = SnapshotHelper.GenerateSnapshot(new VeryComplexClass() { Class = new VeryComplexClass() { ComplexClass = new ComplexClass() { SimpleClass = new SimpleClass() } } }, false);
