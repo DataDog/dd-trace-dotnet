@@ -121,6 +121,12 @@ internal class NativeInterop
         [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
         internal static extern void Drop(ErrorHandle error);
 
+        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
+        internal static extern void DropError(ref Error errorHandle);
+    }
+
+    internal static class LibraryConfig
+    {
         [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
         internal static extern TracerMemfdHandleResult StoreTracerMetadata(
             byte schemaVersion,
@@ -132,7 +138,22 @@ internal class NativeInterop
             CharSlice serviceEnv,
             CharSlice serviceVersion);
 
-        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
-        internal static extern void DropError(ref Error errorHandle);
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_new")]
+        internal static extern IntPtr ConfiguratorNew(byte debugLogs, CharSlice language);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_with_local_path")]
+        internal static extern IntPtr ConfiguratorWithLocalPath(IntPtr configurator, CString localPath);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_with_fleet_path")]
+        internal static extern IntPtr ConfiguratorWithFleetPath(IntPtr configurator, CString fleetPath);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_get")]
+        internal static extern LibraryConfigResult ConfiguratorGet(IntPtr configurator);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_drop")]
+        internal static extern void ConfiguratorDrop(IntPtr configurator);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_config_drop")]
+        internal static extern void LibraryConfigDrop(LibraryConfigs configs);
     }
 }
