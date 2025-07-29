@@ -312,8 +312,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Name switch
             {
-                "aspnet.request" => span.IsAspNet(metadataSchemaVersion),
-                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion),
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion, excludeTags: new HashSet<string> { "baggage.user.id" }),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion, excludeTags: new HashSet<string> { "baggage.user.id" }),
                 _ => Result.DefaultSuccess,
             };
 
