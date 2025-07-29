@@ -11,7 +11,7 @@ set FAILED=0
 echo *********************
 echo Installing timeitsharp
 echo *********************
-dotnet tool update -g timeitsharp --version 0.4.3
+dotnet tool update -g timeitsharp --version 0.4.4
 IF ERRORLEVEL 1 set FAILED=1
 
 echo *********************
