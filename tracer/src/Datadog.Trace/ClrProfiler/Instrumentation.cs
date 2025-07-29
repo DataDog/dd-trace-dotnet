@@ -347,7 +347,14 @@ namespace Datadog.Trace.ClrProfiler
                 if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
                 {
                     Log.Debug("Initializing OTel Metrics Exporter.");
-                    OTelMetrics.OtlpMetricsExporter.Initialize();
+                    if (Tracer.Instance.Settings.OpenTelemetryMeterNames.Length > 0)
+                    {
+                        OTelMetrics.OtlpMetricsExporter.Initialize();
+                    }
+                    else
+                    {
+                        Log.Debug("No meters were found for DD_METRICS_OTEL_METER_NAMES, OTel Metrics Exporter won't be initialized.");
+                    }
                 }
             }
             catch (Exception ex)

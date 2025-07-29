@@ -20,54 +20,46 @@ namespace Datadog.Trace.OTelMetrics
 
         public static void Initialize()
         {
-            try
+            var otelSdkType = Type.GetType("OpenTelemetry.Sdk, OpenTelemetry", throwOnError: false);
+            if (otelSdkType is null)
             {
-                var otelSdkType = Type.GetType("OpenTelemetry.Sdk, OpenTelemetry", throwOnError: false);
-                if (otelSdkType is null)
-                {
-                    ThrowHelper.ThrowNullReferenceException($"The OpenTelemetry SDK type is null, make sure the nuget installed to collect metrics.");
-                }
-
-                var otelSdkProxyResult = DuckType.GetOrCreateProxyType(typeof(IOtelSdk), otelSdkType);
-                var otelSdkProxyResultType = otelSdkProxyResult.ProxyType;
-                if (otelSdkProxyResultType is null)
-                {
-                    ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after Ducktyping attempt of {typeof(IOtelSdk)} is null.");
-                }
-                else if (otelSdkProxyResult.Success)
-                {
-                    var otelSdkProxy = (IOtelSdk)otelSdkProxyResult.CreateInstance(null!);
-                    var meterProviderBuilder = otelSdkProxy.CreateMeterProviderBuilder();
-                    var meterProviderProxy = meterProviderBuilder.DuckCast<IMeterProviderBuilder>();
-                    meterProviderProxy.AddMeter(Tracer.Instance.Settings.OpenTelemetryMeterNames);
-
-                    var otlpMetricExporterExtensionsType = Type.GetType("OpenTelemetry.Metrics.OtlpMetricExporterExtensions, OpenTelemetry.Exporter.OpenTelemetryProtocol", throwOnError: false);
-                    if (otlpMetricExporterExtensionsType is null)
-                    {
-                        ThrowHelper.ThrowNullReferenceException($"The OpenTelemetry Metrics Exporter Extensions type is null, make sure the nuget is installed to collect metrics.");
-                    }
-
-                    var otlpMetricExporterExtensionsProxyResult = DuckType.GetOrCreateProxyType(typeof(IOtlpMetricExporterExtensions), otlpMetricExporterExtensionsType);
-                    var otlpMetricExporterExtensionsProxyResultType = otlpMetricExporterExtensionsProxyResult.ProxyType;
-                    if (otlpMetricExporterExtensionsProxyResultType is null)
-                    {
-                        ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after Ducktyping attempt of {typeof(IOtlpMetricExporterExtensions)} is null.");
-                    }
-                    else if (otlpMetricExporterExtensionsProxyResult.Success)
-                    {
-                        var otlpMetricExporterExtensionsProxy = (IOtlpMetricExporterExtensions)otlpMetricExporterExtensionsProxyResult.CreateInstance(null!);
-                        otlpMetricExporterExtensionsProxy.AddOtlpExporter(meterProviderProxy);
-
-                        var meterProvider = meterProviderProxy.Build();
-                        LifetimeManager.Instance.AddShutdownTask(_ => meterProvider.Dispose());
-                        Log.Information("Successfully Ducktyped and configured OTLP Metrics Exporter.");
-                    }
-                }
+                ThrowHelper.ThrowNullReferenceException($"The OpenTelemetry SDK type is null, make sure the OpenTelemetry NuGet package is installed to collect metrics.");
             }
-            catch (Exception e)
+
+            var otelSdkProxyResult = DuckType.GetOrCreateProxyType(typeof(IOtelSdk), otelSdkType);
+            var otelSdkProxyResultType = otelSdkProxyResult.ProxyType;
+            if (otelSdkProxyResultType is null)
             {
-                Log.Error("Exception when initializing OTLP Metrics Exporter: {E}", e.ToString());
-                throw;
+                ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after Ducktyping attempt of {typeof(IOtelSdk)} is null.");
+            }
+            else if (otelSdkProxyResult.Success)
+            {
+                var otelSdkProxy = (IOtelSdk)otelSdkProxyResult.CreateInstance(null!);
+                var meterProviderBuilder = otelSdkProxy.CreateMeterProviderBuilder();
+                var meterProviderProxy = meterProviderBuilder.DuckCast<IMeterProviderBuilder>();
+                meterProviderProxy.AddMeter(Tracer.Instance.Settings.OpenTelemetryMeterNames);
+
+                var otlpMetricExporterExtensionsType = Type.GetType("OpenTelemetry.Metrics.OtlpMetricExporterExtensions, OpenTelemetry.Exporter.OpenTelemetryProtocol", throwOnError: false);
+                if (otlpMetricExporterExtensionsType is null)
+                {
+                    ThrowHelper.ThrowNullReferenceException($"The OpenTelemetry Metrics Exporter Extensions type is null, make sure the  OpenTelemetry NuGet package is installed to collect metrics.");
+                }
+
+                var otlpMetricExporterExtensionsProxyResult = DuckType.GetOrCreateProxyType(typeof(IOtlpMetricExporterExtensions), otlpMetricExporterExtensionsType);
+                var otlpMetricExporterExtensionsProxyResultType = otlpMetricExporterExtensionsProxyResult.ProxyType;
+                if (otlpMetricExporterExtensionsProxyResultType is null)
+                {
+                    ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after Ducktyping attempt of {typeof(IOtlpMetricExporterExtensions)} is null.");
+                }
+                else if (otlpMetricExporterExtensionsProxyResult.Success)
+                {
+                    var otlpMetricExporterExtensionsProxy = (IOtlpMetricExporterExtensions)otlpMetricExporterExtensionsProxyResult.CreateInstance(null!);
+                    otlpMetricExporterExtensionsProxy.AddOtlpExporter(meterProviderProxy);
+
+                    var meterProvider = meterProviderProxy.Build();
+                    LifetimeManager.Instance.AddShutdownTask(_ => meterProvider.Dispose());
+                    Log.Information("Successfully Ducktyped and configured OTLP Metrics Exporter.");
+                }
             }
         }
     }
