@@ -8,6 +8,7 @@
 #include <spdlog/details/null_mutex.h>
 #include <spdlog/details/synchronous_factory.h>
 
+#include <atomic>
 #include <chrono>
 #include <mutex>
 #include <string>
@@ -40,6 +41,8 @@ private:
     // log.3.txt -> delete
     void rotate_();
 
+    void ensure_file_open_();
+
     // delete the target if exists, and rename the src file  to target
     // return true on success, false otherwise.
     bool rename_file_(const filename_t &src_filename, const filename_t &target_filename);
@@ -49,7 +52,8 @@ private:
     std::size_t max_files_;
     std::size_t current_size_;
     details::file_helper file_helper_;
-    bool file_opened_;
+    std::atomic<bool> file_opened_;
+    Mutex lazy_mutex_;
 };
 
 using lazy_rotating_file_sink_mt = lazy_rotating_file_sink<std::mutex>;
