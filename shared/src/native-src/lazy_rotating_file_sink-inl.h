@@ -93,8 +93,12 @@ SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::sink_it_(const details::log_m
             new_size = formatted.size();
         }
     }
-    file_helper_.write(formatted);
-    current_size_ = new_size;
+
+    if (file_opened_)
+    {
+        file_helper_.write(formatted);
+        current_size_ = new_size;
+    }
 }
 
 template<typename Mutex>
