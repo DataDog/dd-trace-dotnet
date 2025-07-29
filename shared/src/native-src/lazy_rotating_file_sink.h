@@ -41,7 +41,7 @@ private:
     // log.3.txt -> delete
     void rotate_();
 
-    void ensure_file_open_();
+    void open_if_needed_();
 
     // delete the target if exists, and rename the src file  to target
     // return true on success, false otherwise.
@@ -52,8 +52,7 @@ private:
     std::size_t max_files_;
     std::size_t current_size_;
     details::file_helper file_helper_;
-    std::atomic<bool> file_opened_;
-    Mutex lazy_mutex_;
+    bool file_opened_;
 };
 
 using lazy_rotating_file_sink_mt = lazy_rotating_file_sink<std::mutex>;

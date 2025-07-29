@@ -69,8 +69,13 @@ SPDLOG_INLINE filename_t lazy_rotating_file_sink<Mutex>::filename()
 template<typename Mutex>
 SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::sink_it_(const details::log_msg &msg)
 {
-    // let's ensure a file is open
-    ensure_file_open_();
+    try {
+        // let's open the file if is needed
+        open_if_needed_();
+    } catch (const spdlog_ex&) {
+        file_opened_ = false;
+        return;
+    }
 
     memory_buf_t formatted;
     base_sink<Mutex>::formatter_->format(msg, formatted);
@@ -95,7 +100,7 @@ SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::sink_it_(const details::log_m
 template<typename Mutex>
 SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::flush_()
 {
-    if (file_opened_.load())
+    if (file_opened_)
     {
         file_helper_.flush();
     }
@@ -109,12 +114,11 @@ SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::flush_()
 template<typename Mutex>
 SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::rotate_()
 {
-    std::lock_guard<Mutex> lock(lazy_rotating_file_sink<Mutex>::lazy_mutex_);
     using details::os::filename_to_str;
     using details::os::path_exists;
 
+    file_opened_ = false;
     file_helper_.close();
-    file_opened_.store(false);
     for (auto i = max_files_; i > 0; --i)
     {
         filename_t src = calc_filename(base_filename_, i - 1);
@@ -139,20 +143,17 @@ SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::rotate_()
         }
     }
     file_helper_.reopen(true);
-    file_opened_.store(true);
+    file_opened_ = true;
 }
 
 template<typename Mutex>
-SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::ensure_file_open_() {
-    if (!file_opened_.load())
+SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::open_if_needed_()
+{
+    if (!file_opened_)
     {
-        std::lock_guard<Mutex> lock(lazy_rotating_file_sink<Mutex>::lazy_mutex_);
-        if (!file_opened_.load())
-        {
-            file_helper_.open(calc_filename(base_filename_, 0));
-            current_size_ = file_helper_.size(); // expensive. called only once
-            file_opened_.store(true);
-        }
+        file_helper_.open(calc_filename(base_filename_, 0));
+        current_size_ = file_helper_.size(); // expensive. called only once
+        file_opened_ = true;
     }
 }
 
