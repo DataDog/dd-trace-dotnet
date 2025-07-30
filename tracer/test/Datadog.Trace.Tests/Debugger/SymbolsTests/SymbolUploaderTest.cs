@@ -44,7 +44,7 @@ public class SymbolUploaderTest
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" }, { ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes, "10000" } }),
             NullConfigurationTelemetry.Instance);
         EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
-        _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, settings, TracerSettings.FromDefaultSourcesInternal(), "test");
+        _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, settings, "test");
     }
 
     [Fact]
