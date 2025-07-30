@@ -405,7 +405,7 @@ namespace Datadog.Trace.TestHelpers
 
             foreach (var e in missing)
             {
-                Assert.True(false, $"no span found for `{e}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key}").ToArray())}`");
+                Assert.Fail($"no span found for `{e}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key}").ToArray())}`");
             }
         }
 
@@ -555,7 +555,7 @@ namespace Datadog.Trace.TestHelpers
                             minDateTime: testStart,
                             returnAllOperations: true);
 
-                Assert.True(spans.Count == 2, $"expected two span, saw {spans.Count}");
+                spans.Count.Should().Be(1);
             }
 
             var aspnetSpan = spans.FirstOrDefault(s => s.Name == "aspnet.request");
@@ -629,7 +629,7 @@ namespace Datadog.Trace.TestHelpers
                             operationName: "aspnet.request",
                             returnAllOperations: true);
 
-                Assert.True(spans.Count == 1, $"expected two span, saw {spans.Count}");
+                spans.Count.Should().Be(1);
             }
 
             var span = spans[0];

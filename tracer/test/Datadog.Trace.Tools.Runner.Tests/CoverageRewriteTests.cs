@@ -21,15 +21,6 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 [UsesVerify]
 public class CoverageRewriteTests
 {
-    public CoverageRewriteTests()
-    {
-        VerifierSettings.DerivePathInfo(
-            (sourceFile, projectDirectory, type, method) =>
-            {
-                return new(directory: Path.Combine(projectDirectory, "..", "snapshots"));
-            });
-    }
-
     public static IEnumerable<object[]> FiltersData()
     {
         yield return
@@ -141,6 +132,7 @@ public class CoverageRewriteTests
         var originalCode = decompilerOriginalCode.DecompileWholeModuleAsString();
 
         var originalVerifySettings = new VerifySettings();
+        originalVerifySettings.UseDirectory(Path.Combine("..", "snapshots"));
         originalVerifySettings.DisableRequireUniquePrefix();
         originalVerifySettings.UseFileName("CoverageRewriteTests.Original");
         await Verifier.Verify(originalCode, originalVerifySettings);
@@ -157,6 +149,7 @@ public class CoverageRewriteTests
 
         var transVerifySettings = new VerifySettings();
         transVerifySettings.UseFileName($"CoverageRewriteTests.Rewritten.{coverageMode}");
+        transVerifySettings.UseDirectory(Path.Combine("..", "snapshots"));
         await Verifier.Verify(transCode, transVerifySettings);
     }
 
@@ -188,6 +181,7 @@ public class CoverageRewriteTests
 
         var transVerifySettings = new VerifySettings();
         transVerifySettings.UseFileName($"{targetSnapshot}.{coverageMode}");
+        transVerifySettings.UseDirectory(Path.Combine("..", "snapshots"));
         await Verifier.Verify(transCode, transVerifySettings);
     }
 

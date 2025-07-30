@@ -184,11 +184,11 @@ partial class Build
     TargetFramework[] GetTestingFrameworks(bool isArm64) => (isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
         // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
-        (false, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (false, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (false, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0 },
+        (false, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0 },
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
-        (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0 },
+        (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0 },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -2485,6 +2485,12 @@ partial class Build
            // We intentionally set the variables for smoke tests which means we get this warning on <= .NET Core 3.0 or <.NET 6.0.12
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 6.0.12 and earlier have known crashing bugs", RegexOptions.Compiled));
+
+           // Make sure we _only_ add this while .NET 10 is in preview (to make sure we don't forget in the final release)
+           if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 10.0.0-"))
+           {
+               knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 10 or higher.*", RegexOptions.Compiled));
+           }
 
            // CI Visibility known errors
            knownPatterns.Add(new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled));
