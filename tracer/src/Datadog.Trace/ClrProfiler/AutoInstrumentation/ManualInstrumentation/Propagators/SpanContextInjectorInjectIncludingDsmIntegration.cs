@@ -13,7 +13,7 @@ using Datadog.Trace.Telemetry.Metrics;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators;
 
 /// <summary>
-/// Instrumentation for <see cref="Datadog.Trace.SpanContextInjector.InjectIncludingDsm{TCarrier}"/>
+/// Instrumentation for <c>Datadog.Trace.SpanContextInjector.InjectIncludingDsm{TCarrier}</c>
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.Trace.Manual",
@@ -32,7 +32,7 @@ public class SpanContextInjectorInjectIncludingDsmIntegration
     {
         // The Injector.Inject method currently _only_ works with SpanContext objects
         // Therefore, there's no point calling inject unless we can remap it to a SpanContext
-        TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Inject);
+        TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_InjectIncludingDsm);
 
         if (SpanContextHelper.GetContext(context) is { } spanContext)
         {
@@ -40,7 +40,8 @@ public class SpanContextInjectorInjectIncludingDsmIntegration
             // so we wrap the method in a try/catch to ensure we don't throw
             var inject = (Action<TCarrier, string, string>)(object)setter!;
             var injector = new SafeInjector<TCarrier>(inject);
-            SpanContextInjector.InjectInternal(carrier, injector.SafeInject, spanContext, messageType, target);
+            var tracer = Datadog.Trace.Tracer.Instance;
+            SpanContextInjector.Inject(tracer, carrier, injector.SafeInject, spanContext, messageType, target);
         }
 
         return CallTargetState.GetDefault();

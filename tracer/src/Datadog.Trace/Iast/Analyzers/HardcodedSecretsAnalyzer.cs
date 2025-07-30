@@ -219,7 +219,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
 
     public void Dispose()
     {
-        _processExit.SetResult(true);
+        _processExit.TrySetResult(true);
         Log.Debug("HardcodedSecretsAnalyzer -> Disposed");
     }
 

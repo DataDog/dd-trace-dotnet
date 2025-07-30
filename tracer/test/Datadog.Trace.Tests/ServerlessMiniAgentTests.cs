@@ -3,16 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -29,14 +24,14 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void GetMiniAgentPathValidInGCPFunction()
+        public void GetMiniAgentPathValidInGcpFunction()
         {
             var settings = new TracerSettings(CreateConfigurationSource(
                 (ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "value"),
                 (ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "value")));
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
-            var expectedPath = System.IO.Path.Combine(Path.DirectorySeparatorChar.ToString(), "layers", "google.dotnet.publish", "publish", "bin", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
+            var expectedPath = Path.Combine(Path.DirectorySeparatorChar.ToString(), "layers", "google.dotnet.publish", "publish", "bin", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
             path.Should().Be(expectedPath);
         }
 
@@ -44,13 +39,13 @@ namespace Datadog.Trace.Tests
         public void GetMiniAgentPathValidInLinuxAzureFunction()
         {
             var settings = new TracerSettings(CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
-                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
-                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
+                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "value"),
+                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "value"),
+                (ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"),
                 (ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic")));
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
-            var expectedPath = System.IO.Path.Combine(Path.DirectorySeparatorChar.ToString(), "home", "site", "wwwroot", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
+            var expectedPath = Path.Combine(Path.DirectorySeparatorChar.ToString(), "home", "site", "wwwroot", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
             path.Should().Be(expectedPath);
         }
 
@@ -58,13 +53,13 @@ namespace Datadog.Trace.Tests
         public void GetMiniAgentPathValidInWindowsAzureFunction()
         {
             var settings = new TracerSettings(CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
-                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
-                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
+                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "value"),
+                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "value"),
+                (ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"),
                 (ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic")));
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Win32NT, settings);
-            var expectedPath = System.IO.Path.Combine(Path.DirectorySeparatorChar.ToString(), "home", "site", "wwwroot", "datadog-serverless-agent-windows-amd64", "datadog-serverless-trace-mini-agent.exe");
+            var expectedPath = Path.Combine(Path.DirectorySeparatorChar.ToString(), "home", "site", "wwwroot", "datadog-serverless-agent-windows-amd64", "datadog-serverless-trace-mini-agent.exe");
             path.Should().Be(expectedPath);
         }
 
@@ -80,9 +75,7 @@ namespace Datadog.Trace.Tests
         [InlineData("log", "INFO", "log")]
         internal void CleanAndProperlyLogMiniAgentLogs(string rawLog, string expectedLevel, string expectedLog)
         {
-            var level = "INFO";
-            var log = rawLog;
-            ServerlessMiniAgent.ProcessMiniAgentLog(rawLog, out level, out log);
+            ServerlessMiniAgent.ProcessMiniAgentLog(rawLog, out var level, out var log);
             expectedLevel.Should().Be(level);
             expectedLog.Should().Be(log);
         }

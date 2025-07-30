@@ -141,6 +141,12 @@ namespace Datadog.Trace.TestHelpers
             var executable = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? $"{runtimeArgs}{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
+            // on windows in uds , not supported
+            if (!EnvironmentHelper.CanUseStatsD(agent.TransportType))
+            {
+                SetEnvironmentVariable(ConfigurationKeys.RuntimeMetricsEnabled, "0");
+            }
+
             var process = await ProfilerHelper.StartProcessWithProfiler(
                 executable,
                 EnvironmentHelper,
@@ -207,7 +213,7 @@ namespace Datadog.Trace.TestHelpers
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public async Task<(Process Process, string ConfigFile)> StartIISExpress(MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath)
+        public async Task<(ProcessHelper Process, string ConfigFile)> StartIISExpress(MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath)
         {
             var iisExpress = EnvironmentHelper.GetIisExpressPath();
 
@@ -279,30 +285,18 @@ namespace Datadog.Trace.TestHelpers
 
             var semaphore = new SemaphoreSlim(0, 1);
 
-            _ = Task.Factory.StartNew(
-                () =>
+            var processHelper = new ProcessHelper(
+                process,
+                line =>
                 {
-                    while (process.StandardOutput.ReadLine() is { } line)
-                    {
-                        Output.WriteLine($"[webserver][stdout] {line}");
+                    Output.WriteLine($"[webserver][stdout] {line}");
 
-                        if (line.Contains("IIS Express is running"))
-                        {
-                            semaphore.Release();
-                        }
+                    if (line.Contains("IIS Express is running"))
+                    {
+                        semaphore.Release();
                     }
                 },
-                TaskCreationOptions.LongRunning);
-
-            _ = Task.Factory.StartNew(
-                () =>
-                {
-                    while (process.StandardError.ReadLine() is { } line)
-                    {
-                        Output.WriteLine($"[webserver][stderr] {line}");
-                    }
-                },
-                TaskCreationOptions.LongRunning);
+                line => Output.WriteLine($"[webserver][stderr] {line}"));
 
             await semaphore.WaitAsync(TimeSpan.FromSeconds(10));
 
@@ -329,7 +323,7 @@ namespace Datadog.Trace.TestHelpers
                 await Task.Delay(1500);
             }
 
-            return (process, newConfig);
+            return (processHelper, newConfig);
         }
 
         public void EnableIast(bool enable = true)

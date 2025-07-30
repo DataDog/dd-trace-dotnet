@@ -312,7 +312,12 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public Task DisposeAsync()
         {
-            _processExit.SetResult(true);
+            if (!_processExit.TrySetResult(true))
+            {
+                // Double dispose in prod shouldn't happen, and should be avoided, so logging for follow-up
+                Log.Debug($"{nameof(DiscoveryService)} is already disposed, skipping further disposal.");
+            }
+
             return _discoveryTask;
         }
     }

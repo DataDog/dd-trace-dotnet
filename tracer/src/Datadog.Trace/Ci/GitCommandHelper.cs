@@ -427,6 +427,208 @@ internal static class GitCommandHelper
                                                    candidate == $"{remoteName}/{defaultBranch}");
     }
 
+    /// <summary>
+    /// Retrieves commit metadata for the specified <paramref name="commitSha"/>. If the repository is a shallow clone, the
+    /// method attempts to un‑shallow it (requires Git &gt;= 2.27) so that the commit information is available.
+    /// </summary>
+    /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <param name="commitSha">Commit SHA to retrieve.</param>
+    /// <returns>A populated <see cref="CommitData"/> on success; <c>null</c> otherwise.</returns>
+    public static CommitData? FetchCommitData(string workingDirectory, string commitSha)
+    {
+        try
+        {
+            // 1. Detect shallow repository
+            Log.Debug("GitCommandHelper.FetchCommitData: checking if the repository is a shallow clone");
+            var isShallowClone = IsShallowCloneRepository(workingDirectory);
+
+            // 2. If shallow, un‑shallow it (git fetch) provided we have a modern git version
+            if (isShallowClone)
+            {
+                Log.Debug("GitCommandHelper.FetchCommitData: checking the git version");
+                var (major, minor, patch) = GetGitVersion(workingDirectory);
+                Log.Debug<int, int, int>("GitCommandHelper.FetchCommitData: git version detected {Major}.{Minor}.{Patch}", major, minor, patch);
+                if (major > 2 || (major == 2 && minor >= 27))
+                {
+                    // Retrieve remote name, fallback to "origin" if not set
+                    var remoteName = GetRemoteName(workingDirectory);
+                    Log.Debug("GitCommandHelper.FetchCommitData: remote name: {Remote}", remoteName);
+
+                    // git fetch --update-shallow --filter="blob:none" --recurse-submodules=no --no-write-fetch-head <remoteName> <commitSha>
+                    var fetchArgs =
+                        $"fetch --update-shallow --filter=\"blob:none\" --recurse-submodules=no --no-write-fetch-head {remoteName} {commitSha}";
+                    var fetchOutput = RunGitCommand(
+                        workingDirectory,
+                        fetchArgs,
+                        MetricTags.CIVisibilityCommands.Fetch);
+
+                    if (fetchOutput is null || fetchOutput.ExitCode != 0)
+                    {
+                        Log.Warning("GitCommandHelper.FetchCommitData: git fetch failed. Exit={ExitCode}, Error={Error}", fetchOutput?.ExitCode, fetchOutput?.Error);
+                        return null;
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            // 3. Get commit details via `git show`
+            Log.Debug("GitCommandHelper.FetchCommitData: fetching commit details for {Commit}", commitSha);
+            // Example output:
+            // '1f808ea4e7c068a149975e1851bd905cef56779c|,|1753691341|,|Tony Redondo|,|tony.redondo@datadoghq.com|,|1753691341|,|GitHub|,|noreply@github.com|,|Merge branch 'master' into tony/topt-get-head-commit-info'
+            var showArgs = $"""show {commitSha} -s --format='%H|,|%at|,|%an|,|%ae|,|%ct|,|%cn|,|%ce|,|%B'""";
+            var showOutput = RunGitCommand(
+                workingDirectory,
+                showArgs,
+                MetricTags.CIVisibilityCommands.GetHead);
+
+            if (showOutput is null || showOutput.ExitCode != 0 || string.IsNullOrWhiteSpace(showOutput.Output))
+            {
+                Log.Warning("GitCommandHelper.FetchCommitData: git show failed. Exit={ExitCode}, Error={Error}", showOutput?.ExitCode, showOutput?.Error);
+                return null;
+            }
+
+            // 4. Parse output
+            // The delimiter is |,| to avoid issues with commit messages that may contain commas.
+            var gitLogDataArray = showOutput.Output.Trim().Split(["|,|"], StringSplitOptions.None);
+            if (gitLogDataArray.Length < 8)
+            {
+                Log.Warning<int>("GitCommandHelper.FetchCommitData: unexpected git show output – expected ≥ 8 tokens, got {Count}", gitLogDataArray.Length);
+                return null;
+            }
+
+            // Parse author and committer dates from Unix timestamp
+            if (!long.TryParse(gitLogDataArray[1], out var authorUnixDate))
+            {
+                Log.Warning("Error parsing author date from git log output");
+                return null;
+            }
+
+            if (!long.TryParse(gitLogDataArray[4], out var committerUnixDate))
+            {
+                Log.Warning("Error parsing committer date from git log output");
+                return null;
+            }
+
+            var commit = gitLogDataArray[0];
+            if (commit.StartsWith("'"))
+            {
+                commit = commit.Substring(1);
+            }
+
+            // The commit message may contain the `|,|` string , so we join the remaining parts.
+            var commitMessage = gitLogDataArray.Length > 8 ? string.Join("|,|", gitLogDataArray.Skip(7)).Trim() : gitLogDataArray[7].Trim();
+            if (commitMessage.EndsWith("'"))
+            {
+                commitMessage = commitMessage.Substring(0, commitMessage.Length - 1).Trim();
+            }
+
+            var commitData = new CommitData(
+                CommitSha: commit,
+                AuthorDate: DateTimeOffset.FromUnixTimeSeconds(authorUnixDate),
+                AuthorName: gitLogDataArray[2],
+                AuthorEmail: gitLogDataArray[3],
+                CommitterDate: DateTimeOffset.FromUnixTimeSeconds(committerUnixDate),
+                CommitterName: gitLogDataArray[5],
+                CommitterEmail: gitLogDataArray[6],
+                CommitMessage: commitMessage);
+
+            Log.Debug("GitCommandHelper.FetchCommitData: completed successfully for {Commit}", commitSha);
+            return commitData;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "GitCommandHelper.FetchCommitData: unexpected error while fetching data for {Commit}", commitSha);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Determines whether the repository located at <paramref name="workingDirectory"/> is a shallow clone.
+    /// </summary>
+    /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <returns>True if the repository is a shallow clone; otherwise, false.</returns>
+    public static bool IsShallowCloneRepository(string workingDirectory)
+    {
+        // We need to check if the git clone is a shallow one before uploading anything.
+        // In the case is a shallow clone we need to reconfigure it to upload the git tree
+        // without blobs so no content will be downloaded.
+        var gitRevParseShallowOutput = RunGitCommand(
+            workingDirectory,
+            "rev-parse --is-shallow-repository",
+            MetricTags.CIVisibilityCommands.CheckShallow);
+        if (gitRevParseShallowOutput is null || gitRevParseShallowOutput.ExitCode != 0)
+        {
+            Log.Warning("GitCommandHelper: 'git rev-parse --is-shallow-repository' command is null or exit code is not 0. Exit={ExitCode}", gitRevParseShallowOutput?.ExitCode);
+            return false;
+        }
+
+        return gitRevParseShallowOutput.Output.IndexOf("true", StringComparison.OrdinalIgnoreCase) > -1;
+    }
+
+    /// <summary>
+    /// Parses and returns the git version (major, minor, patch) as reported by <c>git --version</c>.
+    /// </summary>
+    /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <returns>VersionInfo containing the major, minor, and patch version numbers.</returns>
+    public static VersionInfo GetGitVersion(string workingDirectory)
+    {
+        var output = RunGitCommand(
+            workingDirectory,
+            "--version",
+            MetricTags.CIVisibilityCommands.GetBranch);
+
+        if (output is { ExitCode: 0 } && !string.IsNullOrWhiteSpace(output.Output))
+        {
+            // Expected format: "git version 2.41.0" or similar
+            var span = output.Output.AsSpan().Trim();
+            var lastSpace = span.LastIndexOf(' ');
+            var versionText = span.Slice(lastSpace + 1).ToString();
+            var segments = versionText.Split('.');
+            int.TryParse(segments.ElementAtOrDefault(0), out var major);
+            int.TryParse(segments.ElementAtOrDefault(1), out var minor);
+            int.TryParse(segments.ElementAtOrDefault(2), out var patch);
+            return new VersionInfo(major, minor, patch);
+        }
+
+        return new VersionInfo(0, 0, 0);
+    }
+
+    /// <summary>
+    /// Attempts to obtain the default remote name for the repository located at <paramref name="workingDirectory"/>.
+    /// Falls back to <c>origin</c> when no remote could be detected.
+    /// </summary>
+    /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <returns>Remote name, or <c>origin</c> if not set.</returns>
+    public static string GetRemoteName(string workingDirectory)
+    {
+        var output = RunGitCommand(
+            workingDirectory,
+            "config --default origin --get clone.defaultRemoteName",
+            MetricTags.CIVisibilityCommands.GetRemote);
+
+        return output?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
+    }
+
+    /// <summary>
+    /// Retrieves a list of local commits from the repository located at <paramref name="workingDirectory"/>.
+    /// </summary>
+    /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <returns>String array containing commit SHAs, or an empty array if no commits are found.</returns>
+    public static string[] GetLocalCommits(string workingDirectory)
+    {
+        var gitLogOutput = RunGitCommand(workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits);
+        if (gitLogOutput is null)
+        {
+            Log.Warning("TestOptimizationClient: 'git log...' command is null");
+            return [];
+        }
+
+        return gitLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
+    }
+
     private static void CheckAndFetchBranch(string workingDirectory, string branch, string remoteName)
     {
         try
@@ -504,4 +706,16 @@ internal static class GitCommandHelper
     private readonly record struct LineRange(int Start, int End);
 
     private readonly record struct BranchMetrics(string Branch, string MergeBaseSha, int Behind, int Ahead);
+
+    public readonly record struct VersionInfo(int Major, int Minor, int Patch);
+
+    public readonly record struct CommitData(
+        string CommitSha,
+        DateTimeOffset AuthorDate,
+        string AuthorName,
+        string AuthorEmail,
+        DateTimeOffset CommitterDate,
+        string CommitterName,
+        string CommitterEmail,
+        string CommitMessage);
 }

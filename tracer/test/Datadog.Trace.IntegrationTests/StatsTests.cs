@@ -59,7 +59,9 @@ namespace Datadog.Trace.IntegrationTests
             });
 
             var discovery = DiscoveryService.Create(settings.Exporter);
-            await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
+            // and this was easiest to retrofit without changing the test structure too much.
+            var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
             Span span;
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
@@ -107,7 +109,7 @@ namespace Datadog.Trace.IntegrationTests
             CreateDefaultSpan(httpStatusCode: "99");
             CreateDefaultSpan(httpStatusCode: "600");
 
-            await tracer.TracerManager.ShutdownAsync(); // Flushes and closes both traces and stats
+            await tracer.DisposeAsync(); // Flushes and closes both traces and stats
 
             var statsPayload = await agent.WaitForStatsAsync(1);
             var spans = await agent.WaitForSpansAsync(13);
@@ -204,7 +206,9 @@ namespace Datadog.Trace.IntegrationTests
             });
 
             var discovery = DiscoveryService.Create(settings.Exporter);
-            await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
+            // and this was easiest to retrofit without changing the test structure too much.
+            var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
@@ -219,7 +223,7 @@ namespace Datadog.Trace.IntegrationTests
             CreateDefaultSpan(type: "redis", resource: "SET le_key le_value");
             CreateDefaultSpan(type: "redis", resource: "SET another_key another_value");
 
-            await tracer.TracerManager.ShutdownAsync(); // Flushes and closes both traces and stats
+            await tracer.DisposeAsync(); // Flushes and closes both traces and stats
 
             var statsPayload = await agent.WaitForStatsAsync(1);
             var spans = await agent.WaitForSpansAsync(6);
@@ -363,7 +367,9 @@ namespace Datadog.Trace.IntegrationTests
                     }));
 
             var discovery = DiscoveryService.Create(settings.Exporter);
-            await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
+            // and this was easiest to retrofit without changing the test structure too much.
+            var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             if (expectStats)
@@ -465,7 +471,7 @@ namespace Datadog.Trace.IntegrationTests
             await tracer.FlushAsync();
 
             // Flush and close both traces and stats
-            await tracer.TracerManager.ShutdownAsync();
+            await tracer.DisposeAsync();
             WaitForStats(statsWaitEvent, expectStats);
             WaitForTraces(tracesWaitEvent, finishSpansOnClose); // The last span was an error, so we expect to receive it as long as it closed
 

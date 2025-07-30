@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
@@ -108,6 +110,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public void CustomTestConfigurationParser(SerializableDictionary tags, SerializableDictionary expected)
         {
             Assert.Equal(expected, TestOptimizationClient.GetCustomTestsConfigurations(tags?.ToDictionary()));
+        }
+
+        [SkippableFact]
+        public void GitFetchCommitInfo()
+        {
+            var workingDirectory = Environment.CurrentDirectory;
+            var localCommits = GitCommandHelper.GetLocalCommits(workingDirectory);
+            if (localCommits.Length == 0)
+            {
+                Skip.If(true, "No local commits found. Skipping test.");
+            }
+            else
+            {
+                localCommits.Should().NotBeNullOrEmpty();
+                localCommits.Should().NotContainNulls();
+                foreach (var localCommit in localCommits)
+                {
+                    if (GitCommandHelper.FetchCommitData(workingDirectory, localCommit) is { } commitData)
+                    {
+                        commitData.CommitSha.Should().NotBeNullOrWhiteSpace();
+                        commitData.AuthorName.Should().NotBeNullOrWhiteSpace();
+                        commitData.AuthorEmail.Should().NotBeNullOrWhiteSpace();
+                        commitData.AuthorDate.Should().BeAfter(DateTimeOffset.MinValue).And.BeBefore(DateTimeOffset.Now);
+                        commitData.CommitterName.Should().NotBeNullOrWhiteSpace();
+                        commitData.CommitterEmail.Should().NotBeNullOrWhiteSpace();
+                        commitData.CommitterDate.Should().BeAfter(DateTimeOffset.MinValue).And.BeBefore(DateTimeOffset.Now);
+                        commitData.CommitMessage.Should().NotBeNullOrWhiteSpace();
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Failed to fetch commit data for {localCommit} in {workingDirectory}");
+                    }
+                }
+            }
         }
     }
 }

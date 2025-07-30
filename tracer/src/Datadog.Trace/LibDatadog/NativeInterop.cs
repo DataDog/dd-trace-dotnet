@@ -9,6 +9,7 @@ using System;
 using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -17,10 +18,14 @@ internal class NativeInterop
     private const string DllName = "LibDatadog";
 
     // This will never change, so we use a lazy to cache the result.
-    // This confirms that we are in an automatic instrumentation environment (and so PInvokes have been re-written)
-    // and that the libdatadog library has been deployed (which is not the case in many serverless environments).
+    // This confirms that we are in an automatic instrumentation environment (and so P/Invokes have been re-written)
+    // and that the libdatadog library has been deployed (which is not the case in some serverless environments).
     // We should add or remove conditions from here as our deployment requirements change.
-    private static readonly Lazy<bool> LibDatadogAvailable = new(() => !Util.EnvironmentHelpers.IsServerlessEnvironment() && Instrumentation.ProfilerAttached);
+    private static readonly Lazy<bool> LibDatadogAvailable = new(() =>
+        Instrumentation.ProfilerAttached &&
+        !EnvironmentHelpers.IsAwsLambda() &&
+        (!EnvironmentHelpers.IsAzureAppServices() || EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()) &&
+        !EnvironmentHelpers.IsGoogleCloudFunctions());
 
     public static bool IsLibDatadogAvailable => LibDatadogAvailable.Value;
 
@@ -37,6 +42,12 @@ internal class NativeInterop
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_send")]
         internal static extern TraceExporterErrorHandle Send(SafeHandle handle, ByteSlice trace, UIntPtr traceCount, ref IntPtr response);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_response_get_body")]
+        internal static extern IntPtr GetResponseBody(IntPtr outHandle);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_response_free")]
+        internal static extern void FreeResponse(IntPtr handle);
     }
 
     internal static class Config

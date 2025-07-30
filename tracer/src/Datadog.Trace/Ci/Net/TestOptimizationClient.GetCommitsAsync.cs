@@ -26,14 +26,7 @@ internal sealed partial class TestOptimizationClient
 
     public async Task<SearchCommitResponse> GetCommitsAsync()
     {
-        var gitLogOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits);
-        if (gitLogOutput is null)
-        {
-            Log.Warning("TestOptimizationClient: 'git log...' command is null");
-            return new SearchCommitResponse(null, null, false);
-        }
-
-        var localCommits = gitLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
+        var localCommits = GitCommandHelper.GetLocalCommits(_workingDirectory);
         if (localCommits.Length == 0)
         {
             Log.Debug("TestOptimizationClient: Local commits not found. (since 1 month ago)");
