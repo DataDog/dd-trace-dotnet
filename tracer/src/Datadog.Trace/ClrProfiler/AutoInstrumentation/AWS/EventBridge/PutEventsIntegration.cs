@@ -47,7 +47,8 @@ public class PutEventsIntegration
             return CallTargetState.GetDefault();
         }
 
-        var scope = AwsEventBridgeCommon.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
+        var tracer = Tracer.Instance;
+        var scope = AwsEventBridgeCommon.CreateScope(tracer, Operation, SpanKind, out var tags);
         if (tags is not null)
         {
             var busName = AwsEventBridgeCommon.GetBusName(request.Entries.Value);
@@ -60,7 +61,7 @@ public class PutEventsIntegration
         }
 
         var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-        ContextPropagation.InjectContext(request, context);
+        ContextPropagation.InjectContext(tracer, request, context);
 
         return new CallTargetState(scope);
     }
