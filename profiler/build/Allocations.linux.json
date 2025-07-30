@@ -1,7 +1,7 @@
 {
   "enableDatadog": true,
   "warmUpCount": 2,
-  "count": 10,
+  "count": 20,
   "scenarios": [
     {
       "name": "Baseline_allocation",
@@ -44,7 +44,6 @@
     "LD_PRELOAD": "$(CWD)/../../shared/bin/monitoring-home/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
     "DD_PROFILING_METRICS_FILEPATH": "metrics.json",
     "DD_PROFILING_GC_ENABLED": "0"
-
   },
   "tags": {
     "runtime.architecture": "x64",

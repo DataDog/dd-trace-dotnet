@@ -105,6 +105,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var url = "/Health";
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            FilterConnectionHeader(settings);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, SecurityEnabled ? 1 : 2, settings, userAgent: "Hello/V");
         }
 

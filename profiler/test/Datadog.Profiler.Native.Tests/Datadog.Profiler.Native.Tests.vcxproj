@@ -59,6 +59,7 @@
     <ClCompile Include="ClrEventsParserTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
     <ClCompile Include="CpuProfilerTypeTest.cpp" />
+    <ClCompile Include="CpuSamplePRoviderTest.cpp" />
     <ClCompile Include="CrashReportingTest.cpp" />
     <ClCompile Include="EnabledProfilersTest.cpp" />
     <ClCompile Include="EnvironmentHelper.cpp" />

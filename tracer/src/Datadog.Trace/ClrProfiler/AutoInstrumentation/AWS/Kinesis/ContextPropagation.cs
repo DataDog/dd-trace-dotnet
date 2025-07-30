@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         private const int MaxDsmHeaderSize = 34;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
-        public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, Scope? scope, string? streamName)
+        public static void InjectTraceIntoRecords<TRecordsRequest>(Tracer tracer, TRecordsRequest request, Scope? scope, string? streamName)
             where TRecordsRequest : IContainsRecords
         {
             // request.Records is not null and has at least one element
@@ -35,11 +35,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             if (request.Records[0].DuckCast<IContainsData>() is { } record)
             {
-                InjectTraceIntoData(record, scope, streamName);
+                InjectTraceIntoData(tracer, record, scope, streamName);
             }
         }
 
-        public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, Scope? scope, string? streamName)
+        public static void InjectTraceIntoData<TRecordRequest>(Tracer tracer, TRecordRequest record, Scope? scope, string? streamName)
             where TRecordRequest : IContainsData
         {
             if (scope is null)
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             var propagatedContext = new Dictionary<string, object>();
             if (scope.Span.Context != null && !string.IsNullOrEmpty(streamName))
             {
-                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+                var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
                 {
                     var payloadSize = jsonData?.Count > 0 && record.Data != null ? record.Data.Length : 0;
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             try
             {
-                Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
+                tracer.TracerManager.SpanContextPropagator.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
                 jsonData[KinesisKey] = propagatedContext;
 
                 var memoryStreamData = DictionaryToMemoryStream(jsonData);

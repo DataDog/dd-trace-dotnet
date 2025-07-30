@@ -695,7 +695,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
                                                                                 promise);
 
             // wait and get the value from the future<ULONG>
-            const auto status = future.wait_for(100ms);
+            const auto status = future.wait_for(200ms);
 
             if (status != std::future_status::timeout)
             {
@@ -1314,7 +1314,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                                                                                 promise);
 
             // wait and get the value from the future<ULONG>
-            const auto status = future.wait_for(100ms);
+            const auto status = future.wait_for(200ms);
 
             if (status != std::future_status::timeout)
             {

@@ -29,13 +29,14 @@ internal sealed partial class TestOptimizationClient
             return new TestManagementResponse();
         }
 
-        var commitMessage = _testOptimization.CIValues.Message ?? string.Empty;
+        var commitSha = _testOptimization.CIValues.HeadCommit ?? _commitSha;
+        var commitMessage = _testOptimization.CIValues.HeadMessage ?? _testOptimization.CIValues.Message ?? string.Empty;
         _testManagementUrl ??= GetUriFromPath(TestManagementUrlPath);
         var query = new DataEnvelope<Data<TestManagementQuery>>(
             new Data<TestManagementQuery>(
-                _commitSha,
+                commitSha,
                 TestManagementType,
-                new TestManagementQuery(_repositoryUrl, _commitSha, null, commitMessage)),
+                new TestManagementQuery(_repositoryUrl, commitSha, null, commitMessage)),
             null);
 
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
