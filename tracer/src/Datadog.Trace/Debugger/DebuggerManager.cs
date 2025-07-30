@@ -67,6 +67,8 @@ namespace Datadog.Trace.Debugger
 
         internal LiveDebugger? DynamicInstrumentation { get; private set; }
 
+        internal SpanCodeOrigin.SpanCodeOrigin? CodeOrigin { get; private set; }
+
         internal IDebuggerUploader? SymbolsUploader { get; private set; }
 
         internal ExceptionDebugging? ExceptionReplay { get; private set; }
@@ -112,6 +114,25 @@ namespace Datadog.Trace.Debugger
         {
             DebuggerSnapshotSerializer.SetConfig(settings);
             Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
+        }
+
+        private void SetCodeOriginState()
+        {
+            try
+            {
+                if (DebuggerSettings.CodeOriginForSpansEnabled && CodeOrigin == null)
+                {
+                    CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(DebuggerSettings);
+                }
+                else
+                {
+                    Log.Information("Code Origin for Spans is disabled by. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing Code Origin for spans.");
+            }
         }
 
         private async Task SetDynamicInstrumentationState()
