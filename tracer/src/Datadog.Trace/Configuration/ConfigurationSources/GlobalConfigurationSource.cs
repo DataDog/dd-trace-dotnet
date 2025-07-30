@@ -8,7 +8,10 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog;
+using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration;
@@ -18,21 +21,57 @@ namespace Datadog.Trace.Configuration;
 /// </summary>
 internal class GlobalConfigurationSource
 {
+    static GlobalConfigurationSource()
+    {
+        var result = CreateDefaultConfigurationSource();
+        Instance = result.ConfigurationSource;
+    }
+
     /// <summary>
     /// Gets the configuration source instance.
     /// </summary>
-    internal static IConfigurationSource Instance { get; private set;  } = CreateDefaultConfigurationSource();
+    internal static IConfigurationSource Instance { get; private set; }
 
     /// <summary>
     /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
     /// AppSettings where available, and a local datadog.json file, if present.
     /// </summary>
     /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
-    internal static CompositeConfigurationSource CreateDefaultConfigurationSource()
+    internal static GlobalConfigurationSourceResult CreateDefaultConfigurationSource(string? handsOffLocalConfigPath = null, string? handsOffFleetConfigPath = null, bool? isLibdatadogAvailable = null)
     {
         // env > AppSettings > datadog.json
+        string? message = null;
+        Exception? exception = null;
+        var resultType = Result.Success;
         var configurationSource = new CompositeConfigurationSource();
-        configurationSource.Add(new EnvironmentConfigurationSource());
+        var environmentSource = new EnvironmentConfigurationSource();
+        var configBuilder = new ConfigurationBuilder(environmentSource, TelemetryFactory.Config);
+        var applicationMonitoringConfigFileEnabled = configBuilder.WithKeys(ConfigurationKeys.ApplicationMonitoringConfigFileEnabled).AsBool(true);
+        var debugEnabled = configBuilder.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
+        if (applicationMonitoringConfigFileEnabled)
+        {
+            // stable configuration: fleet managed
+            var configsResult = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(debugEnabled, handsOffLocalConfigPath, handsOffFleetConfigPath, isLibdatadogAvailable);
+            if (configsResult is { ConfigurationSuccessResult: { } configsValue })
+            {
+                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesFleet, false));
+                configurationSource.Add(environmentSource);
+                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesLocal, true));
+            }
+            else
+            {
+                message = configsResult.ErrorMessage;
+                exception = configsResult.Exception;
+                resultType = configsResult.Result;
+                configurationSource.Add(environmentSource);
+            }
+        }
+        else
+        {
+            resultType = Result.ApplicationMonitoringConfigFileEnabled;
+            message = $"As {nameof(ConfigurationKeys.ApplicationMonitoringConfigFileEnabled)}  is disabled, not using hands-off configuration";
+            configurationSource.Add(environmentSource);
+        }
 
 #if NETFRAMEWORK
         // on .NET Framework only, also read from app.config/web.config
@@ -44,7 +83,7 @@ internal class GlobalConfigurationSource
             configurationSource.Add(jsonConfigurationSource);
         }
 
-        return configurationSource;
+        return new(configurationSource, resultType, message, exception);
     }
 
     internal static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, string? baseDirectory, [NotNullWhen(true)] out IConfigurationSource? jsonConfigurationSource)
@@ -81,9 +120,11 @@ internal class GlobalConfigurationSource
     /// <summary>
     /// Used to refresh configuration source.
     /// </summary>
-    internal static void Reload()
+    /// <param name="isLibdatadogAvailable">whether libdatadog is available</param>
+    internal static void Reload(bool isLibdatadogAvailable)
     {
-        Instance = CreateDefaultConfigurationSource();
+        var result = CreateDefaultConfigurationSource(isLibdatadogAvailable: isLibdatadogAvailable);
+        Instance = result.ConfigurationSource;
     }
 
     private static string GetCurrentDirectory()
