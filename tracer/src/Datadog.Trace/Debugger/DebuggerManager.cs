@@ -1,0 +1,246 @@
+// <copyright file="DebuggerManager.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
+using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
+using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
+
+#nullable enable
+
+namespace Datadog.Trace.Debugger
+{
+    internal class DebuggerManager
+    {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerManager));
+
+        private static readonly Lazy<DebuggerManager> _lazyInstance =
+            new(
+                () => new DebuggerManager(
+                        DebuggerSettings.FromDefaultSource()),
+                LazyThreadSafetyMode.ExecutionAndPublication);
+
+        private static volatile bool _discoveryServiceReady;
+        private readonly SemaphoreSlim _semaphore;
+        private readonly CancellationTokenSource _cancellationToken;
+        private volatile bool _isShuttingDown;
+        private int _initialized;
+
+        private DebuggerManager(DebuggerSettings debuggerSettings)
+        {
+            _initialized = 0;
+            _discoveryServiceReady = false;
+            _isShuttingDown = false;
+            _semaphore = new SemaphoreSlim(1, 1);
+            DebuggerSettings = debuggerSettings;
+            _cancellationToken = new CancellationTokenSource();
+
+            var tracerManager = TracerManager.Instance;
+            try
+            {
+                DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracerManager.Settings.ServiceName ?? tracerManager.DefaultServiceName);
+            }
+            catch (Exception e)
+            {
+                DynamicInstrumentationHelper.ServiceName = tracerManager.DefaultServiceName;
+                Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
+            }
+        }
+
+        internal static DebuggerManager Instance => _lazyInstance.Value;
+
+        internal DebuggerSettings DebuggerSettings { get; private set; }
+
+        internal LiveDebugger? DynamicInstrumentation { get; private set; }
+
+        internal IDebuggerUploader? SymbolsUploader { get; private set; }
+
+        internal ExceptionDebugging? ExceptionReplay { get; private set; }
+
+        internal string ServiceName => DynamicInstrumentationHelper.ServiceName;
+
+        // /!\ This method is called by reflection in the Samples.SampleHelpers
+        // If you remove it then you need to provide an alternative way to wait for the discovery service
+        private static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService, CancellationToken cancellationToken)
+        {
+            // We do not check this here so as not to interfere with the reflection usage of this method.
+            /*
+            if (_discoveryServiceReady)
+            {
+                return true;
+            }
+            */
+
+            var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            // Use the provided cancellation token to cancel the wait operation
+            using var registration = cancellationToken.Register(() => tc.TrySetResult(false));
+
+            discoveryService.SubscribeToChanges(Callback);
+            var result = await tc.Task.ConfigureAwait(false);
+
+            // Cache the successful result
+            if (result)
+            {
+                _discoveryServiceReady = true;
+            }
+
+            return result;
+
+            void Callback(AgentConfiguration x)
+            {
+                tc.TrySetResult(true);
+                discoveryService.RemoveSubscription(Callback);
+            }
+        }
+
+        private void SetGeneralConfig(DebuggerSettings settings)
+        {
+            DebuggerSnapshotSerializer.SetConfig(settings);
+            Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
+        }
+
+        private async Task SetDynamicInstrumentationState()
+        {
+            try
+            {
+                if (DebuggerSettings.Enabled && DynamicInstrumentation == null)
+                {
+                    var tracerManager = TracerManager.Instance;
+                    var settings = tracerManager.Settings;
+
+                    if (!settings.IsRemoteConfigurationAvailable)
+                    {
+                        if (DebuggerSettings.Enabled)
+                        {
+                            Log.Warning("Dynamic Instrumentation is enabled by environment variable but remote configuration is not available in this environment, so Dynamic Instrumentation cannot be enabled.");
+                        }
+
+                        tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                        return;
+                    }
+
+                    var discoveryService = tracerManager.DiscoveryService;
+                    DynamicInstrumentation = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                    Log.Debug("Dynamic Instrumentation has been created.");
+
+                    if (!_discoveryServiceReady)
+                    {
+                        var sw = Stopwatch.StartNew();
+                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService, _cancellationToken.Token).ConfigureAwait(false);
+                        if (isDiscoverySuccessful)
+                        {
+                            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
+                            sw.Restart();
+                            await DynamicInstrumentation.InitializeAsync().ConfigureAwait(false);
+                            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
+                            tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
+                        }
+                    }
+                }
+                else
+                {
+                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.Enabled);
+                }
+            }
+            catch (Exception ex)
+            {
+                TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                Log.Error(ex, "Error initializing Dynamic Instrumentation.");
+            }
+        }
+
+        internal Task UpdateDynamicConfiguration(DebuggerSettings? newDebuggerSettings = null)
+        {
+            return UpdateProductsState(newDebuggerSettings ?? DebuggerSettings);
+        }
+
+        private async Task UpdateProductsState(DebuggerSettings newDebuggerSettings)
+        {
+            if (_isShuttingDown)
+            {
+                return;
+            }
+
+            OneTimeSetup();
+
+            bool semaphoreAcquired = false;
+            try
+            {
+                semaphoreAcquired = await _semaphore.WaitAsync(TimeSpan.FromSeconds(30), _cancellationToken.Token).ConfigureAwait(false);
+                if (!semaphoreAcquired || _isShuttingDown)
+                {
+                    Log.Debug("Skipping update debugger state due to semaphore timed out");
+                    return;
+                }
+
+                DebuggerSettings = newDebuggerSettings;
+                await SetDynamicInstrumentationState().ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Handle cancellation gracefully
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error updating debugger state");
+            }
+            finally
+            {
+                if (semaphoreAcquired)
+                {
+                    try
+                    {
+                        _semaphore.Release();
+                    }
+                    catch
+                    {
+                        // ignore ObjectDisposedException or SemaphoreFullException
+                    }
+                }
+            }
+        }
+
+        private void OneTimeSetup()
+        {
+            if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0)
+            {
+                return;
+            }
+
+            LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
+            SetGeneralConfig(DebuggerSettings);
+        }
+
+        private void ShutdownTasks(Exception? ex)
+        {
+            _isShuttingDown = true;
+
+            if (ex != null)
+            {
+                Log.Debug(ex, "Shutdown task for DebuggerManager is running with exception");
+            }
+
+            SafeDisposal.New()
+                        .Execute(() => _cancellationToken.Cancel(), "cancelling DebuggerManager operations")
+                        .Add(SymbolsUploader)
+                        .Add(_cancellationToken)
+                        .Add(_semaphore)
+                        .DisposeAll();
+        }
+    }
+}

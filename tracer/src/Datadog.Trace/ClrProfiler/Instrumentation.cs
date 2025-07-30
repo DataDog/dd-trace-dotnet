@@ -511,30 +511,16 @@ namespace Datadog.Trace.ClrProfiler
             var serviceName = DynamicInstrumentationHelper.ServiceName;
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
-            Task.Run(
+            _ = Task.Run(
                 async () =>
                 {
-                    // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
-                    // to changes in ExporterSettings etc.
-
                     try
                     {
-                        var sw = Stopwatch.StartNew();
-                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
-                        TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
-
-                        if (isDiscoverySuccessful)
-                        {
-                            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
-
-                            Log.Debug("Initializing live debugger.");
-
-                            await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
-                        }
+                        await DebuggerManager.Instance.UpdateDynamicConfiguration().ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error initializing live debugger.");
+                        Log.Error(ex, "Error initializing debugger");
                     }
                 });
         }
