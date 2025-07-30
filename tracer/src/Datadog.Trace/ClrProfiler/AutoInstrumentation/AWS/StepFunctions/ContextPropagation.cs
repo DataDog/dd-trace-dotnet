@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
     {
         private const string StepFunctionsKey = "_datadog";
 
-        public static void InjectContextIntoInput<TClientMarker, TExecutionRequest>(TExecutionRequest carrier, PropagationContext context)
+        public static void InjectContextIntoInput<TClientMarker, TExecutionRequest>(Tracer tracer, TExecutionRequest carrier, PropagationContext context)
             where TExecutionRequest : IContainsInput
         {
             // Inject the tracing headers
@@ -24,11 +24,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 return;
             }
 
-            Inject<TClientMarker>(context, ref input);
+            Inject<TClientMarker>(tracer, context, ref input);
             carrier.Input = input;
         }
 
-        private static void Inject<TExecutionRequest>(PropagationContext context, ref string input)
+        private static void Inject<TExecutionRequest>(Tracer tracer, PropagationContext context, ref string input)
         {
             var sb = Util.StringBuilderCache.Acquire();
             sb.Append(input);
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
             }
 
             sb.AppendFormat(" \"{0}\": {{", StepFunctionsKey); // Add _datadog:" {
-            Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
+            tracer.TracerManager.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
             sb.Remove(sb.Length - 1, 1); // remove trailing comma
             sb.Append("}}"); // re-add both closing braces one for original JSON and one for context
             input = Util.StringBuilderCache.GetStringAndRelease(sb);

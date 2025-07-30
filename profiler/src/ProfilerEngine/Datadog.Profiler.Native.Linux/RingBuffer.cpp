@@ -283,7 +283,7 @@ Buffer RingBuffer::Writer::Reserve(bool* timeout) const
     }
 
     auto* rb = _rb;
-    // \fixme{nsavoire} Not sure if spinlock is the best option here
+    // \fixme{gleocadie} Not sure if spinlock is the best option here
     std::unique_lock const lock{*rb->spinlock, ReserveTimeout};
     if (!lock.owns_lock())
     {
@@ -360,7 +360,6 @@ RingBuffer::Reader::~Reader()
     }
 }
 
-// todo add a test with _sampleSize + BufferHeader size not aligned
 std::size_t RingBuffer::Reader::AvailableSamples() const
 {
     const auto n2 = align_up(sizeof(BufferHeader) + _rb->sample_size, RingBufferAlignment);
