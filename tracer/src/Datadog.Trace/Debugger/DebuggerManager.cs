@@ -84,7 +84,7 @@ namespace Datadog.Trace.Debugger
 
             var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            await using var registration = cancellationToken.Register(() => tc.TrySetResult(false));
+            using var registration = cancellationToken.Register(() => tc.TrySetResult(false));
 
             discoveryService.SubscribeToChanges(Callback);
             _discoveryServiceReady = await tc.Task.ConfigureAwait(false);
@@ -203,6 +203,7 @@ namespace Datadog.Trace.Debugger
                 }
 
                 DebuggerSettings = newDebuggerSettings;
+                SetCodeOriginState();
                 await SetDynamicInstrumentationState().ConfigureAwait(false);
             }
             catch (OperationCanceledException)
@@ -238,6 +239,22 @@ namespace Datadog.Trace.Debugger
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
             SetGeneralConfig(DebuggerSettings);
+            _ = InitializeSymbolUploader();
+        }
+
+        private async Task InitializeSymbolUploader()
+        {
+            try
+            {
+                var tracerManager = TracerManager.Instance;
+                SymbolsUploader = LiveDebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                // it will do nothing if it is an instance of NoOpSymbolUploader
+                await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing Symbol Database.");
+            }
         }
 
         private void ShutdownTasks(Exception? ex)
