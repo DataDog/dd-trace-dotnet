@@ -75,36 +75,29 @@ namespace Datadog.Trace.Debugger
 
         internal string ServiceName => DynamicInstrumentationHelper.ServiceName;
 
-        // /!\ This method is called by reflection in the Samples.SampleHelpers
-        // If you remove it then you need to provide an alternative way to wait for the discovery service
-        private static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService, CancellationToken cancellationToken)
+        private async Task<bool> WaitForDiscoveryServiceAsync(IDiscoveryService discoveryService, CancellationToken cancellationToken)
         {
-            // We do not check this here so as not to interfere with the reflection usage of this method.
-            /*
             if (_discoveryServiceReady)
             {
                 return true;
             }
-            */
 
             var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            // Use the provided cancellation token to cancel the wait operation
-            using var registration = cancellationToken.Register(() => tc.TrySetResult(false));
+            await using var registration = cancellationToken.Register(() => tc.TrySetResult(false));
 
             discoveryService.SubscribeToChanges(Callback);
-            var result = await tc.Task.ConfigureAwait(false);
-
-            // Cache the successful result
-            if (result)
-            {
-                _discoveryServiceReady = true;
-            }
-
-            return result;
+            _discoveryServiceReady = await tc.Task.ConfigureAwait(false);
+            return _discoveryServiceReady;
 
             void Callback(AgentConfiguration x)
             {
+                if (string.IsNullOrEmpty(x.DebuggerEndpoint))
+                {
+                    Log.Debug("`Debugger endpoint` is null.");
+                    return;
+                }
+
                 tc.TrySetResult(true);
                 discoveryService.RemoveSubscription(Callback);
             }
@@ -162,7 +155,7 @@ namespace Datadog.Trace.Debugger
                     if (!_discoveryServiceReady)
                     {
                         var sw = Stopwatch.StartNew();
-                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService, _cancellationToken.Token).ConfigureAwait(false);
+                        var isDiscoverySuccessful = await WaitForDiscoveryServiceAsync(discoveryService, _cancellationToken.Token).ConfigureAwait(false);
                         if (isDiscoverySuccessful)
                         {
                             TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
