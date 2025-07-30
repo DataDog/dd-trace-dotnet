@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -22,6 +23,7 @@ namespace Datadog.Trace
         private ImmutableTracerSettings? _settings;
 
         [Instrumented] // This is only _actually_ instrumented up to 3.6.0 (automatic)
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private Tracer(object? automaticTracer, Dictionary<string, object?> initialValues)
         {
             AutomaticTracer = automaticTracer;
@@ -73,13 +75,21 @@ namespace Datadog.Trace
         /// Gets the active scope
         /// </summary>
         [Instrumented]
-        public IScope? ActiveScope => null;
+        public IScope? ActiveScope
+        {
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            get => null;
+        }
 
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
         [Instrumented]
-        public string DefaultServiceName => string.Empty;
+        public string DefaultServiceName
+        {
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            get => string.Empty;
+        }
 
         /// <summary>
         /// Gets this tracer's settings.
@@ -119,11 +129,13 @@ namespace Datadog.Trace
 
         /// <inheritdoc cref="ITracer" />
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public IScope StartActive(string operationName)
             => StartActive(operationName, parent: null, serviceName: null, null, finishOnClose: true);
 
         /// <inheritdoc cref="ITracer" />
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public IScope StartActive(string operationName, SpanCreationSettings settings)
             => StartActive(operationName, settings.Parent, serviceName: null, settings.StartTime, settings.FinishOnClose);
 
@@ -133,12 +145,14 @@ namespace Datadog.Trace
         /// </summary>
         /// <returns>Task used to track the async flush operation</returns>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public Task ForceFlushAsync() => Task.CompletedTask;
 
         /// <summary>
         /// Automatic instrumentation intercepts this method and reconfigures the automatic tracer
         /// </summary>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void Configure(Dictionary<string, object?> settings)
         {
             _ = settings;
@@ -148,6 +162,7 @@ namespace Datadog.Trace
         /// Automatic instrumentation intercepts this method and returns the global tracer instance
         /// </summary>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static object? GetAutomaticTracerInstance() => null;
 
         /// <summary>
@@ -155,6 +170,7 @@ namespace Datadog.Trace
         /// settings, only if the ImmutableTracerSettings (automatic) provided is different to the current one.
         /// </summary>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private IDictionary<string, object?>? GetUpdatedImmutableTracerSettings(object? automaticTracer, ref object? automaticSettings)
         {
             _ = automaticTracer;
@@ -166,6 +182,7 @@ namespace Datadog.Trace
         /// Automatic instrumentation intercepts this method and returns a duck-typed Scope from Datadog.Trace.
         /// </summary>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private IScope StartActive(string operationName, ISpanContext? parent, string? serviceName, DateTimeOffset? startTime, bool? finishOnClose)
             => NullScope.Instance;
 
@@ -179,6 +196,7 @@ namespace Datadog.Trace
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <returns>The newly created span</returns>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         ISpan IDatadogOpenTracingTracer.StartSpan(string operationName, ISpanContext? parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
             => NullSpan.Instance;
     }

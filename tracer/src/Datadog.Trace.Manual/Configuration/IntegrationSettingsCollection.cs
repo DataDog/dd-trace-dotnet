@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration
@@ -29,6 +30,7 @@ namespace Datadog.Trace.Configuration
         [Instrumented]
         public IntegrationSettings this[string integrationName]
         {
+            [MethodImpl(MethodImplOptions.NoInlining)]
             get
             {
                 if (Settings.TryGetValue(integrationName, out var setting))

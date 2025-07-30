@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace;
@@ -22,12 +23,14 @@ public static class Baggage
     [Instrumented]
     public static IDictionary<string, string?> Current
     {
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get
         {
             // auto-instrumentation will return Trace.Baggage.Current instead
             return _current ??= new Dictionary<string, string?>();
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         set
         {
             // auto-instrumentation will add:
