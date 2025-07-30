@@ -123,6 +123,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
     [Metric(CommonTags.LogicalCpuCount)]
     public double? LogicalCpuCount { get; }
 
+    [Tag(CommonTags.GitPrBaseHeadCommit)]
+    public string? GitPrBaseHeadCommit { get; set; }
+
     [Tag(CommonTags.GitPrBaseCommit)]
     public string? GitPrBaseCommit { get; set; }
 
@@ -182,6 +185,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
             GitCommitCommitterEmail = environmentValues.CommitterEmail;
             GitCommitMessage = environmentValues.Message;
             BuildSourceRoot = environmentValues.SourceRoot;
+            GitPrBaseHeadCommit = environmentValues.PrBaseHeadCommit;
             GitPrBaseCommit = environmentValues.PrBaseCommit;
             GitPrBaseBranch = environmentValues.PrBaseBranch;
             PrNumber = environmentValues.PrNumber;
