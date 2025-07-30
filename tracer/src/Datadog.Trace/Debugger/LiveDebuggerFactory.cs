@@ -18,7 +18,6 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.StatsdClient;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
@@ -28,15 +27,13 @@ internal class LiveDebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebuggerFactory));
 
-    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         if (!debuggerSettings.Enabled)
         {
             Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
             return LiveDebugger.Create(debuggerSettings, string.Empty, null, null, null, null, null, null, null, null, null);
         }
-
-        telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
 
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
         var snapshotStatusSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
