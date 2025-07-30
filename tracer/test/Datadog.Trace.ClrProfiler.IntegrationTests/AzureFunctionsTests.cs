@@ -280,7 +280,7 @@ public abstract class AzureFunctionsTests : TestHelper
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
-                const int expectedSpanCount = 21;
+                const int expectedSpanCount = 22;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
