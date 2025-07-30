@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Specialized;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -17,6 +18,7 @@ using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.PlatformHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
@@ -25,10 +27,10 @@ using Xunit;
 namespace Datadog.Trace.Tests;
 
 [Collection(nameof(EnvironmentVariablesTestCollection))]
-[EnvironmentRestorer("DD_AZURE_APP_SERVICES", "FUNCTIONS_WORKER_RUNTIME", "FUNCTION_TARGET", "AWS_LAMBDA_FUNCTION_NAME", "K_SERVICE", "_DD_EXTENSION_PATH")]
+[EnvironmentRestorer("AWS_LAMBDA_FUNCTION_NAME", "_DD_EXTENSION_PATH")]
 public class TracerManagerFactoryTests : IAsyncLifetime
 {
-    private TracerManager _manager = null;
+    private TracerManager _manager;
 
     public Task InitializeAsync() => Task.CompletedTask;
 
@@ -37,7 +39,8 @@ public class TracerManagerFactoryTests : IAsyncLifetime
     [Fact]
     public void RemoteConfigIsAvailableByDefault()
     {
-        var settings = TracerSettings.FromDefaultSourcesInternal();
+        var settings = new TracerSettings();
+
         settings.IsRemoteConfigurationAvailable.Should().BeTrue();
 
         _manager = CreateTracerManager(settings);
@@ -47,20 +50,49 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         _manager.TracerFlareManager.Should().BeOfType<TracerFlareManager>();
     }
 
-    [Theory]
-    [InlineData("DD_AZURE_APP_SERVICES", "1")]
-    [InlineData("FUNCTIONS_WORKER_RUNTIME", "dotnet")]
-    [InlineData("FUNCTION_TARGET", "something")]
-    [InlineData("AWS_LAMBDA_FUNCTION_NAME", "something")]
-    public void RemoteConfigIsDisabledInServerlessScenarios(string key, string value)
+    [Fact]
+    public void RemoteConfigIsDisabledInAwsLambda()
     {
-        Environment.SetEnvironmentVariable(key, value);
-
-        // These do nothing on their own but combine later to give an effect
-        Environment.SetEnvironmentVariable("K_SERVICE", "something");
+        // Lambda.Create() reads environment variables directly, not through TracerSettings
+        Environment.SetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME", "something");
         Environment.SetEnvironmentVariable("_DD_EXTENSION_PATH", Path.GetTempFileName());
 
-        var settings = TracerSettings.FromDefaultSourcesInternal();
+        // no source needed
+        var settings = new TracerSettings();
+
+        settings.IsRemoteConfigurationAvailable.Should().BeFalse();
+
+        _manager = CreateTracerManager(settings);
+
+        _manager.RemoteConfigurationManager.Should().BeOfType<NullRemoteConfigurationManager>();
+        _manager.DynamicConfigurationManager.Should().BeOfType<NullDynamicConfigurationManager>();
+        _manager.TracerFlareManager.Should().BeOfType<NullTracerFlareManager>();
+    }
+
+    [Theory]
+    [PairwiseData]
+    public void RemoteConfigIsDisabledInGcp(bool useDeprecatedEnvVars)
+    {
+        var source = useDeprecatedEnvVars ?
+            GcpHelper.CreateMinimalFirstGenCloudRunFunctionsConfiguration("function-name", "project-id") :
+            GcpHelper.CreateMinimalCloudRunFunctionsConfiguration("function-target", "k-service");
+
+        var settings = new TracerSettings(source);
+
+        settings.IsRemoteConfigurationAvailable.Should().BeFalse();
+
+        _manager = CreateTracerManager(settings);
+
+        _manager.RemoteConfigurationManager.Should().BeOfType<NullRemoteConfigurationManager>();
+        _manager.DynamicConfigurationManager.Should().BeOfType<NullDynamicConfigurationManager>();
+        _manager.TracerFlareManager.Should().BeOfType<NullTracerFlareManager>();
+    }
+
+    [Fact]
+    public void RemoteConfigIsDisabledInAzureAppServices()
+    {
+        var source = AzureAppServiceHelper.CreateMinimalAzureAppServiceConfiguration("site-name");
+        var settings = new TracerSettings(source);
 
         settings.IsRemoteConfigurationAvailable.Should().BeFalse();
 
@@ -102,5 +134,17 @@ public class TracerManagerFactoryTests : IAsyncLifetime
 
         static RuntimeMetricsWriter BuildRuntimeMetrics()
             => new(Mock.Of<IDogStatsd>(), TimeSpan.FromMinutes(1), inAzureAppServiceContext: false, (_, _, _) => Mock.Of<IRuntimeMetricsListener>());
+    }
+
+    private static IConfigurationSource CreateConfigurationSource(params (string Key, string Value)[] values)
+    {
+        var config = new NameValueCollection();
+
+        foreach (var (key, value) in values)
+        {
+            config.Add(key, value);
+        }
+
+        return new NameValueConfigurationSource(config);
     }
 }

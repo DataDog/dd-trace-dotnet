@@ -63,7 +63,7 @@ bool Callstack::Add(std::uintptr_t ip)
     return true;
 }
 
-shared::span<std::uintptr_t> Callstack::Data() const
+shared::span<std::uintptr_t> Callstack::AsSpan() const
 {
     return _buffer;
 }

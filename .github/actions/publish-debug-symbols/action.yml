@@ -2,15 +2,15 @@ name: "Publish native debug symbols"
 description: 'Publish native debug symbols'
 
 inputs:
-  symbols_folder:
-    description: "Folder containing the debug symbols"
+  artifacts_path:
+    description: "Path to the build artifacts"
     required: true
   preprod_key:
     description: "Preprod API key"
     default: ""
     required: false
-  prod_key:
-    description: "Prod API key"
+  public_symbols_key:
+    description: "Public symbols API key"
     default: ""
     required: false
 
@@ -34,19 +34,67 @@ runs:
       shell: bash
       run: npm install -g @datadog/datadog-ci@3.15.0
 
+    - name: Create debug symbols directory
+      shell: bash
+      run: |
+        linux_artifact=${{inputs.artifacts_path}}/linux-native-symbols.tar.gz
+        if [ ! -f $linux_artifact ]; then
+          echo "Linux native symbols not found at $linux_artifact"
+          exit 1
+        fi
+
+        windows_native_symbols=${{inputs.artifacts_path}}/windows-native-symbols.zip
+        if [ ! -f $windows_native_symbols ]; then
+          echo "Windows native symbols not found at $windows_native_symbols"
+          exit 1
+        fi
+
+        windows_tracer_home=${{inputs.artifacts_path}}/windows-tracer-home.zip
+        if [ ! -f $windows_tracer_home ]; then
+          echo "Windows tracer home not found at $windows_tracer_home"
+          exit 1
+        fi
+
+        export DEBUG_SYMBOLS_DIR="$GITHUB_WORKSPACE/debug_symbols"
+        mkdir -p "$DEBUG_SYMBOLS_DIR"
+        echo "DEBUG_SYMBOLS_DIR=$DEBUG_SYMBOLS_DIR" >> $GITHUB_ENV
+
+        ## By splitting windows and linux symbols, we prevent trashing the logs
+        ## Ex: when running datadog-ci for linux, it will report all PE files as non-ELF files.
+        ##     when running datadog-ci for windows, it will report all ELF files as non-PE files.
+
+        linux_subfolder="$DEBUG_SYMBOLS_DIR/linux"
+        mkdir "$linux_subfolder"
+        # Extract Linux symbols
+        tar -zxvf $linux_artifact -C "$linux_subfolder"
+
+        windows_subfolder="$DEBUG_SYMBOLS_DIR/windows"
+        mkdir "$windows_subfolder"
+        # Extract Windows symbols
+        unzip -d "$windows_subfolder" $windows_native_symbols
+        # Extract Windows tracer home
+        unzip -d "$windows_subfolder" $windows_tracer_home
+
+        # Remove all directories except the ones containing native symbols
+        find "$windows_subfolder" -mindepth 1 -maxdepth 1 -type d \
+          ! -name dd-dotnet-win-x64 \
+          ! -name win-x64 \
+          ! -name win-x86 \
+          -exec rm -rf {} +
+
     - name: Push debug symbols
       shell: bash
       run: |
-        if [ -n "${{ inputs.prod_key }}" ]; then
+        if [ -n "${{ inputs.public_symbols_key }}" ]; then
           echo "Push symbols to prod env"
-          DATADOG_API_KEY="${{ inputs.prod_key }}" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload ${{inputs.symbols_folder}}
-          DATADOG_API_KEY="${{ inputs.prod_key }}" DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload ${{inputs.symbols_folder}}
+          DATADOG_API_KEY="${{ inputs.public_symbols_key }}" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload "$DEBUG_SYMBOLS_DIR/linux"
+          DATADOG_API_KEY="${{ inputs.public_symbols_key }}" DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload "$DEBUG_SYMBOLS_DIR/windows"
         fi
 
         if [ -n "${{ inputs.preprod_key }}" ]; then
           echo "Push symbols to staging env"
-          DATADOG_API_KEY="${{ inputs.preprod_key }}" DATADOG_SITE="datad0g.com" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload ${{inputs.symbols_folder}}
-          DATADOG_API_KEY="${{ inputs.preprod_key }}" DATADOG_SITE="datad0g.com" DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload ${{inputs.symbols_folder}}
+          DATADOG_API_KEY="${{ inputs.preprod_key }}" DATADOG_SITE="datad0g.com" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload "$DEBUG_SYMBOLS_DIR/linux"
+          DATADOG_API_KEY="${{ inputs.preprod_key }}" DATADOG_SITE="datad0g.com" DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload "$DEBUG_SYMBOLS_DIR/windows"
         fi
 
     

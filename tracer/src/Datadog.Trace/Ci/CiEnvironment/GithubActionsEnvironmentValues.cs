@@ -121,7 +121,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
                     var prBaseSha = pullRequestObject["base"]?["sha"]?.Value<string>();
                     if (!string.IsNullOrWhiteSpace(prBaseSha))
                     {
-                        PrBaseCommit = prBaseSha;
+                        PrBaseHeadCommit = prBaseSha;
                     }
 
                     var prBaseRef = pullRequestObject["base"]?["ref"]?.Value<string>();

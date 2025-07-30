@@ -35,6 +35,8 @@ public:
     // Public but should only be called privately or from tests
     void Export(bool lastCall = false);
 
+    inline static constexpr std::chrono::nanoseconds CollectingPeriod = 60ms;
+
 private:
     bool StartImpl() override;
     bool StopImpl() override;
@@ -48,7 +50,6 @@ private:
     const WCHAR* WorkerThreadName = WStr("DD_worker");
     const WCHAR* ExporterThreadName = WStr("DD_exporter");
 
-    inline static constexpr std::chrono::nanoseconds CollectingPeriod = 60ms;
     inline static std::string const SuccessfulExportsMetricName = "datadog.profiling.dotnet.operational.exports";
 
     std::chrono::seconds _uploadInterval;

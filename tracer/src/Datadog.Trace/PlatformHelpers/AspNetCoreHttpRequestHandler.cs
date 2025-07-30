@@ -217,8 +217,9 @@ namespace Datadog.Trace.PlatformHelpers
                 }
 
                 CoreHttpContextStore.Instance.Remove();
-                proxyScope?.Dispose();
+
                 rootScope.Dispose();
+                proxyScope?.Dispose();
             }
         }
 

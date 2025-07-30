@@ -32,8 +32,8 @@ namespace Samples
         private static readonly MethodInfo GetTracerInstance = TracerType?.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetMethod;
         private static readonly MethodInfo StartActiveMethod = TracerType?.GetMethod("StartActive", types: new[] { typeof(string) });
         private static readonly MethodInfo StartActiveWithContextMethod;
-        private static readonly MethodInfo ExtractMethod = SpanContextExtractorType?.GetMethod("Extract");
-        private static readonly MethodInfo InjectMethod = SpanContextInjectorType?.GetMethod("Inject");
+        private static readonly MethodInfo ExtractMethod = SpanContextExtractorType?.GetMethod("Extract", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo InjectMethod = SpanContextInjectorType?.GetMethod("Inject", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo SetParent = SpanCreationSettingsType?.GetProperty("Parent")?.SetMethod;
         private static readonly MethodInfo ForceFlushAsyncMethod = TracerType?.GetMethod("ForceFlushAsync", BindingFlags.Public | BindingFlags.Instance);
         private static readonly MethodInfo ActiveScopeProperty = TracerType?.GetProperty("ActiveScope")?.GetMethod;
@@ -178,14 +178,15 @@ namespace Samples
                 return new NoOpDisposable();
             }
 
-            var scopeExtractor = Activator.CreateInstance(SpanContextExtractorType);
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+            string messageType = null;
+            string source = null;
             var genericMethod = ExtractMethod.MakeGenericMethod(carrier.GetType());
-            var parentScope = genericMethod.Invoke(scopeExtractor, new object[] { carrier, getter });
+            var parentScope = genericMethod.Invoke(null, new object[] { tracer, carrier, getter, messageType, source });
 
             var spanCreationSettings = Activator.CreateInstance(SpanCreationSettingsType);
             SetParent.Invoke(spanCreationSettings, new object[] { parentScope });
 
-            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
             return (IDisposable)StartActiveWithContextMethod.Invoke(tracer, new object[] { operationName, spanCreationSettings });
         }
 
@@ -197,10 +198,11 @@ namespace Samples
                 spanId = 0;
                 return;
             }
-
-            var scopeExtractor = Activator.CreateInstance(SpanContextExtractorType);
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+            string messageType = null;
+            string source = null;
             var genericMethod = ExtractMethod.MakeGenericMethod(carrier.GetType());
-            var parentScope = genericMethod.Invoke(scopeExtractor, new object[] { carrier, getter });
+            var parentScope = genericMethod.Invoke(null, new object[] { tracer, carrier, getter, messageType, source });
             traceId = (ulong)TraceIdProperty.Invoke(parentScope, null);
             spanId = (ulong)SpanIdProperty.Invoke(parentScope, null);
         }
@@ -212,9 +214,11 @@ namespace Samples
                 return;
             }
 
-            var scopeInjector = Activator.CreateInstance(SpanContextInjectorType);
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
             var genericMethod = InjectMethod.MakeGenericMethod(carrier.GetType());
-            genericMethod.Invoke(scopeInjector, new object[] { carrier, setter, scope });
+            string messageType = null;
+            string target = null;
+            genericMethod.Invoke(null, new object[] { tracer, carrier, setter, scope, messageType, target });
         }
 
         public static ulong GetTraceId(IDisposable scope)

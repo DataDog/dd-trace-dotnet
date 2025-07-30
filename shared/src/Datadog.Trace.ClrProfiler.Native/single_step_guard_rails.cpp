@@ -22,6 +22,7 @@ SingleStepGuardRails::SingleStepGuardRails()
     const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
 
     m_isRunningInSingleStep = !isSingleStepVariable.empty(); 
+    m_forcedRuntimeDescription = "";
 }
 
 SingleStepGuardRails::~SingleStepGuardRails()
@@ -72,11 +73,11 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
                 // https://github.com/dotnet/runtime/pull/78670
                 Log::Debug("SingleStepGuardRails::CheckRuntime: Known faulty .NET runtime version detected, aborting instrumentation");
 
-                const auto eol = ".NET 6.0.12 and earlier have known crashing bugs";
+                const auto description = ".NET 6.0.12 and earlier have known crashing bugs";
                 const auto runtime = std::to_string(runtimeInformation.major_version) + "." +
                                      std::to_string(runtimeInformation.minor_version) + "." +
                                      std::to_string(runtimeInformation.build_version);
-                return HandleUnsupportedNetCoreVersion(eol, runtime, false); // not eol, just incompatible
+                return HandleUnsupportedNetCoreVersion(description, runtime, false); // not eol, just incompatible
             }
 
             // .NET Core 3.1+, but is it _too_ high?
@@ -136,7 +137,7 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetCoreVersion(const std::string&
         return S_OK;
     }
 
-    SendAbortTelemetry(NetCoreRuntime, runtimeVersion, isEol);
+    SendAbortTelemetry(NetCoreRuntime, runtimeVersion, isEol, unsupportedDescription);
     return E_FAIL;
 }
 
@@ -147,7 +148,7 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetFrameworkVersion(const std::st
         return S_OK;
     }
 
-    SendAbortTelemetry(NetFrameworkRuntime, runtimeVersion, isEol);
+    SendAbortTelemetry(NetFrameworkRuntime, runtimeVersion, isEol, unsupportedDescription);
     return E_FAIL;
 }
 
@@ -166,6 +167,7 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
         && forceEolInstrumentation)
     {
         m_isForcedExecution = true;
+        m_forcedRuntimeDescription = eolDescription;
         
         Log::Info(
             "SingleStepGuardRails::ShouldForceInstrumentationOverride: ",
@@ -208,7 +210,7 @@ void SingleStepGuardRails::RecordBootstrapError(const std::string& runtimeName, 
 
     const std::string points = "[{\"name\": \"library_entrypoint.error\", \"tags\": [\"error_type:"
                               + errorType + "\"]}]";
-    SendTelemetry(runtimeName, runtimeVersion, points);
+    SendTelemetry(runtimeName, runtimeVersion, points, "error", errorType, "internal_error");
 }
 
 void SingleStepGuardRails::RecordBootstrapSuccess(const RuntimeInformation& runtimeInformation) const
@@ -227,10 +229,17 @@ void SingleStepGuardRails::RecordBootstrapSuccess(const RuntimeInformation& runt
     const std::string points = "[{\"name\": \"library_entrypoint.complete\", \"tags\": [\"injection_forced:"
                               + isForced + "\"]}]";
 
-    SendTelemetry(runtimeName, runtimeVersion, points);
+    const std::string resultClass = m_isForcedExecution ? "success_forced" : "success";
+    const std::string resultReason = m_isForcedExecution
+    ? ( m_forcedRuntimeDescription.empty()
+        ? "Force instrumentation enabled, incompatible runtime"
+         : "Force instrumentation enabled, incompatible runtime, " + m_forcedRuntimeDescription)
+       : "Successfully configured automatic instrumentation";
+
+    SendTelemetry(runtimeName, runtimeVersion, points, "success", resultReason, resultClass);
 }
 
-void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, const std::string& runtimeVersion, const bool isEol) const
+void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, const std::string& runtimeVersion, const bool isEol, const std::string& unsupportedDescription) const
 {
     if(!m_isRunningInSingleStep)
     {
@@ -245,11 +254,12 @@ void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, co
     
     const std::string points = "[" + abort + "," + abort_runtime + "]";
 
-    SendTelemetry(runtimeName, runtimeVersion, points);
+    SendTelemetry(runtimeName, runtimeVersion, points, "abort", unsupportedDescription, "incompatible_runtime");
 }
 
 void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const std::string& runtimeVersion,
-                                         const std::string& points) const
+    const std::string& points, const std::string& injectResult,
+    const std::string& injectResultReason, const std::string& injectResultClass) const
 {
     if(!m_isRunningInSingleStep)
     {
@@ -280,7 +290,10 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         + "\",\"language_name\": \"dotnet\",\"language_version\": \"" + runtimeVersion
         + "\",\"tracer_version\": \"" + PROFILER_VERSION
         + "\",\"pid\":" + std::to_string(GetPID())
-        + "},\"points\": " + points + "}";
+        + ",\"inject_result\": \"" + injectResult
+        + "\",\"inject_result_reason\": \"" + injectResultReason
+        + "\",\"inject_result_class\": \"" + injectResultClass
+        + "\"},\"points\": " + points + "}";
 
     const auto processPath = ToString(forwarderPath);
 
@@ -289,7 +302,6 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     const std::vector args = {initialArg};
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , metadata);
-
     // Increment the reference count to prevent the loader from being unloaded while sending telemetry
 
 #ifdef _WIN32
