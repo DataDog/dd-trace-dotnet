@@ -1,4 +1,4 @@
-// <copyright file="LiveDebuggerTests.cs" company="Datadog">
+// <copyright file="DynamicInstrumentationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -23,7 +23,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
 
-public class LiveDebuggerTests
+public class DynamicInstrumentationTests
 {
     [Fact]
     public async Task DebuggerEnabled_ServicesCalled()
@@ -37,12 +37,23 @@ public class LiveDebuggerTests
         var lineProbeResolver = new LineProbeResolverMock();
         var snapshotUploader = new SnapshotUploaderMock();
         var diagnosticsUploader = new UploaderMock();
-        var symbolsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
-        await debugger.InitializeAsync();
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        debugger.Initialize();
+        discoveryService.Called.Should().BeTrue();
+
+        // Wait for async initialization to complete
+        var timeout = TimeSpan.FromSeconds(5);
+        var startTime = DateTime.UtcNow;
+
+        while (!debugger.IsInitialized && DateTime.UtcNow - startTime < timeout)
+        {
+            await Task.Delay(50);
+        }
+
+        debugger.IsInitialized.Should().BeTrue("Dynamic instrumentation should be initialized");
 
         probeStatusPoller.Called.Should().BeTrue();
         snapshotUploader.Called.Should().BeTrue();
@@ -51,7 +62,7 @@ public class LiveDebuggerTests
     }
 
     [Fact]
-    public async Task DebuggerDisabled_ServicesNotCalled()
+    public void DebuggerDisabled_ServicesNotCalled()
     {
         var settings = DebuggerSettings.FromSource(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "0" }, }),
@@ -66,8 +77,8 @@ public class LiveDebuggerTests
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
-        await debugger.InitializeAsync();
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        debugger.Initialize();
 
         lineProbeResolver.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
@@ -163,7 +174,7 @@ public class LiveDebuggerTests
     {
         internal bool Called { get; private set; }
 
-        public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location)
+        public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out LineProbeResolver.BoundLineProbeLocation location)
         {
             throw new NotImplementedException();
         }
