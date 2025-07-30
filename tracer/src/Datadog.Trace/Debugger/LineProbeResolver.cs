@@ -191,5 +191,18 @@ namespace Datadog.Trace.Debugger
                 return string.Join(_directoryPathSeparator ?? Path.DirectorySeparatorChar.ToString(), partsReverse);
             }
         }
+
+        internal record BoundLineProbeLocation(ProbeDefinition ProbeDefinition, Guid Mvid, int MethodToken, int BytecodeOffset, int LineNumber)
+        {
+            public ProbeDefinition ProbeDefinition { get; set; } = ProbeDefinition;
+
+            public Guid Mvid { get; set; } = Mvid;
+
+            public int MethodToken { get; set; } = MethodToken;
+
+            public int BytecodeOffset { get; set; } = BytecodeOffset;
+
+            public int LineNumber { get; set; } = LineNumber;
+        }
     }
 }
