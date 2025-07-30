@@ -500,7 +500,7 @@ namespace Foo
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", ".NET 10 or higher", "success_forced");
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET 10 or higher", "success_forced");
         }
 
         [SkippableFact]
