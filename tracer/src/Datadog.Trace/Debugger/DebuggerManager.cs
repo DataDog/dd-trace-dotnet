@@ -178,7 +178,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal Task UpdateDynamicConfiguration(DebuggerSettings? newDebuggerSettings = null)
+        internal Task UpdateConfiguration(DebuggerSettings? newDebuggerSettings = null)
         {
             return UpdateProductsState(newDebuggerSettings ?? DebuggerSettings);
         }

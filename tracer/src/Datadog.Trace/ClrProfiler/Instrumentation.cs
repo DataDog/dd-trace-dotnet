@@ -408,17 +408,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
-                }
-                catch (Exception e)
-                {
-                    DynamicInstrumentationHelper.ServiceName = tracer.DefaultServiceName;
-                    Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
-                }
-
-                try
-                {
-                    InitLiveDebugger(tracer);
+                    InitializeDebugger();
                 }
                 catch (Exception e)
                 {
@@ -490,33 +480,14 @@ namespace Datadog.Trace.ClrProfiler
         }
 #endif
 
-        private static void InitLiveDebugger(Tracer tracer)
+        private static void InitializeDebugger()
         {
-            var settings = tracer.Settings;
-            var debuggerSettings = DebuggerSettings.FromDefaultSource();
-
-            if (!settings.IsRemoteConfigurationAvailable)
-            {
-                // live debugger requires RCM, so there's no point trying to initialize it if RCM is not available
-                if (debuggerSettings.Enabled)
-                {
-                    Log.Warning("Live Debugger is enabled but remote configuration is not available in this environment, so live debugger cannot be enabled.");
-                }
-
-                tracer.TracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
-                return;
-            }
-
-            // Service Name must be lowercase, otherwise the agent will not be able to find the service
-            var serviceName = DynamicInstrumentationHelper.ServiceName;
-            var discoveryService = tracer.TracerManager.DiscoveryService;
-
             _ = Task.Run(
                 async () =>
                 {
                     try
                     {
-                        await DebuggerManager.Instance.UpdateDynamicConfiguration().ConfigureAwait(false);
+                        await DebuggerManager.Instance.UpdateConfiguration().ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -541,21 +512,6 @@ namespace Datadog.Trace.ClrProfiler
                 tc.TrySetResult(true);
                 discoveryService.RemoveSubscription(Callback);
             }
-        }
-
-        internal static async Task InitializeLiveDebugger(LiveDebugger liveDebugger)
-        {
-            var sw = Stopwatch.StartNew();
-            try
-            {
-                await liveDebugger.InitializeAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to initialize Live Debugger");
-            }
-
-            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
         }
 
         internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
