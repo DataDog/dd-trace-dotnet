@@ -51,7 +51,9 @@ public static class Program
             RunAddEventOverloads(span);
             RunSpanUpdateMethods(span);
             RunSpecialTagRemappers(span);
-
+#if NET6_0_OR_GREATER
+            CreateSystemDiagnosticsMetrics();
+#endif
             TelemetrySpan otherSpan = null;
             using (otherSpan = _otherLibraryTracer.StartActiveSpan("Response"))
             {
@@ -100,7 +102,6 @@ public static class Program
         {
             Thread.Sleep(100);
         }
-
     }
 
     private static async Task RunStartSpanOverloadsAsync(TelemetrySpan span)
@@ -308,4 +309,23 @@ public static class Program
 
         _previousSpanContext = currentSpanContext;
     }
+
+#if NET6_0_OR_GREATER
+    private static void CreateSystemDiagnosticsMetrics()
+    {
+        OpenTelemetryMetricsMeter.LongCounter.Add(11L,
+                                                     new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
+        OpenTelemetryMetricsMeter.DoubleHistogram.Record(33L,
+                                                         new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
+#if NET7_0_OR_GREATER
+        OpenTelemetryMetricsMeter.LongUpDownCounter.Add(55L,
+                                                        new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
+#endif
+#if NET9_0_OR_GREATER
+        OpenTelemetryMetricsMeter.DoubleGauge.Record(77L,
+                                                     new KeyValuePair<string, object>("http.method", "GET"), new KeyValuePair<string, object>("rid", "1234567890"));
+#endif
+    }
+#endif
 }
+
