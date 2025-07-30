@@ -65,7 +65,7 @@ namespace Datadog.Trace.Debugger
 
         internal DebuggerSettings DebuggerSettings { get; private set; }
 
-        internal LiveDebugger? DynamicInstrumentation { get; private set; }
+        internal DynamicInstrumentation? DynamicInstrumentation { get; private set; }
 
         internal SpanCodeOrigin.SpanCodeOrigin? CodeOrigin { get; private set; }
 
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Debugger
                     }
 
                     var discoveryService = tracerManager.DiscoveryService;
-                    DynamicInstrumentation = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                    DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
                     Log.Debug("Dynamic Instrumentation has been created.");
 
                     if (!_discoveryServiceReady)
@@ -160,7 +160,7 @@ namespace Datadog.Trace.Debugger
                         {
                             TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
                             sw.Restart();
-                            await DynamicInstrumentation.InitializeAsync().ConfigureAwait(false);
+                            DynamicInstrumentation.Initialize();
                             TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
                             tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
                         }
@@ -247,7 +247,7 @@ namespace Datadog.Trace.Debugger
             try
             {
                 var tracerManager = TracerManager.Instance;
-                SymbolsUploader = LiveDebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
                 // it will do nothing if it is an instance of NoOpSymbolUploader
                 await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
             }
