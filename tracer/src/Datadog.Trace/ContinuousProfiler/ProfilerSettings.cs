@@ -66,7 +66,7 @@ internal class ProfilerSettings
 
                                        return isSsiDeployment switch
                                        {
-                                           not null => "auto",
+                                           not null when isSsiDeployment.Contains("profiler") => "auto",
                                            _ => "false",
                                        };
                                    },
