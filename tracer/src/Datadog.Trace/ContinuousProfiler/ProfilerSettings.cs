@@ -16,7 +16,8 @@ internal class ProfilerSettings
     {
     }
 
-    public ProfilerSettings(IConfigurationSource config, IConfigurationSource envConfig, IConfigurationTelemetry telemetry)
+    // Internal for testing only
+    internal ProfilerSettings(IConfigurationSource config, IConfigurationSource envConfig, IConfigurationTelemetry telemetry)
     {
         if (!IsProfilingSupported)
         {
@@ -44,34 +45,39 @@ internal class ProfilerSettings
         //  - if not, the profiler needed to be loaded by the CLR but no profiling will be done, only telemetry metrics will be sent
         // So, for the Tracer, the profiler should be seen as enabled if ContinuousProfiler.ConfigurationKeys.SsiDeployed has a value
         // (even without "profiler") so that spans will be sent to the profiler.
-        ProfilerState = profilingConfig
-                        .WithKeys(ConfigurationKeys.ProfilingEnabled)
-                        .GetAs(
-                             converter: x => x switch
-                             {
-                                 "auto" => ProfilerState.Auto,
-                                 _ when x.ToBoolean() is { } boolean => boolean switch
-                                 {
-                                     true => ProfilerState.Enabled,
-                                     false => ProfilerState.Disabled,
-                                 },
-                                 _ => ParsingResult<ProfilerState>.Failure(),
-                             },
-                             getDefaultValue: () =>
-                             {
-                                 // If there's no explicit `DD_PROFILING_ENABLED` key,
-                                 // we set the state based on the SSI value, only checking env vars (not the full stack)
-                                 var isSsiDeployment = envConfigBuilder
-                                                      .WithKeys(ConfigurationKeys.SsiDeployed)
-                                                      .AsString();
+        var profilingEnabled = profilingConfig
+                              .WithKeys(ConfigurationKeys.ProfilingEnabled)
+                               // We stick with strings here instead of using the `GetAs` method,
+                               // so that telemetry continues to store true/false/auto, instead of the enum values.
+                              .AsString(
+                                   converter: x => x switch
+                                   {
+                                       "auto" => "auto",
+                                       _ when x.ToBoolean() is { } boolean => boolean ? "true" : "false",
+                                       _ => ParsingResult<string>.Failure(),
+                                   },
+                                   getDefaultValue: () =>
+                                   {
+                                       // If there's no explicit `DD_PROFILING_ENABLED` key,
+                                       // we set the state based on the SSI value, only checking env vars (not the full stack)
+                                       var isSsiDeployment = envConfigBuilder
+                                                            .WithKeys(ConfigurationKeys.SsiDeployed)
+                                                            .AsString();
 
-                                 return isSsiDeployment switch
-                                 {
-                                     not null => ContinuousProfiler.ProfilerState.Auto,
-                                     _ => ContinuousProfiler.ProfilerState.Disabled,
-                                 };
-                             },
-                             validator: null);
+                                       return isSsiDeployment switch
+                                       {
+                                           not null => "auto",
+                                           _ => "false",
+                                       };
+                                   },
+                                   validator: null);
+
+        ProfilerState = profilingEnabled switch
+        {
+            "auto" => ProfilerState.Auto,
+            "true" => ProfilerState.Enabled,
+            _ => ProfilerState.Disabled,
+        };
     }
 
     // Internal for testing only
