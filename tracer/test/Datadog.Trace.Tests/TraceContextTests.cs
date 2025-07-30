@@ -41,8 +41,9 @@ namespace Datadog.Trace.Tests
 
             var t1 = traceContext.Clock.UtcNow;
             var t2 = traceContext.Clock.UtcNow;
+            var substractResult = t2.Subtract(t1);
 
-            Assert.True(t2.Subtract(t1) > TimeSpan.Zero);
+            Assert.True(substractResult > TimeSpan.Zero, $"{t2.ToString()} minus {t1.ToString()} results in {substractResult} which is incorrect.");
         }
 
         [Theory]
