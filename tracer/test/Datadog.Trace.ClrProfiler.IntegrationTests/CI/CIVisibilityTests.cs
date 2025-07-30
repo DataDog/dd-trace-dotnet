@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Net;
+using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -144,6 +145,77 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     }
                 }
             }
+        }
+
+        [SkippableFact]
+        public void SetStringOrArray()
+        {
+            /*
+             * SetStringOrArray is used to set a string or an array of strings in the suite tags.
+             * This is useful when we have tests from multiple files (partial classes) and we want to
+             * report all the source files in the suite tags.
+             */
+
+            var testTags = new  TestSpanTags();
+            var suiteTags = new TestSuiteSpanTags(new TestModuleSpanTags(new TestSessionSpanTags()), "SuiteName");
+
+            testTags.SourceFile = "TestFile.cs";
+
+            Test.SetStringOrArray(
+                testTags,
+                suiteTags,
+                tTags => tTags.SourceFile,
+                sTags => sTags.SourceFile,
+                (sTags, value) => sTags.SourceFile = value);
+
+            // Verify that the suite tags are updated with the test tags value
+            suiteTags.SourceFile.Should().Be(testTags.SourceFile);
+
+            Test.SetStringOrArray(
+                testTags,
+                suiteTags,
+                tTags => tTags.SourceFile,
+                sTags => sTags.SourceFile,
+                (sTags, value) => sTags.SourceFile = value);
+
+            // Verify that there's no change in the suite tags (not duplicate assignment)
+            suiteTags.SourceFile.Should().Be(testTags.SourceFile);
+
+            testTags.SourceFile = "TestFile2.cs";
+            Test.SetStringOrArray(
+                testTags,
+                suiteTags,
+                tTags => tTags.SourceFile,
+                sTags => sTags.SourceFile,
+                (sTags, value) => sTags.SourceFile = value);
+
+            // Verify that the suite tags are updated containing both values
+            suiteTags.SourceFile.Should().Be("""["TestFile.cs","TestFile2.cs"]""");
+        }
+
+        [SkippableFact]
+        public void SetCodeOwnersOnSuiteTags()
+        {
+            var testTags = new  TestSpanTags();
+            var suiteTags = new TestSuiteSpanTags(new TestModuleSpanTags(new TestSessionSpanTags()), "SuiteName");
+
+            Test.SetCodeOwnersOnTags(testTags, suiteTags, ["owner1", "owner2"]);
+
+            testTags.CodeOwners.Should().Be("""["owner1","owner2"]""");
+            // Verify that the suite tags are updated with the test tags value
+            suiteTags.CodeOwners.Should().Be(testTags.CodeOwners);
+
+            Test.SetCodeOwnersOnTags(testTags, suiteTags, ["owner1", "owner2"]);
+
+            testTags.CodeOwners.Should().Be("""["owner1","owner2"]""");
+            // Verify that the suite tags are not changed (not duplicate assignment)
+            suiteTags.CodeOwners.Should().Be(testTags.CodeOwners);
+
+            Test.SetCodeOwnersOnTags(testTags, suiteTags, ["owner3", "owner4"]);
+            testTags.CodeOwners.Should().Be("""["owner3","owner4"]""");
+
+            // Verify that the new test tags are appended to the suite tags
+            suiteTags.CodeOwners.Should().Be("""["owner1","owner2","owner3","owner4"]""");
         }
     }
 }

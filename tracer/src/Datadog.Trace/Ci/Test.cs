@@ -223,24 +223,12 @@ public sealed class Test
             if (ciValues.CodeOwners is { } codeOwners &&
                 codeOwners.Match("/" + tags.SourceFile) is { } match)
             {
-                tags.CodeOwners = "[\"" + string.Join("\",\"", match) + "\"]";
-
-                var suiteTags = Suite.Tags;
-                if (StringUtil.IsNullOrEmpty(suiteTags.CodeOwners))
-                {
-                    suiteTags.CodeOwners = tags.CodeOwners;
-                }
-                else if (!string.Equals(suiteTags.CodeOwners, tags.CodeOwners, StringComparison.OrdinalIgnoreCase))
-                {
-                    var suiteCodeOwners = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTags.CodeOwners) ?? [];
-                    suiteCodeOwners.AddRange(match);
-                    suiteTags.CodeOwners = "[\"" + string.Join("\",\"", suiteCodeOwners.Distinct()) + "\"]";
-                }
+                SetCodeOwnersOnTags(tags, Suite.Tags, match);
             }
         }
     }
 
-    private void SetStringOrArray(TestSpanTags testTags, TestSuiteSpanTags suiteTags, Func<TestSpanTags, string?> getTestTag, Func<TestSuiteSpanTags, string?> getSuiteTag, Action<TestSuiteSpanTags, string?> setSuiteTag)
+    internal static void SetStringOrArray(TestSpanTags testTags, TestSuiteSpanTags suiteTags, Func<TestSpanTags, string?> getTestTag, Func<TestSuiteSpanTags, string?> getSuiteTag, Action<TestSuiteSpanTags, string?> setSuiteTag)
     {
         // If the value is not set, we set it to the current test tag
         // If it is set, we check if it is an array and add the current test tag to it
@@ -275,6 +263,21 @@ public sealed class Test
                 // If the source file is not an array, we create a new one with both values
                 setSuiteTag(suiteTags, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(new List<string> { suiteTagValue, testTagValue }));
             }
+        }
+    }
+
+    internal static void SetCodeOwnersOnTags(TestSpanTags testTags, TestSuiteSpanTags suiteTags, IEnumerable<string> codeOwners)
+    {
+        testTags.CodeOwners = "[\"" + string.Join("\",\"", codeOwners) + "\"]";
+        if (StringUtil.IsNullOrEmpty(suiteTags.CodeOwners))
+        {
+            suiteTags.CodeOwners = testTags.CodeOwners;
+        }
+        else if (!string.Equals(suiteTags.CodeOwners, testTags.CodeOwners, StringComparison.OrdinalIgnoreCase))
+        {
+            var suiteCodeOwners = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTags.CodeOwners) ?? [];
+            suiteCodeOwners.AddRange(codeOwners);
+            suiteTags.CodeOwners = "[\"" + string.Join("\",\"", suiteCodeOwners.Distinct()) + "\"]";
         }
     }
 
