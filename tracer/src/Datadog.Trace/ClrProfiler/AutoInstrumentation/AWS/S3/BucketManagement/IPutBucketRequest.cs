@@ -17,6 +17,6 @@ internal interface IPutBucketRequest : IDuckType
     /// <summary>
     /// Gets the S3 bucket name.
     /// </summary>
-    [DuckField(Name = "bucketName")]
+    [Duck(Name = "BucketName")]
     string BucketName { get; }
 }

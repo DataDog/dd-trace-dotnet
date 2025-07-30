@@ -163,6 +163,29 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         }
 
         // **********
+        // Get all head commit information.
+        // **********
+        if (!StringUtil.IsNullOrEmpty(HeadCommit))
+        {
+            // fetching commit data from head commit
+            if (GitCommandHelper.FetchCommitData(WorkspacePath ?? Environment.CurrentDirectory, HeadCommit) is { } commitData &&
+                commitData.CommitSha == HeadCommit)
+            {
+                HeadAuthorDate = commitData.AuthorDate;
+                HeadAuthorEmail = commitData.AuthorEmail;
+                HeadAuthorName = commitData.AuthorName;
+                HeadCommitterDate = commitData.CommitterDate;
+                HeadCommitterEmail = commitData.CommitterEmail;
+                HeadCommitterName = commitData.CommitterName;
+                HeadMessage = commitData.CommitMessage;
+            }
+            else
+            {
+                Log.Warning("Error fetching data for git commit '{HeadCommit}'", HeadCommit);
+            }
+        }
+
+        // **********
         // Expand ~ in Paths
         // **********
 

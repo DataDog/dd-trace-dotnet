@@ -62,8 +62,8 @@ gantt
     axisFormat %s
     todayMarker off
     section Baseline
-    azure-functions.invoke GET /api/trigger : 0, 100
-    azure-functions.invoke Http TriggerCaller : 10, 90
+    azure_functions.invoke GET /api/trigger : 0, 100
+    azure_functions.invoke Http TriggerCaller : 10, 90
 ```
 
 For a timer trigger, there's a single span
@@ -75,7 +75,7 @@ gantt
     axisFormat %s
     todayMarker off
     section Baseline
-    azure-functions.invoke Timer TriggerAllTimer : 0, 100
+    azure_functions.invoke Timer TriggerAllTimer : 0, 100
 ```
 
 

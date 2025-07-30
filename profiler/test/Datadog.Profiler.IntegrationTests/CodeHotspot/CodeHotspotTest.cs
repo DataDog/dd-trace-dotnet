@@ -133,6 +133,55 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             // By default, the codehotspot feature is activated
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "ManualCpuTime");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+
+            var profilerRuntimeIds = new List<string>();
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                profilerRuntimeIds.Add(ExtractRuntimeIdFromProfilerRequest(ctx.Value.Request));
+            };
+
+            var tracerRuntimeIds = new List<string>();
+            agent.TracerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                tracerRuntimeIds.AddRange(ExtractRuntimeIdsFromTracerRequest(ctx.Value.Request));
+            };
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            Assert.Single(profilerRuntimeIds.Distinct());
+            Assert.Single(tracerRuntimeIds.Distinct());
+
+            var profilerRuntimeId = profilerRuntimeIds.First();
+            Assert.NotNull(profilerRuntimeId);
+            Assert.NotEmpty(profilerRuntimeId);
+
+            var tracerRuntimeId = tracerRuntimeIds.First();
+            Assert.NotNull(tracerRuntimeId);
+            Assert.NotEmpty(tracerRuntimeId);
+
+            Assert.Equal(profilerRuntimeId, tracerRuntimeId);
+
+            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            Assert.NotEmpty(tracingContexts);
+
+            // In the first versions of this test, we extracted span ids from Tracer requests and ensured that the ones collected by the
+            // profiler was a subset. But this makes the test flacky: not flushed when the application is closing.
+        }
+
+        [TestAppFact("Samples.BuggyBits")]
+        [Trait("Category", "LinuxOnly")]
+        public void CheckSpanContextAreAttachedForCpuProfiler_TimerCreate(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            // By default, the codehotspot feature is activated
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 

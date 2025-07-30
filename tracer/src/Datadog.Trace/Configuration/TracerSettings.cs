@@ -134,10 +134,7 @@ namespace Datadog.Trace.Configuration
 
             LambdaMetadata = LambdaMetadata.Create();
 
-            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
-            IsRunningMiniAgentInAzureFunctions = ImmutableAzureAppServiceSettings.GetIsFunctionsAppUsingMiniAgent(source, telemetry);
-
-            if (IsRunningInAzureAppService)
+            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
@@ -529,10 +526,10 @@ namespace Datadog.Trace.Configuration
                              .WithKeys(ConfigurationKeys.BufferSize)
                              .AsInt32(defaultValue: 1024 * 1024 * 10); // 10MB
 
-            // If Lambda/GCP we don't want to have a flush interval. The serverless integration
+            // If Lambda/GCP we don't want to have a flush interval. Some serverless integrations
             // manually calls flush and waits for the result before ending execution.
-            // This can artificially increase the execution time of functions
-            var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningMiniAgentInAzureFunctions ? 0 : 100;
+            // This can artificially increase the execution time of functions.
+            var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningInAzureFunctions ? 0 : 100;
             TraceBatchInterval = config
                                 .WithKeys(ConfigurationKeys.SerializationBatchInterval)
                                 .AsInt32(defaultTraceBatchInterval);
@@ -665,9 +662,15 @@ namespace Datadog.Trace.Configuration
                              .WithKeys(ConfigurationKeys.IpHeaderEnabled)
                              .AsBool(false);
 
+            // DSM is now enabled by default in non-serverless environments
             _isDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
-                                            .AsBool(false);
+                                            .AsBool(
+                                                  !EnvironmentHelpers.IsAwsLambda() &&
+                                                  !EnvironmentHelpers.IsAzureAppServices() &&
+                                                  !EnvironmentHelpers.IsAzureFunctions() &&
+                                                  !EnvironmentHelpers.IsGoogleCloudFunctions());
+
             _isDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                                     .AsBool() == null;
@@ -682,18 +685,18 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationEnabled = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningMiniAgentInAzureFunctions));
-            if (!ApmTracingEnabled && StatsComputationEnabled)
+                                     .AsBool(false); // default is false, but user config can be overridden below
+
+            if (StatsComputationEnabled && !ApmTracingEnabled)
             {
-                telemetry.Record(ConfigurationKeys.StatsComputationEnabled, false, ConfigurationOrigins.Calculated);
+                // if APM is not enabled, disable stats computation (override user config)
+                telemetry.Record(ConfigurationKeys.StatsComputationEnabled, value: false, ConfigurationOrigins.Calculated);
                 StatsComputationEnabled = false;
             }
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
-                                   .AsString(
-                                        IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
-                                        LambdaMetadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : string.Empty);
+                                   .AsString(GetDefaultHttpClientExclusions());
 
             if (isRunningInCiVisibility)
             {
@@ -1172,7 +1175,8 @@ namespace Datadog.Trace.Configuration
         internal int TraceBufferSize { get; }
 
         /// <summary>
-        /// Gets a value indicating the batch interval for the serialization queue, in milliseconds
+        /// Gets a value indicating the batch interval for the serialization queue, in milliseconds.
+        /// Set to 0 to disable.
         /// </summary>
         internal int TraceBatchInterval { get; }
 
@@ -1229,15 +1233,20 @@ namespace Datadog.Trace.Configuration
         internal bool IsRareSamplerEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the tracer is running in AAS
+        /// Gets a value indicating whether the tracer is running in AzureAppServices (AAS).
         /// </summary>
-        internal bool IsRunningInAzureAppService { get; }
+        internal bool IsRunningInAzureAppService => AzureAppServiceMetadata is not null;
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in Azure Functions.
+        /// </summary>
+        internal bool IsRunningInAzureFunctions => AzureAppServiceMetadata?.IsFunctionsApp ?? false;
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in an Azure Function on a
         /// consumption plan
         /// </summary>
-        internal bool IsRunningMiniAgentInAzureFunctions { get; }
+        internal bool IsRunningMiniAgentInAzureFunctions => AzureAppServiceMetadata?.IsRunningMiniAgentInAzureFunctions ?? false;
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions
@@ -1338,15 +1347,16 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
-        /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios.
-        /// It may also be explicitly disabled
+        /// RCM requires the "full" Go agent (not just the trace agent, and not the Rust agents),
+        /// so is not available in some scenarios. It may also be explicitly disabled.
         /// </summary>
+        // NOTE: when we clean this up, see also EnvironmentHelpers.IsServerlessEnvironment()
         internal bool IsRemoteConfigurationAvailable =>
             RemoteConfigurationEnabled &&
-            !(IsRunningInAzureAppService
-           || IsRunningMiniAgentInAzureFunctions
-           || IsRunningInGCPFunctions
-           || LambdaMetadata.IsRunningInLambda);
+            !IsRunningInAzureAppService &&
+            !IsRunningInAzureFunctions &&
+            !IsRunningInGCPFunctions &&
+            !LambdaMetadata.IsRunningInLambda;
 
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
@@ -1550,6 +1560,21 @@ namespace Datadog.Trace.Configuration
             var integrationSettings = Integrations[integration];
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
+        }
+
+        internal string GetDefaultHttpClientExclusions()
+        {
+            if (IsRunningInAzureAppService)
+            {
+                return ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions;
+            }
+
+            if (LambdaMetadata.IsRunningInLambda)
+            {
+                return LambdaMetadata.DefaultHttpClientExclusions;
+            }
+
+            return string.Empty;
         }
 
         private static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)

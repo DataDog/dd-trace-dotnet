@@ -60,6 +60,7 @@ public class DataStreamsMonitoringTransportTests
 
         var discovery = new DiscoveryServiceMock();
         var writer = new DataStreamsWriter(
+            tracerSettings,
             new DataStreamsAggregator(
                 new DataStreamsMessagePackFormatter(tracerSettings, "service"),
                 bucketDurationMs),

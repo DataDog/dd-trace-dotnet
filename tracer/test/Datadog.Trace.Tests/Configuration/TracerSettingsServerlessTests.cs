@@ -9,7 +9,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -17,59 +16,63 @@ using Xunit;
 namespace Datadog.Trace.Tests.Configuration;
 
 [Collection(nameof(EnvironmentVariablesTestCollection))]
+[EnvironmentRestorer(LambdaMetadata.FunctionNameEnvVar, LambdaMetadata.HandlerEnvVar, LambdaMetadata.ExtensionPathEnvVar)]
 public class TracerSettingsServerlessTests : SettingsTestsBase
 {
     // These tests rely on Lambda.Create() which uses environment variables
     // See TracerSettingsTests for tests which don't rely on any environment variables
     [Theory]
-    [InlineData("test1,, ,test2", false, false, new[] { "TEST1", "TEST2" })]
-    [InlineData("test1,, ,test2", true, true, new[] { "TEST1", "TEST2" })]
-    [InlineData(null, true, true, new[] { "azuredefault" })]
-    [InlineData(null, false, true, new[] { "/2018-06-01/RUNTIME/INVOCATION/" })]
-    [InlineData(null, false, false, new string[0])]
-    [InlineData("", true, true, new string[0])]
-    public void HttpClientExcludedUrlSubstrings(string value, bool isRunningInAppService, bool isRunningInLambda, string[] expected)
+    [InlineData("test1,, ,test2", false, new[] { "TEST1", "TEST2" })]
+    [InlineData("test1,, ,test2", true, new[] { "TEST1", "TEST2" })]
+    [InlineData(null, true, new[] { "/2018-06-01/RUNTIME/INVOCATION/" })] // default value for AWS Lambda, see LambdaMetadata.DefaultHttpClientExclusions
+    [InlineData(null, false, new string[0])]                              // empty
+    [InlineData("", true, new string[0])]                                 // empty
+    public void HttpClientExcludedUrlSubstrings_AwsLambda(string value, bool isRunningInLambda, string[] expected)
+    {
+        if (isRunningInLambda)
+        {
+            Environment.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, "functionName");
+            Environment.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, "serviceName::handlerName");
+            Environment.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, GetCallerFilePath());
+        }
+
+        var source = CreateConfigurationSource((ConfigurationKeys.HttpClientExcludedUrlSubstrings, value));
+        var settings = new TracerSettings(source);
+
+        settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
+    }
+
+    [Theory]
+    [InlineData("test1,, ,test2", false, new[] { "TEST1", "TEST2" })]
+    [InlineData("test1,, ,test2", true, new[] { "TEST1", "TEST2" })]
+    [InlineData(null, true, new[] { "azuredefault" })] // "azuredefault" means use ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions
+    [InlineData(null, false, new string[0])]           // empty
+    [InlineData("", true, new string[0])]              // empty
+    public void HttpClientExcludedUrlSubstrings_AzureAppServices(string value, bool isRunningInAppService, string[] expected)
     {
         if (expected.Length == 1 && expected[0] == "azuredefault")
         {
             expected = ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions.Split(',').Select(s => s.Trim()).ToArray();
         }
 
-        var previous = isRunningInLambda
-                           ? SetLambdaEnvironmentForTests("functionName", "serviceName::handlerName")
-                           : SetLambdaEnvironmentForTests(null, null);
-        try
+        var configPairs = new List<(string Key, string Value)>
         {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.HttpClientExcludedUrlSubstrings, value),
-                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, isRunningInAppService ? "1" : "0"));
-
-            var settings = new TracerSettings(source);
-
-            settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
-        }
-        finally
-        {
-            foreach (var kvp in previous)
-            {
-                System.Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
-            }
-        }
-    }
-
-    private Dictionary<string, string> SetLambdaEnvironmentForTests(
-        string functionName, string handlerName, [CallerFilePath] string extensionPath = null)
-    {
-        var previous = new Dictionary<string, string>
-        {
-            { LambdaMetadata.FunctionNameEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar) },
-            { LambdaMetadata.HandlerEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.HandlerEnvVar) },
-            { LambdaMetadata.ExtensionPathEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar) },
+            (ConfigurationKeys.HttpClientExcludedUrlSubstrings, value)
         };
 
-        System.Environment.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, functionName);
-        System.Environment.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, handlerName);
-        System.Environment.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, extensionPath);
-        return previous;
+        if (isRunningInAppService)
+        {
+            configPairs.Add((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
+        }
+
+        var settings = new TracerSettings(CreateConfigurationSource(configPairs.ToArray()));
+
+        settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
+    }
+
+    private static string GetCallerFilePath([CallerFilePath] string callerFilePath = null)
+    {
+        // using [CallerFilePath] to ensure we can a file path that exists
+        return callerFilePath!;
     }
 }

@@ -17,12 +17,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
     {
         internal const string InjectionKey = "_datadog";
 
-        private static void Inject(PropagationContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
+        private static void Inject(Tracer tracer, PropagationContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire();
             sb.Append('{');
-            Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
+            tracer.TracerManager.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
 
             if (context.SpanContext?.PathwayContext is { } pathwayContext)
             {
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             messageAttributes[InjectionKey] = messageHeadersHelper.CreateMessageAttributeValue(resultString);
         }
 
-        public static void InjectHeadersIntoMessage(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
+        public static void InjectHeadersIntoMessage(Tracer tracer, IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             if (carrier.MessageAttributes.Count < 10)
             {
                 var context = new PropagationContext(spanContext, Baggage.Current);
-                Inject(context, carrier.MessageAttributes, dataStreamsManager, messageHeadersHelper);
+                Inject(tracer, context, carrier.MessageAttributes, dataStreamsManager, messageHeadersHelper);
             }
         }
 

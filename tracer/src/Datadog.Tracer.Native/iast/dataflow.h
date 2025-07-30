@@ -63,18 +63,9 @@ namespace iast
         std::map<ModuleID, ModuleInfo*> _modules;
         std::map<AppDomainID, AppDomainInfo*> _appDomains;
 
-        std::vector<WSTRING> _domainIncludeFilters;
-        std::vector<WSTRING> _domainExcludeFilters;
-        std::vector<WSTRING> _assemblyIncludeFilters;
-        std::vector<WSTRING> _assemblyExcludeFilters;
-        std::vector<WSTRING> _methodIncludeFilters;
-        std::vector<WSTRING> _methodExcludeFilters;
-        std::vector<WSTRING> _methodAttributeIncludeFilters;
-        std::vector<WSTRING> _methodAttributeExcludeFilters;
-
         void LoadSecurityControls();
     protected:
-        bool _initialized = false;
+        bool _initialized = true;
         bool _loaded = false;
         bool _setILOnJit = false;
 
@@ -89,10 +80,7 @@ namespace iast
         static bool InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects);
 
     public:
-        bool IsInitialized();
-
-        HRESULT Init();
-        HRESULT Destroy();
+        void Destroy();
         HRESULT AppDomainShutdown(AppDomainID appDomainId);
         HRESULT ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo = nullptr);
         HRESULT ModuleUnloaded(ModuleID moduleId);
