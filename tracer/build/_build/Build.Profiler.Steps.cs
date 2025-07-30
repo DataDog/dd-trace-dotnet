@@ -314,10 +314,11 @@ partial class Build
        .Executes(() =>
        {
            var samplesToBuild = ProfilerSamplesSolution.GetProjects("*");
+           var targetPlatform = IsArm64 ? MSBuildTargetPlatform.MSIL : TargetPlatform;
 
            DotNetBuild(x => x
                    .SetConfiguration(BuildConfiguration)
-                   .SetTargetPlatform(TargetPlatform)
+                   .SetTargetPlatform(targetPlatform)
                    .SetNoWarnDotNetCore3()
                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                    .CombineWith(samplesToBuild, (c, project) => c
@@ -327,7 +328,7 @@ partial class Build
     Target BuildAndRunProfilerCpuLimitTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Run the profiler container tests")
-        .Requires(() => IsLinux && !IsArm64)
+        .Requires(() => IsLinux)
         .Executes(() =>
         {
             BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
@@ -336,7 +337,6 @@ partial class Build
     Target BuildAndRunProfilerIntegrationTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Builds and runs the profiler integration tests")
-        .Requires(() => !IsArm64)
         .Executes(() =>
         {
             // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
@@ -353,13 +353,20 @@ partial class Build
         var integrationTestProjects = ProfilerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj")
                                                         .Select(x => ProfilerSolution.GetProject(x))
                                                         .ToList();
+        var envVars = new Dictionary<string, string>
+        {
+            {"DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory },
+            {"MonitoringHomeDirectory", MonitoringHomeDirectory }
+        };
+
+        var targetPlatform = IsArm64 ? MSBuildTargetPlatform.MSIL : TargetPlatform;
 
         try
         {
             // Run these ones in parallel
             DotNetTest(config => config
                                 .SetConfiguration(BuildConfiguration)
-                                .SetTargetPlatform(TargetPlatform)
+                                .SetTargetPlatform(targetPlatform)
                                 .SetDotnetPath(TargetPlatform)
                                 .SetNoWarnDotNetCore3()
                                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
@@ -368,8 +375,7 @@ partial class Build
                                 .SetFilter(filter)
                                 .SetProcessLogOutput(true)
                                 .SetIsDebugRun(isDebugRun)
-                                .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
-                                .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                                .SetProcessEnvironmentVariables(envVars)
                                 .CombineWith(integrationTestProjects, (s, project) => s
                                                                                         .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
                                                                                         .WithDatadogLogger()
