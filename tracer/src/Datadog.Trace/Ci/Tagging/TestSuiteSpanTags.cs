@@ -60,4 +60,10 @@ internal partial class TestSuiteSpanTags : TestModuleSpanTags
 
     [Tag(TestTags.Suite)]
     public string? Suite { get; set; }
+
+    [Tag(TestTags.SourceFile)]
+    public string? SourceFile { get; set; }
+
+    [Tag(TestTags.CodeOwners)]
+    public string? CodeOwners { get; set; }
 }

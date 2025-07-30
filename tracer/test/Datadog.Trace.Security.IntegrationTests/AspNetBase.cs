@@ -256,6 +256,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
+        protected static void FilterConnectionHeader(VerifySettings settings)
+        {
+            Regex appSecConnectionHeader0 = new(@"_dd.appsec.fp.http.header: hdr-0\d", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            Regex appSecConnectionHeader1 = new(@"_dd.appsec.fp.http.header: hdr-1\d", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            settings.AddRegexScrubber(appSecConnectionHeader0, "_dd.appsec.fp.http.header: hdr-0X");
+            settings.AddRegexScrubber(appSecConnectionHeader1, "_dd.appsec.fp.http.header: hdr-1X");
+        }
+
         protected void AppsecMetaStructScrubbing(MockSpan target, bool forceMetaStruct = false)
         {
             // We want to retrieve the appsec event data from the meta struct to validate it in snapshots

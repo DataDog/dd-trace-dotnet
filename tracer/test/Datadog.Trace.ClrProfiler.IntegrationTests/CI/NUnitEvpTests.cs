@@ -359,6 +359,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // Check suites
                         Assert.True(tests.All(t => testSuites.Find(s => s.TestSuiteId == t.TestSuiteId) != null));
                         Assert.True(tests.All(t => t.TestModuleId == testModule.TestModuleId));
+                        testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().ContainKey(TestTags.SourceFile));
+                        testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().ContainKey(TestTags.CodeOwners));
 
                         // Check Module
                         Assert.True(tests.All(t => t.TestModuleId == testSuites[0].TestModuleId));

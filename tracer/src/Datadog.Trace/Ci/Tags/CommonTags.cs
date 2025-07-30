@@ -207,6 +207,11 @@ internal static class CommonTags
     public const string GitPrBaseCommit = "git.pull_request.base_branch_sha";
 
     /// <summary>
+    /// GIT PR Base head commit hash
+    /// </summary>
+    public const string GitPrBaseHeadCommit = "git.pull_request.base_branch_head_sha";
+
+    /// <summary>
     /// GIT PR Base branch name
     /// </summary>
     public const string GitPrBaseBranch = "git.pull_request.base_branch";

@@ -211,17 +211,101 @@ public sealed class Test
             tags.SourceFile = ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
-
             _testOptimization.ImpactedTestsDetectionFeature?.ImpactedTestsAnalyzer.Analyze(this);
 
-            if (ciValues.CodeOwners is { } codeOwners)
+            SetStringOrArray(
+                tags,
+                Suite.Tags,
+                static testTags => testTags.SourceFile,
+                static suiteTags => suiteTags.SourceFile,
+                static (suiteTags, value) => suiteTags.SourceFile = value);
+
+            if (ciValues.CodeOwners is { } codeOwners &&
+                codeOwners.Match("/" + tags.SourceFile) is { } match)
             {
-                var match = codeOwners.Match("/" + ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
-                if (match is not null)
+                SetCodeOwnersOnTags(tags, Suite.Tags, match);
+            }
+        }
+    }
+
+    internal static void SetStringOrArray(TestSpanTags testTags, TestSuiteSpanTags suiteTags, Func<TestSpanTags, string?> getTestTag, Func<TestSuiteSpanTags, string?> getSuiteTag, Action<TestSuiteSpanTags, string?> setSuiteTag)
+    {
+        // If the value is not set, we set it to the current test tag
+        // If it is set, we check if it is an array and add the current test tag to it
+        // If it is not an array, we create a new array with both values
+        // This is to support multiple values in a single tag
+        var suiteTagValue = getSuiteTag(suiteTags);
+        var testTagValue = getTestTag(testTags);
+        if (StringUtil.IsNullOrEmpty(testTagValue))
+        {
+            return;
+        }
+
+        if (StringUtil.IsNullOrEmpty(suiteTagValue))
+        {
+            setSuiteTag(suiteTags, testTagValue);
+        }
+        else if (!string.Equals(suiteTagValue, testTagValue, StringComparison.Ordinal))
+        {
+            if (suiteTagValue.StartsWith("[", StringComparison.Ordinal) &&
+                suiteTagValue.EndsWith("]", StringComparison.Ordinal))
+            {
+                // If the source file is an array, we add the new source file to it
+                List<string>? files;
+                try
                 {
-                    tags.CodeOwners = "[\"" + string.Join("\",\"", match) + "\"]";
+                    files = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTagValue);
+                }
+                catch (Exception ex)
+                {
+                    TestOptimization.Instance.Log.Warning(ex, "Error deserializing '{SuiteTagValue}' environment variable.", suiteTagValue);
+                    files = [];
+                }
+
+                if (files is not null && !files.Contains(testTagValue, StringComparer.Ordinal))
+                {
+                    files.Add(testTagValue);
+                    setSuiteTag(suiteTags, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(files));
                 }
             }
+            else
+            {
+                // If the source file is not an array, we create a new one with both values
+                try
+                {
+                    setSuiteTag(suiteTags, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(new List<string> { suiteTagValue, testTagValue }));
+                }
+                catch (Exception ex)
+                {
+                    TestOptimization.Instance.Log.Warning(ex, "Error serializing '{SuiteTagValue}' environment variable.", suiteTagValue);
+                    setSuiteTag(suiteTags, $"[\"{suiteTagValue}\",\"{testTagValue}\"]");
+                }
+            }
+        }
+    }
+
+    internal static void SetCodeOwnersOnTags(TestSpanTags testTags, TestSuiteSpanTags suiteTags, IEnumerable<string> codeOwners)
+    {
+        testTags.CodeOwners = "[\"" + string.Join("\",\"", codeOwners) + "\"]";
+        if (StringUtil.IsNullOrEmpty(suiteTags.CodeOwners))
+        {
+            suiteTags.CodeOwners = testTags.CodeOwners;
+        }
+        else if (!string.Equals(suiteTags.CodeOwners, testTags.CodeOwners, StringComparison.Ordinal))
+        {
+            List<string> suiteCodeOwners;
+            try
+            {
+                suiteCodeOwners = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTags.CodeOwners) ?? [];
+            }
+            catch (Exception ex)
+            {
+                TestOptimization.Instance.Log.Warning(ex, "Error deserializing '{SuiteCodeOwners}' environment variable.", suiteTags.CodeOwners);
+                suiteCodeOwners = [];
+            }
+
+            suiteCodeOwners.AddRange(codeOwners);
+            suiteTags.CodeOwners = "[\"" + string.Join("\",\"", suiteCodeOwners.Distinct(StringComparer.Ordinal)) + "\"]";
         }
     }
 
