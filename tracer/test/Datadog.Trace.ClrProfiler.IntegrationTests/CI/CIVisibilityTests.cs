@@ -164,9 +164,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Test.SetStringOrArray(
                 testTags,
                 suiteTags,
-                tTags => tTags.SourceFile,
-                sTags => sTags.SourceFile,
-                (sTags, value) => sTags.SourceFile = value);
+                static tTags => tTags.SourceFile,
+                static sTags => sTags.SourceFile,
+                static (sTags, value) => sTags.SourceFile = value);
 
             // Verify that the suite tags are updated with the test tags value
             suiteTags.SourceFile.Should().Be(testTags.SourceFile);
@@ -174,9 +174,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Test.SetStringOrArray(
                 testTags,
                 suiteTags,
-                tTags => tTags.SourceFile,
-                sTags => sTags.SourceFile,
-                (sTags, value) => sTags.SourceFile = value);
+                static tTags => tTags.SourceFile,
+                static sTags => sTags.SourceFile,
+                static (sTags, value) => sTags.SourceFile = value);
 
             // Verify that there's no change in the suite tags (not duplicate assignment)
             suiteTags.SourceFile.Should().Be(testTags.SourceFile);
@@ -185,9 +185,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Test.SetStringOrArray(
                 testTags,
                 suiteTags,
-                tTags => tTags.SourceFile,
-                sTags => sTags.SourceFile,
-                (sTags, value) => sTags.SourceFile = value);
+                static tTags => tTags.SourceFile,
+                static sTags => sTags.SourceFile,
+                static (sTags, value) => sTags.SourceFile = value);
 
             // Verify that the suite tags are updated containing both values
             suiteTags.SourceFile.Should().Be("""["TestFile.cs","TestFile2.cs"]""");

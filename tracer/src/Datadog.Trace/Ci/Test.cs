@@ -216,9 +216,9 @@ public sealed class Test
             SetStringOrArray(
                 tags,
                 Suite.Tags,
-                testTags => testTags.SourceFile,
-                suiteTags => suiteTags.SourceFile,
-                (suiteTags, value) => suiteTags.SourceFile = value);
+                static testTags => testTags.SourceFile,
+                static suiteTags => suiteTags.SourceFile,
+                static (suiteTags, value) => suiteTags.SourceFile = value);
 
             if (ciValues.CodeOwners is { } codeOwners &&
                 codeOwners.Match("/" + tags.SourceFile) is { } match)
@@ -245,14 +245,24 @@ public sealed class Test
         {
             setSuiteTag(suiteTags, testTagValue);
         }
-        else if (!string.Equals(suiteTagValue, testTagValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.Equals(suiteTagValue, testTagValue, StringComparison.Ordinal))
         {
-            if (suiteTagValue.StartsWith("[", StringComparison.OrdinalIgnoreCase) &&
-                suiteTagValue.EndsWith("]", StringComparison.OrdinalIgnoreCase))
+            if (suiteTagValue.StartsWith("[", StringComparison.Ordinal) &&
+                suiteTagValue.EndsWith("]", StringComparison.Ordinal))
             {
                 // If the source file is an array, we add the new source file to it
-                var files = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTagValue);
-                if (files is not null && !files.Contains(testTagValue))
+                List<string>? files;
+                try
+                {
+                    files = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTagValue);
+                }
+                catch (Exception ex)
+                {
+                    TestOptimization.Instance.Log.Warning(ex, "Error deserializing '{SuiteTagValue}' environment variable.", suiteTagValue);
+                    files = [];
+                }
+
+                if (files is not null && !files.Contains(testTagValue, StringComparer.Ordinal))
                 {
                     files.Add(testTagValue);
                     setSuiteTag(suiteTags, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(files));
@@ -261,7 +271,15 @@ public sealed class Test
             else
             {
                 // If the source file is not an array, we create a new one with both values
-                setSuiteTag(suiteTags, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(new List<string> { suiteTagValue, testTagValue }));
+                try
+                {
+                    setSuiteTag(suiteTags, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(new List<string> { suiteTagValue, testTagValue }));
+                }
+                catch (Exception ex)
+                {
+                    TestOptimization.Instance.Log.Warning(ex, "Error serializing '{SuiteTagValue}' environment variable.", suiteTagValue);
+                    setSuiteTag(suiteTags, $"[\"{suiteTagValue}\",\"{testTagValue}\"]");
+                }
             }
         }
     }
@@ -273,11 +291,21 @@ public sealed class Test
         {
             suiteTags.CodeOwners = testTags.CodeOwners;
         }
-        else if (!string.Equals(suiteTags.CodeOwners, testTags.CodeOwners, StringComparison.OrdinalIgnoreCase))
+        else if (!string.Equals(suiteTags.CodeOwners, testTags.CodeOwners, StringComparison.Ordinal))
         {
-            var suiteCodeOwners = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTags.CodeOwners) ?? [];
+            List<string> suiteCodeOwners;
+            try
+            {
+                suiteCodeOwners = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTags.CodeOwners) ?? [];
+            }
+            catch (Exception ex)
+            {
+                TestOptimization.Instance.Log.Warning(ex, "Error deserializing '{SuiteCodeOwners}' environment variable.", suiteTags.CodeOwners);
+                suiteCodeOwners = [];
+            }
+
             suiteCodeOwners.AddRange(codeOwners);
-            suiteTags.CodeOwners = "[\"" + string.Join("\",\"", suiteCodeOwners.Distinct()) + "\"]";
+            suiteTags.CodeOwners = "[\"" + string.Join("\",\"", suiteCodeOwners.Distinct(StringComparer.Ordinal)) + "\"]";
         }
     }
 
