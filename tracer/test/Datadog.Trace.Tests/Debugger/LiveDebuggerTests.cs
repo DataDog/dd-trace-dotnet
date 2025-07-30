@@ -41,7 +41,7 @@ public class LiveDebuggerTests
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         probeStatusPoller.Called.Should().BeTrue();
@@ -66,7 +66,7 @@ public class LiveDebuggerTests
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         lineProbeResolver.Called.Should().BeFalse();
