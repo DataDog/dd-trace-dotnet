@@ -682,6 +682,28 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
+                    // Alpine tests with the default package with glibc compat installed
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "alpine_libgcc",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                        },
+                        // currently we direct customers to the musl-specific package in the command line.
+                        // Should we update this to point to the default artifact instead?
+                        installer: "datadog-dotnet-apm*-musl.tar.gz", // used by the dd-dotnet checks to direct customers to the right place
+                        additionalInstall: "apk add gcompat", // add the glibc compatibility library
+                        installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.tar.gz",
+                        linuxArtifacts: "linux-packages-linux-x64", // these are what we download
+                        runtimeId: "linux-musl-x64", // used by the dd-dotnet checks to direct customers to the right place
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
                     // Alpine tests with the musl-specific package
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
@@ -906,6 +928,28 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
+                    // Alpine tests with the default package
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "alpine_libgcc",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19-composite"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.18"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.18"),
+                            // runtimes on earlier alpine versions aren't provided by MS
+                        },
+                        // currently we direct customers to the musl-specific package in the command line.
+                        // Should we update this to point to the default artifact instead?
+                        installer: "datadog-dotnet-apm*.arm64.tar.gz", // used by the dd-dotnet checks to direct customers to the right place
+                        additionalInstall: "apk add gcompat", // add the glibc compatibility library
+                        installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.tar.gz",
+                        linuxArtifacts: "linux-packages-linux-arm64", // these are what we download
+                        runtimeId: "linux-musl-arm64", // used by the dd-dotnet checks to direct customers to the right place
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
                     Logger.Information($"Installer smoke tests matrix");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable("installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
@@ -945,7 +989,8 @@ partial class Build : NukeBuild
                     string installCmd,
                     string linuxArtifacts,
                     string runtimeId,
-                    string dockerName
+                    string dockerName,
+                    string additionalInstall = ""
                 )
                 {
                     foreach (var image in images)
@@ -962,7 +1007,8 @@ partial class Build : NukeBuild
                                 publishFramework = image.PublishFramework,
                                 linuxArtifacts = linuxArtifacts,
                                 runCrashTest = image.RunCrashTest ? "true" : "false",
-                                runtimeImage = $"{dockerName}:{image.RuntimeTag}"
+                                runtimeImage = $"{dockerName}:{image.RuntimeTag}",
+                                additionalInstall = additionalInstall
                             });
                     }
                 }
