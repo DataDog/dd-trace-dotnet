@@ -74,9 +74,9 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        [Instrumented]
         public IScope? ActiveScope
         {
+            [Instrumented]
             [MethodImpl(MethodImplOptions.NoInlining)]
             get => null;
         }
@@ -84,9 +84,9 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
-        [Instrumented]
         public string DefaultServiceName
         {
+            [Instrumented]
             [MethodImpl(MethodImplOptions.NoInlining)]
             get => string.Empty;
         }

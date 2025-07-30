@@ -27,9 +27,9 @@ public sealed class ImmutableIntegrationSettingsCollection
     /// </summary>
     /// <param name="integrationName">The name of the integration.</param>
     /// <returns>The integration-specific settings for the specified integration.</returns>
-    [Instrumented]
     public ImmutableIntegrationSettings this[string integrationName]
     {
+        [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get
         {

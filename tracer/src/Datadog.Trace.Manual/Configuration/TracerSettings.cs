@@ -144,13 +144,14 @@ public sealed class TracerSettings
     /// set it using the <c>DD_DIAGNOSTIC_SOURCE_ENABLED</c>
     /// environment variable or in configuration files.
     /// </remark>
-    [Instrumented]
     public bool DiagnosticSourceEnabled
     {
+        [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get => _diagnosticSourceEnabled;
 
         [Obsolete("This value cannot be set in code. Instead, set it using the DD_DIAGNOSTIC_SOURCE_ENABLED environment variable, or in configuration files")]
+        [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         set
         {
@@ -375,9 +376,9 @@ public sealed class TracerSettings
     /// <summary>
     /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.
     /// </summary>
-    [Instrumented]
     public IntegrationSettingsCollection Integrations
     {
+        [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get;
     }
@@ -386,9 +387,9 @@ public sealed class TracerSettings
     /// Gets the transport settings that dictate how the tracer connects to the agent.
     /// </summary>
     [Obsolete("This property is obsolete and will be removed in a future version. To set the AgentUri, use the TracerSettings.AgentUri property")]
-    [Instrumented]
     public ExporterSettings Exporter
     {
+        [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get;
     }

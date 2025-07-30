@@ -31,9 +31,9 @@ public sealed class ImmutableIntegrationSettings
     /// <summary>
     /// Gets the name of the integration. Used to retrieve integration-specific settings.
     /// </summary>
-    [Instrumented]
     public string IntegrationName
     {
+        [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get;
     }
@@ -42,9 +42,9 @@ public sealed class ImmutableIntegrationSettings
     /// Gets a value indicating whether
     /// this integration is enabled.
     /// </summary>
-    [Instrumented]
     public bool? Enabled
     {
+        [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get;
     }
@@ -53,9 +53,9 @@ public sealed class ImmutableIntegrationSettings
     /// Gets a value indicating whether
     /// Analytics are enabled for this integration.
     /// </summary>
-    [Instrumented]
     public bool? AnalyticsEnabled
     {
+        [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get;
     }
@@ -64,9 +64,9 @@ public sealed class ImmutableIntegrationSettings
     /// Gets a value between 0 and 1 (inclusive)
     /// that determines the sampling rate for this integration.
     /// </summary>
-    [Instrumented]
     public double AnalyticsSampleRate
     {
+        [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get;
     }

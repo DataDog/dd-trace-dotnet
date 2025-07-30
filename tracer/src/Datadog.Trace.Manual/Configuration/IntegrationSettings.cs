@@ -29,9 +29,9 @@ public sealed class IntegrationSettings
     /// <summary>
     /// Gets the name of the integration. Used to retrieve integration-specific settings.
     /// </summary>
-    [Instrumented]
     public string IntegrationName
     {
+        [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get;
     }
