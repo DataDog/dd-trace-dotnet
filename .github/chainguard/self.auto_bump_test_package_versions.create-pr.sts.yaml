@@ -1,6 +1,6 @@
 issuer: https://token.actions.githubusercontent.com
 
-subject: repo:DataDog/dd-trace-dotnet:.*
+subject_pattern: repo:DataDog/dd-trace-dotnet:.*
 
 claim_pattern:
   event_name: (schedule|workflow_dispatch|pull_request_target)
@@ -11,4 +11,3 @@ claim_pattern:
 permissions:
   contents: write
   pull_requests: write
-
