@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ContinuousProfiler;
@@ -60,7 +61,9 @@ public class ProfilerSettingsTests : SettingsTestsBase
         var source = CreateConfigurationSource(values.ToArray());
         var settings = new ProfilerSettings(source, source, NullConfigurationTelemetry.Instance);
 
-        settings.ProfilerState.Should().Be((ProfilerState)expected);
+        // Whether the profiler is supported at all overrides the expected profiler state
+        var expectedState = ProfilerSettings.IsProfilingSupported ? (ProfilerState)expected : ProfilerState.Disabled;
+        settings.ProfilerState.Should().Be(expectedState);
     }
 
     [Theory]
@@ -87,9 +90,12 @@ public class ProfilerSettingsTests : SettingsTestsBase
         var envConfig = CreateConfigurationSource(envValues.ToArray());
         var otherConfig = CreateConfigurationSource(otherValues.ToArray());
 
-        // When profiler managed activation is disabled, the profiler state should only be read from the environment variables
+        // When profiler managed activation is enabled, the profiler state should be read from all config
         var settings = new ProfilerSettings(otherConfig, envConfig, NullConfigurationTelemetry.Instance);
-        settings.ProfilerState.Should().Be((ProfilerState)expected);
+
+        // Whether the profiler is supported at all overrides the expected profiler state
+        var expectedState = ProfilerSettings.IsProfilingSupported ? (ProfilerState)expected : ProfilerState.Disabled;
+        settings.ProfilerState.Should().Be(expectedState);
     }
 
     [Theory]
@@ -122,6 +128,28 @@ public class ProfilerSettingsTests : SettingsTestsBase
 
         // When profiler managed activation is disabled, the profiler state should only be read from the environment variables
         var settings = new ProfilerSettings(otherConfig, envConfig, NullConfigurationTelemetry.Instance);
-        settings.ProfilerState.Should().Be((ProfilerState)expected);
+
+        // Whether the profiler is supported at all overrides the expected profiler state
+        var expectedState = ProfilerSettings.IsProfilingSupported ? (ProfilerState)expected : ProfilerState.Disabled;
+        settings.ProfilerState.Should().Be(expectedState);
+    }
+
+    [Fact]
+    public void ProfilerState_IsProfilingSupported_OnlySupportedOnExpectedPlatforms()
+    {
+        // get the current runtime and platform
+        var arch = RuntimeInformation.OSArchitecture;
+        var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        var isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
+        var isSupported = (arch, isWindows, isLinux) switch
+        {
+            (Architecture.X64, true, _) => true, // Windows x64
+            (Architecture.X86, true, _) => true, // Windows x86
+            (Architecture.X64, _, true) => true, // Linux x64
+            _ => false // Unsupported platforms
+        };
+
+        ProfilerSettings.IsProfilingSupported.Should().Be(isSupported);
     }
 }
