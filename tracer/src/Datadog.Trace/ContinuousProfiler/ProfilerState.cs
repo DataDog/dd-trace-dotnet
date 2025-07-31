@@ -18,7 +18,7 @@ internal enum ProfilerState
     Enabled = 1,
 
     /// <summary>
-    /// The profiler is in "auto" mode
+    /// The profiler is in "auto" mode; i.e. will start after a delay and if traces are created
     /// </summary>
     Auto = 2,
 }

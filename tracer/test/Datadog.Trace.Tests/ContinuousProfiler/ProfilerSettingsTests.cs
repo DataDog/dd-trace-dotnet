@@ -70,7 +70,7 @@ public class ProfilerSettingsTests : SettingsTestsBase
     [InlineData(null, "1", (int)ProfilerState.Disabled)]
     [InlineData(null, "0", (int)ProfilerState.Disabled)]
     [InlineData(null, "auto", (int)ProfilerState.Disabled)]
-    public void ProfilerState_WhenManagedActivationIsEnabledOrMissing_ReadsFromAllConfig(string configProfilingEnabled, string envProfilingEnabled, int expected)
+    public void ProfilerState_WhenManagedActivationIsMissingOrOnByDefault_DontReadFromOnlyEnvVars(string configProfilingEnabled, string envProfilingEnabled, int expected)
     {
         var envValues = new List<(string, string)>();
         if (envProfilingEnabled is not null)
