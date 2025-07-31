@@ -40,16 +40,17 @@ internal abstract class LambdaCommon
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
     {
-        var request = requestBuilder.GetStartInvocationRequest();
-        WriteRequestPayload(request, data);
-        WriteRequestHeaders(request, context);
-        using var response = (HttpWebResponse)request.GetResponse();
+        // var request = requestBuilder.GetStartInvocationRequest();
+        // WriteRequestPayload(request, data);
+        // WriteRequestHeaders(request, context);
+        // using var response = (HttpWebResponse)request.GetResponse();
 
-        var headers = response.Headers.Wrap();
-        if (!ValidateOkStatus(response))
-        {
-            return null;
-        }
+        var headers = new NameValueHeadersCollection();
+        // var headers = response.Headers.Wrap();
+        // if (!ValidateOkStatus(response))
+        // {
+        //     return null;
+        // }
 
         var tracer = Tracer.Instance;
         return CreatePlaceholderScope(tracer, headers);
@@ -87,7 +88,7 @@ internal abstract class LambdaCommon
                 span.SetException(exception);
             }
 
-            SendEndInvocation(requestBuilder, scope, exception != null, returnValue);
+            // SendEndInvocation(requestBuilder, scope, exception != null, returnValue);
         }
         catch (Exception ex)
         {
