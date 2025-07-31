@@ -93,6 +93,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+            FilterConnectionHeader(settings);
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json", scrubCookiesFingerprint: true);
         }
 
