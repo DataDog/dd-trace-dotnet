@@ -35,6 +35,7 @@ internal class AppEndpointData
         Method = method;
         Path = path;
         OperationName = "http.request";
+        ResourceName = $"{method} {path}";
     }
 
     /// <summary>
@@ -58,4 +59,9 @@ internal class AppEndpointData
     /// Gets or sets the operation name for the endpoint.
     /// </summary>
     public string OperationName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the resource name for the endpoint.
+    /// </summary>
+    public string ResourceName { get; set; }
 }
