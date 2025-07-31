@@ -676,7 +676,7 @@
   "DD_TRACE_DATA_PIPELINE_ENABLED": "trace_data_pipeline_enabled",
   "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED": "trace_inject_context_into_stored_procedures_enabled",
   "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS": "trace_graphql_error_extensions",
-  "DD_TRACE_BAGGAGE_TAG_KEYS": "trace_baggage_tag_keys"
+  "DD_TRACE_BAGGAGE_TAG_KEYS": "trace_baggage_tag_keys",
   "DD_METRICS_OTEL_ENABLED": "metrics_otel_enabled",
   "DD_METRICS_OTEL_METER_NAMES": "metrics_otel_meter_names"
 }
