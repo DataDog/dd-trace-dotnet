@@ -94,7 +94,8 @@ internal class RetryMessageBus : IMessageBus
             // Bypass some events to trigger MessageSink events. (Allure lib required it to create the test context)
             // but just send the event once.
             var messageTypeName = message.GetType().Name;
-            if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
+            // if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
+            if (messageTypeName is "TestClassConstructionStarting" or "TestClassConstructionFinished")
             {
                 if (metadata.BypassedMessages.Add(messageTypeName))
                 {
