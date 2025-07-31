@@ -129,5 +129,14 @@
     <PackageReference Include="System.DirectoryServices" Version="6.0.0" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="6.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="6.0.0" />
+    <PackageReference Update="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.7" />
+    <PackageReference Update="SQLitePCLRaw.core" Version="2.1.7" />
+    <PackageReference Update="Microsoft.Data.Sqlite.Core" Version="7.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+    <PackageReference Update="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.7" />
+    <PackageReference Update="SQLitePCLRaw.core" Version="2.1.7" />
+    <PackageReference Update="Microsoft.Data.Sqlite.Core" Version="7.0.2" />
   </ItemGroup>
 </Project>
