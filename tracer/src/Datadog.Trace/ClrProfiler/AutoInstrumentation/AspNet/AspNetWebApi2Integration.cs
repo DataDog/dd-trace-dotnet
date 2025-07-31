@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 try
                 {
-                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(tracer, span, baggage);
+                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, baggage, tracer.Settings.BaggageTagKeys);
                 }
                 catch (Exception ex)
                 {

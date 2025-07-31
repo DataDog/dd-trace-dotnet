@@ -20,33 +20,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-    [Collection(nameof(WebRequestCollection))]
     public class SpanContextPropagatorTests_ExtractBaggageHeaderTags
     {
-        public enum HeaderCollectionType
-        {
-            /// <summary>
-            /// NameValueCollection
-            /// </summary>
-            NameValueHeadersCollection,
-
-            /// <summary>
-            /// WebHeadersCollection
-            /// </summary>
-            WebHeadersCollection,
-        }
-
-        public static TheoryData<HeaderCollectionType> GetHeaderCollections()
-            => new() { HeaderCollectionType.NameValueHeadersCollection, HeaderCollectionType.WebHeadersCollection, };
-
-        internal static IHeadersCollection GetHeadersCollection(HeaderCollectionType type)
-            => type switch
-            {
-                HeaderCollectionType.WebHeadersCollection => WebRequest.CreateHttp("http://localhost").Headers.Wrap(),
-                HeaderCollectionType.NameValueHeadersCollection => new NameValueCollection().Wrap(),
-                _ => throw new Exception("Unknown header collection type " + type),
-            };
-
         [Fact]
         internal async Task AddBaggageTags()
         {
@@ -55,13 +30,11 @@ namespace Datadog.Trace.Tests
             baggageItems.Add("user.id", "doggo");
             var baggage = new Baggage(baggageItems);
 
-            var expectedResult = "doggo";
-
             // Test
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = (Scope)tracer.StartActive("operation");
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(tracer, scope.Span, baggage);
-            scope.Span.GetTag("baggage.user.id").Should().Be(expectedResult);
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, baggage, tracer.Settings.BaggageTagKeys);
+            scope.Span.GetTag("baggage.user.id").Should().Be("doggo");
         }
 
         [Fact]
@@ -82,7 +55,7 @@ namespace Datadog.Trace.Tests
             // Test
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(tracer, scope.Span, baggage);
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, baggage, tracer.Settings.BaggageTagKeys);
 
             // With wildcard, all baggage items should be added as tags
             scope.Span.GetTag("baggage.custom.key").Should().Be("custom-value");
@@ -108,7 +81,7 @@ namespace Datadog.Trace.Tests
             // Test
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(tracer, scope.Span, baggage);
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, baggage, tracer.Settings.BaggageTagKeys);
 
             // Only configured keys should be added as tags
             scope.Span.GetTag("baggage.custom.id").Should().Be("my-custom-id");
@@ -133,7 +106,7 @@ namespace Datadog.Trace.Tests
             // Test
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(tracer, scope.Span, baggage);
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, baggage, tracer.Settings.BaggageTagKeys);
 
             // No baggage tags should be added when feature is disabled
             scope.Span.GetTag("user.id").Should().BeNull();

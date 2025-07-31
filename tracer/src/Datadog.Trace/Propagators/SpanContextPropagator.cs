@@ -310,15 +310,12 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal void AddBaggageToSpanAsTags(Tracer tracer, ISpan span, Baggage? baggage)
+        internal void AddBaggageToSpanAsTags(ISpan span, Baggage? baggage, string[] baggageTagKeys)
         {
             if (baggage is null or { Count: 0 })
             {
                 return;
             }
-
-            var settings = tracer.Settings;
-            var baggageTagKeys = settings.BaggageTagKeys;
 
             if (baggageTagKeys.Length == 0)
             {
