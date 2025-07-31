@@ -91,6 +91,20 @@ internal class RetryMessageBus : IMessageBus
                 return _innerMessageBus.QueueMessage(message);
             }
 
+            // Bypass some events to trigger MessageSink events. (Allure lib required it to create the test context)
+            // but just send the event once.
+            var messageTypeName = message.GetType().Name;
+            if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
+            {
+                if (metadata.BypassedMessages.Add(messageTypeName))
+                {
+                    Common.Log.Debug("RetryMessageBus.QueueMessage: Message bypass, flushing directly for: {UniqueID} | {MessageType}", uniqueID, messageTypeName);
+                    return _innerMessageBus.QueueMessage(message);
+                }
+
+                return true;
+            }
+
             var totalExecutions = metadata.TotalExecutions;
 
             // Let's store all messages for all executions of the given test, when the test case is finished,
@@ -213,6 +227,14 @@ internal class RetryMessageBus : IMessageBus
         }
 
         public bool Disposed { get; set; }
+
+        /// <summary>
+        /// Gets the messages that were bypassed to trigger MessageSink events.
+        /// This is used to avoid sending the same message multiple times.
+        /// For example, TestStarting, TestClassConstructionStarting, TestClassConstructionFinished, etc.
+        /// "TestCaseStarting" or "TestMethodStarting" are not bypassed, as they are used to create the test context.
+        /// </summary>
+        public HashSet<string> BypassedMessages { get; } = new();
 
         public void ResizeListOfMessages(int totalExecutions)
         {
