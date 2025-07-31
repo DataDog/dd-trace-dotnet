@@ -196,7 +196,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
 
-            _testName = $"{nameof(AspNetMvc5Tests)}.WithBaggage";
+            _testName = nameof(AspNetMvc5Tests)
+                      + ".Integrated"  // _classicMode = false
+                      + ".WithFF"      // enableRouteTemplateResourceNames = true, enableRouteTemplateExpansion = false
+                      + ".WithBaggage";
         }
 
         public static TheoryData<string, int> Data => new()
