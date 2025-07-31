@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler;
 using FluentAssertions;
 using Xunit;
@@ -34,11 +35,16 @@ public abstract class InstrumentationTests<T>
                                           .Where(y => y.GetCustomAttribute<ManualInstrumented>() != null))
                                .ToList();
 
+        attributedMembers.Should()
+                         .AllSatisfy(
+                              member => member.Should().NotBeOfType<PropertyInfo>(),
+                              "[Instrumented] attribute should be applied to property getters and setters, not the property itself");
+
         foreach (var @group in instrumentations)
         {
             var targetType = manualAssembly.GetType(@group.Key, throwOnError: false);
             targetType.Should().NotBeNull($"target {targetType} required for instrumentation");
-            var allMembers = targetType.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            var allMembers = targetType!.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
             foreach (var (instrumentationType, attribute) in @group)
             {
                 var methodName = attribute.MethodName;
@@ -51,19 +57,14 @@ public abstract class InstrumentationTests<T>
                                  $"type '{targetType.Name}' should have member '{methodName}'")
                             .Subject;
 
-                // allow for decorating the property
                 var instrumentedAttribute = member.GetCustomAttribute<ManualInstrumented>();
-                if (instrumentedAttribute is null && (methodName.StartsWith("get_") || methodName.StartsWith("set_")))
-                {
-                    var snippedName = methodName.Substring(4);
-                    (var property, instrumentedAttribute) = allMembers
-                                           .Where(x => x is PropertyInfo && x.Name == snippedName)
-                                           .Select(x => (x, x.GetCustomAttribute<ManualInstrumented>()))
-                                           .SingleOrDefault();
-                    attributedMembers.Remove(property);
-                }
-
                 instrumentedAttribute.Should().NotBeNull($"'{targetType.Name}.{methodName}' should have [Instrumented] attribute");
+
+                var method = member.Should().BeAssignableTo<MethodBase>().Subject;
+                var flags = method.MethodImplementationFlags;
+                var hasInlining = (flags & MethodImplAttributes.NoInlining) == MethodImplAttributes.NoInlining;
+                hasInlining.Should().BeTrue($"'{targetType.Name}.{methodName}' should have [MethodImpl(MethodImplOptions.NoInlining)] attribute");
+
                 attributedMembers.Remove(member);
             }
         }
