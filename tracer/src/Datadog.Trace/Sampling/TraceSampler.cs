@@ -17,13 +17,14 @@ namespace Datadog.Trace.Sampling
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceSampler>();
 
         private readonly IRateLimiter _limiter;
-        private readonly List<ISamplingRule> _rules = [];
+        private readonly List<ISamplingRule> _rules;
+        private readonly AgentSamplingRule? _agentSamplingRule;
 
-        private AgentSamplingRule? _agentSamplingRule;
-
-        public TraceSampler(IRateLimiter limiter)
+        public TraceSampler(IRateLimiter limiter, List<ISamplingRule> rules, AgentSamplingRule? agentSamplingRule)
         {
             _limiter = limiter;
+            _rules = [..rules];
+            _agentSamplingRule = agentSamplingRule;
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
@@ -46,57 +47,6 @@ namespace Datadog.Trace.Sampling
             // (even before we receive rates from the agent)
             Log.Debug("No sampling rules matched for trace {TraceId}. Using default sampling decision.", span.Context.RawTraceId);
             return SamplingDecision.Default;
-        }
-
-        /// <summary>
-        /// Register a new sampling rule. To register a <see cref="AgentSamplingRule"/>,
-        /// use <see cref="RegisterAgentSamplingRule"/> instead.
-        /// </summary>
-        /// <remarks>
-        /// The order that rules are registered is important, as they are evaluated in order.
-        /// The first rule that matches will be used to determine the sampling rate.
-        /// </remarks>
-        public void RegisterRule(ISamplingRule rule)
-        {
-            _rules.Add(rule);
-        }
-
-        /// <summary>
-        /// Register new sampling rules. To register a <see cref="AgentSamplingRule"/>,
-        /// use <see cref="RegisterAgentSamplingRule"/> instead.
-        /// </summary>
-        /// <remarks>
-        /// The order that rules are registered is important, as they are evaluated in order.
-        /// The first rule that matches will be used to determine the sampling rate.
-        /// </remarks>
-        public void RegisterRules(IEnumerable<ISamplingRule> rules)
-        {
-            _rules.AddRange(rules);
-        }
-
-        /// <summary>
-        /// Register a new agent sampling rule. This rule should be registered last,
-        /// after any calls to <see cref="RegisterRule"/> or <see cref="RegisterRules"/>.
-        /// </summary>
-        /// <remarks>
-        /// The order that rules are registered is important, as they are evaluated in order.
-        /// The first rule that matches will be used to determine the sampling rate.
-        /// </remarks>
-        public void RegisterAgentSamplingRule(AgentSamplingRule rule)
-        {
-            // only register the one AgentSamplingRule
-            if (Interlocked.Exchange(ref _agentSamplingRule, rule) == null)
-            {
-                // keep a reference to this rule so we can call SetDefaultSampleRates() later
-                // to update the agent sampling rates
-                _agentSamplingRule = rule;
-
-                RegisterRule(rule);
-            }
-            else
-            {
-                Log.Warning("AgentSamplingRule already registered. Ignoring additional registration.");
-            }
         }
 
         // used for testing
@@ -136,6 +86,67 @@ namespace Datadog.Trace.Sampling
             }
 
             return new SamplingDecision(priority, mechanism, rate, limiterRate);
+        }
+
+        public class Builder(IRateLimiter limiter)
+        {
+            private readonly IRateLimiter _limiter = limiter;
+            private readonly List<ISamplingRule> _rules = [];
+            private AgentSamplingRule? _agentSamplingRule;
+
+            public TraceSampler Build()
+            {
+                return new TraceSampler(_limiter, _rules, _agentSamplingRule);
+            }
+
+            /// <summary>
+            /// Register a new sampling rule. To register a <see cref="AgentSamplingRule"/>,
+            /// use <see cref="RegisterAgentSamplingRule"/> instead.
+            /// </summary>
+            /// <remarks>
+            /// The order that rules are registered is important, as they are evaluated in order.
+            /// The first rule that matches will be used to determine the sampling rate.
+            /// </remarks>
+            public void RegisterRule(ISamplingRule rule)
+            {
+                _rules.Add(rule);
+            }
+
+            /// <summary>
+            /// Register new sampling rules. To register a <see cref="AgentSamplingRule"/>,
+            /// use <see cref="RegisterAgentSamplingRule"/> instead.
+            /// </summary>
+            /// <remarks>
+            /// The order that rules are registered is important, as they are evaluated in order.
+            /// The first rule that matches will be used to determine the sampling rate.
+            /// </remarks>
+            public void RegisterRules(IEnumerable<ISamplingRule> rules)
+            {
+                _rules.AddRange(rules);
+            }
+
+            /// <summary>
+            /// Register a new agent sampling rule. This rule should be registered last,
+            /// after any calls to <see cref="RegisterRule"/> or <see cref="RegisterRules"/>.
+            /// </summary>
+            /// <remarks>
+            /// The order that rules are registered is important, as they are evaluated in order.
+            /// The first rule that matches will be used to determine the sampling rate.
+            /// </remarks>
+            public void RegisterAgentSamplingRule(AgentSamplingRule rule)
+            {
+                // only register the one AgentSamplingRule
+                // keep a reference to this rule so we can call SetDefaultSampleRates() later
+                // to update the agent sampling rates
+                if (Interlocked.Exchange(ref _agentSamplingRule, rule) == null)
+                {
+                    RegisterRule(rule);
+                }
+                else
+                {
+                    Log.Warning("AgentSamplingRule already registered. Ignoring additional registration.");
+                }
+            }
         }
     }
 }
