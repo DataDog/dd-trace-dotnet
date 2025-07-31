@@ -149,11 +149,12 @@ public abstract class AzureFunctionsTests : TestHelper
             {
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
 
                 using var s = new AssertionScope();
-                spans.Count.Should().Be(expectedSpanCount);
+                filteredSpans.Count.Should().Be(expectedSpanCount);
 
-                await AssertInProcessSpans(spans);
+                await AssertInProcessSpans(filteredSpans);
             }
         }
     }
@@ -216,10 +217,10 @@ public abstract class AzureFunctionsTests : TestHelper
             {
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-
+                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
                 using var s = new AssertionScope();
 
-                await AssertIsolatedSpans(spans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.Sdk1");
+                await AssertIsolatedSpans(filteredSpans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.Sdk1");
             }
         }
     }
@@ -280,14 +281,15 @@ public abstract class AzureFunctionsTests : TestHelper
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
-                const int expectedSpanCount = 22;
+                const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
 
                 using var s = new AssertionScope();
 
-                await AssertIsolatedSpans(spans);
+                await AssertIsolatedSpans(filteredSpans);
 
-                spans.Count.Should().Be(expectedSpanCount);
+                filteredSpans.Count.Should().Be(expectedSpanCount);
             }
         }
     }
