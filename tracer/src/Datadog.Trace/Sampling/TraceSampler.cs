@@ -140,7 +140,6 @@ namespace Datadog.Trace.Sampling
                 {
                     // keep a reference to this rule so we can call SetDefaultSampleRates() later
                     // to update the agent sampling rates
-                    _agentSamplingRule = rule;
 
                     RegisterRule(rule);
                 }
