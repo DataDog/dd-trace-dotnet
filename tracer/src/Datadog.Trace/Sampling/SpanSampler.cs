@@ -25,7 +25,11 @@ internal class SpanSampler : ISpanSampler
         }
 
         _rules = rules.ToList();
+        HasResourceBasedSamplingRule = _rules.Any(rule => rule.IsResourceBasedSamplingRule);
     }
+
+    /// <inheritdoc/>
+    public bool HasResourceBasedSamplingRule { get; }
 
     /// <inheritdoc/>
     public bool MakeSamplingDecision(Span span)
