@@ -415,7 +415,8 @@ namespace Datadog.Trace
                         LanguageInterpreter = frameworkDescription.Name,
                         ComputeStats = settings.StatsComputationEnabled,
                         TelemetryClientConfiguration = telemetryClientConfiguration,
-                        ClientComputedStats = clientComputedStats
+                        ClientComputedStats = clientComputedStats,
+                        ConnectionTimeoutMs = 15_000
                     };
 
                     return new TraceExporter(configuration, updateSampleRates);
