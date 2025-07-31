@@ -136,11 +136,10 @@ namespace Datadog.Trace.Sampling
             public void RegisterAgentSamplingRule(AgentSamplingRule rule)
             {
                 // only register the one AgentSamplingRule
+                // keep a reference to this rule so we can call SetDefaultSampleRates() later
+                // to update the agent sampling rates
                 if (Interlocked.Exchange(ref _agentSamplingRule, rule) == null)
                 {
-                    // keep a reference to this rule so we can call SetDefaultSampleRates() later
-                    // to update the agent sampling rates
-
                     RegisterRule(rule);
                 }
                 else
