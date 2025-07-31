@@ -40,6 +40,7 @@ namespace Samples
         private static readonly MethodInfo ConfigureMethod = TracerType?.GetMethod("Configure");
         private static readonly MethodInfo TraceIdProperty = SpanContextType?.GetProperty("TraceId")?.GetMethod;
         private static readonly MethodInfo SpanIdProperty = SpanContextType?.GetProperty("SpanId")?.GetMethod;
+        private static readonly MethodInfo GetOrMakeSamplingDecisionMethod = SpanContextType?.GetMethod("GetOrMakeSamplingDecision", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SpanProperty = ScopeType?.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static readonly MethodInfo SpanContextProperty = SpanType?.GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType?.GetProperty("TraceId", BindingFlags.Public | BindingFlags.Static)?.GetMethod;
@@ -229,6 +230,11 @@ namespace Samples
         public static ulong GetSpanId(IDisposable scope)
         {
             return (ulong)SpanIdProperty.Invoke(GetActiveSpanContext(), Array.Empty<object>());
+        }
+
+        public static int? GetOrMakeSamplingDecision()
+        {
+            return (int?)GetOrMakeSamplingDecisionMethod.Invoke(GetActiveSpanContext(), Array.Empty<object>());
         }
 
         public static Task ForceTracerFlushAsync()
