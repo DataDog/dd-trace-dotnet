@@ -1,7 +1,4 @@
-﻿using OpenTelemetry;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using Quartz;
+﻿using Quartz;
 using Quartz.Impl;
 using Quartz.Logging;
 
@@ -11,21 +8,19 @@ public class Program
 {
     private static async Task Main(string[] args)
     {
-        var tracerProvider = Sdk.CreateTracerProviderBuilder()
-                                .AddQuartzInstrumentation()
-                                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("QuartzSampleApp"))
-                                .AddConsoleExporter(options =>
-                                 {
-                                     options.Targets = OpenTelemetry.Exporter.ConsoleExporterOutputTargets.Console;
-                                 })
-                                .AddOtlpExporter(otlpOptions =>
-                                 {
-                                     otlpOptions.Endpoint = new Uri("http://localhost:4318/v1/traces");
-                                     otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-                                 })
-                                .Build();
-
-        LogProvider.SetCurrentLogProvider(new ConsoleLogProvider());
+        // var tracerProvider = Sdk.CreateTracerProviderBuilder()
+        //                         .AddQuartzInstrumentation()
+        //                         .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("QuartzSampleApp"))
+        //                         .AddConsoleExporter(options =>
+        //                          {
+        //                              options.Targets = OpenTelemetry.Exporter.ConsoleExporterOutputTargets.Console;
+        //                          })
+        //                         .AddOtlpExporter(otlpOptions =>
+        //                          {
+        //                              otlpOptions.Endpoint = new Uri("http://localhost:4318/v1/traces");
+        //                              otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+        //                          })
+        //                         .Build();
 
         StdSchedulerFactory factory = new StdSchedulerFactory();
         IScheduler scheduler = await factory.GetScheduler();
@@ -67,33 +62,6 @@ public class Program
 
         Console.WriteLine("Press any key to close the application");
         Console.ReadKey();
-
-        tracerProvider?.Dispose();
-    }
-
-    private class ConsoleLogProvider : ILogProvider
-    {
-        public Logger GetLogger(string name)
-        {
-            return (level, func, exception, parameters) =>
-            {
-                if (level >= LogLevel.Info && func != null)
-                {
-                    Console.WriteLine("[" + DateTime.Now.ToLongTimeString() + "] [" + level + "] " + func(), parameters);
-                }
-                return true;
-            };
-        }
-
-        public IDisposable OpenNestedContext(string message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IDisposable OpenMappedContext(string key, object value, bool destructure = false)
-        {
-            throw new NotImplementedException();
-        }
     }
 }
 
