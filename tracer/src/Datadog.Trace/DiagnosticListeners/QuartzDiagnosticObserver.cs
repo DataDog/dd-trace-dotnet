@@ -30,9 +30,6 @@ namespace Datadog.Trace.DiagnosticListeners
         public const IntegrationId IntegrationId = Configuration.IntegrationId.Quartz;
 
         private const string DiagnosticListenerName = "Quartz";
-        private const string JobExecutionOperationName = "quartz.job.execution";
-        private const string JobSchedulingOperationName = "quartz.job.scheduling";
-        private const string TriggerFiredOperationName = "quartz.trigger.fired";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzDiagnosticObserver>();
         private readonly Tracer _tracer;
@@ -67,15 +64,15 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     case "Quartz.Job.Execute.Start":
                     case "Quartz.Job.Veto.Start":
-                        OnStartSpan(arg);
+                        // OnStartSpan(arg);
                         break;
                     case "Quartz.Job.Execute.Stop":
                     case "Quartz.Job.Veto.Stop":
-                        OnStopSpan(arg);
+                       // OnStopSpan(arg);
                         break;
                     case "Quartz.Job.Execute.Exception":
                     case "Quartz.Job.Veto.Exception":
-                        OnException(arg);
+                        // OnException(arg);
                         break;
                 }
             }
