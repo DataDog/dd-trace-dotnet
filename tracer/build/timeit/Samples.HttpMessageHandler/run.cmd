@@ -11,7 +11,7 @@ set FAILED=0
 echo *********************
 echo Installing timeitsharp
 echo *********************
-dotnet tool update -g timeitsharp --version 0.4.5
+dotnet tool update -g timeitsharp --version 0.4.5 --allow-downgrade
 
 echo *********************
 echo .NET Framework 4.8
