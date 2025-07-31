@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.SourceGenerators;
 
@@ -60,42 +61,66 @@ public sealed class ImmutableTracerSettings
     /// <summary>
     /// Gets the default environment name applied to all spans.
     /// </summary>
-    [Instrumented]
-    public string? Environment { get; }
+    public string? Environment
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets the Uri where the Tracer can connect to the Agent.
     /// </summary>
-    [Instrumented]
-    public Uri AgentUri { get; }
+    public Uri AgentUri
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets the exporter settings that dictate how the tracer exports data.
     /// </summary>
     [Obsolete("This property is obsolete and will be removed in a future version. To get the AgentUri, use the AgentUri property")]
-    [Instrumented]
-    public ImmutableExporterSettings Exporter { get; }
+    public ImmutableExporterSettings Exporter
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets the service name applied to top-level spans and used to build derived service names.
     /// </summary>
     /// <seealso cref="TracerSettings.ServiceName"/>
-    [Instrumented]
-    public string? ServiceName { get; }
+    public string? ServiceName
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets the version tag applied to all spans.
     /// </summary>
     /// <seealso cref="TracerSettings.ServiceVersion"/>
-    [Instrumented]
-    public string? ServiceVersion { get; }
+    public string? ServiceVersion
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether tracing is enabled.
     /// Default is <c>true</c>.
     /// </summary>
-    [Instrumented]
-    public bool TraceEnabled { get; }
+    public bool TraceEnabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
 #pragma warning disable CS1574 // AnalyticsEnabled is obsolete
     /// <summary>
@@ -107,85 +132,137 @@ public sealed class ImmutableTracerSettings
     /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
 #pragma warning restore CS1574
     [Obsolete(DeprecationMessages.AppAnalytics)]
-    [Instrumented]
-    public bool AnalyticsEnabled { get; }
+    public bool AnalyticsEnabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether correlation identifiers are
     /// automatically injected into the logging context.
     /// Default is <c>false</c>.
     /// </summary>
-    [Instrumented]
-    public bool LogsInjectionEnabled { get; }
+    public bool LogsInjectionEnabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
     /// Default is <c>100</c>.
     /// </summary>
-    [Instrumented]
-    public int MaxTracesSubmittedPerSecond { get; }
+    public int MaxTracesSubmittedPerSecond
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating custom sampling rules.
     /// </summary>
-    [Instrumented]
-    public string? CustomSamplingRules { get; }
+    public string? CustomSamplingRules
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating a global rate for sampling.
     /// </summary>
-    [Instrumented]
-    public double? GlobalSamplingRate { get; }
+    public double? GlobalSamplingRate
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a collection of <see cref="ImmutableIntegrationSettings"/> keyed by integration name.
     /// </summary>
-    [Instrumented]
-    public ImmutableIntegrationSettingsCollection Integrations { get; }
+    public ImmutableIntegrationSettingsCollection Integrations
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets the global tags, which are applied to all <see cref="ISpan"/>s.
     /// </summary>
-    [Instrumented]
-    public IReadOnlyDictionary<string, string> GlobalTags { get; }
+    public IReadOnlyDictionary<string, string> GlobalTags
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="ISpan"/>
     /// of incoming and outgoing GRPC requests.
     /// </summary>
-    [Instrumented]
-    public IReadOnlyDictionary<string, string> GrpcTags { get; }
+    public IReadOnlyDictionary<string, string> GrpcTags
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets the map of header keys to tag names, which are applied to the root <see cref="ISpan"/>
     /// of incoming and outgoing requests.
     /// </summary>
-    [Instrumented]
-    public IReadOnlyDictionary<string, string> HeaderTags { get; }
+    public IReadOnlyDictionary<string, string> HeaderTags
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether internal metrics
     /// are enabled and sent to DogStatsd.
     /// </summary>
-    [Instrumented]
-    public bool TracerMetricsEnabled { get; }
+    public bool TracerMetricsEnabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether stats are computed on the tracer side
     /// </summary>
-    [Instrumented]
-    public bool StatsComputationEnabled { get; }
+    public bool StatsComputationEnabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether a span context should be created on exiting a successful Kafka
     /// Consumer.Consume() call, and closed on entering Consumer.Consume().
     /// </summary>
-    [Instrumented]
-    public bool KafkaCreateConsumerScopeEnabled { get; }
+    public bool KafkaCreateConsumerScopeEnabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether the diagnostic log at startup is enabled
     /// </summary>
-    [Instrumented]
-    public bool StartupDiagnosticLogEnabled { get; }
+    public bool StartupDiagnosticLogEnabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 }
