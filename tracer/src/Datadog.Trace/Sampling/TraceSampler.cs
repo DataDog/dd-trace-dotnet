@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -25,7 +26,10 @@ namespace Datadog.Trace.Sampling
             _limiter = limiter;
             _rules = [..rules];
             _agentSamplingRule = agentSamplingRule;
+            HasResourceBasedSamplingRule = rules.Any(rule => rule.IsResourceBasedSamplingRule);
         }
+
+        public bool HasResourceBasedSamplingRule { get; }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
         {
