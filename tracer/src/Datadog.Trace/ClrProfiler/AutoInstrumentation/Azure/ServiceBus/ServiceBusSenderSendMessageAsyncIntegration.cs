@@ -50,6 +50,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
+            Scope scope = state.Scope;
+
             if (scope is null)
             {
                 Log.Information("Scope is null");
@@ -58,11 +60,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
             try
             {
-                if (responseMessage.Instance is not null)
-                {
-                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.Settings);
-                }
-
                 if (exception != null)
                 {
                     scope.Span.SetException(exception);
