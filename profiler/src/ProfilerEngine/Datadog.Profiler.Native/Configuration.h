@@ -120,6 +120,7 @@ private:
     static std::chrono::seconds const DefaultDevUploadInterval;
     static std::chrono::seconds const DefaultProdUploadInterval;
     static std::chrono::milliseconds const DefaultCpuProfilingInterval;
+    static CpuProfilerType const DefaultCpuProfilerType;
 
     bool _isProfilingEnabled;
     bool _isCpuProfilingEnabled;
