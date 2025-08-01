@@ -275,12 +275,12 @@ namespace Datadog.Trace
                 (Security.Instance.Settings.AppsecEnabled || Iast.Iast.Instance.Settings.Enabled))
             {
                 // Custom sampler for ASM and IAST standalone billing mode
-                var samplerStandalone = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
+                var samplerStandalone = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
                 samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
-                return samplerStandalone;
+                return samplerStandalone.Build();
             }
 
-            var sampler = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: settings.MaxTracesSubmittedPerSecond, intervalMilliseconds: null));
+            var sampler = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: settings.MaxTracesSubmittedPerSecond, intervalMilliseconds: null));
 
             // sampling rules (remote value overrides local value)
             var samplingRulesJson = settings.CustomSamplingRules;
@@ -336,7 +336,7 @@ namespace Datadog.Trace
             // This rule is always present, even if the agent has not yet provided any sampling rates.
             sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
 
-            return sampler;
+            return sampler.Build();
         }
 
         protected virtual ISpanSampler GetSpanSampler(TracerSettings settings)
@@ -415,7 +415,8 @@ namespace Datadog.Trace
                         LanguageInterpreter = frameworkDescription.Name,
                         ComputeStats = settings.StatsComputationEnabled,
                         TelemetryClientConfiguration = telemetryClientConfiguration,
-                        ClientComputedStats = clientComputedStats
+                        ClientComputedStats = clientComputedStats,
+                        ConnectionTimeoutMs = 15_000
                     };
 
                     return new TraceExporter(configuration, updateSampleRates);

@@ -86,6 +86,9 @@ namespace Datadog.Trace.Sampling
         /// <inheritdoc/>
         public float? MaxPerSecond { get; }
 
+        /// <inheritdoc/>
+        public bool IsResourceBasedSamplingRule => _resourceNameRegex is not null;
+
         /// <summary>
         ///     Creates <see cref="SpanSamplingRule"/>s from the supplied JSON <paramref name="configuration"/>.
         /// </summary>

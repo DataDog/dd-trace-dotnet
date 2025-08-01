@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 
 #nullable enable
@@ -21,6 +22,7 @@ namespace Datadog.Trace
         /// Initializes a new instance of the <see cref="SpanContextExtractor"/> class
         /// </summary>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public SpanContextExtractor()
         {
         }
@@ -33,6 +35,7 @@ namespace Datadog.Trace
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         /// <returns>A potentially null Datadog <see cref="ISpanContext"/></returns>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
             => null;
 
@@ -49,6 +52,7 @@ namespace Datadog.Trace
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         /// <returns>A potentially null Datadog SpanContext</returns>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
             => null;
     }
