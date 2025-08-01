@@ -120,7 +120,7 @@ bool SsiManager::IsLongLived() const
 
 // the profiler is enabled if either:
 //     - the profiler is enabled in the configuration (including "auto")
-//  or - the profiler is deployed via SSI and DD_INJECTION_ENABLED contains "profiling"
+//  or - the profiler is deployed via SSI and DD_INJECTION_ENABLED contains "profiler"
 //
 // WARNING: with Stable Configuration, the enablement status is set to Standby until the managed layer notifies the profiler
 // that it is enabled or disabled. So this function will return false BEFORE the managed layer sets the enablement status.

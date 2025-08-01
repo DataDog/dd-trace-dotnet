@@ -1569,6 +1569,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     }
 #endif
 
+    // sanity check: ensure that the Stable Configuration has been set by the managed layer
+    if (_pConfiguration->IsManagedActivationEnabled())
+    {
+        if (!_IsManagedConfigurationSet)
+        {
+            Log::Error("Stable Configuration has not been set: the profiler was never started.");
+        }
+    }
+
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
