@@ -704,7 +704,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             }
             else
             {
-                Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
+                Logger::Warn("Timeout while waiting for the rejit requests to be processed in ModuleLoadFinished. Rejit will continue asynchronously, but some initial calls may not be instrumented");
+                // Dereference null pointer to force a crash
+                int* crash = nullptr;
+                *crash = 42;
             }
         }
     }
@@ -1323,7 +1326,10 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             }
             else
             {
-                Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
+                Logger::Warn("Timeout while waiting for the rejit requests to be processed in TryRejitModule. Rejit will continue asynchronously, but some initial calls may not be instrumented");
+                // Dereference null pointer to force a crash
+                int* crash = nullptr;
+                *crash = 42;
             }
         }
     }
