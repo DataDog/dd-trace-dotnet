@@ -34,20 +34,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, TimeSpan? maxWaitTime, CancellationToken cancellationToken)
         {
-            var tracer = Tracer.Instance;
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
-            {
-                var scope = tracer.StartActiveInternal(OperationName);
-                var span = scope.Span;
-                span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
-                span.SetTag("azure.servicebus.entity_path", "entity_path");
-                span.SetTag("azure.servicebus.namespace", "namespace");
-                span.SetTag("azure.servicebus.operation", "receive");
-                span.SetTag("azure.servicebus.receive_mode", "receive_mode");
-                return new CallTargetState(scope);
-            }
+            Log.Info(ex, "ReceiveMessageAsync running");
 
-            return CallTargetState.GetDefault();
+            var tracer = Tracer.Instance;
+            var scope = tracer.StartActiveInternal(OperationName);
+            var span = scope.Span;
+            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+            span.SetTag("azure.servicebus.entity_path", "entity_path");
+            span.SetTag("azure.servicebus.namespace", "namespace");
+            span.SetTag("azure.servicebus.operation", "receive");
+            span.SetTag("azure.servicebus.receive_mode", "receive_mode");
+            return new CallTargetState(scope);
         }
 
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)

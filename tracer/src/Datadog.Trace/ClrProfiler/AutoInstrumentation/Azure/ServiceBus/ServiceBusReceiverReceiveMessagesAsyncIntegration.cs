@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure_Messaging_ServiceB
     MethodName = "ReceiveMessagesAsync",
     ReturnTypeName = "System.Threading.Tasks.Task`1[System.Collections.Generic.IReadOnlyList`1[Azure.Messaging.ServiceBus.ServiceBusReceivedMessage]]",
     ParameterTypeNames = [ClrNames.Int32, "System.Nullable`1[System.TimeSpan]", ClrNames.Bool, ClrNames.CancellationToken],
-    MinimumVersion = "7.20.1",
+    MinimumVersion = "7.0.0",
     MaximumVersion = "7.*.*",
     IntegrationName = nameof(IntegrationId.AzureServiceBus))]
 [Browsable(false)]
@@ -33,19 +33,16 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref int maxMessages, ref TimeSpan? maxWaitTime, ref bool isProcessor, ref CancellationToken cancellationToken)
     {
-        var tracer = Tracer.Instance;
-        if (tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
-        {
-            var scope = tracer.StartActiveInternal(OperationName);
-            var span = scope.Span;
-            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
-            span.SetTag("azure.servicebus.entity_path", "entity_path");
-            span.SetTag("azure.servicebus.namespace", "namespace");
-            span.SetTag("azure.servicebus.operation", "receive_batch");
-            return new CallTargetState(scope);
-        }
+        Log.Info(ex, "ReceiveMessagesAsync running");
 
-        return CallTargetState.GetDefault();
+        var tracer = Tracer.Instance;
+        var scope = tracer.StartActiveInternal(OperationName);
+        var span = scope.Span;
+        span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+        span.SetTag("azure.servicebus.entity_path", "entity_path");
+        span.SetTag("azure.servicebus.namespace", "namespace");
+        span.SetTag("azure.servicebus.operation", "receive_batch");
+        return new CallTargetState(scope);
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)

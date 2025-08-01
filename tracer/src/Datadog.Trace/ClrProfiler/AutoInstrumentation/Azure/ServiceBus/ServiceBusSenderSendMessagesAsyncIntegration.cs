@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure_Messaging_ServiceB
     MethodName = "SendMessagesAsync",
     ReturnTypeName = ClrNames.Task,
     ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[Azure.Messaging.ServiceBus.ServiceBusMessage]", ClrNames.CancellationToken],
-    MinimumVersion = "7.20.1",
+    MinimumVersion = "7.0.0",
     MaximumVersion = "7.*.*",
     IntegrationName = nameof(IntegrationId.AzureServiceBus))]
 [Browsable(false)]
@@ -33,19 +33,16 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
 
     internal static CallTargetState OnMethodBegin<TTarget, TMessages>(TTarget instance, ref TMessages? messages, ref CancellationToken cancellationToken)
     {
-        var tracer = Tracer.Instance;
-        if (tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
-        {
-            var scope = tracer.StartActiveInternal(OperationName);
-            var span = scope.Span;
-            span.SetTag(Tags.SpanKind, SpanKinds.Producer);
-            span.SetTag("azure.servicebus.entity_path", "entity_path");
-            span.SetTag("azure.servicebus.namespace", "namespace");
-            span.SetTag("azure.servicebus.operation", "send_batch");
-            return new CallTargetState(scope);
-        }
+        Log.Info(ex, "SendMessagesAsync running");
 
-        return CallTargetState.GetDefault();
+        var tracer = Tracer.Instance;
+        var scope = tracer.StartActiveInternal(OperationName);
+        var span = scope.Span;
+        span.SetTag(Tags.SpanKind, SpanKinds.Producer);
+        span.SetTag("azure.servicebus.entity_path", "entity_path");
+        span.SetTag("azure.servicebus.namespace", "namespace");
+        span.SetTag("azure.servicebus.operation", "send_batch");
+        return new CallTargetState(scope);
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
