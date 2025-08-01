@@ -1,10 +1,22 @@
 
 #include "threadUtils.h"
+#include "logger.h"
 
 #ifdef __linux__
 #include <sys/prctl.h>
+#include <pthread.h>
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <errno.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 #elif __APPLE__
 #include <pthread.h>
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <errno.h>
+#elif _WIN32
+#include <windows.h>
 #endif
 
 #ifdef _WIN32
@@ -71,5 +83,38 @@ bool Threads::SetNativeThreadName(const WCHAR* description)
     const auto name = shared::ToString(description);
     pthread_setname_np(name.data());
     return true;
+#endif
+}
+
+void Threads::RaiseThreadPriorityAboveNormal()
+{
+#ifdef _WIN32
+    if (!::SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL))
+    {
+        trace::Logger::Warn("SetThreadPriority(ABOVE_NORMAL) failed – GLE=%d", ::GetLastError());
+    }
+
+#elif defined(__APPLE__)
+    // One level above default (“Utility”) but below UI-critical.
+    if (pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0) != 0)
+    {
+        trace::Logger::Warn("pthread_set_qos_class_self_np(USER_INITIATED) failed – errno=%d", errno);
+
+        // Fallback: modest nice() boost for the whole process.
+        if (setpriority(PRIO_PROCESS, 0, -5) != 0)
+        {
+            trace::Logger::Warn("setpriority(-5) fallback failed – errno=%d", errno);
+        }
+    }
+
+#elif defined(__linux__)
+    // true per-thread tweak: target the kernel thread ID (TID)
+    const pid_t tid        = static_cast<pid_t>(::syscall(SYS_gettid));
+    constexpr int kDelta   = -5;          // “above normal” without RT
+
+    if (::setpriority(PRIO_PROCESS, tid, kDelta) != 0)
+    {
+        trace::Logger::Warn("setpriority(TID=%d, %d) failed – errno=%d", tid, kDelta, errno);
+    }
 #endif
 }
