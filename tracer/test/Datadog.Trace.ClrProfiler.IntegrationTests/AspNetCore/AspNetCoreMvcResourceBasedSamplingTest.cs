@@ -109,7 +109,8 @@ public abstract class AspNetCoreMvcResourceBasedSamplingTestBase : AspNetCoreMvc
         _testName = testName;
     }
 
-    [Fact]
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
     public async Task TestSampledSpan()
     {
         var path = "/ping";
@@ -146,7 +147,10 @@ public abstract class AspNetCoreIisMvcResourceBasedSamplingTestBase : AspNetCore
         SetEnvironmentVariable(ConfigurationKeys.CustomSamplingRulesFormat, SamplingRulesFormat.Glob); // for ease of use
     }
 
-    [Fact]
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "LinuxUnsupported")]
     public async Task TestSampledSpan()
     {
         var path = "/ping";
