@@ -29,7 +29,8 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
-    _samplingInterval{pConfiguration->GetCpuProfilingInterval()}
+    _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
+    _nbThreadsInSignalHandler{0}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
@@ -86,11 +87,18 @@ bool TimerCreateCpuProfiler::StartImpl()
         _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) { RegisterThreadImpl(thread); });
     }
 
+    Log::Info("---------------------------");
     return registered;
 }
 
 bool TimerCreateCpuProfiler::StopImpl()
 {
+    Instance = nullptr;
+    // we cannot unregister. We would replace the current action by the default one
+    // which will cause the termination of the process
+    // Instead, mark SIGPROF as ignored.
+    _pSignalManager->IgnoreSignal();
+
     {
         std::unique_lock lock(_registerLock);
 
@@ -99,11 +107,46 @@ bool TimerCreateCpuProfiler::StopImpl()
         _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) { UnregisterThreadImpl(thread); });
     }
 
-    Instance = nullptr;
-    _pSignalManager->UnRegisterHandler();
+    // do not unregister the signal handler: if a SIGPROF was enqueud and we remove
+    //_pSignalManager->UnRegisterHandler();
+
+    Log::Info("Waiting for all threads exiting the signal handler (#threads ", _nbThreadsInSignalHandler, ")");
+    std::uint64_t value = _nbThreadsInSignalHandler;
+    auto timeout = std::chrono::steady_clock::now() + 2s;
+
+    while (value != 0) {
+        // spin
+        std::uint64_t spincount = 0;
+        do
+        {
+            if (spincount < 4000)
+            {
+                ++spincount;
+#ifdef __x86_64__
+                asm volatile("pause");
+#else
+                asm volatile("yield");
+#endif
+            }
+            else
+            {
+               break;
+            }
+            // Wait for lock to be released without generating cache misses
+        } while (_nbThreadsInSignalHandler.load(std::memory_order_relaxed) != 0);
+        value = _nbThreadsInSignalHandler;
+        if (value != 0 && std::chrono::steady_clock::now() > timeout)
+        {
+            Log::Warn("Warning, we still have threads running the signal handler");
+            break;
+        }
+    }
+    Log::Info("All threads exited the signal handler");
 
     return true;
 }
+
+
 
 bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext)
 {
@@ -122,7 +165,6 @@ extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak)
 
 bool TimerCreateCpuProfiler::CanCollect(void* ctx)
 {
-    // TODO (in another PR): add metrics about reasons we could not collect
     if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
         _discardMetrics->Incr<DiscardReason::InsideWrappedFunction>();
@@ -189,12 +231,14 @@ private:
 
 bool TimerCreateCpuProfiler::Collect(void* ctx)
 {
+    _nbThreadsInSignalHandler++;
     _totalSampling->Incr();
 
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (threadInfo == nullptr)
     {
         _discardMetrics->Incr<DiscardReason::UnknownThread>();
+        _nbThreadsInSignalHandler--;
         // Ooops should never happen
         return false;
     }
@@ -203,11 +247,13 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     if (!l.IsLockAcquired())
     {
         _discardMetrics->Incr<DiscardReason::FailedAcquiringLock>();
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
     if (!CanCollect(ctx))
     {
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
@@ -217,6 +263,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     auto rawCpuSample = _pProvider->GetRawSample();
     if (!rawCpuSample)
     {
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
@@ -229,6 +276,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     {
         rawCpuSample.Discard();
         _discardMetrics->Incr<DiscardReason::EmptyBacktrace>();
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
@@ -240,6 +288,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     rawCpuSample->AppDomainId = threadInfo->GetAppDomainId();
     rawCpuSample->ThreadInfo = std::move(threadInfo);
     rawCpuSample->Duration = _samplingInterval;
+    _nbThreadsInSignalHandler--;
     return true;
 }
 

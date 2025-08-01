@@ -40,6 +40,11 @@ public:
 
     const char* GetName() override;
 
+    std::uint64_t GetNbThreadsInHandler() const
+    {
+        return _nbThreadsInSignalHandler;
+    }
+
 private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
     static TimerCreateCpuProfiler* Instance;
@@ -59,4 +64,5 @@ private:
     std::shared_mutex _registerLock;
     std::shared_ptr<CounterMetric> _totalSampling;
     std::shared_ptr<DiscardMetrics> _discardMetrics;
+    std::atomic<std::uint64_t> _nbThreadsInSignalHandler;
 };

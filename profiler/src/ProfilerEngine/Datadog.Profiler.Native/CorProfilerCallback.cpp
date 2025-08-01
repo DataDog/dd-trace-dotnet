@@ -520,7 +520,9 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
-        _pCpuProfiler = RegisterService<TimerCreateCpuProfiler>(
+        // Other alternative in case of crash-at-shutdown, do not register it as a service
+        // we will have to start it by hand (already stopped by hand)
+        _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
             _pConfiguration.get(),
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
@@ -710,6 +712,12 @@ bool CorProfilerCallback::StartServices()
     bool result = true;
     bool success = true;
 
+#ifdef LINUX
+    if (_pCpuProfiler != nullptr)
+    {
+        _pCpuProfiler->Start();
+    }
+#endif
     for (auto const& service : _services)
     {
         auto name = service->GetName();
@@ -742,6 +750,9 @@ bool CorProfilerCallback::DisposeServices()
     _pManagedThreadList = nullptr;
     _pCodeHotspotsThreadList = nullptr;
     _pApplicationStore = nullptr;
+#ifdef LINUX
+    //_pCpuProfiler = nullptr;
+#endif
 
     return result;
 }
@@ -785,6 +796,13 @@ void CorProfilerCallback::DisposeInternal()
     bool isInitialized = _isInitialized.load();
 
     Log::Info("CorProfilerCallback::DisposeInternal() invoked. _isInitialized = ", isInitialized);
+
+#ifdef LINUX
+    if (_pCpuProfiler != nullptr)
+    {
+        Log::Info("---------- Nb threads in signal handler ", _pCpuProfiler->GetNbThreadsInHandler());
+    }
+#endif
 
     if (isInitialized)
     {
@@ -836,6 +854,10 @@ void CorProfilerCallback::DisposeInternal()
         std::this_thread::sleep_for(EngineShutdownSafetyPeriodMS);
 
         Log::Debug("CorProfilerCallback::DisposeInternal():  Pause completed.");
+#ifdef LINUX
+        if (_pCpuProfiler != nullptr)
+            Log::Info("last ---------- Nb threads in signal handler ", _pCpuProfiler->GetNbThreadsInHandler());
+#endif
     }
 }
 
@@ -1514,6 +1536,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     if (_pCpuProfiler != nullptr)
     {
         _pCpuProfiler->Stop();
+        Log::Info("---------- Nb threads in signal handler ", _pCpuProfiler->GetNbThreadsInHandler());
     }
 #endif
 
@@ -1776,7 +1799,7 @@ void CorProfilerCallback::OnThreadRoutineFinished()
         return;
     }
 
-    auto* cpuProfiler = myThis->_pCpuProfiler;
+    auto* cpuProfiler = myThis->_pCpuProfiler.get();
     if (cpuProfiler == nullptr)
     {
         return;
