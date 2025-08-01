@@ -10,6 +10,7 @@ using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -29,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ServiceBusReceiverReceiveMessageAsyncIntegration
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusReceiverReceiveMessageAsyncIntegration));
         internal const string IntegrationName = nameof(IntegrationId.AzureServiceBus);
         private const string OperationName = "azure.servicebus.receive";
 
