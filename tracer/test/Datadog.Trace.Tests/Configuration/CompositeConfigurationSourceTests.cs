@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 using FluentAssertions;
@@ -231,6 +232,81 @@ public class CompositeConfigurationSourceTests
         var telemetry = new StubTelemetry();
         var actual = _source.GetDictionary(key, telemetry, validator: null);
         telemetry.GetInstanceCount(key).Should().Be(1);
+    }
+
+    [Fact]
+    public void Telemetry_WhenMissingDoesNotRecordTelemetry()
+    {
+        var telemetry = new StubTelemetry();
+        const string key = "int_value";
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.Calculated),
+            new NameValueConfigurationSource(new() { { "something_else", "456" } }, ConfigurationOrigins.EnvVars),
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.AppConfig),
+        };
+
+        // not present
+        var actual = source.GetInt32(key, telemetry, validator: null);
+        actual.Should().Be(ConfigurationResult<int>.NotFound());
+
+        // final telemetry value should be the "real" value
+        telemetry.Telemetry.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Telemetry_WhenErrorRecordsTelemetry()
+    {
+        var telemetry = new StubTelemetry();
+        const string key = "int_value";
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.Calculated),
+            new NameValueConfigurationSource(new() { { key, "not_an_int" } }, ConfigurationOrigins.DdConfig),
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.AppConfig),
+        };
+
+        // no valid value
+        var actual = source.GetInt32(key, telemetry, validator: null);
+        actual.Should().Be(ConfigurationResult<int>.NotFound());
+
+        // only telemetry value should be the error
+        telemetry.Telemetry.Should()
+                 .ContainSingle()
+                 .Which.Should()
+                 .BeEquivalentTo(new ConfigurationTelemetryTests.ConfigDto(key, "not_an_int", ConfigurationOrigins.DdConfig, true, TelemetryErrorCode.ParsingInt32Error));
+    }
+
+    [Fact]
+    public void RecordsTelemetry_WhenPresentInMultipleSources()
+    {
+        var telemetry = new StubTelemetry();
+        const string key = "int_value";
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.Calculated),
+            new NameValueConfigurationSource(new() { { key, "not_an_int" } }, ConfigurationOrigins.DdConfig),
+            new NameValueConfigurationSource(new() { { key, "123" } }, ConfigurationOrigins.Code),
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.AppConfig),
+            new NameValueConfigurationSource(new() { { key, "not_an_int" } }, ConfigurationOrigins.RemoteConfig),
+            new NameValueConfigurationSource(new() { { key, "456" } }, ConfigurationOrigins.EnvVars),
+        };
+
+        // first wins
+        var expected = 123;
+        var actual = source.GetInt32(key, telemetry, validator: null);
+        actual.Should().Be(ConfigurationResult<int>.Valid(expected));
+
+        // final telemetry value should be the "real" value
+        telemetry.Telemetry.Last().Value.Should().Be(expected);
+
+        // telemetry records the first error, and then the successful value
+        telemetry.Telemetry.Should()
+                 .BeEquivalentTo(
+                  [
+                      new ConfigurationTelemetryTests.ConfigDto(key, "not_an_int", ConfigurationOrigins.DdConfig, true, TelemetryErrorCode.ParsingInt32Error),
+                      new ConfigurationTelemetryTests.ConfigDto(key, 123, ConfigurationOrigins.Code, true, null),
+                  ]);
     }
 
     internal class StubTelemetry : IConfigurationTelemetry
