@@ -35,7 +35,7 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
 
     internal static CallTargetState OnMethodBegin<TTarget, TMessages>(TTarget instance, ref TMessages? messages, ref CancellationToken cancellationToken)
     {
-        Log.Info(ex, "SendMessagesAsync running");
+        Log.Info("SendMessagesAsync running");
 
         var tracer = Tracer.Instance;
         var scope = tracer.StartActiveInternal(OperationName);

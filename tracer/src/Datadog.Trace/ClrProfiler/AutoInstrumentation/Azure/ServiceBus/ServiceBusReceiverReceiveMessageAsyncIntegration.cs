@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, TimeSpan? maxWaitTime, CancellationToken cancellationToken)
         {
-            Log.Info(ex, "ReceiveMessageAsync running");
+            Log.Info("ReceiveMessageAsync running");
 
             var tracer = Tracer.Instance;
             var scope = tracer.StartActiveInternal(OperationName);

@@ -36,7 +36,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref int maxMessages, ref TimeSpan? maxWaitTime, ref bool isProcessor, ref CancellationToken cancellationToken)
     {
-        Log.Info(ex, "ReceiveMessagesAsync running");
+        Log.Info("ReceiveMessagesAsync running");
 
         var tracer = Tracer.Instance;
         var scope = tracer.StartActiveInternal(OperationName);
