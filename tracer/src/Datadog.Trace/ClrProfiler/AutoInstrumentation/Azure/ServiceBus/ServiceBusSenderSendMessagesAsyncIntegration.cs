@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
@@ -40,32 +39,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             {
                 var scope = tracer.StartActiveInternal(OperationName);
                 var span = scope.Span;
-
-                span.SetTag(Tags.SpanKind, SpanKinds.Client);
+                span.SetTag(Tags.SpanKind, SpanKinds.Producer);
                 span.SetTag("azure.servicebus.entity_path", "entity_path");
                 span.SetTag("azure.servicebus.namespace", "namespace");
                 span.SetTag("azure.servicebus.operation", "send_batch");
-
                 return new CallTargetState(scope);
             }
-
             return CallTargetState.GetDefault();
         }
 
-        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+        internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            var scope = state.Scope;
-            if (scope != null)
-            {
-                if (exception != null)
-                {
-                    scope.Span.SetException(exception);
-                }
-
-                scope.Dispose();
-            }
-
-            return CallTargetReturn.GetDefault();
+            state.Scope?.DisposeWithException(exception);
+            return returnValue;
         }
     }
 }
