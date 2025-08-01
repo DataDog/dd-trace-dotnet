@@ -24,7 +24,7 @@ namespace Datadog.Trace.Configuration
     {
         private static readonly char[] DictionarySeparatorChars = { ',' };
 
-        internal abstract ConfigurationOrigins Origin { get; }
+        public abstract ConfigurationOrigins Origin { get; }
 
         /// <summary>
         /// Returns a <see cref="IDictionary{TKey, TValue}"/> from parsing

@@ -31,6 +31,8 @@ namespace Datadog.Trace.Configuration
             _sources = [..sources];
         }
 
+        public ConfigurationOrigins Origin => ConfigurationOrigins.Unknown;
+
         /// <summary>
         /// Adds a new configuration source to this instance.
         /// </summary>
