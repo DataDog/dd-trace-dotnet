@@ -26,7 +26,15 @@ namespace Datadog.Trace.Sampling
             _limiter = limiter;
             _rules = [..rules];
             _agentSamplingRule = agentSamplingRule;
-            HasResourceBasedSamplingRule = rules.Any(rule => rule.IsResourceBasedSamplingRule);
+            HasResourceBasedSamplingRule = false;
+            foreach (var rule in rules)
+            {
+                if (rule.IsResourceBasedSamplingRule)
+                {
+                    HasResourceBasedSamplingRule = true;
+                    break;
+                }
+            }
         }
 
         public bool HasResourceBasedSamplingRule { get; }

@@ -25,7 +25,15 @@ internal class SpanSampler : ISpanSampler
         }
 
         _rules = rules.ToList();
-        HasResourceBasedSamplingRule = _rules.Any(rule => rule.IsResourceBasedSamplingRule);
+        HasResourceBasedSamplingRule = false;
+        foreach (var rule in _rules)
+        {
+            if (rule.IsResourceBasedSamplingRule)
+            {
+                HasResourceBasedSamplingRule = true;
+                break;
+            }
+        }
     }
 
     /// <inheritdoc/>
