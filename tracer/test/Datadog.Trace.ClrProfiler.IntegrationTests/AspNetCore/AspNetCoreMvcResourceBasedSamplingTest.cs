@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETFRAMEWORK
+
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -171,3 +173,4 @@ public abstract class AspNetCoreIisMvcResourceBasedSamplingTestBase : AspNetCore
 
     public Task DisposeAsync() => Task.CompletedTask;
 }
+#endif
