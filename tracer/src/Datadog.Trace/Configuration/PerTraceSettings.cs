@@ -22,7 +22,7 @@ namespace Datadog.Trace.Configuration
             SpanSampler = spanSampler;
             ServiceNames = serviceNames;
             Schema = schema;
-            HasResourceBasedSamplingRule = (traceSampler?.HasResourceBasedSamplingRule ?? false) || (traceSampler?.HasResourceBasedSamplingRule ?? false);
+            HasResourceBasedSamplingRule = (traceSampler?.HasResourceBasedSamplingRule ?? false) || (spanSampler?.HasResourceBasedSamplingRule ?? false);
         }
 
         public ITraceSampler? TraceSampler { get; }
