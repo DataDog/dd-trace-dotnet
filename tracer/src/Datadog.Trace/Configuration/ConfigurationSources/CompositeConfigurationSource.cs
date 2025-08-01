@@ -50,10 +50,6 @@ namespace Datadog.Trace.Configuration
         IEnumerator IEnumerable.GetEnumerator() => _sources.GetEnumerator();
 
         /// <inheritdoc />
-        public bool IsPresent(string key)
-            => _sources.Select(source => source.IsPresent(key)).FirstOrDefault(value => value);
-
-        /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
             => _sources
               .Select(source => source.GetString(key, telemetry, validator, recordValue))

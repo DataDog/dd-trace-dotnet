@@ -97,14 +97,6 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public bool IsPresent(string key)
-        {
-            JToken? token = SelectToken(key);
-
-            return token is not null;
-        }
-
-        /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
             var token = SelectToken(key);
