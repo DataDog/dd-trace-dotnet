@@ -186,7 +186,8 @@ internal class RetryMessageBus : IMessageBus
             var retValue = true;
             foreach (var messageInList in messages)
             {
-                retValue = retValue && _innerMessageBus.QueueMessage(messageInList);
+                Common.Log.Debug("RetryMessageBus.InternalFlushMessages: Flushing message: {Message} for: {UniqueID}", messageInList, uniqueID);
+                retValue = _innerMessageBus.QueueMessage(messageInList) && retValue;
             }
 
             Common.Log.Debug<int, string>("RetryMessageBus.InternalFlushMessages: {Count} messages flushed for: {UniqueID}", messages.Count, uniqueID);
