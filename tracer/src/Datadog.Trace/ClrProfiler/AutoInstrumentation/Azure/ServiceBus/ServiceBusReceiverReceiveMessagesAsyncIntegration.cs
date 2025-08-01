@@ -29,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure_Messaging_ServiceB
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 {
+    private const string OperationName = "azure.servicebus.receive";
+
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref int maxMessages, ref TimeSpan? maxWaitTime, ref bool isProcessor, ref CancellationToken cancellationToken)
     {
         var tracer = Tracer.Instance;
