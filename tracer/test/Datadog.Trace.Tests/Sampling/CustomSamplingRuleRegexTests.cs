@@ -155,11 +155,31 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData("""[{"name":"wat"}]""")] // missing "sample_rate"
         [InlineData("""[{"sample_rate":0.3, "service":"["}]""")] // valid config, but invalid service regex
         [InlineData("""[{"sample_rate":0.3, "name":"["}]""")] // valid config, but invalid operation regex
-
         public void Malformed_Rules_Do_Not_Register_Or_Crash(string ruleConfig)
         {
             var rules = LocalCustomSamplingRule.BuildFromConfigurationString(ruleConfig, SamplingRulesFormat.Regex, Timeout).ToArray();
             Assert.Empty(rules);
+        }
+
+        [Theory]
+        [InlineData("""[{ "sample_rate":0.3, resource: "/api/v1/.*" }]""", true)]
+        [InlineData("""[{ "sample_rate":0.3, resource: ".*" }]""", false)] // Has resource name, but it's match all
+        [InlineData("""[{ "sample_rate":0.3, tags: { "http.method": "GE.", "http.status_code": "200" } }]""", false)]
+        [InlineData("""[{"sample_rate":0.5, "service":".*cart.*"},{"sample_rate":1, "service":".*shipping.*", "name":"authorize"},{"sample_rate":0.1, "service":".*shipping.*"},{"sample_rate":0.05}] """, false)]
+
+        // Malformed rules
+        [InlineData(@"""rate:0.5, ""name"":""auth.*""}]", false)] // missing closing double quotes in "rate"
+        [InlineData("""[{"name":"wat"}]""", false)] // missing "sample_rate"
+        [InlineData("""[{"sample_rate":0.3, "service":"["}]""", false)] // valid config, but invalid service regex
+        [InlineData("""[{"sample_rate":0.3, "name":"["}]""", false)] // valid config, but invalid operation regex
+        public void HasResourceBasedSamplingRule_IsSetCorrectly_Local(string config, bool hasResourceNameRule)
+        {
+            var rules = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout);
+
+            foreach (var rule in rules)
+            {
+                rule.IsResourceBasedSamplingRule.Should().Be(hasResourceNameRule);
+            }
         }
 
         private static void VerifyRate(string config, float expectedRate)

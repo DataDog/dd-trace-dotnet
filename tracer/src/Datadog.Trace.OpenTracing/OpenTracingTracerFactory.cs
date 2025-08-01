@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 
@@ -25,6 +26,7 @@ namespace Datadog.Trace.OpenTracing
         [PublicApi]
         [Obsolete(DeprecationMessage)]
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static global::OpenTracing.ITracer CreateTracer(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             // Keep supporting this older public method by creating a TracerConfiguration
@@ -55,6 +57,7 @@ namespace Datadog.Trace.OpenTracing
         [PublicApi]
         [Obsolete(DeprecationMessage)]
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static global::OpenTracing.ITracer WrapTracer(Tracer tracer)
         {
             return new OpenTracingTracer(tracer, OpenTracingTracer.CreateDefaultScopeManager(), tracer.DefaultServiceName);

@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration;
@@ -30,27 +31,43 @@ public sealed class ImmutableIntegrationSettings
     /// <summary>
     /// Gets the name of the integration. Used to retrieve integration-specific settings.
     /// </summary>
-    [Instrumented]
-    public string IntegrationName { get; }
+    public string IntegrationName
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether
     /// this integration is enabled.
     /// </summary>
-    [Instrumented]
-    public bool? Enabled { get; }
+    public bool? Enabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether
     /// Analytics are enabled for this integration.
     /// </summary>
-    [Instrumented]
-    public bool? AnalyticsEnabled { get; }
+    public bool? AnalyticsEnabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets a value between 0 and 1 (inclusive)
     /// that determines the sampling rate for this integration.
     /// </summary>
-    [Instrumented]
-    public double AnalyticsSampleRate { get; }
+    public double AnalyticsSampleRate
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 }

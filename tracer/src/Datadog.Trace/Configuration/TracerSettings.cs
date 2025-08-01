@@ -761,6 +761,13 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
+            OpenTelemetryMetricsEnabled = config
+                                    .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled)
+                                    .AsBool(defaultValue: false);
+
+            var enabledMeters = config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames).AsString();
+            OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters) ? TrimSplitString(enabledMeters, commaSeparator) : [];
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -889,6 +896,16 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
         public HashSet<string> DisabledIntegrationNames { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether OpenTelemetry Metrics are enabled.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled"/>
+        internal bool OpenTelemetryMetricsEnabled { get; }
+
+        /// Gets the names of enabled Meters.
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
+        internal string[] OpenTelemetryMeterNames { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.

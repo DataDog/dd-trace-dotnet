@@ -22,6 +22,7 @@ namespace Datadog.Trace.Configuration
             SpanSampler = spanSampler;
             ServiceNames = serviceNames;
             Schema = schema;
+            HasResourceBasedSamplingRule = (traceSampler?.HasResourceBasedSamplingRule ?? false) || (spanSampler?.HasResourceBasedSamplingRule ?? false);
         }
 
         public ITraceSampler? TraceSampler { get; }
@@ -31,6 +32,8 @@ namespace Datadog.Trace.Configuration
         public IReadOnlyDictionary<string, string> ServiceNames { get; }
 
         public NamingSchema Schema { get; }
+
+        public bool HasResourceBasedSamplingRule { get; }
 
         internal string GetServiceName(Tracer tracer, string serviceName)
         {
