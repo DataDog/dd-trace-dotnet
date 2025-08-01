@@ -10,10 +10,10 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
 using Xunit;
-using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.XUnit.AnalyzerVerifier<
-    Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer.PublicApiAnalyzer>;
+using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
+    Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer.PublicApiAnalyzer,
+    Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests
 {
@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             };
 
             // Expect it to throw because there's no warning when there should be.
-            await ideallyShouldThrow.Should().ThrowAsync<EqualWithMessageException>();
+            await ideallyShouldThrow.Should().ThrowAsync<InvalidOperationException>();
         }
 
         private static string GetSampleCode(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)

@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
     public class AspNetCoreDiagnosticObserverTests
     {
         [Fact]
-        public async Task<string> CompleteDiagnosticObserverTest()
+        public async Task CompleteDiagnosticObserverTest()
         {
             TracerRestorerAttribute.SetTracer(GetTracer());
 
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 DiagnosticManager.Instance = null;
             }
 
-            return retValue;
+            _ = retValue;
         }
 
         [Theory]

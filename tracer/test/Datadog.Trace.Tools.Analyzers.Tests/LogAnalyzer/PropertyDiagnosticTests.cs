@@ -9,9 +9,10 @@ using Datadog.Trace.Tools.Analyzers.LogAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
-using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.XUnit.CodeFixVerifier<
+using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.LogAnalyzer.LogAnalyzer,
-    Datadog.Trace.Tools.Analyzers.LogAnalyzer.ExceptionPositionCodeFixProvider>;
+    Datadog.Trace.Tools.Analyzers.LogAnalyzer.ExceptionPositionCodeFixProvider,
+    Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests.LogAnalyzer;
 
