@@ -228,6 +228,28 @@ namespace Datadog.Trace.Tests.Sampling
             rule.MaxPerSecond.Should().BeNull();
         }
 
+        [Theory]
+        [InlineData("""[{"service":"*", "name":"*", "resource": "/api/users/*", "sample_rate":0.5, "max_per_second":1000.5}]""", true)]
+        [InlineData("""[{"service":"*", "name":"*", "resource": "*", "sample_rate":0.5, "max_per_second":1000.5}]""", false)] // has resource glob, but it's "match all"
+        [InlineData("", false)]
+        [InlineData("""[{"service":"shopping-cart*", "name":"checkou?", "sample_rate":0.5}]""", false)]
+        [InlineData("""[{ "service":"*", "name":"*", "tags": { "tag1": "value*", "tag2": "40?",}, "sample_rate":0.5, "max_per_second":1000.5}] """, false)]
+
+        // Malformed rules
+        [InlineData("test", false)]
+        [InlineData(@"""rate:0.5, ""name"":""auth.*""}]", false)] // missing closing double quotes in "rate"
+        [InlineData("""[{"name":"wat"}]""", false)] // missing "sample_rate"
+        [InlineData("""[{"sample_rate":0.3, "service":"["}]""", false)] // valid config, but invalid service regex
+        [InlineData("""[{"sample_rate":0.3, "name":"["}]""", false)] // valid config, but invalid operation regex
+        public void HasResourceBasedSamplingRule_IsSetCorrectly_Local(string config, bool hasResourceNameRule)
+        {
+            var rules = SpanSamplingRule.BuildFromConfigurationString(config, Timeout);
+            foreach (var rule in rules)
+            {
+                rule.IsResourceBasedSamplingRule.Should().Be(hasResourceNameRule);
+            }
+        }
+
         [Fact]
         public void SampleRate_ShouldDefaultTo_OneWhenAbsent()
         {
