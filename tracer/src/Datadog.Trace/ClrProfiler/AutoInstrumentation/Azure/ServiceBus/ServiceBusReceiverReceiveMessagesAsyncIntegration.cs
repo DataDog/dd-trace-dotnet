@@ -2,59 +2,52 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Threading;
-using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure_Messaging_ServiceBus;
+
+/// <summary>
+/// System.Threading.Tasks.Task`1[System.Collections.Generic.IReadOnlyList`1[Azure.Messaging.ServiceBus.ServiceBusReceivedMessage]] Azure.Messaging.ServiceBus.ServiceBusReceiver::ReceiveMessagesAsync(System.Int32,System.Nullable`1[System.TimeSpan],System.Boolean,System.Threading.CancellationToken) calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyName = "Azure.Messaging.ServiceBus",
+    TypeName = "Azure.Messaging.ServiceBus.ServiceBusReceiver",
+    MethodName = "ReceiveMessagesAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[System.Collections.Generic.IReadOnlyList`1[Azure.Messaging.ServiceBus.ServiceBusReceivedMessage]]",
+    ParameterTypeNames = [ClrNames.Int32, "System.Nullable`1[System.TimeSpan]", ClrNames.Bool, ClrNames.CancellationToken],
+    MinimumVersion = "7.20.1",
+    MaximumVersion = "7.*.*",
+    IntegrationName = nameof(IntegrationId.AzureMessagingServiceBus))]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 {
-    /// <summary>
-    /// ReceiveMessagesAsyncIntegration class
-    /// </summary>
-    [InstrumentMethod(
-        AssemblyName = "Azure.Messaging.ServiceBus",
-        TypeName = "Azure.Messaging.ServiceBus.ServiceBusReceiver",
-        MethodName = "ReceiveMessagesAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1[System.Collections.Generic.IReadOnlyList`1[Azure.Messaging.ServiceBus.ServiceBusReceivedMessage]]",
-        ParameterTypeNames = new[] { ClrNames.Int32, "System.Nullable`1[System.TimeSpan]", ClrNames.CancellationToken },
-        MinimumVersion = "7.0.0",
-        MaximumVersion = "7.*.*",
-        IntegrationName = IntegrationName)]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ServiceBusReceiverReceiveMessagesAsyncIntegration
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref int maxMessages, ref TimeSpan? maxWaitTime, ref bool isProcessor, ref CancellationToken cancellationToken)
     {
-        internal const string IntegrationName = nameof(IntegrationId.AzureServiceBus);
-        private const string OperationName = "azure.servicebus.receive";
-
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int maxMessages, TimeSpan? maxWaitTime, CancellationToken cancellationToken)
+        var tracer = Tracer.Instance;
+        if (tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
         {
-            var tracer = Tracer.Instance;
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
-            {
-                var scope = tracer.StartActiveInternal(OperationName);
-                var span = scope.Span;
-                span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
-                span.SetTag("azure.servicebus.entity_path", "entity_path");
-                span.SetTag("azure.servicebus.namespace", "namespace");
-                span.SetTag("azure.servicebus.operation", "receive_batch");
-                span.SetTag("azure.servicebus.receive_mode", "receive_mode");
-                span.SetTag("azure.servicebus.max_messages", "1");
-                return new CallTargetState(scope);
-            }
-
-            return CallTargetState.GetDefault();
+            var scope = tracer.StartActiveInternal(OperationName);
+            var span = scope.Span;
+            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+            span.SetTag("azure.servicebus.entity_path", "entity_path");
+            span.SetTag("azure.servicebus.namespace", "namespace");
+            span.SetTag("azure.servicebus.operation", "receive_batch");
+            return new CallTargetState(scope);
         }
 
-        internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
-        {
-            state.Scope?.DisposeWithException(exception);
-            return returnValue;
-        }
+        return CallTargetState.GetDefault();
+    }
+
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
+    {
+        return returnValue;
     }
 }
