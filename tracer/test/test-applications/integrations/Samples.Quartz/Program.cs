@@ -1,6 +1,5 @@
 ﻿using Quartz;
 using Quartz.Impl;
-using Quartz.Logging;
 
 namespace QuartzSampleApp;
 
@@ -8,20 +7,6 @@ public class Program
 {
     private static async Task Main(string[] args)
     {
-        // var tracerProvider = Sdk.CreateTracerProviderBuilder()
-        //                         .AddQuartzInstrumentation()
-        //                         .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("QuartzSampleApp"))
-        //                         .AddConsoleExporter(options =>
-        //                          {
-        //                              options.Targets = OpenTelemetry.Exporter.ConsoleExporterOutputTargets.Console;
-        //                          })
-        //                         .AddOtlpExporter(otlpOptions =>
-        //                          {
-        //                              otlpOptions.Endpoint = new Uri("http://localhost:4318/v1/traces");
-        //                              otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-        //                          })
-        //                         .Build();
-
         StdSchedulerFactory factory = new StdSchedulerFactory();
         IScheduler scheduler = await factory.GetScheduler();
 
@@ -72,12 +57,32 @@ public class HelloJob : IJob
     {
         await Console.Out.WriteLineAsync("Greetings from HelloJob!");
     }
+
+    async ValueTask IJob.Execute(IJobExecutionContext context)
+    {
+        await Console.Out.WriteLineAsync("Greetings from HelloJob!");
+    }
 }
 
 // A new job that throws an exception
 public class ExceptionJob : IJob
 {
     public async Task Execute(IJobExecutionContext context)
+    {
+        try
+        {
+            // Normal work that might blow up
+            await Console.Out.WriteLineAsync("Doing work...");
+            throw new InvalidOperationException("Something went wrong");
+        }
+        catch (Exception ex)
+        {
+            // Let Quartz decide what to do next
+            throw new JobExecutionException(ex, refireImmediately: false);
+        }                              // set true to retry instantly
+    }
+
+    async ValueTask IJob.Execute(IJobExecutionContext context)
     {
         try
         {
