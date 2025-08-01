@@ -4,6 +4,7 @@
 // </copyright>
 #if NETCOREAPP3_1_OR_GREATER
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -51,6 +52,7 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     [Trait("Category", "DisabledTests")]
     public override Task DisabledTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
     {
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "true");
         EnvironmentHelper.EnableDefaultTransport();
         return base.DisabledTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
     }
