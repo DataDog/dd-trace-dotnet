@@ -47,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 span.SetTag("azure.servicebus.max_messages", "1");
                 return new CallTargetState(scope);
             }
+
             return CallTargetState.GetDefault();
         }
 

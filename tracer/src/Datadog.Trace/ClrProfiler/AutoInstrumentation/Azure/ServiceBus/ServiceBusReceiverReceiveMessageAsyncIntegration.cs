@@ -46,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 span.SetTag("azure.servicebus.receive_mode", "receive_mode");
                 return new CallTargetState(scope);
             }
+
             return CallTargetState.GetDefault();
         }
 

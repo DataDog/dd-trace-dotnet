@@ -45,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 span.SetTag("azure.servicebus.operation", "send_batch");
                 return new CallTargetState(scope);
             }
+
             return CallTargetState.GetDefault();
         }
 
