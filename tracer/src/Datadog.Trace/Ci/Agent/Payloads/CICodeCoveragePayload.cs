@@ -45,6 +45,8 @@ internal class CICodeCoveragePayload : MultipartPayload
                ? MetricTags.CIVisibilityEndpointAndCompression.CodeCoverageRequestCompressed
                : MetricTags.CIVisibilityEndpointAndCompression.CodeCoverageUncompressed;
 
+    public int TestCoverageEventsCount { get; private set; }
+
     public override bool CanProcessEvent(IEvent @event)
     {
         return @event is TestCoverage;
@@ -62,6 +64,14 @@ internal class CICodeCoveragePayload : MultipartPayload
     {
         _serializationWatch.Restart();
         var success = base.TryProcessEvent(@event);
+        if (success)
+        {
+            if (@event is TestCoverage)
+            {
+                TestCoverageEventsCount++;
+            }
+        }
+
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointEventsSerializationMs(TelemetryEndpoint, _serializationWatch.Elapsed.TotalMilliseconds);
         return success;
     }
