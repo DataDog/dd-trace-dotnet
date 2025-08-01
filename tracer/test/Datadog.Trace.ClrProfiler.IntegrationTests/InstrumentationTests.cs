@@ -83,8 +83,7 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore");
-            FixTfm(workingDir);
+            var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore -f net8.0");
             AssertNotInstrumented(agent, logDir);
 
             logDir = await RunDotnet("restore");
@@ -116,8 +115,7 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
-            FixTfm(workingDir);
+            var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore -f net8.0");
             AssertNotInstrumented(agent, logDir);
 
             var programCs = GetProgramCSThatMakesSpans();
@@ -155,8 +153,7 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore");
-            FixTfm(workingDir);
+            var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore -f net8.0");
             AssertNotInstrumented(agent, logDir);
 
             var programCs = GetProgramCSThatMakesSpans();
@@ -191,7 +188,7 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet("new xunit -n instrumentation_test -o . --no-restore");
+            var logDir = await RunDotnet("new xunit -n instrumentation_test -o . --no-restore -f net8.0");
             AssertNotInstrumented(agent, logDir);
 
             // this _should_ be instrumented so we expect managed data.
