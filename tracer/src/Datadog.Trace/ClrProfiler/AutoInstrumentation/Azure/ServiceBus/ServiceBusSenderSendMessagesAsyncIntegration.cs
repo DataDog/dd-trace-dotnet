@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure_Messaging_ServiceB
     ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[Azure.Messaging.ServiceBus.ServiceBusMessage]", ClrNames.CancellationToken],
     MinimumVersion = "7.20.1",
     MaximumVersion = "7.*.*",
-    IntegrationName = nameof(IntegrationId.AzureMessagingServiceBus))]
+    IntegrationName = nameof(IntegrationId.AzureServiceBus))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ServiceBusSenderSendMessagesAsyncIntegration
