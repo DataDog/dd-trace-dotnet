@@ -77,7 +77,7 @@ internal class RetryMessageBus : IMessageBus
         else
         {
             Common.Log.Debug("RetryMessageBus.QueueMessage: Message is not a supported message. Flushing: {Message}", message);
-            return _innerMessageBus.QueueMessage(message);
+            return InternalQueueMessage(message);
         }
 
         Common.Log.Debug("RetryMessageBus.QueueMessage: Message: {Message} | UniqueID: {UniqueID}", message, uniqueID);
@@ -88,7 +88,7 @@ internal class RetryMessageBus : IMessageBus
             if (metadata.Disposed)
             {
                 Common.Log.Debug("RetryMessageBus.QueueMessage: Metadata is disposed for: {UniqueID} direct flush of the message.", uniqueID);
-                return _innerMessageBus.QueueMessage(message);
+                return InternalQueueMessage(message);
             }
 
             // Bypass some events to trigger MessageSink events. (Allure lib required it to create the test context)
@@ -100,7 +100,7 @@ internal class RetryMessageBus : IMessageBus
                 if (metadata.BypassedMessages.Add(messageTypeName))
                 {
                     Common.Log.Debug("RetryMessageBus.QueueMessage: Message bypass, flushing directly for: {UniqueID} | {MessageType}", uniqueID, messageTypeName);
-                    return _innerMessageBus.QueueMessage(message);
+                    return InternalQueueMessage(message);
                 }
 
                 return true;
@@ -141,7 +141,7 @@ internal class RetryMessageBus : IMessageBus
         }
 
         Common.Log.Error("RetryMessageBus.QueueMessage: Message doesn't have an UniqueID. Flushing: {Message}", message);
-        return _innerMessageBus.QueueMessage(message);
+        return InternalQueueMessage(message);
     }
 
     public bool FlushMessages(string uniqueID)
@@ -187,13 +187,26 @@ internal class RetryMessageBus : IMessageBus
             foreach (var messageInList in messages)
             {
                 Common.Log.Debug("RetryMessageBus.InternalFlushMessages: Flushing message: {Message} for: {UniqueID}", messageInList, uniqueID);
-                retValue = _innerMessageBus.QueueMessage(messageInList) && retValue;
+                retValue = InternalQueueMessage(messageInList) && retValue;
             }
 
             Common.Log.Debug<int, string>("RetryMessageBus.InternalFlushMessages: {Count} messages flushed for: {UniqueID}", messages.Count, uniqueID);
 
             Array.Clear(listOfMessages, 0, listOfMessages.Length);
             return retValue;
+        }
+    }
+
+    private bool InternalQueueMessage(object message)
+    {
+        try
+        {
+            return _innerMessageBus.QueueMessage(message);
+        }
+        catch (Exception ex)
+        {
+            Common.Log.Error(ex, "RetryMessageBus.InternalQueueMessage: Error while queueing message: {Message}", message);
+            return false;
         }
     }
 
