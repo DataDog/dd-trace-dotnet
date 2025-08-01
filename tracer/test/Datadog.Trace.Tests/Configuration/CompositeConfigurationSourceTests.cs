@@ -131,15 +131,15 @@ public class CompositeConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData("string1")]
-    [InlineData("string2")]
-    [InlineData("string3")]
-    [InlineData("string4")]
-    public void AttemptsToGrabStringFromEverySource(string key)
+    [InlineData("string1", 4)]
+    [InlineData("string2", 3)]
+    [InlineData("string3", 2)]
+    [InlineData("string4", 1)]
+    public void AttemptsToGrabStringFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetString(key, telemetry, validator: null, recordValue: true);
-        telemetry.GetInstanceCount(key).Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
     [Theory]
@@ -154,15 +154,15 @@ public class CompositeConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData("int1")]
-    [InlineData("int2")]
-    [InlineData("int3")]
-    [InlineData("int4")]
-    public void AttemptsToGrabIntFromEverySource(string key)
+    [InlineData("int1", 4)]
+    [InlineData("int2", 3)]
+    [InlineData("int3", 2)]
+    [InlineData("int4", 1)]
+    public void AttemptsToGrabIntFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetInt32(key, telemetry, validator: null);
-        telemetry.GetInstanceCount(key).Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
     [Theory]
@@ -177,15 +177,15 @@ public class CompositeConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData("double1")]
-    [InlineData("double2")]
-    [InlineData("double3")]
-    [InlineData("double4")]
-    public void AttemptsToGrabDoubleFromEverySource(string key)
+    [InlineData("double1", 4)]
+    [InlineData("double2", 3)]
+    [InlineData("double3", 2)]
+    [InlineData("double4", 1)]
+    public void AttemptsToGrabDoubleFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetDouble(key, telemetry, validator: null);
-        telemetry.GetInstanceCount(key).Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
     [Theory]
@@ -200,15 +200,15 @@ public class CompositeConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData("bool1")]
-    [InlineData("bool2")]
-    [InlineData("bool3")]
-    [InlineData("bool4")]
-    public void AttemptsToGrabBoolFromEverySource(string key)
+    [InlineData("bool1", 4)]
+    [InlineData("bool2", 3)]
+    [InlineData("bool3", 2)]
+    [InlineData("bool4", 1)]
+    public void AttemptsToGrabBoolFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetBool(key, telemetry, validator: null);
-        telemetry.GetInstanceCount(key).Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
     [Theory]
@@ -223,15 +223,15 @@ public class CompositeConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData("dict1")]
-    [InlineData("dict2")]
-    [InlineData("dict3")]
-    [InlineData("dict4")]
-    public void AttemptsToGrabDictionaryFromEverySource(string key)
+    [InlineData("dict1", 4)]
+    [InlineData("dict2", 3)]
+    [InlineData("dict3", 2)]
+    [InlineData("dict4", 1)]
+    public void AttemptsToGrabDictionaryFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetDictionary(key, telemetry, validator: null);
-        telemetry.GetInstanceCount(key).Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
     [Fact]
@@ -300,10 +300,13 @@ public class CompositeConfigurationSourceTests
         // final telemetry value should be the "real" value
         telemetry.Telemetry.Last().Value.Should().Be(expected);
 
-        // telemetry records the first error, and then the successful value
+        // telemetry records everything where a value was found. The last value is the "current" value
         telemetry.Telemetry.Should()
                  .BeEquivalentTo(
                   [
+                      new ConfigurationTelemetryTests.ConfigDto(key, 456, ConfigurationOrigins.EnvVars, true, null),
+                      new ConfigurationTelemetryTests.ConfigDto(key, "not_an_int", ConfigurationOrigins.RemoteConfig, true, TelemetryErrorCode.ParsingInt32Error),
+                      new ConfigurationTelemetryTests.ConfigDto(key, 123, ConfigurationOrigins.Code, true, null),
                       new ConfigurationTelemetryTests.ConfigDto(key, "not_an_int", ConfigurationOrigins.DdConfig, true, TelemetryErrorCode.ParsingInt32Error),
                       new ConfigurationTelemetryTests.ConfigDto(key, 123, ConfigurationOrigins.Code, true, null),
                   ]);
