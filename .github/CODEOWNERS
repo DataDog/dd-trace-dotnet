@@ -16,6 +16,7 @@
 /tracer/src/Datadog.Trace.Manual/                                                                       @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/Activity/                                                                     @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/                                @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/                        @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/                             @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 
 /tracer/test/test-applications/integrations/Samples.ManualInstrumentation/                              @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
