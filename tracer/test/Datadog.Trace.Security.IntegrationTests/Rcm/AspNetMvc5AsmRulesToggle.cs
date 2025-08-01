@@ -87,6 +87,7 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
         var url = $"/health";
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();
+        FilterConnectionHeader(settings);
         var fileId = nameof(TestGlobalRulesToggling);
         var userAgent = "(sql power injector)";
 
