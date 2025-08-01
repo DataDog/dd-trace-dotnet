@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
@@ -137,7 +138,7 @@ public class CompositeConfigurationSourceTests
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetString(key, telemetry, validator: null, recordValue: true);
-        telemetry.Accesses[key].Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(1);
     }
 
     [Theory]
@@ -160,7 +161,7 @@ public class CompositeConfigurationSourceTests
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetInt32(key, telemetry, validator: null);
-        telemetry.Accesses[key].Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(1);
     }
 
     [Theory]
@@ -183,7 +184,7 @@ public class CompositeConfigurationSourceTests
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetDouble(key, telemetry, validator: null);
-        telemetry.Accesses[key].Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(1);
     }
 
     [Theory]
@@ -206,7 +207,7 @@ public class CompositeConfigurationSourceTests
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetBool(key, telemetry, validator: null);
-        telemetry.Accesses[key].Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(1);
     }
 
     [Theory]
@@ -229,30 +230,30 @@ public class CompositeConfigurationSourceTests
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetDictionary(key, telemetry, validator: null);
-        telemetry.Accesses[key].Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(1);
     }
 
     internal class StubTelemetry : IConfigurationTelemetry
     {
-        public Dictionary<string, int> Accesses { get; } = new();
+        public List<ConfigurationTelemetryTests.ConfigDto> Telemetry { get; } = new();
 
         public void Record(string key, string value, bool recordValue, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue, error));
 
         public void Record(string key, bool value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
         public void Record(string key, double value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
         public void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
         public void Record(string key, double? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
         public void Record(string key, int? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
         public ICollection<ConfigurationKeyValue> GetData() => null;
 
@@ -264,16 +265,7 @@ public class CompositeConfigurationSourceTests
         {
         }
 
-        private void IncrementAccess(string key)
-        {
-            if (Accesses.TryGetValue(key, out var i))
-            {
-                Accesses[key] = i + 1;
-            }
-            else
-            {
-                Accesses[key] = 1;
-            }
-        }
+        public int GetInstanceCount(string key)
+            => Telemetry.Count(x => x.Name == key);
     }
 }
