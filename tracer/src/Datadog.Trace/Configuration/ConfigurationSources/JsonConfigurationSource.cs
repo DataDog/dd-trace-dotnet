@@ -230,7 +230,7 @@ namespace Datadog.Trace.Configuration
                         if (validator is null || validator(value.Result))
                         {
                             telemetry.Record(key, valueAsString, recordValue, Origin);
-                            return ConfigurationResult<T>.Valid(value.Result);
+                            return ConfigurationResult<T>.Valid(value.Result, valueAsString);
                         }
 
                         telemetry.Record(key, valueAsString, recordValue, Origin, TelemetryErrorCode.FailedValidation);
@@ -321,7 +321,7 @@ namespace Datadog.Trace.Configuration
                 if (validator is null || validator(dictionary))
                 {
                     telemetry.Record(key, tokenAsString, recordValue: true, Origin);
-                    return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary);
+                    return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary, tokenAsString);
                 }
 
                 telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
@@ -383,7 +383,7 @@ namespace Datadog.Trace.Configuration
                 if (validator is null || validator(dictionary))
                 {
                     telemetry.Record(key, tokenAsString, recordValue: true, Origin);
-                    return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary);
+                    return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary, tokenAsString);
                 }
 
                 telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
