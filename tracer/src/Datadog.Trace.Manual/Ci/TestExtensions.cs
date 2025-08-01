@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Ci;
@@ -18,6 +19,7 @@ public static class TestExtensions
     /// <param name="test">The <see cref="ITest"/> instance to augment</param>
     /// <param name="parameters">TestParameters instance</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void SetParameters(this ITest test, TestParameters parameters)
     {
     }
@@ -29,6 +31,7 @@ public static class TestExtensions
     /// <param name="hostInfo">Host info</param>
     /// <param name="jobInfo">Job info</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void SetBenchmarkMetadata(this ITest test, in BenchmarkHostInfo hostInfo, in BenchmarkJobInfo jobInfo)
     {
     }
@@ -41,6 +44,7 @@ public static class TestExtensions
     /// <param name="info">Measure info</param>
     /// <param name="statistics">Statistics values</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void AddBenchmarkData(this ITest test, BenchmarkMeasureType measureType, string info, in BenchmarkDiscreteStats statistics)
     {
     }

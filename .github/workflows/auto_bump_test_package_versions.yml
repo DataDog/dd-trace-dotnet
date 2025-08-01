@@ -2,9 +2,9 @@ name: Auto bump test package versions
 
 on:
   schedule:
-    - cron: '0 0 * * 0' # Every Sunday at midnight
+    - cron: "0 0 * * 0" # Every Sunday at midnight
   pull_request_target:
-    branches: [master, main]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
@@ -13,14 +13,20 @@ jobs:
     runs-on: windows-latest
     permissions:
       actions: read # read secrets
-      contents: write # Creates a branch
-      pull-requests: write # Creates a PR
+      id-token: write # Required for dd-octo-sts authentication
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     steps:
       - name: Support longpaths
         run: git config --system core.longpaths true
+
+      - name: Get dd-octo-sts token
+        uses: DataDog/dd-octo-sts-action@08f2144903ced3254a3dafec2592563409ba2aa0 # v1.0.1
+        id: octo-sts
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.auto_bump_test_package_versions.create-pr
 
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -29,7 +35,7 @@ jobs:
 
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
-          dotnet-version: '10.0.100-preview.6.25358.103'
+          dotnet-version: "10.0.100-preview.6.25358.103"
 
       - name: "Regenerating package versions"
         run: .\tracer\build.ps1 GeneratePackageVersions
@@ -38,7 +44,7 @@ jobs:
         id: pr
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.octo-sts.outputs.token }}
           branch: "bot/test-package-versions-bump"
           commit-message: "[Test Package Versions Bump]"
           delete-branch: true
@@ -47,7 +53,7 @@ jobs:
           milestone: "${{steps.rename.outputs.milestone}}"
           body: |
             Updates the package versions for integration tests.
-            
+
       - name: Send Slack notification about generating failure
         if: failure()
         uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # v2.1.0

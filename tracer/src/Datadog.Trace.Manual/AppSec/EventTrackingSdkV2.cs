@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.AppSec;
@@ -21,6 +22,7 @@ public static class EventTrackingSdkV2
     /// <param name="userId">The optional userId associated with the login success</param>
     /// <param name="metadata">The optional metadata associated with the login success</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void TrackUserLoginSuccess(string userLogin, string? userId = null, IDictionary<string, string>? metadata = null)
     {
     }
@@ -32,6 +34,7 @@ public static class EventTrackingSdkV2
     /// <param name="userDetails">The optional userDetails associated with the login success</param>
     /// <param name="metadata">The optional metadata associated with the login success</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void TrackUserLoginSuccess(string userLogin, UserDetails userDetails, IDictionary<string, string>? metadata = null)
     {
     }
@@ -44,6 +47,7 @@ public static class EventTrackingSdkV2
     /// <param name="userId">The optional userId associated with the login success</param>
     /// <param name="metadata">Metadata associated with the login failure</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void TrackUserLoginFailure(string userLogin, bool exists, string? userId = null, IDictionary<string, string>? metadata = null)
     {
     }
@@ -56,6 +60,7 @@ public static class EventTrackingSdkV2
     /// <param name="userDetails">The details of the user associated with the login failure</param>
     /// <param name="metadata">Metadata associated with the login failure</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void TrackUserLoginFailure(string userLogin, bool exists, UserDetails userDetails, IDictionary<string, string>? metadata = null)
     {
     }

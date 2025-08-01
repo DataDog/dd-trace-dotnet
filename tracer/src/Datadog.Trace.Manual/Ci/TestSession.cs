@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci.Stubs;
 using Datadog.Trace.SourceGenerators;
 
@@ -65,6 +66,7 @@ public static class TestSession
         => InternalGetOrCreate(command, workingDirectory, framework, startDate, propagateEnvironmentVariables);
 
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     internal static ITestSession InternalGetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables = false)
         => NullTestSession.Instance;
 }

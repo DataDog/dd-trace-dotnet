@@ -1,0 +1,169 @@
+﻿[
+  [
+    {
+      Resource: {
+        Attributes: [
+          {
+            Key: service.name,
+            Value: {
+              StringValue: unknown_service:dotnet,
+              HasStringValue: true,
+              BytesValue: [],
+              ValueCase: StringValue
+            }
+          }
+        ]
+      },
+      ScopeMetrics: [
+        {
+          Scope: {
+            Name: OpenTelemetryMetricsMeter,
+            Version: 
+          },
+          Metrics: [
+            {
+              Name: example.async.counter,
+              Description: ,
+              Unit: ,
+              Sum: {
+                DataPoints: [
+                  {
+                    StartTimeUnixNano": <DateTimeOffset.Now>,
+                    TimeUnixNano": <DateTimeOffset.Now>,
+                    AsInt: 22,
+                    HasAsInt: true,
+                    ValueCase: AsInt
+                  }
+                ],
+                AggregationTemporality: Cumulative,
+                IsMonotonic: true
+              },
+              DataCase: Sum
+            },
+            {
+              Name: example.async.gauge,
+              Description: ,
+              Unit: ,
+              Gauge: {
+                DataPoints: [
+                  {
+                    StartTimeUnixNano": <DateTimeOffset.Now>,
+                    TimeUnixNano": <DateTimeOffset.Now>,
+                    AsDouble: 88.0,
+                    HasAsDouble: true,
+                    ValueCase: AsDouble
+                  }
+                ]
+              },
+              DataCase: Gauge
+            },
+            {
+              Name: example.counter,
+              Description: ,
+              Unit: ,
+              Sum: {
+                DataPoints: [
+                  {
+                    Attributes: [
+                      {
+                        Key: http.method,
+                        Value: {
+                          StringValue: GET,
+                          HasStringValue: true,
+                          BytesValue: [],
+                          ValueCase: StringValue
+                        }
+                      },
+                      {
+                        Key: rid,
+                        Value: {
+                          StringValue: 1234567890,
+                          HasStringValue: true,
+                          BytesValue: [],
+                          ValueCase: StringValue
+                        }
+                      }
+                    ],
+                    StartTimeUnixNano": <DateTimeOffset.Now>,
+                    TimeUnixNano": <DateTimeOffset.Now>,
+                    AsInt: 11,
+                    HasAsInt: true,
+                    ValueCase: AsInt
+                  }
+                ],
+                AggregationTemporality: Cumulative,
+                IsMonotonic: true
+              },
+              DataCase: Sum
+            },
+            {
+              Name: example.histogram,
+              Description: ,
+              Unit: ,
+              Histogram: {
+                DataPoints: [
+                  {
+                    Attributes: [
+                      {
+                        Key: http.method,
+                        Value: {
+                          StringValue: GET,
+                          HasStringValue: true,
+                          BytesValue: [],
+                          ValueCase: StringValue
+                        }
+                      },
+                      {
+                        Key: rid,
+                        Value: {
+                          StringValue: 1234567890,
+                          HasStringValue: true,
+                          BytesValue: [],
+                          ValueCase: StringValue
+                        }
+                      }
+                    ],
+                    StartTimeUnixNano": <DateTimeOffset.Now>,
+                    TimeUnixNano": <DateTimeOffset.Now>,
+                    Count: 1,
+                    Sum: 33.0,
+                    HasSum: true,
+                    BucketCounts: [
+                      0,
+                      0,
+                      0,
+                      0,
+                      1,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    ExplicitBounds: [
+                      0.0,
+                      5.0,
+                      10.0,
+                      25.0,
+                      50.0,
+                      75.0,
+                      100.0,
+                      250.0,
+                      500.0,
+                      1000.0
+                    ]
+                  }
+                ],
+                AggregationTemporality: Cumulative
+              },
+              DataCase: Histogram
+            }
+          ],
+          SchemaUrl: 
+        }
+      ],
+      SchemaUrl: 
+    }
+  ]
+]

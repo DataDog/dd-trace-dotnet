@@ -217,6 +217,47 @@ namespace Datadog.Trace.Tests.Sampling
             rules.Should().HaveCount(count);
         }
 
+        [Theory]
+        [InlineData("""[{ "sample_rate":0.3, resource: "/api/v1/*" }]""", true)]
+        [InlineData("""[{ "sample_rate":0.3, resource: "*" }]""", false)] // Has resource name, but it's match all
+        [InlineData("""[{ "sample_rate":0.3, tags: { "http.method": "GE?", "http.status_code": "200", "balance": "*" } }]""", false)]
+        [InlineData("""[{"sample_rate":0.5, "service":"SHOPPING-cart-service", "name":"CHECKOUT"}]""", false)]
+        [InlineData("""[{"sample_rate":0.5, "service":"*cart*"},{"sample_rate":1, "service":"*shipping*", "name":"authorize"},{"sample_rate":0.1, "service":"*shipping*"},{"sample_rate":0.05}]""", false)]
+
+        // Malformed rules
+        [InlineData(@"""rate:0.5, ""name"":""auth*""}]", false)] // missing closing double quote in "rate"
+        [InlineData("""[{"name":"wat"}]""", false)] // missing "sample_rate"
+        [InlineData("""[{"sample_rate":0.3, "service":"["}]""", false)] // invalid regex, but valid glob
+        [InlineData("""[{"sample_rate":0.3, "name":"["}]""", false)] // invalid regex, but valid glob
+        public void HasResourceBasedSamplingRule_IsSetCorrectly_Local(string config, bool hasResourceNameRule)
+        {
+            var rules = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob, Timeout);
+
+            foreach (var rule in rules)
+            {
+                rule.IsResourceBasedSamplingRule.Should().Be(hasResourceNameRule);
+            }
+        }
+
+        [Theory]
+        [InlineData("""[{ "sample_rate":0.3, resource: "/api/v1/*" }]""", true)]
+        [InlineData("""[{ "sample_rate":0.3, "tags": [{ "key":"http.method", "value_glob":"GE?" }, { "key":"http.status_code", "value_glob":"200"}, { "key":"balance", "value_glob":"*" }] }]""", false)]
+
+        // Malformed rules
+        [InlineData(@"""rate:0.5, ""name"":""auth*""}]", false)] // missing closing double quote in "rate"
+        [InlineData("""[{"name":"wat"}]""", false)] // missing "sample_rate"
+        [InlineData("""[{"sample_rate":0.3, "service":"["}]""", false)] // invalid regex, but valid glob
+        [InlineData("""[{"sample_rate":0.3, "name":"["}]""", false)] // invalid regex, but valid glob
+        public void HasResourceBasedSamplingRule_IsSetCorrectly_Remote(string config, bool hasResourceNameRule)
+        {
+            var rules = RemoteCustomSamplingRule.BuildFromConfigurationString(config, Timeout);
+
+            foreach (var rule in rules)
+            {
+                rule.IsResourceBasedSamplingRule.Should().Be(hasResourceNameRule);
+            }
+        }
+
         private static void VerifyRate(string config, float expectedRate)
         {
             var rule = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob, Timeout).Single();

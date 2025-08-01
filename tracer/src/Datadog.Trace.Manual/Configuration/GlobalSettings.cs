@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration;
@@ -22,6 +23,7 @@ public sealed class GlobalSettings
     /// </summary>
     /// <param name="enabled">Whether debug is enabled.</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void SetDebugEnabled(bool enabled)
     {
     }
