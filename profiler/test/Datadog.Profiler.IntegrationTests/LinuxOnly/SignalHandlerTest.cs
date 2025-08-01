@@ -47,10 +47,14 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
                 .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
 
-            var nbSignalHandlerInstallation = File.ReadLines(logFile)
-                .Count(l => l.Contains("Successfully setup signal handler for"));
+            
+            File.ReadLines(logFile)
+                .Count(l => l.Contains("Successfully setup signal handler for User defined signal 1 signal"))
+                .Should().Be(1);
 
-            nbSignalHandlerInstallation.Should().Be(1);
+            File.ReadLines(logFile)
+                .Count(l => l.Contains("Successfully setup signal handler for Profiling timer expired signal"))
+                .Should().Be(1);
         }
     }
 }
