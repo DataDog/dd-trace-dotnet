@@ -39,7 +39,7 @@ namespace Datadog.Trace.Configuration
             Origin = origin;
         }
 
-        internal override ConfigurationOrigins Origin { get; }
+        public override ConfigurationOrigins Origin { get; }
 
         /// <inheritdoc />
         protected override string? GetString(string key)

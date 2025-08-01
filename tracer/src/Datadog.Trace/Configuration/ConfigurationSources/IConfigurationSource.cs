@@ -19,6 +19,11 @@ namespace Datadog.Trace.Configuration;
 public interface IConfigurationSource
 {
     /// <summary>
+    /// Gets the origin of the configuration source.
+    /// </summary>
+    public ConfigurationOrigins Origin { get; }
+
+    /// <summary>
     /// Gets the <see cref="string"/> value of
     /// the setting with the specified key.
     /// </summary>
