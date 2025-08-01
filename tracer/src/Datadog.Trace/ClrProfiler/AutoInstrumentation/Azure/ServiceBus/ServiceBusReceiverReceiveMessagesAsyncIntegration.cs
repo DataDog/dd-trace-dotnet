@@ -30,13 +30,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure_Messaging_ServiceB
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusReceiverReceiveMessagesAsyncIntegration));
-
     private const string OperationName = "azure.servicebus.receive";
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusReceiverReceiveMessagesAsyncIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref int maxMessages, ref TimeSpan? maxWaitTime, ref bool isProcessor, ref CancellationToken cancellationToken)
     {
-        Log.Info("ReceiveMessagesAsync running");
+        Log.Information("ReceiveMessagesAsync running");
 
         var tracer = Tracer.Instance;
         var scope = tracer.StartActiveInternal(OperationName);

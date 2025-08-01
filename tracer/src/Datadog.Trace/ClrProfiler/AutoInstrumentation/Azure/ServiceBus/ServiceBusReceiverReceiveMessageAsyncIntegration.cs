@@ -9,8 +9,8 @@ using System.Threading;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Util;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -30,13 +30,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ServiceBusReceiverReceiveMessageAsyncIntegration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusReceiverReceiveMessageAsyncIntegration));
         internal const string IntegrationName = nameof(IntegrationId.AzureServiceBus);
         private const string OperationName = "azure.servicebus.receive";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusReceiverReceiveMessageAsyncIntegration));
 
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, TimeSpan? maxWaitTime, CancellationToken cancellationToken)
         {
-            Log.Info("ReceiveMessageAsync running");
+            Log.Information("ReceiveMessageAsync running");
 
             var tracer = Tracer.Instance;
             var scope = tracer.StartActiveInternal(OperationName);

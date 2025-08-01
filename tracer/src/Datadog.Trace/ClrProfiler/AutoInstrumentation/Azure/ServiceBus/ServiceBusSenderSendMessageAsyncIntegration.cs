@@ -9,8 +9,8 @@ using System.Threading;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Util;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -30,14 +30,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ServiceBusSenderSendMessageAsyncIntegration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusSenderSendMessageAsyncIntegration));
-
         internal const string IntegrationName = nameof(IntegrationId.AzureServiceBus);
         private const string OperationName = "azure.servicebus.send";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusSenderSendMessageAsyncIntegration));
 
         internal static CallTargetState OnMethodBegin<TTarget, TMessage>(TTarget instance, TMessage message, CancellationToken cancellationToken)
         {
-            Log.Info("SendMessageAsync running");
+            Log.Information("SendMessageAsync running");
 
             var tracer = Tracer.Instance;
             var scope = tracer.StartActiveInternal(OperationName);
