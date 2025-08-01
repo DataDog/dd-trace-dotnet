@@ -310,6 +310,40 @@ namespace Datadog.Trace.Propagators
             }
         }
 
+        internal void AddBaggageToSpanAsTags(ISpan span, Baggage? baggage, string[] baggageTagKeys)
+        {
+            if (baggage is null or { Count: 0 })
+            {
+                return;
+            }
+
+            if (baggageTagKeys.Length == 0)
+            {
+                // feature disabled
+                return;
+            }
+
+            if (baggageTagKeys.Length == 1 && baggageTagKeys[0] == "*")
+            {
+                // add all baggage items as tags
+                foreach (var item in baggage)
+                {
+                    span.SetTag("baggage." + item.Key, item.Value);
+                }
+
+                return;
+            }
+
+            // add only specified baggage items as tags
+            foreach (var key in baggageTagKeys)
+            {
+                if (baggage.TryGetValue(key, out var value))
+                {
+                    span.SetTag("baggage." + key, value);
+                }
+            }
+        }
+
 #pragma warning disable SA1201
         public interface IHeaderTagProcessor
 #pragma warning restore SA1201

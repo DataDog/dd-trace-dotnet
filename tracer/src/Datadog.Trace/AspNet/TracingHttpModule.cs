@@ -125,6 +125,21 @@ namespace Datadog.Trace.AspNet
             }
         }
 
+        private static void AddBaggageTagsToSpan(ISpan span, Baggage baggage, Tracer tracer)
+        {
+            if (baggage != null)
+            {
+                try
+                {
+                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, baggage, tracer.Settings.BaggageTagKeys);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error adding baggage tags to span.");
+                }
+            }
+        }
+
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
             Scope scope = null;
@@ -197,6 +212,8 @@ namespace Datadog.Trace.AspNet
                                        : null;
                 scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
                 tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+
+                AddBaggageTagsToSpan(scope.Span, extractedContext.Baggage, tracer);
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                 {
