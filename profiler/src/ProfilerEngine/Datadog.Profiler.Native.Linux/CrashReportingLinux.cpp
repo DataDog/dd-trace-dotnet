@@ -132,8 +132,12 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
             moduleBaseAddresses[path] = baseAddress;
         }
 
-        auto buildId = BuildId::From(path.data());
-        modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path), std::move(buildId) });
+        // @gleocadie [REMOVE COMMENT]
+        // From now on, we do no need to compute the buildId. This is done by the call to normalize_ips
+        // So pass an empty Build ID.
+        // But since libdatadog does not do it for windows (yet), we keep the Build ID in the ModuleInfo
+        //
+        modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path), BuildId() });
     }
 
     return modules;
@@ -247,8 +251,6 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             }
 
             stackFrame.isSuspicious = false;
-
-            stackFrame.buildId = module->build_id;
 
             fs::path modulePath(module->path);
 
