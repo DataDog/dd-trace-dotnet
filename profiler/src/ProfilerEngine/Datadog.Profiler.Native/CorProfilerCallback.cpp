@@ -520,7 +520,9 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
-        _pCpuProfiler = RegisterService<TimerCreateCpuProfiler>(
+        // Other alternative in case of crash-at-shutdown, do not register it as a service
+        // we will have to start it by hand (already stopped by hand)
+        _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
             _pConfiguration.get(),
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
@@ -724,6 +726,17 @@ bool CorProfilerCallback::StartServices()
         }
         result &= success;
     }
+
+#ifdef LINUX
+    // We cannot add the timer_create-based CPU profiler to the _services list
+    // we have to control the Stop
+    // If we fail to stop, we mustn't release the memory associated to it
+    // otherwise we might crash.
+    if (_pCpuProfiler != nullptr)
+    {
+        _pCpuProfiler->Start();
+    }
+#endif
 
     return result;
 }
@@ -1513,7 +1526,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 #ifdef LINUX
     if (_pCpuProfiler != nullptr)
     {
-        _pCpuProfiler->Stop();
+        // if we failed at stopping the time_create-based CPU profiler,
+        // it's safer to not release the memory.
+        // Otherwise, we might crash the application.
+        // Reason: one thread could be executing the signal handler and accessing some field
+        auto stopped = _pCpuProfiler->Stop();
+        if (stopped)
+        {
+            _pCpuProfiler = nullptr;
+        }
     }
 #endif
 
@@ -1776,7 +1797,7 @@ void CorProfilerCallback::OnThreadRoutineFinished()
         return;
     }
 
-    auto* cpuProfiler = myThis->_pCpuProfiler;
+    auto* cpuProfiler = myThis->_pCpuProfiler.get();
     if (cpuProfiler == nullptr)
     {
         return;
