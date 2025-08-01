@@ -29,7 +29,7 @@ namespace Datadog.Trace.TestHelpers
 
         public bool UseGac { get; set; } = true;
 
-        public async Task TryStartIis(TestHelper helper, IisAppType appType, bool sendHealthCheck = true)
+        public async Task TryStartIis(TestHelper helper, IisAppType appType, bool sendHealthCheck = true, string url = "")
         {
             if (IisExpress.Process == null)
             {
@@ -44,7 +44,7 @@ namespace Datadog.Trace.TestHelpers
                 HttpPort = TcpPortProvider.GetOpenPort();
                 IisExpress = await helper.StartIISExpress(Agent, HttpPort, appType, VirtualApplicationPath);
 
-                await EnsureServerStarted(sendHealthCheck);
+                await EnsureServerStarted(sendHealthCheck, url);
             }
         }
 
@@ -100,7 +100,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private async Task EnsureServerStarted(bool sendHealthCheck)
+        private async Task EnsureServerStarted(bool sendHealthCheck, string url)
         {
             var maxMillisecondsToWait = 30_000;
             var intervalMilliseconds = 500;
@@ -118,7 +118,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     if (sendHealthCheck)
                     {
-                        var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}");
+                        var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}{url}");
                         var response = request.GetResponse();
                         var responseCode = ((HttpWebResponse)response).StatusCode;
                         response.Close();
