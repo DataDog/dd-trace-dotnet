@@ -142,7 +142,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
             if (validator is null || validator(value))
             {
                 telemetry.Record(key, dictAsString, recordValue: true, Origin);
-                return ConfigurationResult<IDictionary<string, string>>.Valid(value);
+                return ConfigurationResult<IDictionary<string, string>>.Valid(value, dictAsString);
             }
 
             telemetry.Record(key, dictAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
@@ -173,7 +173,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
                 if (validator is null || validator(result.Result))
                 {
                     telemetry.Record(key, valueAsString, recordValue, Origin);
-                    return ConfigurationResult<T>.Valid(result.Result);
+                    return ConfigurationResult<T>.Valid(result.Result, valueAsString);
                 }
 
                 telemetry.Record(key, valueAsString, recordValue, Origin, TelemetryErrorCode.FailedValidation);
