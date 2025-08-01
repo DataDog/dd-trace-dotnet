@@ -345,7 +345,9 @@ int32_t CrashReporting::ExportImpl(ddog_Endpoint* endpoint)
         return 1;
     }
 
+#ifdef LINUX
     CHECK_RESULT(ddog_crasht_CrashInfo_normalize_ips(&crashInfo, _pid));
+#endif
     CHECK_RESULT(ddog_crasht_CrashInfo_upload_to_endpoint(&crashInfo, endpoint));
 
     return 0;
