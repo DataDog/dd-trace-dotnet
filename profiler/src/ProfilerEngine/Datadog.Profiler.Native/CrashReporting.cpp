@@ -258,7 +258,9 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             CHECK_RESULT(ddog_crasht_StackFrame_with_ip(&frame, currentFrame.ip));
             CHECK_RESULT(ddog_crasht_StackFrame_with_sp(&frame, currentFrame.sp));
             CHECK_RESULT(ddog_crasht_StackFrame_with_module_base_address(&frame, currentFrame.moduleAddress));
-            // relative address will be computed by libdatadog when calling normalize_ips
+#ifdef _WINDOWS
+            CHECK_RESULT(ddog_crasht_StackFrame_with_relative_address(&frame, currentFrame.ip - currentFrame.moduleAddress));
+#endif
 
             CHECK_RESULT(ddog_crasht_StackFrame_with_symbol_address(&frame, currentFrame.symbolAddress));
 
@@ -266,6 +268,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             if (buildId.size() != 0)
             {
 #ifdef _WINDOWS
+                CHECK_RESULT(ddog_crasht_StackFrame_with_build_id(&frame, {buildId.data(), buildId.size()}));
                 CHECK_RESULT(ddog_crasht_StackFrame_with_build_id_type(&frame, DDOG_CRASHT_BUILD_ID_TYPE_PDB));
 #endif
             }
