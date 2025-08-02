@@ -405,7 +405,7 @@ namespace Datadog.Trace.TestHelpers
 
             foreach (var e in missing)
             {
-                Assert.True(false, $"no span found for `{e}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key}").ToArray())}`");
+                Assert.Fail($"no span found for `{e}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key}").ToArray())}`");
             }
         }
 

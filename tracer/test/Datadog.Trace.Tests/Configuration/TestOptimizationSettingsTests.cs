@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests.Configuration
         private static readonly string ExpectedExcludedSession = "/session/FakeSessionIdForPollingPurposes".ToUpperInvariant();
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), null)]
+        [MemberData(nameof(NullableBooleanTestCases), null)]
         public void Enabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.Enabled, value));
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), parameters: new object[] { null })]
+        [MemberData(nameof(NullableBooleanTestCases), null)]
         public void TestsSkippingEnabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.TestsSkippingEnabled, value));
@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), parameters: new object[] { null })]
+        [MemberData(nameof(NullableBooleanTestCases), null)]
         public void CodeCoverageEnabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.CodeCoverage, value));
@@ -170,7 +170,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), parameters: new object[] { null })]
+        [MemberData(nameof(NullableBooleanTestCases), null)]
         public void GitUploadEnabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.GitUploadEnabled, value));

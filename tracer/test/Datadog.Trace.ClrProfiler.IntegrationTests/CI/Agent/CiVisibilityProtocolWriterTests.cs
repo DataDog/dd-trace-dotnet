@@ -154,16 +154,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var requestFactory = new HttpClientRequestFactory(new Uri("http://localhost"), Array.Empty<KeyValuePair<string, string>>(), new TestMessageHandler());
             var apiRequest = requestFactory.Create(new Uri("http://localhost/api"));
             var response = await apiRequest.PostAsync(
-                                          new[] { new MultipartFormItem("TestName", "application/binary", "TestFileName", "TestContent"u8.ToArray()) },
-                                          MultipartCompression.GZip)
-                                     .ConfigureAwait(false);
-            var stream = await response.GetStreamAsync().ConfigureAwait(false);
+                               new[] { new MultipartFormItem("TestName", "application/binary", "TestFileName", "TestContent"u8.ToArray()) },
+                               MultipartCompression.GZip);
+            var stream = await response.GetStreamAsync();
             using var unzippedStream = new GZipStream(stream, CompressionMode.Decompress, leaveOpen: true);
             var ms = new MemoryStream();
-            await unzippedStream.CopyToAsync(ms).ConfigureAwait(false);
+            await unzippedStream.CopyToAsync(ms);
             ms.Position = 0;
             using var rs = new StreamReader(ms, Encoding.UTF8);
-            var requestContent = await rs.ReadToEndAsync().ConfigureAwait(false);
+            var requestContent = await rs.ReadToEndAsync();
             requestContent.Should().Contain("Content-Type: application/binary");
             requestContent.Should().Contain("Content-Disposition: form-data; name=TestName; filename=TestFileName; filename*=utf-8''TestFileName");
             requestContent.Should().Contain("TestContent");
@@ -261,7 +260,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             }
 
             // We force flush
-            await agentlessWriter.FlushTracesAsync().ConfigureAwait(false);
+            await agentlessWriter.FlushTracesAsync();
 
             lock (lstPayloads)
             {

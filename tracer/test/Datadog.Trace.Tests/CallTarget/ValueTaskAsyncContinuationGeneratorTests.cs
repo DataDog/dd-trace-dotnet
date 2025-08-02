@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests.CallTarget
         }
 
         [Fact]
-        public async ValueTask SuccessTest()
+        public async Task SuccessTest()
         {
             var tcg = new ValueTaskContinuationGenerator<ValueTaskAsyncContinuationGeneratorTests, ValueTaskAsyncContinuationGeneratorTests, ValueTask>();
             var state = CallTargetState.GetDefault();
@@ -113,7 +113,9 @@ namespace Datadog.Trace.Tests.CallTarget
 
             // After setting the continuation, we resolve the task completion source.
             tcs.TrySetResult(true);
+#pragma warning disable xUnit1031 // Test methods should not use Blocking operations
             Task.WaitAny(cTask, synchronizationContext.Task);
+#pragma warning restore xUnit1031
 
             // If preserving context, the continuation should be posted to the synchronization context and cTask should never complete
             // If not, the cTask should complete without using the synchronization context
@@ -221,7 +223,9 @@ namespace Datadog.Trace.Tests.CallTarget
 
             // After setting the continuation, we resolve the task completion source.
             tcs.TrySetResult(true);
+#pragma warning disable xUnit1031 // Test methods should not use Blocking operations
             Task.WaitAny(cTask, synchronizationContext.Task);
+#pragma warning restore xUnit1031
 
             // If preserving context, the continuation should be posted to the synchronization context and cTask should never complete
             // If not, the cTask should complete without using the synchronization context

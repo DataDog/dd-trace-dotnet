@@ -132,16 +132,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
+        public async Task SubmitsTraces(string path, int statusCode)
         {
             // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
             var toLowerPath = path.ToLower();
             if (_testName.Contains(".Classic") && toLowerPath.Contains("badrequest") && toLowerPath.Contains("transferrequest"))
             {
-                statusCode = (HttpStatusCode)500;
+                statusCode = 500;
             }
 
-            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
+            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, (HttpStatusCode)statusCode);
             ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "sample", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);

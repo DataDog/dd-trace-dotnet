@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode, int expectedSpanCount)
+        public async Task SubmitsTraces(string path, int statusCode, int expectedSpanCount)
         {
             await _fixture.TryStartApp(this, _output);
 
@@ -129,13 +129,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.Owin.WebApi2", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Overriding the method name to _
             // Overriding the parameters to remove the expectedSpanCount parameter, which is necessary for operation but unnecessary for the filename
             await Verifier.Verify(spans, settings)
-                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}");
+                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={statusCode}");
         }
 
         public sealed class OwinFixture : IDisposable
