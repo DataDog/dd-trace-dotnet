@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -35,10 +36,44 @@ internal abstract class CIVisibilityProtocolPayload : EventPlatformPayload
 
     internal EventsBuffer<IEvent> Events => _events;
 
+    public int TestEventsCount { get; private set; }
+
+    public int TestSuiteEventsCount { get; private set; }
+
+    public int TestModuleEventsCount { get; private set; }
+
+    public int TestSessionEventsCount { get; private set; }
+
+    public int SpanEventsCount { get; private set; }
+
     public override bool TryProcessEvent(IEvent @event)
     {
         _serializationWatch.Restart();
         var success = _events.TryWrite(@event);
+        if (success)
+        {
+            if (@event is TestEvent)
+            {
+                TestEventsCount++;
+            }
+            else if (@event is TestSuiteEvent)
+            {
+                TestSuiteEventsCount++;
+            }
+            else if (@event is TestModuleEvent)
+            {
+                TestModuleEventsCount++;
+            }
+            else if (@event is TestSessionEvent)
+            {
+                TestSessionEventsCount++;
+            }
+            else if (@event is EventModel.SpanEvent)
+            {
+                SpanEventsCount++;
+            }
+        }
+
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointEventsSerializationMs(TelemetryEndpoint, _serializationWatch.Elapsed.TotalMilliseconds);
         return success;
     }

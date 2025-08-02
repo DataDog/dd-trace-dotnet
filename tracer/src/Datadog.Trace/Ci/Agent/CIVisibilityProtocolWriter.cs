@@ -292,6 +292,8 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
 
         completionSource.TrySetResult(true);
         Log.Debug("CIVisibilityProtocolWriter: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
+        Log.Debug("CIVisibilityProtocolWriter: TestCycle stats: {Stats}", $"[Tests: {buffers.CiTestCycleBuffer.TestEventsCount}, TestSuites: {buffers.CiTestCycleBuffer.TestSuiteEventsCount}, TestModules: {buffers.CiTestCycleBuffer.TestModuleEventsCount}, TestSessions: {buffers.CiTestCycleBuffer.TestSessionEventsCount}, Spans: {buffers.CiTestCycleBuffer.SpanEventsCount}]");
+        Log.Debug<int>("CIVisibilityProtocolWriter: CodeCoverage stats: [Coverage: {Coverage}]", buffers.CiCodeCoverageBuffer.TestCoverageEventsCount);
     }
 
     internal class WatermarkEvent : IEvent

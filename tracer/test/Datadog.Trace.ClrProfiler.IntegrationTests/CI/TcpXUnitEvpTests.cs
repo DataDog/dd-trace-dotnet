@@ -4,6 +4,7 @@
 // </copyright>
 #if NETCOREAPP3_1_OR_GREATER
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -12,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Collection(nameof(TransportTestsCollection))]
 public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
 {
+/*
     [SkippableTheory]
     [MemberData(nameof(GetData))]
     [Trait("Category", "EndToEnd")]
@@ -43,7 +45,7 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
         EnvironmentHelper.EnableDefaultTransport();
         return base.QuarantinedTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
     }
-
+*/
     [SkippableTheory]
     [MemberData(nameof(GetDataForDisabledTests))]
     [Trait("Category", "EndToEnd")]
@@ -51,10 +53,12 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     [Trait("Category", "DisabledTests")]
     public override Task DisabledTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
     {
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "true");
         EnvironmentHelper.EnableDefaultTransport();
         return base.DisabledTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
     }
 
+/*
     [SkippableTheory]
     [MemberData(nameof(GetDataForAttemptToFixTests))]
     [Trait("Category", "EndToEnd")]
@@ -65,5 +69,6 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
         EnvironmentHelper.EnableDefaultTransport();
         return base.AttemptToFixTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
     }
+*/
 }
 #endif

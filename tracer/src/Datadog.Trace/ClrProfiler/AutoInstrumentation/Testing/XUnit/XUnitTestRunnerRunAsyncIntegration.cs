@@ -129,6 +129,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         {
             runnerInstance.SkipReason = "Flaky test is disabled by Datadog";
             testRunnerInstance.SkipReason = runnerInstance.SkipReason;
+            testCaseMetadata.Skipped = true;
             Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Skipping test: {Class}.{Name} Reason: {Reason}", runnerInstance.TestClass?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty, runnerInstance.SkipReason);
             XUnitIntegration.CreateTest(ref runnerInstance, testCaseMetadata);
         }
