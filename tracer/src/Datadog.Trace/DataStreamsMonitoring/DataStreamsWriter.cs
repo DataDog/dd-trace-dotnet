@@ -33,6 +33,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly bool _isInDefaultState;
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
@@ -80,6 +81,51 @@ internal class DataStreamsWriter : IDataStreamsWriter
             new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter)),
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
             discoveryService);
+
+    public async Task FlushAsync()
+    {
+        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var actualTimeout = TimeSpan.FromSeconds(5);
+
+            if (_processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            EventHandler<EventArgs>? handler = null;
+            handler = (_, _) =>
+            {
+                tcs.TrySetResult(true);
+            };
+
+            try
+            {
+                FlushComplete += handler;
+
+                RequestFlush();
+
+                var completedTask = await Task.WhenAny(
+                    tcs.Task,
+                    Task.Delay(actualTimeout)).ConfigureAwait(false);
+
+                return;
+            }
+            finally
+            {
+                if (handler != null)
+                {
+                    FlushComplete -= handler;
+                }
+            }
+        }
+        finally
+        {
+            _flushSemaphore.Release();
+        }
+    }
 
     private void Initialize()
     {
@@ -150,6 +196,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         _flushTimer?.Dispose();
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
+        _flushSemaphore.Dispose();
     }
 
     private async Task FlushAndCloseAsync()

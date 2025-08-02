@@ -332,5 +332,10 @@ public class DataStreamsManagerTests
             Interlocked.Increment(ref _disposeCount);
             await Task.Yield();
         }
+
+        public async Task FlushAsync()
+        {
+            await Task.Yield();
+        }
     }
 }
