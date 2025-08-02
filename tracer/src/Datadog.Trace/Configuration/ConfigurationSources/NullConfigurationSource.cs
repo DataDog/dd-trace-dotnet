@@ -16,8 +16,6 @@ internal class NullConfigurationSource : IConfigurationSource
 {
     public static readonly NullConfigurationSource Instance = new();
 
-    public bool IsPresent(string key) => false;
-
     public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         => ConfigurationResult<string>.NotFound();
 
