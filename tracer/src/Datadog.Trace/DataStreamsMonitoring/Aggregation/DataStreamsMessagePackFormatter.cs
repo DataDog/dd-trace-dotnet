@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -51,7 +52,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _productMaskBytes = StringEncoding.UTF8.GetBytes("ProductMask");
         private readonly byte[] _isInDefaultStateBytes = StringEncoding.UTF8.GetBytes("IsInDefaultState");
 
-        public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, string defaultServiceName)
+        public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, ProfilerSettings profilerSettings, string defaultServiceName)
         {
             var env = tracerSettings.Environment;
             // .NET tracer doesn't yet support primary tag
@@ -60,7 +61,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                                          ? []
                                          : StringEncoding.UTF8.GetBytes(env);
             _serviceValueBytes = StringEncoding.UTF8.GetBytes(defaultServiceName);
-            _productMask = GetProductsMask(tracerSettings);
+            _productMask = GetProductsMask(tracerSettings, profilerSettings);
             _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
         }
 
@@ -75,7 +76,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             Profiling = 1 << 3, // 00001000
         }
 
-        private static long GetProductsMask(TracerSettings tracerSettings)
+        private static long GetProductsMask(TracerSettings tracerSettings, ProfilerSettings profilerSettings)
         {
             var productsMask = (long)Products.Apm;
             if (tracerSettings.IsDataStreamsMonitoringEnabled)
@@ -83,7 +84,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 productsMask |= (long)Products.Dsm;
             }
 
-            if (tracerSettings.ProfilingEnabledInternal)
+            if (profilerSettings.IsProfilerEnabled)
             {
                 productsMask |= (long)Products.Profiling;
             }

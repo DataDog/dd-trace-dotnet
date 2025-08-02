@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.Logging;
@@ -70,12 +71,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public static DataStreamsWriter Create(
         TracerSettings settings,
+        ProfilerSettings profilerSettings,
         IDiscoveryService discoveryService,
         string defaultServiceName)
         => new(
             settings,
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(settings, defaultServiceName),
+                new DataStreamsMessagePackFormatter(settings, profilerSettings, defaultServiceName),
                 bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
             new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter)),
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
