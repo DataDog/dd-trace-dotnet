@@ -35,7 +35,7 @@ internal class AppEndpointData
         Method = method;
         Path = path;
         OperationName = "http.request";
-        ResourceName = $"{method} {path}";
+        ResourceName = method == "*" ? path : $"{method} {path}";
     }
 
     /// <summary>
