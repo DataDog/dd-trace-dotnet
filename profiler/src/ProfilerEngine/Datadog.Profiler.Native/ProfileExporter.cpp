@@ -791,8 +791,18 @@ std::string ProfileExporter::GetInfo() const
             builder << "auto";
         }
         else
+        if (_configuration->GetEnablementStatus() == EnablementStatus::Standby)
+        {
+            builder << "standby"; // shout never occur because the managed layer did not set the activation status
+        }
+        else
+        if (_configuration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
         {
             builder << "injection";
+        }
+        else
+        {
+            builder << "none";
         }
         builder << "\"";
     builder << "}}";

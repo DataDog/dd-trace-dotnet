@@ -94,7 +94,10 @@ Configuration::Configuration()
     }
 
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, true, true);
-    _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
+    _isManagedActivationEnabled = GetEnvironmentValue(EnvironmentVariables::ManagedActivationEnabled, true, true);
+
+    // check that the env var exists (special converter) and log the resulting value
+    _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual, true);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();
@@ -720,6 +723,13 @@ bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
 
 EnablementStatus Configuration::ExtractEnablementStatus()
 {
+    // wait for the managed layer to set the activation status
+    if (_isManagedActivationEnabled)
+    {
+        return EnablementStatus::Standby;
+    }
+
+    // kill switch for local environment variables
     if (shared::EnvironmentExist(EnvironmentVariables::ProfilerEnabled))
     {
         auto isEnabled = false;
@@ -780,6 +790,16 @@ bool Configuration::ForceHttpSampling() const
 bool Configuration::IsWaitHandleProfilingEnabled() const
 {
     return _isWaitHandleProfilingEnabled;
+}
+
+bool Configuration::IsManagedActivationEnabled() const
+{
+    return _isManagedActivationEnabled;
+}
+
+void Configuration::SetEnablementStatus(EnablementStatus status)
+{
+    _enablementStatus = status;
 }
 
 
