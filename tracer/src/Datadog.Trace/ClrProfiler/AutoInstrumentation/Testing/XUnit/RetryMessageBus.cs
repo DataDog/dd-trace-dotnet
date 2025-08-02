@@ -126,10 +126,9 @@ internal class RetryMessageBus : IMessageBus
             // Bypass some events to trigger MessageSink events. (Allure lib required it to create the test context)
             // but just send the event once.
             var messageTypeName = message.GetType().Name;
-            // if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
             if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
             {
-                if (metadata.BypassedMessages.Add(messageTypeName))
+                if (!metadata.Skipped && metadata.BypassedMessages.Add(messageTypeName))
                 {
                     Common.Log.Debug("RetryMessageBus.QueueMessage: Message bypass, flushing directly for: {UniqueID} | {MessageType}", uniqueID, messageTypeName);
                     return InternalQueueMessage(message);
@@ -149,9 +148,10 @@ internal class RetryMessageBus : IMessageBus
 
         var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
         var listOfMessages = metadata.ListOfMessages;
-        if (listOfMessages is null || listOfMessages.Length == 0 || metadata.Disposed)
+        if (listOfMessages is null || listOfMessages.Length == 0 || metadata.Disposed || metadata.Skipped)
         {
             Common.Log.Debug("RetryMessageBus.FlushMessages: Nothing to flush for: {UniqueID}", uniqueID);
+            metadata.ListOfMessages = null;
             return true;
         }
 
