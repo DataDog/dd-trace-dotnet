@@ -93,6 +93,22 @@ bool ProfilerSignalManager::UnRegisterHandler()
     return true;
 }
 
+bool ProfilerSignalManager::IgnoreSignal() {
+    struct sigaction sampleAction;
+    sampleAction.sa_handler = SIG_IGN;
+    sigemptyset(&sampleAction.sa_mask);
+    sampleAction.sa_flags = 0;
+
+    int32_t result = sigaction(_signalToSend, &sampleAction, nullptr);
+    if (result != 0)
+    {
+        Log::Error("ProfilerSignalManager::SetupSignalHandler: Failed mark ", strsignal(_signalToSend), " as ignored. Reason: ",
+                   strerror(errno), ".");
+        return false;
+    }
+    return true;
+}
+
 void ProfilerSignalManager::SetSignal(int32_t signal)
 {
     _signalToSend = signal;
