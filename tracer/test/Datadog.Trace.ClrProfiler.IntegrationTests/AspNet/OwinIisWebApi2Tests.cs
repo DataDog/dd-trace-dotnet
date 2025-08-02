@@ -145,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         // OWIN can only run in integrated mode
-        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated, true, "/api/environment");
 
         public Task DisposeAsync() => Task.CompletedTask;
     }
