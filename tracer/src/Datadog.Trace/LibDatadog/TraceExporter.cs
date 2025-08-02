@@ -22,6 +22,7 @@ internal class TraceExporter : SafeHandle, IApi
 {
     private readonly IDatadogLogger _log;
     private readonly Action<Dictionary<string, float>> _updateSampleRates;
+    private string _cachedResponse;
 
     public TraceExporter(
         TraceExporterConfiguration configuration,
@@ -32,6 +33,7 @@ internal class TraceExporter : SafeHandle, IApi
         _updateSampleRates = updateSampleRates;
         _log = log ?? DatadogLogging.GetLoggerFor<TraceExporter>();
         _log.Debug("Creating new TraceExporter");
+        _cachedResponse = string.Empty;
         using var errPtr = NativeInterop.Exporter.New(out var ptr, configuration);
         errPtr.ThrowIfError();
         SetHandle(ptr);
@@ -134,6 +136,11 @@ internal class TraceExporter : SafeHandle, IApi
 
     private unsafe void ProcessResponse(IntPtr response)
     {
+        if (_updateSampleRates is null)
+        {
+            return;
+        }
+
         if (response == IntPtr.Zero)
         {
             // If response is Null bail out immediately.
@@ -149,8 +156,11 @@ internal class TraceExporter : SafeHandle, IApi
         }
 
         var json = System.Text.Encoding.UTF8.GetString((byte*)body, len);
-        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
-
-        _updateSampleRates(apiResponse.RateByService);
+        if (json != _cachedResponse)
+        {
+            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
+            _updateSampleRates(apiResponse.RateByService);
+            _cachedResponse = json;
+        }
     }
 }
