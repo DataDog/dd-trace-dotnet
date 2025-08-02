@@ -38,6 +38,8 @@ struct ResolveMethodData
     char symbolName[1024];
 };
 
+// @gleocadie Remove this struct when Build IDs are handled completely by libdatadog
+//
 struct BuildId
 {
 public:
