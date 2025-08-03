@@ -323,6 +323,13 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.ApmTracingEnabled)
                                       .AsBool(defaultValue: true);
 
+            var ciVisibilityEnabled = config
+                                     .WithKeys(ConfigurationKeys.CIVisibility.Enabled)
+                                     .AsBool(defaultValue: false);
+
+            // If CI Visibility is enabled then we should enable tracing.
+            _traceEnabled = _traceEnabled || ciVisibilityEnabled;
+
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
                 telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
