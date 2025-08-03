@@ -121,6 +121,9 @@ internal partial class TestSpanTags : TestSuiteSpanTags
     [Tag(TestTags.TestIsAttemptToFix)]
     public string? IsAttemptToFix { get; set; }
 
+    [Tag(TestTags.TestAttemptToFixSource)]
+    public string? AttemptToFixSource { get; set; }
+
     [Tag(TestTags.TestHasFailedAllRetries)]
     public string? HasFailedAllRetries { get; set; }
 
