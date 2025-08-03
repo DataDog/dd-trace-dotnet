@@ -2796,6 +2796,115 @@ stages:
         testResultsFiles: profiler/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+- stage: profiler_integration_tests_arm64
+  condition: >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      or(
+        eq(variables.isMainOrReleaseBranch, true),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+      )
+    )
+  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
+  - job: Test
+    timeoutInMinutes: 120 #default value
+    strategy:
+      matrix:
+        x64:
+          baseImage: debian
+          useNativeSdkVersion: ""
+          artifactSuffix: linux-arm64
+        alpine:
+          baseImage: alpine
+          useNativeSdkVersion: ""
+          artifactSuffix: linux-musl-arm64
+    workspace:
+        clean: all
+    pool:
+        name: aws-arm64-auto-scaling
+
+    variables:
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-$(artifactSuffix)-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux monitoring home
+      inputs:
+        artifact: linux-monitoring-home-$(artifactSuffix)
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux debug symbols
+      inputs:
+        artifact: linux-profiler-symbols-$(artifactSuffix)
+        path: $(monitoringHome)
+
+    # when we build samples separately, we could run this step and the docker-compose one below in //
+    # (currently the docker-compose step relies on serverless samples)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildProfilerSamples"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildAndRunProfilerCpuLimitTests"
+        extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildAndRunProfilerCpuLimitTests"
+        extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
+          run --rm \
+          -e baseImage=$(baseImage) \
+          ProfilerIntegrationTests
+      displayName: docker-compose run --no-deps ProfilerIntegrationTests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
+
+    - publish: profiler/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: profiler/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
 - stage: asan_profiler_tests
   #address sanitizer tests
   condition: >
