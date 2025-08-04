@@ -98,6 +98,21 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
+        private void AddBaggageTagsToSpan(ISpan span, Baggage baggage, Tracer tracer)
+        {
+            if (baggage != null)
+            {
+                try
+                {
+                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, baggage, tracer.Settings.BaggageTagKeys);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error adding baggage tags to span.");
+                }
+            }
+        }
+
         public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, HttpContext httpContext, string resourceName)
         {
             var request = httpContext.Request;
@@ -125,6 +140,7 @@ namespace Datadog.Trace.PlatformHelpers
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
             AddHeaderTagsToSpan(scope.Span, request, tracer);
+            AddBaggageTagsToSpan(scope.Span, extractedContext.Baggage, tracer);
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
             var requestTrackingFeature = new RequestTrackingFeature(originalPath, scope);
