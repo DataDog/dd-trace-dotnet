@@ -5,12 +5,10 @@
 
 #nullable enable
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -27,7 +25,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var config = new ConfigurationBuilder(source, telemetry);
 
 #pragma warning disable CS0612 // Type or member is obsolete
-            Enabled = config.WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingEnabled, ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(false);
+            Enabled =
+                config.WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingEnabled, ConfigurationKeys.Debugger.ExceptionReplayEnabled)
+                      .GetAs(
+                           getDefaultValue: () => false,
+                           null,
+                           x => x switch
+                           {
+                               "null" => false,
+                               _ when x.ToBoolean() is { } boolean => boolean,
+                               _ => ParsingResult<bool>.Failure()
+                           });
 #pragma warning restore CS0612 // Type or member is obsolete
 
             CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled).AsBool(false);

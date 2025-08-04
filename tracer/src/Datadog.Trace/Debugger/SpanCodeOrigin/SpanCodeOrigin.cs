@@ -1,4 +1,4 @@
-// <copyright file="SpanCodeOriginManager.cs" company="Datadog">
+// <copyright file="SpanCodeOrigin.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,25 +17,24 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
-    internal class SpanCodeOriginManager
+    internal class SpanCodeOrigin
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
         private readonly ConcurrentAdaptiveCache<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
-        private readonly DebuggerSettings _settings;
         private readonly CodeOriginTags _tags;
 
-        internal SpanCodeOriginManager()
+        internal SpanCodeOrigin(DebuggerSettings settings)
         {
-            _settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
-            _tags = new CodeOriginTags(_settings.CodeOriginMaxUserFrames);
+            Settings = settings;
+            _tags = new CodeOriginTags(Settings.CodeOriginMaxUserFrames);
         }
 
-        internal static SpanCodeOriginManager Instance { get; } = new();
+        internal DebuggerSettings Settings { get; }
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
-            if (span == null || !_settings.CodeOriginForSpansEnabled)
+            if (span == null || !Settings.CodeOriginForSpansEnabled)
             {
                 return;
             }
@@ -61,7 +60,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             if (span == null ||
                 type == null ||
                 method == null ||
-                !_settings.CodeOriginForSpansEnabled)
+                !Settings.CodeOriginForSpansEnabled)
             {
                 return;
             }
@@ -87,7 +86,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 }
 
                 var assembly = type.Assembly;
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, this._settings.SymDbThirdPartyDetectionExcludes, this._settings.SymDbThirdPartyDetectionIncludes))
+                if (AssemblyFilter.ShouldSkipAssembly(assembly, Settings.SymDbThirdPartyDetectionExcludes, Settings.SymDbThirdPartyDetectionIncludes))
                 {
                     // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
                     return;
@@ -158,7 +157,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private void AddExitSpanTags(Span span)
         {
-            var frames = ArrayPool<FrameInfo>.Shared.Rent(_settings.CodeOriginMaxUserFrames);
+            var frames = ArrayPool<FrameInfo>.Shared.Rent(Settings.CodeOriginMaxUserFrames);
             try
             {
                 var framesLength = PopulateUserFrames(frames);
@@ -205,7 +204,10 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
             finally
             {
-                ArrayPool<FrameInfo>.Shared.Return(frames);
+                if (frames != null)
+                {
+                    ArrayPool<FrameInfo>.Shared.Return(frames);
+                }
             }
         }
 
@@ -220,7 +222,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             var count = 0;
-            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < _settings.CodeOriginMaxUserFrames; walkIndex++)
+            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < Settings.CodeOriginMaxUserFrames; walkIndex++)
             {
                 var frame = stackFrames[walkIndex];
 
@@ -230,7 +232,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     continue;
                 }
 
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, _settings.SymDbThirdPartyDetectionExcludes, _settings.SymDbThirdPartyDetectionIncludes))
+                if (AssemblyFilter.ShouldSkipAssembly(assembly, Settings.ThirdPartyDetectionExcludes, Settings.ThirdPartyDetectionIncludes))
                 {
                     // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
                     continue;
