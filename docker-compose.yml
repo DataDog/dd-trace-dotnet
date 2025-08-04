@@ -1181,4 +1181,3 @@ services:
   # keep syncronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\AerospikeFixture.cs
   aerospike:
     image: aerospike/aerospike-server:6.2.0.6
-    entrypoint: ["/bin/sh", "-c", "sleep infinity"]
