@@ -12,18 +12,10 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
-internal readonly struct ConfigurationBuilder
+internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConfigurationTelemetry telemetry)
 {
-    private readonly IConfigurationSource _source;
-    private readonly IConfigurationTelemetry _telemetry;
-
-    public ConfigurationBuilder(IConfigurationSource source, IConfigurationTelemetry telemetry)
-    {
-        // If the source _isn't_ an IConfigurationSource, it's because it's a custom
-        // IConfigurationSource implementation, so we treat that as a "Code" origin.
-        _source = source;
-        _telemetry = telemetry;
-    }
+    private readonly IConfigurationSource _source = source;
+    private readonly IConfigurationTelemetry _telemetry = telemetry;
 
     public HasKeys WithKeys(string key) => new(_source, _telemetry, key);
 
