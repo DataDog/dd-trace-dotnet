@@ -3,15 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.VisualStudio.TestPlatform.CoreUtilities.Helpers;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -31,11 +30,13 @@ public class QuartzTests : TracingIntegrationTest
         SetServiceVersion("1.0.0");
     }
 
+    public static IEnumerable<object[]> GetData() => PackageVersions.Quartz;
+
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsQuartz(metadataSchemaVersion, ExcludeTags);
 
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
-    public async Task SubmitsTraces()
+    public async Task SubmitsTraces(string packageVersion)
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
@@ -43,7 +44,7 @@ public class QuartzTests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent))
         {
-            // Not testing for retry attempts
+            var filename = nameof(QuartzTests) + GetSuffix(packageVersion);
             const int expectedSpanCount = 2;
             var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
@@ -66,10 +67,29 @@ public class QuartzTests : TracingIntegrationTest
             settings.AddRegexScrubber(fireInstanceId, "fire.instance.id: <fire.instance.id>");
 
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName("QuartzTestsV3");
+                              .UseFileName(filename);
 
             // this isn't real
             // await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Quartz);
+        }
+
+        static string GetSuffix(string packageVersion)
+        {
+            // New tags added in v1.5.1
+            if (!string.IsNullOrEmpty(packageVersion)
+             && new Version(packageVersion) >= new Version("3.1.0"))
+            {
+                return "V3";
+            }
+
+            // v1.7.0 fixed StartRootSpan to not be a child of the active span
+            if (!string.IsNullOrEmpty(packageVersion)
+             && new Version(packageVersion) >= new Version("4.0.0"))
+            {
+                return "V4";
+            }
+
+            return string.Empty;
         }
     }
 }
