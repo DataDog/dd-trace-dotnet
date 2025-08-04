@@ -34,7 +34,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aerospike")
                 .Matches("span.kind", "client"));
 
-        public static Result IsAspNetV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAspNetV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "aspnet.request")
                 .Matches(Type, "web"))
@@ -52,7 +52,7 @@ namespace Datadog.Trace.TestHelpers
                 // .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAspNetMvcV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAspNetMvcV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "aspnet-mvc.request")
                 .Matches(Type, "web"))
@@ -71,7 +71,7 @@ namespace Datadog.Trace.TestHelpers
                 // .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAspNetWebApi2V0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAspNetWebApi2V0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "aspnet-webapi.request")
                 .Matches(Type, "web"))

@@ -2,13 +2,6 @@
 
 call install_timeit.cmd
 
-:: remove DOTNET_ROOT environment variable to ensure we can run
-:: the benchmark in x64 and x86
-set DOTNET_ROOT=
+call run_timeit.cmd Exceptions.windows.json
 
-:: Run x64
-dotnet timeit Exceptions.windows.json --variable arch=x64
-
-:: Run x86
-dotnet timeit Exceptions.windows.json --variable arch=x86
-
+exit /b %ERRORLEVEL%

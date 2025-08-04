@@ -56,6 +56,7 @@ class IExporter;
 class RawSampleTransformer;
 class RuntimeIdStore;
 class TimerCreateCpuProfiler;
+class CpuSampleProvider;
 class NetworkProvider;
 
 #ifdef LINUX
@@ -258,6 +259,7 @@ private :
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
     TimerCreateCpuProfiler* _pCpuProfiler = nullptr;
+    CpuSampleProvider* _pCpuSampleProvider = nullptr;
 #endif
 
     std::vector<std::unique_ptr<IService>> _services;

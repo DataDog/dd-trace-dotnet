@@ -335,6 +335,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // Check the tests, suites and modules count
                         Assert.Equal(expectedTestCount, tests.Count);
                         testSuites.Should().HaveCountLessThanOrEqualTo(2);
+                        testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().ContainKey(TestTags.SourceFile));
+                        testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().ContainKey(TestTags.CodeOwners));
                         Assert.Single(testModules);
 
                         var testSuite = testSuites[0];
