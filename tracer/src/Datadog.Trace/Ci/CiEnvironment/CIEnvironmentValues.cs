@@ -89,13 +89,29 @@ internal abstract class CIEnvironmentValues
 
     public string[]? NodeLabels { get; protected set; }
 
-    public string? HeadCommit { get; protected set; }
-
     public string? PrBaseCommit { get; protected set; }
+
+    public string? PrBaseHeadCommit { get; protected set; }
 
     public string? PrBaseBranch { get; protected set; }
 
     public string? PrNumber { get; protected set; }
+
+    public string? HeadCommit { get; protected set; }
+
+    public string? HeadAuthorName { get; protected set; }
+
+    public string? HeadAuthorEmail { get; protected set; }
+
+    public DateTimeOffset? HeadAuthorDate { get; protected set; }
+
+    public string? HeadCommitterName { get; protected set; }
+
+    public string? HeadCommitterEmail { get; protected set; }
+
+    public DateTimeOffset? HeadCommitterDate { get; protected set; }
+
+    public string? HeadMessage { get; protected set; }
 
     public CodeOwners? CodeOwners { get; protected set; }
 
@@ -269,10 +285,18 @@ internal abstract class CIEnvironmentValues
             SetTagIfNotNullOrEmpty(span, CommonTags.CINodeLabels, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(nodeLabels));
         }
 
-        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommit, HeadCommit);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitPrBaseHeadCommit, PrBaseHeadCommit);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitPrBaseCommit, PrBaseCommit);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitPrBaseBranch, PrBaseBranch);
         SetTagIfNotNullOrEmpty(span, CommonTags.PrNumber, PrNumber);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommit, HeadCommit);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitAuthorDate, HeadAuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitAuthorName, HeadAuthorName);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitAuthorEmail, HeadAuthorEmail);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitCommitterDate, HeadCommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitCommitterName, HeadCommitterName);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitCommitterEmail, HeadCommitterEmail);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitHeadCommitMessage, HeadMessage);
 
         if (VariablesToBypass is { } variablesToBypass)
         {
@@ -508,6 +532,7 @@ internal abstract class CIEnvironmentValues
         public const string GitlabRunnerTags = "CI_RUNNER_TAGS";
         public const string GitlabMergeRequestSourceBranchSha = "CI_MERGE_REQUEST_SOURCE_BRANCH_SHA";
         public const string GitlabMergeRequestTargetBranchSha = "CI_MERGE_REQUEST_TARGET_BRANCH_SHA";
+        public const string GitlabMergeRequestDiffBaseSha = "CI_MERGE_REQUEST_DIFF_BASE_SHA";
         public const string GitlabMergeRequestTargetBranchName = "CI_MERGE_REQUEST_TARGET_BRANCH_NAME";
         public const string GitlabMergeRequestId = "CI_MERGE_REQUEST_IID";
 

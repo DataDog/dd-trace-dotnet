@@ -16,12 +16,18 @@ namespace Datadog.Trace.Ci.Tagging
     {
         // SuiteBytes = MessagePack.Serialize("test.suite");
         private static ReadOnlySpan<byte> SuiteBytes => new byte[] { 170, 116, 101, 115, 116, 46, 115, 117, 105, 116, 101 };
+        // SourceFileBytes = MessagePack.Serialize("test.source.file");
+        private static ReadOnlySpan<byte> SourceFileBytes => new byte[] { 176, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 102, 105, 108, 101 };
+        // CodeOwnersBytes = MessagePack.Serialize("test.codeowners");
+        private static ReadOnlySpan<byte> CodeOwnersBytes => new byte[] { 175, 116, 101, 115, 116, 46, 99, 111, 100, 101, 111, 119, 110, 101, 114, 115 };
 
         public override string? GetTag(string key)
         {
             return key switch
             {
                 "test.suite" => Suite,
+                "test.source.file" => SourceFile,
+                "test.codeowners" => CodeOwners,
                 _ => base.GetTag(key),
             };
         }
@@ -32,6 +38,12 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 case "test.suite": 
                     Suite = value;
+                    break;
+                case "test.source.file": 
+                    SourceFile = value;
+                    break;
+                case "test.codeowners": 
+                    CodeOwners = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -46,6 +58,16 @@ namespace Datadog.Trace.Ci.Tagging
                 processor.Process(new TagItem<string>("test.suite", Suite, SuiteBytes));
             }
 
+            if (SourceFile is not null)
+            {
+                processor.Process(new TagItem<string>("test.source.file", SourceFile, SourceFileBytes));
+            }
+
+            if (CodeOwners is not null)
+            {
+                processor.Process(new TagItem<string>("test.codeowners", CodeOwners, CodeOwnersBytes));
+            }
+
             base.EnumerateTags(ref processor);
         }
 
@@ -55,6 +77,20 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.suite (tag):")
                   .Append(Suite)
+                  .Append(',');
+            }
+
+            if (SourceFile is not null)
+            {
+                sb.Append("test.source.file (tag):")
+                  .Append(SourceFile)
+                  .Append(',');
+            }
+
+            if (CodeOwners is not null)
+            {
+                sb.Append("test.codeowners (tag):")
+                  .Append(CodeOwners)
                   .Append(',');
             }
 

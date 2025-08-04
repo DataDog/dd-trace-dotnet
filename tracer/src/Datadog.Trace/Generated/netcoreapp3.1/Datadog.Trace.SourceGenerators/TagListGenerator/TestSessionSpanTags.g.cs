@@ -80,14 +80,30 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestEnabledBytes => new byte[] { 184, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 101, 110, 97, 98, 108, 101, 100 };
         // EarlyFlakeDetectionTestAbortReasonBytes = MessagePack.Serialize("test.early_flake.abort_reason");
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestAbortReasonBytes => new byte[] { 189, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 97, 98, 111, 114, 116, 95, 114, 101, 97, 115, 111, 110 };
-        // GitHeadCommitBytes = MessagePack.Serialize("git.commit.head.sha");
-        private static ReadOnlySpan<byte> GitHeadCommitBytes => new byte[] { 179, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 115, 104, 97 };
+        // GitPrBaseHeadCommitBytes = MessagePack.Serialize("git.pull_request.base_branch_head_sha");
+        private static ReadOnlySpan<byte> GitPrBaseHeadCommitBytes => new byte[] { 217, 37, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104, 95, 104, 101, 97, 100, 95, 115, 104, 97 };
         // GitPrBaseCommitBytes = MessagePack.Serialize("git.pull_request.base_branch_sha");
         private static ReadOnlySpan<byte> GitPrBaseCommitBytes => new byte[] { 217, 32, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104, 95, 115, 104, 97 };
         // GitPrBaseBranchBytes = MessagePack.Serialize("git.pull_request.base_branch");
         private static ReadOnlySpan<byte> GitPrBaseBranchBytes => new byte[] { 188, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104 };
         // PrNumberBytes = MessagePack.Serialize("pr.number");
         private static ReadOnlySpan<byte> PrNumberBytes => new byte[] { 169, 112, 114, 46, 110, 117, 109, 98, 101, 114 };
+        // GitHeadCommitBytes = MessagePack.Serialize("git.commit.head.sha");
+        private static ReadOnlySpan<byte> GitHeadCommitBytes => new byte[] { 179, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 115, 104, 97 };
+        // GitHeadCommitAuthorNameBytes = MessagePack.Serialize("git.commit.head.author.name");
+        private static ReadOnlySpan<byte> GitHeadCommitAuthorNameBytes => new byte[] { 187, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 97, 117, 116, 104, 111, 114, 46, 110, 97, 109, 101 };
+        // GitHeadCommitAuthorEmailBytes = MessagePack.Serialize("git.commit.head.author.email");
+        private static ReadOnlySpan<byte> GitHeadCommitAuthorEmailBytes => new byte[] { 188, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 97, 117, 116, 104, 111, 114, 46, 101, 109, 97, 105, 108 };
+        // GitHeadCommitAuthorDateBytes = MessagePack.Serialize("git.commit.head.author.date");
+        private static ReadOnlySpan<byte> GitHeadCommitAuthorDateBytes => new byte[] { 187, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 97, 117, 116, 104, 111, 114, 46, 100, 97, 116, 101 };
+        // GitHeadCommitCommitterNameBytes = MessagePack.Serialize("git.commit.head.committer.name");
+        private static ReadOnlySpan<byte> GitHeadCommitCommitterNameBytes => new byte[] { 190, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 110, 97, 109, 101 };
+        // GitHeadCommitCommitterEmailBytes = MessagePack.Serialize("git.commit.head.committer.email");
+        private static ReadOnlySpan<byte> GitHeadCommitCommitterEmailBytes => new byte[] { 191, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 101, 109, 97, 105, 108 };
+        // GitHeadCommitCommitterDateBytes = MessagePack.Serialize("git.commit.head.committer.date");
+        private static ReadOnlySpan<byte> GitHeadCommitCommitterDateBytes => new byte[] { 190, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 100, 97, 116, 101 };
+        // GitHeadCommitMessageBytes = MessagePack.Serialize("git.commit.head.message");
+        private static ReadOnlySpan<byte> GitHeadCommitMessageBytes => new byte[] { 183, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 109, 101, 115, 115, 97, 103, 101 };
 
         public override string? GetTag(string key)
         {
@@ -125,10 +141,18 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.itr.tests_skipping.type" => IntelligentTestRunnerSkippingType,
                 "test.early_flake.enabled" => EarlyFlakeDetectionTestEnabled,
                 "test.early_flake.abort_reason" => EarlyFlakeDetectionTestAbortReason,
-                "git.commit.head.sha" => GitHeadCommit,
+                "git.pull_request.base_branch_head_sha" => GitPrBaseHeadCommit,
                 "git.pull_request.base_branch_sha" => GitPrBaseCommit,
                 "git.pull_request.base_branch" => GitPrBaseBranch,
                 "pr.number" => PrNumber,
+                "git.commit.head.sha" => GitHeadCommit,
+                "git.commit.head.author.name" => GitHeadCommitAuthorName,
+                "git.commit.head.author.email" => GitHeadCommitAuthorEmail,
+                "git.commit.head.author.date" => GitHeadCommitAuthorDate,
+                "git.commit.head.committer.name" => GitHeadCommitCommitterName,
+                "git.commit.head.committer.email" => GitHeadCommitCommitterEmail,
+                "git.commit.head.committer.date" => GitHeadCommitCommitterDate,
+                "git.commit.head.message" => GitHeadCommitMessage,
                 _ => base.GetTag(key),
             };
         }
@@ -230,8 +254,8 @@ namespace Datadog.Trace.Ci.Tagging
                 case "test.early_flake.abort_reason": 
                     EarlyFlakeDetectionTestAbortReason = value;
                     break;
-                case "git.commit.head.sha": 
-                    GitHeadCommit = value;
+                case "git.pull_request.base_branch_head_sha": 
+                    GitPrBaseHeadCommit = value;
                     break;
                 case "git.pull_request.base_branch_sha": 
                     GitPrBaseCommit = value;
@@ -241,6 +265,30 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "pr.number": 
                     PrNumber = value;
+                    break;
+                case "git.commit.head.sha": 
+                    GitHeadCommit = value;
+                    break;
+                case "git.commit.head.author.name": 
+                    GitHeadCommitAuthorName = value;
+                    break;
+                case "git.commit.head.author.email": 
+                    GitHeadCommitAuthorEmail = value;
+                    break;
+                case "git.commit.head.author.date": 
+                    GitHeadCommitAuthorDate = value;
+                    break;
+                case "git.commit.head.committer.name": 
+                    GitHeadCommitCommitterName = value;
+                    break;
+                case "git.commit.head.committer.email": 
+                    GitHeadCommitCommitterEmail = value;
+                    break;
+                case "git.commit.head.committer.date": 
+                    GitHeadCommitCommitterDate = value;
+                    break;
+                case "git.commit.head.message": 
+                    GitHeadCommitMessage = value;
                     break;
                 case "library_version": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(TestSessionSpanTags));
@@ -413,9 +461,9 @@ namespace Datadog.Trace.Ci.Tagging
                 processor.Process(new TagItem<string>("test.early_flake.abort_reason", EarlyFlakeDetectionTestAbortReason, EarlyFlakeDetectionTestAbortReasonBytes));
             }
 
-            if (GitHeadCommit is not null)
+            if (GitPrBaseHeadCommit is not null)
             {
-                processor.Process(new TagItem<string>("git.commit.head.sha", GitHeadCommit, GitHeadCommitBytes));
+                processor.Process(new TagItem<string>("git.pull_request.base_branch_head_sha", GitPrBaseHeadCommit, GitPrBaseHeadCommitBytes));
             }
 
             if (GitPrBaseCommit is not null)
@@ -431,6 +479,46 @@ namespace Datadog.Trace.Ci.Tagging
             if (PrNumber is not null)
             {
                 processor.Process(new TagItem<string>("pr.number", PrNumber, PrNumberBytes));
+            }
+
+            if (GitHeadCommit is not null)
+            {
+                processor.Process(new TagItem<string>("git.commit.head.sha", GitHeadCommit, GitHeadCommitBytes));
+            }
+
+            if (GitHeadCommitAuthorName is not null)
+            {
+                processor.Process(new TagItem<string>("git.commit.head.author.name", GitHeadCommitAuthorName, GitHeadCommitAuthorNameBytes));
+            }
+
+            if (GitHeadCommitAuthorEmail is not null)
+            {
+                processor.Process(new TagItem<string>("git.commit.head.author.email", GitHeadCommitAuthorEmail, GitHeadCommitAuthorEmailBytes));
+            }
+
+            if (GitHeadCommitAuthorDate is not null)
+            {
+                processor.Process(new TagItem<string>("git.commit.head.author.date", GitHeadCommitAuthorDate, GitHeadCommitAuthorDateBytes));
+            }
+
+            if (GitHeadCommitCommitterName is not null)
+            {
+                processor.Process(new TagItem<string>("git.commit.head.committer.name", GitHeadCommitCommitterName, GitHeadCommitCommitterNameBytes));
+            }
+
+            if (GitHeadCommitCommitterEmail is not null)
+            {
+                processor.Process(new TagItem<string>("git.commit.head.committer.email", GitHeadCommitCommitterEmail, GitHeadCommitCommitterEmailBytes));
+            }
+
+            if (GitHeadCommitCommitterDate is not null)
+            {
+                processor.Process(new TagItem<string>("git.commit.head.committer.date", GitHeadCommitCommitterDate, GitHeadCommitCommitterDateBytes));
+            }
+
+            if (GitHeadCommitMessage is not null)
+            {
+                processor.Process(new TagItem<string>("git.commit.head.message", GitHeadCommitMessage, GitHeadCommitMessageBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -662,10 +750,10 @@ namespace Datadog.Trace.Ci.Tagging
                   .Append(',');
             }
 
-            if (GitHeadCommit is not null)
+            if (GitPrBaseHeadCommit is not null)
             {
-                sb.Append("git.commit.head.sha (tag):")
-                  .Append(GitHeadCommit)
+                sb.Append("git.pull_request.base_branch_head_sha (tag):")
+                  .Append(GitPrBaseHeadCommit)
                   .Append(',');
             }
 
@@ -687,6 +775,62 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("pr.number (tag):")
                   .Append(PrNumber)
+                  .Append(',');
+            }
+
+            if (GitHeadCommit is not null)
+            {
+                sb.Append("git.commit.head.sha (tag):")
+                  .Append(GitHeadCommit)
+                  .Append(',');
+            }
+
+            if (GitHeadCommitAuthorName is not null)
+            {
+                sb.Append("git.commit.head.author.name (tag):")
+                  .Append(GitHeadCommitAuthorName)
+                  .Append(',');
+            }
+
+            if (GitHeadCommitAuthorEmail is not null)
+            {
+                sb.Append("git.commit.head.author.email (tag):")
+                  .Append(GitHeadCommitAuthorEmail)
+                  .Append(',');
+            }
+
+            if (GitHeadCommitAuthorDate is not null)
+            {
+                sb.Append("git.commit.head.author.date (tag):")
+                  .Append(GitHeadCommitAuthorDate)
+                  .Append(',');
+            }
+
+            if (GitHeadCommitCommitterName is not null)
+            {
+                sb.Append("git.commit.head.committer.name (tag):")
+                  .Append(GitHeadCommitCommitterName)
+                  .Append(',');
+            }
+
+            if (GitHeadCommitCommitterEmail is not null)
+            {
+                sb.Append("git.commit.head.committer.email (tag):")
+                  .Append(GitHeadCommitCommitterEmail)
+                  .Append(',');
+            }
+
+            if (GitHeadCommitCommitterDate is not null)
+            {
+                sb.Append("git.commit.head.committer.date (tag):")
+                  .Append(GitHeadCommitCommitterDate)
+                  .Append(',');
+            }
+
+            if (GitHeadCommitMessage is not null)
+            {
+                sb.Append("git.commit.head.message (tag):")
+                  .Append(GitHeadCommitMessage)
                   .Append(',');
             }
 

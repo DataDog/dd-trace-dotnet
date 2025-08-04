@@ -18,6 +18,9 @@ namespace Datadog.Trace.Sampling
 
         public string SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.LocalTraceSamplingRule;
 
+        // Doesn't depend on span at all
+        public bool IsResourceBasedSamplingRule => false;
+
         public bool IsMatch(Span span) => true;
 
         public float GetSamplingRate(Span span)

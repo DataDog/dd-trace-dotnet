@@ -288,7 +288,7 @@ private:
         void Work()
         {
             // Get the callstack
-            auto buffer = _callstack.Data();
+            auto buffer = _callstack.AsSpan();
             auto nb = unw_backtrace((void**)buffer.data(), buffer.size());
             _callstack.SetCount(nb);
 
