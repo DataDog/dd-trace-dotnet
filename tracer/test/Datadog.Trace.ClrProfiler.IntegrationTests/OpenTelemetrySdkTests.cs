@@ -72,6 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
         private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
+        private readonly Regex _timeUnixNanoRegexMetrics = new(@"TimeUnixNano: ([0-9]{10}[0-9]+)");
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
@@ -196,6 +197,59 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await telemetry.AssertIntegrationDisabledAsync(IntegrationId.OpenTelemetry);
             }
         }
+
+#if NET6_0_OR_GREATER
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
+        public async Task SubmitsOtlpMetrics(string packageVersion)
+        {
+            var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.12.0");
+            var runtimeMajor = Environment.Version.Major;
+
+            var snapshotName = runtimeMajor switch
+            {
+                6 when parsedVersion >= new Version("1.3.2") && parsedVersion < new Version("1.5.0") => ".NET_6",
+                7 or 8 when parsedVersion >= new Version("1.5.1") && parsedVersion < new Version("1.10.0") => ".NET_7_8",
+                >= 9 when parsedVersion >= new Version("1.10.0") => string.Empty,
+                _ => throw new SkipException($"Skipping test due to irrelevant runtime and OTel versions mix: .NET {runtimeMajor} & Otel v{parsedVersion}")
+            };
+
+            var initialAgentPort = TcpPortProvider.GetOpenPort();
+
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
+
+            using var agent = EnvironmentHelper.GetMockAgent(fixedPort: initialAgentPort);
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.12.0"))
+            {
+                var metricRequests = agent.OtlpRequests
+                                          .Where(r => r.PathAndQuery.StartsWith("/v1/metrics"))
+                                          .ToList();
+
+                metricRequests.Should().NotBeEmpty("Expected OTLP metric requests were not received.");
+
+                var snapshotPayload = metricRequests
+                    .Select(r => r.DeserializedData)
+                    .ToList();
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.AddRegexScrubber(_timeUnixNanoRegexMetrics, @"TimeUnixNano"": <DateTimeOffset.Now>");
+
+                var suffix = GetSuffix(packageVersion);
+                var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpMetrics{suffix}{snapshotName}";
+
+                await Verifier.Verify(snapshotPayload, settings)
+                              .UseFileName(fileName)
+                              .DisableRequireUniquePrefix();
+            }
+        }
+#endif
 
         private static string GetSuffix(string packageVersion)
         {

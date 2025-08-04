@@ -137,6 +137,9 @@ jobs:
         run: |
           dotnet nuget push "*.${{steps.versions.outputs.full_version}}*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
 
+      - name: "Copy gitlab artifacts to artifacts_path"
+        run: cp "${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip" "${{steps.assets.outputs.artifacts_path}}/""
+
       - name: 'Push debug symbols to datadog'
         uses: ./.github/actions/publish-debug-symbols
         with:

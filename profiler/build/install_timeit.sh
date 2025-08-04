@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-dotnet tool update -g timeitsharp --version 0.0.17
+dotnet tool update -g timeitsharp --version 0.4.5 --allow-downgrade
