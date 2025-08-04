@@ -64,12 +64,9 @@ internal class CICodeCoveragePayload : MultipartPayload
     {
         _serializationWatch.Restart();
         var success = base.TryProcessEvent(@event);
-        if (success)
+        if (success && @event is TestCoverage)
         {
-            if (@event is TestCoverage)
-            {
-                TestCoverageEventsCount++;
-            }
+            TestCoverageEventsCount++;
         }
 
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointEventsSerializationMs(TelemetryEndpoint, _serializationWatch.Elapsed.TotalMilliseconds);

@@ -128,7 +128,7 @@ internal class RetryMessageBus : IMessageBus
             var messageTypeName = message.GetType().Name;
             if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
             {
-                if (!metadata.Skipped && metadata.BypassedMessages.Add(messageTypeName))
+                if (!metadata.Skipped && metadata.BypassedMessageTypes.Add(messageTypeName))
                 {
                     Common.Log.Debug("RetryMessageBus.QueueMessage: Message bypass, flushing directly for: {UniqueID} | {MessageType}", uniqueID, messageTypeName);
                     return InternalQueueMessage(message);
@@ -252,12 +252,12 @@ internal class RetryMessageBus : IMessageBus
         public bool Disposed { get; set; }
 
         /// <summary>
-        /// Gets the messages that were bypassed to trigger MessageSink events.
+        /// Gets the messages types that were bypassed to trigger MessageSink events.
         /// This is used to avoid sending the same message multiple times.
         /// For example, TestStarting, TestClassConstructionStarting, TestClassConstructionFinished, etc.
         /// "TestCaseStarting" or "TestMethodStarting" are not bypassed, as they are used to create the test context.
         /// </summary>
-        public HashSet<string> BypassedMessages { get; } = new();
+        public HashSet<string> BypassedMessageTypes { get; } = new();
 
         public void ResizeListOfMessages(int totalExecutions)
         {

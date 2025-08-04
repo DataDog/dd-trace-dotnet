@@ -52,7 +52,6 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     [Trait("Category", "DisabledTests")]
     public override Task DisabledTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
     {
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "true");
         EnvironmentHelper.EnableDefaultTransport();
         return base.DisabledTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
     }
