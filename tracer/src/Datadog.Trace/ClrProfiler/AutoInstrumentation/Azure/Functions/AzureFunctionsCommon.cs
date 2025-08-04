@@ -202,7 +202,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
                 PropagationContext extractedContext = default;
-#pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
+#pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
                 {
@@ -223,7 +223,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub", // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
                         _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos", // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid", // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
-                        _ => "Automatic", // Automatic is the catch all for any triggers we don't explicitly handle
+                        _ => "Automatic", // Automatic is the catch-all for any triggers we don't explicitly handle
                     };
 
                     // need to extract the headers from the context.
