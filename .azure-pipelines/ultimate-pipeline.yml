@@ -96,6 +96,7 @@ variables:
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY_PROD)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
+  DD_LOGGER_DD_TRACE_LOG_DIRECTORY: $(System.DefaultWorkingDirectory)/artifacts/build_data/infra_logs
   DD_LOGGER_TF_BUILD: True
   DD_LOGGER_BUILD_BUILDID: $(Build.BuildId)
   DD_LOGGER_BUILD_DEFINITIONNAME: $(Build.DefinitionName)
