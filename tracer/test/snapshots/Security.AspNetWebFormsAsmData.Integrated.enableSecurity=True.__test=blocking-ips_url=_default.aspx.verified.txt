@@ -19,7 +19,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.event_rules.version: 1.13.3,
-      _dd.appsec.waf.version: 1.26.0,
+      _dd.appsec.waf.version: 1.27.0,
       _dd.runtime_family: dotnet
     },
     Metrics: {

@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 // from dotnet coreclr includes
+
 #include "cor.h"
 #include "corprof.h"
 // end
@@ -59,6 +60,8 @@
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
 #include "LibrariesInfoCache.h"
+#include "RingBuffer.h"
+#include "CpuSampleProvider.h"
 #endif
 
 #include "shared/src/native-src/environment_variables.h"
@@ -66,6 +69,8 @@
 #include "shared/src/native-src/string.h"
 
 #include "dd_profiler_version.h"
+
+#include <cmath>
 
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
@@ -196,17 +201,35 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        shared::pmr::memory_resource* memoryResource = MemoryResourceManager::GetDefault();
-
 #ifdef LINUX
-        if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
+        if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime)
         {
-            auto const useMmap = true;
-            memoryResource = _memoryResourceManager.GetSynchronizedPool(100, 4096, useMmap);
+            _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
+                valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
         }
-#endif
+        else
+        {
+            unsigned long long nbTicks = SamplesCollector::CollectingPeriod / _pConfiguration->GetCpuProfilingInterval();
+            auto nbSamplesCollectorTick = std::max(nbTicks, 1ull);
+            double cpuAllocated = 0;
+            if (!CGroup::GetCpuLimit(&cpuAllocated))
+            {
+                cpuAllocated = OsSpecificApi::GetProcessorCount();
+            }
+
+            // It's safe to cast double to std::size_t. The value will always fit into a std::size_t
+            // Reason:
+            // We know that profiling interval is at most every 1 ms.
+            // So, cpuAllocated will have to be over 37 trillion to have a value that cannot be represented by a std::size_t
+            std::size_t rbSize = std::ceil(nbSamplesCollectorTick * cpuAllocated * RawSampleCollectorBase<RawCpuSample>::SampleSize);
+            Log::Info("RingBuffer size estimate (bytes): ", rbSize);
+            auto ringBuffer = std::make_unique<RingBuffer>(rbSize, CpuSampleProvider::SampleSize);
+            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer), _metricsRegistry);
+        }
+#else // WINDOWS
         _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
-            valueTypeProvider, _rawSampleTransformer.get(), memoryResource);
+            valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
+#endif
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -497,13 +520,11 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
-        auto const useMmap = true;
         _pCpuProfiler = RegisterService<TimerCreateCpuProfiler>(
             _pConfiguration.get(),
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
-            _pCpuTimeProvider,
-            CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize, useMmap)),
+            _pCpuSampleProvider,
             _metricsRegistry);
     }
 #endif
@@ -525,7 +546,7 @@ void CorProfilerCallback::InitializeServices()
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
-        _pCpuTimeProvider != nullptr &&
+        _pConfiguration->IsCpuProfilingEnabled() && // CPU profiling must be enabled
         _pRuntimeInfo->GetMajorVersion() >= 5)
     {
         _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(valueTypeProvider, _rawSampleTransformer.get(), _metricsRegistry);
@@ -560,7 +581,18 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
+#ifdef LINUX
+        if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime)
+        {
+            _pSamplesCollector->Register(_pCpuTimeProvider);
+        }
+        else
+        {
+            _pSamplesCollector->Register(_pCpuSampleProvider);
+        }
+#else // WINDOWS
         _pSamplesCollector->Register(_pCpuTimeProvider);
+#endif
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -1598,6 +1630,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     {
         _pCpuTimeProvider->Stop();
     }
+#ifdef LINUX
+    if (_pCpuSampleProvider != nullptr)
+    {
+        _pCpuSampleProvider->Stop();
+    }
+#endif
     if (_pExceptionsProvider != nullptr)
     {
         _pExceptionsProvider->Stop();

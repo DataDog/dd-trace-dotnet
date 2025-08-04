@@ -8,10 +8,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Amazon.EventBridge.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -39,7 +41,7 @@ public class ContextPropagationTests
     }
 
     [Fact]
-    public void InjectTracingContext_EmptyDetail_AddsTraceContext()
+    public async Task InjectTracingContext_EmptyDetail_AddsTraceContext()
     {
         var request = GeneratePutEventsRequest([
             new PutEventsRequestEntry { Detail = "{}", EventBusName = EventBusName }
@@ -47,7 +49,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -72,7 +75,7 @@ public class ContextPropagationTests
     }
 
     [Fact]
-    public void InjectTracingContext_ExistingDetail_AddsTraceContext()
+    public async Task InjectTracingContext_ExistingDetail_AddsTraceContext()
     {
         var request = GeneratePutEventsRequest([
             new PutEventsRequestEntry { Detail = "{\"foo\":\"bar\"}", EventBusName = EventBusName }
@@ -80,7 +83,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -106,7 +110,7 @@ public class ContextPropagationTests
     }
 
     [Fact]
-    public void InjectTracingContext_NullDetail_AddsTraceContext()
+    public async Task InjectTracingContext_NullDetail_AddsTraceContext()
     {
         var request = GeneratePutEventsRequest([
             new PutEventsRequestEntry { Detail = null, EventBusName = EventBusName }
@@ -114,7 +118,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -139,7 +144,7 @@ public class ContextPropagationTests
     }
 
     [Fact]
-    public void InjectTracingContext_InvalidDetail_DoesNotAddTraceContext()
+    public async Task InjectTracingContext_InvalidDetail_DoesNotAddTraceContext()
     {
         var request = GeneratePutEventsRequest([
             new PutEventsRequestEntry { Detail = "{invalid json", EventBusName = EventBusName }
@@ -147,7 +152,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -157,7 +163,7 @@ public class ContextPropagationTests
     }
 
     [Fact]
-    public void InjectTracingContext_MultipleEntries_AddsTraceContextToAll()
+    public async Task InjectTracingContext_MultipleEntries_AddsTraceContextToAll()
     {
         var request = GeneratePutEventsRequest([
             new PutEventsRequestEntry { Detail = "{}", EventBusName = EventBusName },
@@ -166,7 +172,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(2);
@@ -194,7 +201,7 @@ public class ContextPropagationTests
     }
 
     [Fact]
-    public void InjectTracingContext_NullEventBusName_OmitsResourceName()
+    public async Task InjectTracingContext_NullEventBusName_OmitsResourceName()
     {
         var request = GeneratePutEventsRequest([
             new PutEventsRequestEntry { Detail = "{}", EventBusName = null }
@@ -202,7 +209,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -227,7 +235,7 @@ public class ContextPropagationTests
     }
 
     [Fact]
-    public void InjectTracingContext_PayloadTooLarge_DoesNotAddTraceContext()
+    public async Task InjectTracingContext_PayloadTooLarge_DoesNotAddTraceContext()
     {
         var largeDetail = new string('a', MaxSizeBytes);
         var request = GeneratePutEventsRequest([
@@ -236,7 +244,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -246,7 +255,7 @@ public class ContextPropagationTests
     }
 
     [Fact]
-    public void InjectTracingContext_PayloadJustUnderLimit_AddsTraceContext()
+    public async Task InjectTracingContext_PayloadJustUnderLimit_AddsTraceContext()
     {
         var detailSize = MaxSizeBytes - 1000; // Leave some room for the trace context
         var largeDetail = new string('a', detailSize);
@@ -256,7 +265,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
