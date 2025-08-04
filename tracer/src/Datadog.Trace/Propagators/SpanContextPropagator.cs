@@ -329,13 +329,13 @@ namespace Datadog.Trace.Propagators
             try
             {
                 var addAllItems = baggageTagKeys.Length == 1 && baggageTagKeys[0] == "*";
-                var keysToProcess = addAllItems ? baggage.Select(item => item.Key) : baggageTagKeys;
+                var allowedKeys = addAllItems ? null : new HashSet<string>(baggageTagKeys);
 
-                foreach (var key in keysToProcess)
+                foreach (var item in baggage)
                 {
-                    if (baggage.TryGetValue(key, out var value))
+                    if (addAllItems || allowedKeys!.Contains(item.Key))
                     {
-                        span.SetTag("baggage." + key, value);
+                        span.SetTag("baggage." + item.Key, item.Value);
                     }
                 }
             }
