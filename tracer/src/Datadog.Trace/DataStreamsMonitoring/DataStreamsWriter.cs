@@ -39,6 +39,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private int _flushRequested;
     private Task? _processTask;
     private Timer? _flushTimer;
+    private TaskCompletionSource<bool>? _currentFlushTcs;
 
     private int _isSupported = SupportState.Unknown;
     private bool _isInitialized;
@@ -81,51 +82,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
             new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter)),
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
             discoveryService);
-
-    public async Task FlushAsync()
-    {
-        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            var actualTimeout = TimeSpan.FromSeconds(5);
-
-            if (_processExit.Task.IsCompleted)
-            {
-                return;
-            }
-
-            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            EventHandler<EventArgs>? handler = null;
-            handler = (_, _) =>
-            {
-                tcs.TrySetResult(true);
-            };
-
-            try
-            {
-                FlushComplete += handler;
-
-                RequestFlush();
-
-                var completedTask = await Task.WhenAny(
-                    tcs.Task,
-                    Task.Delay(actualTimeout)).ConfigureAwait(false);
-
-                return;
-            }
-            finally
-            {
-                if (handler != null)
-                {
-                    FlushComplete -= handler;
-                }
-            }
-        }
-        finally
-        {
-            _flushSemaphore.Release();
-        }
-    }
 
     private void Initialize()
     {
@@ -229,6 +185,44 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
+    public async Task FlushAsync()
+    {
+        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var timeout = TimeSpan.FromSeconds(5);
+
+            if (_processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
+            if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+            {
+                return;
+            }
+
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _currentFlushTcs = tcs;
+
+            RequestFlush();
+
+            var completedTask = await Task.WhenAny(
+                tcs.Task,
+                Task.Delay(timeout)).ConfigureAwait(false);
+
+            if (completedTask != tcs.Task)
+            {
+                Log.Error("Data streams flush timeout after {Timeout}ms", timeout.TotalMilliseconds);
+            }
+        }
+        finally
+        {
+            _currentFlushTcs = null;
+            _flushSemaphore.Release();
+        }
+    }
+
     private void RequestFlush()
     {
         Interlocked.Exchange(ref _flushRequested, 1);
@@ -293,6 +287,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 if (flushRequested == 1)
                 {
                     await WriteToApiAsync().ConfigureAwait(false);
+                    _currentFlushTcs?.TrySetResult(true);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
             }
