@@ -66,6 +66,7 @@ internal readonly struct ConfigurationBuilder
         bool recordValue,
         Func<DefaultResult<T>>? getDefaultValue,
         [NotNullIfNotNull(nameof(getDefaultValue))] out T? value)
+        where T : notnull
     {
         if (result is { Result: { } ddResult, IsValid: true })
         {
@@ -85,11 +86,7 @@ internal readonly struct ConfigurationBuilder
         var defaultValue = getDefaultValue();
         RecordTelemetry(telemetry, key, recordValue, defaultValue);
 
-        // The compiler complains about this, because technically you _could_ call it as `TryHandleResult<int?>` (for example)
-        // in which case Func<DefaultResult<T>> _could_ return a `null` value, so the `[NotNullIfNotNull]` annotation
-        // would be wrong. In practice, we control the calls to this method, and we know that T is always non-null
-        // so it's safe to use the dammit here.
-        value = defaultValue.Result!;
+        value = defaultValue.Result;
         return true;
     }
 
@@ -186,6 +183,7 @@ internal readonly struct ConfigurationBuilder
         // We have to use different methods for class/struct when we _don't_ have a null value, because NRTs don't work properly otherwise
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         public T GetAs<T>(Func<DefaultResult<T>> getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+            where T : notnull
         {
             var result = GetAs(validator, converter);
             return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value)
