@@ -82,7 +82,7 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore -f net8.0");
+            var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
 
             logDir = await RunDotnet("restore");
@@ -110,11 +110,14 @@ namespace Foo
             var workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
             Directory.CreateDirectory(workingDir);
 
+            // Hack to ensure that the .NET 8.0 SDK is used instead of .NET 10 as it complains about not finding the runtime
+            EnsureNet8Sdk(workingDir);
+
             Output.WriteLine("Using workingDirectory: " + workingDir);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore -f net8.0");
+            var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
 
             var programCs = GetProgramCSThatMakesSpans();
@@ -148,11 +151,14 @@ namespace Foo
             var workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
             Directory.CreateDirectory(workingDir);
 
+            // Hack to ensure that the .NET 8.0 SDK is used instead of .NET 10 as it complains about not finding the runtime
+            EnsureNet8Sdk(workingDir);
+
             Output.WriteLine("Using workingDirectory: " + workingDir);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore -f net8.0");
+            var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
             var programCs = GetProgramCSThatMakesSpans();
 
@@ -182,11 +188,14 @@ namespace Foo
             var workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
             Directory.CreateDirectory(workingDir);
 
+            // Hack to ensure that the .NET 8.0 SDK is used instead of .NET 10 as it complains about not finding the runtime
+            EnsureNet8Sdk(workingDir);
+
             Output.WriteLine("Using workingDirectory: " + workingDir);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet("new xunit -n instrumentation_test -o . --no-restore -f net8.0");
+            var logDir = await RunDotnet("new xunit -n instrumentation_test -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
 
             // this _should_ be instrumented so we expect managed data.
@@ -838,6 +847,17 @@ namespace Foo
 
                     return sb.ToString();
                 });
+        }
+
+        private void EnsureNet8Sdk(string workingDirectory)
+        {
+            var globalJson = @"{
+  ""sdk"": {
+    ""version"": ""8.0.0"",
+    ""rollForward"": ""latestMinor""
+  }
+}";
+            File.WriteAllText(Path.Combine(workingDirectory, "global.json"), globalJson);
         }
 
         private bool IsAllLoggingDisabledForBailout()
