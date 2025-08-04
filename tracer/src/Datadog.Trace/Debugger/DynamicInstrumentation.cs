@@ -184,7 +184,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                Log.Information<int>("Dynamic Instrumentation.InstrumentProbes: Request to instrument {Count} probes definitions", addedProbes.Count);
+                Log.Information<int>("DynamicInstrumentation.InstrumentProbes: Request to instrument {Count} probes definitions", addedProbes.Count);
 
                 var methodProbes = new List<NativeMethodProbeDefinition>();
                 var lineProbes = new List<NativeLineProbeDefinition>();
@@ -260,7 +260,7 @@ namespace Datadog.Trace.Debugger
                 _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
 
                 // This log entry is being checked in integration test
-                Log.Information("Dynamic Instrumentation.InstrumentProbes: Request to instrument added probes definitions completed.");
+                Log.Information("DynamicInstrumentation.InstrumentProbes: Request to instrument added probes definitions completed.");
             }
         }
 
@@ -294,7 +294,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                Log.Information<int>("Dynamic Instrumentation.InstrumentProbes: Request to remove {Length} probes.", removedProbesIds.Length);
+                Log.Information<int>("DynamicInstrumentation.InstrumentProbes: Request to remove {Length} probes.", removedProbesIds.Length);
 
                 RemoveUnboundProbes(removedProbesIds);
 
@@ -316,7 +316,7 @@ namespace Datadog.Trace.Debugger
                 }
 
                 // This log entry is being checked in integration test
-                Log.Information("Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.");
+                Log.Information("DynamicInstrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.");
             }
         }
 

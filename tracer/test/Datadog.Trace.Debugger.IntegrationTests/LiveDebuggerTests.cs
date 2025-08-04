@@ -7,11 +7,9 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.IntegrationTests.Assertions;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
 using Samples.Probes.TestRuns.SmokeTests;
 using VerifyXunit;
@@ -27,7 +25,7 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 public class LiveDebuggerTests : TestHelper
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
-    private const string LiveDebuggerDisabledLogEntry = "Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.";
+    private const string LiveDebuggerDisabledLogEntry = "Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.";
 
     public LiveDebuggerTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -40,7 +38,7 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    public async Task LiveDebuggerDisabled_DebuggerDisabledByDefault_NoDebuggerTypesCreated()
+    public async Task DynamicInstrumentationDisabledByDefault_NoDebuggerTypesCreated()
     {
 #if NET8_0_OR_GREATER
         // These tests often hang on x86 on .NET 8+. Needs investigation
@@ -54,7 +52,7 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    public async Task LiveDebuggerDisabled_DebuggerExplicitlyDisabled_NoDebuggerTypesCreated()
+    public async Task DynamicInstrumentationExplicitlyDisabled_NoDebuggerTypesCreated()
     {
 #if NET8_0_OR_GREATER
         // These tests often hang on x86 on .NET 8+. Needs investigation

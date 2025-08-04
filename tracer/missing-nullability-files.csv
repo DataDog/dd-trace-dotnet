@@ -104,7 +104,6 @@ src/Datadog.Trace/DatabaseMonitoring/MultiPartIdentifier.cs
 src/Datadog.Trace/DatabaseMonitoring/VendoredSqlHelpers.cs
 src/Datadog.Trace/DataStreamsMonitoring/CheckpointKind.cs
 src/Datadog.Trace/Debugger/ILineProbeResolver.cs
-src/Datadog.Trace/Debugger/LiveDebugger.cs
 src/Datadog.Trace/Debugger/ProbeLocationType.cs
 src/Datadog.Trace/DiagnosticListeners/AspNetCoreDiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/DiagnosticManager.cs
