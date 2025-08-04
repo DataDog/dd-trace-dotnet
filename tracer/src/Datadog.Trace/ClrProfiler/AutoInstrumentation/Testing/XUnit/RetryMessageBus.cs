@@ -128,7 +128,8 @@ internal class RetryMessageBus : IMessageBus
             var messageTypeName = message.GetType().Name;
             if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
             {
-                if (!metadata.Skipped && metadata.BypassedMessageTypes.Add(messageTypeName))
+                if ((!metadata.Skipped && metadata.BypassedMessageTypes.Add(messageTypeName)) ||
+                    metadata.EarlyFlakeDetectionEnabled)
                 {
                     Common.Log.Debug("RetryMessageBus.QueueMessage: Message bypass, flushing directly for: {UniqueID} | {MessageType}", uniqueID, messageTypeName);
                     return InternalQueueMessage(message);
