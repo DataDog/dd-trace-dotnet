@@ -20,8 +20,6 @@ public class Program
         ITrigger helloTrigger = TriggerBuilder.Create()
                                               .WithIdentity("helloTrigger", "group1")
                                               .StartNow()
-                                              .WithSimpleSchedule(x => x
-                                                                     .WithIntervalInSeconds(60))
                                               .Build();
 
         await scheduler.ScheduleJob(helloJob, helloTrigger);
@@ -34,19 +32,13 @@ public class Program
         ITrigger exceptionTrigger = TriggerBuilder.Create()
                                                   .WithIdentity("exceptionTrigger", "group2")
                                                   .StartNow()
-                                                  .WithSimpleSchedule(x => x
-                                                                          .WithIntervalInSeconds(15)
-                                                                          .RepeatForever())
                                                   .Build();
 
         await scheduler.ScheduleJob(exceptionJob, exceptionTrigger);
 
-        await Task.Delay(TimeSpan.FromSeconds(60));
+        await Task.Delay(TimeSpan.FromSeconds(10));
 
         await scheduler.Shutdown();
-
-        Console.WriteLine("Press any key to close the application");
-        Console.ReadKey();
     }
 }
 

@@ -418,5 +418,12 @@ namespace Datadog.Trace.TestHelpers
                 "v1" => span.IsWebRequestV1(),
                 _ => span.IsWebRequestV0(),
             };
+
+        public static Result IsQuartz(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsQuartzV1(),
+                _ => span.IsQuartzV0(),
+            };
     }
 }
