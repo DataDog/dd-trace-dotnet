@@ -49,6 +49,8 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
     {
+        Log.Information("ReceiveMessagesAsync ending");
+
         Scope? scope = state.Scope;
 
         if (scope is null)

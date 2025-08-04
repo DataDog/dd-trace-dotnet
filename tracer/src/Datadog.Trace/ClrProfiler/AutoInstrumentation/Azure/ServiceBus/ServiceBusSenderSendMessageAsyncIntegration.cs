@@ -50,6 +50,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
+            Log.Information("SendMessageAsync ending");
+
             Scope scope = state.Scope;
 
             if (scope is null)
