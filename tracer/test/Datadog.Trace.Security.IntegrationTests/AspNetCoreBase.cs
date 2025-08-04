@@ -69,6 +69,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                              });
             var spans = await WaitForSpansAsync(agent, 1, string.Empty, now, url);
             var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.ScrubSessionFingerprint();
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName($"{GetTestName()}.test-external-waf-headers");
         }
