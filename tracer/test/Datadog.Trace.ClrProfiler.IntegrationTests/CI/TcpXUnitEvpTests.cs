@@ -13,7 +13,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Collection(nameof(TransportTestsCollection))]
 public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
 {
-/*
     [SkippableTheory]
     [MemberData(nameof(GetData))]
     [Trait("Category", "EndToEnd")]
@@ -45,7 +44,7 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
         EnvironmentHelper.EnableDefaultTransport();
         return base.QuarantinedTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
     }
-*/
+
     [SkippableTheory]
     [MemberData(nameof(GetDataForDisabledTests))]
     [Trait("Category", "EndToEnd")]
@@ -58,7 +57,6 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
         return base.DisabledTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
     }
 
-/*
     [SkippableTheory]
     [MemberData(nameof(GetDataForAttemptToFixTests))]
     [Trait("Category", "EndToEnd")]
@@ -69,6 +67,5 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
         EnvironmentHelper.EnableDefaultTransport();
         return base.AttemptToFixTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
     }
-*/
 }
 #endif
