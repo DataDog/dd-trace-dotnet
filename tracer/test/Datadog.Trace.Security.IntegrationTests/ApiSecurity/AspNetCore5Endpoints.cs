@@ -23,6 +23,7 @@ namespace Datadog.Trace.Security.IntegrationTests.ApiSecurity
 
             // Tests for specific endpoints that should be collected
             Endpoints.Should().Contain(e => e.Path == "/iast/executecommand" && e.Method == "GET" && e.ResourceName == "GET /iast/executecommand");
+            Endpoints.Should().Contain(e => e.Path == "/health/params/{id}" && e.Method == "GET" && e.ResourceName == "GET /health/params/{id}");
             Endpoints.Should().Contain(e => e.Path == "/map_endpoint/sub_level" && e.Method == "*" && e.ResourceName == "/map_endpoint/sub_level");
         }
     }
