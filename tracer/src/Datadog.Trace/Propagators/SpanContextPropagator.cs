@@ -313,14 +313,14 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal void AddBaggageToSpanAsTags(ISpan span, Baggage? baggage, string[] baggageTagKeys)
+        internal void AddBaggageToSpanAsTags(ISpan span, Baggage? baggage, HashSet<string> baggageTagKeys)
         {
             if (baggage is null or { Count: 0 })
             {
                 return;
             }
 
-            if (baggageTagKeys.Length == 0)
+            if (baggageTagKeys.Count == 0)
             {
                 // feature disabled
                 return;
@@ -328,12 +328,11 @@ namespace Datadog.Trace.Propagators
 
             try
             {
-                var addAllItems = baggageTagKeys.Length == 1 && baggageTagKeys[0] == "*";
-                var allowedKeys = addAllItems ? null : new HashSet<string>(baggageTagKeys);
+                var addAllItems = baggageTagKeys.Count == 1 && baggageTagKeys.Contains("*");
 
                 foreach (var item in baggage)
                 {
-                    if (addAllItems || allowedKeys!.Contains(item.Key))
+                    if (addAllItems || baggageTagKeys.Contains(item.Key))
                     {
                         span.SetTag("baggage." + item.Key, item.Value);
                     }
