@@ -4189,7 +4189,7 @@ stages:
 
 # New stage for PR Docker builds when label is present
 - stage: upload_container_images_pr
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+  condition: and(in(dependencies.upload_to_azure.result, 'Succeeded'), eq(variables['Build.Reason'], 'PullRequest'))
   dependsOn: [upload_to_azure]
   jobs:
     - job: upload
