@@ -223,6 +223,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub", // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
                         _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos", // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid", // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
+
+                        // TODO: should we use the value of `type`?
                         _ => "Automatic", // Automatic is the catch-all for any triggers we don't explicitly handle
                     };
 
