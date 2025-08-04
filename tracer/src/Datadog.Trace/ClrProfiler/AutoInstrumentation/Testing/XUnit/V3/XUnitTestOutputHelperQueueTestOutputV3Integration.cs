@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = [ClrNames.String],
     MinimumVersion = "1.0.0",
-    MaximumVersion = "2.*.*",
+    MaximumVersion = "3.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

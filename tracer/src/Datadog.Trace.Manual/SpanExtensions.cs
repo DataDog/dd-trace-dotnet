@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
@@ -23,6 +24,7 @@ public static class SpanExtensions
     /// <param name="value">The tag's value.</param>
     /// <returns>This span to allow method chaining.</returns>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static ISpan SetTag(this ISpan span, string key, double? value) => span;
 
     /// <summary>
@@ -36,6 +38,7 @@ public static class SpanExtensions
     }
 
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void SetUser(
         ISpan span,
         string? email,

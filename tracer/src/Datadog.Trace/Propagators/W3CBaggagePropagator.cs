@@ -273,6 +273,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 // separatorPosition == -1: no '=' character found, e.g. "foo"
                 // separatorPosition == 0: key is empty, e.g. "=value" or "="
                 // separatorPosition == span.Length - 1: value is empty, e.g. "key=" or "="
+                TelemetryFactory.Metrics.RecordCountContextHeaderMalformed(MetricTags.ContextHeaderMalformed.Baggage);
                 return null;
             }
 
@@ -281,6 +282,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             if (key.Length == 0)
             {
                 // key was whitespace only. invalid format, ignore entire header.
+                TelemetryFactory.Metrics.RecordCountContextHeaderMalformed(MetricTags.ContextHeaderMalformed.Baggage);
                 return null;
             }
 
@@ -293,6 +295,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             {
                 // invalid, ';' character was found before the value token, e.g. "key;=value" or ";="
                 // invalid format, ignore entire header.
+                TelemetryFactory.Metrics.RecordCountContextHeaderMalformed(MetricTags.ContextHeaderMalformed.Baggage);
                 return null;
             }
 
@@ -305,6 +308,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             if (value.Length == 0)
             {
                 // value was whitespace only. invalid format, ignore entire header.
+                TelemetryFactory.Metrics.RecordCountContextHeaderMalformed(MetricTags.ContextHeaderMalformed.Baggage);
                 return null;
             }
 

@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
@@ -112,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Name switch
             {
-                "aspnet-webapi.request" => span.IsAspNetWebApi2(metadataSchemaVersion),
+                "aspnet-webapi.request" => span.IsAspNetWebApi2(metadataSchemaVersion, excludeTags: new HashSet<string> { "baggage.user.id" }),
                 _ => Result.DefaultSuccess,
             };
 
@@ -147,6 +148,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _httpClient = new HttpClient();
                 _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
                 _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36");
+                _httpClient.DefaultRequestHeaders.Add("baggage", "user.id=doggo");
             }
 
             public MockTracerAgent.TcpUdpAgent Agent { get; private set; }

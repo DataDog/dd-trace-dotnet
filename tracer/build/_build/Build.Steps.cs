@@ -65,7 +65,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.26.0";
+    const string LibDdwafVersion = "1.27.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0", "1.23.0" };
 
@@ -2497,7 +2497,6 @@ partial class Build
 
            // glibc TLS-reuse bug warnings
            knownPatterns.Add(new(@".*GLIBC version 2.34-2.36 has a TLS-reuse bug.*", RegexOptions.Compiled));
-
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
 

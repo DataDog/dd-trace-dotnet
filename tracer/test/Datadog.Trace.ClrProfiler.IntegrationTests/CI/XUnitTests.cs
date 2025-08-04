@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
 
-            using var agent = EnvironmentHelper.GetMockAgent();
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
 
             // We remove the evp_proxy endpoint to force the APM protocol compatibility
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();

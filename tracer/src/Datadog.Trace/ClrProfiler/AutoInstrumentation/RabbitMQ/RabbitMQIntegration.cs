@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     internal static class RabbitMQIntegration
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.RabbitMQ);
+        internal const int DefaultMaxMessageSize = 128 * 1024;
 
         private const string MessagingType = "rabbitmq";
         private const string MessagingSystem = "amqp";
@@ -138,11 +139,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             try
             {
                 var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
-                var edgeTags = string.IsNullOrEmpty(tags.Exchange) ?
+                var edgeTags = string.IsNullOrEmpty(tags.Exchange)
+                                   ?
                                    // exchange can be empty for "direct"
-                                   new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" } :
-                                   new[] { "direction:out", $"exchange:{tags.Exchange}", string.IsNullOrEmpty(tags.RoutingKey) ? "has_routing_key:false" : "has_routing_key:true", "type:rabbitmq" };
-                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetHeadersSize(headers) + messageSize, 0);
+                                   new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" }
+                                   : new[] { "direction:out", $"exchange:{tags.Exchange}", string.IsNullOrEmpty(tags.RoutingKey) ? "has_routing_key:false" : "has_routing_key:true", "type:rabbitmq" };
+                var size = dataStreamsManager.IsInDefaultState ? messageSize : GetHeadersSize(headers) + messageSize;
+                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, size, 0);
+                // DSM context will not be injected in default state if its size exceeds 128kb
+                if (dataStreamsManager.IsInDefaultState && size > DefaultMaxMessageSize)
+                {
+                    return;
+                }
+
                 dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headersAdapter);
             }
             catch (Exception ex)
@@ -208,8 +217,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 try
                 {
                     extractedContext = tracer.TracerManager.SpanContextPropagator
-                                                            .Extract(basicProperties.Headers, default(ContextPropagation))
-                                                            .MergeBaggageInto(Baggage.Current);
+                                             .Extract(basicProperties.Headers, default(ContextPropagation))
+                                             .MergeBaggageInto(Baggage.Current);
                 }
                 catch (Exception ex)
                 {

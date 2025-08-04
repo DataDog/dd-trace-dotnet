@@ -39,7 +39,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly List<Action<AgentConfiguration>> _agentChangeCallbacks = new();
         private readonly object _lock = new();
         private readonly Task _discoveryTask;
-        private int _disposed = 0;
         private AgentConfiguration? _configuration;
 
         /// <summary>
@@ -313,12 +312,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public Task DisposeAsync()
         {
-            if (Interlocked.Exchange(ref _disposed, 1) == 0)
-            {
-                // First dispose, so mark the process exit as completed
-                _processExit.SetResult(true);
-            }
-            else
+            if (!_processExit.TrySetResult(true))
             {
                 // Double dispose in prod shouldn't happen, and should be avoided, so logging for follow-up
                 Log.Debug($"{nameof(DiscoveryService)} is already disposed, skipping further disposal.");

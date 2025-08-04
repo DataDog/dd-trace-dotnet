@@ -11,10 +11,16 @@ namespace Datadog.Trace.Sampling
 {
     internal interface ITraceSampler
     {
+        /// <summary>
+        /// Gets a value indicating whether the sampler contains a sampling rule that depends on span resource names.
+        /// </summary>
+        /// <remarks>Can be used to perform optimizations, such as delaying the creation of a resource name for spans
+        /// which are subsequently going to be sampled, or for which a resource name can't be accurately calculated</remarks>
+        /// <returns><c>true</c> if one of the registered rules depends on span resource names, <c>false</c> otherwise</returns>
+        bool HasResourceBasedSamplingRule { get; }
+
         void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates);
 
         SamplingDecision MakeSamplingDecision(Span span);
-
-        void RegisterRule(ISamplingRule rule);
     }
 }
