@@ -16,6 +16,10 @@ on:
         required: true
         default: 'False'
 
+      branch_name:
+        description: 'Branch name for tagging (optional). If provided, tags as branch name instead of latest_snapshot'
+        required: false
+
 jobs:
   build-and-publish-base-image:
     runs-on: ubuntu-latest
@@ -53,3 +57,4 @@ jobs:
         lib_waf_version: "${{steps.versions.outputs.lib_waf_version}}"
         waf_rules_version: "${{steps.versions.outputs.waf_rules_version}}"
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        image_tag: ${{ github.event.inputs.branch_name && format('{0}', github.event.inputs.branch_name | replace('/', '_')) || 'latest_snapshot' }}
