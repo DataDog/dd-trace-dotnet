@@ -170,7 +170,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             ValidationErrors = validationErrors;
             IsEnabled = isEnabled;
 
-            // Logs injection is enabled by default
+            // Logs injection is enabled by default when not explicitly configured
             LogsInjectionEnabled = config.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(defaultValue: true);
         }
 

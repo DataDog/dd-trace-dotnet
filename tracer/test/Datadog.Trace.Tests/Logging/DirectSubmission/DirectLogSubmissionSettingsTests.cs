@@ -210,7 +210,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
+        [MemberData(nameof(BooleanTestCases), true)]
         public void LogsInjectionEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.LogsInjectionEnabled, value));
@@ -392,7 +392,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void WhenLogsInjectionIsNotSetThenValueIsSameAsLogSubmissionEnabled(bool directLogSubmissionEnabled)
+        public void WhenLogsInjectionIsNotSetThenValueDefaultsToTrue(bool directLogSubmissionEnabled)
         {
             var config = new NameValueCollection(Defaults);
             config.Remove(ConfigurationKeys.LogsInjectionEnabled);
@@ -405,7 +405,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
 
             tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
-            tracerSettings.LogsInjectionEnabled.Should().Be(directLogSubmissionEnabled);
+            tracerSettings.LogsInjectionEnabled.Should().BeTrue(); // Now always defaults to true
         }
     }
 }
