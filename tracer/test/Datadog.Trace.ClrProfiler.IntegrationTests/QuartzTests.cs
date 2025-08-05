@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Serilog;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -34,9 +35,9 @@ public class QuartzTests : TracingIntegrationTest
 
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsQuartz(metadataSchemaVersion, ExcludeTags);
 
-    [SkippableFact]
+    [SkippableTheory]
     [Trait("Category", "EndToEnd")]
-    [MemberData(nameof(PackageVersions.Quartz), MemberType = typeof(PackageVersions))]
+    [MemberData(nameof(GetData))]
     public async Task SubmitsTraces(string packageVersion)
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
@@ -45,7 +46,10 @@ public class QuartzTests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
+            Log.Information("packageversion: " + packageVersion);
+            Log.Information("version from get suffix: " + GetSuffix(packageVersion));
             var filename = nameof(QuartzTests) + GetSuffix(packageVersion);
+            Log.Information(filename);
             const int expectedSpanCount = 2;
             var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
@@ -73,24 +77,22 @@ public class QuartzTests : TracingIntegrationTest
             // this isn't real
             // await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Quartz);
         }
+    }
 
-        string GetSuffix(string packageVersion)
+    private static string GetSuffix(string packageVersion)
+    {
+        if (!string.IsNullOrEmpty(packageVersion)
+         && new Version(packageVersion) >= new Version("3.1.0"))
         {
-            // New tags added in v1.5.1
-            if (!string.IsNullOrEmpty(packageVersion)
-             && new Version(packageVersion) >= new Version("3.1.0"))
-            {
-                return "V3";
-            }
-
-            // v1.7.0 fixed StartRootSpan to not be a child of the active span
-            if (!string.IsNullOrEmpty(packageVersion)
-             && new Version(packageVersion) >= new Version("4.0.0"))
-            {
-                return "V4";
-            }
-
-            return string.Empty;
+            return "V3";
         }
+
+        if (!string.IsNullOrEmpty(packageVersion)
+         && new Version(packageVersion) >= new Version("4.0.0"))
+        {
+            return "V4";
+        }
+
+        return "no-package-version";
     }
 }
