@@ -920,8 +920,25 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.9.3",
-        "maxVersionAvailableInclusive": "3.9.3",
+        "maxVersionSupportedInclusive": "3.10.0",
+        "maxVersionAvailableInclusive": "3.10.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "MsTestV2",
+    "assemblyName": "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices",
+    "minAssemblyVersionInclusive": "14.0.0",
+    "maxAssemblyVersionInclusive": "14.65535.65535",
+    "packages": [
+      {
+        "name": "MSTest.TestAdapter",
+        "minVersionAvailableInclusive": "1.1.11",
+        "minVersionSupportedInclusive": "1.1.11",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "3.10.0",
+        "maxVersionAvailableInclusive": "3.10.0",
         "maxVersionTestedInclusive": null
       }
     ]
