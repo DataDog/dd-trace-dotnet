@@ -117,6 +117,16 @@ namespace Foo
             var logDir = await RunDotnet($"new console -n {excludedProcess} -f {EnvironmentHelper.GetTargetFramework()} -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
 
+            // Force the project to target .NET 8 instead of whatever the SDK defaults to
+            var projectFile = Path.Combine(workingDir, $"{excludedProcess}.csproj");
+            var projectContent = File.ReadAllText(projectFile);
+
+            // Replace any target framework with net8.0
+            var updatedContent = System.Text.RegularExpressions.Regex.Replace(
+                projectContent,
+                @"<TargetFramework>net\d+\.\d+</TargetFramework>",
+                "<TargetFramework>net8.0</TargetFramework>");
+
             var programCs = GetProgramCSThatMakesSpans();
 
             File.WriteAllText(Path.Combine(workingDir, "Program.cs"), programCs);
@@ -154,6 +164,17 @@ namespace Foo
 
             var logDir = await RunDotnet($"new console -n {allowedProcess} -f {EnvironmentHelper.GetTargetFramework()} -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
+
+            // Force the project to target .NET 8 instead of whatever the SDK defaults to
+            var projectFile = Path.Combine(workingDir, $"{allowedProcess}.csproj");
+            var projectContent = File.ReadAllText(projectFile);
+
+            // Replace any target framework with net8.0
+            var updatedContent = System.Text.RegularExpressions.Regex.Replace(
+                projectContent,
+                @"<TargetFramework>net\d+\.\d+</TargetFramework>",
+                "<TargetFramework>net8.0</TargetFramework>");
+
             var programCs = GetProgramCSThatMakesSpans();
 
             File.WriteAllText(Path.Combine(workingDir, "Program.cs"), programCs);
