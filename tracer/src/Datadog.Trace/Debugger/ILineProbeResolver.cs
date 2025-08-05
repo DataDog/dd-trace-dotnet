@@ -6,6 +6,8 @@
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 
+#nullable enable
+
 namespace Datadog.Trace.Debugger
 {
     /// <summary>
@@ -14,6 +16,6 @@ namespace Datadog.Trace.Debugger
     /// </summary>
     internal interface ILineProbeResolver
     {
-        LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out LineProbeResolver.BoundLineProbeLocation location);
+        LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out LineProbeResolver.BoundLineProbeLocation? location);
     }
 }

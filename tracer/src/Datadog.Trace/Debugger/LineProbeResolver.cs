@@ -192,17 +192,17 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal record BoundLineProbeLocation(ProbeDefinition ProbeDefinition, Guid Mvid, int MethodToken, int BytecodeOffset, int LineNumber)
+        internal class BoundLineProbeLocation(ProbeDefinition probeDefinition, Guid mvid, int methodToken, int bytecodeOffset, int lineNumber)
         {
-            public ProbeDefinition ProbeDefinition { get; set; } = ProbeDefinition;
+            public ProbeDefinition ProbeDefinition { get; set; } = probeDefinition;
 
-            public Guid Mvid { get; set; } = Mvid;
+            public Guid Mvid { get; set; } = mvid;
 
-            public int MethodToken { get; set; } = MethodToken;
+            public int MethodToken { get; set; } = methodToken;
 
-            public int BytecodeOffset { get; set; } = BytecodeOffset;
+            public int BytecodeOffset { get; set; } = bytecodeOffset;
 
-            public int LineNumber { get; set; } = LineNumber;
+            public int LineNumber { get; set; } = lineNumber;
         }
     }
 }
