@@ -289,6 +289,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         private static PropagationContext ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
+            Log.Information("ExtractPropagatedContextFromHttp called with bindingName: {BindingName}", bindingName);
+            
             // Need to try and grab the headers from the context
             // Unfortunately, the parsed object isn't available yet, so we grab it
             // directly from the grpc call instead. This is... interesting. It
@@ -296,39 +298,65 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // the suggested approach in the docs.
             if (context.Features is null || string.IsNullOrEmpty(bindingName))
             {
+                Log.Information("Early return: context.Features is null: {FeaturesIsNull}, bindingName is null or empty: {BindingNameIsEmpty}", 
+                    context.Features is null, string.IsNullOrEmpty(bindingName));
                 return default;
             }
 
+            Log.Information("Context.Features count: {FeaturesCount}", context.Features.Count());
+            
             try
             {
                 object? feature = null;
+                Log.Information("Searching for IFunctionBindingsFeature in context features");
+                
                 foreach (var keyValuePair in context.Features)
                 {
+                    Log.Information("Checking feature key: {FeatureKey}", keyValuePair.Key.FullName);
+                    
                     if (keyValuePair.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
                     {
                         feature = keyValuePair.Value;
+                        Log.Information("Found IFunctionBindingsFeature, feature type: {FeatureType}", feature?.GetType().FullName);
                         break;
                     }
                 }
 
                 if (feature is null || !feature.TryDuckCast<FunctionBindingsFeatureStruct>(out var bindingFeature))
                 {
+                    Log.Information("Failed to get binding feature: feature is null: {FeatureIsNull}, duck cast successful: {DuckCastSuccess}", 
+                        feature is null, feature?.TryDuckCast<FunctionBindingsFeatureStruct>(out var _) == true);
                     return default;
                 }
 
+                Log.Information("Successfully obtained binding feature, InputData is null: {InputDataIsNull}", bindingFeature.InputData is null);
+                
                 if (bindingFeature.InputData is null
                  || !bindingFeature.InputData.TryGetValue(bindingName!, out var requestDataObject)
                  || requestDataObject is null)
                 {
+                    Log.Information("Failed to get request data: InputData is null: {InputDataIsNull}, contains binding: {ContainsBinding}, requestDataObject is null: {RequestDataObjectIsNull}",
+                        bindingFeature.InputData is null,
+                        bindingFeature.InputData?.ContainsKey(bindingName!) == true,
+                        requestDataObject is null);
                     return default;
                 }
-
+                
+                Log.Information("Got request data object, type: {RequestDataObjectType}", requestDataObject.GetType().FullName);
+                
                 if (!requestDataObject.TryDuckCast<HttpRequestDataStruct>(out var httpRequest))
                 {
+                    Log.Information("Failed to duck cast request data object to HttpRequestDataStruct");
                     return default;
                 }
-
-                return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(new HttpHeadersCollection(httpRequest.Headers));
+                
+                Log.Information("Successfully cast to HttpRequestDataStruct, headers count: {HeadersCount}", httpRequest.Headers?.Count());
+                
+                var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(new HttpHeadersCollection(httpRequest.Headers));
+                
+                Log.Information("Successfully extracted propagation context: {PropagationContextTraceId}", propagationContext.SpanContext.TraceId);
+                
+                return propagationContext;
             }
             catch (Exception ex)
             {
