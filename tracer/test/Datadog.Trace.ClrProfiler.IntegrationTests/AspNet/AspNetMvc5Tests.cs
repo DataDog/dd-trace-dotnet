@@ -224,13 +224,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(Data))]
-        public async Task BaggageInSpanTags(string path, HttpStatusCode statusCode)
+        public async Task BaggageInSpanTags(string path, int statusCode)
         {
             // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
             var toLowerPath = path.ToLower();
             if (_testName.Contains(".Classic") && toLowerPath.Contains("badrequest") && toLowerPath.Contains("transferrequest"))
             {
-                statusCode = (HttpStatusCode)500;
+                statusCode = 500;
             }
 
             var expectedSpanCount = _enableInferredProxySpans ? 3 : 2;
@@ -239,7 +239,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 path: _iisFixture.VirtualApplicationPath + path, // Append virtual directory to the actual request
                 agent: _iisFixture.Agent,
                 httpPort: _iisFixture.HttpPort,
-                expectedHttpStatusCode: statusCode,
+                expectedHttpStatusCode: (HttpStatusCode)statusCode,
                 expectedSpanCount: expectedSpanCount,
                 filterServerSpans: !_enableInferredProxySpans);
 
