@@ -35,8 +35,8 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 [UsesVerify]
 public class ProbesTests : TestHelper
 {
-    private const string AddedProbesInstrumentedLogEntry = "DynamicInstrumentation.InstrumentProbes: Request to instrument added probes definitions completed.";
-    private const string RemovedProbesInstrumentedLogEntry = "DynamicInstrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.";
+    private const string AddedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to instrument added probes definitions completed.";
+    private const string RemovedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.";
 
     private static readonly Type[] _unoptimizedNotSupportedTypes = new[]
     {
