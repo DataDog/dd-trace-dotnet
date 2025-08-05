@@ -34,12 +34,16 @@ internal class GlobalConfigurationSource
 
     /// <summary>
     /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
-    /// AppSettings where available, and a local datadog.json file, if present.
+    /// Precedence is as follows:
+    /// - fleet hands-off config, if enabled through DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED
+    /// - environment variables
+    /// - local hands-off config, if enabled through DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED
+    /// - AppSettings, app/web.config, if .NET Framework and if file exists
+    /// - local datadog.json file, if file exists
     /// </summary>
     /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
     internal static GlobalConfigurationSourceResult CreateDefaultConfigurationSource(string? handsOffLocalConfigPath = null, string? handsOffFleetConfigPath = null, bool? isLibdatadogAvailable = null)
     {
-        // env > AppSettings > datadog.json
         string? message = null;
         Exception? exception = null;
         var resultType = Result.Success;
@@ -47,15 +51,17 @@ internal class GlobalConfigurationSource
         var environmentSource = new EnvironmentConfigurationSource();
         var configBuilder = new ConfigurationBuilder(environmentSource, TelemetryFactory.Config);
         var applicationMonitoringConfigFileEnabled = configBuilder.WithKeys(ConfigurationKeys.ApplicationMonitoringConfigFileEnabled).AsBool(true);
-        var debugEnabled = configBuilder.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
         if (applicationMonitoringConfigFileEnabled)
         {
-            // stable configuration: fleet managed
+            var debugEnabled = configBuilder.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
             var configsResult = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(debugEnabled, handsOffLocalConfigPath, handsOffFleetConfigPath, isLibdatadogAvailable);
             if (configsResult is { ConfigurationSuccessResult: { } configsValue })
             {
+                // fleet managed hands-off config
                 configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesFleet, false));
+                // env vars
                 configurationSource.Add(environmentSource);
+                // local managed hands-off config
                 configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesLocal, true));
             }
             else
@@ -63,13 +69,15 @@ internal class GlobalConfigurationSource
                 message = configsResult.ErrorMessage;
                 exception = configsResult.Exception;
                 resultType = configsResult.Result;
+                // env vars only
                 configurationSource.Add(environmentSource);
             }
         }
         else
         {
-            resultType = Result.ApplicationMonitoringConfigFileEnabled;
-            message = $"As {nameof(ConfigurationKeys.ApplicationMonitoringConfigFileEnabled)}  is disabled, not using hands-off configuration";
+            resultType = Result.ApplicationMonitoringConfigFileDisabled;
+            message = $"{nameof(ConfigurationKeys.ApplicationMonitoringConfigFileEnabled)} is disabled, not using hands-off configuration";
+            // env vars only
             configurationSource.Add(environmentSource);
         }
 
@@ -78,6 +86,7 @@ internal class GlobalConfigurationSource
         configurationSource.Add(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings, ConfigurationOrigins.AppConfig));
 #endif
 
+        // datadog.json
         if (TryLoadJsonConfigurationFile(configurationSource, null, out var jsonConfigurationSource))
         {
             configurationSource.Add(jsonConfigurationSource);

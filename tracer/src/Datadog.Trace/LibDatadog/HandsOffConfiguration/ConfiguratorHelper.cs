@@ -15,7 +15,12 @@ internal struct ConfiguratorHelper
 {
     internal static ConfigurationResult GetConfiguration(bool debugEnabled, string? handsOffLocalConfigPath, string? handsOffFleetConfigPath, bool? isLibdatadogAvailable = null)
     {
-        if (isLibdatadogAvailable is false or null)
+        if (isLibdatadogAvailable is false)
+        {
+            return new ConfigurationResult(null, "Skipping hands-off configuration: as LibDatadog is not available", Result.LibDatadogUnavailable);
+        }
+
+        if (isLibdatadogAvailable is null)
         {
             var isLibdatadogAvailableEval = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
             if (!isLibdatadogAvailableEval.IsAvailable)
@@ -26,7 +31,8 @@ internal struct ConfiguratorHelper
 
         try
         {
-            var configHandle = NativeInterop.LibraryConfig.ConfiguratorNew(debugEnabled ? (byte)1 : (byte)0, new CharSlice(TracerConstants.Language));
+            var languageCs = new CharSlice(TracerConstants.Language);
+            var configHandle = NativeInterop.LibraryConfig.ConfiguratorNew(debugEnabled ? (byte)1 : (byte)0, languageCs);
             CString? localPath = null;
             CString? fleetPath = null;
             if (handsOffLocalConfigPath is not null)
@@ -87,6 +93,8 @@ internal struct ConfiguratorHelper
             {
                 NativeInterop.LibraryConfig.ConfiguratorDrop(configHandle);
             }
+
+            languageCs.Dispose();
 
             return configurationResultReturned;
         }
