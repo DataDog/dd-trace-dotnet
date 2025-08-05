@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -19,6 +20,8 @@ namespace Datadog.Trace.Propagators
     {
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
 
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly IContextInjector[] _injectors;
@@ -307,6 +310,37 @@ namespace Datadog.Trace.Propagators
                         processor.ProcessTag(tagNameResult, headerValue);
                     }
                 }
+            }
+        }
+
+        internal void AddBaggageToSpanAsTags(ISpan span, Baggage? baggage, HashSet<string> baggageTagKeys)
+        {
+            if (baggage is null or { Count: 0 })
+            {
+                return;
+            }
+
+            if (baggageTagKeys.Count == 0)
+            {
+                // feature disabled
+                return;
+            }
+
+            try
+            {
+                var addAllItems = baggageTagKeys.Count == 1 && baggageTagKeys.Contains("*");
+
+                foreach (var item in baggage)
+                {
+                    if (addAllItems || baggageTagKeys.Contains(item.Key))
+                    {
+                        span.SetTag("baggage." + item.Key, item.Value);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error adding baggage tags to span.");
             }
         }
 

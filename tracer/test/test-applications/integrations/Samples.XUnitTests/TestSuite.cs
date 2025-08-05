@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,6 +21,16 @@ namespace Samples.XUnitTests
         public void SimplePassTest()
         {
             _output.WriteLine("Test:SimplePassTest");
+            
+            // Let's call the Allure API to add tags if available
+            var allureApi = AppDomain.CurrentDomain.GetAssemblies()
+                                     .Select(asm => asm.GetType("Allure.Net.Commons.AllureApi", false))
+                                     .FirstOrDefault(type => type != null);
+            if (allureApi is not null)
+            {
+                _output.WriteLine("Allure API found, adding tags.");
+                allureApi.GetMethod("AddTags")?.Invoke(null, [new[] { "tag1", "tag2" }]);
+            }
         }
 
         [Fact(Skip = "Simple skip reason")]

@@ -468,6 +468,18 @@ namespace Datadog.Trace.Configuration
         public const string BaggageMaximumBytes = "DD_TRACE_BAGGAGE_MAX_BYTES";
 
         /// <summary>
+        /// Configuration key for controlling which baggage keys are converted into span tags.
+        /// Default value is "user.id,session.id,account.id".
+        ///
+        /// Behavior options:
+        /// - Empty string: No baggage keys are converted into span tags (feature disabled)
+        /// - Comma-separated list: Only baggage keys matching exact, case-sensitive names in the list are added as span tags
+        /// - Wildcard (*): All baggage keys are converted into span tags
+        /// </summary>
+        /// <seealso cref="TracerSettings.BaggageTagKeys"/>
+        public const string BaggageTagKeys = "DD_TRACE_BAGGAGE_TAG_KEYS";
+
+        /// <summary>
         /// Configuration key for enabling automatic instrumentation on specified methods.
         /// Default value is "" (disabled).
         /// </summary>

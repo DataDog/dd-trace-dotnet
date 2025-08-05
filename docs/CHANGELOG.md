@@ -25,6 +25,69 @@
 
 
 
+
+## [Release 3.23.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.23.0)
+
+## Summary
+
+- [Tracer] Baggage tags are automatically added as span tags
+- [Tracer] Fix resource-based sampling for ASP.NET Core
+- [Test Optimization] Various fixes for commit info and codeowners
+- [Test Optimization] Fix crash with Allure.Xunit
+- [IAST] Fix potential crash on `ReadOnlySpan<>` `string.Concat()` methods
+
+## Changes
+
+### Tracer
+* feat(baggage): adding baggage to span tags (#7020)
+* Swap disposal ordering of inferred span (#7293)
+* Add `[MethodImpl(MethodImplOptions.NoInlining]` to all our instrumented APIs in Datadog.Trace.Manual (#7302)
+* Refactor `TraceSampler` to separate building from evaluation (#7311)
+* Avoid generating resource name that will be thrown away if it's not required (#7312)
+* Fix resource-based sampling for ASP.NET Core (#7316)
+
+### CI Visibility
+* [Test Optimization] Retrieve head commit info (#7285)
+* [Test Optimization] Add codeowners and test source file tag at suite level (#7295)
+* [Test Optimization] Fix base branch SHA usage (#7300)
+* [Test Optimization] Avoid crashing on Allure.Xunit usage (#7305)
+
+### ASM
+* [AAP] Update WAF to v1.27.0 (#7330)
+
+### Continuous Profiler
+* [Profiler] Use ringbuffer with timer create (#7066)
+
+### Fixes
+* [IAST] Remove troublesome string.Concat overloads with ReadOnlySpan<char> (#7318)
+
+### Miscellaneous
+* Set default timeout for Trace Exporter to 15s. (#7252)
+* [OTEL] OTLP Metrics Exporter POC (#7138)
+* [Test Package Versions Bump] Updating package versions (#7279)
+* [Profiler] Add vcpkg setup for build (#7292)
+* Ensure file_opened_ is getting updated when rotating (#7296)
+* Bump rejit timeout to 200ms (#7301)
+
+### Build / Test
+* Filter connection header in flaky tests (#7290)
+* Remove global state to try to fix flake (#7291)
+* Improve repeatability & precision of throughput tests on Linux & ARM (#7268)
+* More fixes for do-not-merge (#7274)
+* Update the Windows test agent to latest (#7275)
+* Fix potential deadlocks in `IisFixture` process code (#7281)
+* [Profiler] Fix and bump timeitsharp (#7294)
+* Fix debug symbol upload in release (#7297)
+* Additional test that requires HTTP FP connection header scrubbing (#7306)
+* Bump timeitsharp to v0.4.5 (#7308)
+* Avoid using GITHUB_TOKEN for pr creation (#7310)
+* Fix octo sts trust policy subject (#7313)
+* Write `DD_LOGGER_` logs to a separate un-checked location (#7323)
+* Add note about MergeQueue (`/merge`) to PR template (#7329)
+
+
+[Changes since 3.22.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.22.0...v3.23.0)
+
 ## [Release 3.22.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.22.0)
 
 ## Summary

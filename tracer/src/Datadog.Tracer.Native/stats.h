@@ -49,6 +49,7 @@ private:
     std::atomic_ullong moduleUnloadStarted = {0};
     std::atomic_ullong moduleLoadFinished = {0};
     std::atomic_ullong assemblyLoadFinished = {0};
+    std::atomic_ullong enqueueRequestRejitForLoadedModules = {0};
     std::atomic_ullong initialize = {0};
 
     //
@@ -61,6 +62,7 @@ private:
     std::atomic_uint moduleUnloadStartedCount = {0};
     std::atomic_uint moduleLoadFinishedCount = {0};
     std::atomic_uint assemblyLoadFinishedCount = {0};
+    std::atomic_uint enqueueRequestRejitForLoadedModulesCount = {0};
 
 public:
     Stats()
@@ -76,6 +78,7 @@ public:
         moduleUnloadStarted = 0;
         moduleLoadFinished = 0;
         assemblyLoadFinished = 0;
+        enqueueRequestRejitForLoadedModules = 0;
         initialize = 0;
 
         initializeProfilerCount = 0;
@@ -86,6 +89,7 @@ public:
         moduleUnloadStartedCount = 0;
         moduleLoadFinishedCount = 0;
         assemblyLoadFinishedCount = 0;
+        enqueueRequestRejitForLoadedModulesCount = 0;
     }
     SWStat InitializeProfilerMeasure()
     {
@@ -132,6 +136,11 @@ public:
         assemblyLoadFinishedCount++;
         return SWStat(&assemblyLoadFinished);
     }
+    SWStat EnqueueRequestRejitForLoadedModulesMeasure()
+    {
+        enqueueRequestRejitForLoadedModulesCount++;
+        return SWStat(&enqueueRequestRejitForLoadedModules);
+    }
     SWStat InitializeMeasure()
     {
         return SWStat(&initialize);
@@ -148,6 +157,7 @@ public:
         const auto ns_jitInlining = jitInlining.load();
         const auto ns_jitCachedFunctionSearchStarted = jitCachedFunctionSearchStarted.load();
         const auto ns_initializeProfiler = initializeProfiler.load();
+        const auto ns_enqueueRequestRejitForLoadedModules = enqueueRequestRejitForLoadedModules.load();
 
         const auto count_moduleLoadFinishedCount = moduleLoadFinishedCount.load();
         const auto count_callTargetRequestRejitCount = callTargetRequestRejitCount.load();
@@ -158,6 +168,7 @@ public:
         const auto count_jitInliningCount = jitInliningCount.load();
         const auto count_jitCachedFunctionSearchStartedCount = jitCachedFunctionSearchStartedCount.load();
         const auto count_initializeProfilerCount = initializeProfilerCount.load();
+        const auto count_enqueueRequestRejitForLoadedModulesCount = enqueueRequestRejitForLoadedModulesCount.load();
 
         const auto ns_total = ns_initialize + ns_moduleLoadFinished + ns_callTargetRequestRejit +
                               ns_callTargetRewriter + ns_assemblyLoadFinished + ns_moduleUnloadStarted +
@@ -174,33 +185,47 @@ public:
         ss << ns_total / 1000000 << "ms ";
         ss << "[Initialize=";
         ss << ns_initialize / 1000000 << "ms";
+
         ss << ", ModuleLoadFinished=";
         ss << ns_moduleLoadFinished / 1000000 << "ms"
            << "/" << count_moduleLoadFinishedCount;
+
         ss << ", CallTargetRequestRejit=";
         ss << ns_callTargetRequestRejit / 1000000 << "ms"
            << "/" << count_callTargetRequestRejitCount;
+
         ss << ", CallTargetRewriter=";
         ss << ns_callTargetRewriter / 1000000 << "ms"
            << "/" << count_callTargetRewriterCount;
+
         ss << ", AssemblyLoadFinished=";
         ss << ns_assemblyLoadFinished / 1000000 << "ms"
            << "/" << count_assemblyLoadFinishedCount;
+
         ss << ", ModuleUnloadStarted=";
         ss << ns_moduleUnloadStarted / 1000000 << "ms"
            << "/" << count_moduleUnloadStartedCount;
+
         ss << ", JitCompilationStarted=";
         ss << ns_jitCompilationStarted / 1000000 << "ms"
            << "/" << count_jitCompilationStartedCount;
+
         ss << ", JitInlining=";
         ss << ns_jitInlining / 1000000 << "ms"
            << "/" << count_jitInliningCount;
+
         ss << ", JitCacheFunctionSearchStarted=";
         ss << ns_jitCachedFunctionSearchStarted / 1000000 << "ms"
            << "/" << count_jitCachedFunctionSearchStartedCount;
+
         ss << ", InitializeProfiler=";
         ss << ns_initializeProfiler / 1000000 << "ms"
            << "/" << count_initializeProfilerCount;
+
+        ss << ", EnqueueRequestRejitForLoadedModules=";
+        ss << ns_enqueueRequestRejitForLoadedModules / 1000000 << "ms"
+           << "/" << count_enqueueRequestRejitForLoadedModulesCount;
+
         ss << "]";
         return ss.str();
     }

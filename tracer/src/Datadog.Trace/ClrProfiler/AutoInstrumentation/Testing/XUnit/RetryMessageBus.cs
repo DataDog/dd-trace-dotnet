@@ -77,7 +77,7 @@ internal class RetryMessageBus : IMessageBus
         else
         {
             Common.Log.Debug("RetryMessageBus.QueueMessage: Message is not a supported message. Flushing: {Message}", message);
-            return _innerMessageBus.QueueMessage(message);
+            return InternalQueueMessage(message);
         }
 
         Common.Log.Debug("RetryMessageBus.QueueMessage: Message: {Message} | UniqueID: {UniqueID}", message, uniqueID);
@@ -88,7 +88,7 @@ internal class RetryMessageBus : IMessageBus
             if (metadata.Disposed)
             {
                 Common.Log.Debug("RetryMessageBus.QueueMessage: Metadata is disposed for: {UniqueID} direct flush of the message.", uniqueID);
-                return _innerMessageBus.QueueMessage(message);
+                return InternalQueueMessage(message);
             }
 
             var totalExecutions = metadata.TotalExecutions;
@@ -122,11 +122,25 @@ internal class RetryMessageBus : IMessageBus
             }
 
             lstRetryInstance.Add(message);
+
+            // Bypass some events to trigger MessageSink events. (Allure lib required it to create the test context)
+            // but just send the event once.
+            var messageTypeName = message.GetType().Name;
+            if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
+            {
+                if ((!metadata.Skipped && metadata.BypassedMessageTypes.Add(messageTypeName)) ||
+                    metadata.EarlyFlakeDetectionEnabled)
+                {
+                    Common.Log.Debug("RetryMessageBus.QueueMessage: Message bypass, flushing directly for: {UniqueID} | {MessageType}", uniqueID, messageTypeName);
+                    return InternalQueueMessage(message);
+                }
+            }
+
             return true;
         }
 
         Common.Log.Error("RetryMessageBus.QueueMessage: Message doesn't have an UniqueID. Flushing: {Message}", message);
-        return _innerMessageBus.QueueMessage(message);
+        return InternalQueueMessage(message);
     }
 
     public bool FlushMessages(string uniqueID)
@@ -135,9 +149,10 @@ internal class RetryMessageBus : IMessageBus
 
         var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
         var listOfMessages = metadata.ListOfMessages;
-        if (listOfMessages is null || listOfMessages.Length == 0 || metadata.Disposed)
+        if (listOfMessages is null || listOfMessages.Length == 0 || metadata.Disposed || metadata.Skipped)
         {
             Common.Log.Debug("RetryMessageBus.FlushMessages: Nothing to flush for: {UniqueID}", uniqueID);
+            metadata.ListOfMessages = null;
             return true;
         }
 
@@ -169,15 +184,38 @@ internal class RetryMessageBus : IMessageBus
         bool InternalFlushMessages(List<object> messages)
         {
             var retValue = true;
+            Common.Log.Debug("RetryMessageBus.InternalFlushMessages: Flushing messages for: {UniqueID}", uniqueID);
             foreach (var messageInList in messages)
             {
-                retValue = retValue && _innerMessageBus.QueueMessage(messageInList);
+                var messageTypeName = messageInList.GetType().Name;
+                if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
+                {
+                    Common.Log.Debug("RetryMessageBus.InternalFlushMessages: Skipping message: {Message} for: {UniqueID}", messageInList, uniqueID);
+                }
+                else
+                {
+                    Common.Log.Debug("RetryMessageBus.InternalFlushMessages: Flushing message: {Message} for: {UniqueID}", messageInList, uniqueID);
+                    retValue = InternalQueueMessage(messageInList) && retValue;
+                }
             }
 
             Common.Log.Debug<int, string>("RetryMessageBus.InternalFlushMessages: {Count} messages flushed for: {UniqueID}", messages.Count, uniqueID);
 
             Array.Clear(listOfMessages, 0, listOfMessages.Length);
             return retValue;
+        }
+    }
+
+    private bool InternalQueueMessage(object message)
+    {
+        try
+        {
+            return _innerMessageBus.QueueMessage(message);
+        }
+        catch (Exception ex)
+        {
+            Common.Log.Error(ex, "RetryMessageBus.InternalQueueMessage: Error while queueing message: {Message}", message);
+            return false;
         }
     }
 
@@ -213,6 +251,14 @@ internal class RetryMessageBus : IMessageBus
         }
 
         public bool Disposed { get; set; }
+
+        /// <summary>
+        /// Gets the messages types that were bypassed to trigger MessageSink events.
+        /// This is used to avoid sending the same message multiple times.
+        /// For example, TestStarting, TestClassConstructionStarting, TestClassConstructionFinished, etc.
+        /// "TestCaseStarting" or "TestMethodStarting" are not bypassed, as they are used to create the test context.
+        /// </summary>
+        public HashSet<string> BypassedMessageTypes { get; } = new();
 
         public void ResizeListOfMessages(int totalExecutions)
         {

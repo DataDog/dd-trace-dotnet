@@ -19,13 +19,6 @@ namespace Datadog.Trace.Configuration;
 public interface IConfigurationSource
 {
     /// <summary>
-    /// Gets whether the specified key is present in the source.
-    /// </summary>
-    /// <param name="key">The key that identifies the setting.</param>
-    /// <returns><c>true</c> if the key is present in the source, false otherwise.</returns>
-    bool IsPresent(string key);
-
-    /// <summary>
     /// Gets the <see cref="string"/> value of
     /// the setting with the specified key.
     /// </summary>

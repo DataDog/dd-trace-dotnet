@@ -4,6 +4,7 @@
 // </copyright>
 #if NETCOREAPP3_1_OR_GREATER
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Xunit;
 using Xunit.Abstractions;
 

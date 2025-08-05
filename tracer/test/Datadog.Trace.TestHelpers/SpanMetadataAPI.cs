@@ -25,25 +25,25 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAerospikeV0(),
             };
 
-        public static Result IsAspNet(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsAspNet(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsAspNetV1(),
-                _ => span.IsAspNetV0(),
+                "v1" => span.IsAspNetV1(excludeTags),
+                _ => span.IsAspNetV0(excludeTags),
             };
 
-        public static Result IsAspNetMvc(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsAspNetMvc(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsAspNetMvcV1(),
-                _ => span.IsAspNetMvcV0(),
+                "v1" => span.IsAspNetMvcV1(excludeTags),
+                _ => span.IsAspNetMvcV0(excludeTags),
             };
 
-        public static Result IsAspNetWebApi2(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsAspNetWebApi2(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsAspNetWebApi2V1(),
-                _ => span.IsAspNetWebApi2V0(),
+                "v1" => span.IsAspNetWebApi2V1(excludeTags),
+                _ => span.IsAspNetWebApi2V0(excludeTags),
             };
 
         public static Result IsAspNetCore(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>

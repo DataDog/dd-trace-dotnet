@@ -16,6 +16,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci.Agent;
 
@@ -292,6 +293,11 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
 
         completionSource.TrySetResult(true);
         Log.Debug("CIVisibilityProtocolWriter: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Debug("CIVisibilityProtocolWriter: TestCycle stats: {Stats}", $"[Tests: {buffers.CiTestCycleBuffer.TestEventsCount}, TestSuites: {buffers.CiTestCycleBuffer.TestSuiteEventsCount}, TestModules: {buffers.CiTestCycleBuffer.TestModuleEventsCount}, TestSessions: {buffers.CiTestCycleBuffer.TestSessionEventsCount}, Spans: {buffers.CiTestCycleBuffer.SpanEventsCount}]");
+            Log.Debug<int>("CIVisibilityProtocolWriter: CodeCoverage stats: [Coverage: {Coverage}]", buffers.CiCodeCoverageBuffer.TestCoverageEventsCount);
+        }
     }
 
     internal class WatermarkEvent : IEvent
