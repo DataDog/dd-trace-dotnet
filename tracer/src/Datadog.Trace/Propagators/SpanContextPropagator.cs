@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -19,6 +20,8 @@ namespace Datadog.Trace.Propagators
     {
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
 
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly IContextInjector[] _injectors;
@@ -310,37 +313,34 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal void AddBaggageToSpanAsTags(ISpan span, Baggage? baggage, string[] baggageTagKeys)
+        internal void AddBaggageToSpanAsTags(ISpan span, Baggage? baggage, HashSet<string> baggageTagKeys)
         {
             if (baggage is null or { Count: 0 })
             {
                 return;
             }
 
-            if (baggageTagKeys.Length == 0)
+            if (baggageTagKeys.Count == 0)
             {
                 // feature disabled
                 return;
             }
 
-            if (baggageTagKeys.Length == 1 && baggageTagKeys[0] == "*")
+            try
             {
-                // add all baggage items as tags
+                var addAllItems = baggageTagKeys.Count == 1 && baggageTagKeys.Contains("*");
+
                 foreach (var item in baggage)
                 {
-                    span.SetTag("baggage." + item.Key, item.Value);
+                    if (addAllItems || baggageTagKeys.Contains(item.Key))
+                    {
+                        span.SetTag("baggage." + item.Key, item.Value);
+                    }
                 }
-
-                return;
             }
-
-            // add only specified baggage items as tags
-            foreach (var key in baggageTagKeys)
+            catch (Exception ex)
             {
-                if (baggage.TryGetValue(key, out var value))
-                {
-                    span.SetTag("baggage." + key, value);
-                }
+                Log.Error(ex, "Error adding baggage tags to span.");
             }
         }
 
