@@ -82,7 +82,7 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore");
+            var logDir = await RunDotnet($"new console -n instrumentation_test -f {EnvironmentHelper.GetTargetFramework()} -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
 
             logDir = await RunDotnet("restore");
@@ -114,7 +114,7 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
+            var logDir = await RunDotnet($"new console -n {excludedProcess} -f {EnvironmentHelper.GetTargetFramework()} -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
 
             var programCs = GetProgramCSThatMakesSpans();
@@ -152,7 +152,7 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore");
+            var logDir = await RunDotnet($"new console -n {allowedProcess} -f {EnvironmentHelper.GetTargetFramework()} -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
             var programCs = GetProgramCSThatMakesSpans();
 
