@@ -42,11 +42,8 @@ internal class ProfilerSettings
                                   : envConfigBuilder;
 
         // With SSI, beyond ContinuousProfiler.ConfigurationKeys.ProfilingEnabled (true or auto vs false),
-        // the profiler could be enabled via ContinuousProfiler.ConfigurationKeys.SsiDeployed:
-        //  - if it contains "profiler", the profiler is enabled after 30 seconds + at least 1 span
-        //  - if not, the profiler needed to be loaded by the CLR but no profiling will be done, only telemetry metrics will be sent
-        // So, for the Tracer, the profiler should be seen as enabled if ContinuousProfiler.ConfigurationKeys.SsiDeployed has a value
-        // (even without "profiler") so that spans will be sent to the profiler.
+        // the profiler could be enabled via ContinuousProfiler.ConfigurationKeys.SsiDeployed. If it is non-empty, then the
+        // profiler is "active", though won't begin profiling until 30 seconds have passed + at least 1 span has been generated.
         var profilingEnabled = profilingConfig
                               .WithKeys(ConfigurationKeys.ProfilingEnabled)
                                // We stick with strings here instead of using the `GetAs` method,
@@ -68,7 +65,7 @@ internal class ProfilerSettings
 
                                        return isSsiDeployment switch
                                        {
-                                           not null when isSsiDeployment.Contains("profiler") => "auto",
+                                           { Length: > 0 } => "auto",
                                            _ => "false",
                                        };
                                    },
