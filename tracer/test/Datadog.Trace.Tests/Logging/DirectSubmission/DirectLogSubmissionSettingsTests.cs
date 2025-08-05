@@ -388,24 +388,5 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
             tracerSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
         }
-
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void WhenLogsInjectionIsNotSetThenValueDefaultsToTrue(bool directLogSubmissionEnabled)
-        {
-            var config = new NameValueCollection(Defaults);
-            config.Remove(ConfigurationKeys.LogsInjectionEnabled);
-
-            if (!directLogSubmissionEnabled)
-            {
-                config.Remove(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations);
-            }
-
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
-
-            tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
-            tracerSettings.LogsInjectionEnabled.Should().BeTrue(); // Now always defaults to true
-        }
     }
 }
