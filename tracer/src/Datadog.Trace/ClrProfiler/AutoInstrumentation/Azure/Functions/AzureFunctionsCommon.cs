@@ -6,6 +6,8 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -199,6 +201,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             try
             {
+                Log.Information("CreateIsolatedFunctionScope");
+
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
                 PropagationContext extractedContext = default;
@@ -350,6 +354,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 Log.Information("Got request data object, type: {RequestDataObjectType}", requestDataObject.GetType().FullName);
+
+                foreach (var entry in bindingFeature.InputData ?? Enumerable.Empty<KeyValuePair<string, object?>>())
+                {
+                    var valueTypeName = entry.Value?.GetType()?.FullName ?? "null";
+                    Log.Information(
+                        "InputData contains key: {Key}, value type: {ValueType}",
+                        entry.Key,
+                        valueTypeName);
+                }
 
                 if (requestDataObject.GetType().FullName == "System.String")
                 {
