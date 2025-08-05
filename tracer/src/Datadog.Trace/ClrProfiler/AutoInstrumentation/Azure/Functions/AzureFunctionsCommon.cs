@@ -233,6 +233,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
                     }
+                    else if (triggerType == "ServiceBus")
+                    {
+                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                    }
 
                     break;
                 }
