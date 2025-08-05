@@ -41,8 +41,7 @@ namespace Datadog.Trace.Debugger.Expressions
         {
             if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
             {
-                Log.Error("Failed to create probe processor for probe: {Id}", probe.Id);
-                throw new Exception("AddProbeProcessor can be called only when LiveDebugger is initialized");
+                Log.Error("Failed to create probe processor for probe: {Id} because Dynamic Instrumentation has not initialized yet or has been disabled, probably dynamically through Remote Config", probe.Id);
             }
 
             try

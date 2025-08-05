@@ -172,6 +172,13 @@ namespace Datadog.Trace.Debugger.Expressions
         {
             var snapshotCreator = (DebuggerSnapshotCreator)inSnapshotCreator;
 
+            if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
+            {
+                Log.Debug("Stop processing probe {ID} because Dynamic Instrumentation has not initialized yet or has been disabled, probably dynamically through Remote Config", probeData.ProbeId);
+                snapshotCreator.Stop();
+                return false;
+            }
+
             ExpressionEvaluationResult evaluationResult = default;
             try
             {
