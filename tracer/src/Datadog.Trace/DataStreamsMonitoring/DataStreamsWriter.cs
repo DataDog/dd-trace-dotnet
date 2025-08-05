@@ -203,12 +203,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
             }
 
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _currentFlushTcs = tcs;
+            Interlocked.Exchange(ref _currentFlushTcs, tcs);
 
             RequestFlush();
 
             var completedTask = await Task.WhenAny(
                 tcs.Task,
+                _processExit.Task,
                 Task.Delay(timeout)).ConfigureAwait(false);
 
             if (completedTask != tcs.Task)
@@ -287,7 +288,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 if (flushRequested == 1)
                 {
                     await WriteToApiAsync().ConfigureAwait(false);
-                    _currentFlushTcs?.TrySetResult(true);
+                    var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
+                    currentFlushTcs?.TrySetResult(true);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
             }
