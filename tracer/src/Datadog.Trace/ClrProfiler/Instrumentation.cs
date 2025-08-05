@@ -415,22 +415,6 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Error(e, "Failed to initialize Remote Configuration Management.");
                 }
 
-                try
-                {
-                    if (ExceptionDebugging.Enabled)
-                    {
-                        ExceptionDebugging.Initialize();
-                    }
-                    else
-                    {
-                        Log.Information("Exception Replay is disabled. To enable it, please set DD_EXCEPTION_REPLAY_ENABLED environment variable to '1'/'true'.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error initializing Exception Debugging");
-                }
-
                 // RCM isn't _actually_ initialized at this point, as we do it in the background, so we record that separately
                 sw.Restart();
 
