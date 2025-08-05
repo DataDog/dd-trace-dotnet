@@ -351,6 +351,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 Log.Information("Got request data object, type: {RequestDataObjectType}", requestDataObject.GetType().FullName);
 
+                if (requestDataObject.GetType().FullName == "System.String")
+                {
+                    Log.Information("Request data object is a string with value: {RequestDataObjectValue}", requestDataObject);
+                }
+
                 if (!requestDataObject.TryDuckCast<HttpRequestDataStruct>(out var httpRequest))
                 {
                     Log.Information("Failed to duck cast request data object to HttpRequestDataStruct");
