@@ -49,6 +49,17 @@ jobs:
       env:
         AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
 
+    - name: "Sanitize branch name"
+      id: image_tag
+      run: |
+        BRANCH="${{github.event.inputs.branch_name}}"
+        if [[ -z "$BRANCH" ]]; then
+          echo "ERROR: Missing required 'branch_name' input. Aborting docker image build."
+          exit 1
+        fi
+        SAFE_TAG="${BRANCH//\//_}"
+        echo "tag=$SAFE_TAG" >> $GITHUB_OUTPUT
+
     - uses: ./.github/actions/create-system-test-docker-base-images
       name: 'Create system test docker images'
       with:
@@ -57,4 +68,4 @@ jobs:
         lib_waf_version: "${{steps.versions.outputs.lib_waf_version}}"
         waf_rules_version: "${{steps.versions.outputs.waf_rules_version}}"
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        image_tag: ${{ github.event.inputs.branch_name && format('{0}', github.event.inputs.branch_name | replace('/', '_')) || 'latest_snapshot' }}
+        image_tag: ${{steps.image_tag.outputs.tag}}

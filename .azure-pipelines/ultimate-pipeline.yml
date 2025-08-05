@@ -4207,7 +4207,7 @@ stages:
           if echo "$LABELS" | grep -q "docker_image_artifacts"; then
             REF="refs/heads/$(System.PullRequest.SourceBranch)"
             BRANCH_NAME="$(System.PullRequest.SourceBranch)"
-            echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId) and is_release_version=False"
+            echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml with ref=$REF and azdo_build_id=$(Build.BuildId) and is_release_version=False"
             curl \
               -X POST \
               -H "Accept: application/vnd.github+json" \
