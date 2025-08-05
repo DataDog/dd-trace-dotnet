@@ -226,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ => "Automatic", // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
-                    Log.Information("Detected trigger type: {TriggerType}", triggerType);
+                    Log.Information("Detected trigger type {Type} interpreted as {TriggerType}", type, triggerType);
 
                     // need to extract the headers from the context.
                     // We currently only support httpTrigger, but other triggers may also propagate context,
