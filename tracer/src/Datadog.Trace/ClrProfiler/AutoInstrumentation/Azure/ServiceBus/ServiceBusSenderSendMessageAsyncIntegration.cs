@@ -4,12 +4,15 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
@@ -34,7 +37,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         private const string OperationName = "azure.servicebus.send";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusSenderSendMessageAsyncIntegration));
 
-        internal static CallTargetState OnMethodBegin<TTarget, TMessage>(TTarget instance, TMessage message, CancellationToken cancellationToken)
+        internal static CallTargetState OnMethodBegin<TTarget, TMessage>(TTarget instance, TMessage message, ref CancellationToken cancellationToken)
+            where TMessage : IServiceBusMessage
         {
             Log.Information("SendMessageAsync running");
 
@@ -45,6 +49,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             span.SetTag("azure.servicebus.entity_path", "entity_path");
             span.SetTag("azure.servicebus.namespace", "namespace");
             span.SetTag("azure.servicebus.operation", "send");
+
+            if (message.ApplicationProperties == null)
+            {
+                message.ApplicationProperties = new Dictionary<string, object>();
+            }
+
+            var context = new PropagationContext(span.Context, Baggage.Current);
+            tracer.TracerManager.SpanContextPropagator.Inject(context, message.ApplicationProperties, default(ContextPropagation));
+
             return new CallTargetState(scope);
         }
 
