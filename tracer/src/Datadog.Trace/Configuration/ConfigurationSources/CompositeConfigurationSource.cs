@@ -10,11 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -41,21 +37,9 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The configuration source to add.</param>
         public void Add(IConfigurationSource source)
         {
-            if (source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
+            if (source == null!) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
 
             _sources.Add(source);
-        }
-
-        /// <summary>
-        /// Inserts an element into the <see cref="Datadog.Trace.Configuration.CompositeConfigurationSource"/> at the specified index.
-        /// </summary>
-        /// <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
-        /// <param name="item">The configuration source to insert.</param>
-        public void Insert(int index, IConfigurationSource item)
-        {
-            if (item == null) { ThrowHelper.ThrowArgumentNullException(nameof(item)); }
-
-            _sources.Insert(index, item);
         }
 
         /// <inheritdoc />
@@ -64,10 +48,6 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         [PublicApi]
         IEnumerator IEnumerable.GetEnumerator() => _sources.GetEnumerator();
-
-        /// <inheritdoc />
-        public bool IsPresent(string key)
-            => _sources.Select(source => source.IsPresent(key)).FirstOrDefault(value => value);
 
         /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
