@@ -11,21 +11,13 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.Vendors.Serilog.Events;
-using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
-using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -38,15 +30,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly SemaphoreSlim WorkAvailable = new(0, int.MaxValue);
         private static readonly CancellationTokenSource Cts = new();
         private static readonly ExceptionCaseScheduler ExceptionsScheduler = new();
-        private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
-        private static readonly TimeSpan RateLimit = ExceptionDebugging.Settings.RateLimit;
-        private static readonly BasicCircuitBreaker ReportingCircuitBreaker = new(ExceptionDebugging.Settings.MaxExceptionAnalysisLimit, TimeSpan.FromSeconds(1));
+        private static readonly int MaxFramesToCapture = ExceptionReplay.Settings.MaximumFramesToCapture;
+        private static readonly TimeSpan RateLimit = ExceptionReplay.Settings.RateLimit;
+        private static readonly BasicCircuitBreaker ReportingCircuitBreaker = new(ExceptionReplay.Settings.MaxExceptionAnalysisLimit, TimeSpan.FromSeconds(1));
         private static readonly CachedItems EvaluateWithRootSpanCases = new();
         private static readonly CachedItems CachedInvalidatedCases = new();
         private static Task? _exceptionProcessorTask;
         private static bool _isInitialized;
 
-        internal static event Action<ExceptionIdentifier>? ExceptionCaseInstrumented;
+        private static event Action<ExceptionIdentifier>? ExceptionCaseInstrumented;
 
         internal static bool IsEditAndContinueFeatureEnabled { get; private set; }
 
@@ -72,7 +64,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public static void Report(Span span, Exception? exception)
+        internal static void Report(Span span, Exception? exception)
         {
             if (!_isInitialized)
             {
@@ -557,7 +549,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                       .Replace(ExceptionReplaySnapshotCreator.ExceptionCaptureId, exceptionId)
                       .Replace(ExceptionReplaySnapshotCreator.ExceptionHash, exceptionHash)
                       .Replace(ExceptionReplaySnapshotCreator.FrameIndex, frameIndex.ToString());
-            ExceptionDebugging.AddSnapshot(probeId, snapshot);
+            DebuggerManager.Instance.ExceptionReplay?.AddSnapshot(probeId, snapshot);
         }
 
         private static void TagMissingFrame(Span span, string tagPrefix, string method, string reason)
@@ -584,7 +576,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static bool IsSupportedExceptionType(Exception ex) =>
             IsSupportedExceptionType(ex.GetType());
 
-        public static void Initialize()
+        internal static void Initialize()
         {
             _exceptionProcessorTask = Task.Factory.StartNew(
                                                async () => await StartExceptionProcessingAsync(Cts.Token).ConfigureAwait(false), TaskCreationOptions.LongRunning)
@@ -603,7 +595,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return !string.IsNullOrEmpty(encEnabled) && (encEnabled == "1" || encEnabled == "true");
         }
 
-        public static bool IsSupportedExceptionType(Type ex) =>
+        private static bool IsSupportedExceptionType(Type ex) =>
             ex != typeof(BadImageFormatException) &&
             ex != typeof(InvalidProgramException) &&
             ex != typeof(TypeInitializationException) &&
@@ -639,7 +631,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public static ExceptionRelatedFrames GetAllExceptionRelatedStackFrames(Exception exception)
+        private static ExceptionRelatedFrames GetAllExceptionRelatedStackFrames(Exception exception)
         {
             return CreateExceptionPath(exception, true);
 
@@ -663,7 +655,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         /// <param name="isTopFrame">If it's a top frame, we should skip on the above method (e.g. ASP Net methods)</param>
         /// <param name="defaultState">Default state of all method that are not <see cref="ParticipatingFrameState.Blacklist"/> </param>
         /// <returns>All the frames of the exception.</returns>
-        public static IEnumerable<ParticipatingFrame> GetParticipatingFrames(StackTrace stackTrace, bool isTopFrame, ParticipatingFrameState defaultState)
+        private static IEnumerable<ParticipatingFrame> GetParticipatingFrames(StackTrace stackTrace, bool isTopFrame, ParticipatingFrameState defaultState)
         {
             var frames = isTopFrame
                              ? stackTrace.GetFrames()?.

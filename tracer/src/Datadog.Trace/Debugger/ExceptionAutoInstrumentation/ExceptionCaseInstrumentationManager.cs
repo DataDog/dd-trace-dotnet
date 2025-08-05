@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionCaseInstrumentationManager>();
         private static readonly ConcurrentDictionary<MethodUniqueIdentifier, ExceptionDebuggingProbe> MethodToProbe = new();
-        private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
+        private static readonly int MaxFramesToCapture = ExceptionReplay.Settings.MaximumFramesToCapture;
 
         internal static ExceptionCase Instrument(ExceptionIdentifier exceptionId, string exceptionToString)
         {
@@ -157,10 +157,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             foreach (var processor in @case.Processors.Keys)
             {
-                if (processor.ExceptionDebuggingProcessor.RemoveProbeProcessor(processor) == 0)
+                if (processor.ExceptionReplayProcessor.RemoveProbeProcessor(processor) == 0)
                 {
-                    MethodToProbe.TryRemove(processor.ExceptionDebuggingProcessor.Method, out _);
-                    revertProbeIds.Add(processor.ExceptionDebuggingProcessor.ProbeId);
+                    MethodToProbe.TryRemove(processor.ExceptionReplayProcessor.Method, out _);
+                    revertProbeIds.Add(processor.ExceptionReplayProcessor.ProbeId);
                 }
             }
 

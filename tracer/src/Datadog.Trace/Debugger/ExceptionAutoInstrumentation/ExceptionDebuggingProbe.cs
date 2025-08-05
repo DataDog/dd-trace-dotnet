@@ -39,7 +39,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal MethodUniqueIdentifier Method { get; }
 
-        internal ExceptionDebuggingProcessor? ExceptionDebuggingProcessor { get; private set; }
+        internal ExceptionReplayProcessor? ExceptionDebuggingProcessor { get; private set; }
 
         internal bool MayBeOmittedFromCallStack { get; private set; }
 
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             if (Interlocked.CompareExchange(ref _isInstrumented, 1, 0) == 0)
             {
                 ProbeId = Guid.NewGuid().ToString();
-                ExceptionDebuggingProcessor = new ExceptionDebuggingProcessor(ProbeId, Method);
+                ExceptionDebuggingProcessor = new ExceptionReplayProcessor(ProbeId, Method);
                 MayBeOmittedFromCallStack = CheckIfMethodMayBeOmittedFromCallStack();
 
                 return true;

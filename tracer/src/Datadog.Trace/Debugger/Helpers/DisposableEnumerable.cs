@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 return;
             }
 
-            foreach (var item in this._items)
+            foreach (var item in _items)
             {
                 SafeDisposal.TryDispose(item);
             }

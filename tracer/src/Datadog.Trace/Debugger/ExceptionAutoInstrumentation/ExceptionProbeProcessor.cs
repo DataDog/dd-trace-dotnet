@@ -34,14 +34,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal ExceptionProbeProcessor(ExceptionDebuggingProbe probe, HashSet<Type> exceptionTypes, ExceptionDebuggingProbe[] parentProbes, ExceptionDebuggingProbe[] childProbes)
         {
-            ExceptionDebuggingProcessor = probe.ExceptionDebuggingProcessor ?? throw new ArgumentException($"probe.ExceptionDebuggingProcessor is null. Probe: {probe}");
+            ExceptionReplayProcessor = probe.ExceptionDebuggingProcessor ?? throw new ArgumentException($"probe.ExceptionDebuggingProcessor is null. Probe: {probe}");
             _exceptionTypes = exceptionTypes;
             _singleExceptionType = _exceptionTypes.Count == 1 ? _exceptionTypes.Single() : null;
             _childProbes = childProbes;
             _parentProbes = parentProbes;
         }
 
-        internal ExceptionDebuggingProcessor ExceptionDebuggingProcessor { get; }
+        internal ExceptionReplayProcessor ExceptionReplayProcessor { get; }
 
         internal bool ShouldProcess(int enterSequenceHash)
         {
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            return Fnv1aHash.Combine(ExceptionDebuggingProcessor.Method.Method.MetadataToken, hash);
+            return Fnv1aHash.Combine(ExceptionReplayProcessor.Method.Method.MetadataToken, hash);
         }
 
         internal void InvalidateEnterLeave()

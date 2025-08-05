@@ -31,7 +31,8 @@ namespace Datadog.Trace.Debugger
         private static readonly Lazy<DebuggerManager> _lazyInstance =
             new(
                 () => new DebuggerManager(
-                        DebuggerSettings.FromDefaultSource()),
+                    DebuggerSettings.FromDefaultSource(),
+                    ExceptionReplaySettings.FromDefaultSource()),
                 LazyThreadSafetyMode.ExecutionAndPublication);
 
         private static volatile bool _discoveryServiceReady;
@@ -40,13 +41,14 @@ namespace Datadog.Trace.Debugger
         private volatile bool _isShuttingDown;
         private int _initialized;
 
-        private DebuggerManager(DebuggerSettings debuggerSettings)
+        private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
             _initialized = 0;
             _discoveryServiceReady = false;
             _isShuttingDown = false;
             _semaphore = new SemaphoreSlim(1, 1);
             DebuggerSettings = debuggerSettings;
+            ExceptionReplaySettings = exceptionReplaySettings;
             _cancellationToken = new CancellationTokenSource();
 
             var tracerManager = TracerManager.Instance;
@@ -65,13 +67,15 @@ namespace Datadog.Trace.Debugger
 
         internal DebuggerSettings DebuggerSettings { get; private set; }
 
+        internal ExceptionReplaySettings ExceptionReplaySettings { get; }
+
         internal DynamicInstrumentation? DynamicInstrumentation { get; private set; }
 
         internal SpanCodeOrigin.SpanCodeOrigin? CodeOrigin { get; private set; }
 
         internal IDebuggerUploader? SymbolsUploader { get; private set; }
 
-        internal ExceptionDebugging? ExceptionReplay { get; private set; }
+        internal ExceptionReplay? ExceptionReplay { get; private set; }
 
         internal string ServiceName => DynamicInstrumentationHelper.ServiceName;
 
@@ -125,6 +129,27 @@ namespace Datadog.Trace.Debugger
             catch (Exception ex)
             {
                 Log.Error(ex, "Error initializing Code Origin for spans.");
+            }
+        }
+
+        private void SetExceptionReplayState()
+        {
+            try
+            {
+                if (ExceptionReplaySettings.Enabled && ExceptionReplay == null)
+                {
+                    var exceptionReplay = new ExceptionReplay(ExceptionReplaySettings);
+                    exceptionReplay.Initialize();
+                    ExceptionReplay = exceptionReplay;
+                }
+                else
+                {
+                    Log.Information("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.ExceptionReplayEnabled);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing Exception Replay.");
             }
         }
 
