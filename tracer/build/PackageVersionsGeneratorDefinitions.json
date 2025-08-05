@@ -1,9 +1,10 @@
 [
   {
     "IntegrationName": "Quartz",
-    "SampleProjectName": "samples.quartz.consoleapp",
+    "SampleProjectName": "Samples.Quartz",
     "NugetPackageSearchName": "Quartz",
     "MinVersion": "3.1.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "3.*.*",
       "4.*.*"

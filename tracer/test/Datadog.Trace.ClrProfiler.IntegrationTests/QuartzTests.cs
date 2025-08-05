@@ -36,13 +36,14 @@ public class QuartzTests : TracingIntegrationTest
 
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
+    [MemberData(nameof(PackageVersions.Quartz), MemberType = typeof(PackageVersions))]
     public async Task SubmitsTraces(string packageVersion)
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
-        using (await RunSampleAndWaitForExit(agent))
+        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
             var filename = nameof(QuartzTests) + GetSuffix(packageVersion);
             const int expectedSpanCount = 2;
@@ -73,7 +74,7 @@ public class QuartzTests : TracingIntegrationTest
             // await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Quartz);
         }
 
-        static string GetSuffix(string packageVersion)
+        string GetSuffix(string packageVersion)
         {
             // New tags added in v1.5.1
             if (!string.IsNullOrEmpty(packageVersion)

@@ -845,7 +845,7 @@
         "name": "log4net",
         "minVersionAvailableInclusive": "1.2.10",
         "minVersionSupportedInclusive": "1.2.10",
-        "minVersionTestedInclusive": "1.2.11",
+        "minVersionTestedInclusive": "2.0.17",
         "maxVersionSupportedInclusive": "3.1.0",
         "maxVersionAvailableInclusive": "3.1.0",
         "maxVersionTestedInclusive": "3.1.0"
@@ -1168,7 +1168,7 @@
         "name": "Serilog",
         "minVersionAvailableInclusive": "0.1.6",
         "minVersionSupportedInclusive": "1.0.1",
-        "minVersionTestedInclusive": "1.4.214",
+        "minVersionTestedInclusive": "2.12.0",
         "maxVersionSupportedInclusive": "4.3.0",
         "maxVersionAvailableInclusive": "4.3.0",
         "maxVersionTestedInclusive": "4.3.0"
@@ -1185,7 +1185,7 @@
         "name": "ServiceStack.Redis",
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
-        "minVersionTestedInclusive": "4.5.14",
+        "minVersionTestedInclusive": "5.14.0",
         "maxVersionSupportedInclusive": "8.8.0",
         "maxVersionAvailableInclusive": "8.8.0",
         "maxVersionTestedInclusive": "8.8.0"
