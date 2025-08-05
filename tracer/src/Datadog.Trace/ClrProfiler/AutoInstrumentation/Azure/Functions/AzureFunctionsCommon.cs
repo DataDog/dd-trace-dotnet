@@ -337,6 +337,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return default;
                 }
 
+                if (!feature.TryDuckCast<GrpcBindingsFeatureStruct>(out var grpcFeature))
+                {
+                    Log.Information("Failed to duck cast feature to GrpcBindingsFeatureStruct");
+                }
+                else
+                {
+                    Log.Information("Successfully obtained grpc feature, TriggerMetadata is null: {TriggerMetadataIsNull}", grpcFeature.TriggerMetadata is null);
+
+                    foreach (var entry in grpcFeature.TriggerMetadata ?? Enumerable.Empty<KeyValuePair<string, object?>>())
+                    {
+                        var valueTypeName = entry.Value?.GetType()?.FullName ?? "null";
+                        Log.Information(
+                            "TriggerMetadata contains key: {Key}, value type: {ValueType}",
+                            entry.Key,
+                            valueTypeName);
+                    }
+                }
+
                 Log.Information("Successfully obtained binding feature, InputData is null: {InputDataIsNull}", bindingFeature.InputData is null);
 
                 object? requestDataObject = null;
