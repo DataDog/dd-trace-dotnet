@@ -136,7 +136,7 @@ namespace Foo
             // Currently, today, we instrument dotnet run, which results in some "spurious" spans (e.g. command_execution)
             // In the future, we may change that. But hte important part is that we don't instrument the target process itself
             var publishDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
-            logDir = await RunDotnet($"publish -o \"{publishDir}\"");
+            logDir = await RunDotnet($"publish -o \"{publishDir}\" --self-contained");
             AssertNotInstrumented(agent, logDir);
 
             // this _should NOT_ be instrumented
@@ -184,7 +184,7 @@ namespace Foo
             // Currently, today, we instrument dotnet run, which results in some "spurious" spans (e.g. command_execution)
             // In the future, we may change that. But hte important part is that we don't instrument the target process itself
             var publishDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
-            logDir = await RunDotnet($"publish -o \"{publishDir}\"");
+            logDir = await RunDotnet($"publish -o \"{publishDir}\" --self-contained");
             AssertNotInstrumented(agent, logDir);
 
             // this _SHOULD_ be instrumented
