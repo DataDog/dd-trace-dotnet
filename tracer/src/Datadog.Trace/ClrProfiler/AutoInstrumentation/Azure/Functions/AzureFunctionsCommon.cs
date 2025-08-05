@@ -352,6 +352,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             "TriggerMetadata contains key: {Key}, value type: {ValueType}",
                             entry.Key,
                             valueTypeName);
+
+                        if (valueTypeName == "System.String")
+                        {
+                            object? grpcDataObject = null;
+                            grpcFeature.TriggerMetadata!.TryGetValue(entry.Key!, out grpcDataObject);
+                            Log.Information("TriggerMetadata key: {Key} has value: {Value}", entry.Key, grpcDataObject);
+                        }
                     }
                 }
 
