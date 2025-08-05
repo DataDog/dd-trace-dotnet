@@ -6,8 +6,8 @@
 #nullable enable
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -26,14 +26,22 @@ internal struct CString : IDisposable
         }
         else
         {
-            var encoding = Encoding.UTF8;
+            var encoding = StringEncoding.UTF8;
             var maxBytesCount = encoding.GetMaxByteCount(str!.Length);
             Ptr = Marshal.AllocHGlobal(maxBytesCount);
             unsafe
             {
                 fixed (char* strPtr = str)
                 {
-                    Length = (nuint)encoding.GetBytes(strPtr, str.Length, (byte*)Ptr, maxBytesCount);
+                    try
+                    {
+                        Length = (nuint)encoding.GetBytes(strPtr, str.Length, (byte*)Ptr, maxBytesCount);
+                    }
+                    catch
+                    {
+                        Marshal.FreeHGlobal(Ptr);
+                        Ptr = IntPtr.Zero;
+                    }
                 }
             }
         }

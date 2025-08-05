@@ -11,10 +11,10 @@ using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources;
 
-internal class HandsOffConfigurationSource(IDictionary<string, string> configurations, bool localFile)
+internal sealed class HandsOffConfigurationSource(Dictionary<string, string> configurations, bool localFile)
     : StringConfigurationSource
 {
-    private readonly IDictionary<string, string> _configurations = configurations;
+    private readonly Dictionary<string, string> _configurations = configurations;
     private readonly bool _localFile = localFile;
 
     internal override ConfigurationOrigins Origin => _localFile ? ConfigurationOrigins.LocalStableConfig : ConfigurationOrigins.FleetStableConfig;

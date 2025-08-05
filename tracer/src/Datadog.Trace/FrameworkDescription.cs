@@ -11,8 +11,7 @@ namespace Datadog.Trace
 {
     internal partial class FrameworkDescription
     {
-        // don't use a direct logger field as this will trigger ConfigurationSources building which are themselves calling this path though IsProfilerAttached
-        private static readonly Lazy<IDatadogLogger> Log = new(() => DatadogLogging.GetLoggerFor(typeof(FrameworkDescription)));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FrameworkDescription));
 
         private static readonly Assembly RootAssembly = typeof(object).Assembly;
 
@@ -92,7 +91,7 @@ namespace Datadog.Trace
             }
             catch (Exception e)
             {
-                Log.Value.Error(e, "Error getting framework version from [AssemblyInformationalVersion]");
+                Log.Error(e, "Error getting framework version from [AssemblyInformationalVersion]");
             }
 
             if (productVersion == null)
@@ -105,7 +104,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception e)
                 {
-                    Log.Value.Error(e, "Error getting framework version from [AssemblyFileVersion]");
+                    Log.Error(e, "Error getting framework version from [AssemblyFileVersion]");
                 }
             }
 

@@ -9,9 +9,9 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.LibDatadog.HandsOffConfiguration;
 
-internal readonly struct ConfigurationSuccessResult(IDictionary<string, string> configEntriesLocal, IDictionary<string, string> configEntriesFleet)
+internal readonly struct ConfigurationSuccessResult(Dictionary<string, string> configEntriesLocal, Dictionary<string, string> configEntriesFleet)
 {
-    public IDictionary<string, string> ConfigEntriesLocal { get; } = configEntriesLocal;
+    public Dictionary<string, string> ConfigEntriesLocal { get; } = configEntriesLocal;
 
-    public IDictionary<string, string> ConfigEntriesFleet { get; } = configEntriesFleet;
+    public Dictionary<string, string> ConfigEntriesFleet { get; } = configEntriesFleet;
 }

@@ -126,9 +126,9 @@ namespace Datadog.Trace.Configuration
             if (isLibdatadogAvailable.IsAvailable)
             {
                 LibDatadog.Logger.Instance.SetLogLevel(debugEnabled: false);
-                GlobalConfigurationSource.Reload(isLibdatadogAvailable.IsAvailable);
             }
 
+            GlobalConfigurationSource.Reload(isLibdatadogAvailable.IsAvailable);
             Instance = CreateFromDefaultSources();
         }
 

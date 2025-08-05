@@ -7,25 +7,19 @@
 
   <ItemGroup>
     <None Remove="xunit.runner.json" />
-    <None Update="Configuration\HandsOffConfigData\FleetOnly\application_monitoring.yml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Configuration\HandsOffConfigData\FleetOnly\application_monitoring_fleet.yml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Configuration\HandsOffConfigData\LocalOnly\application_monitoring.yml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Configuration\HandsOffConfigData\LocalOnly\application_monitoring_fleet.yml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Configuration\HandsOffConfigData\application_monitoring.yml">
+     <None Update="Configuration\HandsOffConfigData\application_monitoring.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Configuration\HandsOffConfigData\application_monitoring_fleet.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Configuration\HandsOffConfigData\corrupt_file.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Configuration\HandsOffConfigData\corrupt_file2.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Configuration\HandsOffConfigData\corrupt_file3.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
