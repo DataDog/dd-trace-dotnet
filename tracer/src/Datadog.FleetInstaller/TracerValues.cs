@@ -12,6 +12,11 @@ namespace Datadog.FleetInstaller;
 internal class TracerValues
 {
     public TracerValues(string tracerHomeDirectory)
+        : this(tracerHomeDirectory, PathHelper.GetTelemetryForwarderPath())
+    {
+    }
+
+    public TracerValues(string tracerHomeDirectory, string telemetryForwarderPath)
     {
         TracerHomeDirectory = tracerHomeDirectory;
         NativeLoaderX86Path = Path.Combine(tracerHomeDirectory, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll");
@@ -28,6 +33,7 @@ internal class TracerValues
             { "COR_ENABLE_PROFILING", "1" },
             { "CORECLR_ENABLE_PROFILING", "1" },
             { "DD_INJECTION_ENABLED", "tracer" },
+            { "DD_TELEMETRY_FORWARDER_PATH", telemetryForwarderPath },
             { Defaults.InstrumentationInstallTypeKey, Defaults.InstrumentationInstallTypeValue },
         });
 
@@ -47,6 +53,7 @@ internal class TracerValues
             // { "COR_ENABLE_PROFILING", "1" },
             { "CORECLR_ENABLE_PROFILING", "1" },
             { "DD_TRACING_ENABLED", "tracing" },
+            { "DD_TELEMETRY_FORWARDER_PATH", telemetryForwarderPath },
             { Defaults.InstrumentationInstallTypeKey, Defaults.InstrumentationInstallTypeValue },
         });
 
