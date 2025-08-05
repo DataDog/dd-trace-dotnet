@@ -37,7 +37,7 @@ public class QuartzTests : TracingIntegrationTest
 
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
-    [MemberData(nameof(GetData))]
+    [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
     public async Task SubmitsTraces(string packageVersion)
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
@@ -82,7 +82,7 @@ public class QuartzTests : TracingIntegrationTest
     private static string GetSuffix(string packageVersion)
     {
         if (!string.IsNullOrEmpty(packageVersion)
-         && new Version(packageVersion) >= new Version("3.1.0"))
+         && new Version(packageVersion) >= new Version("3.1.0") && new Version(packageVersion) < new Version("4.0.0"))
         {
             return "V3";
         }
