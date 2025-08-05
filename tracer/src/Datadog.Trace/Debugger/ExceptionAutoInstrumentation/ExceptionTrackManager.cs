@@ -487,7 +487,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private static string GetNoCaptureReason(string methodName, ExceptionDebuggingProbe? probe)
+        private static string GetNoCaptureReason(string methodName, ExceptionReplayProbe? probe)
         {
             var noCaptureReason = string.Empty;
 

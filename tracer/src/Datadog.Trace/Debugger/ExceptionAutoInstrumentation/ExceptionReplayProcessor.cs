@@ -105,7 +105,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                         if (snapshotCreator.TrackedStackFrameNode.IsFrameUnwound)
                         {
-                            Log.Warning("ExceptionDebuggingProcessor: Frame is already unwound. Probe Id: {ProbeId}", ProbeId);
+                            Log.Warning("ExceptionReplayProcessor: Frame is already unwound. Probe Id: {ProbeId}", ProbeId);
                             return false;
                         }
 
@@ -221,7 +221,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
             catch (Exception e)
             {
-                Log.Error(e, "ExceptionDebuggingProcessor: Failed to process probe. Probe Id: {ProbeId}", ProbeId);
+                Log.Error(e, "ExceptionReplayProcessor: Failed to process probe. Probe Id: {ProbeId}", ProbeId);
                 return false;
             }
 

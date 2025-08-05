@@ -26,15 +26,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionProbeProcessor));
         private readonly HashSet<Type> _exceptionTypes;
         private readonly Type? _singleExceptionType;
-        private readonly ExceptionDebuggingProbe[] _childProbes;
-        private readonly ExceptionDebuggingProbe[] _parentProbes;
+        private readonly ExceptionReplayProbe[] _childProbes;
+        private readonly ExceptionReplayProbe[] _parentProbes;
         private readonly object _locker = new();
         private int? _enterSequenceHash;
         private int? _leaveSequenceHash;
 
-        internal ExceptionProbeProcessor(ExceptionDebuggingProbe probe, HashSet<Type> exceptionTypes, ExceptionDebuggingProbe[] parentProbes, ExceptionDebuggingProbe[] childProbes)
+        internal ExceptionProbeProcessor(ExceptionReplayProbe probe, HashSet<Type> exceptionTypes, ExceptionReplayProbe[] parentProbes, ExceptionReplayProbe[] childProbes)
         {
-            ExceptionReplayProcessor = probe.ExceptionDebuggingProcessor ?? throw new ArgumentException($"probe.ExceptionDebuggingProcessor is null. Probe: {probe}");
+            ExceptionReplayProcessor = probe.ExceptionReplayProcessor ?? throw new ArgumentException($"probe.ExceptionReplayProcessor is null. Probe: {probe}");
             _exceptionTypes = exceptionTypes;
             _singleExceptionType = _exceptionTypes.Count == 1 ? _exceptionTypes.Single() : null;
             _childProbes = childProbes;
@@ -79,7 +79,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return _leaveSequenceHash != null;
         }
 
-        private int? ComputeSequenceHash(ExceptionDebuggingProbe[] probes, bool reverseOrder = false)
+        private int? ComputeSequenceHash(ExceptionReplayProbe[] probes, bool reverseOrder = false)
         {
             // Ensure we have instrumented probes to work with
             var instrumentedProbes = probes.Where(p => p.IsInstrumented).ToArray();
