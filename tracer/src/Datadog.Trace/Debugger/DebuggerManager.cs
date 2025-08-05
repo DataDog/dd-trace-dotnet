@@ -132,14 +132,14 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                if (DebuggerSettings.Enabled && DynamicInstrumentation == null)
+                if (DebuggerSettings.DynamicInstrumentationEnabled && DynamicInstrumentation == null)
                 {
                     var tracerManager = TracerManager.Instance;
                     var settings = tracerManager.Settings;
 
                     if (!settings.IsRemoteConfigurationAvailable)
                     {
-                        if (DebuggerSettings.Enabled)
+                        if (DebuggerSettings.DynamicInstrumentationEnabled)
                         {
                             Log.Warning("Dynamic Instrumentation is enabled by environment variable but remote configuration is not available in this environment, so Dynamic Instrumentation cannot be enabled.");
                         }
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Debugger
                 }
                 else
                 {
-                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.Enabled);
+                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
                 }
             }
             catch (Exception ex)

@@ -29,7 +29,7 @@ public class DynamicInstrumentationTests
     public async Task DebuggerEnabled_ServicesCalled()
     {
         var settings = DebuggerSettings.FromSource(
-            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "1" }, }),
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
             NullConfigurationTelemetry.Instance);
 
         var discoveryService = new DiscoveryServiceMock();
@@ -65,7 +65,7 @@ public class DynamicInstrumentationTests
     public void DebuggerDisabled_ServicesNotCalled()
     {
         var settings = DebuggerSettings.FromSource(
-            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "0" }, }),
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
             NullConfigurationTelemetry.Instance);
 
         var discoveryService = new DiscoveryServiceMock();

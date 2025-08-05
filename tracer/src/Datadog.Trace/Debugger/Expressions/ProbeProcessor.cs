@@ -419,12 +419,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
                 if (targetSpan == null)
                 {
-                    Log.Warning("No root span or active span is available, so we can't set the {Tag} tag. Probe ID: {ProbeId}", decoration.TagName, this.ProbeInfo.ProbeId);
+                    Log.Warning("No root span or active span is available, so we can't set the {Tag} tag. Probe ID: {ProbeId}", decoration.TagName, ProbeInfo.ProbeId);
                     continue;
                 }
 
                 targetSpan.SetTag(decoration.TagName, decoration.Value);
-                targetSpan.SetTag(probeIdTag, this.ProbeInfo.ProbeId);
+                targetSpan.SetTag(probeIdTag, ProbeInfo.ProbeId);
                 if (decoration.Errors?.Length > 0)
                 {
                     targetSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
@@ -437,7 +437,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 attachedTags = true;
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID={ProbeId}", decoration.TagName, targetSpan.SpanId, this.ProbeInfo.ProbeId);
+                    Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID={ProbeId}", decoration.TagName, targetSpan.SpanId, ProbeInfo.ProbeId);
                 }
             }
 
@@ -472,11 +472,11 @@ namespace Datadog.Trace.Debugger.Expressions
                     return scope != null;
                 }
 
-                Log.Warning("Unable to find active scope in WCF context for span decoration. Probe ID: {ProbeId}", this.ProbeInfo.ProbeId);
+                Log.Warning("Unable to find active scope in WCF context for span decoration. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
                 scope = null;
                 return false;
 #else
-                Log.Warning("No active scope available for span decoration. Probe ID: {ProbeId}", this.ProbeInfo.ProbeId);
+                Log.Warning("No active scope available for span decoration. Probe ID: {ProbeId}", ProbeInfo.ProbeId);
                 scope = null;
                 return false;
 #endif
