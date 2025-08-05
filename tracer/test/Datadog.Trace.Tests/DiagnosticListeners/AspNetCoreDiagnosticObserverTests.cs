@@ -19,6 +19,7 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Internal;
@@ -68,10 +69,11 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             _ = retValue;
         }
 
-        [Fact]
-        public void HttpRequestIn_PopulateSpan()
+        [Theory]
+        [CombinatorialData]
+        public void HttpRequestIn_PopulateSpan(bool hasResourceBasedSamplingRules)
         {
-            var tracer = GetTracer();
+            var tracer = GetTracer(hasResourceBasedSamplingRules);
             var (security, iast) = GetSecurity();
             var liveDebugger = GetLiveDebugger();
 
@@ -97,18 +99,36 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             Assert.Equal("localhost", span.GetTag(Tags.HttpRequestHeadersHost));
             Assert.Equal("http://localhost/home/1/action", span.GetTag(Tags.HttpUrl));
 
-            // Resource isn't populated until request end
-            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop", context));
+            // Resource isn't populated until request end, unless we have resource-based sampling rules
+            if (!hasResourceBasedSamplingRules)
+            {
+                observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop", context));
+            }
+
             Assert.Equal("GET /home/?/action", span.ResourceName);
         }
 
-        private static Tracer GetTracer()
+        private static Tracer GetTracer(bool hasResourceBasedSamplingRules = false)
         {
-            var settings = new TracerSettings();
-            var writerMock = new Mock<IAgentWriter>();
-            var samplerMock = new Mock<ITraceSampler>();
+            TracerSettings settings;
+            if (hasResourceBasedSamplingRules)
+            {
+                settings = TracerSettings.Create(new()
+                {
+                    { ConfigurationKeys.CustomSamplingRules, """[{"sample_rate":0.0, "service":"*", "resource":"GET /status-code/?"}]""" },
+                    { ConfigurationKeys.CustomSamplingRulesFormat, SamplingRulesFormat.Glob },
+                });
+            }
+            else
+            {
+                settings = new TracerSettings();
+            }
 
-            return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            var writerMock = new Mock<IAgentWriter>();
+
+            var tracer = new Tracer(settings, writerMock.Object, sampler: null, scopeManager: null, statsd: null);
+            tracer.TracerManager.PerTraceSettings.HasResourceBasedSamplingRule.Should().Be(hasResourceBasedSamplingRules);
+            return tracer;
         }
 
         private static (Security Security, Iast.Iast Iast) GetSecurity()

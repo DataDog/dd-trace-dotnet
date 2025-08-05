@@ -348,6 +348,7 @@ services:
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -426,6 +427,7 @@ services:
       - COUCHBASE_PORT=8091
       - CONTAINER_HOSTNAME=http://integrationtests
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -496,6 +498,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -552,6 +555,7 @@ services:
       - CONTAINER_HOSTNAME=http://integrationtests
       - IncludeAllTestFrameworks
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -602,6 +606,7 @@ services:
       - IncludeAllTestFrameworks
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -693,6 +698,7 @@ services:
       - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SDK_HOST=localstack_arm64:4566
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -771,6 +777,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
