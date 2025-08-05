@@ -214,9 +214,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void LogsInjectionEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.LogsInjectionEnabled, value));
-            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source);
 
-            settings.LogsInjectionEnabled.Should().Be(expected);
+            tracerSettings.LogsInjectionEnabled.Should().Be(expected);
         }
 
         [Fact]
