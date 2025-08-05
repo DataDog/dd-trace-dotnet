@@ -1626,6 +1626,13 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    # Explicitly set the path to where we have installed the VMs
+    # These should be explicitly set in the VMs, so this is just a workaround for now
+    # Theoretically we don't need them all, but let's play it safe!
+    DOTNET_ROOT: "C:\dotnet"
+    DOTNET_ROOT_X64: "C:\dotnet"
+    DOTNET_ROOT_X86: "C:\dotnet_32"
+    DOTNET_ROOT(x86): "C:\dotnet_32"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
