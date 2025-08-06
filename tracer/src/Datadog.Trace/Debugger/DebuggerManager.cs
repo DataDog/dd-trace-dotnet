@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -19,6 +20,7 @@ using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
 
@@ -236,6 +238,10 @@ namespace Datadog.Trace.Debugger
                 SetCodeOriginState();
                 SetExceptionReplayState();
                 await SetDynamicInstrumentationState().ConfigureAwait(false);
+                if (TracerManager.Instance.Settings.StartupDiagnosticLogEnabled)
+                {
+                    _ = Task.Run(WriteDebuggerDiagnosticLog);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -258,6 +264,34 @@ namespace Datadog.Trace.Debugger
                         // ignore ObjectDisposedException or SemaphoreFullException
                     }
                 }
+            }
+        }
+
+        private void WriteDebuggerDiagnosticLog()
+        {
+            try
+            {
+                var stringWriter = new StringWriter();
+                using (var writer = new JsonTextWriter(stringWriter))
+                {
+                    var debuggerSettings = DebuggerSettings;
+                    writer.WritePropertyName("dynamic_instrumentation_enabled");
+                    writer.WriteValue(debuggerSettings.DynamicInstrumentationEnabled);
+                    writer.WritePropertyName("symbol_database_upload_enabled");
+                    writer.WriteValue(debuggerSettings.SymbolDatabaseUploadEnabled);
+                    writer.WritePropertyName("code_origin_for_spans_enabled");
+                    writer.WriteValue(debuggerSettings.CodeOriginForSpansEnabled);
+                    writer.WritePropertyName("symbol_database_upload_enabled");
+                    writer.WriteValue(DebuggerSettings.SymbolDatabaseUploadEnabled);
+                    writer.WritePropertyName("exception_replay_enabled");
+                    writer.WriteValue(ExceptionReplaySettings.Enabled);
+                }
+
+                Log.Information("DATADOG DEBUGGER CONFIGURATION - {Configuration}", stringWriter.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "DATADOG DEBUGGER DIAGNOSTICS - Error fetching configuration");
             }
         }
 
