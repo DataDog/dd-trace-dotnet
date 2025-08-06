@@ -220,8 +220,6 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            await Task.Delay(500).ConfigureAwait(false);
-
             OneTimeSetup();
 
             bool semaphoreAcquired = false;
