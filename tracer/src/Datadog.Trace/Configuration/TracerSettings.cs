@@ -1377,7 +1377,7 @@ namespace Datadog.Trace.Configuration
         {
             var configurationDictionary = config
                    .WithKeys(key)
-                   .AsDictionary(allowOptionalMappings: true, () => new Dictionary<string, string>());
+                   .AsDictionary(allowOptionalMappings: true, () => new Dictionary<string, string>(), string.Empty);
 
             if (configurationDictionary == null)
             {

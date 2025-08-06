@@ -355,15 +355,34 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         // ****************
         // Dictionary accessors
         // ****************
-        [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
+        public IDictionary<string, string>? AsDictionary()
+            => AsDictionary(allowOptionalMappings: false, getDefaultValue: null, defaultValueForTelemetry: string.Empty);
+
+        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings)
+            => AsDictionary(allowOptionalMappings, getDefaultValue: null, defaultValueForTelemetry: string.Empty);
+
+        public IDictionary<string, string> AsDictionary(Func<IDictionary<string, string>> getDefaultValue, string defaultValueForTelemetry)
+            => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue, defaultValueForTelemetry);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null)
+        public IDictionary<string, string>? AsDictionary(
+            bool allowOptionalMappings,
+            Func<IDictionary<string, string>>? getDefaultValue,
+            string defaultValueForTelemetry)
         {
-            // TODO: Handle/allow default values + validation?
             var result = GetDictionaryResult(allowOptionalMappings, separator: ':');
-            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            if (getDefaultValue?.Invoke() is not { } value)
+            {
+                return null;
+            }
+
+            Telemetry.Record(Key, defaultValueForTelemetry, recordValue: true, ConfigurationOrigins.Default);
+            return value;
         }
 
         // ****************
