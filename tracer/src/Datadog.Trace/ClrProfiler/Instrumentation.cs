@@ -406,6 +406,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
+                /*
                 try
                 {
                     InitializeDebugger();
@@ -414,6 +415,7 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     Log.Error(e, "Failed to initialize Remote Configuration Management.");
                 }
+                */
 
                 // RCM isn't _actually_ initialized at this point, as we do it in the background, so we record that separately
                 sw.Restart();
