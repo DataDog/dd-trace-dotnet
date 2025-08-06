@@ -72,9 +72,16 @@ internal partial class CircularChannel : IChannel
         }
 
         _disposed = 0;
-        _mutex = new Mutex(
-            initiallyOwned: false,
-            FrameworkDescription.Instance.IsWindows() ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}" : $"{Path.GetFileNameWithoutExtension(fileName)}");
+        var mutexName = FrameworkDescription.Instance.IsWindows() ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}" : $"{Path.GetFileNameWithoutExtension(fileName)}";
+        Log.Debug("CircularChannel: Initializing with file {FileName} and mutex name {Mutex}", fileName, mutexName);
+        if (Mutex.TryOpenExisting(mutexName, out var existingMutex))
+        {
+            _mutex = existingMutex;
+        }
+        else
+        {
+            _mutex = new Mutex(initiallyOwned: false, name: mutexName);
+        }
 
         var hasHandle = _mutex.WaitOne(_settings.MutexTimeout);
         if (!hasHandle)

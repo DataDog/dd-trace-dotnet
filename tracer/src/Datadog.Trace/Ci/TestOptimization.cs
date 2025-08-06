@@ -221,6 +221,8 @@ internal class TestOptimization : ITestOptimization
         Log.Information("TestOptimization: Initializing CI Visibility");
         var settings = Settings;
 
+        Log.Information("TestOptimizationSettings: {Settings}", settings);
+
         // In case we are running using the agent, check if the event platform proxy is supported.
         TracerManagement = new TestOptimizationTracerManagement(
             settings: Settings,
@@ -288,6 +290,7 @@ internal class TestOptimization : ITestOptimization
         }
 
         Log.Information("TestOptimization: Initializing CI Visibility from dd-trace / runner");
+        Log.Information("TestOptimizationSettings: {Settings}", settings);
         Settings = settings;
         LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
