@@ -882,9 +882,9 @@ partial class Build
         .DependsOn(PublishNativeTracerUnix)
         .DependsOn(PublishNativeTracerOsx);
 
-    Target PublishFleetInstaller => _ => _
+    Target BuildFleetInstaller => _ => _
         .Unlisted()
-        .Description("Builds and publishes the fleet installer binary files as a zip")
+        .Description("Builds and publishes the fleet installer binary files")
         .After(Clean, Restore, CompileManagedSrc)
         .Before(SignDlls)
         .OnlyWhenStatic(() => IsWin)
@@ -905,7 +905,17 @@ partial class Build
                               .SetConfiguration(BuildConfiguration)
                               .SetOutput(publishFolder)
                               .CombineWith(tfms, (p, tfm) => p.SetFramework(tfm)));
+        });
 
+    Target PublishFleetInstaller => _ => _
+        .Unlisted()
+        .Description("Publishes the fleet installer binary files as a zip")
+        .DependsOn(BuildFleetInstaller)
+        .After(SignDlls)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            var publishFolder = ArtifactsDirectory / "Datadog.FleetInstaller";
             CompressZip(publishFolder, ArtifactsDirectory / "fleet-installer.zip", fileMode: FileMode.Create);
         });
 
