@@ -5,14 +5,20 @@
 #nullable enable
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Threading;
+using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure_Messaging_ServiceBus;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 /// <summary>
 /// System.Threading.Tasks.Task Azure.Messaging.ServiceBus.ServiceBusSender::SendMessagesAsync(System.Collections.Generic.IEnumerable`1[Azure.Messaging.ServiceBus.ServiceBusMessage],System.Threading.CancellationToken) calltarget instrumentation
@@ -33,7 +39,7 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
     private const string OperationName = "azure.servicebus.send";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusSenderSendMessagesAsyncIntegration));
 
-    internal static CallTargetState OnMethodBegin<TTarget, TMessages>(TTarget instance, ref TMessages? messages, ref CancellationToken cancellationToken)
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IEnumerable messages, ref CancellationToken cancellationToken)
     {
         Log.Information("SendMessagesAsync running");
 
@@ -44,6 +50,24 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
         span.SetTag("azure.servicebus.entity_path", "entity_path");
         span.SetTag("azure.servicebus.namespace", "namespace");
         span.SetTag("azure.servicebus.operation", "send_batch");
+
+        if (messages is not null)
+        {
+            foreach (var message in messages)
+            {
+                if (message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage))
+                {
+                    if (serviceBusMessage.ApplicationProperties == null)
+                    {
+                        serviceBusMessage.ApplicationProperties = new Dictionary<string, object>();
+                    }
+
+                    var context = new PropagationContext(span.Context, Baggage.Current);
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, serviceBusMessage.ApplicationProperties, default(ContextPropagation));
+                }
+            }
+        }
+
         return new CallTargetState(scope);
     }
 
