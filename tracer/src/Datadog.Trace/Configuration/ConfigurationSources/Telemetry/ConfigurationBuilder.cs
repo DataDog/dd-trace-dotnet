@@ -30,6 +30,37 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         string key,
         ConfigurationResult<T> result,
         bool recordValue,
+        Func<T>? getDefaultValue,
+        [NotNullIfNotNull(nameof(getDefaultValue))] out T? value)
+        where T : notnull
+    {
+        if (result is { Result: { } ddResult, IsValid: true })
+        {
+            value = ddResult;
+            return true;
+        }
+
+        // don't have a default value, so caller (which knows what the <T> is needs
+        // to return the default value. Necessary because we can't create a generic
+        // method that works "correctly" for both value types and reference types.
+        if (getDefaultValue is null)
+        {
+            value = default;
+            return false;
+        }
+
+        var defaultValue = getDefaultValue();
+        RecordTelemetry(telemetry, key, recordValue, defaultValue);
+
+        value = defaultValue;
+        return true;
+    }
+
+    private static bool TryHandleResult<T>(
+        IConfigurationTelemetry telemetry,
+        string key,
+        ConfigurationResult<T> result,
+        bool recordValue,
         Func<DefaultResult<T>>? getDefaultValue,
         [NotNullIfNotNull(nameof(getDefaultValue))] out T? value)
         where T : notnull
@@ -54,6 +85,31 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
         value = defaultValue.Result;
         return true;
+    }
+
+    private static void RecordTelemetry<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, T defaultValue)
+    {
+        switch (defaultValue)
+        {
+            case int intVal:
+                telemetry.Record(key, intVal, ConfigurationOrigins.Default);
+                break;
+            case double doubleVal:
+                telemetry.Record(key, doubleVal, ConfigurationOrigins.Default);
+                break;
+            case bool boolVal:
+                telemetry.Record(key, boolVal, ConfigurationOrigins.Default);
+                break;
+            case string stringVal:
+                telemetry.Record(key, stringVal, recordValue, ConfigurationOrigins.Default);
+                break;
+            case null: // can't actually be called in practice
+                break;
+            default:
+                // TODO: this shouldn't be calleable in practice, we need to revise it
+                telemetry.Record(key, defaultValue.ToString(), recordValue, ConfigurationOrigins.Default);
+                break;
+        }
     }
 
     private static void RecordTelemetry<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, DefaultResult<T> defaultValue)
