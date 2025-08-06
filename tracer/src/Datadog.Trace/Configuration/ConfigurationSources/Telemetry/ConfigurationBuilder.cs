@@ -307,10 +307,23 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public int? AsInt32(int? defaultValue, Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
         {
             var result = GetInt32Result(validator, converter);
-            Func<DefaultResult<int>>? getDefaultValue = defaultValue.HasValue ? () => defaultValue.Value : null;
-            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            if (defaultValue is not { } value)
+            {
+                return null;
+            }
+
+            Telemetry.Record(Key, value, ConfigurationOrigins.Default);
+            return value;
         }
 
+        // ****************
+        // Double accessors
+        // ****************
         public double? AsDouble() => AsDouble(defaultValue: null, validator: null);
 
         public double AsDouble(double defaultValue) => AsDouble(defaultValue, validator: null).Value;
@@ -325,8 +338,18 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public double? AsDouble(double? defaultValue, Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
         {
             var result = GetDoubleResult(validator, converter);
-            Func<DefaultResult<double>>? getDefaultValue = defaultValue.HasValue ? () => defaultValue.Value : null;
-            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            if (defaultValue is not { } value)
+            {
+                return null;
+            }
+
+            Telemetry.Record(Key, value, ConfigurationOrigins.Default);
+            return value;
         }
 
         // ****************
