@@ -529,11 +529,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     var method = routeEndpoint?.RequestDelegate?.Method;
                     if (method != null)
                     {
-                        CurrentCodeOrigin.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
+                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
                     }
                     else if (routeEndpoint?.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
                     {
-                        CurrentCodeOrigin.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
                     }
                 }
 
@@ -635,7 +635,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     if (isCodeOriginEnabled && TryGetTypeAndMethod(typedArg, out var type, out var method))
                     {
-                        CurrentCodeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }
 
                     CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
