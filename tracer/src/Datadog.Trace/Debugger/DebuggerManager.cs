@@ -233,6 +233,7 @@ namespace Datadog.Trace.Debugger
 
                 DebuggerSettings = newDebuggerSettings;
                 SetCodeOriginState();
+                SetExceptionReplayState();
                 await SetDynamicInstrumentationState().ConfigureAwait(false);
             }
             catch (OperationCanceledException)
