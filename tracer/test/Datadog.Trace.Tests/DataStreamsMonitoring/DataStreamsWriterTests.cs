@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -22,6 +23,7 @@ using Datadog.Trace.Util;
 using FluentAssertions;
 using MessagePack;
 using Xunit;
+using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 
@@ -344,7 +346,7 @@ public class DataStreamsWriterTests
         return new DataStreamsWriter(
             settings,
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(settings, Service),
+                new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled), Service),
                 bucketDurationMs),
             stubApi,
             bucketDurationMs: bucketDurationMs,

@@ -20,6 +20,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Processors;
@@ -138,28 +139,6 @@ namespace Datadog.Trace.Configuration
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
-
-            // With SSI, beyond ContinuousProfiler.ConfigurationKeys.ProfilingEnabled (true or auto vs false),
-            // the profiler could be enabled via ContinuousProfiler.ConfigurationKeys.SsiDeployed:
-            //  - if it contains "profiler", the profiler is enabled after 30 seconds + at least 1 span
-            //  - if not, the profiler needed to be loaded by the CLR but no profiling will be done, only telemetry metrics will be sent
-            // So, for the Tracer, the profiler should be seen as enabled if ContinuousProfiler.ConfigurationKeys.SsiDeployed has a value
-            // (even without "profiler") so that spans will be sent to the profiler.
-            ProfilingEnabledInternal = config
-                         .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
-                         .GetAs(
-                            converter: x => x switch
-                            {
-                                "auto" => true,
-                                _ when x.ToBoolean() is { } boolean => boolean,
-                                _ => ParsingResult<bool>.Failure(),
-                            },
-                            getDefaultValue: () =>
-                            {
-                                var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
-                                return (profilingSsiDeployed != null);
-                            },
-                            validator: null);
 
             var otelTags = config
                           .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
@@ -889,13 +868,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
         internal bool ApmTracingEnabled => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
-
-        /// <summary>
-        /// Gets a value indicating whether profiling is enabled.
-        /// Default is <c>false</c>.
-        /// </summary>
-        /// <seealso cref="ContinuousProfiler.ConfigurationKeys.ProfilingEnabled"/>
-        internal bool ProfilingEnabledInternal { get; }
 
         /// <summary>
         /// Gets the names of disabled integrations.
