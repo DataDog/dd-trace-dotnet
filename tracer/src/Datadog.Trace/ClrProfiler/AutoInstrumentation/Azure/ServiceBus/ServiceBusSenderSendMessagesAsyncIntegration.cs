@@ -51,12 +51,17 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
         span.SetTag("azure.servicebus.namespace", "namespace");
         span.SetTag("azure.servicebus.operation", "send_batch");
 
+        Log.Information("Messages is null: {IsNull}", messages is null);
+
         if (messages is not null)
         {
             foreach (var message in messages)
             {
+                Log.Information("Propagating context for message");
+
                 if (message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage))
                 {
+                    Log.Information("Duck casting successful for message");
                     if (serviceBusMessage.ApplicationProperties == null)
                     {
                         serviceBusMessage.ApplicationProperties = new Dictionary<string, object>();
@@ -64,6 +69,10 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
 
                     var context = new PropagationContext(span.Context, Baggage.Current);
                     tracer.TracerManager.SpanContextPropagator.Inject(context, serviceBusMessage.ApplicationProperties, default(ContextPropagation));
+                }
+                else
+                {
+                    Log.Information("Could not duck cast message to IServiceBusMessage");
                 }
             }
         }
