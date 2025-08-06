@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: AerospikeClient -->
     <!--    Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/8.0.2 -->
-    <PackageReference Include="Aerospike.Client" Version="8.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/8.1.0 -->
+    <PackageReference Include="Aerospike.Client" Version="8.1.0" />
 
     <!-- Integration: Amazon.Lambda.RuntimeSupport -->
     <!--    Assembly: Amazon.Lambda.RuntimeSupport -->
@@ -18,43 +18,43 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.0.18 -->
-    <PackageReference Include="AWSSDK.Core" Version="4.0.0.18" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.0.20 -->
+    <PackageReference Include="AWSSDK.Core" Version="4.0.0.20" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.3.1 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.3.1" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.3.3 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.3.3" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.3.1 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.3.1" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.3.2 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.3.2" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/4.0.2.14 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="4.0.2.14" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/4.0.2.15 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="4.0.2.15" />
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.6.2 -->
-    <PackageReference Include="AWSSDK.S3" Version="4.0.6.2" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.6.3 -->
+    <PackageReference Include="AWSSDK.S3" Version="4.0.6.3" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/4.0.0.15 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.0.15" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/4.0.0.17 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.0.17" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.0.17 -->
-    <PackageReference Include="AWSSDK.SQS" Version="4.0.0.17" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.0.18 -->
+    <PackageReference Include="AWSSDK.SQS" Version="4.0.0.18" />
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.0.17 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.0.17" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.0.18 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.0.18" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -195,23 +195,23 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!--    Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/9.0.7 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.7" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/9.0.8 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.8" />
 
     <!-- Integration: Microsoft.Extensions.Identity.Core -->
     <!--    Assembly: Microsoft.Extensions.Identity.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/9.0.7 -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.7" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/9.0.8 -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.8" />
 
     <!-- Integration: Microsoft.Extensions.Logging -->
     <!--    Assembly: Microsoft.Extensions.Logging -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging/9.0.7 -->
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging/9.0.8 -->
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
 
     <!-- Integration: Microsoft.Extensions.Logging.Abstractions -->
     <!--    Assembly: Microsoft.Extensions.Logging.Abstractions -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/9.0.7 -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/9.0.8 -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
 
     <!-- Integration: Microsoft.Extensions.Telemetry -->
     <!--    Assembly: Microsoft.Extensions.Telemetry -->
@@ -239,8 +239,8 @@
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.10.0 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="3.10.0" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.10.1 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="3.10.1" />
 
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
@@ -336,8 +336,8 @@
 
     <!-- Integration: System.Net.Http.WinHttpHandler -->
     <!--    Assembly: System.Net.Http.WinHttpHandler -->
-    <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/9.0.7 -->
-    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="9.0.7" />
+    <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/9.0.8 -->
+    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="9.0.8" />
 
     <!-- Integration: System.Net.Requests -->
     <!--    Assembly: System.Net.Requests -->
