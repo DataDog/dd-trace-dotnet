@@ -159,17 +159,17 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         // String accessors
         // ****************
         public string? AsRedactedString()
-            => AsString(getDefaultValue: null, validator: null, converter: null, recordValue: false);
+            => AsString(defaultValue: null, validator: null, recordValue: false);
 
         public string AsRedactedString(string defaultValue)
-            => AsString(() => defaultValue, validator: null, converter: null, recordValue: false);
+            => AsString(defaultValue, validator: null, recordValue: false);
 
         /// <summary>
         /// Beware, this function won't record telemetry if the config isn't explicitly set.
         /// If you can, use <see cref="AsString(string)"/> instead or record telemetry manually.
         /// </summary>
         /// <returns>the string value of the configuration if set</returns>
-        public string? AsString() => AsString(getDefaultValue: null, validator: null, converter: null, recordValue: true);
+        public string? AsString() => AsString(defaultValue: null, validator: null, recordValue: true);
 
         public string AsString(string defaultValue) => AsString(defaultValue, validator: null);
 
@@ -178,25 +178,43 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         /// If you can, use <see cref="AsString(string, Func&lt;string, bool&gt;?)" /> instead or record telemetry manually.
         /// </summary>
         /// <returns>the string value of the configuration if set and valid</returns>
-        public string? AsString(Func<string, bool> validator) => AsString(getDefaultValue: null, validator, recordValue: true);
+        public string? AsString(Func<string, bool> validator) => AsString(defaultValue: null, validator, recordValue: true);
 
         public string AsString(string defaultValue, Func<string, bool>? validator)
-            => AsString(() => defaultValue, validator, recordValue: true);
+            => AsString(defaultValue, validator, recordValue: true);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator)
+        public string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator)
             => AsString(getDefaultValue, validator, recordValue: true);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>> converter)
+        public string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>> converter)
             => AsString(getDefaultValue, validator, converter, recordValue: true);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
+        private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
             => AsString(getDefaultValue, validator, converter: null, recordValue);
 
+        [return: NotNullIfNotNull(nameof(defaultValue))]
+        private string? AsString(string? defaultValue, Func<string, bool>? validator, bool recordValue)
+        {
+            var result = GetStringResult(validator, converter: null, recordValue);
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            if (defaultValue is null)
+            {
+                return null;
+            }
+
+            Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
+            return defaultValue;
+        }
+
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
+        private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
         {
             var result = GetStringResult(validator, converter, recordValue);
             return TryHandleResult(Telemetry, Key, result, recordValue, getDefaultValue, out var value) ? value : null;
