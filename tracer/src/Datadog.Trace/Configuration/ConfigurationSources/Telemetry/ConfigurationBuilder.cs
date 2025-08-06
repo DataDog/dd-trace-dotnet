@@ -120,24 +120,31 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         [return: NotNullIfNotNull(nameof(defaultValue))]
         private string? AsString(string? defaultValue, Func<string, bool>? validator, bool recordValue)
         {
+            // pre-record the default value, so it's in the "correct" place in the stack
+            if (defaultValue is not null)
+            {
+                Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
+            }
+
             var result = GetStringResult(validator, converter: null, recordValue);
             if (result is { Result: { } ddResult, IsValid: true })
             {
                 return ddResult;
             }
 
-            if (defaultValue is null)
+            if (defaultValue is not null && result.IsPresent)
             {
-                return null;
+                // re-record telemetry because we found an invalid value in sources which clobbered it
+                Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
             }
 
-            Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
             return defaultValue;
         }
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
         {
+            // We don't "pre-record" the default because it's expensive to create
             var result = GetStringResult(validator, converter, recordValue);
             if (result is { Result: { } ddResult, IsValid: true })
             {
@@ -161,6 +168,10 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public T GetAs<T>(DefaultResult<T> defaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
             where T : notnull
         {
+            // Ideally we would like to pre-record the default telemetry here so it's in the correct place
+            // in the stack, but the GetAs<T> behaviour of the JsonConfigurationSource is problematic, as it
+            // adds a telemetry result but still returns NotFound, so we can't use NotFound as the indicator
+            // of whether we need to re-record the telemetry or not
             var result = GetAs(validator, converter);
             if (result is { Result: { } ddResult, IsValid: true })
             {
@@ -174,6 +185,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public T GetAs<T>(Func<DefaultResult<T>> getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
             where T : notnull
         {
+            // We don't "pre-record" the default because it's expensive to create
             var result = GetAs(validator, converter);
             if (result is { Result: { } ddResult, IsValid: true })
             {
@@ -218,24 +230,30 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         [return: NotNullIfNotNull(nameof(defaultValue))]
         public bool? AsBool(bool? defaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
         {
+            // pre-record the default value, so it's in the "correct" place in the stack
+            if (defaultValue.HasValue)
+            {
+                Telemetry.Record(Key, defaultValue.Value, ConfigurationOrigins.Default);
+            }
+
             var result = GetBoolResult(validator, converter: null);
             if (result is { Result: { } ddResult, IsValid: true })
             {
                 return ddResult;
             }
 
-            if (defaultValue is not { } value)
+            if (defaultValue is { } value && result.IsPresent)
             {
-                return null;
+                Telemetry.Record(Key, value, ConfigurationOrigins.Default);
             }
 
-            Telemetry.Record(Key, value, ConfigurationOrigins.Default);
-            return value;
+            return defaultValue;
         }
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
         public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
         {
+            // We don't "pre-record" the default because it's expensive to create
             var result = GetBoolResult(validator, converter);
             if (result is { Result: { } ddResult, IsValid: true })
             {
@@ -268,19 +286,24 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         [return: NotNullIfNotNull(nameof(defaultValue))] // This doesn't work with nullables, but it still expresses intent
         public int? AsInt32(int? defaultValue, Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
         {
+            // pre-record the default value, so it's in the "correct" place in the stack
+            if (defaultValue.HasValue)
+            {
+                Telemetry.Record(Key, defaultValue.Value, ConfigurationOrigins.Default);
+            }
+
             var result = GetInt32Result(validator, converter);
             if (result is { Result: { } ddResult, IsValid: true })
             {
                 return ddResult;
             }
 
-            if (defaultValue is not { } value)
+            if (defaultValue is { } value && result.IsPresent)
             {
-                return null;
+                Telemetry.Record(Key, value, ConfigurationOrigins.Default);
             }
 
-            Telemetry.Record(Key, value, ConfigurationOrigins.Default);
-            return value;
+            return defaultValue;
         }
 
         // ****************
@@ -299,19 +322,24 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         [return: NotNullIfNotNull(nameof(defaultValue))]
         public double? AsDouble(double? defaultValue, Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
         {
+            // pre-record the default value, so it's in the "correct" place in the stack
+            if (defaultValue.HasValue)
+            {
+                Telemetry.Record(Key, defaultValue.Value, ConfigurationOrigins.Default);
+            }
+
             var result = GetDoubleResult(validator, converter);
             if (result is { Result: { } ddResult, IsValid: true })
             {
                 return ddResult;
             }
 
-            if (defaultValue is not { } value)
+            if (defaultValue is { } value && result.IsPresent)
             {
-                return null;
+                Telemetry.Record(Key, value, ConfigurationOrigins.Default);
             }
 
-            Telemetry.Record(Key, value, ConfigurationOrigins.Default);
-            return value;
+            return defaultValue;
         }
 
         // ****************
