@@ -220,8 +220,23 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             return TryHandleResult(Telemetry, Key, result, recordValue, getDefaultValue, out var value) ? value : null;
         }
 
+        // ****************
+        // GetAs accessors
+        // ****************
         // We have to use different methods for class/struct when we _don't_ have a null value, because NRTs don't work properly otherwise
-        [return: NotNullIfNotNull(nameof(getDefaultValue))]
+        public T GetAs<T>(DefaultResult<T> defaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+            where T : notnull
+        {
+            var result = GetAs(validator, converter);
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            Telemetry.Record(Key, defaultValue.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
+            return defaultValue.Result;
+        }
+
         public T GetAs<T>(Func<DefaultResult<T>> getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
             where T : notnull
         {
@@ -235,18 +250,14 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             where T : class
         {
             var result = GetAs(validator, converter);
-            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue: null, out var value)
-                       ? value
-                       : null;
+            return result is { Result: { } ddResult, IsValid: true } ? ddResult : null;
         }
 
         public T? GetAsStruct<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
             where T : struct
         {
             var result = GetAs(validator, converter);
-            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue: null, out var value)
-                       ? value
-                       : null;
+            return result is { Result: { } ddResult, IsValid: true } ? ddResult : null;
         }
 
         // ****************

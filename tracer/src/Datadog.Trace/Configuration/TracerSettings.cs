@@ -376,7 +376,7 @@ namespace Datadog.Trace.Configuration
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
-                                        () => new DefaultResult<SchemaVersion>(SchemaVersion.V0, "V0"),
+                                        defaultValue: new DefaultResult<SchemaVersion>(SchemaVersion.V0, "V0"),
                                         converter: x => x switch
                                         {
                                             "v1" or "V1" => SchemaVersion.V1,
@@ -446,7 +446,7 @@ namespace Datadog.Trace.Configuration
 
             CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat)
                                               .GetAs(
-                                                   getDefaultValue: () => new DefaultResult<string>(SamplingRulesFormat.Glob, "glob"),
+                                                   defaultValue: new DefaultResult<string>(SamplingRulesFormat.Glob, "glob"),
                                                    converter: value =>
                                                    {
                                                        // We intentionally report invalid values as "valid" in the converter,
@@ -598,7 +598,7 @@ namespace Datadog.Trace.Configuration
             PropagationBehaviorExtract = config
                                          .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
                                          .GetAs(
-                                             () => new DefaultResult<ExtractBehavior>(ExtractBehavior.Continue, "continue"),
+                                             defaultValue: new(ExtractBehavior.Continue, "continue"),
                                              converter: x => x.ToLowerInvariant() switch
                                              {
                                                  "continue" => ExtractBehavior.Continue,
@@ -700,7 +700,7 @@ namespace Datadog.Trace.Configuration
             DbmPropagationMode = config
                                 .WithKeys(ConfigurationKeys.DbmPropagationMode)
                                 .GetAs(
-                                     () => new DefaultResult<DbmPropagationLevel>(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
+                                     defaultValue: new(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
