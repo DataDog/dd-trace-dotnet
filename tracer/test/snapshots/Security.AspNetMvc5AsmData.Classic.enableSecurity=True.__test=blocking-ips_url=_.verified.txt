@@ -44,17 +44,14 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.event_rules.version: 1.13.3,
-      _dd.appsec.waf.version: 1.27.0,
       _dd.runtime_family: dotnet
     },
     Metrics: {
       process_id: 0,
       _dd.appsec.enabled: 1.0,
-      _dd.appsec.event_rules.error_count: 0.0,
-      _dd.appsec.event_rules.loaded: 159.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 2.0
+      _sampling_priority_v1: 1.0
     }
   },
   {
