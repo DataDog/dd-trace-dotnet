@@ -672,10 +672,7 @@ void CorProfilerCallback::OnStartDelayedProfiling()
     }
 
     // if not enabled via SSI, just get out
-    if (!(
-        (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled) ||
-        (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
-        ))
+    if (_pConfiguration->GetEnablementStatus() != EnablementStatus::Auto)
     {
         return;
     }
@@ -1577,10 +1574,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
             return E_FAIL;
         }
-    }
-    else if (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
-    {
-        Log::Info("Profiler is enabled by SSI. Services will be started later.");
     }
     else if (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
     {

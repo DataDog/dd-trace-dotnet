@@ -8,7 +8,6 @@ enum class EnablementStatus
     NotSet,
     ManuallyEnabled,
     ManuallyDisabled,
-    SsiEnabled,
     Auto,
     Standby, // Waiting for Stable Configuration to be set by the managed layer
 };

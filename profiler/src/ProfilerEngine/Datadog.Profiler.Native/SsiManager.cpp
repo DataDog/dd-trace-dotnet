@@ -61,10 +61,7 @@ void SsiManager::OnStableConfiguration()
         StartProfiling(_pSsiLifetime);
     }
     else
-    if (
-        (enablementStatus == EnablementStatus::Auto) ||
-        (enablementStatus == EnablementStatus::SsiEnabled)
-        )
+    if (enablementStatus == EnablementStatus::Auto)
     {
         Log::Info("Profiler enabled by SSI");
 
@@ -86,7 +83,7 @@ void SsiManager::OnShortLivedEnds()
         return;  // still waiting for enablement configuration from managed layer
     }
 
-    if (_hasSpan && ((enablementStatus == EnablementStatus::SsiEnabled) || (enablementStatus == EnablementStatus::Auto)))
+    if (_hasSpan && (enablementStatus == EnablementStatus::Auto))
     {
         StartProfiling(_pSsiLifetime);
     }
@@ -102,7 +99,7 @@ void SsiManager::OnSpanCreated()
         return; // still waiting for enablement configuration from managed layer
     }
 
-    if (_isLongLived && ((enablementStatus == EnablementStatus::SsiEnabled) || (enablementStatus == EnablementStatus::Auto)))
+    if (_isLongLived && (enablementStatus == EnablementStatus::Auto))
     {
         StartProfiling(_pSsiLifetime);
     }
@@ -133,9 +130,7 @@ bool SsiManager::IsProfilerEnabled()
     }
 
     return enablementStatus == EnablementStatus::ManuallyEnabled ||
-           enablementStatus == EnablementStatus::Auto ||
-           // in the future, users will be able to enable the profiler via SSI at agent installation time
-           enablementStatus == EnablementStatus::SsiEnabled;
+           enablementStatus == EnablementStatus::Auto;
 }
 
 // the profiler is activated (i.e. its providers services are started) either if:
@@ -151,7 +146,7 @@ bool SsiManager::IsProfilerStarted()
     }
 
     return (enablementStatus == EnablementStatus::ManuallyEnabled) ||
-           (((enablementStatus == EnablementStatus::Auto) || (enablementStatus == EnablementStatus::SsiEnabled)) && IsLongLived() && IsSpanCreated());
+           ((enablementStatus == EnablementStatus::Auto) && IsLongLived() && IsSpanCreated());
 }
 
 void SsiManager::ProcessStart()
