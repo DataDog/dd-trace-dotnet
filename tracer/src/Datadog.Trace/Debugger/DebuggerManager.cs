@@ -50,19 +50,7 @@ namespace Datadog.Trace.Debugger
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
             _cancellationToken = new CancellationTokenSource();
-
-            /*
-            var tracerManager = TracerManager.Instance;
-            try
-            {
-                DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracerManager.Settings.ServiceName ?? tracerManager.DefaultServiceName);
-            }
-            catch (Exception e)
-            {
-                DynamicInstrumentationHelper.ServiceName = tracerManager.DefaultServiceName;
-                Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
-            }
-            */
+            ServiceName = string.Empty;
         }
 
         internal static DebuggerManager Instance => _lazyInstance.Value;
@@ -79,7 +67,7 @@ namespace Datadog.Trace.Debugger
 
         internal ExceptionReplay? ExceptionReplay { get; private set; }
 
-        internal string ServiceName => DynamicInstrumentationHelper.ServiceName;
+        internal string ServiceName { get; private set; }
 
         private async Task<bool> WaitForDiscoveryServiceAsync(IDiscoveryService discoveryService, CancellationToken cancellationToken)
         {
@@ -113,6 +101,21 @@ namespace Datadog.Trace.Debugger
         {
             DebuggerSnapshotSerializer.SetConfig(settings);
             Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
+            ServiceName = GetServiceName();
+        }
+
+        private string GetServiceName()
+        {
+            var tracerManager = TracerManager.Instance;
+            try
+            {
+                return TraceUtil.NormalizeTag(tracerManager.Settings.ServiceName ?? tracerManager.DefaultServiceName);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
+                return tracerManager.DefaultServiceName;
+            }
         }
 
         private void SetCodeOriginState()
