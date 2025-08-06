@@ -102,7 +102,7 @@ namespace Datadog.Trace.Propagators
 
             foreach (var injector in _injectors)
             {
-                Log.Information("Injecting context: injecting with {PropagatorType}", injector.PropagatorType);
+                Log.Information("Injecting context: injecting with {PropagatorType}", injector.GetType().Name);
                 injector.Inject(context, carrier, carrierSetter);
             }
 
