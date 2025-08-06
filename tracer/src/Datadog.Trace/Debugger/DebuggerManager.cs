@@ -51,6 +51,7 @@ namespace Datadog.Trace.Debugger
             ExceptionReplaySettings = exceptionReplaySettings;
             _cancellationToken = new CancellationTokenSource();
 
+            /*
             var tracerManager = TracerManager.Instance;
             try
             {
@@ -61,6 +62,7 @@ namespace Datadog.Trace.Debugger
                 DynamicInstrumentationHelper.ServiceName = tracerManager.DefaultServiceName;
                 Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
             }
+            */
         }
 
         internal static DebuggerManager Instance => _lazyInstance.Value;
@@ -214,6 +216,8 @@ namespace Datadog.Trace.Debugger
             {
                 return;
             }
+
+            await Task.Delay(500);
 
             OneTimeSetup();
 
