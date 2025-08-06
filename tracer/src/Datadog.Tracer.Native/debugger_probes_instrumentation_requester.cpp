@@ -339,7 +339,7 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
 {
     if (removeProbes != nullptr)
     {
-        Logger::Info("LiveDebugger: received request to remove ", removeProbesLength, " probes from the managed side.");
+        Logger::Info("Dynamic Instrumentation: received request to remove ", removeProbesLength, " probes from the managed side.");
 
         if (removeProbesLength <= 0) return;
 
@@ -449,7 +449,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
 
     if (methodProbes != nullptr && methodProbesLength > 0)
     {
-        Logger::Info("InitializeLiveDebugger: received ", methodProbesLength, " method probes from managed side.");
+        Logger::Info("Dynamic Instrumentation: received ", methodProbesLength, " method probes from managed side.");
 
         for (int i = 0; i < methodProbesLength; i++)
         {
@@ -499,7 +499,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
 
     if (spanProbes != nullptr && spanProbesLength > 0)
     {
-        Logger::Info("InitializeLiveDebugger: received ", methodProbesLength, " span probes from managed side.");
+        Logger::Info("Dynamic Instrumentation: received ", methodProbesLength, " span probes from managed side.");
 
         for (int i = 0; i < spanProbesLength; i++)
         {
@@ -585,7 +585,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
 {
     if (lineProbes != nullptr)
     {
-        Logger::Info("InitializeLiveDebugger: received ", lineProbesLength, " integrations from managed side.");
+        Logger::Info("Dynamic Instrumentation: received ", lineProbesLength, " integrations from managed side.");
 
         if (lineProbesLength <= 0) return;
 
@@ -639,7 +639,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
             m_probes.push_back(lineProbe);
         }
 
-        Logger::Info("LiveDebugger: Total method probes added: ", m_probes.size());
+        Logger::Info("Dynamic Instrumentation: Total method probes added: ", m_probes.size());
     }
 }
 

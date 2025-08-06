@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(null)]
         [InlineData("")]
         [InlineData("false")]
-        public void DebuggerDisabled(string enabled)
+        public void DynamicInstrumentationDisabled(string enabled)
         {
             var settings = new DebuggerSettings(
                 new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),

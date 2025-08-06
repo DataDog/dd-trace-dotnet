@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.Debugger;
 public class DynamicInstrumentationTests
 {
     [Fact]
-    public async Task DebuggerEnabled_ServicesCalled()
+    public async Task DynamicInstrumentationEnabled_ServicesCalled()
     {
         var settings = DebuggerSettings.FromSource(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
@@ -62,7 +62,7 @@ public class DynamicInstrumentationTests
     }
 
     [Fact]
-    public void DebuggerDisabled_ServicesNotCalled()
+    public void DynamicInstrumentationDisabled_ServicesNotCalled()
     {
         var settings = DebuggerSettings.FromSource(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
