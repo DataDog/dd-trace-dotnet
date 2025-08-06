@@ -104,7 +104,7 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
                 {
                     threadLifetimeIsLogged = true;
                 }
-                else if (line.Contains("DD_PROFILER_MANAGED_ACTIVATION_ENABLED"))
+                else if (line.Contains("DD_PROFILING_MANAGED_ACTIVATION_ENABLED"))
                 {
                     stableConfigIsLogged = true;
                 }
@@ -212,7 +212,7 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
                 {
                     threadLifetimeIsLogged = true;
                 }
-                else if (line.Contains("DD_PROFILER_MANAGED_ACTIVATION_ENABLED"))
+                else if (line.Contains("DD_PROFILING_MANAGED_ACTIVATION_ENABLED"))
                 {
                     stableConfigIsLogged = true;
                 }

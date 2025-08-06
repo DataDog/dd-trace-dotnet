@@ -63,7 +63,7 @@ public:
     inline static const shared::WSTRING ThreadLifetimeEnabled           = WStr("DD_THREAD_LIFETIME_ENABLED");
     inline static const shared::WSTRING SystemCallsShieldEnabled        = WStr("DD_INTERNAL_SYSTEM_CALLS_SHIELD_ENABLED");
     inline static const shared::WSTRING EtwEnabled                      = WStr("DD_INTERNAL_PROFILING_ETW_ENABLED");
-    inline static const shared::WSTRING ManagedActivationEnabled        = WStr("DD_PROFILER_MANAGED_ACTIVATION_ENABLED");
+    inline static const shared::WSTRING ManagedActivationEnabled        = WStr("DD_PROFILING_MANAGED_ACTIVATION_ENABLED");
     inline static const shared::WSTRING SsiDeployed                     = WStr("DD_INJECTION_ENABLED");
     inline static const shared::WSTRING EtwLoggingEnabled               = WStr("DD_INTERNAL_ETW_LOGGING_ENABLED");
     inline static const shared::WSTRING EtwReplayEndpoint               = WStr("DD_INTERNAL_ETW_REPLAY_ENDPOINT");
