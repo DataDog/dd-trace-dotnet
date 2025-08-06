@@ -2262,14 +2262,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.3.1" },
                 new object[] { "5.4.1" },
                 new object[] { "7.4.0" },
-                new object[] { "8.1.0" },
+                new object[] { "8.0.2" },
 #endif
 #if NET7_0
                 new object[] { "4.0.3" },
                 new object[] { "4.3.1" },
                 new object[] { "5.4.1" },
                 new object[] { "7.4.0" },
-                new object[] { "8.1.0" },
+                new object[] { "8.0.2" },
 #endif
 #if NET8_0
                 new object[] { "4.0.3" },
