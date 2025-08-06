@@ -114,6 +114,9 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
+            await RunDotnet("--info");
+            await RunDotnet("new console -h");
+
             var logDir = await RunDotnet($"new console -n {excludedProcess} -f {EnvironmentHelper.GetTargetFramework()} -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
 
