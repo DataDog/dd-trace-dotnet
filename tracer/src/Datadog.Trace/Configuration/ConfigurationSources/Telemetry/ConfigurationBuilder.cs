@@ -252,21 +252,39 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         // ****************
         // Bool accessors
         // ****************
-        public bool? AsBool() => AsBool(getDefaultValue: null, validator: null);
+        public bool? AsBool() => AsBool(defaultValue: null, validator: null, converter: null);
 
         public bool AsBool(bool defaultValue) => AsBool(() => defaultValue, validator: null).Value;
 
-        public bool? AsBool(Func<bool, bool> validator) => AsBool(null, validator);
+        public bool? AsBool(Func<bool, bool> validator) => AsBool(defaultValue: null, validator, converter: null);
 
         public bool AsBool(bool defaultValue, Func<bool, bool>? validator)
-            => AsBool(() => defaultValue, validator).Value;
+            => AsBool(defaultValue, validator, converter: null).Value;
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
-        public bool? AsBool(Func<DefaultResult<bool>>? getDefaultValue, Func<bool, bool>? validator)
+        public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator)
             => AsBool(getDefaultValue, validator, converter: null);
 
+        [return: NotNullIfNotNull(nameof(defaultValue))]
+        public bool? AsBool(bool? defaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
+        {
+            var result = GetBoolResult(validator, converter: null);
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            if (defaultValue is not { } value)
+            {
+                return null;
+            }
+
+            Telemetry.Record(Key, value, ConfigurationOrigins.Default);
+            return value;
+        }
+
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
-        public bool? AsBool(Func<DefaultResult<bool>>? getDefaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
+        public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
         {
             var result = GetBoolResult(validator, converter);
             return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
