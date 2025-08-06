@@ -678,5 +678,7 @@
   "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS": "trace_graphql_error_extensions",
   "DD_TRACE_BAGGAGE_TAG_KEYS": "trace_baggage_tag_keys",
   "DD_METRICS_OTEL_ENABLED": "metrics_otel_enabled",
-  "DD_METRICS_OTEL_METER_NAMES": "metrics_otel_meter_names"
+  "DD_METRICS_OTEL_METER_NAMES": "metrics_otel_meter_names",
+  "DD_PROFILER_MANAGED_ACTIVATION_ENABLED": "trace_profiler_managed_activation_enabled",
+  "DD_CALLSITE_MANAGED_ACTIVATION_ENABLED": "trace_callsite_managed_activation_enabled"
 }

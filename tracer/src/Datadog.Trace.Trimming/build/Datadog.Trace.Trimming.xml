@@ -107,6 +107,7 @@
    <assembly fullname="Microsoft.TestPlatform.CrossPlatEngine" />
    <assembly fullname="Microsoft.TestPlatform.PlatformAbstractions" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
+   <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
    <assembly fullname="Microsoft.VisualStudio.TraceDataCollector" />
    <assembly fullname="Microsoft.Win32.Primitives">
