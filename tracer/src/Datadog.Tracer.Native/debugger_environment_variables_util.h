@@ -8,7 +8,7 @@
 namespace debugger
 {
 
-bool IsDynamicInstrumentationEnabled();
+bool IsDebuggerEnabled();
 bool IsExceptionReplayEnabled();
 bool IsDebuggerInstrumentAllEnabled();
 bool IsDebuggerInstrumentAllLinesEnabled();

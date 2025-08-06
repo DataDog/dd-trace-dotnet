@@ -4,22 +4,21 @@
 namespace debugger
 {
 
-bool IsDynamicInstrumentationEnabled()
+bool IsDebuggerEnabled()
 {
     CheckIfTrue(GetEnvironmentValue(environment::debugger_enabled));
 }
 
 bool IsExceptionReplayEnabled()
 {
-    static int sErEnabledValue = -1;
-    if (sErEnabledValue == -1)
+    static int sValue = -1;
+    if (sValue == -1)
     {
         const auto old_exception_replay_flag = GetEnvironmentValue(environment::exception_debugging_enabled);
         const auto new_exception_replay_flag = GetEnvironmentValue(environment::exception_replay_enabled);
-        sErEnabledValue = (IsFalse(old_exception_replay_flag) || IsFalse(new_exception_replay_flag)) ? 0 : 1;
+        sValue = (IsTrue(old_exception_replay_flag) || IsTrue(new_exception_replay_flag)) ? 1 : 0;
     }
-
-    return sErEnabledValue == 1;
+    return sValue == 1;
 }
 
 bool IsDebuggerInstrumentAllEnabled()
