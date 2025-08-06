@@ -19,7 +19,7 @@ internal partial class CircularChannel : IChannel
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CircularChannel));
 
     private readonly MemoryMappedFile _mmf;
-    private readonly Mutex _mutex;
+    private readonly CrossPlatformLock _mutex;
     private readonly CircularChannelSettings _settings;
 
     private long _disposed;
@@ -72,15 +72,15 @@ internal partial class CircularChannel : IChannel
         }
 
         _disposed = 0;
-        var mutexName = FrameworkDescription.Instance.IsWindows() ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}" : $"{Path.GetFileNameWithoutExtension(fileName)}";
-        Log.Debug("CircularChannel: Initializing with file {FileName} and mutex name {Mutex}", fileName, mutexName);
-        if (Mutex.TryOpenExisting(mutexName, out var existingMutex))
+        var lockName = Path.GetFileNameWithoutExtension(fileName);
+        Log.Debug("CircularChannel: Initializing with file {FileName} and lock name {LockName}", fileName, lockName);
+        if (CrossPlatformLock.TryOpenExisting(lockName, out var existingLock) && existingLock != null)
         {
-            _mutex = existingMutex;
+            _mutex = existingLock;
         }
         else
         {
-            _mutex = new Mutex(initiallyOwned: false, name: mutexName);
+            _mutex = new CrossPlatformLock(lockName);
         }
 
         var hasHandle = _mutex.WaitOne(_settings.MutexTimeout);
