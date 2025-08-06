@@ -66,7 +66,7 @@ public static class TestMethodRunnerExecuteTestIntegration
 /// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner.ExecuteTest calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    AssemblyNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices"],
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
     MethodName = "ExecuteTestAsync",
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",

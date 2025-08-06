@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 /// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TypeCache::GetTestMethodInfo(Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod,Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.ITestContext,System.Boolean) calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    AssemblyNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices"],
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TypeCache",
     MethodName = "GetTestMethodInfo",
     ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo",
@@ -37,7 +37,7 @@ public class TypeCacheGetTestMethodInfoIntegration
 /// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TypeCache::GetTestMethodInfo(Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod,Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.ITestContext) calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    AssemblyNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices"],
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TypeCache",
     MethodName = "GetTestMethodInfo",
     ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo",

@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 /// System.Void Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.UnitTestDiscoverer::SendTestCases(System.String,System.Collections.Generic.IEnumerable`1[Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement],Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.ITestCaseDiscoverySink,Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IDiscoveryContext,Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger) calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    AssemblyNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices"],
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.UnitTestDiscoverer",
     MethodName = "SendTestCases",
     ReturnTypeName = ClrNames.Void,

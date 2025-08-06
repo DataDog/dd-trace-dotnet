@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 /// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo.ExecuteAssemblyCleanup() calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    AssemblyNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices"],
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo",
     MethodName = "ExecuteAssemblyCleanup",
     ReturnTypeName = ClrNames.Void,

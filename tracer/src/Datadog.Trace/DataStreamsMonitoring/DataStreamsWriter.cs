@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.Logging;
@@ -33,11 +34,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly bool _isInDefaultState;
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
     private Task? _processTask;
     private Timer? _flushTimer;
+    private TaskCompletionSource<bool>? _currentFlushTcs;
 
     private int _isSupported = SupportState.Unknown;
     private bool _isInitialized;
@@ -70,12 +73,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public static DataStreamsWriter Create(
         TracerSettings settings,
+        ProfilerSettings profilerSettings,
         IDiscoveryService discoveryService,
         string defaultServiceName)
         => new(
             settings,
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(settings, defaultServiceName),
+                new DataStreamsMessagePackFormatter(settings, profilerSettings, defaultServiceName),
                 bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
             new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter)),
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
@@ -150,6 +154,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         _flushTimer?.Dispose();
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
+        _flushSemaphore.Dispose();
     }
 
     private async Task FlushAndCloseAsync()
@@ -179,6 +184,45 @@ internal class DataStreamsWriter : IDataStreamsWriter
         if (completedTask != _processTask)
         {
             Log.Error("Could not flush all data streams stats before process exit");
+        }
+    }
+
+    public async Task FlushAsync()
+    {
+        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var timeout = TimeSpan.FromSeconds(5);
+
+            if (_processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
+            if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+            {
+                return;
+            }
+
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Interlocked.Exchange(ref _currentFlushTcs, tcs);
+
+            RequestFlush();
+
+            var completedTask = await Task.WhenAny(
+                tcs.Task,
+                _processExit.Task,
+                Task.Delay(timeout)).ConfigureAwait(false);
+
+            if (completedTask != tcs.Task)
+            {
+                Log.Error("Data streams flush timeout after {Timeout}ms", timeout.TotalMilliseconds);
+            }
+        }
+        finally
+        {
+            _currentFlushTcs = null;
+            _flushSemaphore.Release();
         }
     }
 
@@ -246,6 +290,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 if (flushRequested == 1)
                 {
                     await WriteToApiAsync().ConfigureAwait(false);
+                    var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
+                    currentFlushTcs?.TrySetResult(true);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
             }

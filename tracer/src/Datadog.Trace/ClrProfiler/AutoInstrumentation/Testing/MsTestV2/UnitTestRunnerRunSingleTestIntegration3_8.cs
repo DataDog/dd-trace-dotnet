@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 /// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner.RunSingleTest calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    AssemblyNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices"],
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
     MethodName = "RunSingleTest",
     ReturnTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]",

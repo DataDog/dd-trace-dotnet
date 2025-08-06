@@ -89,6 +89,7 @@ public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFix
         var url = $"/health?arg=dummy_rule";
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode);
+        FilterConnectionHeader(settings);
         var fileId = nameof(TestBlockingAction);
         // need to reset if the process is going to be reused
         await agent.SetupRcmAndWait(Output, []);

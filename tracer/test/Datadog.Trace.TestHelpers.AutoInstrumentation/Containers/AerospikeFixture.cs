@@ -28,6 +28,7 @@ public class AerospikeFixture : ContainerFixture
     {
         // pinning to a known good version because the latest version
         // (6.3.0.5 at time of issue) causes 'Server memory error' and flake
+        // Keep syncronized image version with docker-compose.yml
         var container = new ContainerBuilder()
                        .WithImage("aerospike/aerospike-server:6.2.0.6")
                        .WithPortBinding(AerospikePort, true)
