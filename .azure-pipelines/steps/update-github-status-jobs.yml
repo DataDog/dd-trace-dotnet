@@ -66,4 +66,4 @@ jobs:
       parameters:
         checkName: $(System.StageName)
         status: 'failure'
-        description: 'Run failed'
+        description: 'Run failed, please investigate and/or retry this (if flake) via Azure DevOps'

@@ -637,10 +637,11 @@ namespace Datadog.Trace.Configuration
                                  .WithKeys(ConfigurationKeys.BaggageMaximumBytes)
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageBytes);
 
-            BaggageTagKeys = config
+            BaggageTagKeys = new HashSet<string>(
+                            config
                             .WithKeys(ConfigurationKeys.BaggageTagKeys)
                             .AsString(defaultValue: "user.id,session.id,account.id")
-                            ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? [];
+                            ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? []);
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
 
@@ -1156,7 +1157,7 @@ namespace Datadog.Trace.Configuration
         /// Default value is "user.id,session.id,account.id".
         /// </summary>
         /// <seealso cref="ConfigurationKeys.BaggageTagKeys"/>
-        internal string[] BaggageTagKeys { get; }
+        internal HashSet<string> BaggageTagKeys { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics
