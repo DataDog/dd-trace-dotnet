@@ -75,6 +75,22 @@ internal class DataStreamsManager
         await writer.DisposeAsync().ConfigureAwait(false);
     }
 
+    public async Task FlushAsync()
+    {
+        if (!IsEnabled)
+        {
+            return;
+        }
+
+        var writer = Volatile.Read(ref _writer);
+        if (writer is null)
+        {
+            return;
+        }
+
+        await writer.FlushAsync().ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Trys to extract a <see cref="PathwayContext"/>, from the provided <paramref name="headers"/>
     /// If data streams is disabled, or no pathway is present, returns null.
