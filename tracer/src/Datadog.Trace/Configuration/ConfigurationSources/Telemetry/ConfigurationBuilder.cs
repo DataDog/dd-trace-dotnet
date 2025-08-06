@@ -25,72 +25,13 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
     public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
 
-    private static bool TryHandleResult<T>(
-        IConfigurationTelemetry telemetry,
-        string key,
-        ConfigurationResult<T> result,
-        bool recordValue,
-        Func<T>? getDefaultValue,
-        [NotNullIfNotNull(nameof(getDefaultValue))] out T? value)
-        where T : notnull
-    {
-        if (result is { Result: { } ddResult, IsValid: true })
-        {
-            value = ddResult;
-            return true;
-        }
-
-        // don't have a default value, so caller (which knows what the <T> is needs
-        // to return the default value. Necessary because we can't create a generic
-        // method that works "correctly" for both value types and reference types.
-        if (getDefaultValue is null)
-        {
-            value = default;
-            return false;
-        }
-
-        var defaultValue = getDefaultValue();
-        RecordTelemetry(telemetry, key, recordValue, defaultValue);
-
-        value = defaultValue;
-        return true;
-    }
-
-    private static bool TryHandleResult<T>(
-        IConfigurationTelemetry telemetry,
-        string key,
-        ConfigurationResult<T> result,
-        bool recordValue,
-        Func<DefaultResult<T>>? getDefaultValue,
-        [NotNullIfNotNull(nameof(getDefaultValue))] out T? value)
-        where T : notnull
-    {
-        if (result is { Result: { } ddResult, IsValid: true })
-        {
-            value = ddResult;
-            return true;
-        }
-
-        // don't have a default value, so caller (which knows what the <T> is needs
-        // to return the default value. Necessary because we can't create a generic
-        // method that works "correctly" for both value types and reference types.
-        if (getDefaultValue is null)
-        {
-            value = default;
-            return false;
-        }
-
-        var defaultValue = getDefaultValue();
-        RecordTelemetry(telemetry, key, recordValue, defaultValue);
-
-        value = defaultValue.Result;
-        return true;
-    }
-
     private static void RecordTelemetry<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, T defaultValue)
     {
         switch (defaultValue)
         {
+            case DefaultResult<T> defaultResult:
+                telemetry.Record(key, defaultResult.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
+                break;
             case int intVal:
                 telemetry.Record(key, intVal, ConfigurationOrigins.Default);
                 break;
@@ -108,25 +49,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             default:
                 // TODO: this shouldn't be calleable in practice, we need to revise it
                 telemetry.Record(key, defaultValue.ToString(), recordValue, ConfigurationOrigins.Default);
-                break;
-        }
-    }
-
-    private static void RecordTelemetry<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, DefaultResult<T> defaultValue)
-    {
-        switch (defaultValue.Result)
-        {
-            case int intVal:
-                telemetry.Record(key, intVal, ConfigurationOrigins.Default);
-                break;
-            case double doubleVal:
-                telemetry.Record(key, doubleVal, ConfigurationOrigins.Default);
-                break;
-            case bool boolVal:
-                telemetry.Record(key, boolVal, ConfigurationOrigins.Default);
-                break;
-            default:
-                telemetry.Record(key, defaultValue.TelemetryValue, recordValue, ConfigurationOrigins.Default);
                 break;
         }
     }
@@ -217,7 +139,19 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
         {
             var result = GetStringResult(validator, converter, recordValue);
-            return TryHandleResult(Telemetry, Key, result, recordValue, getDefaultValue, out var value) ? value : null;
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            if (getDefaultValue is null)
+            {
+                return null;
+            }
+
+            var defaultValue = getDefaultValue();
+            RecordTelemetry(Telemetry, Key, recordValue, defaultValue);
+            return defaultValue;
         }
 
         // ****************
@@ -241,9 +175,14 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             where T : notnull
         {
             var result = GetAs(validator, converter);
-            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value)
-                       ? value
-                       : default!; // TryHandleResult always returns true as getDefaultValue != null
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            var defaultValue = getDefaultValue();
+            RecordTelemetry(Telemetry, Key, true, defaultValue.TelemetryValue);
+            return defaultValue.Result;
         }
 
         public T? GetAsClass<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
@@ -298,7 +237,19 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
         {
             var result = GetBoolResult(validator, converter);
-            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            if (getDefaultValue is null)
+            {
+                return null;
+            }
+
+            var defaultValue = getDefaultValue();
+            RecordTelemetry(Telemetry, Key, true, defaultValue);
+            return defaultValue;
         }
 
         // ****************
@@ -698,7 +649,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var defaultValue = getDefaultValue();
-            RecordTelemetry(Telemetry, Key, RecordValue, defaultValue);
+            RecordTelemetry(Telemetry, Key, RecordValue, defaultValue.TelemetryValue);
             return defaultValue.Result;
         }
 
