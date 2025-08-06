@@ -57,7 +57,7 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
         {
             foreach (var message in messages)
             {
-                Log.Information("Propagating context for message");
+                Log.Information("Propagating context for message of type: {MessageType}", message?.GetType()?.FullName ?? "null");
 
                 if (message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage))
                 {
