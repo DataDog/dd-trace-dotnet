@@ -594,7 +594,7 @@ namespace Foo
         {
             // Disable .NET CLI telemetry to prevent extra HTTP spans
             SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1");
-            return RunCommand(workingDirectory, mockTracerAgent, EnvironmentHelper.GetDotnetExe(), arguments);
+            return RunCommand(workingDirectory, mockTracerAgent, "dotnet", arguments);
         }
 
         private async Task<string> RunCommand(string workingDirectory, MockTracerAgent mockTracerAgent, string exe, string arguments = null)
