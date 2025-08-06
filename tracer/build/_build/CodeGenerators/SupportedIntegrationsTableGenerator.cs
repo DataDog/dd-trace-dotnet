@@ -308,12 +308,11 @@ namespace CodeGenerators
         private static void GenerateCsv(IEnumerable<IntegrationInfo> integrations, AbsolutePath outputPath, string framework)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Display Name,Integration Name,NuGet Package,Assembly,Min Version,Max Version,Built-in");
+            sb.AppendLine("Integration Name,NuGet Package,Min Version,Max Version");
 
             foreach (var integration in integrations)
             {
-                var builtIn = integration.IsBuiltIn ? "Yes" : "No";
-                sb.AppendLine($"\"{integration.DisplayName}\",\"{integration.IntegrationName}\",\"{integration.NuGetPackage}\",\"{integration.AssemblyName}\",\"{integration.MinVersion}\",\"{integration.MaxVersion}\",\"{builtIn}\"");
+                sb.AppendLine($"\"{integration.IntegrationName}\",\"{integration.NuGetPackage}\",\"{integration.MinVersion}\",\"{integration.MaxVersion}\"");
             }
 
             EnsureExistingDirectory(outputPath.Parent);
