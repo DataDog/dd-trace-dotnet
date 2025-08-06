@@ -62,13 +62,15 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
                 if (message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage))
                 {
                     Log.Information("Duck casting successful for message");
-                    if (serviceBusMessage.ApplicationProperties == null)
+                    if (serviceBusMessage.ApplicationProperties != null)
                     {
-                        serviceBusMessage.ApplicationProperties = new Dictionary<string, object>();
+                        var context = new PropagationContext(span.Context, Baggage.Current);
+                        tracer.TracerManager.SpanContextPropagator.Inject(context, serviceBusMessage.ApplicationProperties, default(ContextPropagation));
                     }
-
-                    var context = new PropagationContext(span.Context, Baggage.Current);
-                    tracer.TracerManager.SpanContextPropagator.Inject(context, serviceBusMessage.ApplicationProperties, default(ContextPropagation));
+                    else
+                    {
+                        Log.Warning("ApplicationProperties is null for message");
+                    }
                 }
                 else
                 {

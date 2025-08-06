@@ -50,13 +50,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             span.SetTag("azure.servicebus.namespace", "namespace");
             span.SetTag("azure.servicebus.operation", "send");
 
-            if (message.ApplicationProperties == null)
+            if (message.ApplicationProperties != null)
             {
-                message.ApplicationProperties = new Dictionary<string, object>();
+                var context = new PropagationContext(span.Context, Baggage.Current);
+                tracer.TracerManager.SpanContextPropagator.Inject(context, message.ApplicationProperties, default(ContextPropagation));
             }
-
-            var context = new PropagationContext(span.Context, Baggage.Current);
-            tracer.TracerManager.SpanContextPropagator.Inject(context, message.ApplicationProperties, default(ContextPropagation));
+            else
+            {
+                Log.Warning("ApplicationProperties is null for message");
+            }
 
             return new CallTargetState(scope);
         }

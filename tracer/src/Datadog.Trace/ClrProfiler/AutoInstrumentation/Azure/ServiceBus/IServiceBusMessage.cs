@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 internal interface IServiceBusMessage : IDuckType
 {
-    IDictionary<string, object> ApplicationProperties { get; set; }
+    IDictionary<string, object> ApplicationProperties { get; }
 
     IBinaryData Body { get; }
 }
