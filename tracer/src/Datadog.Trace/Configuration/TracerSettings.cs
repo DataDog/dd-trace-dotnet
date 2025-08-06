@@ -662,7 +662,7 @@ namespace Datadog.Trace.Configuration
 
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
-                                               .AsBool(true);
+                                               .AsBool(false);
 
             IsRareSamplerEnabled = config
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
