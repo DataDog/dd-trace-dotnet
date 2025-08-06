@@ -217,7 +217,7 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            await Task.Delay(500);
+            await Task.Delay(500).ConfigureAwait(false);
 
             OneTimeSetup();
 
