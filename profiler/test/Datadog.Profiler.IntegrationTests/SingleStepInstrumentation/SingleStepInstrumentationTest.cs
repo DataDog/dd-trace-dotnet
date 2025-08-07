@@ -240,6 +240,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
             // deployed and enabled with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
             // short lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
@@ -256,6 +257,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
             // deployed and enabled with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
 
             // simulate long lived
@@ -273,6 +275,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableTracer: true, enableProfiler: false);
 
             // deployed and enabled with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
             // short lived with span
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
@@ -289,6 +292,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableTracer: true, enableProfiler: false);
 
             // deployed and enabled with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
@@ -305,6 +309,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableTracer: true, enableProfiler: false);
 
             // deployed and enabled with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, TimeSpan.FromSeconds(6).TotalMilliseconds.ToString());

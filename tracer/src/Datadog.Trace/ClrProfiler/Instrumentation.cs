@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler
                     {
                         ProfilingEnabled = (profilerSettings.ProfilerState == ProfilerState.Auto) ? NativeInterop.ProfilingEnabled.Auto :
                                            (profilerSettings.ProfilerState == ProfilerState.Enabled) ? NativeInterop.ProfilingEnabled.Enabled :
-                                           NativeInterop.ProfilingEnabled.Enabled,
+                                           NativeInterop.ProfilingEnabled.Disabled,
                         TracingEnabled = tracerSettings.TraceEnabled,
                         IastEnabled = Iast.Iast.Instance.Settings.Enabled,
                         RaspEnabled = Security.Instance.Settings.RaspEnabled,
