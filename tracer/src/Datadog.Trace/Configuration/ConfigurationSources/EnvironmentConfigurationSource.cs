@@ -17,7 +17,7 @@ namespace Datadog.Trace.Configuration
     internal class EnvironmentConfigurationSource : StringConfigurationSource
     {
         /// <inheritdoc />
-        internal override ConfigurationOrigins Origin => ConfigurationOrigins.EnvVars;
+        public override ConfigurationOrigins Origin => ConfigurationOrigins.EnvVars;
 
         /// <inheritdoc />
         protected override string? GetString(string key)
