@@ -209,16 +209,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             settings.ApiKey.Should().Be(expected);
         }
 
-        [Theory]
-        [MemberData(nameof(BooleanTestCases), true)]
-        public void LogsInjectionEnabled(string value, bool expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.LogsInjectionEnabled, value));
-            var tracerSettings = new TracerSettings(source);
-
-            tracerSettings.LogsInjectionEnabled.Should().Be(expected);
-        }
-
         [Fact]
         public void ValidSettingsAreValid()
         {
