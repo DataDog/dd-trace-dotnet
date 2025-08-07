@@ -979,7 +979,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), true)]
+        [MemberData(nameof(BooleanTestCases), false)]
         public void IsDataStreamsLegacyHeadersEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, value));

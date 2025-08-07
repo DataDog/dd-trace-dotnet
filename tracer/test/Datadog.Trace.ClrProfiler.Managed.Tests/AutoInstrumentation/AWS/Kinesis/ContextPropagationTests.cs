@@ -148,7 +148,6 @@ public class ContextPropagationTests
         extractedTraceContext["x-datadog-parent-id"].Should().Be(scope?.Span.SpanId.ToString());
         extractedTraceContext["x-datadog-trace-id"].Should().Be(scope?.Span.TraceId.ToString());
         extractedTraceContext["dd-pathway-ctx-base64"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
-        extractedTraceContext["dd-pathway-ctx"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
     }
 
     [Fact]
@@ -203,7 +202,6 @@ public class ContextPropagationTests
         extractedTraceContext["x-datadog-parent-id"].Should().Be(scope?.Span.SpanId.ToString());
         extractedTraceContext["x-datadog-trace-id"].Should().Be(scope?.Span.TraceId.ToString());
         extractedTraceContext["dd-pathway-ctx-base64"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
-        extractedTraceContext["dd-pathway-ctx"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
     }
 
     [Fact]

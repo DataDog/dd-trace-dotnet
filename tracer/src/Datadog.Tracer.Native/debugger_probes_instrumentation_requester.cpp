@@ -330,7 +330,19 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     m_work_offloader(work_offloader),
     m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
 {
-    is_debugger_or_exception_debugging_enabled = IsDebuggerEnabled() || IsExceptionReplayEnabled();
+    auto diEnabled = IsDynamicInstrumentationEnabled();
+    if (diEnabled == false)
+    {
+        Logger::Debug("Dynamic Instrumentation is disabled");
+    }
+
+    auto erEnabled = IsExceptionReplayEnabled();
+    if (erEnabled == false)
+    {
+        Logger::Debug("Exception Replay is explicitly disabled");
+    }
+
+    is_debugger_or_exception_debugging_enabled = diEnabled || erEnabled;
 }
 
 void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes,
@@ -339,7 +351,7 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
 {
     if (removeProbes != nullptr)
     {
-        Logger::Info("LiveDebugger: received request to remove ", removeProbesLength, " probes from the managed side.");
+        Logger::Info("Dynamic Instrumentation: received request to remove ", removeProbesLength, " probes from the managed side.");
 
         if (removeProbesLength <= 0) return;
 
@@ -449,7 +461,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
 
     if (methodProbes != nullptr && methodProbesLength > 0)
     {
-        Logger::Info("InitializeLiveDebugger: received ", methodProbesLength, " method probes from managed side.");
+        Logger::Info("Dynamic Instrumentation: received ", methodProbesLength, " method probes from managed side.");
 
         for (int i = 0; i < methodProbesLength; i++)
         {
@@ -499,7 +511,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
 
     if (spanProbes != nullptr && spanProbesLength > 0)
     {
-        Logger::Info("InitializeLiveDebugger: received ", methodProbesLength, " span probes from managed side.");
+        Logger::Info("Dynamic Instrumentation: received ", methodProbesLength, " span probes from managed side.");
 
         for (int i = 0; i < spanProbesLength; i++)
         {
@@ -585,7 +597,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
 {
     if (lineProbes != nullptr)
     {
-        Logger::Info("InitializeLiveDebugger: received ", lineProbesLength, " integrations from managed side.");
+        Logger::Info("Dynamic Instrumentation: received ", lineProbesLength, " integrations from managed side.");
 
         if (lineProbesLength <= 0) return;
 
@@ -639,7 +651,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
             m_probes.push_back(lineProbe);
         }
 
-        Logger::Info("LiveDebugger: Total method probes added: ", m_probes.size());
+        Logger::Info("Dynamic Instrumentation: Total method probes added: ", m_probes.size());
     }
 }
 
