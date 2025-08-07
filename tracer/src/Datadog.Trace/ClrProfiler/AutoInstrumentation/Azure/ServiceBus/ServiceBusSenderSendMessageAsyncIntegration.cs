@@ -50,26 +50,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             span.SetTag("azure.servicebus.namespace", "namespace");
             span.SetTag("azure.servicebus.operation", "send");
 
-            if (message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage))
-            {
-                Log.Information("Duck casting successful for message");
-                if (serviceBusMessage.UserProperties != null)
-                {
-                    Log.Information("Propagating context for message of type: {MessageType}", message.GetType().FullName);
-                    serviceBusMessage.UserProperties["InstrumentationHeaderSendMessage"] = "InstrumentationValue";
-                    var context = new PropagationContext(span.Context, Baggage.Current);
-                    tracer.TracerManager.SpanContextPropagator.Inject(context, serviceBusMessage.UserProperties, default(ContextPropagation));
-                }
-                else
-                {
-                    Log.Warning("UserProperties is null for message");
-                }
-            }
-            else
-            {
-                Log.Warning("Could not duck cast message to IServiceBusMessage");
-            }
-
             return new CallTargetState(scope);
         }
 

@@ -14,7 +14,5 @@ internal interface IServiceBusMessage : IDuckType
 {
     IDictionary<string, object> ApplicationProperties { get; }
 
-    IDictionary<string, object> UserProperties { get; }
-
     IBinaryData Body { get; }
 }

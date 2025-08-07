@@ -55,30 +55,6 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
 
         if (messages is not null)
         {
-            foreach (var message in messages)
-            {
-                Log.Information("Propagating context for message of type: {MessageType}", message?.GetType()?.FullName ?? "null");
-
-                if (message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage))
-                {
-                    Log.Information("Duck casting successful for message");
-                    if (serviceBusMessage.UserProperties != null)
-                    {
-                        Log.Information("Propagating context for message from ServiceBusSenderSendMessagesAsyncIntegration");
-                        serviceBusMessage.UserProperties["InstrumentationHeaderSendMessages"] = "InstrumentationValue";
-                        var context = new PropagationContext(span.Context, Baggage.Current);
-                        tracer.TracerManager.SpanContextPropagator.Inject(context, serviceBusMessage.UserProperties, default(ContextPropagation));
-                    }
-                    else
-                    {
-                        Log.Warning("UserProperties is null for message");
-                    }
-                }
-                else
-                {
-                    Log.Information("Could not duck cast message to IServiceBusMessage");
-                }
-            }
         }
 
         return new CallTargetState(scope);

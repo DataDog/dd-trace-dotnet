@@ -11,9 +11,11 @@ using System.Linq;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
 
@@ -241,7 +243,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                     else if (triggerType == "ServiceBus")
                     {
-                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                        extractedContext = ExtractPropagatedContextFromServiceBus(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
                     }
 
                     break;
@@ -337,31 +339,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return default;
                 }
 
-                if (!feature.TryDuckCast<GrpcBindingsFeatureStruct>(out var grpcFeature))
-                {
-                    Log.Information("Failed to duck cast feature to GrpcBindingsFeatureStruct");
-                }
-                else
-                {
-                    Log.Information("Successfully obtained grpc feature, TriggerMetadata is null: {TriggerMetadataIsNull}", grpcFeature.TriggerMetadata is null);
-
-                    foreach (var entry in grpcFeature.TriggerMetadata ?? Enumerable.Empty<KeyValuePair<string, object?>>())
-                    {
-                        var valueTypeName = entry.Value?.GetType()?.FullName ?? "null";
-                        Log.Information(
-                            "TriggerMetadata contains key: {Key}, value type: {ValueType}",
-                            entry.Key,
-                            valueTypeName);
-
-                        if (valueTypeName == "System.String")
-                        {
-                            object? grpcDataObject = null;
-                            grpcFeature.TriggerMetadata!.TryGetValue(entry.Key!, out grpcDataObject);
-                            Log.Information("TriggerMetadata key: {Key} has value: {Value}", entry.Key, grpcDataObject);
-                        }
-                    }
-                }
-
                 Log.Information("Successfully obtained binding feature, InputData is null: {InputDataIsNull}", bindingFeature.InputData is null);
 
                 object? requestDataObject = null;
@@ -417,6 +394,117 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             catch (Exception ex)
             {
                 Log.Error(ex, "Error extracting propagated HTTP context from Http binding");
+                return default;
+            }
+        }
+
+        private static PropagationContext ExtractPropagatedContextFromServiceBus<T>(T context, string? bindingName)
+            where T : IFunctionContext
+        {
+            Log.Information("ExtractPropagatedContextFromServiceBus called with bindingName: {BindingName}", bindingName);
+
+            // Need to try and grab the UserProperties from the ServiceBus message in the context
+            if (context.Features is null || string.IsNullOrEmpty(bindingName))
+            {
+                Log.Information(
+                    "Early return: context.Features is null: {FeaturesIsNull}, bindingName is null or empty: {BindingNameIsEmpty}",
+                    context.Features is null,
+                    string.IsNullOrEmpty(bindingName));
+                return default;
+            }
+
+            Log.Information("Proceeding to search for IFunctionBindingsFeature in context features for ServiceBus");
+
+            try
+            {
+                object? feature = null;
+                Log.Information("Searching for IFunctionBindingsFeature in context features");
+
+                foreach (var keyValuePair in context.Features)
+                {
+                    Log.Information("Checking feature key: {FeatureKey}", keyValuePair.Key.FullName);
+
+                    if (keyValuePair.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
+                    {
+                        feature = keyValuePair.Value;
+                        Log.Information("Found IFunctionBindingsFeature, feature type: {FeatureType}", feature?.GetType().FullName);
+                        break;
+                    }
+                }
+
+                if (feature is null || !feature.TryDuckCast<FunctionBindingsFeatureStruct>(out var bindingFeature))
+                {
+                    Log.Information(
+                        "Failed to get binding feature: feature is null: {FeatureIsNull}, duck cast successful: {DuckCastSuccess}",
+                        feature is null,
+                        feature?.TryDuckCast<FunctionBindingsFeatureStruct>(out var _) == true);
+                    return default;
+                }
+
+                if (!feature.TryDuckCast<GrpcBindingsFeatureStruct>(out var grpcFeature))
+                {
+                    Log.Information("Failed to duck cast feature to GrpcBindingsFeatureStruct for ServiceBus");
+                    return default;
+                }
+
+                Log.Information("Successfully obtained grpc feature for ServiceBus, TriggerMetadata is null: {TriggerMetadataIsNull}", grpcFeature.TriggerMetadata is null);
+
+                // Look for UserProperties in the TriggerMetadata
+                if (grpcFeature.TriggerMetadata?.TryGetValue("UserProperties", out var userPropertiesObj) == true)
+                {
+                    Log.Information("Found UserProperties in TriggerMetadata, type: {UserPropertiesType}", userPropertiesObj?.GetType().FullName);
+
+                    if (userPropertiesObj is string userPropertiesJson)
+                    {
+                        Log.Information("UserProperties is a JSON string: {UserPropertiesJson}", userPropertiesJson);
+
+                        try
+                        {
+                            // Parse the JSON string to extract headers
+                            var userPropertiesDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(userPropertiesJson);
+
+                            if (userPropertiesDict != null)
+                            {
+                                Log.Information("Successfully parsed UserProperties JSON, contains {Count} keys", (object)userPropertiesDict.Count);
+
+                                // Log all keys for debugging
+                                foreach (var kvp in userPropertiesDict)
+                                {
+                                    Log.Information("UserProperties key: {Key}, value: {Value}", kvp.Key, kvp.Value);
+                                }
+
+                                // Create a headers collection adapter for context extraction
+                                var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
+                                var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+
+                                Log.Information("Successfully extracted propagation context from ServiceBus UserProperties");
+                                return propagationContext;
+                            }
+                            else
+                            {
+                                Log.Information("Failed to deserialize UserProperties JSON to dictionary");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error parsing UserProperties JSON: {Json}", userPropertiesJson);
+                        }
+                    }
+                    else
+                    {
+                        Log.Information("UserProperties is not a string, cannot parse as JSON");
+                    }
+                }
+                else
+                {
+                    Log.Information("UserProperties not found in TriggerMetadata");
+                }
+
+                return default;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error extracting propagated context from ServiceBus binding");
                 return default;
             }
         }
