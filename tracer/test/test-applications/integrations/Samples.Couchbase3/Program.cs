@@ -12,7 +12,7 @@ namespace Samples.Couchbase3
     {
         private static bool ContainsAuthenticationException(Exception ex) => ex switch
         {
-            AuthenticationException => true,
+            AuthenticationException or AuthenticationFailureException => true,
             AggregateException aggEx => aggEx.InnerExceptions.Any(ContainsAuthenticationException),
             { InnerException: { } inner } => ContainsAuthenticationException(inner),
             _ => false,
