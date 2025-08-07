@@ -9,7 +9,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
@@ -143,19 +142,26 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                if (ExceptionReplaySettings.Enabled && ExceptionReplay == null)
-                {
-                    var exceptionReplay = new ExceptionReplay(ExceptionReplaySettings);
-                    exceptionReplay.Initialize();
-                    ExceptionReplay = exceptionReplay;
-                }
-                else
+                if (!ExceptionReplaySettings.Enabled)
                 {
                     Log.Information("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.ExceptionReplayEnabled);
                 }
+
+                if (ExceptionReplay != null)
+                {
+                    Log.Debug("Exception Replay is already initialized");
+                    return;
+                }
+
+                var exceptionReplay = ExceptionReplay.Create(ExceptionReplaySettings);
+                exceptionReplay.Initialize();
+                ExceptionReplay = exceptionReplay;
+
+                TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.ExceptionReplay, enabled: true, error: null);
             }
             catch (Exception ex)
             {
+                TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.ExceptionReplay, enabled: false, error: null);
                 Log.Error(ex, "Error initializing Exception Replay.");
             }
         }
@@ -164,44 +170,59 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                if (DebuggerSettings.DynamicInstrumentationEnabled && DynamicInstrumentation == null)
+                if (!DebuggerSettings.DynamicInstrumentationEnabled)
                 {
-                    var tracerManager = TracerManager.Instance;
-                    var settings = tracerManager.Settings;
+                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
+                    return;
+                }
 
-                    if (!settings.IsRemoteConfigurationAvailable)
+                if (DynamicInstrumentation != null)
+                {
+                    Log.Debug("Dynamic Instrumentation is already initialized");
+                    return;
+                }
+
+                var tracerManager = TracerManager.Instance;
+                var tracerSettings = tracerManager.Settings;
+
+                if (!tracerSettings.IsRemoteConfigurationAvailable)
+                {
+                    if (DebuggerSettings.DynamicInstrumentationEnabled)
                     {
-                        if (DebuggerSettings.DynamicInstrumentationEnabled)
-                        {
-                            Log.Warning("Dynamic Instrumentation is enabled by environment variable but remote configuration is not available in this environment, so Dynamic Instrumentation cannot be enabled.");
-                        }
+                        Log.Warning("Dynamic Instrumentation is enabled by environment variable but remote configuration is not available in this environment, so Dynamic Instrumentation cannot be enabled.");
+                    }
 
-                        tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                    tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                    return;
+                }
+
+                var discoveryService = tracerManager.DiscoveryService;
+                DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(
+                    discoveryService,
+                    RcmSubscriptionManager.Instance,
+                    tracerSettings,
+                    ServiceName,
+                    DebuggerSettings,
+                    tracerManager.GitMetadataTagsProvider);
+                Log.Debug("Dynamic Instrumentation has been created.");
+
+                var sw = Stopwatch.StartNew();
+                if (!_discoveryServiceReady)
+                {
+                    var isDiscoverySuccessful = await WaitForDiscoveryServiceAsync(discoveryService, _cancellationToken.Token).ConfigureAwait(false);
+                    if (!isDiscoverySuccessful)
+                    {
+                        Log.Warning("Discovery service is not ready, Dynamic Instrumentation will not be initialized.");
                         return;
                     }
 
-                    var discoveryService = tracerManager.DiscoveryService;
-                    DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
-                    Log.Debug("Dynamic Instrumentation has been created.");
+                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
+                }
 
-                    if (!_discoveryServiceReady)
-                    {
-                        var sw = Stopwatch.StartNew();
-                        var isDiscoverySuccessful = await WaitForDiscoveryServiceAsync(discoveryService, _cancellationToken.Token).ConfigureAwait(false);
-                        if (isDiscoverySuccessful)
-                        {
-                            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
-                            sw.Restart();
-                            DynamicInstrumentation.Initialize();
-                            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
-                            tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
-                        }
-                    }
-                }
-                else
-                {
-                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
-                }
+                sw.Restart();
+                DynamicInstrumentation.Initialize();
+                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
+                tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
             }
             catch (Exception ex)
             {
@@ -333,6 +354,8 @@ namespace Datadog.Trace.Debugger
 
             SafeDisposal.New()
                         .Execute(() => _cancellationToken.Cancel(), "cancelling DebuggerManager operations")
+                        .Add(DynamicInstrumentation)
+                        .Add(ExceptionReplay)
                         .Add(SymbolsUploader)
                         .Add(_cancellationToken)
                         .Add(_semaphore)
