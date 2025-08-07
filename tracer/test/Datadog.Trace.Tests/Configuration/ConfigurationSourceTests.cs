@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return (s => s.Environment, null);
             yield return (s => s.ServiceName, null);
             yield return (s => s.DisabledIntegrationNames.Count, 1); // The OpenTelemetry integration is disabled by default
-            yield return (s => s.LogsInjectionEnabled, false);
+            yield return (s => s.LogsInjectionEnabled, true);
             yield return (s => s.GlobalTags.Count, 0);
 #pragma warning disable 618 // App analytics is deprecated but supported
             yield return (s => s.AnalyticsEnabled, false);

@@ -52,6 +52,7 @@ namespace Datadog.Trace.Configuration
         // These values can all be overwritten by dynamic config
         private readonly bool _traceEnabled;
         private readonly bool _apmTracingEnabled;
+        private readonly bool _logsInjectionEnabled;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _isDataStreamsMonitoringInDefaultState;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
@@ -301,6 +302,10 @@ namespace Datadog.Trace.Configuration
             _apmTracingEnabled = config
                                       .WithKeys(ConfigurationKeys.ApmTracingEnabled)
                                       .AsBool(defaultValue: true);
+
+            _logsInjectionEnabled = config
+                                         .WithKeys(ConfigurationKeys.LogsInjectionEnabled)
+                                         .AsBool(defaultValue: true);
 
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
@@ -910,11 +915,10 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether correlation identifiers are
         /// automatically injected into the logging context.
-        /// Default is <c>false</c>, unless <see cref="ConfigurationKeys.DirectLogSubmission.EnabledIntegrations"/>
-        /// enables Direct Log Submission.
+        /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? LogSubmissionSettings.LogsInjectionEnabled;
+        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? _logsInjectionEnabled;
 
         /// <summary>
         /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
