@@ -53,16 +53,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             if (message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage))
             {
                 Log.Information("Duck casting successful for message");
-                if (serviceBusMessage.ApplicationProperties != null)
+                if (serviceBusMessage.UserProperties != null)
                 {
                     Log.Information("Propagating context for message of type: {MessageType}", message.GetType().FullName);
-                    serviceBusMessage.ApplicationProperties["InstrumentationHeader"] = "InstrumentationValue";
+                    serviceBusMessage.UserProperties["InstrumentationHeaderSendMessage"] = "InstrumentationValue";
                     var context = new PropagationContext(span.Context, Baggage.Current);
-                    tracer.TracerManager.SpanContextPropagator.Inject(context, serviceBusMessage.ApplicationProperties, default(ContextPropagation));
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, serviceBusMessage.UserProperties, default(ContextPropagation));
                 }
                 else
                 {
-                    Log.Warning("ApplicationProperties is null for message");
+                    Log.Warning("UserProperties is null for message");
                 }
             }
             else

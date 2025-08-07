@@ -44,26 +44,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IDictionary<string, object> properties, string activityName, ref string traceparent, ref string tracestate)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+                && Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
             {
-                if (Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
-                {
-                    // Adding DSM to the send operation of IReadOnlyCollection<ServiceBusMessage>|ServiceBusMessageBatch - Step Two:
-                    // In between the OnMethodBegin and OnMethodEnd, a new Activity will be created to represent
-                    // the Azure Service Bus message. To access the active message that is being instrumented,
-                    // save the active message properties object to an AsyncLocal field. This will limit
-                    // our lookup to one AsyncLocal field and one static field
-                    AzureServiceBusCommon.ActiveMessageProperties.Value = properties;
-                }
-
-                var activeScope = Tracer.Instance.ActiveScope;
-                if (activeScope?.Span?.Context != null && properties != null)
-                {
-                    Log.Information("Injecting context from InstrumentMessageIntegration");
-                    properties["InstrumentationHeader"] = "InstrumentationValueInstrumentMessageIntegration";
-                    var context = new Datadog.Trace.Propagators.PropagationContext(activeScope.Span.Context as Datadog.Trace.SpanContext, Datadog.Trace.Baggage.Current);
-                    Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, properties, default(ContextPropagation));
-                }
+                // Adding DSM to the send operation of IReadOnlyCollection<ServiceBusMessage>|ServiceBusMessageBatch - Step Two:
+                // In between the OnMethodBegin and OnMethodEnd, a new Activity will be created to represent
+                // the Azure Service Bus message. To access the active message that is being instrumented,
+                // save the active message properties object to an AsyncLocal field. This will limit
+                // our lookup to one AsyncLocal field and one static field
+                AzureServiceBusCommon.ActiveMessageProperties.Value = properties;
             }
 
             return CallTargetState.GetDefault();
