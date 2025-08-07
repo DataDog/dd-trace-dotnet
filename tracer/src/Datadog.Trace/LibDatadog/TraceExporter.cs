@@ -133,7 +133,7 @@ internal class TraceExporter : SafeHandle, IApi
         var len = UIntPtr.Zero;
         var body = NativeInterop.Exporter.GetResponseBody(response, ref len);
         var bodyLen = (ulong)len;
-        if (body != IntPtr.Zero || bodyLen == 0)
+        if (body == IntPtr.Zero || bodyLen == 0)
         {
             _log.Warning("Agent response is null or empty");
             return;
