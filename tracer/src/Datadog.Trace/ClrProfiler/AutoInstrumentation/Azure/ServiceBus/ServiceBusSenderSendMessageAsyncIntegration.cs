@@ -52,6 +52,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
             if (message.ApplicationProperties != null)
             {
+                Log.Information("Propagating context for message of type: {MessageType}", message.GetType().FullName);
+                message.ApplicationProperties["InstrumentationHeader"] = "InstrumentationValue";
                 var context = new PropagationContext(span.Context, Baggage.Current);
                 tracer.TracerManager.SpanContextPropagator.Inject(context, message.ApplicationProperties, default(ContextPropagation));
             }
