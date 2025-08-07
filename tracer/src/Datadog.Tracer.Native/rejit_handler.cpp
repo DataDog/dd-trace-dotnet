@@ -294,7 +294,7 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
             if (enable_rejit_tracking)
             {
                 WriteLock wlock(m_rejit_history_lock);
-                for (auto i = 0; i < modulesVector.size(); i++)
+                for (size_t i = 0; i < modulesVector.size(); i++)
                 {
                     m_rejit_history.push_back({modulesVector[i], modulesMethodDef[i]});
                 }
@@ -533,7 +533,7 @@ bool RejitHandler::HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef) {
     }
 
     ReadLock rlock(m_rejit_history_lock);
-    for (auto i = 0; i < m_rejit_history.size(); i++)
+    for (size_t i = 0; i < m_rejit_history.size(); i++)
     {
         const auto mod_met_pair = m_rejit_history[i];
         if (get<0>(mod_met_pair) == moduleId && get<1>(mod_met_pair) == methodDef)
