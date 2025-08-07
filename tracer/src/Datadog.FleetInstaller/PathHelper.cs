@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.IO;
-using System.Reflection;
 
 namespace Datadog.FleetInstaller;
 
@@ -12,24 +11,18 @@ internal static class PathHelper
 {
     private const string ForwarderFileName = "telemetry_forwarder.exe";
 
-    public static string GetTelemetryForwarderPath()
+    public static string GetTelemetryForwarderPath(string homePath)
     {
-        // Get path of FleetInstaller.exe
-        var fleetInstallerPath = Assembly.GetExecutingAssembly().Location;
-        if (string.IsNullOrEmpty(fleetInstallerPath))
-        {
-            // Shouldn't ever be needed, but let's play it safe
-            fleetInstallerPath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-        }
-
-        if (string.IsNullOrEmpty(fleetInstallerPath)
-            || Path.GetDirectoryName(fleetInstallerPath) is not { } directory)
+        if (string.IsNullOrEmpty(homePath)
+            || !Path.IsPathRooted(homePath) // can't use relative paths
+            || Path.GetDirectoryName(homePath) is not { } directory)
         {
             // I guess we failed for some reason, so we can't calculate the path to the telemetry forwarder
             return string.Empty;
         }
 
         // Ok, now we have the path
-        return Path.Combine(directory, ForwarderFileName);
+        // Should we care about long paths?
+        return Path.Combine(Path.GetFullPath(directory), "installer", ForwarderFileName);
     }
 }
