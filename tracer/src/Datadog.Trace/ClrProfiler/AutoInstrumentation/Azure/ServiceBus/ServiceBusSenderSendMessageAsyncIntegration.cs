@@ -11,6 +11,7 @@ using System.Threading;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
@@ -37,8 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         private const string OperationName = "azure.servicebus.send";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusSenderSendMessageAsyncIntegration));
 
-        internal static CallTargetState OnMethodBegin<TTarget, TMessage>(TTarget instance, ref TMessage message, ref CancellationToken cancellationToken)
-            where TMessage : IServiceBusMessage
+        internal static CallTargetState OnMethodBegin<TTarget, TMessage>(TTarget instance, TMessage message, ref CancellationToken cancellationToken)
         {
             Log.Information("SendMessageAsync running");
 
@@ -50,16 +50,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             span.SetTag("azure.servicebus.namespace", "namespace");
             span.SetTag("azure.servicebus.operation", "send");
 
-            if (message.ApplicationProperties != null)
+            if (message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage))
             {
-                Log.Information("Propagating context for message of type: {MessageType}", message.GetType().FullName);
-                message.ApplicationProperties["InstrumentationHeader"] = "InstrumentationValue";
-                var context = new PropagationContext(span.Context, Baggage.Current);
-                tracer.TracerManager.SpanContextPropagator.Inject(context, message.ApplicationProperties, default(ContextPropagation));
+                Log.Information("Duck casting successful for message");
+                if (serviceBusMessage.ApplicationProperties != null)
+                {
+                    Log.Information("Propagating context for message of type: {MessageType}", message.GetType().FullName);
+                    serviceBusMessage.ApplicationProperties["InstrumentationHeader"] = "InstrumentationValue";
+                    var context = new PropagationContext(span.Context, Baggage.Current);
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, serviceBusMessage.ApplicationProperties, default(ContextPropagation));
+                }
+                else
+                {
+                    Log.Warning("ApplicationProperties is null for message");
+                }
             }
             else
             {
-                Log.Warning("ApplicationProperties is null for message");
+                Log.Warning("Could not duck cast message to IServiceBusMessage");
             }
 
             return new CallTargetState(scope);
