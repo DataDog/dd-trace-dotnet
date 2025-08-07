@@ -112,7 +112,7 @@ namespace Datadog.Trace.Debugger
                 Log.Information("Dynamic Instrumentation initialization started");
 
                 // Initialize without blocking
-                _ = Task.Run(async () => await InitializeAsync().ConfigureAwait(false), _cancellationTokenSource.Token).ConfigureAwait(false);
+                _ = Task.Run(async () => await InitializeAsync().ConfigureAwait(false), _cancellationTokenSource.Token);
             }
             catch (Exception e)
             {
