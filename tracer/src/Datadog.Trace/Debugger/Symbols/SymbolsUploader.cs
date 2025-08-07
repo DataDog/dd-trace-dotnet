@@ -485,6 +485,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return;
                 }
 
+                _disposed = true;
                 _subscriptionManager.Unsubscribe(_subscription);
 
                 try
@@ -503,7 +504,6 @@ namespace Datadog.Trace.Debugger.Symbols
                 _assemblySemaphore.Dispose();
                 _enablementSemaphore.Dispose();
                 _discoveryServiceSemaphore.Dispose();
-                _disposed = true;
             }
         }
     }
