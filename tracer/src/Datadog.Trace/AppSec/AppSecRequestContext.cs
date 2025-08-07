@@ -77,7 +77,7 @@ internal partial class AppSecRequestContext
     {
         if (result.Timeout)
         {
-            Interlocked.Increment(ref _wafTimeout);
+            _wafTimeout++;
         }
 
         var code = (int)result.ReturnCode;
