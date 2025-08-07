@@ -5,16 +5,18 @@ using System.Security.Authentication;
 using System.Threading.Tasks;
 using Couchbase;
 using Couchbase.Core;
+using Couchbase.Core.Exceptions;
 
 namespace Samples.Couchbase3
 {
     internal class Program
     {
-        private static bool ContainsAuthenticationException(Exception ex) => ex switch
+        private static bool ContainsIgnorableException(Exception ex) => ex switch
         {
             AuthenticationException or AuthenticationFailureException => true,
-            AggregateException aggEx => aggEx.InnerExceptions.Any(ContainsAuthenticationException),
-            { InnerException: { } inner } => ContainsAuthenticationException(inner),
+            UnambiguousTimeoutException => true,
+            AggregateException aggEx => aggEx.InnerExceptions.Any(ContainsIgnorableException),
+            { InnerException: { } inner } => ContainsIgnorableException(inner),
             _ => false,
         };
 
@@ -31,16 +33,13 @@ namespace Samples.Couchbase3
             try
             {
                 cluster = await Cluster.ConnectAsync(options);
+                await cluster.WaitUntilReadyAsync(TimeSpan.FromSeconds(15));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ContainsIgnorableException(ex))
             {
                 Console.WriteLine("Exception during execution " + ex);
-
-                if (ContainsAuthenticationException(ex))
-                {
-                    Console.WriteLine("Exiting with skip code (13)");
-                    return 13;
-                }
+                Console.WriteLine("Exiting with skip code (13)");
+                return 13;
             }
 
             // get a bucket reference
