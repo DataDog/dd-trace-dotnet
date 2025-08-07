@@ -1,4 +1,4 @@
-// <copyright file="ExceptionDebuggingProbe.cs" company="Datadog">
+// <copyright file="ExceptionReplayProbe.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,40 +6,36 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionDebuggingProbe
+    internal class ExceptionReplayProbe
     {
         private readonly int _hashCode;
         private readonly object _locker = new();
         private readonly List<ExceptionCase> _exceptionCases = new();
         private int _isInstrumented = 0;
+        private int _maxFramesToCapture;
 
-        public ExceptionDebuggingProbe(MethodUniqueIdentifier method)
+        public ExceptionReplayProbe(MethodUniqueIdentifier method, int maxFramesToCapture)
         {
             Method = method;
             _hashCode = ComputeHashCode();
+            _maxFramesToCapture = maxFramesToCapture;
         }
 
         internal string? ProbeId { get; private set; }
 
         internal MethodUniqueIdentifier Method { get; }
 
-        internal ExceptionDebuggingProcessor? ExceptionDebuggingProcessor { get; private set; }
+        internal ExceptionReplayProcessor? ExceptionReplayProcessor { get; private set; }
 
         internal bool MayBeOmittedFromCallStack { get; private set; }
 
@@ -51,7 +47,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             get
             {
-                return _isInstrumented == 1 && ExceptionDebuggingProcessor != null && !string.IsNullOrEmpty(ProbeId);
+                return _isInstrumented == 1 && ExceptionReplayProcessor != null && !string.IsNullOrEmpty(ProbeId);
             }
         }
 
@@ -60,7 +56,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             if (Interlocked.CompareExchange(ref _isInstrumented, 1, 0) == 0)
             {
                 ProbeId = Guid.NewGuid().ToString();
-                ExceptionDebuggingProcessor = new ExceptionDebuggingProcessor(ProbeId, Method);
+                ExceptionReplayProcessor = new ExceptionReplayProcessor(ProbeId, Method, _maxFramesToCapture);
                 MayBeOmittedFromCallStack = CheckIfMethodMayBeOmittedFromCallStack();
 
                 return true;
@@ -99,13 +95,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     var processor = new ExceptionProbeProcessor(probe, @case.ExceptionTypes, parentProbes: parentProbes, childProbes: childProbes);
                     @case.Processors.TryAdd(processor, 0);
-                    ExceptionDebuggingProcessor?.AddProbeProcessor(processor);
+                    ExceptionReplayProcessor?.AddProbeProcessor(processor);
                 }
             }
 
             foreach (var probe in probes.Where(p => p.IsInstrumented))
             {
-                probe.ExceptionDebuggingProcessor?.InvalidateEnterLeave();
+                probe.ExceptionReplayProcessor?.InvalidateEnterLeave();
             }
         }
 
@@ -128,9 +124,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     // We don't care about sampling Exception Probes. To save memory, NopAdaptiveSampler is used.
                     ProbeRateLimiter.Instance.TryAddSampler(ProbeId, NopAdaptiveSampler.Instance);
-                    if (!ProbeExpressionsProcessor.Instance.TryAddProbeProcessor(ProbeId, ExceptionDebuggingProcessor))
+                    if (!ProbeExpressionsProcessor.Instance.TryAddProbeProcessor(ProbeId, ExceptionReplayProcessor))
                     {
-                        Log.Error("Could not add ExceptionDebuggingProcessor. Method: {TypeName}.{MethodName}", Method.Method.DeclaringType?.Name, Method.Method.Name);
+                        Log.Error("Could not add ExceptionReplayProcessor. Method: {TypeName}.{MethodName}", Method.Method.DeclaringType?.Name, Method.Method.Name);
                     }
 
                     InstrumentationRequester.Instrument(ProbeId!, Method.Method);
@@ -156,14 +152,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return hashCode.ToHashCode();
         }
 
-        public bool Equals(ExceptionDebuggingProbe other)
+        public bool Equals(ExceptionReplayProbe other)
         {
             return Method.Equals(other.Method);
         }
 
         public override bool Equals(object? obj)
         {
-            return obj is ExceptionDebuggingProbe other && Equals(other);
+            return obj is ExceptionReplayProbe other && Equals(other);
         }
 
         public override int GetHashCode()

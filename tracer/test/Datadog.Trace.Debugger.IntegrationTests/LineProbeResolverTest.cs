@@ -34,7 +34,7 @@ public class LineProbeResolverTest
         result.Status.Should().Be(LiveProbeResolveStatus.Bound);
         var module = typeof(LambdaSingleLine).Assembly.ManifestModule;
         var method = module.ResolveMethod(loc.MethodToken);
-        loc.MVID.Should().Be(module.ModuleVersionId);
+        loc.Mvid.Should().Be(module.ModuleVersionId);
         method.Name.Should().Be("Run");
     }
 
