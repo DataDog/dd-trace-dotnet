@@ -33,8 +33,8 @@ internal class DebuggerFactory
         var snapshotStatusSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
         var diagnosticsSink = DiagnosticsSink.Create(serviceName, debuggerSettings);
 
-        var debuggerUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(false), snapshotStatusSink);
-        var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(true), diagnosticsSink);
+        var debuggerUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings,false), snapshotStatusSink);
+        var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
@@ -90,18 +90,18 @@ internal class DebuggerFactory
         return debuggerSink;
     }
 
-    internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, string serviceName, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, string serviceName, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
-        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(true), discoveryService, gitMetadataTagsProvider, serviceName, settings.SymbolDatabaseCompressionEnabled);
+        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, serviceName, settings.SymbolDatabaseCompressionEnabled);
         var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, settings, serviceName);
         return symbolsUploader;
     }
 
-    private static IApiRequestFactory GetApiFactory(bool isMultipart)
+    private static IApiRequestFactory GetApiFactory(TracerSettings tracerSettings, bool isMultipart)
     {
         // TODO: we need to be able to update the tracer settings dynamically
         return AgentTransportStrategy.Get(
-            TracerManager.Instance.Settings.Exporter,
+            tracerSettings.Exporter,
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
             AgentHttpHeaderNames.MinimalHeaders,

@@ -408,7 +408,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    InitializeDebugger();
+                    InitializeDebugger(tracer.Settings);
                 }
                 catch (Exception e)
                 {
@@ -464,14 +464,14 @@ namespace Datadog.Trace.ClrProfiler
         }
 #endif
 
-        private static void InitializeDebugger()
+        private static void InitializeDebugger(TracerSettings tracerSettings)
         {
             _ = Task.Run(
                 async () =>
                 {
                     try
                     {
-                        await DebuggerManager.Instance.UpdateConfiguration().ConfigureAwait(false);
+                        await DebuggerManager.Instance.UpdateConfiguration(tracerSettings).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {

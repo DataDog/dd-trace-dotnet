@@ -98,24 +98,23 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void SetGeneralConfig(DebuggerSettings settings)
+        private void SetGeneralConfig(TracerSettings tracerSettings, DebuggerSettings settings)
         {
             DebuggerSnapshotSerializer.SetConfig(settings);
             Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
-            ServiceName = GetServiceName();
+            ServiceName = GetServiceName(tracerSettings);
         }
 
-        private string GetServiceName()
+        private string GetServiceName(TracerSettings tracerSettings)
         {
-            var tracerManager = TracerManager.Instance;
             try
             {
-                return TraceUtil.NormalizeTag(tracerManager.Settings.ServiceName ?? tracerManager.DefaultServiceName);
+                return TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? TracerManager.Instance.DefaultServiceName);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
-                return tracerManager.DefaultServiceName;
+                return TracerManager.Instance.DefaultServiceName;
             }
         }
 
@@ -166,7 +165,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private async Task SetDynamicInstrumentationState()
+        private async Task SetDynamicInstrumentationState(TracerSettings tracerSettings)
         {
             try
             {
@@ -183,7 +182,6 @@ namespace Datadog.Trace.Debugger
                 }
 
                 var tracerManager = TracerManager.Instance;
-                var tracerSettings = tracerManager.Settings;
 
                 if (!tracerSettings.IsRemoteConfigurationAvailable)
                 {
@@ -231,19 +229,19 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal Task UpdateConfiguration(DebuggerSettings? newDebuggerSettings = null)
+        internal Task UpdateConfiguration(TracerSettings tracerSettings, DebuggerSettings? newDebuggerSettings = null)
         {
-            return UpdateProductsState(newDebuggerSettings ?? DebuggerSettings);
+            return UpdateProductsState(tracerSettings, newDebuggerSettings ?? DebuggerSettings);
         }
 
-        private async Task UpdateProductsState(DebuggerSettings newDebuggerSettings)
+        private async Task UpdateProductsState(TracerSettings tracerSettings, DebuggerSettings newDebuggerSettings)
         {
             if (_isShuttingDown)
             {
                 return;
             }
 
-            OneTimeSetup();
+            OneTimeSetup(tracerSettings);
 
             bool semaphoreAcquired = false;
             try
@@ -258,8 +256,8 @@ namespace Datadog.Trace.Debugger
                 DebuggerSettings = newDebuggerSettings;
                 SetCodeOriginState();
                 SetExceptionReplayState();
-                await SetDynamicInstrumentationState().ConfigureAwait(false);
-                if (TracerManager.Instance.Settings.StartupDiagnosticLogEnabled)
+                await SetDynamicInstrumentationState(tracerSettings).ConfigureAwait(false);
+                if (tracerSettings.StartupDiagnosticLogEnabled)
                 {
                     _ = Task.Run(WriteDebuggerDiagnosticLog);
                 }
@@ -316,7 +314,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void OneTimeSetup()
+        private void OneTimeSetup(TracerSettings tracerSettings)
         {
             if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0)
             {
@@ -324,16 +322,16 @@ namespace Datadog.Trace.Debugger
             }
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
-            SetGeneralConfig(DebuggerSettings);
-            _ = InitializeSymbolUploader();
+            SetGeneralConfig(tracerSettings, DebuggerSettings);
+            _ = InitializeSymbolUploader(tracerSettings);
         }
 
-        private async Task InitializeSymbolUploader()
+        private async Task InitializeSymbolUploader(TracerSettings tracerSettings)
         {
             try
             {
                 var tracerManager = TracerManager.Instance;
-                SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, Instance.ServiceName, tracerSettings, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
                 // it will do nothing if it is an instance of NoOpSymbolUploader
                 await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
             }
