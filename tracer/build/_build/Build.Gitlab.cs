@@ -34,7 +34,7 @@ partial class Build
             const string url = "https://apmdotnetci.blob.core.windows.net/apm-datadog-win-ssi-telemetry-forwarder/telemetry_forwarder.exe";
             const string expectedHash = "3A207302683E2BE8CB3D3A6AFF4F40721B7C85763A5A9B8F441D6BFD1B419F02D3EA8155634CEB3A09473F4745CE49679A55095F0EAD91F0582C6CB08C725782";
 
-            var tempFile = await TryDownloadForwarder();
+            var tempFile = await DownloadFile(url);
             var actualHash = GetSha512Hash(tempFile);
             if (!string.Equals(expectedHash, actualHash, StringComparison.Ordinal))
             {
@@ -46,71 +46,6 @@ partial class Build
             // Move to expected location
             var output = ArtifactsDirectory / "telemetry_forwarder.exe";
             FileSystemTasks.CopyFile(tempFile, output, FileExistsPolicy.Overwrite);
-
-            static async Task<string> TryDownloadForwarder()
-            {
-                using var client = new HttpClient();
-                var attemptsRemaining = 3;
-                var defaultdelay = TimeSpan.FromSeconds(2);
-
-                while (attemptsRemaining > 0)
-                {
-                    var retryDelay = defaultdelay;
-                    try
-                    {
-                        Logger.Information("Downloading from {Url}", url);
-                        using var response = await client.GetAsync(url);
-                        var outputPath = Path.GetTempFileName();
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            Logger.Information("Saving file to {Path}", outputPath);
-                            await using var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
-                            await response.Content.CopyToAsync(fs);
-                            return outputPath;
-                        }
-
-                        Logger.Warning("Failed to download telemetry forwarder, {StatusCode}: {Body}", response.StatusCode, await response.Content.ReadAsStringAsync());
-
-                        if (response.StatusCode == HttpStatusCode.TooManyRequests
-                            && response.Headers.TryGetValues("Retry-After", out var values)
-                            && values.FirstOrDefault() is {} retryAfter)
-                            {
-                                if (int.TryParse(retryAfter, out var seconds))
-                                {
-                                    retryDelay = TimeSpan.FromSeconds(seconds);
-                                }
-                                else if (DateTimeOffset.TryParse(retryAfter, out var retryDate))
-                                {
-                                    var delta = retryDate - DateTimeOffset.UtcNow;
-                                    retryDelay = delta > TimeSpan.Zero ? delta : retryDelay;
-                                }
-                            }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warning(ex, "Error downloading telemetry forwarder {Url}", url);
-                    }
-
-                    attemptsRemaining--;
-                    if (attemptsRemaining > 0)
-                    {
-                        Logger.Debug("Waiting {RetryDelayTotalSeconds} seconds before retry...", retryDelay.TotalSeconds);
-                        await Task.Delay(retryDelay);
-                    }
-                }
-
-                throw new Exception("Failed to download telemetry forwarder");
-            }
-
-            static string GetSha512Hash(string filePath)
-            {
-                using var sha512 = SHA512.Create();
-                using var stream = File.OpenRead(filePath);
-
-                var hashBytes = sha512.ComputeHash(stream);
-                return Convert.ToHexString(hashBytes);
-            }
         });
 
     Target SignDlls => _ => _
