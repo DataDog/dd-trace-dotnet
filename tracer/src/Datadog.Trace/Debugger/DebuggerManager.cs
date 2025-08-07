@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
@@ -115,32 +116,60 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void SetCodeOriginState()
+        private void SetCodeOriginState(TracerSettings tracerSettings)
         {
             try
             {
-                if (DebuggerSettings.CodeOriginForSpansEnabled && CodeOrigin == null)
+                if (!DebuggerSettings.CodeOriginForSpansEnabled)
                 {
-                    CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(DebuggerSettings);
+                    CodeOrigin = null;
+                    if (DebuggerSettings.DynamicSettings.CodeOriginEnabled == false)
+                    {
+                        Log.Information("Code Origin for Spans is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                        tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, false, ConfigurationOrigins.RemoteConfig);
+                    }
+                    else
+                    {
+                        Log.Information("Code Origin for Spans is disabled by. To enable it, please set {CodeOriginForSpansEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
+                    }
+
+                    return;
                 }
-                else
+
+                if (CodeOrigin != null)
                 {
-                    Log.Information("Code Origin for Spans is disabled by. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
+                    Log.Debug("Code Origin for Spans is already initialized");
+                    return;
                 }
+
+                CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(DebuggerSettings);
+                tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, true, DebuggerSettings.DynamicSettings.CodeOriginEnabled == true ? ConfigurationOrigins.RemoteConfig : ConfigurationOrigins.AppConfig);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error initializing Code Origin for spans.");
+                Log.Error(ex, "Error initializing Code Origin for Spans.");
             }
         }
 
-        private void SetExceptionReplayState()
+        private void SetExceptionReplayState(TracerSettings tracerSettings)
         {
             try
             {
                 if (!ExceptionReplaySettings.Enabled)
                 {
-                    Log.Information("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.ExceptionReplayEnabled);
+                    SafeDisposal.TryDispose(ExceptionReplay);
+                    ExceptionReplay = null;
+                    if (DebuggerSettings.DynamicSettings.ExceptionReplayEnabled == false)
+                    {
+                        Log.Information("Exception Replay is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                        tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.ExceptionReplayEnabled, false, ConfigurationOrigins.RemoteConfig);
+                    }
+                    else
+                    {
+                        Log.Information("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.ExceptionReplayEnabled);
+                    }
+
+                    return;
                 }
 
                 if (ExceptionReplay != null)
@@ -153,13 +182,10 @@ namespace Datadog.Trace.Debugger
                 exceptionReplay.Initialize();
                 ExceptionReplay = exceptionReplay;
 
-                // TODO:
-                // TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.ExceptionReplay, enabled: true, error: null);
+                tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.ExceptionReplayEnabled, true, DebuggerSettings.DynamicSettings.ExceptionReplayEnabled == true ? ConfigurationOrigins.RemoteConfig : ConfigurationOrigins.AppConfig);
             }
             catch (Exception ex)
             {
-                // TODO:
-                // TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.ExceptionReplay, enabled: false, error: null);
                 Log.Error(ex, "Error initializing Exception Replay.");
             }
         }
@@ -170,7 +196,20 @@ namespace Datadog.Trace.Debugger
             {
                 if (!DebuggerSettings.DynamicInstrumentationEnabled)
                 {
-                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
+                    SafeDisposal.TryDispose(DynamicInstrumentation);
+                    DynamicInstrumentation = null;
+
+                    if (DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false)
+                    {
+                        Log.Information("Dynamic Instrumentation is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                        TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                        tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, false, ConfigurationOrigins.RemoteConfig);
+                    }
+                    else
+                    {
+                        Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
+                    }
+
                     return;
                 }
 
@@ -220,6 +259,7 @@ namespace Datadog.Trace.Debugger
                 DynamicInstrumentation.Initialize();
                 TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
                 tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
+                tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, true, DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true ? ConfigurationOrigins.RemoteConfig : ConfigurationOrigins.AppConfig);
             }
             catch (Exception ex)
             {
@@ -265,8 +305,8 @@ namespace Datadog.Trace.Debugger
                 }
 
                 DebuggerSettings = newDebuggerSettings;
-                SetCodeOriginState();
-                SetExceptionReplayState();
+                SetCodeOriginState(tracerSettings);
+                SetExceptionReplayState(tracerSettings);
                 await SetDynamicInstrumentationState(tracerSettings).ConfigureAwait(false);
                 if (tracerSettings.StartupDiagnosticLogEnabled)
                 {
