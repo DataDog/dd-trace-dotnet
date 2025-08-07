@@ -6,24 +6,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Threading;
-using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Debugger.RateLimiting;
-using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -32,9 +17,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionCaseInstrumentationManager>();
         private static readonly ConcurrentDictionary<MethodUniqueIdentifier, ExceptionReplayProbe> MethodToProbe = new();
-        private static readonly int MaxFramesToCapture = ExceptionReplay.Settings.MaximumFramesToCapture;
 
-        internal static ExceptionCase Instrument(ExceptionIdentifier exceptionId, string exceptionToString)
+        internal static ExceptionCase Instrument(ExceptionIdentifier exceptionId, string exceptionToString, int maxFramesToCapture)
         {
             Log.Information("Instrumenting {ExceptionId}", exceptionId);
 
@@ -52,12 +36,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             foreach (var frame in neverSeenBeforeMethods)
             {
-                MethodToProbe.TryAdd(frame, new ExceptionReplayProbe(frame));
+                MethodToProbe.TryAdd(frame, new ExceptionReplayProbe(frame, maxFramesToCapture));
             }
 
             var probes = participatingUserMethods.Select((m, frameIndex) => MethodToProbe[m]).ToArray();
 
-            var thresholdIndex = participatingUserMethods.Count - MaxFramesToCapture;
+            var thresholdIndex = participatingUserMethods.Count - maxFramesToCapture;
             var targetMethods = new HashSet<MethodUniqueIdentifier>();
 
             for (var index = 0; index < probes.Length; index++)
@@ -80,7 +64,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             bool ShouldInstrumentFrameAtIndex(int i)
             {
-                return i == 0 || i >= thresholdIndex || participatingUserMethods.Count <= MaxFramesToCapture + 1;
+                return i == 0 || i >= thresholdIndex || participatingUserMethods.Count <= maxFramesToCapture + 1;
             }
         }
 

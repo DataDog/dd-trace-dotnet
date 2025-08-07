@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Upload;
@@ -18,34 +19,36 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionReplay
+    internal class ExceptionReplay : IDisposable
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionReplay));
+        private bool _isDisabled;
+        private SnapshotUploader? _uploader;
+        private SnapshotSink? _snapshotSink;
+        private ExceptionTrackManager? _exceptionTrackManager;
 
-        private static ExceptionReplaySettings? _settings;
-        private static int _firstInitialization = 1;
-        private static bool _isDisabled;
-
-        private static SnapshotUploader? _uploader;
-        private static SnapshotSink? _snapshotSink;
-
-        internal ExceptionReplay(ExceptionReplaySettings settings)
+        private ExceptionReplay(ExceptionReplaySettings settings)
         {
             Settings = settings;
         }
 
-        internal static ExceptionReplaySettings Settings
+        internal ExceptionReplaySettings Settings { get; }
+
+        internal bool Enabled
         {
-            get => LazyInitializer.EnsureInitialized(ref _settings, ExceptionReplaySettings.FromDefaultSource)!;
-            private set => _settings = value;
+            get => Settings.Enabled && !_isDisabled;
         }
 
-        internal static bool Enabled => Settings.Enabled && !_isDisabled;
-
-        internal void Initialize()
+        internal static ExceptionReplay Create(ExceptionReplaySettings settings)
         {
-            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
+            return new ExceptionReplay(settings);
+        }
+
+        public void Initialize()
+        {
+            if (!Enabled)
             {
+                Log.Information("Exception replay is disabled.");
                 return;
             }
 
@@ -55,13 +58,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 Log.Warning("Third party modules load has failed. Disabling Exception Debugging.");
                 _isDisabled = true;
+                return;
             }
-            else
-            {
-                InitSnapshotsSink();
-                ExceptionTrackManager.Initialize();
-                LifetimeManager.Instance.AddShutdownTask(Dispose);
-            }
+
+            InitSnapshotsSink();
+            _exceptionTrackManager = ExceptionTrackManager.Create(Settings);
+            return;
         }
 
         private void InitSnapshotsSink()
@@ -94,18 +96,27 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 snapshotBatchUploader: snapshotBatchUploader,
                 debuggerSettings);
 
-            Task.Run(() => _uploader.StartFlushingAsync())
-                .ContinueWith(t => Log.Error(t.Exception, "Error in flushing task"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = Task.Run(() => _uploader.StartFlushingAsync())
+                    .ContinueWith(
+                         t =>
+                         {
+                             if (t.Exception?.GetType() != typeof(OperationCanceledException))
+                             {
+                                 Log.Error(t.Exception, "Error in flushing task");
+                             }
+                         },
+                         TaskContinuationOptions.OnlyOnFaulted);
         }
 
         internal void Report(Span span, Exception exception)
         {
             if (!Enabled)
             {
+                Log.Debug("Exception replay is disabled.");
                 return;
             }
 
-            ExceptionTrackManager.Report(span, exception);
+            _exceptionTrackManager?.Report(span, exception);
         }
 
         internal void BeginRequest()
@@ -133,19 +144,25 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal void AddSnapshot(string probeId, string snapshot)
         {
-            if (_snapshotSink == null)
+            if (!Enabled)
             {
-                Log.Debug("The sink of the Exception Debugging is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
+                Log.Debug("Exception replay is disabled.");
                 return;
             }
 
-            _snapshotSink.Add(probeId, snapshot);
+            if (_snapshotSink == null)
+            {
+                Log.Debug("The sink of the Exception Replay is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
+                return;
+            }
+
+            _snapshotSink?.Add(probeId, snapshot);
         }
 
-        public void Dispose(Exception? ex)
+        public void Dispose()
         {
-            ExceptionTrackManager.Dispose();
-            _uploader?.Dispose();
+            SafeDisposal.TryDispose(_exceptionTrackManager);
+            SafeDisposal.TryDispose(_uploader);
         }
     }
 }

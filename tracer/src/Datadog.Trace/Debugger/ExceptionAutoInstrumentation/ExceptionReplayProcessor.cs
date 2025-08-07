@@ -22,12 +22,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private readonly bool _isMisleadingMethod;
         private ExceptionProbeProcessor[] _processors;
 
-        internal ExceptionReplayProcessor(string probeId, MethodUniqueIdentifier method)
+        internal ExceptionReplayProcessor(string probeId, MethodUniqueIdentifier method, int maxFramesToCapture)
         {
             _processors = Array.Empty<ExceptionProbeProcessor>();
             ProbeId = probeId;
             Method = method;
-            _maxFramesToCapture = ExceptionReplay.Settings.MaximumFramesToCapture;
+            _maxFramesToCapture = maxFramesToCapture;
             _isMisleadingMethod = method.IsMisleadMethod();
         }
 

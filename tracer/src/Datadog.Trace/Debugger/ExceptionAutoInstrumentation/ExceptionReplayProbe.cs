@@ -22,11 +22,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private readonly object _locker = new();
         private readonly List<ExceptionCase> _exceptionCases = new();
         private int _isInstrumented = 0;
+        private int _maxFramesToCapture;
 
-        public ExceptionReplayProbe(MethodUniqueIdentifier method)
+        public ExceptionReplayProbe(MethodUniqueIdentifier method, int maxFramesToCapture)
         {
             Method = method;
             _hashCode = ComputeHashCode();
+            _maxFramesToCapture = maxFramesToCapture;
         }
 
         internal string? ProbeId { get; private set; }
@@ -54,7 +56,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             if (Interlocked.CompareExchange(ref _isInstrumented, 1, 0) == 0)
             {
                 ProbeId = Guid.NewGuid().ToString();
-                this.ExceptionReplayProcessor = new ExceptionReplayProcessor(ProbeId, Method);
+                ExceptionReplayProcessor = new ExceptionReplayProcessor(ProbeId, Method, _maxFramesToCapture);
                 MayBeOmittedFromCallStack = CheckIfMethodMayBeOmittedFromCallStack();
 
                 return true;
