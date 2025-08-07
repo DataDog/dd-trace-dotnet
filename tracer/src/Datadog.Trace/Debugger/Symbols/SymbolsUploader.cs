@@ -122,7 +122,7 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryService = null;
         }
 
-        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, string serviceName)
+        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, DebuggerSettings settings, string serviceName)
         {
             if (!settings.SymbolDatabaseUploadEnabled)
             {
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             // TODO: we need to be able to update the tracer settings dynamically
-            return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, TracerManager.Instance.Settings, serviceName);
+            return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
         }
 
         private void RegisterToAssemblyLoadEvent()
