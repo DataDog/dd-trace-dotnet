@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
@@ -22,8 +23,9 @@ internal partial class AppSecRequestContext
     private const string AppsecKey = "appsec";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AppSecRequestContext>();
     private readonly object _sync = new();
-    private readonly RaspTelemetryHelper? _raspTelemetryHelper = Security.Instance.RaspEnabled ? new RaspTelemetryHelper() : null;
+    private readonly RaspMetricsHelper? _raspMetricsHelper = Security.Instance.RaspEnabled ? new RaspMetricsHelper() : null;
     private readonly List<object> _wafSecurityEvents = new();
+    private int _wafTimeout = 0;
     private int? _wafError = null;
     private int? _wafRaspError = null;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
@@ -47,27 +49,38 @@ internal partial class AppSecRequestContext
                 }
             }
 
+            if (_wafTimeout > 0)
+            {
+                span.Tags.SetMetric(Metrics.WafTimeouts, _wafTimeout);
+            }
+
+            if (_wafError != null)
+            {
+                span.Tags.SetMetric(Metrics.WafError, _wafError);
+            }
+
+            if (_wafRaspError != null)
+            {
+                span.Tags.SetMetric(Metrics.RaspWafError, _wafRaspError);
+            }
+
             if (_raspStackTraces?.Count > 0)
             {
                 span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
             }
 
-            if (_wafError != null)
-            {
-                tags.SetTag(Tags.WafError, _wafError.ToString());
-            }
-
-            if (_wafRaspError != null)
-            {
-                tags.SetTag(Tags.RaspWafError, _wafRaspError.ToString());
-            }
-
-            _raspTelemetryHelper?.GenerateRaspSpanMetricTags(span.Tags);
+            _raspMetricsHelper?.GenerateRaspSpanMetricTags(span.Tags);
         }
     }
 
-    internal void CheckWAFError(int code, bool isRasp)
+    internal void CheckWAFError(IResult result, bool isRasp)
     {
+        if (result.Timeout)
+        {
+            Interlocked.Increment(ref _wafTimeout);
+        }
+
+        var code = (int)result.ReturnCode;
         int? existingValue = isRasp ? _wafRaspError : _wafError;
         if (code < 0 && (existingValue == null || existingValue < code))
         {
@@ -86,7 +99,7 @@ internal partial class AppSecRequestContext
     {
         lock (_sync)
         {
-            _raspTelemetryHelper?.AddRaspSpanMetrics(duration, durationWithBindings, timeout);
+            _raspMetricsHelper?.AddRaspSpanMetrics(duration, durationWithBindings, timeout);
         }
     }
 
