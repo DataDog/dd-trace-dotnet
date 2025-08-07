@@ -87,6 +87,5 @@ namespace Datadog.Trace.Configuration
         DatadogTraceManual,
         EmailHtmlInjection,
         Protobuf,
-        Quartz
     }
 }
