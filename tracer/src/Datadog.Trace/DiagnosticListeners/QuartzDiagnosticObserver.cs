@@ -9,11 +9,13 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -33,28 +35,32 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzDiagnosticObserver>();
         private readonly Tracer _tracer;
-        private readonly LiveDebugger _liveDebugger;
-        private readonly SpanCodeOriginManager _spanOriginManager;
+        private readonly Security _security;
+        private readonly Iast.Iast _iast;
+        private readonly SpanCodeOrigin _spanCodeOrigin;
 
         public QuartzDiagnosticObserver()
-            : this(null, null, null)
+            : this(null, null, null, null)
         {
         }
 
-        public QuartzDiagnosticObserver(Tracer tracer, LiveDebugger liveDebugger, SpanCodeOriginManager spanOriginManager)
+        public QuartzDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, SpanCodeOrigin spanCodeOrigin)
         {
             _tracer = tracer;
-            _liveDebugger = liveDebugger;
-            _spanOriginManager = spanOriginManager;
+            _security = security;
+            _iast = iast;
+            _spanCodeOrigin = spanCodeOrigin;
         }
 
         protected override string ListenerName => DiagnosticListenerName;
 
         private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
 
-        private LiveDebugger CurrentLiveDebugger => _liveDebugger ?? LiveDebugger.Instance;
+        private Security CurrentSecurity => _security ?? Security.Instance;
 
-        private SpanCodeOriginManager CurrentCodeOriginManager => _spanOriginManager ?? SpanCodeOriginManager.Instance;
+        private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
+
+        private SpanCodeOrigin CurrentCodeOrigin => _spanCodeOrigin ?? DebuggerManager.Instance.CodeOrigin;
 
         protected override void OnNext(string eventName, object arg)
         {
