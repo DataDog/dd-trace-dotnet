@@ -30,7 +30,7 @@ internal partial class AppSecRequestContext
     private int? _wafRaspError = null;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
 
-    internal void CloseWebSpan(TraceTagCollection tags, Span span)
+    internal void CloseWebSpan(Span span)
     {
         lock (_sync)
         {
@@ -45,7 +45,7 @@ internal partial class AppSecRequestContext
                 else
                 {
                     var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
-                    tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
+                    span.Tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
                 }
             }
 

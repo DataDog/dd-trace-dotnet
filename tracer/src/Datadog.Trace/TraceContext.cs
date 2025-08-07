@@ -180,7 +180,7 @@ namespace Datadog.Trace
 
                     if (_appSecRequestContext is not null)
                     {
-                        _appSecRequestContext.CloseWebSpan(Tags, span);
+                        _appSecRequestContext.CloseWebSpan(span);
                         _appSecRequestContext.DisposeAdditiveContext();
                     }
                 }
