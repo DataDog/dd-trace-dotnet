@@ -39,7 +39,7 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
     private const string OperationName = "azure.servicebus.send";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusSenderSendMessagesAsyncIntegration));
 
-    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IEnumerable messages, ref CancellationToken cancellationToken)
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref IEnumerable messages, ref CancellationToken cancellationToken)
     {
         Log.Information("SendMessagesAsync running");
 
@@ -64,6 +64,8 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
                     Log.Information("Duck casting successful for message");
                     if (serviceBusMessage.ApplicationProperties != null)
                     {
+                        Log.Information("Propagating context for message from ServiceBusSenderSendMessagesAsyncIntegration");
+                        serviceBusMessage.ApplicationProperties["InstrumentationHeader"] = "InstrumentationValue";
                         var context = new PropagationContext(span.Context, Baggage.Current);
                         tracer.TracerManager.SpanContextPropagator.Inject(context, serviceBusMessage.ApplicationProperties, default(ContextPropagation));
                     }
