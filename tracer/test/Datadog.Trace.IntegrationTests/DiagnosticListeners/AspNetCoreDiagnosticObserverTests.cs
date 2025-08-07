@@ -38,7 +38,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
     {
         [SkippableTheory]
         [MemberData(nameof(AspNetCoreMvcTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]
-        public async Task DiagnosticObserver_ForMvcEndpoints_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task DiagnosticObserver_ForMvcEndpoints_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
@@ -47,7 +47,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         [MemberData(nameof(AspNetCoreMvcTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]
         public async Task DiagnosticObserver_ForMvcEndpoints_WithFeatureFlag_SubmitsSpans(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -75,7 +75,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         [MemberData(nameof(AspNetCoreMvcTestData.WithExpandRouteTemplates), MemberType = typeof(AspNetCoreMvcTestData))]
         public async Task DiagnosticObserver_ForMvcEndpoints_WithExpandedRouteTemplates_SubmitsSpans(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -103,7 +103,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 #if NETCOREAPP3_0_OR_GREATER
         [SkippableTheory]
         [MemberData(nameof(AspNetCoreRazorPagesTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
-        public async Task DiagnosticObserver_ForRazorPages_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task DiagnosticObserver_ForRazorPages_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<RazorPagesStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
@@ -112,7 +112,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         [MemberData(nameof(AspNetCoreRazorPagesTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
         public async Task DiagnosticObserver_ForRazorPages_WithFeatureFlag_SubmitsSpans(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -140,7 +140,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         [MemberData(nameof(AspNetCoreRazorPagesTestData.WithExpandRouteTemplates), MemberType = typeof(AspNetCoreRazorPagesTestData))]
         public async Task DiagnosticObserver_ForRazorPages_WithExpandedRouteTemplates_SubmitsSpans(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -167,7 +167,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
-        public async Task DiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task DiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
@@ -176,7 +176,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForEndpointRouting_WithFeatureFlag_SubmitsSpans(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -204,7 +204,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteTemplates), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForEndpointRouting_WithExpandedRouteTemplates_SubmitsSpans(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -233,14 +233,14 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 #if NET6_0_OR_GREATER
         [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
-        public async Task DiagnosticObserver_ForWebApplicationBuilder_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task DiagnosticObserver_ForWebApplicationBuilder_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: false, path, statusCode, isError, resourceName, expectedTags, featureFlagEnabled: false);
         }
 
         [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
-        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithImplicitRouting_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithImplicitRouting_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: true, path, statusCode, isError, resourceName, expectedTags, featureFlagEnabled: false);
         }
@@ -249,7 +249,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForWebApplicationBuilder_WithFeatureFlag_SubmitsSpans(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -266,7 +266,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForWebApplicationBuilder_WithFeatureFlag_WithImplicitRouting_SubmitsSpans(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -283,7 +283,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteTemplates), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteTemplates_SubmitsSpans(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -300,7 +300,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteTemplates), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteTemplates_WithImplicitRouting_SubmitsSpans(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -316,7 +316,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         private static async Task AssertDiagnosticObserverForWebApplicationBuilder(
             bool useImplicitRouting,
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedTags,
@@ -373,7 +373,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static async Task AssertDiagnosticObserverSubmitsSpans<T>(
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedParentSpanTags,
@@ -411,7 +411,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         private static async Task AssertDiagnosticObserverSubmitsSpans(
             HttpClient client,
             string path,
-            HttpStatusCode statusCode,
+            int statusCode,
             bool isError,
             string resourceName,
             SerializableDictionary expectedParentSpanTags,
@@ -442,7 +442,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 try
                 {
                     var response = await client.GetAsync(path);
-                    Assert.Equal(statusCode, response.StatusCode);
+                    response.StatusCode.Should().Be((HttpStatusCode)statusCode);
                 }
                 catch (Exception ex)
                 {
@@ -476,7 +476,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             parentSpan.Type.Should().Be(SpanTypes.Web);
             parentSpan.ResourceName.Should().Be(resourceName);
             AssertTagHasValue(parentSpan, Tags.SpanKind, SpanKinds.Server);
-            AssertTagHasValue(parentSpan, Tags.HttpStatusCode, ((int)statusCode).ToString());
+            AssertTagHasValue(parentSpan, Tags.HttpStatusCode, statusCode.ToString());
             parentSpan.Error.Should().Be(isError);
 
             if (expectedParentSpanTags is not null)

@@ -8,9 +8,10 @@ using Datadog.Trace.Tools.Analyzers.AspectAnalyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
-using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.XUnit.CodeFixVerifier<
+using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.AspectAnalyzers.ReplaceAspectAnalyzer,
-    Datadog.Trace.Tools.Analyzers.AspectAnalyzers.ReplaceAspectCodeFixProvider>;
+    Datadog.Trace.Tools.Analyzers.AspectAnalyzers.ReplaceAspectCodeFixProvider,
+    Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests.AspectAnalyzers;
 
