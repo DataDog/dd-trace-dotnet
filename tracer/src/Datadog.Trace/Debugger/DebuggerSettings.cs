@@ -8,13 +8,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger
 {
-    internal class DebuggerSettings
+    internal record DebuggerSettings
     {
         public const string DebuggerMetricPrefix = "dynamic.instrumentation.metric.probe";
         public const int DefaultMaxDepthToSerialize = 3;
@@ -29,12 +31,31 @@ namespace Datadog.Trace.Debugger
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
         public const int DefaultCodeOriginExitSpanFrames = 8;
 
+        private bool? _internalDynamicInstrumentationEnabled;
+        private bool? _internalCodeOriginForSpansEnabled;
+
         public DebuggerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
             DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(false);
+
+            string diEnabledAsString =
+                config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled)
+                      .AsString(
+                           getDefaultValue: () => "null",
+                           null,
+                           x => x switch
+                           {
+                               _ when x.ToBoolean() is { } boolean => boolean ? "true" : "false",
+                               _ => ParsingResult<string>.Failure()
+                           });
+
+            _internalDynamicInstrumentationEnabled = diEnabledAsString is null or "null"
+                                                         ? null
+                                                         : diEnabledAsString.ToBoolean();
+
             SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
 
             MaximumDepthOfMembersToCopy = config
@@ -133,15 +154,40 @@ namespace Datadog.Trace.Debugger
 
             CodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(false);
 
+            string coEnabledAsString =
+                config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled)
+                      .AsString(
+                           getDefaultValue: () => "null",
+                           null,
+                           x => x switch
+                           {
+                               _ when x.ToBoolean() is { } boolean => boolean ? "true" : "false",
+                               _ => ParsingResult<string>.Failure()
+                           });
+
+            _internalCodeOriginForSpansEnabled = coEnabledAsString is null or "null"
+                                                     ? null
+                                                     : coEnabledAsString.ToBoolean();
+
             CodeOriginMaxUserFrames = config
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
                                          .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
                                          .Value;
 
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
+
+            LiveDebuggingEnabled = config.WithKeys(ConfigurationKeys.Debugger.LiveDebuggingEnabled).AsBool(true);
         }
 
-        public bool DynamicInstrumentationEnabled { get; }
+        internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
+
+        public bool DynamicInstrumentationEnabled
+        {
+            get =>
+                (_internalDynamicInstrumentationEnabled == true && DynamicSettings.DynamicInstrumentationEnabled == null)
+             || (_internalDynamicInstrumentationEnabled == null && DynamicSettings.DynamicInstrumentationEnabled == true);
+            init { }
+        }
 
         public bool SymbolDatabaseUploadEnabled { get; }
 
@@ -173,9 +219,17 @@ namespace Datadog.Trace.Debugger
 
         public HashSet<string> RedactedTypes { get; }
 
-        public bool CodeOriginForSpansEnabled { get; }
+        public bool CodeOriginForSpansEnabled
+        {
+            get =>
+                (_internalCodeOriginForSpansEnabled == true && DynamicSettings.CodeOriginEnabled == null)
+             || (_internalCodeOriginForSpansEnabled == null && DynamicSettings.CodeOriginEnabled == true);
+            init { }
+        }
 
         public int CodeOriginMaxUserFrames { get; }
+
+        public bool LiveDebuggingEnabled { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

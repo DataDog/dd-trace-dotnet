@@ -179,6 +179,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.CodeOriginMaxUserFrames"/>
             public const string CodeOriginMaxUserFrames = "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES";
+
+            /// <summary>
+            /// Configuration key to enable Live Debugging.
+            /// Default value is <c>false</c>.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.LiveDebuggingEnabled"/>
+            public const string LiveDebuggingEnabled = "DD_LIVE_DEBUGGING_ENABLED";
         }
     }
 }
