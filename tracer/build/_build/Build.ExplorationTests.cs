@@ -167,6 +167,8 @@ partial class Build
             ["DD_TRACE_LOG_DIRECTORY"] = TestLogsDirectory,
             ["DD_SERVICE"] = "exploration_tests",
             ["DD_VERSION"] = Version
+            // Disable logs injection for exploration tests to avoid interfering with third-party test expectations
+            ["DD_LOGS_INJECTION"] = "false"
         };
 
         switch (ExplorationTestUseCase)
