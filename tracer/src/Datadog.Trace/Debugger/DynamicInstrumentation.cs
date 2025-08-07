@@ -48,8 +48,8 @@ namespace Datadog.Trace.Debugger
         private readonly DebuggerSettings _settings;
         private readonly object _instanceLock = new();
         private volatile bool _isRcmAvailable;
-        private long _initState = 0; // 0=not initialized, 1=initializing, 2=initialized
-        private long _disposeState = 0; // 0=not disposed, 1=disposing or disposed
+        private int _initState = 0; // 0=not initialized, 1=initializing, 2=initialized
+        private int _disposeState = 0; // 0=not disposed, 1=disposing or disposed
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -85,9 +85,9 @@ namespace Datadog.Trace.Debugger
                 RcmProducts.LiveDebugging);
         }
 
-        public bool IsDisposed => Interlocked.Read(ref _disposeState) != 0;
+        public bool IsDisposed => Volatile.Read(ref _disposeState) != 0;
 
-        public bool IsInitialized => Interlocked.Read(ref _initState) == 2;
+        public bool IsInitialized => Volatile.Read(ref _initState) == 2;
 
         internal void Initialize()
         {
