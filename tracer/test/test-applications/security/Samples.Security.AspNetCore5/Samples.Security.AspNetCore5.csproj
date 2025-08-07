@@ -3,8 +3,10 @@
   <PropertyGroup>
     <RequiresDockerDependency>Mixed</RequiresDockerDependency>
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <PropertyGroup Condition="'$(IsAlpine)' == 'true'">
+      <RuntimeIdentifiers>linux-musl-x64</RuntimeIdentifiers>
+    </PropertyGroup>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
-    <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64;linux-musl-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -130,14 +132,5 @@
     <PackageReference Include="System.DirectoryServices" Version="6.0.0" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="6.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="6.0.0" />
-    <PackageReference Update="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.7" />
-    <PackageReference Update="SQLitePCLRaw.core" Version="2.1.7" />
-    <PackageReference Update="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.7" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <PackageReference Update="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.7" />
-    <PackageReference Update="SQLitePCLRaw.core" Version="2.1.7" />
-    <PackageReference Update="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.7" />
   </ItemGroup>
 </Project>
