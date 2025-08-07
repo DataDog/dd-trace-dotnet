@@ -47,7 +47,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             get
             {
-                return _isInstrumented == 1 && this.ExceptionReplayProcessor != null && !string.IsNullOrEmpty(ProbeId);
+                return _isInstrumented == 1 && ExceptionReplayProcessor != null && !string.IsNullOrEmpty(ProbeId);
             }
         }
 
@@ -95,7 +95,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     var processor = new ExceptionProbeProcessor(probe, @case.ExceptionTypes, parentProbes: parentProbes, childProbes: childProbes);
                     @case.Processors.TryAdd(processor, 0);
-                    this.ExceptionReplayProcessor?.AddProbeProcessor(processor);
+                    ExceptionReplayProcessor?.AddProbeProcessor(processor);
                 }
             }
 
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     // We don't care about sampling Exception Probes. To save memory, NopAdaptiveSampler is used.
                     ProbeRateLimiter.Instance.TryAddSampler(ProbeId, NopAdaptiveSampler.Instance);
-                    if (!ProbeExpressionsProcessor.Instance.TryAddProbeProcessor(ProbeId, this.ExceptionReplayProcessor))
+                    if (!ProbeExpressionsProcessor.Instance.TryAddProbeProcessor(ProbeId, ExceptionReplayProcessor))
                     {
                         Log.Error("Could not add ExceptionReplayProcessor. Method: {TypeName}.{MethodName}", Method.Method.DeclaringType?.Name, Method.Method.Name);
                     }
