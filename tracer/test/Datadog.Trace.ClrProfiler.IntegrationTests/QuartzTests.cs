@@ -46,8 +46,6 @@ public class QuartzTests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
-            Log.Information("packageversion: " + packageVersion);
-            Log.Information("version from get suffix: " + GetSuffix(packageVersion));
             var filename = nameof(QuartzTests) + GetSuffix(packageVersion);
             Log.Information(filename);
             const int expectedSpanCount = 2;
@@ -93,6 +91,6 @@ public class QuartzTests : TracingIntegrationTest
             return "V4";
         }
 
-        return "no-package-version";
+        return string.Empty;
     }
 }
