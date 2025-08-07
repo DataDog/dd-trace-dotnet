@@ -32,7 +32,7 @@ partial class Build
             // Download the forwarder from Azure for now.
             // We will likely change this in the future, but it'll do for now.
             const string url = "https://apmdotnetci.blob.core.windows.net/apm-datadog-win-ssi-telemetry-forwarder/telemetry_forwarder.exe";
-            const string expectedHash = "3A207302683E2BE8CB3D3A6AFF4F40721B7C85763A5A9B8F441D6BFD1B419F02D3EA8155634CEB3A09473F4745CE49679A55095F0EAD91F0582C6CB08C725782";
+            const string expectedHash = "0B192C1901C670FC9A55464AFDF39774AB7CD0D667ECFB37BC22C27184B49C37D4658383E021F792A2F0C7024E1091F35C3CAD046EC68871FAEEE3C98A40163A";
 
             var tempFile = await DownloadFile(url);
             var actualHash = GetSha512Hash(tempFile);
