@@ -6,7 +6,9 @@
 
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -36,6 +38,37 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref int maxMessages, ref TimeSpan? maxWaitTime, ref bool isProcessor, ref CancellationToken cancellationToken)
     {
         Log.Information("ReceiveMessagesAsync running");
+
+        // Log the full call stack to understand who's calling this
+        var stackTrace = new StackTrace(true);
+        var frames = stackTrace.GetFrames();
+
+        Log.Information("=== FULL CALL STACK FOR ReceiveMessagesAsync ===");
+        if (frames != null)
+        {
+            for (int i = 0; i < frames.Length; i++)
+            {
+                var frame = frames[i];
+                var method = frame?.GetMethod();
+                var fileName = frame?.GetFileName();
+                var lineNumber = frame?.GetFileLineNumber() ?? 0;
+
+                if (method != null)
+                {
+                    var declaringType = method.DeclaringType?.FullName ?? "Unknown";
+                    var methodName = method.Name;
+                    var fullFrameInfo = $"  [{i}] {declaringType}.{methodName}";
+                    if (!string.IsNullOrEmpty(fileName))
+                    {
+                        fullFrameInfo += $" at {Path.GetFileName(fileName)}:{lineNumber}";
+                    }
+
+                    Log.Information("{FrameInfo}", fullFrameInfo);
+                }
+            }
+        }
+
+        Log.Information("=== END CALL STACK ===");
 
         var tracer = Tracer.Instance;
         var scope = tracer.StartActiveInternal(OperationName);
