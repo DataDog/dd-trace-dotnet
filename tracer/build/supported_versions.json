@@ -862,7 +862,7 @@
         "name": "MongoDB.Driver",
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
-        "minVersionTestedInclusive": "2.0.2",
+        "minVersionTestedInclusive": "2.5.1",
         "maxVersionSupportedInclusive": "3.4.2",
         "maxVersionAvailableInclusive": "3.4.2",
         "maxVersionTestedInclusive": "3.4.2"
@@ -879,7 +879,7 @@
         "name": "MongoDB.Driver",
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
-        "minVersionTestedInclusive": "2.0.2",
+        "minVersionTestedInclusive": "2.5.1",
         "maxVersionSupportedInclusive": "3.4.2",
         "maxVersionAvailableInclusive": "3.4.2",
         "maxVersionTestedInclusive": "3.4.2"
@@ -1004,7 +1004,7 @@
         "name": "NLog",
         "minVersionAvailableInclusive": "1.0.0.505",
         "minVersionSupportedInclusive": "1.0.0.505",
-        "minVersionTestedInclusive": "1.0.0.505",
+        "minVersionTestedInclusive": "4.7.15",
         "maxVersionSupportedInclusive": "6.0.2",
         "maxVersionAvailableInclusive": "6.0.2",
         "maxVersionTestedInclusive": "6.0.2"
@@ -1277,7 +1277,7 @@
         "name": "StackExchange.Redis",
         "minVersionAvailableInclusive": "1.0.187",
         "minVersionSupportedInclusive": "1.0.187",
-        "minVersionTestedInclusive": "1.0.488",
+        "minVersionTestedInclusive": "1.2.6",
         "maxVersionSupportedInclusive": "2.8.58",
         "maxVersionAvailableInclusive": "2.8.58",
         "maxVersionTestedInclusive": "2.8.58"
