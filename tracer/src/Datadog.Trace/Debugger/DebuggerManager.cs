@@ -156,12 +156,12 @@ namespace Datadog.Trace.Debugger
                 exceptionReplay.Initialize();
                 ExceptionReplay = exceptionReplay;
 
-                //TODO:
+                // TODO:
                 // TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.ExceptionReplay, enabled: true, error: null);
             }
             catch (Exception ex)
             {
-                //TODO:
+                // TODO:
                 // TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.ExceptionReplay, enabled: false, error: null);
                 Log.Error(ex, "Error initializing Exception Replay.");
             }
