@@ -235,14 +235,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 metricRequests.Should().NotBeEmpty("Expected OTLP metric requests were not received.");
 
-                // TODO: We only expect one metric request in the snapshot, but we could actually have multiple payloads, some of which
-                // could contain no metrics, some of which could contain _duplicate_ metrics. Flake central.
-                // To fix it we need to deserialize the data into a "real" payload, and aggregate the metrics as appropriate,
-                // to make sure that we're actually sending the "correct" results. For example, gauge values should not change,
-                // count values should be 0 in subsequent payloads etc.
-                var snapshotPayload = metricRequests
-                    .Select(r => r.DeserializedData)
-                    .ToList();
+                // Group the scope metrics by the resource metrics and schema URL (should only be one unique combination)
+                var resourceMetricsByResource = metricRequests
+                                        .SelectMany(r => r.MetricsData.ResourceMetrics)
+                                        .GroupBy(r => new Tuple<global::OpenTelemetry.Proto.Resource.V1.Resource, string>(r.Resource, r.SchemaUrl)).ToList();
+                resourceMetricsByResource.Should().ContainSingle();
+
+                var resourceMetrics = new List<object>();
+
+                // Although there's only one resource, let's still emit snapshot data in the expected array format
+                foreach (var resourceMetricByResource in resourceMetricsByResource)
+                {
+                    resourceMetrics.Add(new
+                    {
+                        Resource = resourceMetricByResource.Key.Item1,
+                        ScopeMetrics = resourceMetricByResource.SelectMany(r => r.ScopeMetrics),
+                        SchemaUrl = resourceMetricByResource.Key.Item2,
+                    });
+                }
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_timeUnixNanoRegexMetrics, @"TimeUnixNano"": <DateTimeOffset.Now>");
@@ -250,7 +260,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var suffix = GetSuffix(packageVersion);
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpMetrics{suffix}{snapshotName}";
 
-                await Verifier.Verify(snapshotPayload, settings)
+                await Verifier.Verify(resourceMetrics, settings)
                               .UseFileName(fileName)
                               .DisableRequireUniquePrefix();
             }
