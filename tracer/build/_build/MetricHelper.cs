@@ -56,22 +56,30 @@ public static class MetricHelper
         if (string.IsNullOrEmpty(envKey))
         {
             // We're probably not in CI
-            Log.Debug("No CI API Key found, skipping {MetricName} metric submission", metricName);
+            log.Debug("No CI API Key found, skipping {MetricName} metric submission", metricName);
             return;
         }
 
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("DD-API-KEY", envKey);
-
         var payload = $$"""{ "series": [{{string.Join(",", metrics)}}] }""";
-        var content = new StringContent(payload, Encoding.UTF8, "application/json");
-        var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
-        var responseContent = await response.Content.ReadAsStringAsync();
 
-        var result = response.IsSuccessStatusCode
-                         ? "Successfully submitted metric"
-                         : "Failed to submit metric";
-        log.Error("{Result} {MetricName}. Response was: Code: {ResponseStatusCode}. Response: {ResponseContent}. Payload sent was: \"{Payload}\"", result, metricName, response.StatusCode, responseContent, payload);
+        try
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("DD-API-KEY", envKey);
+
+            var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            var result = response.IsSuccessStatusCode
+                             ? "Successfully submitted metric"
+                             : "Failed to submit metric";
+            log.Error("{Result} {MetricName}. Response was: Code: {ResponseStatusCode}. Response: {ResponseContent}. Payload sent was: \"{Payload}\"", result, metricName, response.StatusCode, responseContent, payload);
+        }
+        catch (Exception ex)
+        {
+            log.Error(ex, "Error sending {MetricName} metric to backend with payload \"{Payload}\"", metricName, payload);
+        }
     }
 
     private static string SanitizeTagValue(string tag)

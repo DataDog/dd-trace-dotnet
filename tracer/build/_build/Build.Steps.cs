@@ -2415,7 +2415,7 @@ partial class Build
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines")
-       .Executes(() =>
+       .Executes(async () =>
        {
            // we expect to see _some_ errors, so explicitly ignore them
            var knownPatterns = new List<Regex>
@@ -2453,13 +2453,13 @@ partial class Build
                new(@".*Some errors were found while applying waf configuration \(RulesFile: rasp-rule-set.json\).*", RegexOptions.Compiled),
            };
 
-           CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error, new ());
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error, new ());
        });
 
     Target CheckSmokeTestsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines in the smoke test logs")
-       .Executes(() =>
+       .Executes(async () =>
        {
            var knownPatterns = new List<Regex>();
 
@@ -2515,10 +2515,10 @@ partial class Build
                new("rejit_thread_timeout", new(@".*Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented.*", RegexOptions.Compiled))
            };
 
-           CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning, reportablePatterns);
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning, reportablePatterns);
        });
 
-    private void CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel, List<(string IgnoreReasonTag, Regex Regex)> reportablePatterns)
+    private async Task CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel, List<(string IgnoreReasonTag, Regex Regex)> reportablePatterns)
     {
         var logDirectory = BuildDataDirectory / "logs";
         if (!logDirectory.Exists())
@@ -2578,8 +2578,8 @@ partial class Build
         if (reportableMetrics.Count > 0)
         {
             Logger.Warning("Found reportable (but ignored) problems in the logs");
-            MetricHelper.SendReportableErrorMetrics(Logger.Logger, reportableMetrics);
-            // TODO: REmove this before merge, this is just to find it
+            await MetricHelper.SendReportableErrorMetrics(Logger.Logger, reportableMetrics);
+            // TODO: Remove this before merge, this is just to find it
             Logger.Error("Reportable error - metrics sent");
             ExitCode = 1;
         }
