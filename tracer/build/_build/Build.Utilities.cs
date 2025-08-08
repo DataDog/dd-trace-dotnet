@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
@@ -612,6 +613,76 @@ partial class Build
             var lines = diff.text.TrimEnd(trimChar: '\n').Split(Environment.NewLine);
             return string.Join(Environment.NewLine, lines.Select(l => symbol + l));
         }
+    }
 
+    /// <summary>
+    /// Tries to download a file from the provided url, with a retry, and saves it at a temp path
+    /// </summary>
+    /// <param name="url">The URL to download from</param>
+    /// <returns>The temporary path where the file has been saved</returns>
+    /// <exception cref="Exception"></exception>
+    private static async Task<string> DownloadFile(string url)
+    {
+        using var client = new HttpClient();
+        var attemptsRemaining = 3;
+        var defaultDelay = TimeSpan.FromSeconds(2);
+
+        while (attemptsRemaining > 0)
+        {
+            var retryDelay = defaultDelay;
+            try
+            {
+                Logger.Information("Downloading from {Url}", url);
+                using var response = await client.GetAsync(url);
+                var outputPath = Path.GetTempFileName();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Logger.Information("Saving file to {Path}", outputPath);
+                    await using var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
+                    await response.Content.CopyToAsync(fs);
+                    return outputPath;
+                }
+
+                Logger.Warning("Failed to download file from {Url}, {StatusCode}: {Body}", url, response.StatusCode, await response.Content.ReadAsStringAsync());
+
+                if (response.StatusCode == HttpStatusCode.TooManyRequests
+                    && response.Headers.TryGetValues("Retry-After", out var values)
+                    && values.FirstOrDefault() is {} retryAfter)
+                    {
+                        if (int.TryParse(retryAfter, out var seconds))
+                        {
+                            retryDelay = TimeSpan.FromSeconds(seconds);
+                        }
+                        else if (DateTimeOffset.TryParse(retryAfter, out var retryDate))
+                        {
+                            var delta = retryDate - DateTimeOffset.UtcNow;
+                            retryDelay = delta > TimeSpan.Zero ? delta : retryDelay;
+                        }
+                    }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Error downloading file from {Url}", url);
+            }
+
+            attemptsRemaining--;
+            if (attemptsRemaining > 0)
+            {
+                Logger.Debug("Waiting {RetryDelayTotalSeconds} seconds before retry...", retryDelay.TotalSeconds);
+                await Task.Delay(retryDelay);
+            }
+        }
+
+        throw new Exception("Failed to download telemetry forwarder");
+    }
+
+    static string GetSha512Hash(string filePath)
+    {
+        using var sha512 = SHA512.Create();
+        using var stream = File.OpenRead(filePath);
+
+        var hashBytes = sha512.ComputeHash(stream);
+        return Convert.ToHexString(hashBytes);
     }
 }

@@ -56,6 +56,9 @@ elif [ "$OS" == "windows" ]; then
   mkdir -p sources/installer
   unzip ../artifacts/windows/fleet-installer.zip -d sources/installer/
 
+  # Copy the telemetry forwarder in too
+  cp ../artifacts/windows/telemetry_forwarder.exe sources/installer/
+
 fi
 
 echo -n $VERSION > sources/version
