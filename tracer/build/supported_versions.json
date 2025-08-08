@@ -845,7 +845,7 @@
         "name": "log4net",
         "minVersionAvailableInclusive": "1.2.10",
         "minVersionSupportedInclusive": "1.2.10",
-        "minVersionTestedInclusive": "2.0.17",
+        "minVersionTestedInclusive": "1.2.11",
         "maxVersionSupportedInclusive": "3.1.0",
         "maxVersionAvailableInclusive": "3.1.0",
         "maxVersionTestedInclusive": "3.1.0"
@@ -862,7 +862,7 @@
         "name": "MongoDB.Driver",
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
-        "minVersionTestedInclusive": "2.5.1",
+        "minVersionTestedInclusive": "2.0.2",
         "maxVersionSupportedInclusive": "3.4.2",
         "maxVersionAvailableInclusive": "3.4.2",
         "maxVersionTestedInclusive": "3.4.2"
@@ -879,7 +879,7 @@
         "name": "MongoDB.Driver",
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
-        "minVersionTestedInclusive": "2.5.1",
+        "minVersionTestedInclusive": "2.0.2",
         "maxVersionSupportedInclusive": "3.4.2",
         "maxVersionAvailableInclusive": "3.4.2",
         "maxVersionTestedInclusive": "3.4.2"
@@ -1004,7 +1004,7 @@
         "name": "NLog",
         "minVersionAvailableInclusive": "1.0.0.505",
         "minVersionSupportedInclusive": "1.0.0.505",
-        "minVersionTestedInclusive": "4.7.15",
+        "minVersionTestedInclusive": "1.0.0.505",
         "maxVersionSupportedInclusive": "6.0.2",
         "maxVersionAvailableInclusive": "6.0.2",
         "maxVersionTestedInclusive": "6.0.2"
@@ -1168,7 +1168,7 @@
         "name": "Serilog",
         "minVersionAvailableInclusive": "0.1.6",
         "minVersionSupportedInclusive": "1.0.1",
-        "minVersionTestedInclusive": "2.12.0",
+        "minVersionTestedInclusive": "1.4.214",
         "maxVersionSupportedInclusive": "4.3.0",
         "maxVersionAvailableInclusive": "4.3.0",
         "maxVersionTestedInclusive": "4.3.0"
@@ -1185,7 +1185,7 @@
         "name": "ServiceStack.Redis",
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
-        "minVersionTestedInclusive": "5.14.0",
+        "minVersionTestedInclusive": "4.5.14",
         "maxVersionSupportedInclusive": "8.8.0",
         "maxVersionAvailableInclusive": "8.8.0",
         "maxVersionTestedInclusive": "8.8.0"
@@ -1277,7 +1277,7 @@
         "name": "StackExchange.Redis",
         "minVersionAvailableInclusive": "1.0.187",
         "minVersionSupportedInclusive": "1.0.187",
-        "minVersionTestedInclusive": "1.2.6",
+        "minVersionTestedInclusive": "1.0.488",
         "maxVersionSupportedInclusive": "2.8.58",
         "maxVersionAvailableInclusive": "2.8.58",
         "maxVersionTestedInclusive": "2.8.58"
