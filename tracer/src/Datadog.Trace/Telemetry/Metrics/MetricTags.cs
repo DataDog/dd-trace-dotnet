@@ -271,7 +271,7 @@ internal static class MetricTags
         [Description("integration_name:sessiontimeout")] SessionTimeout,
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
         [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
-        [Description("integration_name:protobuf")] Protobuf,
+        [Description("integration_name:protobuf")] Protobuf
     }
 
     public enum InstrumentationError
