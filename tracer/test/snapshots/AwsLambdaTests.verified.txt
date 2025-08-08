@@ -1104,6 +1104,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1127,6 +1128,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_2,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1150,6 +1152,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_3,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1173,6 +1176,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_4,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1196,6 +1200,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_5,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1219,6 +1224,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_6,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1242,6 +1248,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_7,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1265,6 +1272,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_8,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1288,6 +1296,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_9,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1311,6 +1320,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_10,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1334,6 +1344,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_11,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
@@ -1357,6 +1368,7 @@
       out.host: serverless-dummy-api,
       runtime-id: Guid_12,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Lambda
     },
     Metrics: {
