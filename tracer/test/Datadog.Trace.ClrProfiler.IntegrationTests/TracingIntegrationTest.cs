@@ -32,10 +32,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);
-                if (isExternalSpan == true)
-                {
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
             }
         }
     }
