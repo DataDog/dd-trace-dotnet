@@ -246,10 +246,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Although there's only one resource, let's still emit snapshot data in the expected array format
                 foreach (var resourceMetricByResource in resourceMetricsByResource)
                 {
+                    // Group the individual metrics by scope metric and schema URL (should only be one unique combination since we're only using one ActivitySource)
+                    // This may result in multiple entries for metrics that are repeated multiple times before the test exits
+                    var scopeMetricsByResource = resourceMetricByResource
+                                            .SelectMany(r => r.ScopeMetrics)
+                                            .GroupBy(r => new Tuple<global::OpenTelemetry.Proto.Common.V1.InstrumentationScope, string>(r.Scope, r.SchemaUrl)).ToList();
+
+                    var scopeMetrics = new List<object>();
+                    foreach (var scopeMetricByResource in scopeMetricsByResource)
+                    {
+                        scopeMetrics.Add(new
+                        {
+                            Scope = scopeMetricByResource.Key.Item1,
+                            Metrics = scopeMetricByResource.SelectMany(r => r.Metrics),
+                            SchemaUrl = scopeMetricByResource.Key.Item2
+                        });
+                    }
+
                     resourceMetrics.Add(new
                     {
                         Resource = resourceMetricByResource.Key.Item1,
-                        ScopeMetrics = resourceMetricByResource.SelectMany(r => r.ScopeMetrics),
+                        ScopeMetrics = scopeMetrics,
                         SchemaUrl = resourceMetricByResource.Key.Item2,
                     });
                 }
