@@ -202,7 +202,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Flaky("The received payload is super flaky, sometimes we receive multiple payloads", maxRetries: 3)]
         [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
         public async Task SubmitsOtlpMetrics(string packageVersion)
         {
