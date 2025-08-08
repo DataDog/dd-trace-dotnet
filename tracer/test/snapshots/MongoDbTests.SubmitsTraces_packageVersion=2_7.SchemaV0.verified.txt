@@ -96,7 +96,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -158,7 +158,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -184,7 +184,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -210,7 +210,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -236,7 +236,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -259,7 +259,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -285,7 +285,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -311,7 +311,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -337,7 +337,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -363,7 +363,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -389,7 +389,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -415,7 +415,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -441,7 +441,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -467,7 +467,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -490,7 +490,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -513,7 +513,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {
@@ -536,7 +536,7 @@
       out.port: 27017,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MongoDB
     },
     Metrics: {

@@ -36,7 +36,7 @@
       out.host: aws_kinesis,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Kinesis
     },
     Metrics: {
@@ -66,7 +66,7 @@
       runtime-id: Guid_1,
       span.kind: producer,
       streamname: MyStreamName,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Kinesis
     },
     Metrics: {
@@ -96,7 +96,7 @@
       runtime-id: Guid_1,
       span.kind: producer,
       streamname: MyStreamName,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Kinesis
     },
     Metrics: {
@@ -122,7 +122,7 @@
       out.host: aws_kinesis,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.AWS.Kinesis
     },
     Metrics: {

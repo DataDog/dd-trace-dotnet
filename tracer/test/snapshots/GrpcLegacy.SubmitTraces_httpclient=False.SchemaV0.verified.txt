@@ -48,7 +48,7 @@
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -139,7 +139,7 @@
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -236,7 +236,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -335,7 +335,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -434,7 +434,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -533,7 +533,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -632,7 +632,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -731,7 +731,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -830,7 +830,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -929,7 +929,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -1022,7 +1022,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -1113,7 +1113,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -1204,7 +1204,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
@@ -1296,7 +1296,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {

@@ -15,7 +15,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -41,7 +41,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -67,7 +67,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -93,7 +93,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -120,7 +120,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -147,7 +147,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -174,7 +174,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -201,7 +201,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -226,7 +226,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -251,7 +251,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -276,7 +276,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -301,7 +301,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -327,7 +327,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
@@ -353,7 +353,7 @@
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.CosmosDb
     },
     Metrics: {

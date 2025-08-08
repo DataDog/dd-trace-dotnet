@@ -16,7 +16,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -43,7 +43,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -70,7 +70,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -97,7 +97,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -124,7 +124,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -151,7 +151,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -178,7 +178,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -205,7 +205,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -232,7 +232,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -259,7 +259,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -286,7 +286,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -313,7 +313,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -340,7 +340,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -367,7 +367,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -394,7 +394,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -421,7 +421,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -448,7 +448,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -475,7 +475,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -502,7 +502,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -529,7 +529,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -556,7 +556,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -583,7 +583,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -610,7 +610,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -637,7 +637,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -664,7 +664,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -691,7 +691,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -718,7 +718,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -745,7 +745,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -772,7 +772,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -799,7 +799,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -826,7 +826,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -853,7 +853,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -880,7 +880,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -907,7 +907,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -934,7 +934,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -961,7 +961,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -988,7 +988,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1015,7 +1015,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1042,7 +1042,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1069,7 +1069,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1096,7 +1096,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1123,7 +1123,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1150,7 +1150,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1177,7 +1177,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1204,7 +1204,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1231,7 +1231,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1258,7 +1258,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1285,7 +1285,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1312,7 +1312,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1339,7 +1339,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1366,7 +1366,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1393,7 +1393,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1420,7 +1420,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1447,7 +1447,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1474,7 +1474,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1501,7 +1501,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1528,7 +1528,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1555,7 +1555,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1582,7 +1582,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1609,7 +1609,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1636,7 +1636,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1663,7 +1663,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1690,7 +1690,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1717,7 +1717,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1744,7 +1744,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1771,7 +1771,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1798,7 +1798,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1825,7 +1825,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1852,7 +1852,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1879,7 +1879,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1906,7 +1906,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1933,7 +1933,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1960,7 +1960,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -1987,7 +1987,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2014,7 +2014,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2041,7 +2041,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2068,7 +2068,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2095,7 +2095,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2122,7 +2122,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2149,7 +2149,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2176,7 +2176,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2203,7 +2203,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2230,7 +2230,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2257,7 +2257,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2284,7 +2284,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2311,7 +2311,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2338,7 +2338,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2365,7 +2365,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2392,7 +2392,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2419,7 +2419,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2446,7 +2446,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2473,7 +2473,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2500,7 +2500,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2527,7 +2527,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2554,7 +2554,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2581,7 +2581,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2608,7 +2608,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2635,7 +2635,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2662,7 +2662,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2689,7 +2689,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2716,7 +2716,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2743,7 +2743,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2770,7 +2770,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2797,7 +2797,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2824,7 +2824,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2851,7 +2851,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2878,7 +2878,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2905,7 +2905,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2932,7 +2932,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2959,7 +2959,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -2986,7 +2986,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -3013,7 +3013,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -3040,7 +3040,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -3067,7 +3067,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -3094,7 +3094,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
@@ -3121,7 +3121,7 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Elasticsearch
     },
     Metrics: {
