@@ -55,6 +55,7 @@ namespace Samples.AWS.S3
         private static AmazonS3Client GetInvalidEndpointS3Client()
         {
             Console.WriteLine("Creating S3 client with invalid endpoint to reproduce duck typing issue...");
+            Environment.SetEnvironmentVariable("AWS_REQUEST_CHECKSUM_CALCULATION", "WHEN_REQUIRED");
 
             var awsCredentials = new BasicAWSCredentials("x", "x");
             var s3Config = new AmazonS3Config
