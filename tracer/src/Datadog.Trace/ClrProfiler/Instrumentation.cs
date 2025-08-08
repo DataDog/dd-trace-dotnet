@@ -111,30 +111,31 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     InitializeNoNativeParts(sw);
 
-                    // Set the Stable Configuration to the native parts
-                    // TODO: only for profiler here
-                    var tracerSettings = Tracer.Instance.Settings;
-                    var profilerSettings = Profiler.Instance.Settings;
-
-                    // TODO: wait for the new ProfileSettings to be available
-                    NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
-                    {
-                        ProfilingEnabled = (profilerSettings.ProfilerState == ProfilerState.Auto) ? NativeInterop.ProfilingEnabled.Auto :
-                                           (profilerSettings.ProfilerState == ProfilerState.Enabled) ? NativeInterop.ProfilingEnabled.Enabled :
-                                           NativeInterop.ProfilingEnabled.Disabled,
-                        TracingEnabled = tracerSettings.TraceEnabled,
-                        IastEnabled = Iast.Iast.Instance.Settings.Enabled,
-                        RaspEnabled = Security.Instance.Settings.RaspEnabled,
-                        DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
-                        RuntimeId = RuntimeId.Get(),
-                        Environment = tracerSettings.Environment,
-                        ServiceName = TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? string.Empty),
-                        Version = tracerSettings.ServiceVersion
-                    };
-                    NativeInterop.ProfilerSetConfiguration(config);
-
                     try
                     {
+                        // Set the Stable Configuration to the native parts
+
+                        // TODO: only for profiler here
+                        Log.Debug("Enabling Profiling integration in native library.");
+                        var tracerSettings = Tracer.Instance.Settings;
+                        var profilerSettings = Profiler.Instance.Settings;
+
+                        NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
+                        {
+                            ProfilingEnabled = (profilerSettings.ProfilerState == ProfilerState.Auto) ? NativeInterop.ProfilingEnabled.Auto :
+                                               (profilerSettings.ProfilerState == ProfilerState.Enabled) ? NativeInterop.ProfilingEnabled.Enabled :
+                                               NativeInterop.ProfilingEnabled.Disabled,
+                            TracingEnabled = tracerSettings.TraceEnabled,
+                            IastEnabled = Iast.Iast.Instance.Settings.Enabled,
+                            RaspEnabled = Security.Instance.Settings.RaspEnabled,
+                            DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
+                            RuntimeId = RuntimeId.Get(),
+                            Environment = tracerSettings.Environment,
+                            ServiceName = TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? string.Empty),
+                            Version = tracerSettings.ServiceVersion
+                        };
+                        NativeInterop.ProfilerSetConfiguration(config);
+
                         Log.Debug("Enabling CallTarget integration definitions in native library.");
 
                         InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
