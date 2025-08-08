@@ -255,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 else
                 {
                     // shouldn't be hit, but better safe than sorry
-                    scope = tracer.StartActiveInternal(OperationName);
+                    scope = tracer.StartActiveInternal(OperationName, tags: tags);
                     var rootSpan = scope.Root.Span;
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,
