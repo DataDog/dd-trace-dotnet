@@ -11,9 +11,7 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -48,122 +46,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             where TTarget : IReceiverManager
             where TMessage : IServiceBusReceivedMessage
         {
-            Log.Information("ProcessOneMessage starting for individual message processing");
-
+            // Do not create a span, this will automatically be created by the Azure.Messaging.ServiceBus ActivitySource(s)
+            // when the following requirements are met:
+            // - AzureServiceBus integration enabled
+            // - DD_TRACE_OTEL_ENABLED=true
             var tracer = Tracer.Instance;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
-            {
-                Log.Information("AzureServiceBus integration disabled, skipping ProcessOneMessage instrumentation");
-                return CallTargetState.GetDefault();
-            }
-
-            Log.Information(
-                "Processing individual ServiceBus message, EnqueuedTime: {EnqueuedTime}",
-                message.EnqueuedTime);
-
-            // Extract tracing context from message ApplicationProperties
-            Scope? messageScope = null;
-            PropagationContext extractedContext = default;
-
-            if (message.ApplicationProperties is not null)
-            {
-                Log.Information(
-                    "Message has {PropertyCount} ApplicationProperties, attempting context extraction",
-                    (object)message.ApplicationProperties.Count);
-
-                // Log all properties for debugging
-                foreach (var prop in message.ApplicationProperties)
-                {
-                    Log.Information("ApplicationProperty: {Key} = {Value}", prop.Key, prop.Value);
-                }
-
-                try
-                {
-                    var headersCollection = new ServiceBusHeadersCollectionAdapter(message.ApplicationProperties);
-                    extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headersCollection);
-
-                    if (extractedContext.SpanContext != null)
-                    {
-                        Log.Information("Successfully extracted context from message ApplicationProperties");
-                    }
-                    else
-                    {
-                        Log.Information("No propagated context found in message ApplicationProperties");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting propagated context from ServiceBus message ApplicationProperties");
-                }
-            }
-            else
-            {
-                Log.Information("Message has no ApplicationProperties, cannot extract context");
-            }
-
-            // Create message processing span
-            try
-            {
-                const string operationName = "azure.servicebus.process";
-                var entityPath = instance.Processor?.EntityPath ?? "unknown";
-
-                if (extractedContext.SpanContext != null)
-                {
-                    // Create span as child of extracted producer context
-                    Log.Information("Creating message span with extracted parent context");
-                    messageScope = tracer.StartActiveInternal(operationName, parent: extractedContext.SpanContext);
-                }
-                else
-                {
-                    // Create span without parent if no context was extracted
-                    Log.Information("Creating message span without parent context (no extracted context available)");
-                    messageScope = tracer.StartActiveInternal(operationName);
-                }
-
-                if (messageScope?.Span != null)
-                {
-                    var span = messageScope.Span;
-                    span.Type = SpanTypes.Queue;
-                    span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
-                    span.SetTag("azure.servicebus.entity_path", entityPath);
-                    span.SetTag("azure.servicebus.operation", "process");
-                    // MessageId is not available in the interface, skip this tag
-                    span.SetTag("messaging.system", "servicebus");
-                    span.SetTag("messaging.destination.name", entityPath);
-                    span.SetTag("messaging.operation", "process");
-
-                    // Add span link to any existing batch span (if we can access it)
-                    // This requires checking if there's an active scope from the batch operation
-                    if (tracer.InternalActiveScope?.Span != null && tracer.InternalActiveScope != messageScope)
-                    {
-                        var batchSpan = tracer.InternalActiveScope.Span;
-                        Log.Information(
-                            "Adding span link to batch span");
-
-                        span.AddLink(new SpanLink(batchSpan.Context));
-                    }
-                    else
-                    {
-                        Log.Information("No batch span found to link to");
-                    }
-
-                    Log.Information("Created message processing span with parent context");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating message processing span");
-                messageScope?.Dispose();
-                messageScope = null;
-            }
-
-            // Handle Data Streams Monitoring (preserve existing logic)
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (messageScope?.Span is Span activeSpan && dataStreamsManager.IsEnabled)
-            {
-                Log.Information("Processing Data Streams Monitoring for message span");
 
+            if (tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+                && tracer.InternalActiveScope?.Span is Span span
+                && dataStreamsManager.IsEnabled)
+            {
                 PathwayContext? pathwayContext = null;
 
                 if (message.ApplicationProperties is not null)
@@ -180,75 +73,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                     }
                 }
 
-                var consumeTime = activeSpan.StartTime.UtcDateTime;
+                var consumeTime = span.StartTime.UtcDateTime;
                 var produceTime = message.EnqueuedTime.UtcDateTime;
                 var messageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
-                activeSpan.Tags.SetMetric(Trace.Metrics.MessageQueueTimeMs, messageQueueTimeMs);
+                span.Tags.SetMetric(Trace.Metrics.MessageQueueTimeMs, messageQueueTimeMs);
 
-                var namespaceString = instance.Processor?.EntityPath ?? "unknown";
+                var namespaceString = instance.Processor.EntityPath;
 
+                // TODO: we could pool these arrays to reduce allocations
+                // NOTE: the tags must be sorted in alphabetical order
                 var edgeTags = string.IsNullOrEmpty(namespaceString)
                                     ? new[] { "direction:in", "type:servicebus" }
                                     : new[] { "direction:in", $"topic:{namespaceString}", "type:servicebus" };
                 var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
-                activeSpan.SetDataStreamsCheckpoint(
+                span.SetDataStreamsCheckpoint(
                     dataStreamsManager,
                     CheckpointKind.Consume,
                     edgeTags,
                     msgSize,
                     (long)messageQueueTimeMs,
                     pathwayContext);
-
-                Log.Information("Data Streams Monitoring completed for message span");
             }
 
-            Log.Information("ProcessOneMessage setup completed, returning scope: {ScopeExists}", messageScope != null);
-            return new CallTargetState(messageScope);
-        }
-
-        /// <summary>
-        /// OnMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TReturn">Type of the return value</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="returnValue">Return value</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">Calltarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
-        {
-            Log.Information("ProcessOneMessage ending, exception: {HasException}", exception != null);
-
-            if (state.Scope is Scope scope)
-            {
-                try
-                {
-                    if (exception != null)
-                    {
-                        Log.Information(
-                            "ProcessOneMessage ended with exception: {ExceptionType} - {ExceptionMessage}",
-                            exception.GetType().Name,
-                            exception.Message);
-                        scope.Span.SetException(exception);
-                    }
-                    else
-                    {
-                        Log.Information("ProcessOneMessage completed successfully");
-                    }
-                }
-                finally
-                {
-                    Log.Information("Disposing ProcessOneMessage span");
-                    scope.Dispose();
-                }
-            }
-            else
-            {
-                Log.Information("ProcessOneMessage ending with no scope to dispose");
-            }
-
-            return new CallTargetReturn<TReturn>(returnValue);
+            return CallTargetState.GetDefault();
         }
     }
 }
