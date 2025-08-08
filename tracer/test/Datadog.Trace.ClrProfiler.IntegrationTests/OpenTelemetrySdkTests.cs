@@ -260,9 +260,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         var metrics = scopeMetricByResource
                                         .SelectMany(r => r.Metrics)
-                                        .OrderBy(metric => metric.Name)
+                                        .GroupBy(r => r.Name)
+                                        .OrderBy(group => group.Key)
+                                        .Select(group => group.First())
                                         .ToList();
-                        OtlpHelper.DeduplicateOtlpMetrics(metrics);
 
                         scopeMetrics.Add(new
                         {
