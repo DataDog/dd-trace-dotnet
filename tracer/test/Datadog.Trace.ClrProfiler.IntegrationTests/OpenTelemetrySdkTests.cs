@@ -238,7 +238,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Group the scope metrics by the resource metrics and schema URL (should only be one unique combination)
                 var resourceMetricsByResource = metricRequests
                                         .SelectMany(r => r.MetricsData.ResourceMetrics)
-                                        .GroupBy(r => new Tuple<global::OpenTelemetry.Proto.Resource.V1.Resource, string>(r.Resource, r.SchemaUrl)).ToList();
+                                        .GroupBy(r => new Tuple<global::OpenTelemetry.Proto.Resource.V1.Resource, string>(r.Resource, r.SchemaUrl))
+                                        .ToList();
                 resourceMetricsByResource.Should().ContainSingle();
 
                 var resourceMetrics = new List<object>();
@@ -250,15 +251,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     // This may result in multiple entries for metrics that are repeated multiple times before the test exits
                     var scopeMetricsByResource = resourceMetricByResource
                                             .SelectMany(r => r.ScopeMetrics)
-                                            .GroupBy(r => new Tuple<global::OpenTelemetry.Proto.Common.V1.InstrumentationScope, string>(r.Scope, r.SchemaUrl)).ToList();
+                                            .GroupBy(r => new Tuple<global::OpenTelemetry.Proto.Common.V1.InstrumentationScope, string>(r.Scope, r.SchemaUrl))
+                                            .OrderBy(group => group.Key.Item1.Name)
+                                            .ToList();
 
                     var scopeMetrics = new List<object>();
                     foreach (var scopeMetricByResource in scopeMetricsByResource)
                     {
+                        var metrics = scopeMetricByResource
+                                        .SelectMany(r => r.Metrics)
+                                        .OrderBy(metric => metric.Name)
+                                        .ToList();
+                        OtlpHelper.DeduplicateOtlpMetrics(metrics);
+
                         scopeMetrics.Add(new
                         {
                             Scope = scopeMetricByResource.Key.Item1,
-                            Metrics = scopeMetricByResource.SelectMany(r => r.Metrics),
+                            Metrics = metrics,
                             SchemaUrl = scopeMetricByResource.Key.Item2
                         });
                     }

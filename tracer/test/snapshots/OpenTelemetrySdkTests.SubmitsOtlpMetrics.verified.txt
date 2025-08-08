@@ -84,44 +84,6 @@
             DataCase: Gauge
           },
           {
-            Name: example.upDownCounter,
-            Description: ,
-            Unit: ,
-            Sum: {
-              DataPoints: [
-                {
-                  Attributes: [
-                    {
-                      Key: http.method,
-                      Value: {
-                        StringValue: GET,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
-                    },
-                    {
-                      Key: rid,
-                      Value: {
-                        StringValue: 1234567890,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
-                    }
-                  ],
-                  StartTimeUnixNano": <DateTimeOffset.Now>,
-                  TimeUnixNano": <DateTimeOffset.Now>,
-                  AsInt: 55,
-                  HasAsInt: true,
-                  ValueCase: AsInt
-                }
-              ],
-              AggregationTemporality: Cumulative
-            },
-            DataCase: Sum
-          },
-          {
             Name: example.async.upDownCounter,
             Description: ,
             Unit: ,
@@ -138,43 +100,6 @@
               AggregationTemporality: Cumulative
             },
             DataCase: Sum
-          },
-          {
-            Name: example.gauge,
-            Description: ,
-            Unit: ,
-            Gauge: {
-              DataPoints: [
-                {
-                  Attributes: [
-                    {
-                      Key: http.method,
-                      Value: {
-                        StringValue: GET,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
-                    },
-                    {
-                      Key: rid,
-                      Value: {
-                        StringValue: 1234567890,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
-                    }
-                  ],
-                  StartTimeUnixNano": <DateTimeOffset.Now>,
-                  TimeUnixNano": <DateTimeOffset.Now>,
-                  AsDouble: 77.0,
-                  HasAsDouble: true,
-                  ValueCase: AsDouble
-                }
-              ]
-            },
-            DataCase: Gauge
           },
           {
             Name: example.counter,
@@ -214,6 +139,43 @@
               IsMonotonic: true
             },
             DataCase: Sum
+          },
+          {
+            Name: example.gauge,
+            Description: ,
+            Unit: ,
+            Gauge: {
+              DataPoints: [
+                {
+                  Attributes: [
+                    {
+                      Key: http.method,
+                      Value: {
+                        StringValue: GET,
+                        HasStringValue: true,
+                        BytesValue: [],
+                        ValueCase: StringValue
+                      }
+                    },
+                    {
+                      Key: rid,
+                      Value: {
+                        StringValue: 1234567890,
+                        HasStringValue: true,
+                        BytesValue: [],
+                        ValueCase: StringValue
+                      }
+                    }
+                  ],
+                  StartTimeUnixNano": <DateTimeOffset.Now>,
+                  TimeUnixNano": <DateTimeOffset.Now>,
+                  AsDouble: 77.0,
+                  HasAsDouble: true,
+                  ValueCase: AsDouble
+                }
+              ]
+            },
+            DataCase: Gauge
           },
           {
             Name: example.histogram,
@@ -291,6 +253,44 @@
               AggregationTemporality: Delta
             },
             DataCase: Histogram
+          },
+          {
+            Name: example.upDownCounter,
+            Description: ,
+            Unit: ,
+            Sum: {
+              DataPoints: [
+                {
+                  Attributes: [
+                    {
+                      Key: http.method,
+                      Value: {
+                        StringValue: GET,
+                        HasStringValue: true,
+                        BytesValue: [],
+                        ValueCase: StringValue
+                      }
+                    },
+                    {
+                      Key: rid,
+                      Value: {
+                        StringValue: 1234567890,
+                        HasStringValue: true,
+                        BytesValue: [],
+                        ValueCase: StringValue
+                      }
+                    }
+                  ],
+                  StartTimeUnixNano": <DateTimeOffset.Now>,
+                  TimeUnixNano": <DateTimeOffset.Now>,
+                  AsInt: 55,
+                  HasAsInt: true,
+                  ValueCase: AsInt
+                }
+              ],
+              AggregationTemporality: Cumulative
+            },
+            DataCase: Sum
           }
         ],
         SchemaUrl: 
