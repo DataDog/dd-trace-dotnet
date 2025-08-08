@@ -1372,6 +1372,16 @@ namespace Datadog.Trace.Tests.Configuration
             settings.GraphQLErrorExtensions.Should().BeEquivalentTo(expected);
         }
 
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void LogsInjectionEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.LogsInjectionEnabled, value));
+            var tracerSettings = new TracerSettings(source);
+
+            tracerSettings.LogsInjectionEnabled.Should().Be(expected);
+        }
+
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)
         {
             if (newErrorKeyValue is not null || deprecatedErrorKeyValue is not null)
