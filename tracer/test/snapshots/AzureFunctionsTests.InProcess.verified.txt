@@ -53,7 +53,6 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
@@ -148,7 +147,6 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
@@ -176,7 +174,6 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
@@ -204,7 +201,6 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
@@ -234,7 +230,6 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {

@@ -40,7 +40,6 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -71,7 +70,6 @@
       objectkey: sample.txt,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -112,7 +110,6 @@
       objectkey: sample.txt,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -143,7 +140,6 @@
       objectkey: copy.txt,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -183,7 +179,6 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -214,7 +209,6 @@
       objectkey: copy.txt,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -244,7 +238,6 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -275,7 +268,6 @@
       objectkey: multipart.txt,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -306,7 +298,6 @@
       objectkey: multipart.txt,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -337,7 +328,6 @@
       objectkey: multipart.txt,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -368,7 +358,6 @@
       objectkey: multipart.txt,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -407,7 +396,6 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -437,7 +425,6 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -468,7 +455,6 @@
       objectkey: multipart.txt,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {
@@ -498,7 +484,6 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.S3
     },
     Metrics: {

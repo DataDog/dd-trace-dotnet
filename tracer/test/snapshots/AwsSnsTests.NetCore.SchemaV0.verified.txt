@@ -36,7 +36,6 @@
       out.host: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.SimpleNotificationService
     },
     Metrics: {
@@ -68,7 +67,6 @@
       runtime-id: Guid_1,
       span.kind: client,
       topicname: MyTopic,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.SimpleNotificationService
     },
     Metrics: {
@@ -100,7 +98,6 @@
       runtime-id: Guid_1,
       span.kind: client,
       topicname: MyTopic,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.SimpleNotificationService
     },
     Metrics: {
@@ -126,7 +123,6 @@
       out.host: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.AWS.SimpleNotificationService
     },
     Metrics: {

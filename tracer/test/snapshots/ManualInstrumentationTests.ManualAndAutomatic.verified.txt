@@ -66,7 +66,6 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
@@ -173,7 +172,6 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
@@ -270,7 +268,6 @@
       runtime-id: Guid_1,
       span.kind: client,
       Updated-key: Updated Value,
-      version: 1.0.0,
       _dd.base_service: updated-name
     },
     Metrics: {
@@ -395,7 +392,6 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
@@ -518,7 +514,6 @@ CustomException: Exception of type 'CustomException' was thrown.
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
@@ -592,7 +587,6 @@ CustomException: Exception of type 'CustomException' was thrown.
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
@@ -685,7 +679,6 @@ CustomException: Exception of type 'CustomException' was thrown.
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
@@ -779,7 +772,6 @@ CustomException: Exception of type 'CustomException' was thrown.
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
@@ -885,7 +877,6 @@ CustomException: Exception of type 'CustomException' was thrown.
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
