@@ -6,7 +6,6 @@
 #if NETFRAMEWORK
 using System;
 using System.Linq;
-using Datadog.Trace.Logging;
 using Microsoft.Win32;
 
 namespace Datadog.Trace
@@ -36,7 +35,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Value.Error(ex, "Error getting framework description.");
+                Log.Error(ex, "Error getting framework description.");
             }
 
             return new FrameworkDescription(
@@ -76,7 +75,7 @@ namespace Datadog.Trace
             }
             catch (Exception e)
             {
-                Log.Value.Error(e, "Error getting .NET Framework version from Windows Registry");
+                Log.Error(e, "Error getting .NET Framework version from Windows Registry");
             }
 
             if (productVersion == null)

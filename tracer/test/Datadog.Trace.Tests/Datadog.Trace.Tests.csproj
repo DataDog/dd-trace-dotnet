@@ -16,6 +16,12 @@
     <None Update="Configuration\HandsOffConfigData\corrupt_file.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Configuration\HandsOffConfigData\corrupt_file2.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Configuration\HandsOffConfigData\corrupt_file3.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

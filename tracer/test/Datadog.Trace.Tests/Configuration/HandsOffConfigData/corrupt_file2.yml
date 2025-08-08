@@ -1,0 +1,6 @@
+config_id: a1
+configuration_wrong:
+  DD_TRACE_DEBUG: "datadog",
+  DD_ENV: 456
+  DD_SERVICE: 563.45,
+  DD_DATA_STREAMS_ENABLED: %

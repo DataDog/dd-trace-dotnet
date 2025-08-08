@@ -575,7 +575,6 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for deactivating reading the application monitoring config file through libdatadog (hands off config).
         /// True by default
         /// </summary>
-        /// <seealso cref="TracerSettings.GraphQLErrorExtensions"/>
         public const string ApplicationMonitoringConfigFileEnabled = "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED";
 
         /// <summary>

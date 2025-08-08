@@ -7,11 +7,13 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using FluentAssertions;
 using Xunit;
+using Result = Datadog.Trace.LibDatadog.HandsOffConfiguration.Result;
 
 namespace Datadog.Trace.Tests.Configuration;
 
@@ -25,57 +27,25 @@ public class GlobalConfigurationSourceTests
         // 2. env var
         // 3. local file
 
-        // KEY1: defined in fleet file: this should be ignored
-        Environment.SetEnvironmentVariable("KEY1", "local_env_var", EnvironmentVariableTarget.Process);
-
-        // KEY2: defined false in local file: this should be applied over the local file
-        Environment.SetEnvironmentVariable("KEY2", "true", EnvironmentVariableTarget.Process);
-
-        // KEY2: only defined in env var, should prevail
-        Environment.SetEnvironmentVariable("KEY3", "false", EnvironmentVariableTarget.Process);
         var result = GlobalConfigurationSource.CreateDefaultConfigurationSource(
             handsOffLocalConfigPath: Path.Combine("Configuration", "HandsOffConfigData", "application_monitoring.yml"),
             handsOffFleetConfigPath: Path.Combine("Configuration", "HandsOffConfigData", "application_monitoring_fleet.yml"),
             isLibdatadogAvailable: true);
-
-        var source = result.ConfigurationSource;
-        // env var
-        var key3 = source.GetBool("KEY3", new NullConfigurationTelemetry(), null);
-        key3.IsPresent.Should().BeTrue();
-        key3.Result.Should().Be(false);
-
-        // fleet file
-        var environment = source.GetString("KEY1", new NullConfigurationTelemetry(), null, false);
-        environment.IsPresent.Should().BeTrue();
-        environment.Result.Should().Be("fleet_file_env");
-
-        // local file
-        var dataStreamEnabled = source.GetBool("KEY4", new NullConfigurationTelemetry(), null);
-        dataStreamEnabled.IsPresent.Should().BeTrue();
-        dataStreamEnabled.Result.Should().Be(true);
-
-        // fleet file
-        var service = source.GetString("KEY5", new NullConfigurationTelemetry(), null, false);
-        service.IsPresent.Should().BeTrue();
-        service.Result.Should().Be("fleet_file_service");
-
-        // KEY1: defined in fleet file: this should be ignored
-        Environment.SetEnvironmentVariable("KEY1", null, EnvironmentVariableTarget.Process);
-
-        // KEY2: defined false in local file: this should be applied over the local file
-        Environment.SetEnvironmentVariable("KEY2", null, EnvironmentVariableTarget.Process);
-
-        // KEY2: only defined in env var, should prevail
-        Environment.SetEnvironmentVariable("KEY2", null, EnvironmentVariableTarget.Process);
-    }
-
-    [Fact]
-    public void TestErrorHandsOffConfigFile()
-    {
-        var handsOffErrorPath = Path.Combine("Configuration", "HandsOffConfigData", "corrupt_file.yml");
-        var result = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(debugEnabled: true, handsOffLocalConfigPath: handsOffErrorPath, handsOffFleetConfigPath: handsOffErrorPath, isLibdatadogAvailable: true);
-        result.ConfigurationSuccessResult.Should().BeNull();
-        result.ErrorMessage.Should().NotBeNull();
-        result.ErrorMessage.Should().Be("apm_configuration_default: invalid type: string \"DD_TRACE_DEBUG': true, DD_ENV: \", expected struct ConfigMap(HashMap<String, String>) at line 3 column 3");
+        result.Result.Should().Be(Result.Success);
+        var sources = result.ConfigurationSource.ToList();
+        sources.Count.Should().Be(4);
+        var fleetConfigSource = sources[0].Should().BeOfType<HandsOffConfigurationSource>().Subject;
+        fleetConfigSource.Origin.Should().Be(ConfigurationOrigins.FleetStableConfig);
+        fleetConfigSource.GetString("KEY1", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("fleet_file_env");
+        fleetConfigSource.GetString("KEY5", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("fleet_file_service");
+        sources[1].Should().BeOfType<EnvironmentConfigurationSource>();
+        var localConfigSource = sources[2].Should().BeOfType<HandsOffConfigurationSource>().Subject;
+        localConfigSource.Origin.Should().Be(ConfigurationOrigins.LocalStableConfig);
+        // libdatadog already applies precedence so doesnt get these keys already defined by fleet, but we want to account for this in later stages where it should report everything for telemetry
+        localConfigSource.GetString("KEY1", NullConfigurationTelemetry.Instance, null, false).IsPresent.Should().BeFalse();
+        localConfigSource.GetString("KEY5", NullConfigurationTelemetry.Instance, null, false).IsPresent.Should().BeFalse();
+        localConfigSource.GetString("KEY4", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("true");
+        localConfigSource.GetBool("KEY2", NullConfigurationTelemetry.Instance, null).Result.Should().Be(false);
+        sources[3].Should().BeOfType<NameValueConfigurationSource>();
     }
 }
