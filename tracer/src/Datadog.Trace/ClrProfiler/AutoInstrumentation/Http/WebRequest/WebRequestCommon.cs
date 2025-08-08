@@ -41,7 +41,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         /// <returns>Returns <c>true</c> if injection was performed, and <c>/false</c> otherwise</returns>
         public static bool TryInjectHeaders<TTarget>(TTarget instance)
         {
-            if (instance is HttpWebRequest request && IsTracingEnabled(request))
+            if (instance is not HttpWebRequest request)
+            {
+                return false;
+            }
+
+            if (IsTracingEnabled(request))
             {
                 var tracer = Tracer.Instance;
 
@@ -73,6 +78,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     }
                 }
             }
+
+            request.Headers.Remove(HttpHeaderNames.TracingEnabled);
 
             return false;
         }
