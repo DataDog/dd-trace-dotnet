@@ -14,7 +14,5 @@ namespace Datadog.Trace.Debugger.Configurations
         public bool? ExceptionReplayEnabled { get; init; }
 
         public bool? CodeOriginEnabled { get; init; }
-
-        public bool? LiveDebuggingEnabled { get; init; }
     }
 }

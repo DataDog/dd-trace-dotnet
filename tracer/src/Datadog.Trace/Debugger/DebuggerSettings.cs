@@ -227,8 +227,6 @@ namespace Datadog.Trace.Debugger
 
         public int CodeOriginMaxUserFrames { get; }
 
-        public bool LiveDebuggingEnabled { get; } = false;
-
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             return new DebuggerSettings(source, telemetry);
