@@ -17,12 +17,12 @@ internal interface ICopyObjectRequest : IDuckType
     /// <summary>
     /// Gets the S3 destination bucket name.
     /// </summary>
-    [DuckField(Name = "dstBucket")]
-    string DestinationBucketName { get; }
+    [Duck(Name = "DestinationBucket")]
+    string? DestinationBucketName { get; }
 
     /// <summary>
     /// Gets the S3 destination key.
     /// </summary>
-    [DuckField(Name = "dstKey")]
-    string DestinationObjectKey { get; }
+    [Duck(Name = "DestinationKey")]
+    string? DestinationObjectKey { get; }
 }

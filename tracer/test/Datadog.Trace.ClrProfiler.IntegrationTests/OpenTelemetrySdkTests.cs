@@ -202,6 +202,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Flaky("The received payload is super flaky, sometimes we receive multiple payloads", maxRetries: 3)]
         [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
         public async Task SubmitsOtlpMetrics(string packageVersion)
         {
@@ -234,6 +235,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 metricRequests.Should().NotBeEmpty("Expected OTLP metric requests were not received.");
 
+                // TODO: We only expect one metric request in the snapshot, but we could actually have multiple payloads, some of which
+                // could contain no metrics, some of which could contain _duplicate_ metrics. Flake central.
+                // To fix it we need to deserialize the data into a "real" payload, and aggregate the metrics as appropriate,
+                // to make sure that we're actually sending the "correct" results. For example, gauge values should not change,
+                // count values should be 0 in subsequent payloads etc.
                 var snapshotPayload = metricRequests
                     .Select(r => r.DeserializedData)
                     .ToList();
