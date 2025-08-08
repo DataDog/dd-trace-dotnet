@@ -43,7 +43,6 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -69,7 +68,6 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -175,7 +173,6 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -201,7 +198,6 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -309,7 +305,6 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -335,7 +330,6 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -445,7 +439,6 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -471,7 +464,6 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -581,7 +573,6 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -607,7 +598,6 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -717,7 +707,6 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -743,7 +732,6 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -857,7 +845,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -883,7 +870,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -993,7 +979,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1019,7 +1004,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1129,7 +1113,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1155,7 +1138,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1265,7 +1247,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1291,7 +1272,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1403,7 +1383,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1429,7 +1408,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1535,7 +1513,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1561,7 +1538,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1667,7 +1643,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1693,7 +1668,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1799,7 +1773,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1825,7 +1798,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1933,7 +1905,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
@@ -1959,7 +1930,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
       _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {

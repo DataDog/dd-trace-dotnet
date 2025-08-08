@@ -20,7 +20,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
@@ -52,7 +51,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -78,7 +76,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -104,7 +101,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -131,7 +127,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -158,7 +153,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -185,7 +179,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -212,7 +205,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -239,7 +231,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -265,7 +256,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -291,7 +281,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -317,7 +306,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -344,7 +332,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -370,7 +357,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -396,7 +382,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -422,7 +407,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -447,7 +431,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -473,7 +456,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -498,7 +480,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -523,7 +504,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -548,7 +528,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -573,7 +552,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -600,7 +578,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
@@ -642,7 +619,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
@@ -681,7 +657,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -706,7 +681,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -731,7 +705,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -756,7 +729,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -784,7 +756,6 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -817,7 +788,6 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -843,7 +813,6 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -869,7 +838,6 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -895,7 +863,6 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -920,7 +887,6 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     }
   },
@@ -945,7 +911,6 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
@@ -984,7 +949,6 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
@@ -1056,7 +1020,6 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      version: 1.0.0,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
