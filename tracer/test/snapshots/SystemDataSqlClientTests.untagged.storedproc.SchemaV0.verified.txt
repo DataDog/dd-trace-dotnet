@@ -24,6 +24,7 @@ END,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -54,6 +55,7 @@ END,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -91,6 +93,7 @@ END,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -119,6 +122,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -143,6 +147,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -167,6 +172,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -191,6 +197,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -215,6 +222,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -239,6 +247,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -264,6 +273,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -286,6 +296,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -308,6 +319,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -330,6 +342,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -352,6 +365,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -374,6 +388,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -396,6 +411,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -418,6 +434,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -440,6 +457,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -462,6 +480,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -484,6 +503,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -506,6 +526,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -528,6 +549,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -550,6 +572,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -572,6 +595,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -594,6 +618,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -616,6 +641,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -638,6 +664,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -660,6 +687,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -682,6 +710,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -704,6 +733,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -726,6 +756,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -748,6 +779,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -770,6 +802,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -792,6 +825,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -814,6 +848,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -836,6 +871,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -858,6 +894,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -880,6 +917,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -902,6 +940,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -924,6 +963,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -946,6 +986,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -968,6 +1009,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -990,6 +1032,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1012,6 +1055,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1034,6 +1078,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1056,6 +1101,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1078,6 +1124,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1100,6 +1147,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1122,6 +1170,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1144,6 +1193,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1166,6 +1216,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1188,6 +1239,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1210,6 +1262,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1232,6 +1285,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1254,6 +1308,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1276,6 +1331,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1298,6 +1354,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1319,6 +1376,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1344,6 +1402,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1366,6 +1425,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1388,6 +1448,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1410,6 +1471,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1432,6 +1494,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1454,6 +1517,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1476,6 +1540,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1498,6 +1563,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1520,6 +1586,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1542,6 +1609,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1564,6 +1632,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1586,6 +1655,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1608,6 +1678,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1630,6 +1701,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1652,6 +1724,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1674,6 +1747,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1696,6 +1770,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1718,6 +1793,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1740,6 +1816,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1762,6 +1839,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1784,6 +1862,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1806,6 +1885,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1828,6 +1908,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1850,6 +1931,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1872,6 +1954,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1894,6 +1977,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1916,6 +2000,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1938,6 +2023,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1960,6 +2046,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -1982,6 +2069,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2004,6 +2092,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2026,6 +2115,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2048,6 +2138,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2070,6 +2161,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2092,6 +2184,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2114,6 +2207,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2136,6 +2230,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2158,6 +2253,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2180,6 +2276,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2202,6 +2299,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2224,6 +2322,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2246,6 +2345,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2268,6 +2368,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2290,6 +2391,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2312,6 +2414,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2334,6 +2437,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2356,6 +2460,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2378,6 +2483,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2400,6 +2506,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2422,6 +2529,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2444,6 +2552,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2466,6 +2575,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2488,6 +2598,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2510,6 +2621,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2532,6 +2644,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2554,6 +2667,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2576,6 +2690,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2598,6 +2713,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2620,6 +2736,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2642,6 +2759,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2664,6 +2782,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2686,6 +2805,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2708,6 +2828,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2730,6 +2851,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2752,6 +2874,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2774,6 +2897,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2796,6 +2920,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2818,6 +2943,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2840,6 +2966,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2862,6 +2989,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2884,6 +3012,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2906,6 +3035,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2928,6 +3058,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2950,6 +3081,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2972,6 +3104,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -2994,6 +3127,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3016,6 +3150,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3038,6 +3173,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3060,6 +3196,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3082,6 +3219,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3104,6 +3242,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3126,6 +3265,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3148,6 +3288,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3170,6 +3311,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3192,6 +3334,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3214,6 +3357,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3236,6 +3380,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3258,6 +3403,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3280,6 +3426,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3302,6 +3449,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3324,6 +3472,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3346,6 +3495,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3368,6 +3518,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3390,6 +3541,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3412,6 +3564,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3434,6 +3587,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3456,6 +3610,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3478,6 +3633,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3500,6 +3656,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3522,6 +3679,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3544,6 +3702,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3566,6 +3725,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3588,6 +3748,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3610,6 +3771,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3632,6 +3794,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3654,6 +3817,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3676,6 +3840,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3698,6 +3863,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3720,6 +3886,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3742,6 +3909,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3764,6 +3932,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3786,6 +3955,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3808,6 +3978,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3830,6 +4001,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3852,6 +4024,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3874,6 +4047,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3896,6 +4070,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3918,6 +4093,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3940,6 +4116,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {
@@ -3962,6 +4139,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.SqlServer
     },
     Metrics: {

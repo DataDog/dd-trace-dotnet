@@ -42,6 +42,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -73,6 +74,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -98,6 +100,7 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -123,6 +126,7 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -148,6 +152,7 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -173,6 +178,7 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -198,6 +204,7 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -229,6 +236,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -260,6 +268,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -291,6 +300,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -322,6 +332,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -353,6 +364,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -384,6 +396,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -415,6 +428,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -446,6 +460,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -477,6 +492,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -508,6 +524,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -539,6 +556,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -570,6 +588,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -601,6 +620,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -632,6 +652,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -663,6 +684,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -694,6 +716,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -725,6 +748,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -756,6 +780,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -787,6 +812,7 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -818,6 +844,7 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {

@@ -9,6 +9,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0
       _dd.base_service: Samples.OpenTracing
     },
     Metrics: {

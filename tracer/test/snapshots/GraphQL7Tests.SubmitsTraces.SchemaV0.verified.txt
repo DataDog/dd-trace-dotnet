@@ -41,6 +41,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      version: 1.0.0
       _dd.base_service: Samples.GraphQL7
     },
     Metrics: {
@@ -63,6 +64,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      version: 1.0.0
       _dd.base_service: Samples.GraphQL7
     },
     Metrics: {
@@ -219,6 +221,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      version: 1.0.0
       _dd.base_service: Samples.GraphQL7
     },
     Metrics: {
@@ -242,6 +245,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      version: 1.0.0
       _dd.base_service: Samples.GraphQL7
     },
     Metrics: {
@@ -263,6 +267,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      version: 1.0.0
       _dd.base_service: Samples.GraphQL7
     },
     Metrics: {
@@ -286,6 +291,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      version: 1.0.0
       _dd.base_service: Samples.GraphQL7
     },
     Metrics: {
@@ -325,6 +331,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      version: 1.0.0
       _dd.base_service: Samples.GraphQL7
     },
     Metrics: {
@@ -374,6 +381,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      version: 1.0.0
       _dd.base_service: Samples.GraphQL7
     },
     Metrics: {
@@ -413,6 +421,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      version: 1.0.0
       _dd.base_service: Samples.GraphQL7
     },
     Metrics: {

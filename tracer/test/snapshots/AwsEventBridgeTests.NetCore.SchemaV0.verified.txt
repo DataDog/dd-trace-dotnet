@@ -36,6 +36,7 @@
       out.host: aws_eventbridge,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.EventBridge
     },
     Metrics: {
@@ -65,6 +66,7 @@
       rulename: MyEventBus,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.EventBridge
     },
     Metrics: {
@@ -90,6 +92,7 @@
       out.host: aws_eventbridge,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0
       _dd.base_service: Samples.AWS.EventBridge
     },
     Metrics: {
