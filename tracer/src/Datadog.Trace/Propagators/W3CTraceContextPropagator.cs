@@ -7,9 +7,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -611,8 +611,7 @@ namespace Datadog.Trace.Propagators
             var traceParentHeaders = carrierGetter.Get(carrier, TraceParentHeaderName);
 
             if (!TryGetSingle(traceParentHeaders, out var traceParentHeader) ||
-                string.IsNullOrWhiteSpace(traceParentHeader) ||
-                !TryParseTraceParent(traceParentHeader, out var traceParent))
+                string.IsNullOrWhiteSpace(traceParentHeader))
             {
                 // a single "traceparent" header is required
                 return false;
@@ -621,6 +620,23 @@ namespace Datadog.Trace.Propagators
             // get the "tracestate" header
             var traceStateHeaders = carrierGetter.Get(carrier, TraceStateHeaderName);
             var traceStateHeader = TrimAndJoinStrings(traceStateHeaders);
+
+            return TryExtract(traceParentHeader, traceStateHeader, out context);
+        }
+
+        public bool TryExtract(
+            string traceParentHeader,
+            string traceStateHeader,
+            out PropagationContext context)
+        {
+            context = default;
+
+            if (string.IsNullOrWhiteSpace(traceParentHeader) ||
+                !TryParseTraceParent(traceParentHeader, out var traceParent))
+            {
+                return false;
+            }
+
             var traceState = ParseTraceState(traceStateHeader);
 
             // Consider both the traceparent sampled flag and the Datadog sampling priority value to determine the final sampling priority value.
@@ -638,7 +654,7 @@ namespace Datadog.Trace.Propagators
 
             if (traceParent.Sampled && traceState.SamplingPriority <= 0)
             {
-                traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
+                traceTags.SetTag(Tags.Propagated.DecisionMaker, SamplingMechanism.Default);
             }
             else if (!traceParent.Sampled && traceState.SamplingPriority > 0)
             {
