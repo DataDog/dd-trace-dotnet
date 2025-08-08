@@ -35,6 +35,10 @@ namespace Datadog.Trace.Configuration
         {
             var builder = new ConfigurationBuilder(source, telemetry);
 
+            // Read the DD values before the OTel values to ensure the order is correct in telemetry
+            var debugEnabled = builder
+                              .WithKeys(ConfigurationKeys.DebugEnabled)
+                              .AsBoolResult();
             var otelConfig = builder
                             .WithKeys(ConfigurationKeys.OpenTelemetry.LogLevel)
                             .AsBoolResult(
@@ -42,10 +46,7 @@ namespace Datadog.Trace.Configuration
                                               ? ParsingResult<bool>.Success(result: true)
                                               : ParsingResult<bool>.Failure());
 
-            DebugEnabledInternal = builder
-                                  .WithKeys(ConfigurationKeys.DebugEnabled)
-                                  .AsBoolResult()
-                                  .OverrideWith(in otelConfig, overrideHandler, false);
+            DebugEnabledInternal = debugEnabled.OverrideWith(in otelConfig, overrideHandler, false);
 
             DiagnosticSourceEnabled = builder
                                      .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
