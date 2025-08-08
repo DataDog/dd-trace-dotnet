@@ -113,6 +113,7 @@
     <PackageReference Include="System.DirectoryServices" Version="7.0.1" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="7.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.5" />
     <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.5" />
   </ItemGroup>
 
