@@ -61,10 +61,7 @@ void SsiManager::OnStableConfiguration()
         StartProfiling(_pSsiLifetime);
     }
     else
-    if (
-        (enablementStatus == EnablementStatus::Auto) ||
-        (enablementStatus == EnablementStatus::SsiEnabled)
-        )
+    if (enablementStatus == EnablementStatus::Auto)
     {
         Log::Info("Profiler enabled by SSI");
 
@@ -74,21 +71,34 @@ void SsiManager::OnStableConfiguration()
             StartProfiling(_pSsiLifetime);
         }
     }
+    else
+    {
+        // should never happen, but if it does, log an error
+        Log::Error("Unknown enablement status from Stable Configuration", static_cast<int>(enablementStatus));
+    }
 }
 
 void SsiManager::OnShortLivedEnds()
 {
     _isLongLived = true;
 
+
     auto enablementStatus = GetCurrentEnabledStatus();
     if (enablementStatus == EnablementStatus::Standby)
     {
+        Log::Debug("OnShortLivedEnds() called, still waiting for Stable Configuration...");
         return;  // still waiting for enablement configuration from managed layer
     }
 
-    if (_hasSpan && ((enablementStatus == EnablementStatus::SsiEnabled) || (enablementStatus == EnablementStatus::Auto)))
+    Log::Debug("OnShortLivedEnds() called");
+    if (_hasSpan && (enablementStatus == EnablementStatus::Auto))
     {
+        Log::Debug("--> start profiling");
         StartProfiling(_pSsiLifetime);
+    }
+    else
+    {
+        Log::Debug("--> still no span");
     }
 }
 
@@ -99,12 +109,19 @@ void SsiManager::OnSpanCreated()
     auto enablementStatus = GetCurrentEnabledStatus();
     if (enablementStatus == EnablementStatus::Standby)
     {
+        Log::Debug("OnSpanCreated() called, still waiting for Stable Configuration...");
         return; // still waiting for enablement configuration from managed layer
     }
 
-    if (_isLongLived && ((enablementStatus == EnablementStatus::SsiEnabled) || (enablementStatus == EnablementStatus::Auto)))
+    Log::Debug("OnSpanCreated() called");
+    if (_isLongLived && (enablementStatus == EnablementStatus::Auto))
     {
+        Log::Debug("--> start profiling");
         StartProfiling(_pSsiLifetime);
+    }
+    else
+    {
+        Log::Debug("--> still not long lived");
     }
 }
 
@@ -127,15 +144,14 @@ bool SsiManager::IsLongLived() const
 bool SsiManager::IsProfilerEnabled()
 {
     auto enablementStatus = GetCurrentEnabledStatus();
-    if (enablementStatus == EnablementStatus::Standby)
+    if ((enablementStatus == EnablementStatus::Standby) ||
+        (enablementStatus == EnablementStatus::ManuallyDisabled))
     {
         return false;
     }
 
     return enablementStatus == EnablementStatus::ManuallyEnabled ||
-           enablementStatus == EnablementStatus::Auto ||
-           // in the future, users will be able to enable the profiler via SSI at agent installation time
-           enablementStatus == EnablementStatus::SsiEnabled;
+           enablementStatus == EnablementStatus::Auto;
 }
 
 // the profiler is activated (i.e. its providers services are started) either if:
@@ -151,22 +167,17 @@ bool SsiManager::IsProfilerStarted()
     }
 
     return (enablementStatus == EnablementStatus::ManuallyEnabled) ||
-           (((enablementStatus == EnablementStatus::Auto) || (enablementStatus == EnablementStatus::SsiEnabled)) && IsLongLived() && IsSpanCreated());
+           ((enablementStatus == EnablementStatus::Auto) && IsLongLived() && IsSpanCreated());
 }
 
 void SsiManager::ProcessStart()
 {
     Log::Debug("ProcessStart(", to_string(_deploymentMode), ")");
 
-    // TODO the doc again to know when we need the timer.
-    // currently it's disabled in ssi deployed AND not manually enabled nor ssi enabled
-    // I guess we still have to start the timer when ssi enabled
+    // Note: the deployment mode is not provided by Stable Configuration
+    //       --> it is read from env var set during SSI installation
     if (_deploymentMode == DeploymentMode::SingleStepInstrumentation)
     {
-        // This timer *must* be created only AND only if it's a SSI deployment
-        // we have to check if this is what we want. In CorProfilerCallback.cpp l.1239, we start the service
-        // if the profiler is enabled (SII or not SSI).
-        // For the moment we just enable the timer only in pure SSI
         _longLivedTimerFuture = std::async(
             std::launch::async, [this](std::future<void> stopRequest) {
                 auto status = stopRequest.wait_for(_longLivedThreshold);

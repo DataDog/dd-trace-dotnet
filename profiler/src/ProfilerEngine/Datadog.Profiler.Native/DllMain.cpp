@@ -81,14 +81,6 @@ bool IsProfilingEnabled(Configuration const& configuration)
         return false;
     }
 
-    if (enablementStatus == EnablementStatus::SsiEnabled)
-    {
-        Log::Info(".NET Profiler is enabled via Single Step Instrumentation. It will start later.");
-
-        // delay start with SSI is now supported
-        return true;
-    }
-
     if (enablementStatus == EnablementStatus::Auto)
     {
         Log::Info(".NET Profiler is installed via Single Step Instrumentation and automatically enabled. It will start later.");

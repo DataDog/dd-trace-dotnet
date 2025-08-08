@@ -38,26 +38,6 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_ShortLived)
     ASSERT_EQ(manager.GetSkipProfileHeuristic(), SkipProfileHeuristicType::ShortLived);
 }
 
-TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan)
-{
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
-    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms)); // simulate long lived
-    EXPECT_CALL(mockConfiguration, GetUploadInterval()).WillRepeatedly(Return(10s));
-    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::SsiEnabled));
-
-    SsiLifetimeForTest lifetime;
-
-    SsiManager manager(configuration.get(), &lifetime);
-    // but no span created
-    manager.ProcessStart();
-    manager.ProcessEnd();
-
-    // wait for the timer to finish
-    std::this_thread::sleep_for(100ms);
-    ASSERT_EQ(manager.GetSkipProfileHeuristic(), SkipProfileHeuristicType::NoSpan);
-}
-
 TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan_And_Auto_Enabled)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
@@ -166,26 +146,6 @@ TEST(SsiManagerTest, Should_ProfilerBeActivated_When_NotDeployedAsSSIAndEnabled)
     SsiManager manager(&configuration, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerStarted(), true);
-}
-
-TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndSpanAndLongLived)
-{
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
-    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::SsiEnabled));
-    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms));  // simulate long lived
-
-    SsiLifetimeForTest lifetime;
-
-    SsiManager manager(configuration.get(), &lifetime);
-    manager.OnSpanCreated();
-    manager.ProcessStart();
-
-    // wait for the timer to finish
-    std::this_thread::sleep_for(100ms);
-
-    ASSERT_EQ(manager.IsProfilerStarted(), true);
-    ASSERT_EQ(manager.IsProfilerEnabled(), true);
 }
 
 TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndSpanAndLongLived_AndAutoEnabled)

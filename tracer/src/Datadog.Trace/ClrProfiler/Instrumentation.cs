@@ -14,6 +14,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
@@ -109,6 +110,28 @@ namespace Datadog.Trace.ClrProfiler
                 else
                 {
                     InitializeNoNativeParts(sw);
+
+                    // Set the Stable Configuration to the native parts
+                    // TODO: only for profiler here
+                    var tracerSettings = Tracer.Instance.Settings;
+                    var profilerSettings = Profiler.Instance.Settings;
+
+                    // TODO: wait for the new ProfileSettings to be available
+                    NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
+                    {
+                        ProfilingEnabled = (profilerSettings.ProfilerState == ProfilerState.Auto) ? NativeInterop.ProfilingEnabled.Auto :
+                                           (profilerSettings.ProfilerState == ProfilerState.Enabled) ? NativeInterop.ProfilingEnabled.Enabled :
+                                           NativeInterop.ProfilingEnabled.Disabled,
+                        TracingEnabled = tracerSettings.TraceEnabled,
+                        IastEnabled = Iast.Iast.Instance.Settings.Enabled,
+                        RaspEnabled = Security.Instance.Settings.RaspEnabled,
+                        DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
+                        RuntimeId = RuntimeId.Get(),
+                        Environment = tracerSettings.Environment,
+                        ServiceName = TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? string.Empty),
+                        Version = tracerSettings.ServiceVersion
+                    };
+                    NativeInterop.ProfilerSetConfiguration(config);
 
                     try
                     {
@@ -442,8 +465,8 @@ namespace Datadog.Trace.ClrProfiler
             var observers = new List<DiagnosticObserver>();
 
             // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
+            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
+            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
 
             if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
             {

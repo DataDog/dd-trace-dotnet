@@ -24,6 +24,22 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             _output = output;
         }
 
+        [Flags]
+        private enum WaitHandleType
+        {
+            None = 0,
+            AutoResetEvent = 1,
+            ManualResetEvent = 2,
+            ManualResetEventSlim = 4,
+            Mutex = 8,
+            Semaphore = 16,
+            SemaphoreSlim = 32,
+            ReaderWriterLock = 64,
+            ReaderWriterLockSlim = 128,
+
+            All = AutoResetEvent | ManualResetEvent | ManualResetEventSlim | Mutex | Semaphore | SemaphoreSlim | ReaderWriterLock | ReaderWriterLockSlim
+        }
+
         [TestAppFact("Samples.WaitHandles", new[] { "net9.0" })]
         public void ShouldGetWaitSamples(string appName, string framework, string appAssembly)
         {
@@ -169,23 +185,6 @@ namespace Datadog.Profiler.IntegrationTests.Contention
                 blockingThreadIdLabel.Name.Should().NotBeNullOrWhiteSpace();
                 blockingThreadIdLabel.Value.Should().NotBeNullOrWhiteSpace();
             }
-        }
-
-
-        [Flags]
-        private enum WaitHandleType
-        {
-            None = 0,
-            AutoResetEvent = 1,
-            ManualResetEvent = 2,
-            ManualResetEventSlim = 4,
-            Mutex = 8,
-            Semaphore = 16,
-            SemaphoreSlim = 32,
-            ReaderWriterLock = 64,
-            ReaderWriterLockSlim = 128,
-
-            All = AutoResetEvent | ManualResetEvent | ManualResetEventSlim | Mutex | Semaphore | SemaphoreSlim | ReaderWriterLock | ReaderWriterLockSlim
         }
 
         private static void AssertContainWait(string pprofDir)

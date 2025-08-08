@@ -35,7 +35,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             {
                 // With Stable Configuration, it is needed to wait for the tracer to enable/disable/auto the profiler
                 // So, use the kill switch to rely on env vars instead
-                CustomEnvironmentVariables["DD_PROFILER_MANAGED_ACTIVATION_ENABLED"] = "0";
+                CustomEnvironmentVariables["DD_PROFILING_MANAGED_ACTIVATION_ENABLED"] = "0";
             }
 
             InitializeLogAndPprofEnvironmentVariables();

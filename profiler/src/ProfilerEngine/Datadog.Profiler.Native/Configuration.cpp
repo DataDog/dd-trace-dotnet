@@ -746,25 +746,14 @@ EnablementStatus Configuration::ExtractEnablementStatus()
         // It is possible that a Single Step Instrumentation deployment was done
         // and the profiler was enabled during that step. In that case, the "auto" value
         // will be set and profiler should be enabled.
-        // This should be replaced by adding "profiler" in EnvironmentVariables::SsiDeployed
-        // later that will take into account heuristics
         return !enabled.empty() && enabled == WStr("auto")
             ? EnablementStatus::Auto
             : EnablementStatus::ManuallyDisabled;
     }
 
-    auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
-    auto pos = r.find(WStr("profiler"));
-    auto ssiEnabled = (pos != shared::WSTRING::npos);
-
-    if (ssiEnabled)
-    {
-        return EnablementStatus::SsiEnabled;
-    }
-    else
-    {
-        return EnablementStatus::NotSet;
-    }
+    // Note: the initial support of adding "profiler" in EnvironmentVariables::SsiDeployed
+    // has never been implemented, so we are not checking for it here.
+    return EnablementStatus::NotSet;
 }
 
 std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const

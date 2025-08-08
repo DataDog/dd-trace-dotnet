@@ -672,10 +672,7 @@ void CorProfilerCallback::OnStartDelayedProfiling()
     }
 
     // if not enabled via SSI, just get out
-    if (!(
-        (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled) ||
-        (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
-        ))
+    if (_pConfiguration->GetEnablementStatus() != EnablementStatus::Auto)
     {
         return;
     }
@@ -692,7 +689,11 @@ void CorProfilerCallback::OnStartDelayedProfiling()
     {
         Log::Info("Profiler is started after a delay.");
 
-        StartEtwCommunication();
+        // for .NET Framework, we need to start ETW communication
+        if (_pEtwEventsManager != nullptr)
+        {
+            StartEtwCommunication();
+        }
     }
 }
 
@@ -706,37 +707,26 @@ bool CorProfilerCallback::SetConfiguration(SharedConfig config)
 
         // Take into account the enablement computed by the managed layer:
         Log::Info("Managed layer provides Stable Configuration.");
+        EnablementStatus enablementStatus =
+            (config.profilingEnabled == ProfilingEnabled::ProfilingAuto) ? EnablementStatus::Auto
+            : (config.profilingEnabled == ProfilingEnabled::ProfilingEnabledTrue)
+                ? EnablementStatus::ManuallyEnabled
+                : EnablementStatus::ManuallyDisabled;
+        _pConfiguration->SetEnablementStatus(enablementStatus);
 
-        if (config.profilingEnabled == ProfilingEnabled::ProfilingAuto)
-        {
-            Log::Info("Profiler is enabled via SSI. Services will be started later.");
-        }
-        else
-        if (config.profilingEnabled == ProfilingEnabled::ProfilingEnabledTrue)
-        {
-            Log::Info("Profiler is enabled.");
-
-            // same as what is done in Initialize()
-            auto started = StartServices();
-            if (!started)
-            {
-                Log::Error("One or multiple services failed to start. Stopping all services.");
-                StopServices();
-
-                Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
-            }
-            else
-            {
-                Log::Info("Profiler is started after a delay.");
-
-                StartEtwCommunication();
-            }
-        }
-        else
+        // propagate the enablement status
         if (config.profilingEnabled == ProfilingEnabled::ProfilingDisabled)
         {
             Log::Info("Profiler is disabled via Stable Configuration");
             return true;
+        }
+        else
+        if (
+            (config.profilingEnabled == ProfilingEnabled::ProfilingAuto) ||
+            (config.profilingEnabled == ProfilingEnabled::ProfilingEnabledTrue)
+            )
+        {
+            _pSsiManager->OnStableConfiguration();
         }
         else
         {
@@ -771,6 +761,18 @@ bool CorProfilerCallback::SetConfiguration(SharedConfig config)
 
 void CorProfilerCallback::StartEtwCommunication()
 {
+    if (_isETWStarted)
+    {
+        Log::Warn("ETW communication is already started.");
+        return;
+    }
+
+    if (_pEtwEventsManager == nullptr)
+    {
+        Log::Error("ETW communication is not available. The profiler will not be able to communicate with the Agent.");
+        return;
+    }
+
     _isETWStarted = true;
     auto success = _pEtwEventsManager->Start();
     if (!success)
@@ -790,6 +792,14 @@ bool CorProfilerCallback::StartServices()
     for (auto const& service : _services)
     {
         auto name = service->GetName();
+
+        // with SSI and Stable Configuration, some services might have been started already
+        if (service->IsStarted())
+        {
+            Log::Info(name, " is already started.");
+            continue; // skip already started services
+        }
+
         success = service->Start();
         if (success)
         {
@@ -1543,6 +1553,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     _isInitialized.store(true);
     ProfilerEngineStatus::WriteIsProfilerEngineActive(true);
 
+    // the runtime ID store must be ALWAYS started (i.e. get a way to map AppDomainID to RuntimeID)
+    _pRuntimeIdStore->Start();
+
     // For Stable Configuration support, delay the decision to start services AFTER the managed layer sets the configuration
     if (_pConfiguration->IsManagedActivationEnabled() && !_IsManagedConfigurationSet)
     {
@@ -1553,8 +1566,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation &&
         _pConfiguration->GetEnablementStatus() != EnablementStatus::ManuallyEnabled)
     {
+        // TODO: check we this is needed under these conditions (for example, should do nothing if disabled)
         _pSamplesCollector->Start();
-        _pRuntimeIdStore->Start();
     }
 
     // if the profiler is not enabled (either manually or via SSI), nothing is profiled
@@ -1577,10 +1590,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
             return E_FAIL;
         }
-    }
-    else if (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
-    {
-        Log::Info("Profiler is enabled by SSI. Services will be started later.");
     }
     else if (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
     {
@@ -1618,7 +1627,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // --> to ensure that the last samples are collected
     _pSamplesCollector->Stop();
 
-    // wait until the last .pprof is generated to send the telemetry metrics
     _pSsiManager->ProcessEnd();
 
     // Calling Stop on providers transforms the last raw samples
@@ -1689,6 +1697,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationFinished(AppDoma
 {
     if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
     {
+        // TODO: why only for SSI?
         auto runtimeId = _pRuntimeIdStore->GetId(appDomainId);
         _pExporter->RegisterApplication(runtimeId);
     }

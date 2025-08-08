@@ -78,12 +78,13 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
 
     if (profiler == nullptr)
     {
-        Log::Error("SetApplicationInfo is called BEFORE CLR initialize");
+        Log::Error("SetApplicationInfo is called BEFORE profiler is created");
         return;
     }
 
     if (!profiler->GetClrLifetime()->IsInitialized())
     {
+        Log::Error("SetApplicationInfo is called BEFORE CLR initialize");
         return;
     }
 

@@ -1014,7 +1014,7 @@ TEST_F(ConfigurationTest, CheckSsiIsDeployedIfProfilerEnabledVarIsSetToFalse)
 
 
 // with Stable Configuration, ALL enablement/SSI decisions are delayed at runtime so by default become disabled
-// Use the DD_PROFILER_MANAGED_ACTIVATION_ENABLED kill switch to test per env vars configuration
+// Use the DD_PROFILING_MANAGED_ACTIVATION_ENABLED kill switch to test per env vars configuration
 TEST_F(ConfigurationTest, CheckStandbyIfSsiEnabledAndStableConfigurationByDefault)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiler"));
@@ -1086,12 +1086,12 @@ TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToFalseAndStableConfi
 }
 
 // use the Stable Configuration kill switch to validate per env vars enablement configuration
-TEST_F(ConfigurationTest, CheckSsiIsActivatedIfEnvVarConstainsProfiler)
+TEST_F(ConfigurationTest, CheckNoMoreSupportedSsiActivationModeIfEnvVarConstainsProfiler)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
-    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::SsiDeployed, WStr("tracer,profiler"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::SsiDeployed, WStr("profiler"));
     auto configuration = Configuration{};
-    auto expectedValue = EnablementStatus::SsiEnabled;
+    auto expectedValue = EnablementStatus::NotSet;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
