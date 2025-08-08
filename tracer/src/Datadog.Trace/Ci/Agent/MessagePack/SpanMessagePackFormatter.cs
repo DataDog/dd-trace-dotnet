@@ -262,26 +262,18 @@ internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             offset += MessagePackBinary.WriteString(ref bytes, offset, env);
         }
 
-        // add "language=dotnet" tag to all spans, except those that
-        // represents a downstream service or external dependency
-        if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
+        // add "language=dotnet" tag to all spans
+        count++;
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
+
+        // add "version" tags to all spans
+        var version = traceContext?.ServiceVersion;
+        if (!string.IsNullOrWhiteSpace(version))
         {
             count++;
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
-        }
-
-        // add "version" tags to all spans whose service name is the default service name
-        if (string.Equals(span.Context.ServiceName, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
-        {
-            var version = traceContext?.ServiceVersion;
-
-            if (!string.IsNullOrWhiteSpace(version))
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
-                offset += MessagePackBinary.WriteString(ref bytes, offset, version);
-            }
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, version);
         }
 
         if (count > 0)
