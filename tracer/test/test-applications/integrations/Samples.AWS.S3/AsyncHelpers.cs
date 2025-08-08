@@ -60,6 +60,47 @@ namespace Samples.AWS.S3
             }
         }
 
+        public static async Task StartS3DuckTypingErrorTasks(AmazonS3Client s3Client)
+        {
+            Console.WriteLine("Beginning Async methods with duck typing error");
+            using (var scope = SampleHelpers.CreateScope("async-methods-duck-typing-error"))
+            {
+                // Each operation will fail due to invalid endpoint, but we should instrument still
+                // previously we would throw null refs
+                await TryS3Operation("CreateBucket", () => CreateBucketAsync(s3Client, BucketName));
+                await TryS3Operation("PutObject", () => PutObjectAsync(s3Client, BucketName, ObjectKey));
+                await TryS3Operation("GetObject", () => GetObjectAsync(s3Client, BucketName, ObjectKey));
+                await TryS3Operation("CopyObject", () => CopyObjectAsync(s3Client, BucketName, ObjectKey, CopiedObjectKey));
+                await TryS3Operation("ListObjects", () => ListObjectsAsync(s3Client, BucketName));
+                await TryS3Operation("DeleteObject", () => DeleteObjectAsync(s3Client, BucketName, CopiedObjectKey));
+                await TryS3Operation("DeleteObjects", () => DeleteObjectsAsync(s3Client, BucketName, [ObjectKey]));
+                await TryS3Operation("ListBuckets", () => ListBucketsAsync(s3Client));
+                await TryS3Operation("DeleteBucket", () => DeleteBucketAsync(s3Client, BucketName));
+
+            }
+        }
+
+        private static async Task TryS3Operation(string operationName, Func<Task> operation)
+        {
+            try
+            {
+                await operation();
+            }
+            catch (Exception ex) when (ex.Message.Contains("No such host is known"))
+            {
+                Console.WriteLine($"{operationName}: Expected connection failure");
+            }
+            catch (NullReferenceException ex) when (ex.ToString().Contains("get_ETag"))
+            {
+                Console.WriteLine($"*** DUCK TYPING ERROR IN {operationName.ToUpper()}! ***");
+                Console.WriteLine("This should be fixed by checking returnValue?.Instance is not null");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{operationName}: Unexpected exception - {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
         // OBJECT MANAGEMENT
         private static async Task PutObjectAsync(AmazonS3Client s3Client, string bucketName, string objectKey)
         {

@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var expectedCount = 32;
                 var frameworkName = "NetFramework";
 #else
-                var expectedCount = 16;
+                var expectedCount = 26;
                 var frameworkName = "NetCore";
 #endif
                 var spans = await agent.WaitForSpansAsync(expectedCount);
@@ -62,6 +62,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var s3Spans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 s3Spans.Should().NotBeEmpty();
+
+                // non error spans only to ignore the intended errors
+                s3Spans = s3Spans.Where(span => span.Error == 0);
                 ValidateIntegrationSpans(s3Spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");

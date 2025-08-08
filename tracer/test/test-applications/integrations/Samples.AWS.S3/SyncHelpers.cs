@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Amazon.S3;
 using Amazon.S3.Model;
 
@@ -61,6 +62,47 @@ namespace Samples.AWS.S3
 
                 // Allow time for the bucket to be deleted
                 Thread.Sleep(1000);
+            }
+        }
+
+        public static void StartS3DuckTypingError(AmazonS3Client s3Client)
+        {
+            Console.WriteLine("Beginning Async methods with duck typing error");
+            using (var scope = SampleHelpers.CreateScope("async-methods-duck-typing-error"))
+            {
+                // Each operation will fail due to invalid endpoint, but we should instrument still
+                // previously we would throw null refs
+                TryS3Operation("CreateBucket", () => CreateBucket(s3Client, BucketName));
+                TryS3Operation("PutObject", () => PutObject(s3Client, BucketName, ObjectKey));
+                TryS3Operation("GetObject", () => GetObject(s3Client, BucketName, ObjectKey));
+                TryS3Operation("CopyObject", () => CopyObject(s3Client, BucketName, ObjectKey, CopiedObjectKey));
+                TryS3Operation("ListObjects", () => ListObjects(s3Client, BucketName));
+                TryS3Operation("DeleteObject", () => DeleteObject(s3Client, BucketName, CopiedObjectKey));
+                TryS3Operation("DeleteObjects", () => DeleteObjects(s3Client, BucketName, [ObjectKey]));
+                TryS3Operation("ListBuckets", () => ListBuckets(s3Client));
+                TryS3Operation("DeleteBucket", () => DeleteBucket(s3Client, BucketName));
+
+            }
+        }
+
+        private static void TryS3Operation(string operationName, Action operation)
+        {
+            try
+            {
+                operation();
+            }
+            catch (Exception ex) when (ex.Message.Contains("No such host is known"))
+            {
+                Console.WriteLine($"{operationName}: Expected connection failure");
+            }
+            catch (NullReferenceException ex) when (ex.ToString().Contains("get_ETag"))
+            {
+                Console.WriteLine($"*** DUCK TYPING ERROR IN {operationName.ToUpper()}! ***");
+                Console.WriteLine("This should be fixed by checking returnValue?.Instance is not null");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{operationName}: Unexpected exception - {ex.GetType().Name}: {ex.Message}");
             }
         }
 

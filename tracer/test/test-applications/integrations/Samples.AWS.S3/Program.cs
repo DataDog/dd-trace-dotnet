@@ -10,10 +10,15 @@ namespace Samples.AWS.S3
         private static async Task Main(string[] args)
         {
             var s3Client = GetAmazonS3Client();
+            var missingEndpointClient = GetInvalidEndpointS3Client();
+
 #if NETFRAMEWORK
             SyncHelpers.StartS3Tasks(s3Client);
+            // FIXME: hangs
+            // SyncHelpers.StartS3DuckTypingError(missingEndpointClient);
 #endif
             await AsyncHelpers.StartS3Tasks(s3Client);
+            await AsyncHelpers.StartS3DuckTypingErrorTasks(missingEndpointClient);
         }
 
         private static AmazonS3Client GetAmazonS3Client()
@@ -45,6 +50,21 @@ namespace Samples.AWS.S3
         private static string Host()
         {
             return Environment.GetEnvironmentVariable("AWS_SDK_HOST") ?? "localhost:4566";
+        }
+
+        private static AmazonS3Client GetInvalidEndpointS3Client()
+        {
+            Console.WriteLine("Creating S3 client with invalid endpoint to reproduce duck typing issue...");
+
+            var awsCredentials = new BasicAWSCredentials("x", "x");
+            var s3Config = new AmazonS3Config
+            {
+                ServiceURL = "http://no-such-host-is-known-is-expected-if-you-see-it:9999",
+                ForcePathStyle = true,
+                UseHttp = true,
+            };
+
+            return new AmazonS3Client(awsCredentials, s3Config);
         }
     }
 }

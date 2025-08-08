@@ -489,5 +489,332 @@
     Metrics: {
       _dd.top_level: 1.0
     }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_19,
+    Name: async-methods-duck-typing-error,
+    Resource: async-methods-duck-typing-error,
+    Service: Samples.AWS.S3,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_20,
+    Name: s3.request,
+    Resource: S3.PutBucket,
+    Service: Samples.AWS.S3-aws-s3,
+    Type: http,
+    ParentId: Id_19,
+    Error: 1,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: PutBucket,
+      aws.service: S3,
+      aws_service: S3,
+      bucketname: my-bucket,
+      component: aws-sdk,
+      env: integration_tests,
+      error.msg: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999),
+      error.stack:
+System.Net.Http.HttpRequestException: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999)
+---> System.Net.Sockets.SocketException (11001): No such host is known.
+at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken),
+      error.type: System.Net.Http.HttpRequestException,
+      http.method: PUT,
+      http.url: http://no-such-host-is-known-is-expected-if-you-see-it:9999/my-bucket/,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.S3
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_21,
+    Name: s3.request,
+    Resource: S3.PutObject,
+    Service: Samples.AWS.S3-aws-s3,
+    Type: http,
+    ParentId: Id_19,
+    Error: 1,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: PutObject,
+      aws.service: S3,
+      aws_service: S3,
+      bucketname: my-bucket,
+      component: aws-sdk,
+      env: integration_tests,
+      error.msg: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999),
+      error.stack:
+System.Net.Http.HttpRequestException: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999)
+---> System.Net.Sockets.SocketException (11001): No such host is known.
+at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken),
+      error.type: System.Net.Http.HttpRequestException,
+      http.method: PUT,
+      http.url: http://no-such-host-is-known-is-expected-if-you-see-it:9999/my-bucket/sample.txt,
+      language: dotnet,
+      objectkey: sample.txt,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.S3
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_22,
+    Name: s3.request,
+    Resource: S3.GetObject,
+    Service: Samples.AWS.S3-aws-s3,
+    Type: http,
+    ParentId: Id_19,
+    Error: 1,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: GetObject,
+      aws.service: S3,
+      aws_service: S3,
+      bucketname: my-bucket,
+      component: aws-sdk,
+      env: integration_tests,
+      error.msg: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999),
+      error.stack:
+System.Net.Http.HttpRequestException: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999)
+---> System.Net.Sockets.SocketException (11001): No such host is known.
+at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken),
+      error.type: System.Net.Http.HttpRequestException,
+      http.method: GET,
+      http.url: http://no-such-host-is-known-is-expected-if-you-see-it:9999/my-bucket/sample.txt,
+      language: dotnet,
+      objectkey: sample.txt,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.S3
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_23,
+    Name: s3.request,
+    Resource: S3.CopyObject,
+    Service: Samples.AWS.S3-aws-s3,
+    Type: http,
+    ParentId: Id_19,
+    Error: 1,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: CopyObject,
+      aws.service: S3,
+      aws_service: S3,
+      bucketname: my-bucket,
+      component: aws-sdk,
+      env: integration_tests,
+      error.msg: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999),
+      error.stack:
+System.Net.Http.HttpRequestException: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999)
+---> System.Net.Sockets.SocketException (11001): No such host is known.
+at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken),
+      error.type: System.Net.Http.HttpRequestException,
+      http.method: PUT,
+      http.url: http://no-such-host-is-known-is-expected-if-you-see-it:9999/my-bucket/copy.txt,
+      language: dotnet,
+      objectkey: copy.txt,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.S3
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_24,
+    Name: s3.request,
+    Resource: S3.ListObjectsV2,
+    Service: Samples.AWS.S3-aws-s3,
+    Type: http,
+    ParentId: Id_19,
+    Error: 1,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ListObjectsV2,
+      aws.service: S3,
+      aws_service: S3,
+      bucketname: my-bucket,
+      component: aws-sdk,
+      env: integration_tests,
+      error.msg: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999),
+      error.stack:
+System.Net.Http.HttpRequestException: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999)
+---> System.Net.Sockets.SocketException (11001): No such host is known.
+at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken),
+      error.type: System.Net.Http.HttpRequestException,
+      http.method: GET,
+      http.url: http://no-such-host-is-known-is-expected-if-you-see-it:9999/my-bucket/,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.S3
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_25,
+    Name: s3.request,
+    Resource: S3.DeleteObject,
+    Service: Samples.AWS.S3-aws-s3,
+    Type: http,
+    ParentId: Id_19,
+    Error: 1,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteObject,
+      aws.service: S3,
+      aws_service: S3,
+      bucketname: my-bucket,
+      component: aws-sdk,
+      env: integration_tests,
+      error.msg: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999),
+      error.stack:
+System.Net.Http.HttpRequestException: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999)
+---> System.Net.Sockets.SocketException (11001): No such host is known.
+at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken),
+      error.type: System.Net.Http.HttpRequestException,
+      http.method: DELETE,
+      http.url: http://no-such-host-is-known-is-expected-if-you-see-it:9999/my-bucket/copy.txt,
+      language: dotnet,
+      objectkey: copy.txt,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.S3
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_26,
+    Name: s3.request,
+    Resource: S3.DeleteObjects,
+    Service: Samples.AWS.S3-aws-s3,
+    Type: http,
+    ParentId: Id_19,
+    Error: 1,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteObjects,
+      aws.service: S3,
+      aws_service: S3,
+      bucketname: my-bucket,
+      component: aws-sdk,
+      env: integration_tests,
+      error.msg: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999),
+      error.stack:
+System.Net.Http.HttpRequestException: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999)
+---> System.Net.Sockets.SocketException (11001): No such host is known.
+at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken),
+      error.type: System.Net.Http.HttpRequestException,
+      http.method: POST,
+      http.url: http://no-such-host-is-known-is-expected-if-you-see-it:9999/my-bucket/,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.S3
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_27,
+    Name: s3.request,
+    Resource: S3.ListBuckets,
+    Service: Samples.AWS.S3-aws-s3,
+    Type: http,
+    ParentId: Id_19,
+    Error: 1,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ListBuckets,
+      aws.service: S3,
+      aws_service: S3,
+      component: aws-sdk,
+      env: integration_tests,
+      error.msg: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999),
+      error.stack:
+System.Net.Http.HttpRequestException: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999)
+---> System.Net.Sockets.SocketException (11001): No such host is known.
+at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken),
+      error.type: System.Net.Http.HttpRequestException,
+      http.method: GET,
+      http.url: http://no-such-host-is-known-is-expected-if-you-see-it:9999/,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.S3
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_28,
+    Name: s3.request,
+    Resource: S3.ListObjectsV2,
+    Service: Samples.AWS.S3-aws-s3,
+    Type: http,
+    ParentId: Id_19,
+    Error: 1,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ListObjectsV2,
+      aws.service: S3,
+      aws_service: S3,
+      bucketname: my-bucket,
+      component: aws-sdk,
+      env: integration_tests,
+      error.msg: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999),
+      error.stack:
+System.Net.Http.HttpRequestException: No such host is known. (no-such-host-is-known-is-expected-if-you-see-it:9999)
+---> System.Net.Sockets.SocketException (11001): No such host is known.
+at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken),
+      error.type: System.Net.Http.HttpRequestException,
+      http.method: GET,
+      http.url: http://no-such-host-is-known-is-expected-if-you-see-it:9999/my-bucket/,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.S3
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
   }
 ]
