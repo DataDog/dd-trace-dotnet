@@ -273,6 +273,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         });
                     }
 
+                    // Filter out the telemetry resource name, if any
+                    foreach (var attribute in resourceMetricByResource.Key.Item1.Attributes)
+                    {
+                        if (attribute.Key.Equals("telemetry.sdk.version"))
+                        {
+                            attribute.Value.StringValue = "sdk-version";
+                        }
+                    }
+
                     resourceMetrics.Add(new
                     {
                         Resource = resourceMetricByResource.Key.Item1,

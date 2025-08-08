@@ -23,7 +23,7 @@
         {
           Key: telemetry.sdk.version,
           Value: {
-            StringValue: 1.5.1,
+            StringValue: sdk-version,
             HasStringValue: true,
             BytesValue: [],
             ValueCase: StringValue
