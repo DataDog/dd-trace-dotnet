@@ -44,7 +44,7 @@ public class PutObjectAsyncIntegration
         return new CallTargetState(scope, request);
     }
 
-    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : IS3EtagResponse
     {
         if (Tracer.Instance.Settings.SpanPointersEnabled && state.Scope is not null && state.State is IPutObjectRequest request && returnValue?.Instance is not null)
