@@ -175,8 +175,6 @@ namespace Datadog.Trace.Debugger
                                          .Value;
 
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
-
-            LiveDebuggingEnabled = config.WithKeys(ConfigurationKeys.Debugger.LiveDebuggingEnabled).AsBool(true);
         }
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
@@ -229,7 +227,7 @@ namespace Datadog.Trace.Debugger
 
         public int CodeOriginMaxUserFrames { get; }
 
-        public bool LiveDebuggingEnabled { get; }
+        public bool LiveDebuggingEnabled { get; } = false;
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
