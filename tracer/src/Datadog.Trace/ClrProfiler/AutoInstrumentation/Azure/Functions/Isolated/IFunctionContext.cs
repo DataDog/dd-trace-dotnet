@@ -5,6 +5,7 @@
 
 #if !NETFRAMEWORK
 #nullable enable
+
 using System;
 using System.Collections.Generic;
 
@@ -18,6 +19,8 @@ internal interface IFunctionContext
     FunctionDefinitionStruct FunctionDefinition { get; }
 
     IEnumerable<KeyValuePair<Type, object?>>? Features { get; }
+
+    ITraceContext TraceContext { get; }
 }
 
 #endif
