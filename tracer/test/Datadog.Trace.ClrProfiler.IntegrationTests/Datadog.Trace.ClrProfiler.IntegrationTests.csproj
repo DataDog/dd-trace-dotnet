@@ -25,7 +25,7 @@
 
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
 
-    <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
 
     <PackageReference Include="Testcontainers" Version="3.6.0" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />  

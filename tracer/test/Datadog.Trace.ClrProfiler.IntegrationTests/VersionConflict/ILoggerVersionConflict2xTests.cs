@@ -29,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             : base(output, "LogsInjection.ILogger.VersionConflict.2x")
         {
             SetServiceVersion("1.0.0");
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
             // When doing log injection for CI, only emit 64-bit trace-ids.
             // By default, the version conflict results in both 64-bit trace-ids
