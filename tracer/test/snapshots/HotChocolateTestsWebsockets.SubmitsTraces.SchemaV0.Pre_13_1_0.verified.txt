@@ -140,7 +140,7 @@ query Book {
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
@@ -171,7 +171,7 @@ mutation m {
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
@@ -215,7 +215,7 @@ query ErrorQuery {
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
@@ -263,7 +263,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.HotChocolate
     },
     Metrics: {

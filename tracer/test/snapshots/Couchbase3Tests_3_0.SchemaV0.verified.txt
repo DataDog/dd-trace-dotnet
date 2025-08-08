@@ -15,7 +15,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -47,7 +47,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -73,7 +73,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -99,7 +99,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -125,7 +125,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -151,7 +151,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -177,7 +177,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -203,7 +203,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -229,7 +229,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -256,7 +256,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {

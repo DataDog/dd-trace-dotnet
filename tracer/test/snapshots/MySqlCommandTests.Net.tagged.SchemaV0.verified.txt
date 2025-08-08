@@ -17,7 +17,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -43,7 +43,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -69,7 +69,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -95,7 +95,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -121,7 +121,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -147,7 +147,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -173,7 +173,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -199,7 +199,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -225,7 +225,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -251,7 +251,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -277,7 +277,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -303,7 +303,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -329,7 +329,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -355,7 +355,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -381,7 +381,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -407,7 +407,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -433,7 +433,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -459,7 +459,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -485,7 +485,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -511,7 +511,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -537,7 +537,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -563,7 +563,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -589,7 +589,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -615,7 +615,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -641,7 +641,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -667,7 +667,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -693,7 +693,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -719,7 +719,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -745,7 +745,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -771,7 +771,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -797,7 +797,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -823,7 +823,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -849,7 +849,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -875,7 +875,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -901,7 +901,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -927,7 +927,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -953,7 +953,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -979,7 +979,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1005,7 +1005,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1031,7 +1031,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1057,7 +1057,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1083,7 +1083,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1109,7 +1109,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1135,7 +1135,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1161,7 +1161,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1187,7 +1187,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1213,7 +1213,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1239,7 +1239,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1265,7 +1265,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1291,7 +1291,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1317,7 +1317,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1343,7 +1343,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1369,7 +1369,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1395,7 +1395,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1421,7 +1421,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1447,7 +1447,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1473,7 +1473,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1499,7 +1499,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1525,7 +1525,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1551,7 +1551,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1577,7 +1577,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1603,7 +1603,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1629,7 +1629,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1655,7 +1655,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1681,7 +1681,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1707,7 +1707,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1733,7 +1733,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1759,7 +1759,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1785,7 +1785,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1811,7 +1811,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1837,7 +1837,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1863,7 +1863,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1889,7 +1889,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1915,7 +1915,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1941,7 +1941,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1967,7 +1967,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -1993,7 +1993,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2019,7 +2019,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2045,7 +2045,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2071,7 +2071,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2097,7 +2097,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2123,7 +2123,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2149,7 +2149,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2175,7 +2175,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2201,7 +2201,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2227,7 +2227,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2253,7 +2253,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2279,7 +2279,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2305,7 +2305,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2331,7 +2331,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2357,7 +2357,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2383,7 +2383,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2409,7 +2409,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2435,7 +2435,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2461,7 +2461,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2487,7 +2487,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2513,7 +2513,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2539,7 +2539,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2565,7 +2565,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2591,7 +2591,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2617,7 +2617,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2643,7 +2643,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2669,7 +2669,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2695,7 +2695,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2721,7 +2721,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2747,7 +2747,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2773,7 +2773,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2799,7 +2799,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2825,7 +2825,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2851,7 +2851,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2877,7 +2877,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2903,7 +2903,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2929,7 +2929,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2955,7 +2955,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -2981,7 +2981,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3007,7 +3007,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3033,7 +3033,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3059,7 +3059,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3085,7 +3085,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3111,7 +3111,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3137,7 +3137,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3163,7 +3163,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3189,7 +3189,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3215,7 +3215,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3241,7 +3241,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3267,7 +3267,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3293,7 +3293,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3319,7 +3319,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3345,7 +3345,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3371,7 +3371,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3397,7 +3397,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3423,7 +3423,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3449,7 +3449,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3475,7 +3475,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3501,7 +3501,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3527,7 +3527,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3553,7 +3553,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3579,7 +3579,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3605,7 +3605,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3631,7 +3631,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3657,7 +3657,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3683,7 +3683,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3709,7 +3709,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3735,7 +3735,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3761,7 +3761,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3787,7 +3787,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
@@ -3813,7 +3813,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },

@@ -46,7 +46,7 @@
       runtime-id: Guid_1,
       span.kind: internal,
       stage: prod,
-      version: 1.0.0
+      version: 1.0.0,
       _dd.base_service: Samples.AspNetCoreMvc31
     },
     Metrics: {
