@@ -30,7 +30,7 @@ public class ListBucketsIntegration
 
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request)
     {
-        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
+        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out _);
         return new CallTargetState(scope);
     }
 
