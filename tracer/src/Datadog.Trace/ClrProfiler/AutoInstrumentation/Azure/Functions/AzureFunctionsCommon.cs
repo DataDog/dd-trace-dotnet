@@ -231,10 +231,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // need to extract the headers from the context.
                     // We currently only support httpTrigger, but other triggers may also propagate context,
                     // e.g. Cosmos + ServiceBus, so we should handle those too
-                    if (triggerType == "Http")
-                    {
-                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
-                    }
+                    // if (triggerType == "Http")
+                    // {
+                    //     extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                    // }
 
                     break;
                 }
@@ -252,6 +252,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // This is the root scope
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+
+                    if (context.TraceContext is { TraceParent: { } traceParent, TraceState: { } traceState })
+                    {
+                        W3CTraceContextPropagator.Instance.TryExtract(traceParent, traceState, out extractedContext);
+                    }
+
                     scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
                 }
                 else
