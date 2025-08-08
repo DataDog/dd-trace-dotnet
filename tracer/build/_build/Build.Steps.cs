@@ -2579,6 +2579,9 @@ partial class Build
         {
             Logger.Warning("Found reportable (but ignored) problems in the logs");
             MetricHelper.SendReportableErrorMetrics(Logger.Logger, reportableMetrics);
+            // TODO: REmove this before merge, this is just to find it
+            Logger.Error("Reportable error - metrics sent");
+            ExitCode = 1;
         }
 
         if (hasRequiredFiles && !hasErrors)
