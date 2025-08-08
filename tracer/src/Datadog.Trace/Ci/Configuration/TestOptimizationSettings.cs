@@ -345,7 +345,7 @@ namespace Datadog.Trace.Ci.Configuration
         }
 
         private TracerSettings InitializeTracerSettings()
-            => InitializeTracerSettings(GlobalConfigurationSource.CreateDefaultConfigurationSource());
+            => InitializeTracerSettings(GlobalConfigurationSource.CreateDefaultConfigurationSource().ConfigurationSource);
 
         // Internal for testing
         internal TracerSettings InitializeTracerSettings(CompositeConfigurationSource source)

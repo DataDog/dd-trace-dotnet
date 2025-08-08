@@ -6,7 +6,6 @@
 #if NETFRAMEWORK
 using System;
 using System.Linq;
-using Datadog.Trace.Logging;
 using Microsoft.Win32;
 
 namespace Datadog.Trace
