@@ -6,7 +6,6 @@ namespace Benchmarks.OpenTelemetry.Api.Setup
     internal class TelemetrySpanBenchmarkSetup
     {
         private TracerProvider tracerProviderAlwaysOnSample;
-        private TracerProvider tracerProviderAlwaysOffSample;
 
         internal void GlobalSetup()
         {
