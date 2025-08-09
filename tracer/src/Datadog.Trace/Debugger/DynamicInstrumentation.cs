@@ -101,10 +101,15 @@ namespace Datadog.Trace.Debugger
 
             try
             {
-                if (!_settings.DynamicInstrumentationEnabled)
+                var disabled =
+                    !(_settings.DynamicInstrumentationEnabled == true ||
+                      _settings.DynamicSettings.DynamicInstrumentationEnabled == true) ||
+                    _settings.DynamicInstrumentationEnabled == false ||
+                    _settings.DynamicSettings.DynamicInstrumentationEnabled == false;
+
+                if (disabled)
                 {
                     Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
-                    // Reset to "not initialized"
                     Interlocked.Exchange(ref _initState, 0);
                     return;
                 }
