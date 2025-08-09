@@ -117,6 +117,16 @@ namespace Foo
             var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
 
+            // Force the project to target .NET 8 instead of whatever the SDK defaults to
+            var projectFile = Path.Combine(workingDir, $"{excludedProcess}.csproj");
+            var projectContent = File.ReadAllText(projectFile);
+
+            // Replace any target framework with net8.0
+            var updatedContent = System.Text.RegularExpressions.Regex.Replace(
+                projectContent,
+                @"<TargetFramework>net\d+\.\d+</TargetFramework>",
+                "<TargetFramework>net8.0</TargetFramework>");
+
             var programCs = GetProgramCSThatMakesSpans();
 
             File.WriteAllText(Path.Combine(workingDir, "Program.cs"), programCs);
@@ -125,7 +135,7 @@ namespace Foo
             // Currently, today, we instrument dotnet run, which results in some "spurious" spans (e.g. command_execution)
             // In the future, we may change that. But hte important part is that we don't instrument the target process itself
             var publishDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
-            logDir = await RunDotnet($"publish -o \"{publishDir}\"");
+            logDir = await RunDotnet($"publish -o \"{publishDir}\" --self-contained");
             AssertNotInstrumented(agent, logDir);
 
             // this _should NOT_ be instrumented
@@ -154,6 +164,17 @@ namespace Foo
 
             var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
+
+            // Force the project to target .NET 8 instead of whatever the SDK defaults to
+            var projectFile = Path.Combine(workingDir, $"{allowedProcess}.csproj");
+            var projectContent = File.ReadAllText(projectFile);
+
+            // Replace any target framework with net8.0
+            var updatedContent = System.Text.RegularExpressions.Regex.Replace(
+                projectContent,
+                @"<TargetFramework>net\d+\.\d+</TargetFramework>",
+                "<TargetFramework>net8.0</TargetFramework>");
+
             var programCs = GetProgramCSThatMakesSpans();
 
             File.WriteAllText(Path.Combine(workingDir, "Program.cs"), programCs);
@@ -162,7 +183,7 @@ namespace Foo
             // Currently, today, we instrument dotnet run, which results in some "spurious" spans (e.g. command_execution)
             // In the future, we may change that. But hte important part is that we don't instrument the target process itself
             var publishDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
-            logDir = await RunDotnet($"publish -o \"{publishDir}\"");
+            logDir = await RunDotnet($"publish -o \"{publishDir}\" --self-contained");
             AssertNotInstrumented(agent, logDir);
 
             // this _SHOULD_ be instrumented
@@ -461,6 +482,99 @@ namespace Foo
 
 #endif
 #if NETCOREAPP3_1_OR_GREATER
+        // We have different behaviour depending on whether the framework is in preview
+        // This condition should always point to the "next" version of .NET
+        // e.g. if .NET 10 is in preview, use NET10_0_OR_GREATER.
+        // Once .NET 10 goes GA, update this to NET11_0_OR_GREATER
+#if NET10_0_OR_GREATER
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]
+        public async Task OnPreviewFrameworkInSsi_CallsForwarderWithExpectedTelemetry()
+        {
+            var logDir = SetLogDirectory();
+            var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
+            Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
+
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
+            // Need to force injection because we bail by default
+            SetEnvironmentVariable("DD_INJECT_FORCE", "true");
+
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, logFileName);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertInstrumented(agent, logDir);
+
+            var pointsJson = """
+                             [{
+                               "name": "library_entrypoint.complete", 
+                               "tags": ["injection_forced:true"]
+                             }]
+                             """;
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET 10 or higher", "success_forced");
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]
+        public async Task OnPreviewFrameworkInSsi_WhenForwarderPathExists_CallsForwarderWithExpectedTelemetry()
+        {
+            var logDir = SetLogDirectory();
+            var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
+
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
+            Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
+
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
+
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, logFileName);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+
+            var pointsJson = """
+                             [{
+                               "name": "library_entrypoint.abort", 
+                               "tags": ["reason:incompatible_runtime"]
+                             },{
+                               "name": "library_entrypoint.abort.runtime"
+                             }]
+                             """;
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "abort", ".NET 10 or higher", "incompatible_runtime");
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task OnPreviewFrameworkInSsi_Buffers()
+        {
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+            // this is already tested in AssertNotInstrumented, but adding an explicit check here to make sure
+            if (EnvironmentTools.IsWindows())
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
+                Directory.GetFiles(logDir).Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-"));
+            }
+            else
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
+            }
+        }
+#else
         [SkippableTheory]
         [Trait("RunOnWindows", "True")]
         [InlineData("1")]
@@ -516,6 +630,7 @@ namespace Foo
                 AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
             }
         }
+#endif
 #endif
 
         // The dynamic context switch/bail out is only available in .NET 8+

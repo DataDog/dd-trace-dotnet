@@ -40,9 +40,11 @@ namespace Datadog.Trace.Tests
             var traceContext = new TraceContext(_tracerMock.Object);
 
             var t1 = traceContext.Clock.UtcNow;
+            System.Threading.Thread.Sleep(1); // Getting some flaky errors in .NET 10 (same time is returned)
             var t2 = traceContext.Clock.UtcNow;
+            var substractResult = t2.Subtract(t1);
 
-            Assert.True(t2.Subtract(t1) > TimeSpan.Zero);
+            Assert.True(substractResult > TimeSpan.Zero, $"{t2.ToString()} minus {t1.ToString()} results in {substractResult} which is incorrect.");
         }
 
         [Theory]
