@@ -46,6 +46,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     return new CallTargetState(scope);
                 }
             }
+            else
+            {
+                headers.Remove(HttpHeaderNames.TracingEnabled);
+            }
 
             return CallTargetState.GetDefault();
         }
