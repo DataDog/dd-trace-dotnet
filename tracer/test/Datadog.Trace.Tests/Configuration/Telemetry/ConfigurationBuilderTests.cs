@@ -564,7 +564,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
                         .GetAs<Guid>(
-                             getDefaultValue: () => _default,
+                             defaultValue: new(_default, Default),
                              validator: null,
                              converter: _converter);
 
@@ -584,7 +584,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
                         .GetAs<Guid?>(
-                             getDefaultValue: () => _default,
+                             defaultValue: new(_default, Default),
                              validator: null,
                              converter: _nullableConverter);
 
@@ -605,7 +605,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, telemetry)
                         .WithKeys(key)
                         .GetAs<Guid?>(
-                             getDefaultValue: () => _default,
+                             defaultValue: new(_default, Default),
                              validator: null,
                              converter: _nullableConverter);
 
@@ -615,7 +615,7 @@ public class ConfigurationBuilderTests
                                       .OrderByDescending(x => x.SeqId)
                                       .FirstOrDefault()
                                       .Value;
-            finalValue.Should().Be(_default.ToString());
+            finalValue.Should().Be(Default);
         }
 
         [Theory]
@@ -677,7 +677,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
                         .GetAs<Guid>(
-                             getDefaultValue: () => _default,
+                             defaultValue: new(_default, Default),
                              validator: x => x.ToString()[0] != '5',
                              converter: _converter);
 
