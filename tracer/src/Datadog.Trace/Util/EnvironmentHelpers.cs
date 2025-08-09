@@ -155,6 +155,24 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
+        /// Activate runtime metrics only on >= net9 or NetFx
+        /// </summary>
+        /// <param name="isRunningInCiVisibility">isRunningInCiVisibility</param>
+        /// <returns>whether to activate it or not</returns>
+        public static bool ShouldActivateRuntimeMetrics(bool isRunningInCiVisibility)
+        {
+            // only activate runtime metrics by default from net9 or netframework
+            var shouldActivateRuntimeMetrics = !isRunningInCiVisibility;
+#if !NETFRAMEWORK
+            if (shouldActivateRuntimeMetrics && FrameworkDescription.IsLowerThanNet9())
+            {
+                shouldActivateRuntimeMetrics = false;
+            }
+#endif
+            return shouldActivateRuntimeMetrics;
+        }
+
+        /// <summary>
         /// Checks if the specified environment variable exists in the current environment.
         /// </summary>
         private static bool EnvironmentVariableExists(string key) => !string.IsNullOrEmpty(GetEnvironmentVariable(key));
