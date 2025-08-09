@@ -22,7 +22,7 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Get dd-octo-sts token
-        uses: DataDog/dd-octo-sts-action@08f2144903ced3254a3dafec2592563409ba2aa0 # v1.0.1
+        uses: DataDog/dd-octo-sts-action@acaa02eee7e3bb0839e4272dacb37b8f3b58ba80 # v1.0.3
         id: octo-sts
         with:
           scope: DataDog/dd-trace-dotnet
@@ -56,7 +56,7 @@ jobs:
 
       - name: Send Slack notification about generating failure
         if: failure()
-        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # v2.1.0
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           # This data can be any valid JSON from a previous step in the GitHub Action
           payload: |
