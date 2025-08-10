@@ -129,7 +129,6 @@ namespace Datadog.Trace.Configuration
                 DynamicInstrumentationEnabled = settings.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(),
                 ExceptionReplayEnabled = settings.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(),
                 CodeOriginEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
-                LiveDebuggingEnabled = settings.WithKeys(ConfigurationKeys.Debugger.LiveDebuggingEnabled).AsBool()
             };
 
             var oldDebuggerSettings = DebuggerManager.Instance.DebuggerSettings;
@@ -144,11 +143,10 @@ namespace Datadog.Trace.Configuration
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug(
-                    "DynamicInstrumentationEnabled={DynamicInstrumentationEnabled}, ExceptionReplayEnabled={ExceptionReplayEnabled}, CodeOriginEnabled={CodeOriginEnabled}, DebuggerEnabled={DebuggerEnabled}",
+                    "DynamicInstrumentationEnabled={DynamicInstrumentationEnabled}, ExceptionReplayEnabled={ExceptionReplayEnabled}, CodeOriginEnabled={CodeOriginEnabled}",
                     dynamicDebuggerSettings.DynamicInstrumentationEnabled,
                     dynamicDebuggerSettings.ExceptionReplayEnabled,
-                    dynamicDebuggerSettings.CodeOriginEnabled,
-                    dynamicDebuggerSettings.LiveDebuggingEnabled);
+                    dynamicDebuggerSettings.CodeOriginEnabled);
             }
 
             var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
@@ -160,6 +158,10 @@ namespace Datadog.Trace.Configuration
                                     if (t is { IsFaulted: true, Exception: not null })
                                     {
                                         Log.Error(t.Exception.Flatten(), "Error updating dynamic configuration for debugger");
+                                    }
+                                    else if (t.IsFaulted)
+                                    {
+                                        Log.Warning("UpdateConfiguration task faulted without exception");
                                     }
                                 },
                                 TaskContinuationOptions.OnlyOnFaulted);
