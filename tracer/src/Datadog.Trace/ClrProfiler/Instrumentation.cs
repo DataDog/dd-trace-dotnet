@@ -445,18 +445,20 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
-            _ = Task.Run(
-                async () =>
-                {
-                    try
-                    {
-                        await DebuggerManager.Instance.UpdateConfiguration(tracerSettings).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error initializing debugger");
-                    }
-                });
+            DebuggerManager.Instance.UpdateConfiguration(tracerSettings)
+                           .ContinueWith(
+                                t =>
+                                {
+                                    if (t is { Exception: not null })
+                                    {
+                                        Log.Error(t.Exception.Flatten(), "Error initializing debugger");
+                                    }
+                                    else
+                                    {
+                                        Log.Warning("Unhandled error in debugger initialization task");
+                                    }
+                                },
+                                TaskContinuationOptions.OnlyOnFaulted);
         }
 
         // /!\ This method is called by reflection in the SampleHelpers
