@@ -91,38 +91,48 @@ namespace Datadog.Trace.Debugger
 
         internal void Initialize()
         {
-            var originalState = Interlocked.CompareExchange(ref _initState, 1, 0);
-
             // If we weren't in "not initialized" state, return early
-            if (originalState != 0)
+            if (Interlocked.CompareExchange(ref _initState, 1, 0) != 0)
             {
+                return;
+            }
+
+            if (!_settings.DynamicInstrumentationEnabled)
+            {
+                Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
+                Interlocked.Exchange(ref _initState, 0);
                 return;
             }
 
             try
             {
-                var disabled =
-                    !(_settings.DynamicInstrumentationEnabled == true ||
-                      _settings.DynamicSettings.DynamicInstrumentationEnabled == true) ||
-                    _settings.DynamicInstrumentationEnabled == false ||
-                    _settings.DynamicSettings.DynamicInstrumentationEnabled == false;
-
-                if (disabled)
-                {
-                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
-                    Interlocked.Exchange(ref _initState, 0);
-                    return;
-                }
-
                 Log.Information("Dynamic Instrumentation initialization started");
 
-                // Initialize without blocking
-                _ = Task.Run(async () => await InitializeAsync().ConfigureAwait(false), _cancellationTokenSource.Token);
+                Task.Run(
+                         async () =>
+                         {
+                             try
+                             {
+                                 await InitializeAsync().ConfigureAwait(false);
+                             }
+                             catch (Exception e)
+                             {
+                                 Log.Error(e, "Dynamic Instrumentation initialization failed");
+                                 Interlocked.Exchange(ref _initState, 0);
+                             }
+                         },
+                         _cancellationTokenSource.Token)
+                    .ContinueWith(
+                         t =>
+                         {
+                             Log.Error(t.Exception, "Unhandled error in dynamic instrumentation initialization");
+                             Interlocked.Exchange(ref _initState, 0);
+                         },
+                         TaskContinuationOptions.OnlyOnFaulted);
             }
             catch (Exception e)
             {
-                Log.Error(e, "Initializing Dynamic Instrumentation failed.");
-                // Reset to "not initialized"
+                Log.Error(e, "Dynamic Instrumentation initialization failed");
                 Interlocked.Exchange(ref _initState, 0);
             }
         }
@@ -156,14 +166,13 @@ namespace Datadog.Trace.Debugger
             }
             catch (OperationCanceledException e)
             {
-                Log.Debug(e, "Async initialization of Dynamic Instrumentation stopped due task cancellation.");
+                Log.Debug(e, "Dynamic Instrumentation stopped due task cancellation");
                 // Reset to "not initialized"
                 Interlocked.Exchange(ref _initState, 0);
             }
             catch (Exception e)
             {
-                Log.Error(e, "Async initialization of Dynamic Instrumentation failed.");
-                // Reset to "not initialized"
+                Log.Error(e, "Dynamic Instrumentation initialization failed");
                 Interlocked.Exchange(ref _initState, 0);
             }
         }
@@ -171,8 +180,36 @@ namespace Datadog.Trace.Debugger
         private void StartInBackground()
         {
             _probeStatusPoller.StartPolling();
-            _ = _diagnosticsUploader.StartFlushingAsync();
-            _ = _snapshotUploader.StartFlushingAsync();
+
+            Task.Run(() => _diagnosticsUploader.StartFlushingAsync(), _cancellationTokenSource.Token)
+                .ContinueWith(
+                     t =>
+                     {
+                         if (t is { Exception: not null })
+                         {
+                             Log.Error(t.Exception.Flatten(), "Error in diagnostic uploader");
+                         }
+                         else
+                         {
+                             Log.Warning("Error in diagnostic uploader");
+                         }
+                     },
+                     TaskContinuationOptions.OnlyOnFaulted);
+
+            Task.Run(() => _snapshotUploader.StartFlushingAsync(), _cancellationTokenSource.Token)
+                .ContinueWith(
+                     t =>
+                     {
+                         if (t is { Exception: not null })
+                         {
+                             Log.Error(t.Exception.Flatten(), "Error in snapshot uploader");
+                         }
+                         else
+                         {
+                             Log.Warning("Error in snapshot uploader");
+                         }
+                     },
+                     TaskContinuationOptions.OnlyOnFaulted);
         }
 
         internal void UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
@@ -562,13 +599,25 @@ namespace Datadog.Trace.Debugger
                 return true;
             }
 
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token);
+            cts.CancelAfter(timeout);
+
             try
             {
-                await _rcmAvailabilitySemaphore.WaitAsync(timeout, _cancellationTokenSource.Token).ConfigureAwait(false);
+                await _rcmAvailabilitySemaphore.WaitAsync(cts.Token).ConfigureAwait(false);
                 return _isRcmAvailable;
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
             {
+                if (_cancellationTokenSource.Token.IsCancellationRequested)
+                {
+                    Log.Debug("RCM availability wait cancelled due to shutdown");
+                }
+                else
+                {
+                    Log.Warning("RCM availability wait timed out after {Timeout}", timeout);
+                }
+
                 return false;
             }
             catch (Exception ex)
