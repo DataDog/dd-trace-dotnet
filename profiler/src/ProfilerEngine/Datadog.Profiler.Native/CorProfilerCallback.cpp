@@ -662,17 +662,11 @@ void CorProfilerCallback::InitializeServices()
 }
 
 
-// Single Step Instrumentation heuristics are triggered so profiling can start
+// Stable Configuration as manual or Single Step Instrumentation heuristics are triggered so profiling can start
 void CorProfilerCallback::OnStartDelayedProfiling()
 {
     // check race conditions for shutdown
     if (!_isInitialized.load())
-    {
-        return;
-    }
-
-    // if not enabled via SSI, just get out
-    if (_pConfiguration->GetEnablementStatus() != EnablementStatus::Auto)
     {
         return;
     }

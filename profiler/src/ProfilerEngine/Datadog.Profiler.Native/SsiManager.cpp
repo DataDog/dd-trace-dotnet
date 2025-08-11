@@ -90,15 +90,19 @@ void SsiManager::OnShortLivedEnds()
         return;  // still waiting for enablement configuration from managed layer
     }
 
-    Log::Debug("OnShortLivedEnds() called");
-    if (_hasSpan && (enablementStatus == EnablementStatus::Auto))
+    if (enablementStatus == EnablementStatus::Auto)
     {
-        Log::Debug("--> start profiling");
-        StartProfiling(_pSsiLifetime);
-    }
-    else
-    {
-        Log::Debug("--> still no span");
+        Log::Debug("OnShortLivedEnds() called");
+
+        if (_hasSpan)
+        {
+            Log::Debug("--> start profiling");
+            StartProfiling(_pSsiLifetime);
+        }
+        else
+        {
+            Log::Debug("--> still no span");
+        }
     }
 }
 
@@ -113,15 +117,19 @@ void SsiManager::OnSpanCreated()
         return; // still waiting for enablement configuration from managed layer
     }
 
-    Log::Debug("OnSpanCreated() called");
-    if (_isLongLived && (enablementStatus == EnablementStatus::Auto))
+    if (enablementStatus == EnablementStatus::Auto)
     {
-        Log::Debug("--> start profiling");
-        StartProfiling(_pSsiLifetime);
-    }
-    else
-    {
-        Log::Debug("--> still not long lived");
+        Log::Debug("OnSpanCreated() called");
+
+        if (_isLongLived)
+        {
+            Log::Debug("--> start profiling");
+            StartProfiling(_pSsiLifetime);
+        }
+        else
+        {
+            Log::Debug("--> still not long lived");
+        }
     }
 }
 
