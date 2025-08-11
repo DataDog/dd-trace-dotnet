@@ -21,7 +21,7 @@ internal static class HangfireCommon
     private const string HangfireType = "Hangfire";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HangfireCommon));
 
-    internal const string IntegrationName = nameof(Configuration.IntegrationId.Hangfire);
+    internal const string IntegrationName = nameof(IntegrationId.Hangfire);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.Hangfire;
 
     public static Scope? CreateScope(Tracer tracer, HangfireTags tags, IPerformingContextProxy performingContext, ISpanContext? parentContext = null, bool finishOnClose = true)

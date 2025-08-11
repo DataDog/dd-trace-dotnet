@@ -4,15 +4,11 @@
     "SampleProjectName": "Samples.Hangfire",
     "NugetPackageSearchName": "Hangfire.Core",
     "MinVersion": "1.7.0",
-    "MaxVersionExclusive": "1.8.*",
+    "MaxVersionExclusive": "1.9.0",
     "SpecificVersions": [
       "1.7.*",
       "1.8.*"
-    ],
-    "VersionConditions": [{
-      "MinVersion": "1.7.0",
-      "IncludeOnlyTargetFrameworks": ["net6.0","net7.0","net8.0","net9.0"]
-    }]
+    ]
   },
   {
     "IntegrationName": "AwsSdk",

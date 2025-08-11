@@ -31,16 +31,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 return;
             }
 
-            SpanContext? parentContext = null;
-
             var spanContextData = performingContext.GetJobParameter<Dictionary<string, string?>?>(HangfireConstants.DatadogContextKey);
             Log.Debug("Extracting context from the following data: {SpanContextData}", spanContextData);
 
             PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData).MergeBaggageInto(Baggage.Current);
-            parentContext = propagationContext.SpanContext;
+            var parentContext = propagationContext.SpanContext;
 
             Scope? scope = HangfireCommon.CreateScope(Tracer.Instance, new HangfireTags(), performingContext, parentContext);
-            ((Dictionary<string, object?>)performingContext.Items)?.Add(HangfireConstants.DatadogScopeKey, scope);
+            ((Dictionary<string, object?>)performingContext.Items).Add(HangfireConstants.DatadogScopeKey, scope);
         }
 
         /// <summary>

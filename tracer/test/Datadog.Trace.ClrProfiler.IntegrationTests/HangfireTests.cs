@@ -37,8 +37,11 @@ public class HangfireTests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent))
         {
+            // used to create custom spans
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+
             // Not testing for retry attempts
-            const int expectedSpanCount = 6;
+            const int expectedSpanCount = 3;
             var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
             using var s = new AssertionScope();
@@ -55,9 +58,7 @@ public class HangfireTests : TracingIntegrationTest
             settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
             settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
             settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
-            await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName(nameof(HangfireTests));
-
+            await VerifyHelper.VerifySpans(spans, settings).UseFileName(nameof(HangfireTests));
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Hangfire);
         }
     }
