@@ -125,7 +125,7 @@ namespace Foo
             var updatedContent = System.Text.RegularExpressions.Regex.Replace(
                 projectContent,
                 @"<TargetFramework>net\d+\.\d+</TargetFramework>",
-                "<TargetFramework>net8.0</TargetFramework>");
+                $"<TargetFramework>{EnvironmentHelper.GetTargetFramework()}</TargetFramework>");
 
             var programCs = GetProgramCSThatMakesSpans();
 
@@ -173,7 +173,7 @@ namespace Foo
             var updatedContent = System.Text.RegularExpressions.Regex.Replace(
                 projectContent,
                 @"<TargetFramework>net\d+\.\d+</TargetFramework>",
-                "<TargetFramework>net8.0</TargetFramework>");
+                $"<TargetFramework>{EnvironmentHelper.GetTargetFramework()}</TargetFramework>");
 
             var programCs = GetProgramCSThatMakesSpans();
 
