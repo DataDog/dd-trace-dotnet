@@ -42,13 +42,13 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly ImmutableHashSet<string> _symDb3rdPartyIncludes;
         private readonly ImmutableHashSet<string> _symDb3rdPartyExcludes;
         private readonly long _thresholdInBytes;
-        private readonly CancellationTokenSource _cancellationToken;
+        private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly IBatchUploadApi _api;
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
         private readonly object _disposeLock = new();
+        private readonly IDiscoveryService _discoveryService;
         private volatile bool _disposed = false;
-        private IDiscoveryService? _discoveryService;
         private byte[]? _payload;
         private string? _symDbEndpoint;
         private bool _isSymDbEnabled;
@@ -74,7 +74,6 @@ namespace Datadog.Trace.Debugger.Symbols
             _thresholdInBytes = settings.SymbolDatabaseBatchSizeInBytes;
             _symDb3rdPartyIncludes = settings.SymDbThirdPartyDetectionIncludes;
             _symDb3rdPartyExcludes = settings.SymDbThirdPartyDetectionExcludes;
-            _cancellationToken = new CancellationTokenSource();
             _jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             _discoveryService.SubscribeToChanges(ConfigurationChanged);
             _subscription = new Subscription(Callback, RcmProducts.LiveDebuggingSymbolDb);
@@ -102,7 +101,7 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 _isSymDbEnabled = false;
                 UnRegisterToAssemblyLoadEvent();
-                _cancellationToken.Cancel(false);
+                _processExit.TrySetResult(true);
             }
 
             return Array.Empty<ApplyDetails>();
@@ -118,8 +117,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             _symDbEndpoint = configuration.SymbolDbEndpoint;
             _discoveryServiceSemaphore.Release(1);
-            _discoveryService!.RemoveSubscription(ConfigurationChanged);
-            _discoveryService = null;
+            _discoveryService.RemoveSubscription(ConfigurationChanged);
         }
 
         public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, DebuggerSettings settings, string serviceName)
@@ -167,10 +165,13 @@ namespace Datadog.Trace.Debugger.Symbols
             bool semaphoreAcquired = false;
             try
             {
-                await _assemblySemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
-                semaphoreAcquired = true;
+                var acquireTimeout = TimeSpan.FromSeconds(5);
+                while (!_processExit.Task.IsCompleted && !semaphoreAcquired)
+                {
+                    semaphoreAcquired = await _assemblySemaphore.WaitAsync(acquireTimeout).ConfigureAwait(false);
+                }
 
-                if (!_isSymDbEnabled || _cancellationToken.IsCancellationRequested || _disposed)
+                if (!_isSymDbEnabled || _processExit.Task.IsCompleted || _disposed)
                 {
                     return;
                 }
@@ -392,7 +393,6 @@ namespace Datadog.Trace.Debugger.Symbols
 
             if (await WaitForEnablementAsync().ConfigureAwait(false) == false)
             {
-                Log.Information("This can happen when the service is shut down");
                 return;
             }
 
@@ -413,7 +413,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 return true;
             }
 
-            if (_disposed || _cancellationToken.IsCancellationRequested)
+            if (_disposed || _processExit.Task.IsCompleted)
             {
                 return false;
             }
@@ -422,10 +422,12 @@ namespace Datadog.Trace.Debugger.Symbols
 
             try
             {
-                await _discoveryServiceSemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
-                _discoveryServiceSemaphore.Dispose();
+                var completedTask = await Task.WhenAny(
+                                                   _discoveryServiceSemaphore.WaitAsync(),
+                                                   _processExit.Task)
+                                              .ConfigureAwait(false);
 
-                if (_cancellationToken.IsCancellationRequested || _disposed)
+                if (completedTask == _processExit.Task || _disposed)
                 {
                     return false;
                 }
@@ -444,7 +446,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task<bool> WaitForEnablementAsync()
         {
-            if (_disposed || _cancellationToken.IsCancellationRequested)
+            if (_disposed || _processExit.Task.IsCompleted)
             {
                 return false;
             }
@@ -453,8 +455,12 @@ namespace Datadog.Trace.Debugger.Symbols
 
             try
             {
-                await _enablementSemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
-                if (_cancellationToken.IsCancellationRequested || _disposed)
+                var completedTask = await Task.WhenAny(
+                                                   _enablementSemaphore.WaitAsync(),
+                                                   _processExit.Task)
+                                              .ConfigureAwait(false);
+
+                if (completedTask == _processExit.Task || _disposed)
                 {
                     return false;
                 }
@@ -488,19 +494,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 _disposed = true;
                 _subscriptionManager.Unsubscribe(_subscription);
 
-                try
-                {
-                    if (!_cancellationToken.IsCancellationRequested)
-                    {
-                        _cancellationToken.Cancel();
-                    }
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Already disposed, ignore
-                }
-
-                _cancellationToken.Dispose();
+                _processExit.TrySetResult(true);
                 _assemblySemaphore.Dispose();
                 _enablementSemaphore.Dispose();
                 _discoveryServiceSemaphore.Dispose();
