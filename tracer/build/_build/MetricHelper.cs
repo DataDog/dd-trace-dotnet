@@ -74,7 +74,7 @@ public static class MetricHelper
             var result = response.IsSuccessStatusCode
                              ? "Successfully submitted metric"
                              : "Failed to submit metric";
-            log.Error("{Result} {MetricName}. Response was: Code: {ResponseStatusCode}. Response: {ResponseContent}. Payload sent was: \"{Payload}\"", result, metricName, response.StatusCode, responseContent, payload);
+            log.Warning("{Result} {MetricName}. Response was: Code: {ResponseStatusCode}. Response: {ResponseContent}. Payload sent was: \"{Payload}\"", result, metricName, response.StatusCode, responseContent, payload);
         }
         catch (Exception ex)
         {
