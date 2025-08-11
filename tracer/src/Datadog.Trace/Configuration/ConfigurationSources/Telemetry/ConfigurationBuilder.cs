@@ -216,7 +216,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         // ****************
         public bool? AsBool() => AsBool(defaultValue: null, validator: null, converter: null);
 
-        public bool AsBool(bool defaultValue) => AsBool(() => defaultValue, validator: null).Value;
+        public bool AsBool(bool defaultValue) => AsBool(defaultValue, validator: null);
 
         public bool? AsBool(Func<bool, bool> validator) => AsBool(defaultValue: null, validator, converter: null);
 
