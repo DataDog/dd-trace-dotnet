@@ -262,7 +262,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // This is the root scope
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
+                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: null, links: extractedContext.Links);
                 }
                 else
                 {
@@ -449,55 +449,52 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 Log.Information("Successfully obtained grpc feature for ServiceBus, TriggerMetadata is null: {TriggerMetadataIsNull}", grpcFeature.TriggerMetadata is null);
 
-                // Look for UserProperties in the TriggerMetadata
+                var spanLinks = new List<SpanLink>();
+
+                // Handle single message scenario (UserProperties)
                 if (grpcFeature.TriggerMetadata?.TryGetValue("UserProperties", out var userPropertiesObj) == true)
                 {
                     Log.Information("Found UserProperties in TriggerMetadata, type: {UserPropertiesType}", userPropertiesObj?.GetType().FullName);
-
-                    if (userPropertiesObj is string userPropertiesJson)
+                    var extractedContext = ExtractContextFromUserProperties(userPropertiesObj);
+                    if (extractedContext.SpanContext != null)
                     {
-                        Log.Information("UserProperties is a JSON string: {UserPropertiesJson}", userPropertiesJson);
-
-                        try
-                        {
-                            // Parse the JSON string to extract headers
-                            var userPropertiesDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(userPropertiesJson);
-
-                            if (userPropertiesDict != null)
-                            {
-                                Log.Information("Successfully parsed UserProperties JSON, contains {Count} keys", (object)userPropertiesDict.Count);
-
-                                // Log all keys for debugging
-                                foreach (var kvp in userPropertiesDict)
-                                {
-                                    Log.Information("UserProperties key: {Key}, value: {Value}", kvp.Key, kvp.Value);
-                                }
-
-                                // Create a headers collection adapter for context extraction
-                                var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
-                                var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-
-                                Log.Information("Successfully extracted propagation context from ServiceBus UserProperties");
-                                return propagationContext;
-                            }
-                            else
-                            {
-                                Log.Information("Failed to deserialize UserProperties JSON to dictionary");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error parsing UserProperties JSON: {Json}", userPropertiesJson);
-                        }
-                    }
-                    else
-                    {
-                        Log.Information("UserProperties is not a string, cannot parse as JSON");
+                        spanLinks.Add(new SpanLink(extractedContext.SpanContext));
+                        Log.Information(
+                            "Added span link from UserProperties: TraceId={TraceId}, SpanId={SpanId}",
+                            extractedContext.SpanContext.TraceId128.Lower,
+                            extractedContext.SpanContext.SpanId);
                     }
                 }
                 else
                 {
                     Log.Information("UserProperties not found in TriggerMetadata");
+                }
+
+                // Handle batch message scenario (UserPropertiesArray)
+                if (grpcFeature.TriggerMetadata?.TryGetValue("UserPropertiesArray", out var userPropertiesArrayObj) == true)
+                {
+                    Log.Information("Found UserPropertiesArray in TriggerMetadata, type: {UserPropertiesArrayType}", userPropertiesArrayObj?.GetType().FullName);
+                    var batchSpanLinks = ExtractSpanLinksFromUserPropertiesArray(userPropertiesArrayObj);
+                    spanLinks.AddRange(batchSpanLinks);
+                    Log.Information("Added {Count} span links from UserPropertiesArray", (object)batchSpanLinks.Count);
+                }
+                else
+                {
+                    Log.Information("UserPropertiesArray not found in TriggerMetadata");
+                }
+
+                if (spanLinks.Count > 0)
+                {
+                    Log.Information("Successfully extracted {Count} span links from ServiceBus metadata", (object)spanLinks.Count);
+                    // Return PropagationContext with links instead of parent span context
+                    return new PropagationContext(
+                        spanContext: null, // No parenting - we're using links instead
+                        baggage: Baggage.Current,
+                        extractionSpanLinks: spanLinks);
+                }
+                else
+                {
+                    Log.Information("No span links extracted from ServiceBus metadata");
                 }
 
                 return default;
@@ -507,6 +504,135 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 Log.Error(ex, "Error extracting propagated context from ServiceBus binding");
                 return default;
             }
+        }
+
+        private static PropagationContext ExtractContextFromUserProperties(object? userPropertiesObj)
+        {
+            if (userPropertiesObj is string userPropertiesJson)
+            {
+                Log.Information("UserProperties is a JSON string: {UserPropertiesJson}", userPropertiesJson);
+
+                try
+                {
+                    // Parse the JSON string to extract headers
+                    var userPropertiesDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(userPropertiesJson);
+
+                    if (userPropertiesDict != null)
+                    {
+                        Log.Information("Successfully parsed UserProperties JSON, contains {Count} keys", (object)userPropertiesDict.Count);
+
+                        // Log all keys for debugging
+                        foreach (var kvp in userPropertiesDict)
+                        {
+                            Log.Information("UserProperties key: {Key}, value: {Value}", kvp.Key, kvp.Value);
+                        }
+
+                        // Create a headers collection adapter for context extraction
+                        var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
+                        var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+
+                        Log.Information("Successfully extracted propagation context from UserProperties");
+                        return propagationContext;
+                    }
+                    else
+                    {
+                        Log.Information("Failed to deserialize UserProperties JSON to dictionary");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error parsing UserProperties JSON: {Json}", userPropertiesJson);
+                }
+            }
+            else
+            {
+                Log.Information("UserProperties is not a string, cannot parse as JSON");
+            }
+
+            return default;
+        }
+
+        private static List<SpanLink> ExtractSpanLinksFromUserPropertiesArray(object? userPropertiesArrayObj)
+        {
+            var spanLinks = new List<SpanLink>();
+
+            try
+            {
+                // Handle array of UserProperties (batch scenario)
+                if (userPropertiesArrayObj is string userPropertiesArrayJson)
+                {
+                    Log.Information("UserPropertiesArray is a JSON string: {UserPropertiesArrayJson}", userPropertiesArrayJson);
+
+                    var userPropertiesArray = JsonConvert.DeserializeObject<string[]>(userPropertiesArrayJson);
+
+                    if (userPropertiesArray != null)
+                    {
+                        Log.Information("Successfully parsed UserPropertiesArray JSON, contains {Count} items", (object)userPropertiesArray.Length);
+
+                        for (int i = 0; i < userPropertiesArray.Length; i++)
+                        {
+                            var userPropertiesJson = userPropertiesArray[i];
+                            Log.Information("Processing UserPropertiesArray item {Index}: {Item}", (object)i, userPropertiesJson);
+
+                            var extractedContext = ExtractContextFromUserProperties(userPropertiesJson);
+                            if (extractedContext.SpanContext != null)
+                            {
+                                spanLinks.Add(new SpanLink(extractedContext.SpanContext));
+                                Log.Information(
+                                    "Added span link from UserPropertiesArray item {Index}: TraceId={TraceId}, SpanId={SpanId}",
+                                    (object)i,
+                                    extractedContext.SpanContext.TraceId128.Lower,
+                                    extractedContext.SpanContext.SpanId);
+                            }
+                            else
+                            {
+                                Log.Information("No span context extracted from UserPropertiesArray item {Index}", (object)i);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Log.Information("Failed to deserialize UserPropertiesArray JSON to string array");
+                    }
+                }
+
+                // Could also handle direct array objects if they come in that format
+                else if (userPropertiesArrayObj is object[] directArray)
+                {
+                    Log.Information("UserPropertiesArray is a direct object array with {Count} items", (object)directArray.Length);
+
+                    for (int i = 0; i < directArray.Length; i++)
+                    {
+                        var item = directArray[i];
+                        Log.Information("Processing UserPropertiesArray direct item {Index}: {Item}", (object)i, item?.GetType().FullName ?? "null");
+
+                        var extractedContext = ExtractContextFromUserProperties(item);
+                        if (extractedContext.SpanContext != null)
+                        {
+                            spanLinks.Add(new SpanLink(extractedContext.SpanContext));
+                            Log.Information(
+                                "Added span link from UserPropertiesArray direct item {Index}: TraceId={TraceId}, SpanId={SpanId}",
+                                (object)i,
+                                extractedContext.SpanContext.TraceId128.Lower,
+                                extractedContext.SpanContext.SpanId);
+                        }
+                        else
+                        {
+                            Log.Information("No span context extracted from UserPropertiesArray direct item {Index}", (object)i);
+                        }
+                    }
+                }
+                else
+                {
+                    Log.Information("UserPropertiesArray is of unexpected type: {Type}", userPropertiesArrayObj?.GetType().FullName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error parsing UserPropertiesArray: {Array}", userPropertiesArrayObj);
+            }
+
+            return spanLinks;
         }
     }
 }
