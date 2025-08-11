@@ -85,10 +85,6 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
 
         Log.Information("Messages is null: {IsNull}", messages is null);
 
-        if (messages is not null)
-        {
-        }
-
         return new CallTargetState(scope);
     }
 

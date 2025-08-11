@@ -262,7 +262,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // This is the root scope
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: null, links: extractedContext.Links);
+                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext, links: extractedContext.Links);
                 }
                 else
                 {
@@ -449,18 +449,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 Log.Information("Successfully obtained grpc feature for ServiceBus, TriggerMetadata is null: {TriggerMetadataIsNull}", grpcFeature.TriggerMetadata is null);
 
-                var spanLinks = new List<SpanLink>();
+                object? userPropertiesObj = null;
+                object? userPropertiesArrayObj = null;
+                var hasUserProperties = grpcFeature.TriggerMetadata?.TryGetValue("UserProperties", out userPropertiesObj) == true;
+                var hasUserPropertiesArray = grpcFeature.TriggerMetadata?.TryGetValue("UserPropertiesArray", out userPropertiesArrayObj) == true;
+
+                // Extract contexts from both sources
+                SpanContext? singleContext = null;
+                var allContexts = new List<SpanContext>();
 
                 // Handle single message scenario (UserProperties)
-                if (grpcFeature.TriggerMetadata?.TryGetValue("UserProperties", out var userPropertiesObj) == true)
+                if (hasUserProperties)
                 {
                     Log.Information("Found UserProperties in TriggerMetadata, type: {UserPropertiesType}", userPropertiesObj?.GetType().FullName);
                     var extractedContext = ExtractContextFromUserProperties(userPropertiesObj);
                     if (extractedContext.SpanContext != null)
                     {
-                        spanLinks.Add(new SpanLink(extractedContext.SpanContext));
+                        singleContext = extractedContext.SpanContext;
+                        allContexts.Add(extractedContext.SpanContext);
                         Log.Information(
-                            "Added span link from UserProperties: TraceId={TraceId}, SpanId={SpanId}",
+                            "Extracted context from UserProperties: TraceId={TraceId}, SpanId={SpanId}",
                             extractedContext.SpanContext.TraceId128.Lower,
                             extractedContext.SpanContext.SpanId);
                     }
@@ -471,39 +479,106 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 // Handle batch message scenario (UserPropertiesArray)
-                if (grpcFeature.TriggerMetadata?.TryGetValue("UserPropertiesArray", out var userPropertiesArrayObj) == true)
+                if (hasUserPropertiesArray)
                 {
                     Log.Information("Found UserPropertiesArray in TriggerMetadata, type: {UserPropertiesArrayType}", userPropertiesArrayObj?.GetType().FullName);
-                    var batchSpanLinks = ExtractSpanLinksFromUserPropertiesArray(userPropertiesArrayObj);
-                    spanLinks.AddRange(batchSpanLinks);
-                    Log.Information("Added {Count} span links from UserPropertiesArray", (object)batchSpanLinks.Count);
+                    var batchContexts = ExtractSpanContextsFromUserPropertiesArray(userPropertiesArrayObj);
+                    allContexts.AddRange(batchContexts);
+                    Log.Information("Extracted {Count} contexts from UserPropertiesArray", (object)batchContexts.Count);
                 }
                 else
                 {
                     Log.Information("UserPropertiesArray not found in TriggerMetadata");
                 }
 
-                if (spanLinks.Count > 0)
+                if (allContexts.Count == 0)
                 {
-                    Log.Information("Successfully extracted {Count} span links from ServiceBus metadata", (object)spanLinks.Count);
-                    // Return PropagationContext with links instead of parent span context
+                    Log.Information("No span contexts extracted from ServiceBus metadata");
+                    return default;
+                }
+
+                // Determine whether to use reparenting or span linking
+                bool shouldReparent = DetermineReparentingStrategy(hasUserProperties, hasUserPropertiesArray, allContexts);
+
+                if (shouldReparent && allContexts.Count > 0)
+                {
+                    // Use reparenting - return the first valid context as parent
+                    var parentContext = allContexts[0];
+                    Log.Information(
+                        "Using reparenting strategy with parent context: TraceId={TraceId}, SpanId={SpanId}",
+                        parentContext.TraceId128.Lower,
+                        parentContext.SpanId);
+
                     return new PropagationContext(
-                        spanContext: null, // No parenting - we're using links instead
+                        spanContext: parentContext,
                         baggage: Baggage.Current,
-                        extractionSpanLinks: spanLinks);
+                        extractionSpanLinks: null);
                 }
                 else
                 {
-                    Log.Information("No span links extracted from ServiceBus metadata");
-                }
+                    // Use span linking - create links to all contexts
+                    var spanLinks = allContexts.Select(ctx => new SpanLink(ctx)).ToList();
+                    Log.Information("Using span linking strategy with {Count} span links", (object)spanLinks.Count);
 
-                return default;
+                    return new PropagationContext(
+                        spanContext: null,
+                        baggage: Baggage.Current,
+                        extractionSpanLinks: spanLinks);
+                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error extracting propagated context from ServiceBus binding");
                 return default;
             }
+        }
+
+        private static bool DetermineReparentingStrategy(bool hasUserProperties, bool hasUserPropertiesArray, List<SpanContext> allContexts)
+        {
+            // Case 1: UserProperties is used and UserPropertiesArray is not -> Reparent
+            if (hasUserProperties && !hasUserPropertiesArray)
+            {
+                Log.Information("Reparenting: UserProperties used without UserPropertiesArray");
+                return true;
+            }
+
+            // Case 2: UserPropertiesArray is used and UserProperties is not -> Check if all contexts are the same
+            if (!hasUserProperties && hasUserPropertiesArray)
+            {
+                if (allContexts.Count <= 1)
+                {
+                    Log.Information("Reparenting: UserPropertiesArray has single context");
+                    return true;
+                }
+
+                // Check if all contexts are the same (same TraceId and SpanId)
+                var firstContext = allContexts[0];
+                bool allSame = allContexts.All(ctx =>
+                    ctx.TraceId128.Equals(firstContext.TraceId128) &&
+                    ctx.SpanId == firstContext.SpanId);
+
+                if (allSame)
+                {
+                    Log.Information("Reparenting: All contexts in UserPropertiesArray are identical");
+                    return true;
+                }
+                else
+                {
+                    Log.Information("Span linking: Non-uniform contexts in UserPropertiesArray");
+                    return false;
+                }
+            }
+
+            // Case 3: Both UserProperties and UserPropertiesArray are used -> Span link to all
+            if (hasUserProperties && hasUserPropertiesArray)
+            {
+                Log.Information("Span linking: Both UserProperties and UserPropertiesArray are present");
+                return false;
+            }
+
+            // Default fallback
+            Log.Information("Span linking: Default fallback strategy");
+            return false;
         }
 
         private static PropagationContext ExtractContextFromUserProperties(object? userPropertiesObj)
@@ -552,9 +627,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return default;
         }
 
-        private static List<SpanLink> ExtractSpanLinksFromUserPropertiesArray(object? userPropertiesArrayObj)
+        private static List<SpanContext> ExtractSpanContextsFromUserPropertiesArray(object? userPropertiesArrayObj)
         {
-            var spanLinks = new List<SpanLink>();
+            var spanContexts = new List<SpanContext>();
 
             try
             {
@@ -581,9 +656,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                             if (extractedContext.SpanContext != null)
                             {
-                                spanLinks.Add(new SpanLink(extractedContext.SpanContext));
+                                spanContexts.Add(extractedContext.SpanContext);
                                 Log.Information(
-                                    "Added span link from UserPropertiesArray item {Index}: TraceId={TraceId}, SpanId={SpanId}",
+                                    "Added span context from UserPropertiesArray item {Index}: TraceId={TraceId}, SpanId={SpanId}",
                                     (object)i,
                                     extractedContext.SpanContext.TraceId128.Lower,
                                     extractedContext.SpanContext.SpanId);
@@ -616,9 +691,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                         if (extractedContext.SpanContext != null)
                         {
-                            spanLinks.Add(new SpanLink(extractedContext.SpanContext));
+                            spanContexts.Add(extractedContext.SpanContext);
                             Log.Information(
-                                "Added span link from UserPropertiesArray direct item {Index}: TraceId={TraceId}, SpanId={SpanId}",
+                                "Added span context from UserPropertiesArray direct item {Index}: TraceId={TraceId}, SpanId={SpanId}",
                                 (object)i,
                                 extractedContext.SpanContext.TraceId128.Lower,
                                 extractedContext.SpanContext.SpanId);
@@ -646,9 +721,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                             if (extractedContext.SpanContext != null)
                             {
-                                spanLinks.Add(new SpanLink(extractedContext.SpanContext));
+                                spanContexts.Add(extractedContext.SpanContext);
                                 Log.Information(
-                                    "Added span link from UserPropertiesArray generic item {Index}: TraceId={TraceId}, SpanId={SpanId}",
+                                    "Added span context from UserPropertiesArray generic item {Index}: TraceId={TraceId}, SpanId={SpanId}",
                                     (object)i,
                                     extractedContext.SpanContext.TraceId128.Lower,
                                     extractedContext.SpanContext.SpanId);
@@ -674,7 +749,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 Log.Error(ex, "Error parsing UserPropertiesArray: {Array}", userPropertiesArrayObj);
             }
 
-            return spanLinks;
+            return spanContexts;
+        }
+
+        private static List<SpanLink> ExtractSpanLinksFromUserPropertiesArray(object? userPropertiesArrayObj)
+        {
+            var spanContexts = ExtractSpanContextsFromUserPropertiesArray(userPropertiesArrayObj);
+            return spanContexts.Select(ctx => new SpanLink(ctx)).ToList();
         }
     }
 }
