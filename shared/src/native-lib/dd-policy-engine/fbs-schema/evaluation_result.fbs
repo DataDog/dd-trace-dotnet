@@ -1,0 +1,12 @@
+
+namespace dd.wls;
+
+/// Represents an 'optional' Boolean results where EVAL_RESULT_ABSTAIN is a *dont care* result.
+/// For more details about the *dont care* results please refer the RFC\Documentation.
+enum EvaluationResult : byte {
+  EVAL_RESULT_TRUE = 1,
+  EVAL_RESULT_FALSE = 0,
+  EVAL_RESULT_ABSTAIN = -1,
+  /// Synthetic count to align with other enumerations
+  EVAL_RESULT_COUNT = 3
+}

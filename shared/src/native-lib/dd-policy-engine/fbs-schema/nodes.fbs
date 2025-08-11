@@ -1,0 +1,38 @@
+include "boolean_operation.fbs";
+include "evaluators.fbs";
+
+namespace dd.wls;
+
+/// Represents the type of node in the policy tree.
+/// It can either be a leaf node (which contains an evaluator) or a root node (which contains children nodes).
+/// The NodeType is a union of EvaluatorNode and CompositeNode.
+union NodeType {
+    EvaluatorNode, 
+    CompositeNode
+}
+
+/// Represents a wrapper for NodeType to allow for union vectors in FlatBuffers.
+/// This is necessary because union vectors are not supported directly in all FlatBuffers implementations :(
+table NodeTypeWrapper {
+  node: NodeType;
+}
+
+/// Represents a root node in the policy tree.
+/// It contains a description, a boolean operation (AND, OR, NOT) and a list of child nodes.
+/// The children are wrapped in NodeTypeWrapper to allow for union vectors.
+table CompositeNode {
+  description: string;
+  op: BoolOperation;
+  /// At some point we will switch back to; children: [NodeType]; 
+  /// (union vectors are not supported in GO so we are wrapping the table in a table)
+  children: [NodeTypeWrapper];
+}
+
+/// Represents a leaf node in the policy tree.
+/// It contains a description and an evaluator.
+table EvaluatorNode {
+  /// The description is used for debugging purposes.
+ description: string;
+  /// The evaluator is a union of different evaluator types (String, Numeric, etc.).
+ eval: EvaluatorType;
+}

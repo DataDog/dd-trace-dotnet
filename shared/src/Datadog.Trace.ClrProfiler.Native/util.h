@@ -83,6 +83,24 @@ static fs::path GetCurrentModuleFolderPath()
     return {};
 }
 
+static fs::path GetDatadogProgramDataFolderPath()
+{
+#ifdef _WIN32
+    fs::path program_data_path = shared::GetEnvironmentValue(WStr("PROGRAMDATA"));
+
+    if (program_data_path.empty())
+    {
+        program_data_path = WStr(R"(C:\ProgramData)");
+    }
+
+    // on Windows WSTRING == wstring
+    return program_data_path / "Datadog";
+#else
+    // Is it the correct path on linux?
+    return shared::ToWSTRING("/var/log/datadog/dotnet/");
+#endif
+}
+
 static ::shared::WSTRING GetDatadogLogsDirectoryPath()
 {
     ::shared::WSTRING directory = shared::GetEnvironmentValue(cfg_log_directory_env);

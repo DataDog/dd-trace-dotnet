@@ -141,6 +141,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -162,7 +163,7 @@
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(OutDirFullPath)\dd-policy-engine\dist\include;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
@@ -172,8 +173,18 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(OutDirFullPath)\dd-policy-engine\dist\lib\policies.lib;$(OutDirFullPath)\dd-policy-engine\dist\lib\flatccrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>set POLICY_BUILD_DIR="$(OutDirFullPath)\dd-policy-engine"
+rmdir /s /q %POLICY_BUILD_DIR%
+cmake -B %POLICY_BUILD_DIR% -DCMAKE_BUILD_TYPE=Debug -DDD_POLICY_ENABLE_STATIC_CRT=ON -DDD_POLICY_BUILD_TESTS=OFF -DDD_POLICY_BUILD_EXAMPLES=OFF -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" $(ProjectDir)\..\native-lib\dd-policy-engine -A $(Platform)
+cmake --build %POLICY_BUILD_DIR% -j --config Debug
+cmake --install %POLICY_BUILD_DIR% --prefix=%POLICY_BUILD_DIR%\dist --config Debug</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Build dd-policy-engine</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -191,7 +202,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDirFullPath)\dd-policy-engine\dist\include;$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
@@ -203,8 +214,18 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(OutDirFullPath)\dd-policy-engine\dist\lib\policies.lib;$(OutDirFullPath)\dd-policy-engine\dist\lib\flatccrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>set POLICY_BUILD_DIR="$(OutDirFullPath)\dd-policy-engine"
+rmdir /s /q %POLICY_BUILD_DIR%
+cmake -B %POLICY_BUILD_DIR% -DCMAKE_BUILD_TYPE=Release -DDD_POLICY_ENABLE_STATIC_CRT=ON -DDD_POLICY_BUILD_TESTS=OFF -DDD_POLICY_BUILD_EXAMPLES=OFF -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" $(ProjectDir)\..\native-lib\dd-policy-engine -A $(Platform)
+cmake --build %POLICY_BUILD_DIR% -j --config Release
+cmake --install %POLICY_BUILD_DIR% --prefix=%POLICY_BUILD_DIR%\dist --config Release</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Build dd-policy-engine</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -216,7 +237,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>BIT64;AMD64;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SHARED-LIB-INCLUDES);$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDirFullPath)\dd-policy-engine\dist\include;$(SHARED-LIB-INCLUDES);$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
@@ -226,8 +247,18 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(OutDirFullPath)\dd-policy-engine\dist\lib\policies.lib;$(OutDirFullPath)\dd-policy-engine\dist\lib\flatccrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>set POLICY_BUILD_DIR="$(OutDirFullPath)\dd-policy-engine"
+rmdir /s /q %POLICY_BUILD_DIR%
+cmake -B %POLICY_BUILD_DIR% -DCMAKE_BUILD_TYPE=Debug -DDD_POLICY_ENABLE_STATIC_CRT=ON -DDD_POLICY_BUILD_TESTS=OFF -DDD_POLICY_BUILD_EXAMPLES=OFF -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" $(ProjectDir)\..\native-lib\dd-policy-engine -A $(Platform)
+cmake --build %POLICY_BUILD_DIR% -j --config Debug
+cmake --install %POLICY_BUILD_DIR% --prefix=%POLICY_BUILD_DIR%\dist --config Debug</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Build dd-policy-engine</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -243,7 +274,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDirFullPath)\dd-policy-engine\dist\include;$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>BIT64;AMD64;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -255,8 +286,18 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(OutDirFullPath)\dd-policy-engine\dist\lib\flatccrt.lib;$(OutDirFullPath)\dd-policy-engine\dist\lib\policies.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>set POLICY_BUILD_DIR="$(OutDirFullPath)\dd-policy-engine"
+rmdir /s /q %POLICY_BUILD_DIR%
+cmake -B %POLICY_BUILD_DIR% -DCMAKE_BUILD_TYPE=Release -DDD_POLICY_ENABLE_STATIC_CRT=ON -DDD_POLICY_BUILD_TESTS=OFF -DDD_POLICY_BUILD_EXAMPLES=OFF -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" $(ProjectDir)\..\native-lib\dd-policy-engine -A $(Platform)
+cmake --build %POLICY_BUILD_DIR% -j --config Release
+cmake --install %POLICY_BUILD_DIR% --prefix=%POLICY_BUILD_DIR%\dist --config Release</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Build dd-policy-engine</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64' OR '$(Configuration)|$(Platform)'=='Debug|ARM64EC'">
     <ClCompile>

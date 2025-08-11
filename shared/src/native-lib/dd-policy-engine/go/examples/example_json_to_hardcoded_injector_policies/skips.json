@@ -1,0 +1,370 @@
+{ 
+    "policies" : [
+    {
+        "skip": true,
+        "description": "Skip all system directories",
+        "runtime": "all",
+        "conditions": [
+            {
+                "description": "system directory",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "/bin/",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "/sbin/",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "/usr/bin/",
+                        "value_type": "entry_file"
+                    }
+                ]
+            },
+            {
+                "description": "system directory",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "/opt/datadog",
+                        "value_type": "exe_full_path",
+                        "description": "Datadog Agent/Packages Installation Directory (/opt/datadog*)"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "/etc/datadog-agent/",
+                        "value_type": "exe_full_path",
+                        "description": "Datadog Agent configuration directory"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "skip": true,
+        "runtime": "jvm",
+        "conditions": [
+            {
+                "description": "Apache ActiveMQ Artemis",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.activemq",
+                        "value_type": "class"
+                    }
+                ]
+            },
+            {
+                "description": "Apache Cassandra",
+                "values": [
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "org.apache.cassandra.service.CassandraDaemon",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "org.apache.cassandra.transport.Client",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.cassandra.tools",
+                        "value_type": "class"
+                    }
+                ]
+            },
+            {
+                "description": "Apache Hadoop",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.hadoop.mapred",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.hadoop.mapreduce",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.hadoop.hdfs",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "org.apache.hadoop.util.VersionInfo",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.hadoop.record.compiler.generated.Rcc",
+                        "value_type": "class"
+                    }
+                ]
+            },
+            {
+                "description": "Apache HBase",
+                "values": [
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "org.apache.hbase.HBCK2",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.hadoop.hbase",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "org.apache.hadoop.security.alias.CredentialShell",
+                        "value_type": "class"
+                    }
+                ]
+            },
+            {
+                "description": "Apache Netbeans",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.netbeans",
+                        "value_type": "class"
+                    }
+                ]
+            },
+            {
+                "description": "Apache Hive",
+                "values": []
+            },
+            {
+                "description": "Apache Solr",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "solr.solr.home",
+                        "value_type": "class"
+                    }
+                ]
+            },
+            {
+                "description": "Apache ZooKeeper",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.zookeeper.server",
+                        "value_type": "class"
+                    }
+                ]
+            },
+            {
+                "description": "ElasticSearch",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.elasticsearch.launcher.CliToolLauncher",
+                        "value_type": "class"
+                    }
+                ]
+            },
+            {
+                "description": "ElasticSearch",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.elasticsearch.launcher.CliToolLauncher",
+                        "value_type": "class"
+                    }
+                ]
+            },
+            {
+                "description": "Kafka CLI scripts",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.kafka.tools",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "org.apache.zookeeper.ZooKeeperMainWithTlsSupportForKafka",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.kafka.shell",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "kafka.admin",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "kafka.tools",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.kafka.connect",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "org.apache.kafka.trogdor",
+                        "value_type": "class"
+                    }
+                ]
+            },
+            {
+                "description": "Oracle Database JVM Based tools",
+                "values": [
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "oracle.assistants",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "oracle.diagfw.adr.diagsetup",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "oracle.sysman.assistants",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "oracle.ldap.util",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "oracle.net.ca",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "oracle.ops.opsctl",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "oracle.net.trcasst",
+                        "value_type": "class"
+                    },
+                    {
+                        "cmp_strategy": "prefix",
+                        "value": "oracle.ss.tools.trcsess",
+                        "value_type": "class"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "skip": false,
+        "runtime": "python",
+        "conditions": [
+            {
+                "description": "Allowed Python targets from system directories",
+                "values": [
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/gunicorn",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/flask",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/uvicorn",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/django-admin",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/celery",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/scrapy",
+                        "value_type": "entry_file"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "skip": false,
+        "runtime": "ruby",
+        "conditions": [
+            {
+                "description": "Allowed Ruby targets from system directories",
+                "values": [
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/bundle",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/bundler",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/puma",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/unicorn",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/unicorn_rails",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/rainbows",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/thin",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/sidekiq",
+                        "value_type": "entry_file"
+                    },
+                    {
+                        "cmp_strategy": "equals",
+                        "value": "/usr/bin/passenger",
+                        "value_type": "entry_file"
+                    }
+                ]
+            }
+        ]
+    }
+]
+}

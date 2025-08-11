@@ -1,0 +1,25 @@
+include "actions.fbs";
+include "nodes.fbs";
+
+namespace dd.wls;
+
+/// Represents a policy that contains rules and actions.
+/// The rules are represented as a tree structure where each node can be a leaf (with an evaluator) or a root (with child nodes).
+table Policy {
+  /// The policy can have a description for debugging purposes.
+  description: string;
+  /// The rules are represented as a NodeTypeWrapper to allow for union vectors in FlatBuffers. 
+  rules: NodeTypeWrapper; // this is a tree
+  /// The actions are taken post evaluation of the policy.
+  actions: [Action];
+}
+
+/// Represents a collection of policies.
+/// This allows for concatenation of policies from different sources.
+/// The policies are stored in a vector of Policy.
+/// This is also the root type of the FlatBuffer schema!!!
+table Policies {
+  policies: [Policy];
+}
+
+root_type Policies;

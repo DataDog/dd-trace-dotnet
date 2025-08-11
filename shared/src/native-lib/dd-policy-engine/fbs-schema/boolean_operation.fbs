@@ -1,0 +1,10 @@
+
+namespace dd.wls;
+
+/// These are the supported boolean operators when evaluating multiple conditions
+enum BoolOperation : byte {
+  BOOL_AND,
+  BOOL_NOT,
+  BOOL_OR,
+  BOOL_COUNT
+}
