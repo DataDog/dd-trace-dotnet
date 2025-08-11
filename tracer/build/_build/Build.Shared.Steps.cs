@@ -4,6 +4,7 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using System.Linq;
 using System.IO;
+using System.Threading.Tasks;
 using DiffMatchPatch;
 using NativeValidation;
 using Nuke.Common.Tooling;
@@ -32,8 +33,11 @@ partial class Build
     Target CompileNativeLoaderWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
-        .Executes(() =>
+        .Executes(async () =>
         {
+            // This will clean and download every time, we likely want to add
+            await DownloadWorkloadSelection();
+
             // If we're building for x64, build for x86 too
             var platforms = ArchitecturesForPlatformForTracer;
 
@@ -47,6 +51,46 @@ partial class Build
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
+
+            async Task DownloadWorkloadSelection()
+            {
+                var output = RootDirectory / "shared" / "src" / "native-lib";
+                var expectedSha = "866bfaba9ec96538eddf03106b1d59ae42c1b548";
+
+                if (File.Exists(output / "dd-policy-engine" / expectedSha))
+                {
+                    Logger.Information("Workload selection for SHA {SHA} already downloaded", expectedSha);
+                    return;
+                }
+
+                // Download the lib from Azure for now, this will very likely change this in the future, but it'll do for now.
+                var url = $"https://apmdotnetci.blob.core.windows.net/apm-datadog-win-ssi-policy-engine/{expectedSha}/dd-policy-engine-v0.0.2.zip";
+                const string expectedHash = "0815E644514DADA4566861CA4A4393C759F05A54A40A677CA9C04B8401486ACB4AF72943B471389996EAC6933B2279849A45A18A21B50F512F0DFD45FEB4F486";
+
+                var tempFile = await DownloadFile(url);
+                var actualHash = GetSha512Hash(tempFile);
+                if (!string.Equals(expectedHash, actualHash, StringComparison.Ordinal))
+                {
+                    throw new Exception($"Downloaded file did not have expected hash. Expected hash {expectedHash}, actual hash {actualHash}");
+                }
+
+                Logger.Information("Hash verified: '{Hash}'", expectedHash);
+
+                // Unzip to expected location
+                EnsureExistingDirectory(output);
+                foreach (var p in Directory.GetFiles(output).Where(x => Path.GetFileName(x) != ".gitignore"))
+                {
+                    DeleteFile(p);
+                }
+
+                var policyDir = Path.Combine(output, "dd-policy-engine");
+                if (Directory.Exists(policyDir))
+                {
+                    DeleteDirectory(policyDir);
+                }
+
+                CompressionTasks.UncompressZip(tempFile, output);
+            }
         });
 
     Target CompileNativeLoaderTestsWindows => _ => _
