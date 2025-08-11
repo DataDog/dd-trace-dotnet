@@ -47,6 +47,7 @@
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_INTERNAL_USE_BACKTRACE2": "1",
         "DD_INTERNAL_CPU_PROFILER_TYPE": "ManualCpuTime",
         "DD_TRACE_ENABLED" : "0"
       }

@@ -72,6 +72,30 @@
 
 #include <cmath>
 
+void LogServiceStart(bool success, const char* name )
+{
+    if (success)
+    {
+        Log::Info(name, " started successfully.");
+    }
+    else
+    {
+        Log::Info(name, " failed to start. This service might have been started earlier.");
+    }
+}
+
+void LogServiceStop(bool success, const char* name )
+{
+    if (success)
+    {
+        Log::Info(name, " stopped successfully.");
+    }
+    else
+    {
+        Log::Info(name, " failed to stopped. This service might have been stopped earlier.");
+    }
+}
+
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
     return _pClrLifetime.get();
@@ -716,14 +740,7 @@ bool CorProfilerCallback::StartServices()
     {
         auto name = service->GetName();
         success = service->Start();
-        if (success)
-        {
-            Log::Info(name, " started successfully.");
-        }
-        else
-        {
-            Log::Info(name, " failed to start. This service might have been started earlier.");
-        }
+        LogServiceStart(success, name);
         result &= success;
     }
 
@@ -734,7 +751,8 @@ bool CorProfilerCallback::StartServices()
     // otherwise we might crash.
     if (_pCpuProfiler != nullptr)
     {
-        _pCpuProfiler->Start();
+        auto success = _pCpuProfiler->Start();
+        LogServiceStart(success, _pCpuProfiler->GetName());
     }
 #endif
 
@@ -772,14 +790,7 @@ bool CorProfilerCallback::StopServices()
         const auto& service = _services[i - 1];
         const auto* name = service->GetName();
         success = service->Stop();
-        if (success)
-        {
-            Log::Info(name, " stopped successfully.");
-        }
-        else
-        {
-            Log::Info(name, " failed to stop. This service might have been stopped earlier.");
-        }
+        LogServiceStop(success, name);
         result &= success;
     }
 
@@ -1531,6 +1542,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
         // Otherwise, we might crash the application.
         // Reason: one thread could be executing the signal handler and accessing some field
         auto stopped = _pCpuProfiler->Stop();
+        LogServiceStop(stopped, _pCpuProfiler->GetName());
         if (stopped)
         {
             _pCpuProfiler = nullptr;

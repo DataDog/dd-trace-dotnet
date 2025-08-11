@@ -102,7 +102,7 @@ bool ProfilerSignalManager::IgnoreSignal() {
     int32_t result = sigaction(_signalToSend, &sampleAction, nullptr);
     if (result != 0)
     {
-        Log::Error("ProfilerSignalManager::SetupSignalHandler: Failed mark ", strsignal(_signalToSend), " as ignored. Reason: ",
+        Log::Error("ProfilerSignalManager::IgnoreSignal: Failed mark ", strsignal(_signalToSend), " as ignored. Reason: ",
                    strerror(errno), ".");
         return false;
     }
