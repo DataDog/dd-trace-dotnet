@@ -38,12 +38,9 @@ namespace CodeGenerators
         public class IntegrationInfo
         {
             public string IntegrationName { get; set; }
-            public string DisplayName { get; set; }
-            public string NuGetPackage { get; set; }
-            public string AssemblyName { get; set; }
+            public string PackageName { get; set; }
             public string MinVersion { get; set; }
             public string MaxVersion { get; set; }
-            public bool IsBuiltIn { get; set; }
             public bool IsNetCore { get; set; }
             public bool IsNetFramework { get; set; }
         }
@@ -56,62 +53,6 @@ namespace CodeGenerators
             "ServiceRemoting",
             "OpenTelemetry",
             "AssemblyResolve"
-        };
-
-        // User-friendly display names for integrations
-        private static readonly Dictionary<string, string> IntegrationDisplayNames = new()
-        {
-            ["AdoNet"] = "ADO.NET",
-            ["Aerospike"] = "Aerospike",
-            ["AspNet"] = "ASP.NET",
-            ["AspNetCore"] = "ASP.NET Core",
-            ["AspNetMvc"] = "ASP.NET MVC",
-            ["AspNetWebApi2"] = "ASP.NET Web API",
-            ["AwsDynamoDb"] = "AWS DynamoDB",
-            ["AwsKinesis"] = "AWS Kinesis",
-            ["AwsLambda"] = "AWS Lambda",
-            ["AwsSns"] = "AWS SNS",
-            ["AwsSqs"] = "AWS SQS",
-            ["AzureFunctions"] = "Azure Functions",
-            ["CosmosDb"] = "Azure Cosmos DB",
-            ["Couchbase"] = "Couchbase",
-            ["DatadogTraceManual"] = "Manual Instrumentation",
-            ["DiagnosticSource"] = "DiagnosticSource (Activity)",
-            ["Elasticsearch"] = "Elasticsearch",
-            ["GraphQL"] = "GraphQL .NET",
-            ["Grpc"] = "gRPC",
-            ["HotChocolate"] = "HotChocolate (GraphQL)",
-            ["HttpMessageHandler"] = "HttpClient",
-            ["ILogger"] = "ILogger",
-            ["Kafka"] = "Kafka (Confluent)",
-            ["MassTransit"] = "MassTransit",
-            ["MongoDB"] = "MongoDB",
-            ["Msmq"] = "MSMQ",
-            ["MySql"] = "MySQL (MySql.Data)",
-            ["MySqlData"] = "MySQL (MySqlConnector)",
-            ["NLog"] = "NLog",
-            ["Npgsql"] = "PostgreSQL (Npgsql)",
-            ["NServiceBus"] = "NServiceBus",
-            ["NUnit"] = "NUnit",
-            ["Oracle"] = "Oracle",
-            ["Owin"] = "OWIN",
-            ["Process"] = "Process (Command Injection)",
-            ["RabbitMQ"] = "RabbitMQ",
-            ["Registry"] = "Windows Registry (LFI)",
-            ["Remoting"] = ".NET Remoting",
-            ["Serilog"] = "Serilog",
-            ["ServiceStackRedis"] = "Redis (ServiceStack)",
-            ["StackExchangeRedis"] = "Redis (StackExchange)",
-            ["Sqlite"] = "SQLite",
-            ["SqlClient"] = "SQL Server",
-            ["Ssrf"] = "SSRF Protection",
-            ["StackTraceLeak"] = "StackTrace Leak Protection",
-            ["TestPlatformAssemblyResolver"] = "Test Platform Assembly Resolver",
-            ["Wcf"] = "WCF",
-            ["WebRequest"] = "WebClient / WebRequest",
-            ["Xss"] = "XSS Protection",
-            ["XUnit"] = "xUnit",
-            ["MsTestV2"] = "MSTest"
         };
 
         // not 100% sure on these TBH would have to check
@@ -131,26 +72,6 @@ namespace CodeGenerators
             "Owin",
             "Remoting",
             "Wcf"
-        };
-
-        // runtime stuff that _usually_ don't come from NuGet packages, but they could
-        private static readonly HashSet<string> BuiltInAssemblies = new()
-        {
-            "System.Web",
-            "System.Web.Mvc",
-            "System.Web.Http",
-            "System.Messaging",
-            "System.Runtime.Remoting",
-            "System.ServiceModel",
-            "System.Diagnostics.Process",
-            "System.Data",
-            "System.Data.Common",
-            "System.Data.SqlClient",
-            "System.Net.Http",
-            "System.Net.Requests",
-            "Microsoft.Owin",
-            "Owin",
-            "netstandard"
         };
 
         /// <summary>
@@ -181,19 +102,19 @@ namespace CodeGenerators
         {
             // Generate .NET Core/.NET CSV
             GenerateCsv(
-                integrations.Where(i => i.IsNetCore).OrderBy(i => i.DisplayName).ThenBy(i => i.NuGetPackage),
+                integrations.Where(i => i.IsNetCore).OrderBy(i => i.IntegrationName).ThenBy(i => i.PackageName),
                 outputDirectory / "supported_integrations_netcore.csv",
                 ".NET Core / .NET");
 
             // Generate .NET Framework CSV
             GenerateCsv(
-                integrations.Where(i => i.IsNetFramework).OrderBy(i => i.DisplayName).ThenBy(i => i.NuGetPackage),
+                integrations.Where(i => i.IsNetFramework).OrderBy(i => i.IntegrationName).ThenBy(i => i.PackageName),
                 outputDirectory / "supported_integrations_netfx.csv",
                 ".NET Framework");
 
             // Generate combined CSV
             GenerateCsv(
-                integrations.OrderBy(i => i.DisplayName).ThenBy(i => i.NuGetPackage),
+                integrations.OrderBy(i => i.IntegrationName).ThenBy(i => i.PackageName),
                 outputDirectory / "supported_integrations.csv",
                 "All Frameworks");
         }
@@ -207,19 +128,17 @@ namespace CodeGenerators
                 if (IsHelperIntegration(version.IntegrationName))
                     continue;
 
-                var displayName = GetDisplayName(version.IntegrationName);
-
                 if (version.Packages != null && version.Packages.Any())
                 {
                     foreach (var package in version.Packages)
                     {
-                        var info = CreateIntegrationInfo(version, package, displayName);
+                        var info = CreateIntegrationInfo(version, package);
                         integrations.Add(info);
                     }
                 }
                 else
                 {
-                    var info = CreateIntegrationInfoFromAssembly(version, displayName);
+                    var info = CreateIntegrationInfoFromAssembly(version);
                     integrations.Add(info);
                 }
             }
@@ -227,35 +146,34 @@ namespace CodeGenerators
             return integrations;
         }
 
-        private static IntegrationInfo CreateIntegrationInfo(SupportedVersion version, Package package, string displayName)
+        private static IntegrationInfo CreateIntegrationInfo(SupportedVersion version, Package package)
         {
+            // For packages with NuGet packages, use minVersionTestedInclusive as min
+            // and the floating major version of maxVersionTestedInclusive as max
+            var minVersion = package.MinVersionTestedInclusive ?? package.MinVersionSupportedInclusive ?? version.MinAssemblyVersionInclusive;
+            var maxVersion = package.MaxVersionTestedInclusive ?? package.MaxVersionSupportedInclusive ?? version.MaxAssemblyVersionInclusive;
+
             return new IntegrationInfo
             {
                 IntegrationName = version.IntegrationName,
-                DisplayName = displayName,
-                NuGetPackage = package.Name,
-                AssemblyName = version.AssemblyName,
-                MinVersion = GetVersionString(package.MinVersionSupportedInclusive ?? version.MinAssemblyVersionInclusive),
-                MaxVersion = GetVersionString(package.MaxVersionSupportedInclusive ?? version.MaxAssemblyVersionInclusive),
-                IsBuiltIn = IsBuiltInPackage(package.Name),
+                PackageName = package.Name,
+                MinVersion = minVersion,
+                MaxVersion = GetFloatingMajorVersion(maxVersion),  // Use floating version for max
                 IsNetCore = !NetFrameworkOnlyIntegrations.Contains(version.IntegrationName),
                 IsNetFramework = !NetCoreOnlyIntegrations.Contains(version.IntegrationName)
             };
         }
 
-        private static IntegrationInfo CreateIntegrationInfoFromAssembly(SupportedVersion version, string displayName)
+        private static IntegrationInfo CreateIntegrationInfoFromAssembly(SupportedVersion version)
         {
-            var packageName = GetPackageNameForAssembly(version.IntegrationName, version.AssemblyName);
-
+            // For assemblies without NuGet packages, use minAssemblyVersionInclusive as min
+            // and the floating version of maxAssemblyVersionInclusive as max
             return new IntegrationInfo
             {
                 IntegrationName = version.IntegrationName,
-                DisplayName = displayName,
-                NuGetPackage = packageName,
-                AssemblyName = version.AssemblyName,
-                MinVersion = GetVersionString(version.MinAssemblyVersionInclusive),
-                MaxVersion = GetVersionString(version.MaxAssemblyVersionInclusive),
-                IsBuiltIn = IsBuiltInPackage(packageName),
+                PackageName = version.AssemblyName,  // Use assembly name as package name
+                MinVersion = version.MinAssemblyVersionInclusive,
+                MaxVersion = GetFloatingMajorVersion(version.MaxAssemblyVersionInclusive),  // Use floating version for max
                 IsNetCore = !NetFrameworkOnlyIntegrations.Contains(version.IntegrationName),
                 IsNetFramework = !NetCoreOnlyIntegrations.Contains(version.IntegrationName)
             };
@@ -266,40 +184,17 @@ namespace CodeGenerators
             return HelperIntegrations.Contains(integrationName);
         }
 
-        private static bool IsBuiltInPackage(string packageName)
-        {
-            return BuiltInAssemblies.Contains(packageName) ||
-                   packageName.StartsWith("System.") ||
-                   packageName == "netstandard";
-        }
-
-        private static string GetDisplayName(string integrationName)
-        {
-            return IntegrationDisplayNames.TryGetValue(integrationName, out var displayName)
-                ? displayName
-                : integrationName;
-        }
-
-        private static string GetPackageNameForAssembly(string integrationName, string assemblyName)
-        {
-            // For assemblies without NuGet packages, return the assembly name
-            // The built-in status will be determined by IsBuiltInPackage
-            return assemblyName;
-        }
-
-        private static string GetVersionString(string version)
+        private static string GetFloatingMajorVersion(string version)
         {
             if (string.IsNullOrEmpty(version))
                 return "N/A";
 
-            // Handle versions like "4.65535.65535" by showing just major version
-            if (version.Contains("65535"))
+            // Parse the version string to get the major version
+            var parts = version.Split('.');
+            if (parts.Length > 0)
             {
-                var parts = version.Split('.');
-                if (parts.Length > 0)
-                {
-                    return parts[0] + ".x";
-                }
+                // Return major version with .x suffix
+                return parts[0] + ".x";
             }
 
             return version;
@@ -308,11 +203,12 @@ namespace CodeGenerators
         private static void GenerateCsv(IEnumerable<IntegrationInfo> integrations, AbsolutePath outputPath, string framework)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Integration Name,NuGet Package,Min Version,Max Version");
+            // Simple 4-column CSV format
+            sb.AppendLine("integration,package,min_version,max_version");
 
             foreach (var integration in integrations)
             {
-                sb.AppendLine($"\"{integration.IntegrationName}\",\"{integration.NuGetPackage}\",\"{integration.MinVersion}\",\"{integration.MaxVersion}\"");
+                sb.AppendLine($"{integration.IntegrationName},{integration.PackageName},{integration.MinVersion},{integration.MaxVersion}");
             }
 
             EnsureExistingDirectory(outputPath.Parent);
