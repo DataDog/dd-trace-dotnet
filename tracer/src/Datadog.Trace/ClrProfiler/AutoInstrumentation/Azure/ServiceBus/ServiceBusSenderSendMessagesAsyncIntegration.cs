@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using Datadog.Trace;
@@ -42,6 +43,37 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref IEnumerable messages, ref CancellationToken cancellationToken)
     {
         Log.Information("SendMessagesAsync running");
+
+        // Log the full call stack to understand who's calling this
+        var stackTrace = new StackTrace(true);
+        var frames = stackTrace.GetFrames();
+
+        Log.Information("=== FULL CALL STACK FOR ReceiveMessagesAsync ===");
+        if (frames != null)
+        {
+            for (int i = 0; i < frames.Length; i++)
+            {
+                var frame = frames[i];
+                var method = frame?.GetMethod();
+                var fileName = frame?.GetFileName();
+                var lineNumber = frame?.GetFileLineNumber() ?? 0;
+
+                if (method != null)
+                {
+                    var declaringType = method.DeclaringType?.FullName ?? "Unknown";
+                    var methodName = method.Name;
+                    var fullFrameInfo = $"  [{i}] {declaringType}.{methodName}";
+                    if (!string.IsNullOrEmpty(fileName))
+                    {
+                        fullFrameInfo += $" at {Path.GetFileName(fileName)}:{lineNumber}";
+                    }
+
+                    Log.Information("{FrameInfo}", fullFrameInfo);
+                }
+            }
+        }
+
+        Log.Information("=== END CALL STACK ===");
 
         var tracer = Tracer.Instance;
         var scope = tracer.StartActiveInternal(OperationName);
