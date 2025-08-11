@@ -80,6 +80,12 @@ public class QuartzTests : TracingIntegrationTest
     private static string GetSuffix(string packageVersion)
     {
         if (!string.IsNullOrEmpty(packageVersion)
+         && new Version(packageVersion) >= new Version("3.15.0") && new Version(packageVersion) < new Version("4.0.0"))
+        {
+            return "V315plus";
+        }
+
+        if (!string.IsNullOrEmpty(packageVersion)
          && new Version(packageVersion) >= new Version("3.1.0") && new Version(packageVersion) < new Version("4.0.0"))
         {
             return "V3";
