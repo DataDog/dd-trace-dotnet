@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -83,6 +84,7 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
 
             logDir = await RunDotnet("restore");
@@ -115,18 +117,8 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
-
-            // Force the project to target .NET 8 instead of whatever the SDK defaults to
-            var projectFile = Path.Combine(workingDir, $"{excludedProcess}.csproj");
-            var projectContent = File.ReadAllText(projectFile);
-
-            // Replace any target framework with net8.0
-            var updatedContent = System.Text.RegularExpressions.Regex.Replace(
-                projectContent,
-                @"<TargetFramework>net\d+\.\d+</TargetFramework>",
-                $"<TargetFramework>{EnvironmentHelper.GetTargetFramework()}</TargetFramework>");
-            File.WriteAllText(projectFile, updatedContent);
 
             var programCs = GetProgramCSThatMakesSpans();
 
@@ -164,18 +156,8 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
-
-            // Force the project to target .NET 8 instead of whatever the SDK defaults to
-            var projectFile = Path.Combine(workingDir, $"{allowedProcess}.csproj");
-            var projectContent = File.ReadAllText(projectFile);
-
-            // Replace any target framework with net8.0
-            var updatedContent = System.Text.RegularExpressions.Regex.Replace(
-                projectContent,
-                @"<TargetFramework>net\d+\.\d+</TargetFramework>",
-                $"<TargetFramework>{EnvironmentHelper.GetTargetFramework()}</TargetFramework>");
-            File.WriteAllText(projectFile, updatedContent);
 
             var programCs = GetProgramCSThatMakesSpans();
 
@@ -779,6 +761,28 @@ namespace Foo
 
             var loggingDisabled = isSsi && EnvironmentTools.IsWindows() && !bufferingDisabled;
             return loggingDisabled;
+        }
+
+        private void FixTfm(string workingDir)
+        {
+            // This is a hack because for _some_ reason, we can't set the -f flag in the Linux CI.
+            // Force the project to target .NET 8 instead of whatever the SDK defaults to
+            foreach (var projectFile in Directory.GetFiles(workingDir, "*.csproj"))
+            {
+                var projectContent = File.ReadAllText(projectFile);
+
+                // Replace any target framework with the updated version
+                // and add a langversion update to ensure we still compile
+                var replacement = $"""
+                                   <TargetFramework>{EnvironmentHelper.GetTargetFramework()}</TargetFramework>
+                                   <LangVersion>latest</LangVersion>
+                                   """;
+                var updatedContent = Regex.Replace(
+                    projectContent,
+                    @"<TargetFramework>.+</TargetFramework>",
+                    replacement);
+                File.WriteAllText(projectFile, updatedContent);
+            }
         }
 
         public class TelemetryReporterFixture : IDisposable
