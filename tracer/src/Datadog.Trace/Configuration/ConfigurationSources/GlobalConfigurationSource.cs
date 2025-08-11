@@ -10,7 +10,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Telemetry;
 
@@ -35,12 +34,14 @@ internal class GlobalConfigurationSource
                 return _instance;
             }
 
-            var result = CreateDefaultConfigurationSource();
-            _instance = result.ConfigurationSource;
+            CreationResult = CreateDefaultConfigurationSource();
+            _instance = CreationResult.ConfigurationSource;
 
             return _instance;
         }
     }
+
+    internal static GlobalConfigurationSourceResult CreationResult { get; private set; }
 
     /// <summary>
     /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,

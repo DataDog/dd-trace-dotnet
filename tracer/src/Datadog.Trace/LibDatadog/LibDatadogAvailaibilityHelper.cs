@@ -25,7 +25,7 @@ internal static class LibDatadogAvailaibilityHelper
     private static readonly Lazy<LibDatadogAvailableResult> LibDatadogAvailable = new(() =>
     {
         var isServerless = EnvironmentHelpersNoLogging.IsServerlessEnvironment(out var possibleException);
-        return new(!isServerless && NativeMethods.IsProfilerAttached(), possibleException);
+        return new(!isServerless && EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe(), possibleException);
     });
 
     public static LibDatadogAvailableResult IsLibDatadogAvailable => LibDatadogAvailable.Value;

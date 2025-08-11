@@ -47,7 +47,7 @@ internal struct CString : IDisposable
         }
     }
 
-    public string ToUtf8String() => NativeStringHelper.GetString(Ptr, Length);
+    public unsafe string ToUtf8String() => StringEncoding.UTF8.GetString((byte*)Ptr, (int)Length);
 
     public void Dispose()
     {

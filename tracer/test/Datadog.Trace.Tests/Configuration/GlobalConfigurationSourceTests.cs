@@ -33,7 +33,12 @@ public class GlobalConfigurationSourceTests
             isLibdatadogAvailable: true);
         result.Result.Should().Be(Result.Success);
         var sources = result.ConfigurationSource.ToList();
+#if NETFRAMEWORK
         sources.Count.Should().Be(4);
+        sources[3].Should().BeOfType<NameValueConfigurationSource>();
+#else
+        sources.Count.Should().Be(3);
+#endif
         var fleetConfigSource = sources[0].Should().BeOfType<HandsOffConfigurationSource>().Subject;
         fleetConfigSource.Origin.Should().Be(ConfigurationOrigins.FleetStableConfig);
         fleetConfigSource.GetString("KEY1", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("fleet_file_env");
@@ -46,6 +51,5 @@ public class GlobalConfigurationSourceTests
         localConfigSource.GetString("KEY5", NullConfigurationTelemetry.Instance, null, false).IsPresent.Should().BeFalse();
         localConfigSource.GetString("KEY4", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("true");
         localConfigSource.GetBool("KEY2", NullConfigurationTelemetry.Instance, null).Result.Should().Be(false);
-        sources[3].Should().BeOfType<NameValueConfigurationSource>();
     }
 }

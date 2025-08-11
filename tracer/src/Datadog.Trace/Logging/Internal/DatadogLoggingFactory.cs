@@ -166,7 +166,7 @@ internal static class DatadogLoggingFactory
 
     // Internal for testing
     internal static string GetLogDirectory(IConfigurationTelemetry telemetry)
-        => GetLogDirectory(GlobalConfigurationSource.CreateDefaultConfigurationSource().ConfigurationSource, telemetry);
+        => GetLogDirectory(GlobalConfigurationSource.Instance, telemetry);
 
     private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {

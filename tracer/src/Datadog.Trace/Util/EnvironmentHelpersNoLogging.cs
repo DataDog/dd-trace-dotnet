@@ -24,12 +24,12 @@ internal static class EnvironmentHelpersNoLogging
         Exception? firstException = null;
 
         var isServerless = CheckEnvVar(LambdaMetadata.FunctionNameEnvVar, ref firstException)
-                         || (CheckEnvVar(ConfigurationKeys.AzureAppService.SiteNameKey, ref firstException)
-                          && !CheckEnvVar(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, ref firstException))
-                         || (CheckEnvVar(ConfigurationKeys.GCPFunction.FunctionNameKey, ref firstException)
-                          && CheckEnvVar(ConfigurationKeys.GCPFunction.FunctionTargetKey, ref firstException))
-                         || (CheckEnvVar(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, ref firstException)
-                          && CheckEnvVar(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, ref firstException));
+                        || (CheckEnvVar(ConfigurationKeys.AzureAppService.SiteNameKey, ref firstException)
+                         && !CheckEnvVar(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, ref firstException))
+                        || (CheckEnvVar(ConfigurationKeys.GCPFunction.FunctionNameKey, ref firstException)
+                         && CheckEnvVar(ConfigurationKeys.GCPFunction.FunctionTargetKey, ref firstException))
+                        || (CheckEnvVar(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, ref firstException)
+                         && CheckEnvVar(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, ref firstException));
 
         exceptionInReading = firstException;
         return isServerless;
@@ -47,6 +47,18 @@ internal static class EnvironmentHelpersNoLogging
                 storedException ??= ex;
                 return false;
             }
+        }
+    }
+
+    public static bool IsClrProfilerAttachedSafe()
+    {
+        try
+        {
+            return NativeMethods.IsProfilerAttached();
+        }
+        catch (DllNotFoundException)
+        {
+            return false;
         }
     }
 }
