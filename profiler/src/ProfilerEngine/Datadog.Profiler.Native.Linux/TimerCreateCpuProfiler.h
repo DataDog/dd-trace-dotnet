@@ -42,7 +42,7 @@ public:
 
 private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
-    static TimerCreateCpuProfiler* Instance;
+    static std::atomic<TimerCreateCpuProfiler*> Instance;
 
     bool CanCollect(void* context);
     bool Collect(void* ucontext);

@@ -17,7 +17,7 @@
 #include <ucontext.h>
 #include <unistd.h>
 
-TimerCreateCpuProfiler* TimerCreateCpuProfiler::Instance = nullptr;
+std::atomic<TimerCreateCpuProfiler*> TimerCreateCpuProfiler::Instance = nullptr;
 
 TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IConfiguration* pConfiguration,
@@ -115,7 +115,7 @@ bool TimerCreateCpuProfiler::StopImpl()
         Log::Info("Waiting for all threads exiting the signal handler (#threads ", _nbThreadsInSignalHandler, ")");
     
         // TODO: for now we sleep.
-        std::this_thread::sleep_for(1s);
+        std::this_thread::sleep_for(500ms);
         if (_nbThreadsInSignalHandler != 0)
         {
             Log::Warn("There are threads that are still executing the signal handler: ", _nbThreadsInSignalHandler);
@@ -129,7 +129,7 @@ bool TimerCreateCpuProfiler::StopImpl()
 
 bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext)
 {
-    auto instance = Instance;
+    auto instance = Instance.load();
     if (instance == nullptr)
     {
         return false;
