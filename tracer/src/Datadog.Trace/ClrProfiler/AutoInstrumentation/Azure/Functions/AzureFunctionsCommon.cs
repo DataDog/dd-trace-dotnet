@@ -563,7 +563,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     Log.Information("UserPropertiesArray is a JSON string: {UserPropertiesArrayJson}", userPropertiesArrayJson);
 
-                    var userPropertiesArray = JsonConvert.DeserializeObject<string[]>(userPropertiesArrayJson);
+                    // The UserPropertiesArray contains an array of objects, not an array of strings
+                    var userPropertiesArray = JsonConvert.DeserializeObject<Dictionary<string, object>[]>(userPropertiesArrayJson);
 
                     if (userPropertiesArray != null)
                     {
@@ -571,10 +572,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                         for (int i = 0; i < userPropertiesArray.Length; i++)
                         {
-                            var userPropertiesJson = userPropertiesArray[i];
-                            Log.Information("Processing UserPropertiesArray item {Index}: {Item}", (object)i, userPropertiesJson);
+                            var userPropertiesDict = userPropertiesArray[i];
+                            Log.Information("Processing UserPropertiesArray item {Index}: {ItemKeys}", (object)i, string.Join(", ", userPropertiesDict.Keys));
 
-                            var extractedContext = ExtractContextFromUserProperties(userPropertiesJson);
+                            // Create a headers collection adapter for context extraction
+                            var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
+                            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+
                             if (extractedContext.SpanContext != null)
                             {
                                 spanLinks.Add(new SpanLink(extractedContext.SpanContext));
@@ -592,21 +596,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                     else
                     {
-                        Log.Information("Failed to deserialize UserPropertiesArray JSON to string array");
+                        Log.Information("Failed to deserialize UserPropertiesArray JSON to object array");
                     }
                 }
 
                 // Could also handle direct array objects if they come in that format
-                else if (userPropertiesArrayObj is object[] directArray)
+                else if (userPropertiesArrayObj is Dictionary<string, object>[] directDictArray)
                 {
-                    Log.Information("UserPropertiesArray is a direct object array with {Count} items", (object)directArray.Length);
+                    Log.Information("UserPropertiesArray is a direct Dictionary array with {Count} items", (object)directDictArray.Length);
 
-                    for (int i = 0; i < directArray.Length; i++)
+                    for (int i = 0; i < directDictArray.Length; i++)
                     {
-                        var item = directArray[i];
-                        Log.Information("Processing UserPropertiesArray direct item {Index}: {Item}", (object)i, item?.GetType().FullName ?? "null");
+                        var userPropertiesDict = directDictArray[i];
+                        Log.Information("Processing UserPropertiesArray direct item {Index}: {ItemKeys}", (object)i, string.Join(", ", userPropertiesDict.Keys));
 
-                        var extractedContext = ExtractContextFromUserProperties(item);
+                        // Create a headers collection adapter for context extraction
+                        var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
+                        var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+
                         if (extractedContext.SpanContext != null)
                         {
                             spanLinks.Add(new SpanLink(extractedContext.SpanContext));
@@ -619,6 +626,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         else
                         {
                             Log.Information("No span context extracted from UserPropertiesArray direct item {Index}", (object)i);
+                        }
+                    }
+                }
+                else if (userPropertiesArrayObj is object[] directArray)
+                {
+                    Log.Information("UserPropertiesArray is a generic object array with {Count} items", (object)directArray.Length);
+
+                    for (int i = 0; i < directArray.Length; i++)
+                    {
+                        var item = directArray[i];
+                        Log.Information("Processing UserPropertiesArray generic item {Index}: {Item}", (object)i, item?.GetType().FullName ?? "null");
+
+                        // Try to convert the object to a dictionary if possible
+                        if (item is Dictionary<string, object> itemDict)
+                        {
+                            var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(itemDict);
+                            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+
+                            if (extractedContext.SpanContext != null)
+                            {
+                                spanLinks.Add(new SpanLink(extractedContext.SpanContext));
+                                Log.Information(
+                                    "Added span link from UserPropertiesArray generic item {Index}: TraceId={TraceId}, SpanId={SpanId}",
+                                    (object)i,
+                                    extractedContext.SpanContext.TraceId128.Lower,
+                                    extractedContext.SpanContext.SpanId);
+                            }
+                            else
+                            {
+                                Log.Information("No span context extracted from UserPropertiesArray generic item {Index}", (object)i);
+                            }
+                        }
+                        else
+                        {
+                            Log.Information("UserPropertiesArray generic item {Index} is not a Dictionary<string, object>", (object)i);
                         }
                     }
                 }
