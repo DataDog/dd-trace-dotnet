@@ -392,7 +392,6 @@ namespace Datadog.Trace.Debugger.Symbols
 
             if (await WaitForEnablementAsync().ConfigureAwait(false) == false)
             {
-                Log.Information("This can happen when the service is shut down");
                 return;
             }
 
