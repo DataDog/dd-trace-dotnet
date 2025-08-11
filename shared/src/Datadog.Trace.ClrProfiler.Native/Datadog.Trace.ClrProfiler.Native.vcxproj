@@ -216,7 +216,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>BIT64;AMD64;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SHARED-LIB-INCLUDES);$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\workspace\flatcc\include;..\..\..\shared\src\native-lib\libpolicy\include;$(SHARED-LIB-INCLUDES);$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
@@ -226,7 +226,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(MSBuildProjectDirectory)\..\native-lib\libpolicy\lib\dd_libpolicy-cpp.lib;C:\workspace\flatcc\lib\Release\flatcc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
