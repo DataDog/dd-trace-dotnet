@@ -31,7 +31,7 @@ public static class MetricHelper
                              "ci.stage:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_STAGEDISPLAYNAME"))}}",
                              "ci.job:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_JOBDISPLAYNAME"))}}",
                              "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
-                             "error_reason: {{SanitizeTagValue(errorReason)}}"
+                             "error_reason:{{SanitizeTagValue(errorReason)}}"
                          """;
 
             return $$"""
