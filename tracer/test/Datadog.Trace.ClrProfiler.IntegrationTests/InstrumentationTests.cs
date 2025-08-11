@@ -126,6 +126,7 @@ namespace Foo
                 projectContent,
                 @"<TargetFramework>net\d+\.\d+</TargetFramework>",
                 $"<TargetFramework>{EnvironmentHelper.GetTargetFramework()}</TargetFramework>");
+            File.WriteAllText(projectFile, updatedContent);
 
             var programCs = GetProgramCSThatMakesSpans();
 
@@ -174,6 +175,7 @@ namespace Foo
                 projectContent,
                 @"<TargetFramework>net\d+\.\d+</TargetFramework>",
                 $"<TargetFramework>{EnvironmentHelper.GetTargetFramework()}</TargetFramework>");
+            File.WriteAllText(projectFile, updatedContent);
 
             var programCs = GetProgramCSThatMakesSpans();
 
