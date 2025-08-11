@@ -37,7 +37,7 @@ public class QuartzTests : TracingIntegrationTest
 
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
-    [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
+    [MemberData(nameof(PackageVersions.Quartz), MemberType = typeof(PackageVersions))]
     public async Task SubmitsTraces(string packageVersion)
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
