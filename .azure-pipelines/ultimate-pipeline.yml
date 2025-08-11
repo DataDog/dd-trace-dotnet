@@ -120,7 +120,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.23.0
+  ToolVersion: 3.24.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -1025,8 +1025,8 @@ stages:
           artifact: dd-dotnet-win-x64
           path: $(monitoringHome)/win-x64
 
-      - script: tracer\build.cmd PackageTracerHome PublishFleetInstaller
-        displayName: Build MSI and Tracer home
+      - script: tracer\build.cmd PackageTracerHome PublishFleetInstaller DownloadWinSsiTelemetryForwarder
+        displayName: Build MSI, Tracer home, FleetInstaller, and TelemetryForwarder
         retryCountOnTaskFailure: 1
 
       - publish: $(artifacts)/windows-tracer-home.zip
@@ -1044,6 +1044,10 @@ stages:
       - publish: $(artifacts)/Datadog.FleetInstaller
         displayName: Publish fleet installer
         artifact: fleet-installer
+
+      - publish: $(artifacts)/telemetry_forwarder.exe
+        displayName: Publish telemetry-forwarder
+        artifact: fleet-installer-telemetry-forwarder
 
 - stage: build_dd_dotnet_windows
   dependsOn: [merge_commit_id]
@@ -6046,6 +6050,11 @@ stages:
         - template: steps/download-artifact.yml
           parameters:
             artifact: fleet-installer
+            path: $(smokeTestAppDir)/artifacts/installer
+
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: fleet-installer-telemetry-forwarder
             path: $(smokeTestAppDir)/artifacts/installer
 
         - powershell: |

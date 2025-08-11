@@ -388,14 +388,14 @@ internal static class DebuggerTestHelper
         var probeTestData = method.GetCustomAttributes<MethodProbeTestDataAttribute>().ElementAt(testIndex);
         if (probeTestData == null)
         {
-            throw new Xunit.Sdk.SkipException($"{typeof(T).Name} has not found for method: {method.DeclaringType?.FullName}.{method.Name}");
+            throw new SkipException($"{typeof(T).Name} has not found for method: {method.DeclaringType?.FullName}.{method.Name}");
         }
 
         typeName = probeTestData.UseFullTypeName ? method.DeclaringType?.FullName : method.DeclaringType?.Name;
 
         if (typeName == null)
         {
-            throw new Xunit.Sdk.SkipException($"{nameof(CreateLogMethodProbe)} failed in getting type name for method: {method.Name}");
+            throw new SkipException($"{nameof(CreateLogMethodProbe)} failed in getting type name for method: {method.Name}");
         }
 
         return probeTestData;

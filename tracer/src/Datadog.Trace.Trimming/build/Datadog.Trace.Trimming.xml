@@ -107,6 +107,7 @@
    <assembly fullname="Microsoft.TestPlatform.CrossPlatEngine" />
    <assembly fullname="Microsoft.TestPlatform.PlatformAbstractions" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
+   <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
    <assembly fullname="Microsoft.VisualStudio.TraceDataCollector" />
    <assembly fullname="Microsoft.Win32.Primitives">
@@ -1035,6 +1036,7 @@
       <type fullname="System.Threading.Monitor" />
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
+      <type fullname="System.Threading.SemaphoreFullException" />
       <type fullname="System.Threading.SemaphoreSlim" />
       <type fullname="System.Threading.SpinLock" />
       <type fullname="System.Threading.SpinWait" />

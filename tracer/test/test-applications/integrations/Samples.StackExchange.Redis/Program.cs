@@ -124,27 +124,27 @@ namespace Samples.StackExchangeRedis
 #endif
 
 #if (STACKEXCHANGEREDIS_1_2_0)
-                { "GeoAdd", () => db.GeoAdd($"{prefix}Geo", new GeoEntry(1.5, 2.5, "member")) },
-                { "GeoDistance", () => db.GeoDistance($"{prefix}Geo", "member1", "member2") },
-                { "GeoHash", () => db.GeoHash($"{prefix}Geo", "member") },
-                { "GeoPosition", () => db.GeoPosition($"{prefix}Geo", "member") },
-                { "GeoRadius", () => db.GeoRadius($"{prefix}Geo", "member", 2.3) },
-                { "GeoRemove", () => db.GeoRemove($"{prefix}Geo", "member") },
+                { "GeoAdd", () => db.GeoAdd($"{prefix}GeoAdd", new GeoEntry(1.5, 2.5, "member")) },
+                { "GeoDistance", () => db.GeoDistance($"{prefix}GeoDistance", "member1", "member2") },
+                { "GeoHash", () => db.GeoHash($"{prefix}GeoHash", "member") },
+                { "GeoPosition", () => db.GeoPosition($"{prefix}GeoPosition", "member") },
+                { "GeoRadius", () => db.GeoRadius($"{prefix}GeoRadius", "member", 2.3) },
+                { "GeoRemove", () => db.GeoRemove($"{prefix}GeoRemove", "member") },
 #endif
 
-                { "HashDecrement", () => db.HashDecrement($"{prefix}Hash", "hashfield", 4.5) },
-                { "HashDelete", () => db.HashDelete($"{prefix}Hash", "hashfield") },
-                { "HashExists", () => db.HashExists($"{prefix}Hash", "hashfield") },
-                { "HashGet", () => db.HashGet($"{prefix}Hash", "hashfield") },
-                { "HashGetAll", () => db.HashGetAll($"{prefix}Hash") },
-                { "HashIncrement", () => db.HashIncrement($"{prefix}Hash", "hashfield") },
-                { "HashKeys", () => db.HashKeys($"{prefix}Hash") },
-                { "HashLength", () => db.HashLength($"{prefix}Hash") },
+                { "HashDecrement", () => db.HashDecrement($"{prefix}HashDecrement", "hashfield", 4.5) },
+                { "HashDelete", () => db.HashDelete($"{prefix}HashDelete", "hashfield") },
+                { "HashExists", () => db.HashExists($"{prefix}HashExists", "hashfield") },
+                { "HashGet", () => db.HashGet($"{prefix}HashGet", "hashfield") },
+                { "HashGetAll", () => db.HashGetAll($"{prefix}HashGetAll") },
+                { "HashIncrement", () => db.HashIncrement($"{prefix}HashIncrement", "hashfield") },
+                { "HashKeys", () => db.HashKeys($"{prefix}HashKeys") },
+                { "HashLength", () => db.HashLength($"{prefix}HashLength") },
 #if (STACKEXCHANGEREDIS_1_0_228)
-                { "HashScan", () => db.HashScan($"{prefix}Hash", "*", 5, CommandFlags.None) },
+                { "HashScan", () => db.HashScan($"{prefix}HashScan", "*", 5, CommandFlags.None) },
 #endif
-                { "HashSet", () => { db.HashSet($"{prefix}Hash", ApiSafeCreateHashSetEntryList(new KeyValuePair<RedisValue, RedisValue>[] { new KeyValuePair<RedisValue, RedisValue>("hashfield", "hashvalue") })); return null; } },
-                { "HashValues", () => db.HashValues($"{prefix}Hash") },
+                { "HashSet", () => { db.HashSet($"{prefix}HashSet", ApiSafeCreateHashSetEntryList(new KeyValuePair<RedisValue, RedisValue>[] { new KeyValuePair<RedisValue, RedisValue>("hashfield", "hashvalue") })); return null; } },
+                { "HashValues", () => db.HashValues($"{prefix}HashValues") },
 
 #if (STACKEXCHANGEREDIS_1_0_242)
                 { "HyperLogLogAdd", () => db.HyperLogLogAdd($"{prefix}HyperLogLog", "value") },

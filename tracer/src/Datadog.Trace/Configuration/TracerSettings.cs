@@ -20,6 +20,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Processors;
@@ -51,6 +52,7 @@ namespace Datadog.Trace.Configuration
         // These values can all be overwritten by dynamic config
         private readonly bool _traceEnabled;
         private readonly bool _apmTracingEnabled;
+        private readonly bool _logsInjectionEnabled;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _isDataStreamsMonitoringInDefaultState;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
@@ -138,28 +140,6 @@ namespace Datadog.Trace.Configuration
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
-
-            // With SSI, beyond ContinuousProfiler.ConfigurationKeys.ProfilingEnabled (true or auto vs false),
-            // the profiler could be enabled via ContinuousProfiler.ConfigurationKeys.SsiDeployed:
-            //  - if it contains "profiler", the profiler is enabled after 30 seconds + at least 1 span
-            //  - if not, the profiler needed to be loaded by the CLR but no profiling will be done, only telemetry metrics will be sent
-            // So, for the Tracer, the profiler should be seen as enabled if ContinuousProfiler.ConfigurationKeys.SsiDeployed has a value
-            // (even without "profiler") so that spans will be sent to the profiler.
-            ProfilingEnabledInternal = config
-                         .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
-                         .GetAs(
-                            converter: x => x switch
-                            {
-                                "auto" => true,
-                                _ when x.ToBoolean() is { } boolean => boolean,
-                                _ => ParsingResult<bool>.Failure(),
-                            },
-                            getDefaultValue: () =>
-                            {
-                                var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
-                                return (profilingSsiDeployed != null);
-                            },
-                            validator: null);
 
             var otelTags = config
                           .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
@@ -322,6 +302,10 @@ namespace Datadog.Trace.Configuration
             _apmTracingEnabled = config
                                       .WithKeys(ConfigurationKeys.ApmTracingEnabled)
                                       .AsBool(defaultValue: true);
+
+            _logsInjectionEnabled = config
+                                         .WithKeys(ConfigurationKeys.LogsInjectionEnabled)
+                                         .AsBool(defaultValue: true);
 
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
@@ -637,10 +621,11 @@ namespace Datadog.Trace.Configuration
                                  .WithKeys(ConfigurationKeys.BaggageMaximumBytes)
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageBytes);
 
-            BaggageTagKeys = config
+            BaggageTagKeys = new HashSet<string>(
+                            config
                             .WithKeys(ConfigurationKeys.BaggageTagKeys)
                             .AsString(defaultValue: "user.id,session.id,account.id")
-                            ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? [];
+                            ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? []);
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
 
@@ -680,9 +665,10 @@ namespace Datadog.Trace.Configuration
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                                     .AsBool() == null;
 
+            // no legacy headers if we are in "enbaled by default" state
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
-                                               .AsBool(true);
+                                               .AsBool(!_isDataStreamsMonitoringInDefaultState);
 
             IsRareSamplerEnabled = config
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
@@ -890,13 +876,6 @@ namespace Datadog.Trace.Configuration
         internal bool ApmTracingEnabled => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
 
         /// <summary>
-        /// Gets a value indicating whether profiling is enabled.
-        /// Default is <c>false</c>.
-        /// </summary>
-        /// <seealso cref="ContinuousProfiler.ConfigurationKeys.ProfilingEnabled"/>
-        internal bool ProfilingEnabledInternal { get; }
-
-        /// <summary>
         /// Gets the names of disabled integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
@@ -936,11 +915,10 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether correlation identifiers are
         /// automatically injected into the logging context.
-        /// Default is <c>false</c>, unless <see cref="ConfigurationKeys.DirectLogSubmission.EnabledIntegrations"/>
-        /// enables Direct Log Submission.
+        /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? LogSubmissionSettings.LogsInjectionEnabled;
+        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? _logsInjectionEnabled;
 
         /// <summary>
         /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
@@ -1156,7 +1134,7 @@ namespace Datadog.Trace.Configuration
         /// Default value is "user.id,session.id,account.id".
         /// </summary>
         /// <seealso cref="ConfigurationKeys.BaggageTagKeys"/>
-        internal string[] BaggageTagKeys { get; }
+        internal HashSet<string> BaggageTagKeys { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics
