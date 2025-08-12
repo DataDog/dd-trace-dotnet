@@ -91,7 +91,7 @@ public static class MetricHelper
         static bool TryNormalizeTagName(
             string value,
             bool normalizeSpaces,
-            [NotNullWhen(returnValue: true)] out string? normalizedTagName)
+            [NotNullWhen(returnValue: true)] out string normalizedTagName)
         {
             normalizedTagName = null;
 
@@ -123,7 +123,7 @@ public static class MetricHelper
 
         static bool IsValidTagName(
             string value,
-            [NotNullWhen(returnValue: true)] out string? trimmedValue)
+            [NotNullWhen(returnValue: true)] out string trimmedValue)
         {
             trimmedValue = null;
 
