@@ -6,12 +6,18 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
 
@@ -21,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
     {
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
 
-        public const string OperationName = "azure_functions.invoke";
+        public const string OperationName = "azure.functions.invoke";
         public const string SpanType = SpanTypes.Serverless;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
@@ -201,6 +207,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
+                var bindingName = default(string);
                 PropagationContext extractedContext = default;
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
@@ -217,7 +224,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         _ when type.Equals("httpTrigger", StringComparison.OrdinalIgnoreCase) => "Http", // Microsoft.Azure.Functions.Worker.Extensions.Http
                         _ when type.Equals("timerTrigger", StringComparison.OrdinalIgnoreCase) => "Timer", // Microsoft.Azure.Functions.Worker.Extensions.Timer
-                        _ when type.Equals("serviceBus", StringComparison.OrdinalIgnoreCase) => "ServiceBus", // Microsoft.Azure.Functions.Worker.Extensions.ServiceBus
+                        _ when type.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase) => "ServiceBus", // Microsoft.Azure.Functions.Worker.Extensions.ServiceBus
                         _ when type.Equals("queue", StringComparison.OrdinalIgnoreCase) => "Queue", // Microsoft.Azure.Functions.Worker.Extensions.Queues
                         _ when type.StartsWith("blob", StringComparison.OrdinalIgnoreCase) => "Blob", // Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs
                         _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub", // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
@@ -233,6 +240,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
                     }
+                    else if (triggerType == "ServiceBus")
+                    {
+                        extractedContext = ExtractPropagatedContextFromServiceBus(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                    }
 
                     break;
                 }
@@ -246,11 +257,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     FullName = context.FunctionDefinition.EntryPoint,
                 };
 
+                // Extract ServiceBus messaging metadata if this is a ServiceBus trigger
+                if (triggerType == "ServiceBus")
+                {
+                    var messageId = ExtractServiceBusMessageId(context, bindingName);
+                    tags.MessagingMessageId = messageId;
+
+                    // Try to extract destination name from binding metadata
+                    // TODO: @pmartinez there must be a better way than this to get the queue
+                    var destinationName = ExtractQueueNameFromFunctionMethod(context.FunctionDefinition.EntryPoint);
+                    if (!string.IsNullOrEmpty(destinationName))
+                    {
+                        tags.MessagingDestinationName = destinationName;
+                    }
+                }
+
                 if (tracer.InternalActiveScope == null)
                 {
                     // This is the root scope
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
+                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext, links: extractedContext.Links);
                 }
                 else
                 {
@@ -329,6 +355,270 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 Log.Error(ex, "Error extracting propagated HTTP context from Http binding");
                 return default;
             }
+        }
+
+        private static PropagationContext ExtractPropagatedContextFromServiceBus<T>(T context, string? bindingName)
+            where T : IFunctionContext
+        {
+            try
+            {
+                // Get bindings feature inline
+                if (context.Features == null)
+                {
+                    return default;
+                }
+
+                GrpcBindingsFeatureStruct? bindingsFeature = null;
+                foreach (var kvp in context.Features)
+                {
+                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
+                    {
+                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
+                        break;
+                    }
+                }
+
+                if (bindingsFeature == null)
+                {
+                    return default;
+                }
+
+                // Extract contexts inline
+                var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
+                var spanContexts = new List<SpanContext>();
+
+                // Extract from single message UserProperties
+                if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
+                    TryParseJson<Dictionary<string, object>>(singlePropsObj) is { } singleProps)
+                {
+                    if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
+                    {
+                        spanContexts.Add(singleContext);
+                    }
+                }
+
+                // Extract from batch UserPropertiesArray
+                if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true &&
+                    TryParseJson<Dictionary<string, object>[]>(arrayPropsObj) is { } propsArray)
+                {
+                    foreach (var props in propsArray)
+                    {
+                        if (ExtractSpanContextFromProperties(props) is { } batchContext)
+                        {
+                            spanContexts.Add(batchContext);
+                        }
+                    }
+                }
+
+                if (spanContexts.Count == 0)
+                {
+                    return default;
+                }
+
+                // Create propagation context inline
+                bool shouldReparent = spanContexts.Count == 1 ||
+                                     (spanContexts.Count > 1 && AreAllContextsIdentical(spanContexts));
+
+                return shouldReparent
+                    ? new PropagationContext(spanContexts[0], Baggage.Current, null)
+                    : new PropagationContext(null, Baggage.Current, spanContexts.Select(ctx => new SpanLink(ctx)).ToList());
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error extracting propagated context from ServiceBus binding");
+                return default;
+            }
+        }
+
+        private static SpanContext? ExtractSpanContextFromProperties(Dictionary<string, object> userProperties)
+        {
+            var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userProperties);
+            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+            return extractedContext.SpanContext;
+        }
+
+        private static T? TryParseJson<T>(object? jsonObj)
+            where T : class
+        {
+            if (jsonObj is not string jsonString)
+            {
+                return null;
+            }
+
+            try
+            {
+                return JsonConvert.DeserializeObject<T>(jsonString);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Failed to parse JSON: {Json}", jsonString);
+                return null;
+            }
+        }
+
+        private static bool AreAllContextsIdentical(List<SpanContext> contexts)
+        {
+            if (contexts.Count <= 1)
+            {
+                return true;
+            }
+
+            var first = contexts[0];
+            return contexts.All(ctx =>
+                ctx.TraceId128.Equals(first.TraceId128) &&
+                ctx.SpanId == first.SpanId);
+        }
+
+        private static string? ExtractServiceBusMessageId<T>(T context, string? bindingName)
+            where T : IFunctionContext
+        {
+            try
+            {
+                // Get bindings feature
+                if (context.Features == null)
+                {
+                    return null;
+                }
+
+                GrpcBindingsFeatureStruct? bindingsFeature = null;
+                foreach (var kvp in context.Features)
+                {
+                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
+                    {
+                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
+                        break;
+                    }
+                }
+
+                if (bindingsFeature == null)
+                {
+                    return null;
+                }
+
+                var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
+
+                // Extract message ID for single message only (not for batches)
+                string? messageId = null;
+                if (triggerMetadata?.TryGetValue("MessageId", out var msgIdObj) == true && msgIdObj is string msgId)
+                {
+                    messageId = msgId;
+                }
+
+                // Don't extract messageId if this is a batch (UserPropertiesArray indicates batch)
+                else if (triggerMetadata?.ContainsKey("UserPropertiesArray") == true)
+                {
+                    messageId = null; // Explicitly null for batch triggers
+                }
+
+                return messageId;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error extracting ServiceBus message ID");
+                return null;
+            }
+        }
+
+        // TODO: @pmartinez I hate this
+        private static string? ExtractQueueNameFromFunctionMethod(string? entryPoint)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(entryPoint))
+                {
+                    return null;
+                }
+
+                var parts = entryPoint!.Split('.');
+                if (parts.Length < 3)
+                {
+                    return null;
+                }
+
+                var methodName = parts[parts.Length - 1];
+                var className = string.Join(".", parts.Take(parts.Length - 1));
+
+                Type? functionType = null;
+
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    try
+                    {
+                        functionType = assembly.GetType(className);
+                        if (functionType != null)
+                        {
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(ex, "Error getting type {ClassName} from assembly {AssemblyName}", className, assembly.FullName);
+                    }
+                }
+
+                if (functionType == null)
+                {
+                    return null;
+                }
+
+                var method = functionType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
+                if (method == null)
+                {
+                    return null;
+                }
+
+                var parameters = method.GetParameters();
+                foreach (var parameter in parameters)
+                {
+                    var attributes = parameter.GetCustomAttributes(false);
+                    foreach (var attribute in attributes)
+                    {
+                        var attributeType = attribute.GetType();
+
+                        if (attributeType.Name == "ServiceBusTriggerAttribute")
+                        {
+                            var queueName = ExtractQueueNameFromServiceBusTriggerAttribute(attribute);
+                            if (!string.IsNullOrEmpty(queueName))
+                            {
+                                return queueName;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error extracting queue name from function method: {EntryPoint}", entryPoint);
+            }
+
+            return null;
+        }
+
+        // TODO: @pmartinez I hate this
+        private static string? ExtractQueueNameFromServiceBusTriggerAttribute(object serviceBusTriggerAttribute)
+        {
+            try
+            {
+                var attributeType = serviceBusTriggerAttribute.GetType();
+
+                var properties = attributeType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+                foreach (var property in properties)
+                {
+                    var propValue = property.GetValue(serviceBusTriggerAttribute);
+                    if ((property.Name.Equals("QueueName") || property.Name.Equals("TopicName")) &&
+                        propValue is string strValue && !string.IsNullOrEmpty(strValue))
+                    {
+                        return strValue;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error extracting queue name from ServiceBusTrigger attribute");
+            }
+
+            return null;
         }
     }
 }
