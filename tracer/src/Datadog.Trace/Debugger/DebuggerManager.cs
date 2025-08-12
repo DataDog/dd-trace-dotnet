@@ -240,8 +240,6 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            OneTimeSetup(tracerSettings);
-
             bool semaphoreAcquired = false;
             try
             {
@@ -264,10 +262,21 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                DebuggerSettings = newDebuggerSettings;
-                SetCodeOriginState();
-                SetExceptionReplayState();
-                await SetDynamicInstrumentationState(tracerSettings).ConfigureAwait(false);
+                // if nothing is enabled and this is the first initialization,
+                // avoid initializing everything to avoid taking the perf hit
+                var isFirstInitialization = ReferenceEquals(DebuggerSettings, newDebuggerSettings);
+                if (!isFirstInitialization
+                 || newDebuggerSettings.DynamicInstrumentationEnabled
+                 || newDebuggerSettings.CodeOriginForSpansEnabled
+                 || ExceptionReplaySettings.Enabled)
+                {
+                    OneTimeSetup(tracerSettings);
+                    DebuggerSettings = newDebuggerSettings;
+                    SetCodeOriginState();
+                    SetExceptionReplayState();
+                    await SetDynamicInstrumentationState(tracerSettings).ConfigureAwait(false);
+                }
+
                 if (tracerSettings.StartupDiagnosticLogEnabled)
                 {
                     _ = Task.Run(WriteDebuggerDiagnosticLog);
