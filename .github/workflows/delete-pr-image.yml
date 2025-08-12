@@ -21,10 +21,9 @@ jobs:
           TAG="${BRANCH//\//_}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Delete image from GHCR
-        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55
-        with:
-          package-name: 'datadog/dd-trace-dotnet/dd-trace-dotnet'
-          package-type: 'container'
-          token: ${{ secrets.GITHUB_TOKEN }}
-          version-pattern: '^${{ steps.sanitize.outputs.tag }}$' 
+      - name: Delete image by tag from GHCR
+        run: |
+          gh api "orgs/DataDog/packages/container/dd-trace-dotnet%2Fdd-trace-dotnet/versions" \
+            --jq ".[] | select(.metadata.container.tags[]? == \"${{ steps.sanitize.outputs.tag }}\") | .id" \
+            | xargs -r -I {} gh api "orgs/DataDog/packages/container/dd-trace-dotnet%2Fdd-trace-dotnet/versions/{}" -X DELETE
+          echo "Deleted version with tag: ${{ steps.sanitize.outputs.tag }}" 
