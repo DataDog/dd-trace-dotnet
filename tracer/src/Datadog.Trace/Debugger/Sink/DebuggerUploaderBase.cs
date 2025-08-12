@@ -8,6 +8,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Exception = System.Exception;
 
 namespace Datadog.Trace.Debugger.Sink;
 
@@ -25,7 +26,7 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DebuggerUploaderBase>();
 
-    private readonly CancellationTokenSource _cancellationSource;
+    private readonly TaskCompletionSource<bool> _processExit;
     private readonly int _uploadFlushInterval;
     private readonly int _initialFlushInterval;
 
@@ -39,12 +40,12 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
 
         _uploadFlushInterval = uploadInterval;
         _initialFlushInterval = initialInterval;
-        _cancellationSource = new CancellationTokenSource();
+        _processExit = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
     public async Task StartFlushingAsync()
     {
-        while (!_cancellationSource.IsCancellationRequested)
+        while (!_processExit.Task.IsCompleted)
         {
             var currentInterval = _initialFlushInterval;
             try
@@ -68,18 +69,19 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
 
         async Task Delay(int delay)
         {
-            if (_cancellationSource.IsCancellationRequested)
+            if (_processExit.Task.IsCompleted)
             {
                 return;
             }
 
             try
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(delay), _cancellationSource.Token).ConfigureAwait(false);
+                var delayTask = Task.Delay(TimeSpan.FromMilliseconds(delay));
+                await Task.WhenAny(delayTask, _processExit.Task).ConfigureAwait(false);
             }
-            catch (TaskCanceledException)
+            catch (Exception)
             {
-                // We are shutting down, so don't do anything about it
+                // ignored
             }
         }
     }
@@ -113,6 +115,6 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
 
     public void Dispose()
     {
-        _cancellationSource.Cancel();
+        _processExit.TrySetResult(true);
     }
 }
