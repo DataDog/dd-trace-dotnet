@@ -6,6 +6,7 @@ internal class TestJob
 {
     public void Execute()
     {
+        Console.WriteLine("TestJob.Execute()");
     }
 
     public void ThrowException()

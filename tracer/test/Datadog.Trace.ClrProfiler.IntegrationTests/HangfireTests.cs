@@ -33,17 +33,16 @@ public class HangfireTests : TracingIntegrationTest
     [Trait("Category", "EndToEnd")]
     public async Task SubmitsTraces()
     {
+        // used to create custom spans
+        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent))
         {
-            // used to create custom spans
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-
             // Not testing for retry attempts
             const int expectedSpanCount = 3;
-            var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, timeoutInMilliseconds: 15000);
             using var s = new AssertionScope();
             spans.Count.Should().Be(expectedSpanCount);
 

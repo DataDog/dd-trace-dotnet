@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Hangfire;
 using Hangfire.MemoryStorage;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Samples.Hangfire
 {
@@ -17,26 +15,33 @@ namespace Samples.Hangfire
             GlobalConfiguration.Configuration
                                .UseSimpleAssemblyNameTypeSerializer()
                                .UseRecommendedSerializerSettings()
+                               .UseColouredConsoleLogProvider()
                                .UseMemoryStorage();
             
             
-            using var localActivity = AdditionalActivitySource.StartActivity(name: "OtelParent");
+            
+            GlobalJobFilters.Filters.Add(new LogEverythingAttribute());
+            
+            // using var localActivity = AdditionalActivitySource.StartActivity(name: "OtelParent");
+            Console.WriteLine("before starting server");
             using var server = new BackgroundJobServer();
+            Console.WriteLine("after starting server");
             await Should_Create_Span();
             await Should_Create_Span_With_Status_Error_When_Job_Failed();
             
+            Console.ReadLine();
         }
 
         public static async Task Should_Create_Span()
         {
+            Console.WriteLine("before Should_Create_Span");
             BackgroundJob.Enqueue<TestJob>(x => x.Execute());
-            await Task.Delay(1000);
+            Console.WriteLine("after Should_Create_Span");
         }
 
         public static async Task Should_Create_Span_With_Status_Error_When_Job_Failed()
         {
             BackgroundJob.Enqueue<TestJob>(x => x.ThrowException());
-            await Task.Delay(1000);
         }
     }
 }

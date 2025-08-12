@@ -16,7 +16,6 @@
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared/bin/monitoring-home",
         "DD_TRACE_OTEL_ENABLED": "true",
         "DD_TRACE_AGENT_PORT": "8136",
-        "DD_TRACE_DEBUG": "true",
         "DD_ENV": "Mohammad",
         "DD_SERVICE": "Samples.Hangfire.ConsoleApp",
         "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED":"true"

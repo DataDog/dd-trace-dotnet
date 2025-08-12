@@ -2,22 +2,19 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: http.request,
-    Resource: GET localhost:00000/trace,
-    Service: Samples.Hangfire-http-client,
-    Type: http,
+    Name: internal,
+    Resource: OtelParent,
+    Service: Samples.Hangfire,
+    Type: custom,
     Tags: {
-      component: HttpMessageHandler,
       env: integration_tests,
-      http-client-handler-type: System.Net.Http.HttpClientHandler,
-      http.method: GET,
-      http.status_code: 200,
-      http.url: http://localhost:00000/trace,
       language: dotnet,
-      out.host: localhost,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.Hangfire
+      otel.library.name: AdditionalActivitySource,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -29,25 +26,27 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: aspnet_core.request,
-    Resource: GET /trace,
-    Service: Samples.Hangfire,
-    Type: web,
+    Name: Hangfire.onPerform,
+    Resource: JOB TestJob.ThrowException,
+    Service: Samples.Hangfire-Hangfire,
+    Type: Hangfire,
     ParentId: Id_2,
+    Error: 1,
     Tags: {
-      aspnet_core.endpoint: Samples.Hangfire.TraceController.Trace (Samples.Hangfire),
-      aspnet_core.route: trace,
-      component: aspnet_core,
+      component: Hangfire,
       env: integration_tests,
-      http.method: GET,
-      http.request.headers.host: localhost:00000,
-      http.route: trace,
-      http.status_code: 200,
-      http.url: http://localhost:00000/trace,
+      error.msg: An exception occurred during performance of the job.,
+      error.stack:
+Hangfire.Server.JobPerformanceException: An exception occurred during performance of the job.
+---> System.Exception: Exception of type 'System.Exception' was thrown.
+at Samples.Hangfire.TestJob.ThrowException(),
+      error.type: Hangfire.Server.JobPerformanceException,
+      job.CreatedAt: DateTimeOffset_1,
+      job.ID: Guid_3,
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.base_service: Samples.Hangfire
     },
     Metrics: {
       process_id: 0,
@@ -59,92 +58,18 @@
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: aspnet_core_mvc.request,
-    Resource: GET /trace,
-    Service: Samples.Hangfire,
-    Type: web,
-    ParentId: Id_3,
-    Tags: {
-      aspnet_core.action: trace,
-      aspnet_core.controller: trace,
-      aspnet_core.route: trace,
-      component: aspnet_core,
-      env: integration_tests,
-      language: dotnet,
-      span.kind: server,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_5,
-    Name: Hangfire.onPerform,
-    Resource: JOB Program.ExecuteTracedJob,
-    Service: Samples.Hangfire-Hangfire,
-    Type: Hangfire,
-    ParentId: Id_4,
-    Tags: {
-      component: Hangfire,
-      env: integration_tests,
-      job.CreatedAt: DateTimeOffset_1,
-      job.ID: Guid_2,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: internal,
-      _dd.base_service: Samples.Hangfire
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_6,
-    SpanId: Id_7,
     Name: Hangfire.onPerform,
     Resource: JOB TestJob.Execute,
     Service: Samples.Hangfire-Hangfire,
     Type: Hangfire,
+    ParentId: Id_2,
     Tags: {
       component: Hangfire,
       env: integration_tests,
       job.CreatedAt: DateTimeOffset_2,
-      job.ID: Guid_3,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: internal,
-      _dd.base_service: Samples.Hangfire
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_8,
-    SpanId: Id_9,
-    Name: Hangfire.onPerform,
-    Resource: JOB TestJob.ThrowException,
-    Service: Samples.Hangfire-Hangfire,
-    Type: Hangfire,
-    Error: 1,
-    Tags: {
-      component: Hangfire,
-      env: integration_tests,
-      error.msg: An exception occurred during performance of the job.,
-      error.stack:
-Hangfire.Server.JobPerformanceException: An exception occurred during performance of the job.
----> System.Exception: Exception of type 'System.Exception' was thrown.
-at Samples.Hangfire.TestJob.ThrowException(),
-      error.type: Hangfire.Server.JobPerformanceException,
-      job.CreatedAt: DateTimeOffset_3,
       job.ID: Guid_4,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: internal,
       _dd.base_service: Samples.Hangfire
     },
