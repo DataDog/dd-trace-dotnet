@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tagging
         private const string TriggerTypeTagName = Trace.Tags.AzureFunctionTriggerType;
 
         [Tag(Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Server;
+        public override string SpanKind => TriggerType == "ServiceBus" ? SpanKinds.Consumer : SpanKinds.Server;
 
         [Tag(Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
@@ -32,6 +32,18 @@ namespace Datadog.Trace.Tagging
 
         [Tag(TriggerTypeTagName)]
         public string TriggerType { get; set; } = "Unknown";
+
+        [Tag(Tags.MessagingDestinationName)]
+        public string MessagingDestinationName { get; set; }
+
+        [Tag(Tags.MessagingMessageId)]
+        public string MessagingMessageId { get; set; }
+
+        [Tag(Tags.MessagingOperation)]
+        public string MessagingOperation => TriggerType == "ServiceBus" ? "receive" : null;
+
+        [Tag(Tags.MessagingSystem)]
+        public string MessagingSystem => TriggerType == "ServiceBus" ? "servicebus" : null;
 
         internal static void SetRootSpanTags(
             Span span,
