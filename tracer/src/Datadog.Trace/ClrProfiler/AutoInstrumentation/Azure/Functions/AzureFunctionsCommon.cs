@@ -342,21 +342,68 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         private static PropagationContext ExtractPropagatedContextFromServiceBus<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
-            var bindingsFeature = GetBindingsFeature(context);
-            if (bindingsFeature == null)
-            {
-                return default;
-            }
-
             try
             {
-                var spanContexts = ExtractAllSpanContextsFromMetadata(bindingsFeature.Value.TriggerMetadata);
+                // Get bindings feature inline
+                if (context.Features == null)
+                {
+                    return default;
+                }
+
+                GrpcBindingsFeatureStruct? bindingsFeature = null;
+                foreach (var kvp in context.Features)
+                {
+                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
+                    {
+                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
+                        break;
+                    }
+                }
+
+                if (bindingsFeature == null)
+                {
+                    return default;
+                }
+
+                // Extract contexts inline
+                var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
+                var spanContexts = new List<SpanContext>();
+
+                // Extract from single message UserProperties
+                if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
+                    TryParseJson<Dictionary<string, object>>(singlePropsObj) is { } singleProps)
+                {
+                    if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
+                    {
+                        spanContexts.Add(singleContext);
+                    }
+                }
+
+                // Extract from batch UserPropertiesArray
+                if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true &&
+                    TryParseJson<Dictionary<string, object>[]>(arrayPropsObj) is { } propsArray)
+                {
+                    foreach (var props in propsArray)
+                    {
+                        if (ExtractSpanContextFromProperties(props) is { } batchContext)
+                        {
+                            spanContexts.Add(batchContext);
+                        }
+                    }
+                }
+
                 if (spanContexts.Count == 0)
                 {
                     return default;
                 }
 
-                return CreatePropagationContext(spanContexts);
+                // Create propagation context inline
+                bool shouldReparent = spanContexts.Count == 1 ||
+                                     (spanContexts.Count > 1 && AreAllContextsIdentical(spanContexts));
+
+                return shouldReparent
+                    ? new PropagationContext(spanContexts[0], Baggage.Current, null)
+                    : new PropagationContext(null, Baggage.Current, spanContexts.Select(ctx => new SpanLink(ctx)).ToList());
             }
             catch (Exception ex)
             {
@@ -365,130 +412,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static GrpcBindingsFeatureStruct? GetBindingsFeature<T>(T context)
-            where T : IFunctionContext
-        {
-            if (context.Features is null)
-            {
-                return null;
-            }
-
-            foreach (var kvp in context.Features)
-            {
-                if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
-                {
-                    return kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
-                }
-            }
-
-            return null;
-        }
-
-        private static List<SpanContext> ExtractAllSpanContextsFromMetadata(IDictionary<string, object?>? triggerMetadata)
-        {
-            var contexts = new List<SpanContext>();
-
-            if (triggerMetadata?.TryGetValue("UserProperties", out var singleProps) == true)
-            {
-                var context = ExtractContextFromUserProperties(singleProps);
-                if (context.SpanContext != null)
-                {
-                    contexts.Add(context.SpanContext);
-                }
-            }
-
-            if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayProps) == true)
-            {
-                contexts.AddRange(ExtractSpanContextsFromUserPropertiesArray(arrayProps));
-            }
-
-            return contexts;
-        }
-
-        private static PropagationContext CreatePropagationContext(List<SpanContext> contexts)
-        {
-            bool shouldReparent = ShouldUseReparenting(contexts);
-
-            return shouldReparent
-                ? new PropagationContext(contexts[0], Baggage.Current, null)
-                : new PropagationContext(null, Baggage.Current, contexts.Select(ctx => new SpanLink(ctx)).ToList());
-        }
-
-        private static bool ShouldUseReparenting(List<SpanContext> contexts)
-        {
-            // Single or no context always reparents
-            if (contexts.Count <= 1)
-            {
-                return true;
-            }
-
-            // Multiple contexts: reparent only if they're all identical
-            var first = contexts[0];
-            return contexts.All(ctx =>
-                ctx.TraceId128.Equals(first.TraceId128) &&
-                ctx.SpanId == first.SpanId);
-        }
-
-        private static PropagationContext ExtractContextFromUserProperties(object? userPropertiesObj)
-        {
-            var userProperties = ServiceBusJsonParser.ParseUserProperties(userPropertiesObj);
-            if (userProperties == null)
-            {
-                return default;
-            }
-
-            var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userProperties);
-            return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-        }
-
-        private static SpanContext? ExtractSpanContextOnly(Dictionary<string, object> userProperties)
+        private static SpanContext? ExtractSpanContextFromProperties(Dictionary<string, object> userProperties)
         {
             var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userProperties);
             var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
             return extractedContext.SpanContext;
         }
 
-        private static List<SpanContext> ExtractSpanContextsFromUserPropertiesArray(object? userPropertiesArrayObj)
+        private static T? TryParseJson<T>(object? jsonObj)
+            where T : class
         {
-            var userPropertiesArray = ServiceBusJsonParser.ParseUserPropertiesArray(userPropertiesArrayObj);
-            if (userPropertiesArray == null)
+            if (jsonObj is not string jsonString)
             {
-                return new List<SpanContext>();
+                return null;
             }
 
-            return userPropertiesArray
-                .Select(props => ExtractSpanContextOnly(props))
-                .Where(ctx => ctx != null)
-                .Cast<SpanContext>()
-                .ToList();
+            try
+            {
+                return JsonConvert.DeserializeObject<T>(jsonString);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Failed to parse JSON: {Json}", jsonString);
+                return null;
+            }
         }
 
-        private static class ServiceBusJsonParser
+        private static bool AreAllContextsIdentical(List<SpanContext> contexts)
         {
-            public static T? TryParseJson<T>(object? jsonObj, string context)
-                where T : class
+            if (contexts.Count <= 1)
             {
-                if (jsonObj is not string jsonString)
-                {
-                    return null;
-                }
-
-                try
-                {
-                    return JsonConvert.DeserializeObject<T>(jsonString);
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, "Failed to parse {Context} JSON: {Json}", context, jsonString);
-                    return null;
-                }
+                return true;
             }
 
-            public static Dictionary<string, object>? ParseUserProperties(object? userPropertiesObj)
-                => TryParseJson<Dictionary<string, object>>(userPropertiesObj, "UserProperties");
-
-            public static Dictionary<string, object>[]? ParseUserPropertiesArray(object? arrayObj)
-                => TryParseJson<Dictionary<string, object>[]>(arrayObj, "UserPropertiesArray");
+            var first = contexts[0];
+            return contexts.All(ctx =>
+                ctx.TraceId128.Equals(first.TraceId128) &&
+                ctx.SpanId == first.SpanId);
         }
     }
 }
