@@ -24,7 +24,7 @@ jobs:
       - name: Delete image from GHCR
         uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55
         with:
-          package-name: 'dd-trace-dotnet/dd-trace-dotnet'
+          package-name: 'datadog/dd-trace-dotnet/dd-trace-dotnet'
           package-type: 'container'
           token: ${{ secrets.GITHUB_TOKEN }}
           version-pattern: '^${{ steps.sanitize.outputs.tag }}$' 
