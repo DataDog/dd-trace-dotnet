@@ -60,7 +60,7 @@ internal class ServiceDiscoveryHelper
         Log.Debug(
             "Skipping storage of tracer metadata with LibDatadog: Platform supported: {PlatformIsSupported}, Deployment supported: {DeploymentIsSupported}",
             platformIsSupported,
-            deploymentIsSupported);
+            deploymentIsSupported.IsAvailable);
 
         return StoreMetadataResult.Skipped;
     }
