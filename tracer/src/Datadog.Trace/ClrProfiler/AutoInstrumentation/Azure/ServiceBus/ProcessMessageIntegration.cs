@@ -80,6 +80,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
                 var namespaceString = instance.Processor.EntityPath;
 
+                // Set messaging.destination.name tag for consumption spans
+                if (!string.IsNullOrEmpty(namespaceString) && span.Tags is Tagging.AzureServiceBusTags serviceBusTags)
+                {
+                    serviceBusTags.MessagingDestinationName = namespaceString;
+                }
+
                 // TODO: we could pool these arrays to reduce allocations
                 // NOTE: the tags must be sorted in alphabetical order
                 var edgeTags = string.IsNullOrEmpty(namespaceString)

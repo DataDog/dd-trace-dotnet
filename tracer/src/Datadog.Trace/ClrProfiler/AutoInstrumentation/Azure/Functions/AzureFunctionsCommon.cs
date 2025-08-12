@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
     {
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
 
-        public const string OperationName = "azure_functions.invoke";
+        public const string OperationName = "azure.functions.invoke";
         public const string SpanType = SpanTypes.Serverless;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
@@ -258,9 +258,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Extract ServiceBus messaging metadata if this is a ServiceBus trigger
                 if (triggerType == "ServiceBus")
                 {
-                    var metadata = ExtractServiceBusMessagingMetadata(context, bindingName);
-                    tags.MessagingDestinationName = metadata.QueueName;
-                    tags.MessagingMessageId = metadata.MessageId;
+                    var messageId = ExtractServiceBusMessageId(context, bindingName);
+                    // MessagingDestinationName is now set by ProcessMessageIntegration
+                    tags.MessagingMessageId = messageId;
                 }
 
                 if (tracer.InternalActiveScope == null)
@@ -460,7 +460,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 ctx.SpanId == first.SpanId);
         }
 
-        private static (string? QueueName, string? MessageId) ExtractServiceBusMessagingMetadata<T>(T context, string? bindingName)
+        private static string? ExtractServiceBusMessageId<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
             try
@@ -468,7 +468,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Get bindings feature
                 if (context.Features == null)
                 {
-                    return (null, null);
+                    return null;
                 }
 
                 GrpcBindingsFeatureStruct? bindingsFeature = null;
@@ -483,21 +483,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (bindingsFeature == null)
                 {
-                    return (null, null);
+                    return null;
                 }
 
                 var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
-
-                // Extract queue name
-                string? queueName = null;
-                if (triggerMetadata?.TryGetValue("QueueName", out var queueObj) == true && queueObj is string queue)
-                {
-                    queueName = queue;
-                }
-                else if (triggerMetadata?.TryGetValue("EntityName", out var entityObj) == true && entityObj is string entity)
-                {
-                    queueName = entity;
-                }
 
                 // Extract message ID for single message only (not for batches)
                 string? messageId = null;
@@ -512,12 +501,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     messageId = null; // Explicitly null for batch triggers
                 }
 
-                return (queueName, messageId);
+                return messageId;
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error extracting ServiceBus messaging metadata");
-                return (null, null);
+                Log.Debug(ex, "Error extracting ServiceBus message ID");
+                return null;
             }
         }
     }
