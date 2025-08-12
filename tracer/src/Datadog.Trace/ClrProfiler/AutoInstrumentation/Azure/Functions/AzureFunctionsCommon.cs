@@ -386,9 +386,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
                 var spanContexts = new List<SpanContext>();
 
-                var triggerMetadataCount = triggerMetadata?.Count ?? 0;
-                Log.Information<int>("AzureFunctions: TriggerMetadata has {Count} items", triggerMetadataCount);
-
                  // Extract from single message UserProperties
                 if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
                     TryParseJson<Dictionary<string, object>>(singlePropsObj) is { } singleProps)
@@ -530,8 +527,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return null;
                 }
 
-                // EntryPoint format is typically: "Namespace.ClassName.MethodName"
-                // We need to find the method and inspect its ServiceBusTrigger attribute
                 var parts = entryPoint!.Split('.');
                 if (parts.Length < 3)
                 {
@@ -541,10 +536,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var methodName = parts[parts.Length - 1];
                 var className = string.Join(".", parts.Take(parts.Length - 1));
 
-                // Try to find the type using reflection
                 Type? functionType = null;
 
-                // Search through all loaded assemblies for the type
                 foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
                 {
                     try
@@ -566,14 +559,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return null;
                 }
 
-                // Find the method
                 var method = functionType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
                 if (method == null)
                 {
                     return null;
                 }
 
-                // Check method parameters for ServiceBusTrigger attribute
                 var parameters = method.GetParameters();
                 foreach (var parameter in parameters)
                 {
@@ -582,11 +573,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         var attributeType = attribute.GetType();
 
-                        // Check if this is a ServiceBusTrigger attribute
-                        if (attributeType.Name == "ServiceBusTriggerAttribute" ||
-                            attributeType.FullName?.Contains("ServiceBusTrigger") == true)
+                        if (attributeType.Name == "ServiceBusTriggerAttribute")
                         {
-                            // Try to get the queue/topic name from the attribute
                             var queueName = ExtractQueueNameFromServiceBusTriggerAttribute(attribute);
                             if (!string.IsNullOrEmpty(queueName))
                             {
@@ -610,42 +598,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 var attributeType = serviceBusTriggerAttribute.GetType();
 
-                // ServiceBusTriggerAttribute typically has properties like:
-                // - QueueName or EntityName (for queue)
-                // - TopicName (for topic)
-                // Or constructor parameters
-
-                // Try to get properties first
                 var properties = attributeType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
                 foreach (var property in properties)
                 {
                     var propValue = property.GetValue(serviceBusTriggerAttribute);
-                    var propName = property.Name.ToLowerInvariant();
-                    if ((propName.Contains("queue") || propName.Contains("topic") || propName.Contains("entity")) &&
+                    if ((property.Name.Equals("QueueName") || property.Name.Equals("TopicName")) &&
                         propValue is string strValue && !string.IsNullOrEmpty(strValue))
                     {
                         return strValue;
-                    }
-                }
-
-                // If no properties found, try to access constructor arguments via reflection
-                // This is more complex and might not always work, but the first constructor parameter
-                // of ServiceBusTriggerAttribute is usually the queue/topic name
-                var fields = attributeType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-                foreach (var field in fields)
-                {
-                    var fieldValue = field.GetValue(serviceBusTriggerAttribute);
-
-                    if (fieldValue is string strFieldValue && !string.IsNullOrEmpty(strFieldValue) &&
-                        !strFieldValue.Equals("ServiceBusConnection", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var fieldName = field.Name.ToLowerInvariant();
-                        if (fieldName.Contains("queue") || fieldName.Contains("topic") || fieldName.Contains("entity") ||
-                            fieldName.Contains("name") || strFieldValue.Length > 3)
-                        {
-                            return strFieldValue;
-                        }
                     }
                 }
             }
