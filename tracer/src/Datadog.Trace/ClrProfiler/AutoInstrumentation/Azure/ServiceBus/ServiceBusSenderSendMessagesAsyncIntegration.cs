@@ -48,33 +48,6 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
         var stackTrace = new StackTrace(true);
         var frames = stackTrace.GetFrames();
 
-        Log.Information("=== FULL CALL STACK FOR ReceiveMessagesAsync ===");
-        if (frames != null)
-        {
-            for (int i = 0; i < frames.Length; i++)
-            {
-                var frame = frames[i];
-                var method = frame?.GetMethod();
-                var fileName = frame?.GetFileName();
-                var lineNumber = frame?.GetFileLineNumber() ?? 0;
-
-                if (method != null)
-                {
-                    var declaringType = method.DeclaringType?.FullName ?? "Unknown";
-                    var methodName = method.Name;
-                    var fullFrameInfo = $"  [{i}] {declaringType}.{methodName}";
-                    if (!string.IsNullOrEmpty(fileName))
-                    {
-                        fullFrameInfo += $" at {Path.GetFileName(fileName)}:{lineNumber}";
-                    }
-
-                    Log.Information("{FrameInfo}", fullFrameInfo);
-                }
-            }
-        }
-
-        Log.Information("=== END CALL STACK ===");
-
         var tracer = Tracer.Instance;
         var scope = tracer.StartActiveInternal(OperationName);
         var span = scope.Span;
