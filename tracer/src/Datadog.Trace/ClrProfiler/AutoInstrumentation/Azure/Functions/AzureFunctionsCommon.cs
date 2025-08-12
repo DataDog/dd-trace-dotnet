@@ -259,7 +259,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 if (triggerType == "ServiceBus")
                 {
                     var messageId = ExtractServiceBusMessageId(context, bindingName);
-                    // MessagingDestinationName is now set by ProcessMessageIntegration
                     tags.MessagingMessageId = messageId;
                 }
 

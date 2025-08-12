@@ -54,30 +54,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
 
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-                && tracer.InternalActiveScope?.Span is Span span
-                && dataStreamsManager.IsEnabled)
+                && tracer.InternalActiveScope?.Span is Span span)
             {
-                PathwayContext? pathwayContext = null;
-
-                if (message.ApplicationProperties is not null)
-                {
-                    var headers = new ServiceBusHeadersCollectionAdapter(message.ApplicationProperties);
-
-                    try
-                    {
-                        pathwayContext = dataStreamsManager.ExtractPathwayContextAsBase64String(headers);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error extracting PathwayContext from Azure Service Bus message");
-                    }
-                }
-
-                var consumeTime = span.StartTime.UtcDateTime;
-                var produceTime = message.EnqueuedTime.UtcDateTime;
-                var messageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
-                span.Tags.SetMetric(Trace.Metrics.MessageQueueTimeMs, messageQueueTimeMs);
-
                 var namespaceString = instance.Processor.EntityPath;
 
                 // Set messaging.destination.name tag for consumption spans
@@ -86,19 +64,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                     serviceBusTags.MessagingDestinationName = namespaceString;
                 }
 
-                // TODO: we could pool these arrays to reduce allocations
-                // NOTE: the tags must be sorted in alphabetical order
-                var edgeTags = string.IsNullOrEmpty(namespaceString)
-                                    ? new[] { "direction:in", "type:servicebus" }
-                                    : new[] { "direction:in", $"topic:{namespaceString}", "type:servicebus" };
-                var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
-                span.SetDataStreamsCheckpoint(
-                    dataStreamsManager,
-                    CheckpointKind.Consume,
-                    edgeTags,
-                    msgSize,
-                    (long)messageQueueTimeMs,
-                    pathwayContext);
+                // Data Streams Monitoring (only if enabled)
+                if (dataStreamsManager.IsEnabled)
+                {
+                    PathwayContext? pathwayContext = null;
+
+                    if (message.ApplicationProperties is not null)
+                    {
+                        var headers = new ServiceBusHeadersCollectionAdapter(message.ApplicationProperties);
+
+                        try
+                        {
+                            pathwayContext = dataStreamsManager.ExtractPathwayContextAsBase64String(headers);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error extracting PathwayContext from Azure Service Bus message");
+                        }
+                    }
+
+                    var consumeTime = span.StartTime.UtcDateTime;
+                    var produceTime = message.EnqueuedTime.UtcDateTime;
+                    var messageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+                    span.Tags.SetMetric(Trace.Metrics.MessageQueueTimeMs, messageQueueTimeMs);
+
+                    // TODO: we could pool these arrays to reduce allocations
+                    // NOTE: the tags must be sorted in alphabetical order
+                    var edgeTags = string.IsNullOrEmpty(namespaceString)
+                                        ? new[] { "direction:in", "type:servicebus" }
+                                        : new[] { "direction:in", $"topic:{namespaceString}", "type:servicebus" };
+                    var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
+                    span.SetDataStreamsCheckpoint(
+                        dataStreamsManager,
+                        CheckpointKind.Consume,
+                        edgeTags,
+                        msgSize,
+                        (long)messageQueueTimeMs,
+                        pathwayContext);
+                }
             }
 
             return CallTargetState.GetDefault();
