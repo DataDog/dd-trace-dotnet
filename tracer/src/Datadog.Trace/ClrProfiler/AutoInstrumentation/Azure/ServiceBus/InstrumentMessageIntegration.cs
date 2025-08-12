@@ -60,8 +60,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 var activeScope = Tracer.Instance.ActiveScope;
                 if (activeScope?.Span?.Context != null && properties != null)
                 {
-                    Log.Information("Injecting context from InstrumentMessageIntegration");
-                    properties["InstrumentationHeader"] = "InstrumentationValueInstrumentMessageIntegration";
                     var context = new Datadog.Trace.Propagators.PropagationContext(activeScope.Span.Context as Datadog.Trace.SpanContext, Datadog.Trace.Baggage.Current);
                     Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, properties, default(ContextPropagation));
                 }

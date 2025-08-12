@@ -203,8 +203,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             try
             {
-                Log.Information("CreateIsolatedFunctionScope");
-
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
                 PropagationContext extractedContext = default;
@@ -378,7 +376,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var hasUserPropertiesArray = grpcFeature.TriggerMetadata?.TryGetValue("UserPropertiesArray", out userPropertiesArrayObj) == true;
 
                 // Extract contexts from both sources
-                SpanContext? singleContext = null;
                 var allContexts = new List<SpanContext>();
 
                 // Handle single message scenario (UserProperties)
@@ -387,7 +384,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     var extractedContext = ExtractContextFromUserProperties(userPropertiesObj);
                     if (extractedContext.SpanContext != null)
                     {
-                        singleContext = extractedContext.SpanContext;
                         allContexts.Add(extractedContext.SpanContext);
                     }
                 }
@@ -405,7 +401,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 // Determine whether to use reparenting or span linking
-                bool shouldReparent = DetermineReparentingStrategy(hasUserProperties, hasUserPropertiesArray, allContexts);
+                bool shouldReparent = ShouldUseReparenting(allContexts);
 
                 if (shouldReparent && allContexts.Count > 0)
                 {
@@ -435,95 +431,52 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static bool DetermineReparentingStrategy(bool hasUserProperties, bool hasUserPropertiesArray, List<SpanContext> allContexts)
+        private static bool ShouldUseReparenting(List<SpanContext> contexts)
         {
-            // Case 1: UserProperties is used and UserPropertiesArray is not -> Reparent
-            if (hasUserProperties && !hasUserPropertiesArray)
+            // Single or no context always reparents
+            if (contexts.Count <= 1)
             {
-                Log.Information("Reparenting: UserProperties used without UserPropertiesArray");
                 return true;
             }
 
-            // Case 2: UserPropertiesArray is used and UserProperties is not -> Check if all contexts are the same
-            if (!hasUserProperties && hasUserPropertiesArray)
-            {
-                if (allContexts.Count <= 1)
-                {
-                    Log.Information("Reparenting: UserPropertiesArray has single context");
-                    return true;
-                }
-
-                // Check if all contexts are the same (same TraceId and SpanId)
-                var firstContext = allContexts[0];
-                bool allSame = allContexts.All(ctx =>
-                    ctx.TraceId128.Equals(firstContext.TraceId128) &&
-                    ctx.SpanId == firstContext.SpanId);
-
-                if (allSame)
-                {
-                    Log.Information("Reparenting: All contexts in UserPropertiesArray are identical");
-                    return true;
-                }
-                else
-                {
-                    Log.Information("Span linking: Non-uniform contexts in UserPropertiesArray");
-                    return false;
-                }
-            }
-
-            // Case 3: Both UserProperties and UserPropertiesArray are used -> Span link to all
-            if (hasUserProperties && hasUserPropertiesArray)
-            {
-                Log.Information("Span linking: Both UserProperties and UserPropertiesArray are present");
-                return false;
-            }
-
-            // Default fallback
-            Log.Information("Span linking: Default fallback strategy");
-            return false;
+            // Multiple contexts: reparent only if they're all identical
+            var first = contexts[0];
+            return contexts.All(ctx =>
+                ctx.TraceId128.Equals(first.TraceId128) &&
+                ctx.SpanId == first.SpanId);
         }
 
-        private static PropagationContext ExtractContextFromUserProperties(object? userPropertiesObj)
+        private static Dictionary<string, object>? ParseUserPropertiesJson(object? userPropertiesObj)
         {
             if (userPropertiesObj is string userPropertiesJson)
             {
-                Log.Information("UserProperties is a JSON string: {UserPropertiesJson}", userPropertiesJson);
-
                 try
                 {
-                    // Parse the JSON string to extract headers
-                    var userPropertiesDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(userPropertiesJson);
-
-                    if (userPropertiesDict != null)
-                    {
-                        Log.Information("Successfully parsed UserProperties JSON, contains {Count} keys", (object)userPropertiesDict.Count);
-
-                        // Log all keys for debugging
-                        foreach (var kvp in userPropertiesDict)
-                        {
-                            Log.Information("UserProperties key: {Key}, value: {Value}", kvp.Key, kvp.Value);
-                        }
-
-                        // Create a headers collection adapter for context extraction
-                        var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
-                        var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-
-                        Log.Information("Successfully extracted propagation context from UserProperties");
-                        return propagationContext;
-                    }
-                    else
-                    {
-                        Log.Information("Failed to deserialize UserProperties JSON to dictionary");
-                    }
+                    return JsonConvert.DeserializeObject<Dictionary<string, object>>(userPropertiesJson);
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Error parsing UserProperties JSON: {Json}", userPropertiesJson);
                 }
             }
-            else
+
+            return null;
+        }
+
+        private static SpanContext? ExtractSingleContext(Dictionary<string, object> userProperties)
+        {
+            var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userProperties);
+            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+            return extractedContext.SpanContext;
+        }
+
+        private static PropagationContext ExtractContextFromUserProperties(object? userPropertiesObj)
+        {
+            var userPropertiesDict = ParseUserPropertiesJson(userPropertiesObj);
+            if (userPropertiesDict != null)
             {
-                Log.Information("UserProperties is not a string, cannot parse as JSON");
+                var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
+                return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
             }
 
             return default;
@@ -543,17 +496,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                     if (userPropertiesArray != null)
                     {
-                        for (int i = 0; i < userPropertiesArray.Length; i++)
+                        foreach (var userPropertiesDict in userPropertiesArray)
                         {
-                            var userPropertiesDict = userPropertiesArray[i];
-
-                            // Create a headers collection adapter for context extraction
-                            var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
-                            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-
-                            if (extractedContext.SpanContext != null)
+                            var context = ExtractSingleContext(userPropertiesDict);
+                            if (context != null)
                             {
-                                spanContexts.Add(extractedContext.SpanContext);
+                                spanContexts.Add(context);
                             }
                         }
                     }
@@ -562,35 +510,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Could also handle direct array objects if they come in that format
                 else if (userPropertiesArrayObj is Dictionary<string, object>[] directDictArray)
                 {
-                    for (int i = 0; i < directDictArray.Length; i++)
+                    foreach (var userPropertiesDict in directDictArray)
                     {
-                        var userPropertiesDict = directDictArray[i];
-
-                        // Create a headers collection adapter for context extraction
-                        var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
-                        var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-
-                        if (extractedContext.SpanContext != null)
+                        var context = ExtractSingleContext(userPropertiesDict);
+                        if (context != null)
                         {
-                            spanContexts.Add(extractedContext.SpanContext);
+                            spanContexts.Add(context);
                         }
                     }
                 }
                 else if (userPropertiesArrayObj is object[] directArray)
                 {
-                    for (int i = 0; i < directArray.Length; i++)
+                    foreach (var item in directArray)
                     {
-                        var item = directArray[i];
-
                         // Try to convert the object to a dictionary if possible
                         if (item is Dictionary<string, object> itemDict)
                         {
-                            var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(itemDict);
-                            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-
-                            if (extractedContext.SpanContext != null)
+                            var context = ExtractSingleContext(itemDict);
+                            if (context != null)
                             {
-                                spanContexts.Add(extractedContext.SpanContext);
+                                spanContexts.Add(context);
                             }
                         }
                     }

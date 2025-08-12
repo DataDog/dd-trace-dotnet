@@ -6,18 +6,12 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
@@ -42,12 +36,6 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref IEnumerable messages, ref CancellationToken cancellationToken)
     {
-        Log.Information("SendMessagesAsync running");
-
-        // Log the full call stack to understand who's calling this
-        var stackTrace = new StackTrace(true);
-        var frames = stackTrace.GetFrames();
-
         var tracer = Tracer.Instance;
         var scope = tracer.StartActiveInternal(OperationName);
         var span = scope.Span;
@@ -56,20 +44,15 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
         span.SetTag("azure.servicebus.namespace", "namespace");
         span.SetTag("azure.servicebus.operation", "send_batch");
 
-        Log.Information("Messages is null: {IsNull}", messages is null);
-
         return new CallTargetState(scope);
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
     {
-        Log.Information("SendMessagesAsync ending");
-
         Scope? scope = state.Scope;
 
         if (scope is null)
         {
-            Log.Information("Scope is null");
             return returnValue;
         }
 
