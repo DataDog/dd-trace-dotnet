@@ -232,8 +232,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ => "Automatic", // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
-                    Log.Information("Detected trigger of type {Type} interpreted as {TriggerType}", type, triggerType);
-
                     // need to extract the headers from the context.
                     // We currently only support httpTrigger, but other triggers may also propagate context,
                     // e.g. Cosmos + ServiceBus, so we should handle those too
@@ -346,53 +344,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         private static PropagationContext ExtractPropagatedContextFromServiceBus<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
-            Log.Information("ExtractPropagatedContextFromServiceBus called with bindingName: {BindingName}", bindingName);
-
             // Need to try and grab the UserProperties from the ServiceBus message in the context
             if (context.Features is null || string.IsNullOrEmpty(bindingName))
             {
-                Log.Information(
-                    "Early return: context.Features is null: {FeaturesIsNull}, bindingName is null or empty: {BindingNameIsEmpty}",
-                    context.Features is null,
-                    string.IsNullOrEmpty(bindingName));
                 return default;
             }
-
-            Log.Information("Proceeding to search for IFunctionBindingsFeature in context features for ServiceBus");
 
             try
             {
                 object? feature = null;
-                Log.Information("Searching for IFunctionBindingsFeature in context features");
-
                 foreach (var keyValuePair in context.Features)
                 {
-                    Log.Information("Checking feature key: {FeatureKey}", keyValuePair.Key.FullName);
-
                     if (keyValuePair.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
                     {
                         feature = keyValuePair.Value;
-                        Log.Information("Found IFunctionBindingsFeature, feature type: {FeatureType}", feature?.GetType().FullName);
                         break;
                     }
                 }
 
                 if (feature is null || !feature.TryDuckCast<FunctionBindingsFeatureStruct>(out var bindingFeature))
                 {
-                    Log.Information(
-                        "Failed to get binding feature: feature is null: {FeatureIsNull}, duck cast successful: {DuckCastSuccess}",
-                        feature is null,
-                        feature?.TryDuckCast<FunctionBindingsFeatureStruct>(out var _) == true);
                     return default;
                 }
 
                 if (!feature.TryDuckCast<GrpcBindingsFeatureStruct>(out var grpcFeature))
                 {
-                    Log.Information("Failed to duck cast feature to GrpcBindingsFeatureStruct for ServiceBus");
                     return default;
                 }
-
-                Log.Information("Successfully obtained grpc feature for ServiceBus, TriggerMetadata is null: {TriggerMetadataIsNull}", grpcFeature.TriggerMetadata is null);
 
                 object? userPropertiesObj = null;
                 object? userPropertiesArrayObj = null;
@@ -406,39 +384,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Handle single message scenario (UserProperties)
                 if (hasUserProperties)
                 {
-                    Log.Information("Found UserProperties in TriggerMetadata, type: {UserPropertiesType}", userPropertiesObj?.GetType().FullName);
                     var extractedContext = ExtractContextFromUserProperties(userPropertiesObj);
                     if (extractedContext.SpanContext != null)
                     {
                         singleContext = extractedContext.SpanContext;
                         allContexts.Add(extractedContext.SpanContext);
-                        Log.Information(
-                            "Extracted context from UserProperties: TraceId={TraceId}, SpanId={SpanId}",
-                            extractedContext.SpanContext.TraceId128.Lower,
-                            extractedContext.SpanContext.SpanId);
                     }
-                }
-                else
-                {
-                    Log.Information("UserProperties not found in TriggerMetadata");
                 }
 
                 // Handle batch message scenario (UserPropertiesArray)
                 if (hasUserPropertiesArray)
                 {
-                    Log.Information("Found UserPropertiesArray in TriggerMetadata, type: {UserPropertiesArrayType}", userPropertiesArrayObj?.GetType().FullName);
                     var batchContexts = ExtractSpanContextsFromUserPropertiesArray(userPropertiesArrayObj);
                     allContexts.AddRange(batchContexts);
-                    Log.Information("Extracted {Count} contexts from UserPropertiesArray", (object)batchContexts.Count);
-                }
-                else
-                {
-                    Log.Information("UserPropertiesArray not found in TriggerMetadata");
                 }
 
                 if (allContexts.Count == 0)
                 {
-                    Log.Information("No span contexts extracted from ServiceBus metadata");
                     return default;
                 }
 
@@ -449,10 +411,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // Use reparenting - return the first valid context as parent
                     var parentContext = allContexts[0];
-                    Log.Information(
-                        "Using reparenting strategy with parent context: TraceId={TraceId}, SpanId={SpanId}",
-                        parentContext.TraceId128.Lower,
-                        parentContext.SpanId);
 
                     return new PropagationContext(
                         spanContext: parentContext,
@@ -463,7 +421,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // Use span linking - create links to all contexts
                     var spanLinks = allContexts.Select(ctx => new SpanLink(ctx)).ToList();
-                    Log.Information("Using span linking strategy with {Count} span links", (object)spanLinks.Count);
 
                     return new PropagationContext(
                         spanContext: null,
@@ -581,19 +538,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Handle array of UserProperties (batch scenario)
                 if (userPropertiesArrayObj is string userPropertiesArrayJson)
                 {
-                    Log.Information("UserPropertiesArray is a JSON string: {UserPropertiesArrayJson}", userPropertiesArrayJson);
-
                     // The UserPropertiesArray contains an array of objects, not an array of strings
                     var userPropertiesArray = JsonConvert.DeserializeObject<Dictionary<string, object>[]>(userPropertiesArrayJson);
 
                     if (userPropertiesArray != null)
                     {
-                        Log.Information("Successfully parsed UserPropertiesArray JSON, contains {Count} items", (object)userPropertiesArray.Length);
-
                         for (int i = 0; i < userPropertiesArray.Length; i++)
                         {
                             var userPropertiesDict = userPropertiesArray[i];
-                            Log.Information("Processing UserPropertiesArray item {Index}: {ItemKeys}", (object)i, string.Join(", ", userPropertiesDict.Keys));
 
                             // Create a headers collection adapter for context extraction
                             var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
@@ -602,33 +554,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             if (extractedContext.SpanContext != null)
                             {
                                 spanContexts.Add(extractedContext.SpanContext);
-                                Log.Information(
-                                    "Added span context from UserPropertiesArray item {Index}: TraceId={TraceId}, SpanId={SpanId}",
-                                    (object)i,
-                                    extractedContext.SpanContext.TraceId128.Lower,
-                                    extractedContext.SpanContext.SpanId);
-                            }
-                            else
-                            {
-                                Log.Information("No span context extracted from UserPropertiesArray item {Index}", (object)i);
                             }
                         }
-                    }
-                    else
-                    {
-                        Log.Information("Failed to deserialize UserPropertiesArray JSON to object array");
                     }
                 }
 
                 // Could also handle direct array objects if they come in that format
                 else if (userPropertiesArrayObj is Dictionary<string, object>[] directDictArray)
                 {
-                    Log.Information("UserPropertiesArray is a direct Dictionary array with {Count} items", (object)directDictArray.Length);
-
                     for (int i = 0; i < directDictArray.Length; i++)
                     {
                         var userPropertiesDict = directDictArray[i];
-                        Log.Information("Processing UserPropertiesArray direct item {Index}: {ItemKeys}", (object)i, string.Join(", ", userPropertiesDict.Keys));
 
                         // Create a headers collection adapter for context extraction
                         var headerAdapter = new ServiceBusUserPropertiesHeadersCollection(userPropertiesDict);
@@ -637,26 +573,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         if (extractedContext.SpanContext != null)
                         {
                             spanContexts.Add(extractedContext.SpanContext);
-                            Log.Information(
-                                "Added span context from UserPropertiesArray direct item {Index}: TraceId={TraceId}, SpanId={SpanId}",
-                                (object)i,
-                                extractedContext.SpanContext.TraceId128.Lower,
-                                extractedContext.SpanContext.SpanId);
-                        }
-                        else
-                        {
-                            Log.Information("No span context extracted from UserPropertiesArray direct item {Index}", (object)i);
                         }
                     }
                 }
                 else if (userPropertiesArrayObj is object[] directArray)
                 {
-                    Log.Information("UserPropertiesArray is a generic object array with {Count} items", (object)directArray.Length);
-
                     for (int i = 0; i < directArray.Length; i++)
                     {
                         var item = directArray[i];
-                        Log.Information("Processing UserPropertiesArray generic item {Index}: {Item}", (object)i, item?.GetType().FullName ?? "null");
 
                         // Try to convert the object to a dictionary if possible
                         if (item is Dictionary<string, object> itemDict)
@@ -667,26 +591,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             if (extractedContext.SpanContext != null)
                             {
                                 spanContexts.Add(extractedContext.SpanContext);
-                                Log.Information(
-                                    "Added span context from UserPropertiesArray generic item {Index}: TraceId={TraceId}, SpanId={SpanId}",
-                                    (object)i,
-                                    extractedContext.SpanContext.TraceId128.Lower,
-                                    extractedContext.SpanContext.SpanId);
                             }
-                            else
-                            {
-                                Log.Information("No span context extracted from UserPropertiesArray generic item {Index}", (object)i);
-                            }
-                        }
-                        else
-                        {
-                            Log.Information("UserPropertiesArray generic item {Index} is not a Dictionary<string, object>", (object)i);
                         }
                     }
-                }
-                else
-                {
-                    Log.Information("UserPropertiesArray is of unexpected type: {Type}", userPropertiesArrayObj?.GetType().FullName);
                 }
             }
             catch (Exception ex)

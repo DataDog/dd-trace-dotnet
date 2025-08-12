@@ -10,7 +10,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -18,8 +17,6 @@ namespace Datadog.Trace.Propagators
 {
     internal class SpanContextPropagator
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
-
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
 
@@ -72,41 +69,31 @@ namespace Datadog.Trace.Propagators
         internal void Inject<TCarrier, TCarrierSetter>(PropagationContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
-            Log.Information("Injecting context: starting");
-
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
             if (context.SpanContext is null && context.Baggage is null)
             {
-                Log.Information("Injecting context: span context and baggage are null, nothing to inject");
                 // nothing to inject
                 return;
             }
 
             if (context.SpanContext is { } spanContext)
             {
-                Log.Information("Injecting context: span context is not empty");
-
                 // If apm tracing is disabled and no other product owns the trace -> stop propagation
                 if (spanContext.TraceContext is { Tracer.Settings.ApmTracingEnabled: false } trace &&
                     !trace.Tags.HasTraceSources())
                 {
-                    Log.Information("Injecting context: ApmTracingEnabled is false and no other product owns the trace, skipping propagation");
                     return;
                 }
 
-                Log.Information("Injecting context: Get or make sampling decision");
                 // trigger a sampling decision if it hasn't happened yet
                 _ = spanContext.GetOrMakeSamplingDecision();
             }
 
             foreach (var injector in _injectors)
             {
-                Log.Information("Injecting context: injecting with {PropagatorType}", injector.GetType().Name);
                 injector.Inject(context, carrier, carrierSetter);
             }
-
-            Log.Information("Injecting context: done");
         }
 
         /// <summary>
