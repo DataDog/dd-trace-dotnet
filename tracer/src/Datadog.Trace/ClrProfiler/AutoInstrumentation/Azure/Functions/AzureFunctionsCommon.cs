@@ -361,13 +361,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
-                Log.Information("AzureFunctions: === ServiceBus Context Extraction Debug ===");
-                Log.Information("AzureFunctions: Function='{FunctionName}', BindingName='{BindingName}'", context.FunctionDefinition.Name, bindingName);
-
                 // Get bindings feature inline
                 if (context.Features == null)
                 {
-                    Log.Warning("AzureFunctions: context.Features is null - no ServiceBus context available");
                     return default;
                 }
 
@@ -383,7 +379,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (bindingsFeature == null)
                 {
-                    Log.Warning("AzureFunctions: IFunctionBindingsFeature not found - no ServiceBus context available");
                     return default;
                 }
 
@@ -394,133 +389,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var triggerMetadataCount = triggerMetadata?.Count ?? 0;
                 Log.Information<int>("AzureFunctions: TriggerMetadata has {Count} items", triggerMetadataCount);
 
-                // COMPREHENSIVE TRIGGERMETADATA ANALYSIS - Print ALL keys and values
-                if (triggerMetadata != null)
+                 // Extract from single message UserProperties
+                if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
+                    TryParseJson<Dictionary<string, object>>(singlePropsObj) is { } singleProps)
                 {
-                    Log.Information("=== COMPLETE TRIGGERMETADATA DUMP START ===");
-                    foreach (var item in triggerMetadata)
+                    if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
                     {
-                        try
-                        {
-                            var key = item.Key;
-                            var value = item.Value;
-                            var valueType = value?.GetType()?.FullName ?? "null";
-                            var valueString = value?.ToString() ?? "null";
-
-                            Log.Information("TriggerMetadata[{Key}] = {Value} (Type: {Type})", key, valueString, valueType);
-
-                            // For complex objects, try JSON serialization
-                            if (value != null && value.GetType() != typeof(string) && !value.GetType().IsPrimitive)
-                            {
-                                try
-                                {
-                                    var jsonValue = JsonConvert.SerializeObject(value, Formatting.Indented);
-                                    if (jsonValue.Length > 50 && jsonValue != valueString)
-                                    {
-                                        Log.Information("TriggerMetadata[{Key}] JSON: {JsonValue}", key, jsonValue);
-                                    }
-                                }
-                                catch
-                                {
-                                    // Ignore JSON serialization errors
-                                }
-                            }
-                        }
-                        catch (Exception itemEx)
-                        {
-                            Log.Error(itemEx, "Error analyzing TriggerMetadata item: {Key}", item.Key);
-                        }
-                    }
-
-                    Log.Information("=== COMPLETE TRIGGERMETADATA DUMP END ===");
-                }
-
-                // Extract from single message UserProperties
-                if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true)
-                {
-                    Log.Information("AzureFunctions: Found UserProperties");
-                    if (TryParseJson<Dictionary<string, object>>(singlePropsObj) is { } singleProps)
-                    {
-                        Log.Information<int>("AzureFunctions: Parsed UserProperties with {Count} properties", singleProps.Count);
-                        foreach (var prop in singleProps)
-                        {
-                            var isTracingHeader = prop.Key.StartsWith("x-datadog-") || prop.Key.StartsWith("traceparent") || prop.Key.StartsWith("tracestate");
-                            if (isTracingHeader)
-                            {
-                                Log.Information("AzureFunctions: TRACING HEADER {Key}: {Value}", prop.Key, prop.Value);
-                            }
-                            else
-                            {
-                                Log.Information("AzureFunctions: Property {Key} found", prop.Key);
-                            }
-                        }
-
-                        if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
-                        {
-                            Log.Information("AzureFunctions: Successfully extracted SpanContext from UserProperties - TraceId: {TraceId}", singleContext.TraceId128);
-                            spanContexts.Add(singleContext);
-                        }
-                        else
-                        {
-                            Log.Warning("AzureFunctions: Failed to extract SpanContext from UserProperties");
-                        }
-                    }
-                    else
-                    {
-                        Log.Warning("AzureFunctions: Failed to parse UserProperties as JSON");
+                        spanContexts.Add(singleContext);
                     }
                 }
 
                 // Extract from batch UserPropertiesArray
-                if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true)
+                if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true &&
+                    TryParseJson<Dictionary<string, object>[]>(arrayPropsObj) is { } propsArray)
                 {
-                    Log.Information("AzureFunctions: Found UserPropertiesArray");
-                    if (TryParseJson<Dictionary<string, object>[]>(arrayPropsObj) is { } propsArray)
+                    foreach (var props in propsArray)
                     {
-                        Log.Information<int>("AzureFunctions: Parsed UserPropertiesArray with {Count} messages", propsArray.Length);
-                        for (int i = 0; i < propsArray.Length; i++)
+                        if (ExtractSpanContextFromProperties(props) is { } batchContext)
                         {
-                            Log.Information<int, int>("AzureFunctions: Message {Index} has {Count} properties", i, propsArray[i].Count);
-                            if (ExtractSpanContextFromProperties(propsArray[i]) is { } batchContext)
-                            {
-                                Log.Information<int>("AzureFunctions: Successfully extracted SpanContext from batch message {Index}", i);
-                                spanContexts.Add(batchContext);
-                            }
-                            else
-                            {
-                                Log.Warning<int>("AzureFunctions: Failed to extract SpanContext from batch message {Index}", i);
-                            }
+                            spanContexts.Add(batchContext);
                         }
                     }
-                    else
-                    {
-                        Log.Warning("AzureFunctions: Failed to parse UserPropertiesArray as JSON");
-                    }
                 }
-
-                // Also try ApplicationProperties for backward compatibility
-                if (triggerMetadata?.TryGetValue("ApplicationProperties", out var appPropsObj) == true)
-                {
-                    Log.Information("AzureFunctions: Found ApplicationProperties");
-                    if (TryParseJson<Dictionary<string, object>>(appPropsObj) is { } appProps)
-                    {
-                        Log.Information<int>("AzureFunctions: Parsed ApplicationProperties with {Count} properties", appProps.Count);
-                    }
-                }
-
-                Log.Information<int>("AzureFunctions: Extracted {Count} SpanContext(s) from ServiceBus metadata", spanContexts.Count);
 
                 if (spanContexts.Count == 0)
                 {
-                    Log.Warning("AzureFunctions: No SpanContext found in ServiceBus metadata - returning default context");
                     return default;
                 }
 
                 // Create propagation context inline
                 bool shouldReparent = spanContexts.Count == 1 ||
                                      (spanContexts.Count > 1 && AreAllContextsIdentical(spanContexts));
-
-                Log.Information("AzureFunctions: Should reparent: {ShouldReparent}", shouldReparent);
 
                 return shouldReparent
                     ? new PropagationContext(spanContexts[0], Baggage.Current, null)
