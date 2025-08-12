@@ -6461,7 +6461,7 @@ stages:
       timeoutInMinutes: 60 #default value
       pool:
         name: azure-managed-linux-tasks
-      condition: failed()
+      condition: or(failed(), canceled())
       steps:
         - checkout: none
         - template: steps/update-github-status.yml
