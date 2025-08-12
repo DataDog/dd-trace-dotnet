@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private readonly ConcurrentDictionary<ExceptionIdentifier, TrackedExceptionCase> _trackedExceptionCases;
         private readonly ConcurrentQueue<Exception> _exceptionProcessQueue;
         private readonly SemaphoreSlim _workAvailable;
-        private readonly CancellationTokenSource _cts;
+        private readonly TaskCompletionSource<bool> _processExit;
         private readonly ExceptionCaseScheduler _exceptionsScheduler;
         private readonly int _maxFramesToCapture;
         private readonly TimeSpan _rateLimit;
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _trackedExceptionCases = new();
             _exceptionProcessQueue = new();
             _workAvailable = new(0, int.MaxValue);
-            _cts = new();
+            _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
             _exceptionsScheduler = new();
             _maxFramesToCapture = settings.MaximumFramesToCapture;
             _rateLimit = settings.RateLimit;
@@ -52,7 +52,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _cachedInvalidatedCases = new();
 
             _exceptionProcessorTask = Task.Factory.StartNew(
-                                               async () => await StartExceptionProcessingAsync(_cts.Token).ConfigureAwait(false), TaskCreationOptions.LongRunning)
+                                               async () => await StartExceptionProcessingAsync().ConfigureAwait(false),
+                                               TaskCreationOptions.LongRunning)
                                           .Unwrap();
             IsEditAndContinueFeatureEnabled = IsEnCFeatureEnabled();
             _isInitialized = true;
@@ -67,11 +68,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return new ExceptionTrackManager(settings);
         }
 
-        private async Task StartExceptionProcessingAsync(CancellationToken cancellationToken)
+        private async Task StartExceptionProcessingAsync()
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while (!_processExit.Task.IsCompleted)
             {
-                await _workAvailable.WaitAsync(cancellationToken).ConfigureAwait(false);
+                var completedTask = await Task.WhenAny(_workAvailable.WaitAsync(), _processExit.Task).ConfigureAwait(false);
+                if (completedTask == _processExit.Task)
+                {
+                    return;
+                }
 
                 while (_exceptionProcessQueue.TryDequeue(out var exception))
                 {
@@ -625,7 +630,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public void Dispose()
         {
-            _cts.Cancel();
+            _processExit.TrySetResult(true);
             _reportingCircuitBreaker.Dispose();
 
             foreach (var trackedExceptionCase in _trackedExceptionCases.Values)
@@ -658,7 +663,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             finally
             {
                 _workAvailable.Dispose();
-                _cts.Dispose();
                 _trackedExceptionCases.Clear();
             }
         }

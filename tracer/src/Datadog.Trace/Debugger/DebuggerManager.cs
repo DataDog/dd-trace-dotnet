@@ -39,24 +39,24 @@ namespace Datadog.Trace.Debugger
 
         private readonly object _syncLock;
         private readonly TimeSpan _diDebounceDelay;
+        private readonly TaskCompletionSource<bool> _processExit;
+        private TaskCompletionSource<bool> _dynamicInstrumentationInitializationGate;
         private int _initialized;
         private volatile bool _discoveryServiceReady;
-        private volatile bool _isShuttingDown;
         private Task? _dynamicInstrumentationTask;
-        private CancellationTokenSource? _dynamicInstrumentationCancellation;
         private CancellationTokenSource? _diDebounceCts;
-		private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
             _initialized = 0;
             _discoveryServiceReady = false;
-            _isShuttingDown = false;
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
             ServiceName = string.Empty;
             _syncLock = new();
-            _diDebounceDelay = TimeSpan.FromMilliseconds(200);
+            _diDebounceDelay = TimeSpan.FromMilliseconds(300);
+            _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            _dynamicInstrumentationInitializationGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         internal static DebuggerManager Instance => _lazyInstance.Value;
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private async Task<bool> WaitForDiscoveryServiceAsync(IDiscoveryService discoveryService, Task shutdownTask)
+        private async Task<bool> WaitForDiscoveryServiceAsync(IDiscoveryService discoveryService, Task processExitTask, Task ongoingInitializationTask)
         {
             if (_discoveryServiceReady)
             {
@@ -96,18 +96,15 @@ namespace Datadog.Trace.Debugger
             }
 
             var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-            using var registration = cancellationToken.Register(
-                () =>
-                {
-                    tc.TrySetResult(false);
-                    discoveryService.RemoveSubscription(Callback);
-                });
-
             discoveryService.SubscribeToChanges(Callback);
-			var completedTask = await Task.WhenAny(shutdownTask, tc.Task).ConfigureAwait(false);
+            var completedTask = await Task.WhenAny(tc.Task, processExitTask, ongoingInitializationTask).ConfigureAwait(false);
+            discoveryService.RemoveSubscription(Callback);
+            if (completedTask == tc.Task)
+            {
+                return _discoveryServiceReady;
+            }
 
-            _discoveryServiceReady = completedTask == tc.Task;
+            _discoveryServiceReady = false;
             return _discoveryServiceReady;
 
             void Callback(AgentConfiguration x)
@@ -118,6 +115,7 @@ namespace Datadog.Trace.Debugger
                 }
 
                 tc.TrySetResult(true);
+                _discoveryServiceReady = true;
                 discoveryService.RemoveSubscription(Callback);
             }
         }
@@ -138,7 +136,7 @@ namespace Datadog.Trace.Debugger
         {
             if (_processExit.Task.IsCompleted)
             {
-                return;
+                return _processExit.Task;
             }
 
             OneTimeSetup(tracerSettings);
@@ -146,9 +144,9 @@ namespace Datadog.Trace.Debugger
             // Handle sync operations immediately with simple lock
             lock (_syncLock)
             {
-                if (_isShuttingDown)
+                if (_processExit.Task.IsCompleted)
                 {
-                    return Task.CompletedTask;
+                    return _processExit.Task;
                 }
 
                 DebuggerSettings = newDebuggerSettings;
@@ -192,6 +190,17 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
+                if (!tracerSettings.IsRemoteConfigurationAvailable)
+                {
+                    Log.Information("Remote configuration is not available in this environment, so we don't upload symbols.");
+                    return;
+                }
+
                 var tracerManager = TracerManager.Instance;
                 SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, Instance.ServiceName, tracerSettings, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
 
@@ -208,6 +217,11 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
                 if (!debuggerSettings.CodeOriginForSpansEnabled)
                 {
                     CodeOrigin = null;
@@ -243,6 +257,11 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
                 if (!ExceptionReplaySettings.Enabled)
                 {
                     SafeDisposal.TryDispose(ExceptionReplay);
@@ -280,9 +299,9 @@ namespace Datadog.Trace.Debugger
 
         private Task ScheduleStartDynamicInstrumentation(TracerSettings tracerSettings, DebuggerSettings debuggerSettings)
         {
-            if (_isShuttingDown)
+            if (_processExit.Task.IsCompleted)
             {
-                return Task.CompletedTask;
+                return _processExit.Task;
             }
 
             // Coalesce: cancel any in-flight debounce delay
@@ -301,14 +320,14 @@ namespace Datadog.Trace.Debugger
                     try
                     {
                         await Task.Delay(_diDebounceDelay, cts.Token).ConfigureAwait(false);
-                        if (!cts.IsCancellationRequested && !_isShuttingDown)
+                        if (!cts.IsCancellationRequested && !_processExit.Task.IsCompleted)
                         {
                             await StartDynamicInstrumentationAsync(tracerSettings, debuggerSettings).ConfigureAwait(false);
                         }
                     }
                     catch (OperationCanceledException)
                     {
-                        /* expected on coalesce */
+                        // The task was cancelled, which is expected if a new DI request comes in before the delay completes.
                     }
                     catch (Exception ex)
                     {
@@ -322,21 +341,19 @@ namespace Datadog.Trace.Debugger
 
         private async Task StartDynamicInstrumentationAsync(TracerSettings tracerSettings, DebuggerSettings debuggerSettings)
         {
-            if (_isShuttingDown)
+            if (_processExit.Task.IsCompleted)
             {
                 return;
             }
 
             // Cancel any ongoing DI operation
-            var oldCancellation = Interlocked.Exchange(ref _dynamicInstrumentationCancellation, new CancellationTokenSource());
-            SafeDisposal.TryExecute(() => oldCancellation?.Cancel(), "ongoing Dynamic Instrumentation cancellation");
-            SafeDisposal.TryDispose(oldCancellation);
+            var oldGate = Interlocked.Exchange(ref _dynamicInstrumentationInitializationGate, new(TaskCreationOptions.RunContinuationsAsynchronously));
+            oldGate.TrySetResult(false);
+            SafeDisposal.TryDispose(oldGate.Task);
 
-            var currentCancellation = Volatile.Read(ref _dynamicInstrumentationCancellation);
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (currentCancellation == null)
+            if (_dynamicInstrumentationInitializationGate.Task.IsCompleted)
             {
-                return; // Shutting down
+                return;
             }
 
             // Wait for previous operation to actually stop (with timeout)
@@ -345,39 +362,22 @@ namespace Datadog.Trace.Debugger
             {
                 try
                 {
-                    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                        currentCancellation.Token,
-                        timeoutCts.Token);
-
-                    await previousTask.ContinueWith(_ => { }, combinedCts.Token).ConfigureAwait(false);
+                    var delayTask = Task.Delay(TimeSpan.FromSeconds(15));
+                    await Task.WhenAny(delayTask, oldGate.Task, previousTask).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException)
+                catch (Exception)
                 {
-                    if (currentCancellation.Token.IsCancellationRequested)
-                    {
-                        Log.Debug("Wait for previous DI operation cancelled due to shutdown");
-                    }
-                    else
-                    {
-                        Log.Warning("Previous Dynamic Instrumentation operation didn't stop within timeout");
-                    }
-
-                    return;
+                    Log.Warning("Previous Dynamic Instrumentation operation didn't stop within timeout");
                 }
             }
 
             // Start new operation
-            var newTask = SetDynamicInstrumentationStateAsync(tracerSettings, debuggerSettings, currentCancellation.Token);
+            var newTask = SetDynamicInstrumentationStateAsync(tracerSettings, debuggerSettings, _dynamicInstrumentationInitializationGate.Task);
             _ = Interlocked.Exchange(ref _dynamicInstrumentationTask, newTask);
 
             try
             {
                 await newTask.ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (currentCancellation.Token.IsCancellationRequested)
-            {
-                Log.Debug("Dynamic Instrumentation operation was cancelled by newer request");
             }
             catch (Exception ex)
             {
@@ -385,10 +385,15 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private async Task SetDynamicInstrumentationStateAsync(TracerSettings tracerSettings, DebuggerSettings debuggerSettings, CancellationToken cancellationToken)
+        private async Task SetDynamicInstrumentationStateAsync(TracerSettings tracerSettings, DebuggerSettings debuggerSettings, Task ongoingInitializationGateTask)
         {
             try
             {
+                if (_processExit.Task.IsCompleted || ongoingInitializationGateTask.IsCompleted)
+                {
+                    return;
+                }
+
                 if (!debuggerSettings.DynamicInstrumentationEnabled)
                 {
                     SafeDisposal.TryDispose(DynamicInstrumentation);
@@ -427,27 +432,12 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                var discoveryService = tracerManager.DiscoveryService;
-                DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(
-                    discoveryService,
-                    RcmSubscriptionManager.Instance,
-                    tracerSettings,
-                    ServiceName,
-                    debuggerSettings,
-                    tracerManager.GitMetadataTagsProvider);
-
-                Log.Debug("Dynamic Instrumentation has been created");
-
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
-
                 var sw = Stopwatch.StartNew();
+                var discoveryService = tracerManager.DiscoveryService;
                 if (!_discoveryServiceReady)
                 {
-                    var isDiscoverySuccessful = await WaitForDiscoveryServiceAsync(discoveryService, _processExit.Task).ConfigureAwait(false);
-                    if (!isDiscoverySuccessful || cancellationToken.IsCancellationRequested)
+                    var isDiscoverySuccessful = await WaitForDiscoveryServiceAsync(discoveryService, _processExit.Task, ongoingInitializationGateTask).ConfigureAwait(false);
+                    if (!isDiscoverySuccessful)
                     {
                         return;
                     }
@@ -455,10 +445,19 @@ namespace Datadog.Trace.Debugger
                     TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
                 }
 
-                if (cancellationToken.IsCancellationRequested)
+                if (ongoingInitializationGateTask.IsCompleted || _processExit.Task.IsCompleted)
                 {
                     return;
                 }
+
+                DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(
+                    discoveryService,
+                    RcmSubscriptionManager.Instance,
+                    tracerSettings,
+                    ServiceName,
+                    debuggerSettings,
+                    tracerManager.GitMetadataTagsProvider);
+                Log.Debug("Dynamic Instrumentation has been created");
 
                 sw.Restart();
                 DynamicInstrumentation.Initialize();
@@ -470,7 +469,6 @@ namespace Datadog.Trace.Debugger
             {
                 SafeDisposal.TryDispose(DynamicInstrumentation);
                 DynamicInstrumentation = null;
-                throw; // Re-throw to signal cancellation
             }
             catch (Exception ex)
             {
@@ -513,6 +511,7 @@ namespace Datadog.Trace.Debugger
             {
                 return;
             }
+
             _processExit.TrySetResult(true);
 
             if (ex != null)
@@ -520,7 +519,7 @@ namespace Datadog.Trace.Debugger
                 Log.Debug(ex, "Shutdown task for DebuggerManager is running with exception");
             }
 
-            var cancellation = Interlocked.Exchange(ref _dynamicInstrumentationCancellation, null);
+            // Interlocked.Exchange(ref _dynamicInstrumentationCancellation, null);
             SafeDisposal.New()
                         .Add(DynamicInstrumentation)
                         .Add(ExceptionReplay)

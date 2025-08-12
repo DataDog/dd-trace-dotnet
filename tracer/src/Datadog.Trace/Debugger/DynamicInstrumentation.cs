@@ -33,8 +33,8 @@ namespace Datadog.Trace.Debugger
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
 
+        private readonly TaskCompletionSource<bool> _processExit;
         private readonly SemaphoreSlim _rcmAvailabilitySemaphore;
-        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly IDiscoveryService _discoveryService;
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
@@ -63,8 +63,8 @@ namespace Datadog.Trace.Debugger
             IDogStatsd dogStats)
         {
             _settings = settings;
+            _processExit = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _rcmAvailabilitySemaphore = new SemaphoreSlim(0, 1);
-            _cancellationTokenSource = new CancellationTokenSource();
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _snapshotUploader = snapshotUploader;
@@ -120,8 +120,7 @@ namespace Datadog.Trace.Debugger
                                  Log.Error(e, "Dynamic Instrumentation initialization failed");
                                  Interlocked.Exchange(ref _initState, 0);
                              }
-                         },
-                         _cancellationTokenSource.Token)
+                         })
                     .ContinueWith(
                          t =>
                          {
@@ -181,7 +180,7 @@ namespace Datadog.Trace.Debugger
         {
             _probeStatusPoller.StartPolling();
 
-            Task.Run(() => _diagnosticsUploader.StartFlushingAsync(), _cancellationTokenSource.Token)
+            Task.Run(() => _diagnosticsUploader.StartFlushingAsync())
                 .ContinueWith(
                      t =>
                      {
@@ -196,7 +195,7 @@ namespace Datadog.Trace.Debugger
                      },
                      TaskContinuationOptions.OnlyOnFaulted);
 
-            Task.Run(() => _snapshotUploader.StartFlushingAsync(), _cancellationTokenSource.Token)
+            Task.Run(() => _snapshotUploader.StartFlushingAsync())
                 .ContinueWith(
                      t =>
                      {
@@ -599,25 +598,17 @@ namespace Datadog.Trace.Debugger
                 return true;
             }
 
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token);
-            cts.CancelAfter(timeout);
-
             try
             {
-                await _rcmAvailabilitySemaphore.WaitAsync(cts.Token).ConfigureAwait(false);
-                return _isRcmAvailable;
-            }
-            catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
-            {
-                if (_cancellationTokenSource.Token.IsCancellationRequested)
+                var waitTask = _rcmAvailabilitySemaphore.WaitAsync();
+                var timeoutTask = Task.Delay(timeout);
+                var completed = await Task.WhenAny(waitTask, timeoutTask, _processExit.Task).ConfigureAwait(false);
+                if (completed == waitTask)
                 {
-                    Log.Debug("RCM availability wait cancelled due to shutdown");
-                }
-                else
-                {
-                    Log.Warning("RCM availability wait timed out after {Timeout}", timeout);
+                    return _isRcmAvailable;
                 }
 
+                Log.Warning("RCM availability wait timed out after {Timeout}", timeout);
                 return false;
             }
             catch (Exception ex)
@@ -658,9 +649,9 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
+            _processExit.TrySetResult(true);
             AppDomain.CurrentDomain.AssemblyLoad -= CheckUnboundProbes;
             SafeDisposal.New()
-                        .Execute(() => _cancellationTokenSource.Cancel(), "cancel dynamic instrumentation operations")
                         .Execute(() => _discoveryService.RemoveSubscription(DiscoveryCallback), "removing discovery service subscription")
                         .Execute(() => _subscriptionManager.Unsubscribe(_subscription), "unsubscribing from RCM")
                         .Add(_snapshotUploader)
@@ -668,7 +659,6 @@ namespace Datadog.Trace.Debugger
                         .Add(_probeStatusPoller)
                         .Add(_dogStats)
                         .Add(_rcmAvailabilitySemaphore)
-                        .Add(_cancellationTokenSource)
                         .DisposeAll();
         }
     }
