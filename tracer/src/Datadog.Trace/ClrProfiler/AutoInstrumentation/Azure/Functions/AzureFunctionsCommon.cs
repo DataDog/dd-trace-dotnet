@@ -269,14 +269,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     var destinationName = ExtractServiceBusDestinationName(context, bindingName);
                     if (!string.IsNullOrEmpty(destinationName))
                     {
-                        // Store this in the span context for later retrieval by ProcessMessageIntegration
-                        // We'll add this as a tag that ProcessMessageIntegration can read
-                        if (scope?.Span?.Tags is AzureFunctionsTags azureTags)
-                        {
-                            // TODO: We need a way to pass this to ProcessMessageIntegration
-                            // For now, just log it
-                            Log.Information("AzureFunctions: Extracted ServiceBus destination name '{DestinationName}' from binding metadata", destinationName);
-                        }
+                        // Set the messaging destination name in the tags
+                        tags.MessagingDestinationName = destinationName;
+                        Log.Information("AzureFunctions: Set MessagingDestinationName to '{DestinationName}'", destinationName);
                     }
                 }
 
