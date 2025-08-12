@@ -16,10 +16,6 @@ on:
         required: true
         default: 'False'
 
-      branch_name:
-        description: 'Branch name for tagging (optional). If provided, tags as branch name instead of latest_snapshot'
-        required: false
-
 jobs:
   build-and-publish-base-image:
     runs-on: ubuntu-latest
@@ -49,17 +45,6 @@ jobs:
       env:
         AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
 
-    - name: "Sanitize branch name"
-      id: image_tag
-      run: |
-        BRANCH="${{github.event.inputs.branch_name}}"
-        if [[ -z "$BRANCH" ]]; then
-          echo "ERROR: Missing required 'branch_name' input. Aborting docker image build."
-          exit 1
-        fi
-        SAFE_TAG="${BRANCH//\//_}"
-        echo "tag=$SAFE_TAG" >> $GITHUB_OUTPUT
-
     - uses: ./.github/actions/create-system-test-docker-base-images
       name: 'Create system test docker images'
       with:
@@ -68,4 +53,3 @@ jobs:
         lib_waf_version: "${{steps.versions.outputs.lib_waf_version}}"
         waf_rules_version: "${{steps.versions.outputs.waf_rules_version}}"
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        image_tag: ${{steps.image_tag.outputs.tag}}
