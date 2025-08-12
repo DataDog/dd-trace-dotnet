@@ -1007,6 +1007,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 Log.Information("AzureFunctions: Function Name: {FunctionName}", context.FunctionDefinition.Name);
                 Log.Information("AzureFunctions: Function EntryPoint: {EntryPoint}", context.FunctionDefinition.EntryPoint);
 
+                // Try to extract queue name from the EntryPoint method via reflection
+                var queueNameFromReflection = ExtractQueueNameFromFunctionMethod(context.FunctionDefinition.EntryPoint);
+                if (!string.IsNullOrEmpty(queueNameFromReflection))
+                {
+                    Log.Information("AzureFunctions: *** FOUND DESTINATION from method reflection: '{QueueName}' ***", queueNameFromReflection);
+                    return queueNameFromReflection;
+                }
+
                 // The queue/topic name should be in the ServiceBus trigger attribute
                 // Look through the function definition for ServiceBus trigger configuration
                 if (context.FunctionDefinition.InputBindings is not null)
@@ -1196,6 +1204,177 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             catch (Exception ex)
             {
                 Log.Debug(ex, "Error extracting from configuration object");
+            }
+
+            return null;
+        }
+
+        private static string? ExtractQueueNameFromFunctionMethod(string? entryPoint)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(entryPoint))
+                {
+                    return null;
+                }
+
+                Log.Information("AzureFunctions: Attempting to extract queue name from method: {EntryPoint}", entryPoint);
+
+                // EntryPoint format is typically: "Namespace.ClassName.MethodName"
+                // We need to find the method and inspect its ServiceBusTrigger attribute
+                var parts = entryPoint!.Split('.');
+                if (parts.Length < 3)
+                {
+                    Log.Information("AzureFunctions: EntryPoint format unexpected, expected at least 3 parts: {Parts}", string.Join(".", parts));
+                    return null;
+                }
+
+                var methodName = parts[parts.Length - 1];
+                var className = string.Join(".", parts.Take(parts.Length - 1));
+
+                Log.Information("AzureFunctions: Parsed EntryPoint - Class: '{ClassName}', Method: '{MethodName}'", className, methodName);
+
+                // Try to find the type using reflection
+                Type? functionType = null;
+
+                // Search through all loaded assemblies for the type
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    try
+                    {
+                        functionType = assembly.GetType(className);
+                        if (functionType != null)
+                        {
+                            Log.Information("AzureFunctions: Found function type: {TypeName} in assembly: {AssemblyName}", functionType.FullName, assembly.FullName);
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(ex, "Error getting type {ClassName} from assembly {AssemblyName}", className, assembly.FullName);
+                    }
+                }
+
+                if (functionType == null)
+                {
+                    Log.Information("AzureFunctions: Could not find function type: {ClassName}", className);
+                    return null;
+                }
+
+                // Find the method
+                var method = functionType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
+                if (method == null)
+                {
+                    Log.Information("AzureFunctions: Could not find method: {MethodName} in type: {TypeName}", methodName, functionType.FullName);
+                    return null;
+                }
+
+                Log.Information("AzureFunctions: Found method: {MethodName}, analyzing parameters", methodName);
+
+                // Check method parameters for ServiceBusTrigger attribute
+                var parameters = method.GetParameters();
+                Log.Information<int>("AzureFunctions: Method has {Count} parameters", parameters.Length);
+
+                foreach (var parameter in parameters)
+                {
+                    Log.Information("AzureFunctions: Parameter: {Name} (Type: {Type})", parameter.Name, parameter.ParameterType.Name);
+
+                    var attributes = parameter.GetCustomAttributes(false);
+                    foreach (var attribute in attributes)
+                    {
+                        var attributeType = attribute.GetType();
+                        Log.Information("AzureFunctions: Parameter attribute: {AttributeType}", attributeType.FullName);
+
+                        // Check if this is a ServiceBusTrigger attribute
+                        if (attributeType.Name == "ServiceBusTriggerAttribute" ||
+                            attributeType.FullName?.Contains("ServiceBusTrigger") == true)
+                        {
+                            Log.Information("AzureFunctions: *** FOUND ServiceBusTrigger attribute! ***");
+
+                            // Try to get the queue/topic name from the attribute
+                            var queueName = ExtractQueueNameFromServiceBusTriggerAttribute(attribute);
+                            if (!string.IsNullOrEmpty(queueName))
+                            {
+                                Log.Information("AzureFunctions: *** EXTRACTED QUEUE NAME from ServiceBusTrigger: '{QueueName}' ***", queueName);
+                                return queueName;
+                            }
+                        }
+                    }
+                }
+
+                Log.Information("AzureFunctions: No ServiceBusTrigger attribute found in method parameters");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error extracting queue name from function method: {EntryPoint}", entryPoint);
+            }
+
+            return null;
+        }
+
+        private static string? ExtractQueueNameFromServiceBusTriggerAttribute(object serviceBusTriggerAttribute)
+        {
+            try
+            {
+                var attributeType = serviceBusTriggerAttribute.GetType();
+                Log.Information("AzureFunctions: Analyzing ServiceBusTrigger attribute type: {Type}", attributeType.FullName);
+
+                // ServiceBusTriggerAttribute typically has properties like:
+                // - QueueName or EntityName (for queue)
+                // - TopicName (for topic)
+                // Or constructor parameters
+
+                // Try to get properties first
+                var properties = attributeType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                Log.Information<int>("AzureFunctions: ServiceBusTrigger attribute has {Count} properties", properties.Length);
+
+                foreach (var property in properties)
+                {
+                    var propValue = property.GetValue(serviceBusTriggerAttribute);
+                    Log.Information(
+                        "AzureFunctions: ServiceBusTrigger property '{Name}' = '{Value}' (Type: {Type})",
+                        property.Name,
+                        propValue,
+                        property.PropertyType.Name);
+
+                    var propName = property.Name.ToLowerInvariant();
+                    if ((propName.Contains("queue") || propName.Contains("topic") || propName.Contains("entity")) &&
+                        propValue is string strValue && !string.IsNullOrEmpty(strValue))
+                    {
+                        Log.Information("AzureFunctions: *** FOUND QUEUE/TOPIC NAME in property '{Property}': '{Value}' ***", property.Name, strValue);
+                        return strValue;
+                    }
+                }
+
+                // If no properties found, try to access constructor arguments via reflection
+                // This is more complex and might not always work, but the first constructor parameter
+                // of ServiceBusTriggerAttribute is usually the queue/topic name
+                var fields = attributeType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+                foreach (var field in fields)
+                {
+                    var fieldValue = field.GetValue(serviceBusTriggerAttribute);
+                    Log.Information(
+                        "AzureFunctions: ServiceBusTrigger field '{Name}' = '{Value}' (Type: {Type})",
+                        field.Name,
+                        fieldValue,
+                        field.FieldType.Name);
+
+                    if (fieldValue is string strFieldValue && !string.IsNullOrEmpty(strFieldValue) &&
+                        !strFieldValue.Equals("ServiceBusConnection", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var fieldName = field.Name.ToLowerInvariant();
+                        if (fieldName.Contains("queue") || fieldName.Contains("topic") || fieldName.Contains("entity") ||
+                            fieldName.Contains("name") || strFieldValue.Length > 3)
+                        {
+                            Log.Information("AzureFunctions: *** FOUND QUEUE/TOPIC NAME in field '{Field}': '{Value}' ***", field.Name, strFieldValue);
+                            return strFieldValue;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error extracting queue name from ServiceBusTrigger attribute");
             }
 
             return null;
