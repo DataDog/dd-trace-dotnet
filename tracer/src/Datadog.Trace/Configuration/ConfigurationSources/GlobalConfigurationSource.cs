@@ -20,28 +20,12 @@ namespace Datadog.Trace.Configuration;
 /// </summary>
 internal class GlobalConfigurationSource
 {
-    private static IConfigurationSource? _instance;
-
     /// <summary>
     /// Gets the configuration source instance.
     /// </summary>
-    internal static IConfigurationSource Instance
-    {
-        get
-        {
-            if (_instance != null)
-            {
-                return _instance;
-            }
+    internal static IConfigurationSource Instance => CreationResult.ConfigurationSource;
 
-            CreationResult = CreateDefaultConfigurationSource();
-            _instance = CreationResult.ConfigurationSource;
-
-            return _instance;
-        }
-    }
-
-    internal static GlobalConfigurationSourceResult CreationResult { get; private set; }
+    internal static GlobalConfigurationSourceResult CreationResult { get; private set; } = CreateDefaultConfigurationSource();
 
     /// <summary>
     /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
@@ -143,8 +127,7 @@ internal class GlobalConfigurationSource
     /// <param name="isLibdatadogAvailable">whether libdatadog is available</param>
     internal static void Reload(bool isLibdatadogAvailable)
     {
-        var result = CreateDefaultConfigurationSource(isLibdatadogAvailable: isLibdatadogAvailable);
-        _instance = result.ConfigurationSource;
+        CreationResult = CreateDefaultConfigurationSource(isLibdatadogAvailable: isLibdatadogAvailable);
     }
 
     private static string GetCurrentDirectory()

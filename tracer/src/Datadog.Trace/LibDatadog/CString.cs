@@ -19,7 +19,7 @@ internal struct CString : IDisposable
 
     internal CString(string? str)
     {
-        if (string.IsNullOrEmpty(str))
+        if (StringUtil.IsNullOrEmpty(str))
         {
             Ptr = IntPtr.Zero;
             Length = UIntPtr.Zero;
@@ -27,7 +27,7 @@ internal struct CString : IDisposable
         else
         {
             var encoding = StringEncoding.UTF8;
-            var maxBytesCount = encoding.GetMaxByteCount(str!.Length);
+            var maxBytesCount = encoding.GetMaxByteCount(str.Length);
             Ptr = Marshal.AllocHGlobal(maxBytesCount);
             unsafe
             {

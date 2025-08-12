@@ -77,11 +77,11 @@ internal struct ConfiguratorHelper
                     var value = libraryConfig->Value.ToUtf8String();
                     if (libraryConfig->Source == LibraryConfigSource.FleetStableConfig)
                     {
-                        configEntriesRemote.Add(name, value);
+                        configEntriesRemote[name] = value;
                     }
                     else if (libraryConfig->Source == LibraryConfigSource.LocalStableConfig)
                     {
-                        configEntriesLocal.Add(name, value);
+                        configEntriesLocal[name] = value;
                     }
                 }
             }

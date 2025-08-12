@@ -14,7 +14,6 @@ namespace Datadog.Trace.LibDatadog;
 /// *This class should NOT contain any direct Logger field, nor methods should log*.
 /// LibDatadogAvailable factory is used when building settings for the tracer, if a logger is instantiated in this path, it creates an infinite loop as the logger itself will try to build settings
 /// The Lazy will loop on itself and end up in a InvalidOperationException as Value ends up calling itself
-/// Even calling a method on a class that has a Logger as a static field is enough to have it instantiated, that's why ProfilerAttached eventually call FrameworkDescription that has a Lazy`Logger`
 /// </summary>
 internal static class LibDatadogAvailaibilityHelper
 {

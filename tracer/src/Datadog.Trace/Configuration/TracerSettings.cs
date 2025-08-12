@@ -441,7 +441,7 @@ namespace Datadog.Trace.Configuration
                     DataPipelineEnabled = false;
                     if (isLibDatadogAvailable.Exception is not null)
                     {
-                        Log.Error(
+                        Log.Warning(
                             isLibDatadogAvailable.Exception,
                             $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
                     }
