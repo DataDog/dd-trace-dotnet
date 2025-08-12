@@ -19,9 +19,6 @@ internal struct GrpcBindingsFeatureStruct
 {
     public IDictionary<string, object?>? TriggerMetadata;
     public IDictionary<string, object?>? InputData;
-    public IDictionary<string, object?>? OutputBindingData;
-    public object? OutputBindingsInfo;
-    public object? InvocationResult;
 }
 
 #endif

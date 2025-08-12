@@ -10,12 +10,4 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 internal interface IServiceBusProcessor
 {
     string EntityPath { get; }
-
-    string? FullyQualifiedNamespace { get; }
-
-    string? Identifier { get; }
-
-    object? Options { get; }
-
-    bool IsSessionProcessor { get; }
 }
