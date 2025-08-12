@@ -1043,6 +1043,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                                     Log.Information<int>("AzureFunctions: Found {Count} properties on binding object", properties.Length);
 
+                                    // First, log all properties without filtering
                                     foreach (var prop in properties)
                                     {
                                         try
@@ -1055,13 +1056,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                                                 prop.Name,
                                                 propValueStr,
                                                 prop.PropertyType.Name);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Log.Debug(ex, "Error accessing property {Property}", prop.Name);
+                                        }
+                                    }
 
-                                            // Look for properties that might contain the queue/topic name
+                                    // Now analyze properties for queue/topic name
+                                    foreach (var prop in properties)
+                                    {
+                                        try
+                                        {
+                                            var propValue = prop.GetValue(rawValue);
                                             var propName = prop.Name.ToLowerInvariant();
 
                                             // Check for direct queue/topic name properties
                                             if (propName.Contains("queue") || propName.Contains("topic") || propName.Contains("entity") ||
-                                                propName.Contains("name") || propName.Contains("path"))
+                                                propName.Contains("path"))
                                             {
                                                 if (propValue is string strValue && !string.IsNullOrEmpty(strValue) &&
                                                     !strValue.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase))
@@ -1071,15 +1083,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                                                 }
                                             }
 
+                                            // Skip parameter name (that's not the queue/topic name)
+                                            if (propName.Equals("name", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                Log.Information("AzureFunctions: Skipping parameter name property: '{Property}' = '{Value}'", prop.Name, propValue);
+                                                continue;
+                                            }
+
                                             // Some bindings might have the queue/topic name as the first parameter
                                             // in a configuration object or array
-                                            if (propName.Contains("parameter") || propName.Contains("config") || propName.Contains("arg"))
+                                            if (propName.Contains("parameter") || propName.Contains("config") || propName.Contains("arg") ||
+                                                propName.Contains("data") || propName.Contains("source") || propName.Contains("metadata"))
                                             {
                                                 // Try to extract from configuration structures
                                                 if (propValue != null)
                                                 {
+                                                    Log.Information("AzureFunctions: Analyzing config property '{Property}' for queue/topic name", prop.Name);
                                                     var extracted = TryExtractFromConfigurationObject(propValue);
-                                                    if (extracted != null)
+                                                    if (extracted != null && !extracted.Equals("msg", StringComparison.OrdinalIgnoreCase) &&
+                                                        !extracted.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase))
                                                     {
                                                         Log.Information("AzureFunctions: *** FOUND DESTINATION in config object: '{Value}' ***", extracted);
                                                         return extracted;
