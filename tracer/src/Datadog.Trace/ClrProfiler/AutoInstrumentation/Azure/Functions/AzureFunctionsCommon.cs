@@ -264,6 +264,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     tags.MessagingMessageId = messageId;
 
                     // Try to extract destination name from binding metadata
+                    // TODO: @pmartinez there must be a better way than this to get the queue
                     var destinationName = ExtractQueueNameFromFunctionMethod(context.FunctionDefinition.EntryPoint);
                     if (!string.IsNullOrEmpty(destinationName))
                     {
@@ -386,7 +387,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
                 var spanContexts = new List<SpanContext>();
 
-                 // Extract from single message UserProperties
+                // Extract from single message UserProperties
                 if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
                     TryParseJson<Dictionary<string, object>>(singlePropsObj) is { } singleProps)
                 {
@@ -518,6 +519,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
+        // TODO: @pmartinez I hate this
         private static string? ExtractQueueNameFromFunctionMethod(string? entryPoint)
         {
             try
@@ -592,6 +594,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return null;
         }
 
+        // TODO: @pmartinez I hate this
         private static string? ExtractQueueNameFromServiceBusTriggerAttribute(object serviceBusTriggerAttribute)
         {
             try
