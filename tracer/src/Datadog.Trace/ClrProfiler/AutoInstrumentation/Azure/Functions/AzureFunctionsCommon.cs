@@ -205,6 +205,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
+                var bindingName = default(string);
                 PropagationContext extractedContext = default;
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
@@ -253,6 +254,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     ShortName = functionName,
                     FullName = context.FunctionDefinition.EntryPoint,
                 };
+
+                // Extract ServiceBus messaging metadata if this is a ServiceBus trigger
+                if (triggerType == "ServiceBus")
+                {
+                    var metadata = ExtractServiceBusMessagingMetadata(context, bindingName);
+                    tags.MessagingDestinationName = metadata.QueueName;
+                    tags.MessagingMessageId = metadata.MessageId;
+                }
 
                 if (tracer.InternalActiveScope == null)
                 {
@@ -449,6 +458,67 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return contexts.All(ctx =>
                 ctx.TraceId128.Equals(first.TraceId128) &&
                 ctx.SpanId == first.SpanId);
+        }
+
+        private static (string? QueueName, string? MessageId) ExtractServiceBusMessagingMetadata<T>(T context, string? bindingName)
+            where T : IFunctionContext
+        {
+            try
+            {
+                // Get bindings feature
+                if (context.Features == null)
+                {
+                    return (null, null);
+                }
+
+                GrpcBindingsFeatureStruct? bindingsFeature = null;
+                foreach (var kvp in context.Features)
+                {
+                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
+                    {
+                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
+                        break;
+                    }
+                }
+
+                if (bindingsFeature == null)
+                {
+                    return (null, null);
+                }
+
+                var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
+
+                // Extract queue name
+                string? queueName = null;
+                if (triggerMetadata?.TryGetValue("QueueName", out var queueObj) == true && queueObj is string queue)
+                {
+                    queueName = queue;
+                }
+                else if (triggerMetadata?.TryGetValue("EntityName", out var entityObj) == true && entityObj is string entity)
+                {
+                    queueName = entity;
+                }
+
+                // Extract message ID for single message only (not for batches)
+                string? messageId = null;
+                if (triggerMetadata?.TryGetValue("MessageId", out var msgIdObj) == true && msgIdObj is string msgId)
+                {
+                    messageId = msgId;
+                }
+
+                // Don't extract messageId if this is a batch (UserPropertiesArray indicates batch)
+                else if (triggerMetadata?.ContainsKey("UserPropertiesArray") == true)
+                {
+                    messageId = null; // Explicitly null for batch triggers
+                }
+
+                return (queueName, messageId);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error extracting ServiceBus messaging metadata");
+                return (null, null);
+            }
         }
     }
 }

@@ -312,6 +312,16 @@ namespace Datadog.Trace
         internal const string MessagingOperation = "messaging.operation";
 
         /// <summary>
+        /// The messaging system.
+        /// </summary>
+        internal const string MessagingSystem = "messaging.system";
+
+        /// <summary>
+        /// The message ID.
+        /// </summary>
+        internal const string MessagingMessageId = "messaging.message_id";
+
+        /// <summary>
         /// The AMQP method.
         /// </summary>
         internal const string AmqpCommand = "amqp.command";
