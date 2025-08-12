@@ -636,6 +636,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
+                // FIRST: Try to extract from function binding definition (most reliable)
+                var destinationFromBinding = ExtractDestinationFromBindingDefinition(context);
+                if (!string.IsNullOrEmpty(destinationFromBinding))
+                {
+                    Log.Information("AzureFunctions: Extracted destination from binding definition: '{Destination}'", destinationFromBinding);
+                    return destinationFromBinding;
+                }
+
                 if (context.Features == null)
                 {
                     return null;
@@ -995,39 +1003,88 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
+                Log.Information("AzureFunctions: === Analyzing Function Binding Definition for ServiceBus destination ===");
+                Log.Information("AzureFunctions: Function Name: {FunctionName}", context.FunctionDefinition.Name);
+                Log.Information("AzureFunctions: Function EntryPoint: {EntryPoint}", context.FunctionDefinition.EntryPoint);
+
                 // The queue/topic name should be in the ServiceBus trigger attribute
                 // Look through the function definition for ServiceBus trigger configuration
                 if (context.FunctionDefinition.InputBindings is not null)
                 {
+                    Log.Information<int>("AzureFunctions: Found {Count} input bindings", context.FunctionDefinition.InputBindings.Count);
+
                     foreach (var entry in context.FunctionDefinition.InputBindings)
                     {
                         if (entry is DictionaryEntry dictEntry && dictEntry.Value != null)
                         {
-                            if (dictEntry.Value.TryDuckCast<BindingMetadata>(out var bindingMeta) &&
-                                bindingMeta.BindingType?.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase) == true)
+                            Log.Information(
+                                "AzureFunctions: Checking binding - Key: '{Key}', Value Type: {ValueType}",
+                                dictEntry.Key,
+                                dictEntry.Value.GetType().FullName);
+
+                            if (dictEntry.Value.TryDuckCast<BindingMetadata>(out var bindingMeta))
                             {
-                                // Found ServiceBus trigger, now extract the queue/topic name from the raw binding data
-                                // This is where the actual queue name should be stored in the binding configuration
-                                var rawValue = dictEntry.Value;
-                                Log.Information("AzureFunctions: ServiceBus binding found, type: {Type}", rawValue.GetType().FullName);
+                                Log.Information(
+                                    "AzureFunctions: Binding metadata - Type: '{BindingType}', Direction: {Direction}",
+                                    bindingMeta.BindingType,
+                                    bindingMeta.Direction);
 
-                                // Try to extract queue/topic name from binding properties
-                                // The actual property names may vary, so we'll try common ones
-                                var valueType = rawValue.GetType();
-                                var properties = valueType.GetProperties();
-
-                                foreach (var prop in properties)
+                                if (bindingMeta.BindingType?.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase) == true)
                                 {
-                                    var propName = prop.Name.ToLowerInvariant();
-                                    if (propName.Contains("queue") || propName.Contains("topic") || propName.Contains("entity"))
+                                    Log.Information("AzureFunctions: *** FOUND SERVICEBUS TRIGGER BINDING ***");
+
+                                    // Found ServiceBus trigger, now extract the queue/topic name from the raw binding data
+                                    var rawValue = dictEntry.Value;
+                                    Log.Information("AzureFunctions: Raw binding value type: {Type}", rawValue.GetType().FullName);
+
+                                    // Try to extract queue/topic name from ALL binding properties
+                                    var valueType = rawValue.GetType();
+                                    var properties = valueType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+                                    Log.Information<int>("AzureFunctions: Found {Count} properties on binding object", properties.Length);
+
+                                    foreach (var prop in properties)
                                     {
                                         try
                                         {
                                             var propValue = prop.GetValue(rawValue);
-                                            if (propValue is string strValue && !string.IsNullOrEmpty(strValue))
+                                            var propValueStr = propValue?.ToString();
+
+                                            Log.Information(
+                                                "AzureFunctions: Property '{PropertyName}' = '{Value}' (Type: {Type})",
+                                                prop.Name,
+                                                propValueStr,
+                                                prop.PropertyType.Name);
+
+                                            // Look for properties that might contain the queue/topic name
+                                            var propName = prop.Name.ToLowerInvariant();
+
+                                            // Check for direct queue/topic name properties
+                                            if (propName.Contains("queue") || propName.Contains("topic") || propName.Contains("entity") ||
+                                                propName.Contains("name") || propName.Contains("path"))
                                             {
-                                                Log.Information("AzureFunctions: Found potential destination in property '{Property}': '{Value}'", prop.Name, strValue);
-                                                return strValue;
+                                                if (propValue is string strValue && !string.IsNullOrEmpty(strValue) &&
+                                                    !strValue.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    Log.Information("AzureFunctions: *** FOUND DESTINATION in property '{Property}': '{Value}' ***", prop.Name, strValue);
+                                                    return strValue;
+                                                }
+                                            }
+
+                                            // Some bindings might have the queue/topic name as the first parameter
+                                            // in a configuration object or array
+                                            if (propName.Contains("parameter") || propName.Contains("config") || propName.Contains("arg"))
+                                            {
+                                                // Try to extract from configuration structures
+                                                if (propValue != null)
+                                                {
+                                                    var extracted = TryExtractFromConfigurationObject(propValue);
+                                                    if (extracted != null)
+                                                    {
+                                                        Log.Information("AzureFunctions: *** FOUND DESTINATION in config object: '{Value}' ***", extracted);
+                                                        return extracted;
+                                                    }
+                                                }
                                             }
                                         }
                                         catch (Exception ex)
@@ -1035,7 +1092,80 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                                             Log.Debug(ex, "Error accessing property {Property}", prop.Name);
                                         }
                                     }
+
+                                    // If we found the ServiceBus trigger but couldn't extract the destination,
+                                    // try to get it from the binding key itself (parameter name)
+                                    if (dictEntry.Key is string bindingKey && !string.IsNullOrEmpty(bindingKey))
+                                    {
+                                        Log.Information("AzureFunctions: ServiceBus trigger found but no destination in properties. Binding key: '{Key}'", bindingKey);
+
+                                        // Sometimes the binding key might give us a hint about the entity
+                                        // but usually it's just the parameter name like "message" or "msg"
+                                    }
                                 }
+                            }
+                            else
+                            {
+                                Log.Information("AzureFunctions: Could not duck cast to BindingMetadata for key '{Key}'", dictEntry.Key);
+                            }
+                        }
+                        else
+                        {
+                            Log.Information("AzureFunctions: Skipping null or non-DictionaryEntry binding");
+                        }
+                    }
+                }
+                else
+                {
+                    Log.Warning("AzureFunctions: No input bindings found in function definition");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error extracting destination from binding definition");
+            }
+
+            Log.Information("AzureFunctions: Could not extract ServiceBus destination from binding definition");
+            return null;
+        }
+
+        private static string? TryExtractFromConfigurationObject(object configObj)
+        {
+            try
+            {
+                // Handle common configuration patterns
+                if (configObj is string strConfig && !string.IsNullOrEmpty(strConfig))
+                {
+                    return strConfig;
+                }
+
+                // Handle arrays (first element might be queue/topic name)
+                if (configObj is System.Collections.IEnumerable enumerable && configObj is not string)
+                {
+                    foreach (var item in enumerable)
+                    {
+                        if (item is string strItem && !string.IsNullOrEmpty(strItem))
+                        {
+                            return strItem;
+                        }
+
+                        break; // Only check first item
+                    }
+                }
+
+                // Handle objects with properties
+                var objType = configObj.GetType();
+                if (!objType.IsPrimitive && objType != typeof(string))
+                {
+                    var props = objType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                    foreach (var prop in props)
+                    {
+                        if (prop.PropertyType == typeof(string))
+                        {
+                            var value = prop.GetValue(configObj) as string;
+                            if (!string.IsNullOrEmpty(value))
+                            {
+                                return value;
                             }
                         }
                     }
@@ -1043,7 +1173,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error extracting destination from binding definition");
+                Log.Debug(ex, "Error extracting from configuration object");
             }
 
             return null;
