@@ -22,6 +22,11 @@ EXTERN_C BOOL STDAPICALLTYPE IsProfilerAttached()
     return trace::profiler != nullptr && trace::profiler->IsAttached();
 }
 
+EXTERN_C BOOL STDAPICALLTYPE IsLibdatadogAvailable()
+{
+    return trace::profiler != nullptr && trace::profiler->IsLibdatadogAvailable();
+}
+
 EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
                                                         int* symbolsSize)
 {

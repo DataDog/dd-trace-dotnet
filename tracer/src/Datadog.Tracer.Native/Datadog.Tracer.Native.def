@@ -4,6 +4,7 @@ EXPORTS
     DllCanUnloadNow PRIVATE
     DllGetClassObject PRIVATE
     IsProfilerAttached
+    IsLibdatadogAvailable
     GetAssemblyAndSymbolsBytes
     InitializeProfiler
     RemoveCallTargetDefinitions

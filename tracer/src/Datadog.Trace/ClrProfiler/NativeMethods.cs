@@ -42,6 +42,16 @@ namespace Datadog.Trace.ClrProfiler
             return NonWindows.IsProfilerAttached();
         }
 
+        public static bool IsLibdatadogAvailable()
+        {
+            if (IsWindows)
+            {
+                return Windows.IsLibdatadogAvailable();
+            }
+
+            return NonWindows.IsLibdatadogAvailable();
+        }
+
         public static void InitializeProfiler(string id, NativeCallTargetDefinition[] methodArrays)
         {
             if (methodArrays is null || methodArrays.Length == 0)
@@ -252,6 +262,9 @@ namespace Datadog.Trace.ClrProfiler
             public static extern bool IsProfilerAttached();
 
             [DllImport("Datadog.Tracer.Native.dll")]
+            public static extern bool IsLibdatadogAvailable();
+
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native.dll")]
@@ -294,6 +307,9 @@ namespace Datadog.Trace.ClrProfiler
         {
             [DllImport("Datadog.Tracer.Native")]
             public static extern bool IsProfilerAttached();
+
+            [DllImport("Datadog.Tracer.Native.")]
+            public static extern bool IsLibdatadogAvailable();
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);

@@ -18,14 +18,7 @@ namespace Datadog.Trace.LibDatadog;
 internal static class LibDatadogAvailaibilityHelper
 {
     // This will never change, so we use a lazy to cache the result.
-    // This confirms that we are in an automatic instrumentation environment (and so P/Invokes have been re-written)
-    // and that the libdatadog library has been deployed (which is not the case in some serverless environments).
-    // We should add or remove conditions from here as our deployment requirements change.
-    private static readonly Lazy<LibDatadogAvailableResult> LibDatadogAvailable = new(() =>
-    {
-        var isServerless = EnvironmentHelpersNoLogging.IsServerlessEnvironment(out var possibleException);
-        return new(!isServerless && EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe(), possibleException);
-    });
+    private static readonly Lazy<LibDatadogAvailableResult> LibDatadogAvailable = new(() => new(NativeMethods.IsLibdatadogAvailable()));
 
     public static LibDatadogAvailableResult IsLibDatadogAvailable => LibDatadogAvailable.Value;
 }
