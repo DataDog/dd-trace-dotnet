@@ -79,6 +79,13 @@ public class QuartzTests : TracingIntegrationTest
 
     private static string GetSuffix(string packageVersion)
     {
+#if NETCOREAPP3_1
+        if (!string.IsNullOrEmpty(packageVersion)
+         && new Version(packageVersion) >= new Version("3.15.0") && new Version(packageVersion) < new Version("4.0.0"))
+        {
+            return "V315plusNETCOREAPP31";
+        }
+#endif
         if (!string.IsNullOrEmpty(packageVersion)
          && new Version(packageVersion) >= new Version("3.15.0") && new Version(packageVersion) < new Version("4.0.0"))
         {
