@@ -312,7 +312,7 @@ namespace Datadog.Trace.Debugger
                     writer.WritePropertyName("code_origin_for_spans_enabled");
                     writer.WriteValue(debuggerSettings.CodeOriginForSpansEnabled);
                     writer.WritePropertyName("symbol_database_upload_enabled");
-                    writer.WriteValue(DebuggerSettings.SymbolDatabaseUploadEnabled);
+                    writer.WriteValue(debuggerSettings.SymbolDatabaseUploadEnabled);
                     writer.WritePropertyName("exception_replay_enabled");
                     writer.WriteValue(ExceptionReplaySettings.Enabled);
                 }
