@@ -158,10 +158,9 @@ TEST(ClrEventsParserTest, AllocationTickV4)
     auto parser = ClrEventsParser(allocationListener.get(), nullptr, nullptr);
 
     auto typeName = WStr("MyType");
-
     auto [buffer, eventSize] = CreateAllocationTickEvent(typeName, 0x0, 42, 12, 123456789, 999);
 
     EXPECT_CALL(mockAllocationListener, OnAllocation(0, 12, GenericStrEq(typeName), 123456789, 999, 42)).Times(1);
 
-    parser.ParseEvent(12345ns, 4, KEYWORD_GC, EVENT_ALLOCATION_TICK, eventSize, buffer.get());
+    parser.ParseEvent(12345ns, 4, KEYWORD_GC, EVENT_ALLOCATION_TICK, (ULONG)eventSize, buffer.get());
 }
