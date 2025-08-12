@@ -13,4 +13,11 @@ internal interface IReceiverManager
 {
     [DuckField(Name = "Processor")]
     IServiceBusProcessor Processor { get; }
+
+    // Additional properties for debugging
+    [DuckField(Name = "Receiver")]
+    object? Receiver { get; }
+
+    [DuckField(Name = "ProcessorOptions")]
+    object? ProcessorOptions { get; }
 }

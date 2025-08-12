@@ -1,4 +1,4 @@
-// <copyright file="IServiceBusProcessor.cs" company="Datadog">
+// <copyright file="IServiceBusProcessorOptions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,15 +7,15 @@
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
-internal interface IServiceBusProcessor
+internal interface IServiceBusProcessorOptions
 {
-    string EntityPath { get; }
+    int MaxConcurrentCalls { get; }
 
-    string? FullyQualifiedNamespace { get; }
+    object ReceiveMode { get; }
 
-    string? Identifier { get; }
+    int PrefetchCount { get; }
 
-    object? Options { get; }
+    object? MaxReceiveWaitTime { get; }
 
-    bool IsSessionProcessor { get; }
+    bool AutoCompleteMessages { get; }
 }

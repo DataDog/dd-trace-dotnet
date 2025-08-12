@@ -8,6 +8,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -258,8 +260,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Extract ServiceBus messaging metadata if this is a ServiceBus trigger
                 if (triggerType == "ServiceBus")
                 {
+                    LogServiceBusBindingDebugInfo(context, bindingName);
+
                     var messageId = ExtractServiceBusMessageId(context, bindingName);
                     tags.MessagingMessageId = messageId;
+
+                    // Try to extract destination name from binding metadata
+                    var destinationName = ExtractServiceBusDestinationName(context, bindingName);
+                    if (!string.IsNullOrEmpty(destinationName))
+                    {
+                        // Store this in the span context for later retrieval by ProcessMessageIntegration
+                        // We'll add this as a tag that ProcessMessageIntegration can read
+                        if (scope?.Span?.Tags is AzureFunctionsTags azureTags)
+                        {
+                            // TODO: We need a way to pass this to ProcessMessageIntegration
+                            // For now, just log it
+                            Log.Information("AzureFunctions: Extracted ServiceBus destination name '{DestinationName}' from binding metadata", destinationName);
+                        }
+                    }
                 }
 
                 if (tracer.InternalActiveScope == null)
@@ -507,6 +525,259 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 Log.Debug(ex, "Error extracting ServiceBus message ID");
                 return null;
             }
+        }
+
+        private static string? ExtractServiceBusDestinationName<T>(T context, string? bindingName)
+            where T : IFunctionContext
+        {
+            try
+            {
+                if (context.Features == null)
+                {
+                    return null;
+                }
+
+                GrpcBindingsFeatureStruct? bindingsFeature = null;
+                foreach (var kvp in context.Features)
+                {
+                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
+                    {
+                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
+                        break;
+                    }
+                }
+
+                if (bindingsFeature == null)
+                {
+                    return null;
+                }
+
+                var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
+
+                // Try various metadata keys for destination name
+                string? destinationName = null;
+
+                // Try queueName first (for queue triggers)
+                if (triggerMetadata?.TryGetValue("queueName", out var queueNameObj) == true && queueNameObj is string queueName)
+                {
+                    destinationName = queueName;
+                    Log.Information("AzureFunctions: Found queueName='{QueueName}' in TriggerMetadata", queueName);
+                }
+
+                // Try topicName (for topic triggers)
+                else if (triggerMetadata?.TryGetValue("topicName", out var topicNameObj) == true && topicNameObj is string topicName)
+                {
+                    destinationName = topicName;
+                    Log.Information("AzureFunctions: Found topicName='{TopicName}' in TriggerMetadata", topicName);
+                }
+
+                // Try entityPath
+                else if (triggerMetadata?.TryGetValue("entityPath", out var entityPathObj) == true && entityPathObj is string entityPath)
+                {
+                    destinationName = entityPath;
+                    Log.Information("AzureFunctions: Found entityPath='{EntityPath}' in TriggerMetadata", entityPath);
+                }
+
+                return destinationName;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error extracting ServiceBus destination name");
+                return null;
+            }
+        }
+
+        private static void LogServiceBusBindingDebugInfo<T>(T context, string? bindingName)
+            where T : IFunctionContext
+        {
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("=== Azure Functions ServiceBus Binding Debug Info ===");
+                sb.AppendLine($"FunctionContext Type: {context.GetType().FullName}");
+                sb.AppendLine($"Function Name: {context.FunctionDefinition.Name}");
+                sb.AppendLine($"Function EntryPoint: {context.FunctionDefinition.EntryPoint}");
+                sb.AppendLine($"Binding Name: {bindingName}");
+
+                // Log FunctionDefinition InputBindings
+                sb.AppendLine("InputBindings:");
+                if (context.FunctionDefinition.InputBindings is not null)
+                {
+                    try
+                    {
+                        foreach (var entry in context.FunctionDefinition.InputBindings)
+                        {
+                            if (entry is DictionaryEntry dictEntry)
+                            {
+                                var key = dictEntry.Key;
+                                var value = dictEntry.Value;
+                                sb.AppendLine($"  Key: {key} (Type: {key?.GetType()?.Name ?? "null"})");
+                                sb.AppendLine($"  Value: {value} (Type: {value?.GetType()?.FullName ?? "null"})");
+
+                                if (value is not null && value.TryDuckCast<BindingMetadata>(out var bindingMeta))
+                                {
+                                    sb.AppendLine($"    BindingType: {bindingMeta.BindingType}");
+                                    sb.AppendLine($"    Direction: {bindingMeta.Direction}");
+
+                                    // If this is a ServiceBus trigger, try to extract more details
+                                    if (bindingMeta.BindingType?.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase) == true)
+                                    {
+                                        sb.AppendLine($"    *** SERVICEBUS TRIGGER FOUND ***");
+                                        sb.AppendLine($"    Raw Value Type: {value.GetType().FullName}");
+                                        sb.AppendLine($"    Raw Value: {value}");
+
+                                        // Try to access properties via reflection since we don't have duck types
+                                        var valueType = value.GetType();
+                                        var properties = valueType.GetProperties();
+                                        foreach (var prop in properties)
+                                        {
+                                            try
+                                            {
+                                                var propValue = prop.GetValue(value);
+                                                sb.AppendLine($"    Property {prop.Name}: {propValue} (Type: {propValue?.GetType()?.Name})");
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                sb.AppendLine($"    Property {prop.Name}: Error - {ex.Message}");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                sb.AppendLine($"  Non-DictionaryEntry: {entry?.GetType()?.FullName ?? "null"}");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        sb.AppendLine($"  Error iterating InputBindings: {ex.Message}");
+                    }
+                }
+
+                // Log Features
+                sb.AppendLine("Features:");
+                if (context.Features is not null)
+                {
+                    foreach (var feature in context.Features)
+                    {
+                        sb.AppendLine($"  Key: {feature.Key.FullName}");
+                        sb.AppendLine($"  Value: {feature.Value?.GetType()?.FullName ?? "null"}");
+
+                        // If this is IFunctionBindingsFeature, log its contents
+                        if (feature.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true
+                            && feature.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var bindingsFeature) == true)
+                        {
+                            sb.AppendLine("    IFunctionBindingsFeature Details:");
+
+                            // TriggerMetadata
+                            sb.AppendLine($"    TriggerMetadata Count: {bindingsFeature.TriggerMetadata?.Count ?? 0}");
+                            if (bindingsFeature.TriggerMetadata is not null)
+                            {
+                                foreach (var tm in bindingsFeature.TriggerMetadata)
+                                {
+                                    sb.AppendLine($"      {tm.Key}: {tm.Value} (Type: {tm.Value?.GetType()?.Name ?? "null"})");
+                                }
+                            }
+
+                            // InputData
+                            sb.AppendLine($"    InputData Count: {bindingsFeature.InputData?.Count ?? 0}");
+                            if (bindingsFeature.InputData is not null)
+                            {
+                                foreach (var id in bindingsFeature.InputData)
+                                {
+                                    sb.AppendLine($"      {id.Key}: {id.Value?.GetType()?.Name ?? "null"}");
+                                }
+                            }
+
+                            // OutputBindingData
+                            sb.AppendLine($"    OutputBindingData Count: {bindingsFeature.OutputBindingData?.Count ?? 0}");
+                            if (bindingsFeature.OutputBindingData is not null)
+                            {
+                                foreach (var obd in bindingsFeature.OutputBindingData)
+                                {
+                                    sb.AppendLine($"      {obd.Key}: {obd.Value?.GetType()?.Name ?? "null"}");
+                                }
+                            }
+
+                            // OutputBindingsInfo
+                            sb.AppendLine($"    OutputBindingsInfo: {bindingsFeature.OutputBindingsInfo?.GetType()?.FullName ?? "null"}");
+
+                            // InvocationResult
+                            sb.AppendLine($"    InvocationResult: {bindingsFeature.InvocationResult?.GetType()?.FullName ?? "null"}");
+                        }
+                    }
+                }
+
+                // Note: Items property not available in duck type interface
+
+                var debugOutput = sb.ToString();
+                Log.Information("{AzureFunctionsDebugInfo}", debugOutput);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "AzureFunctions: Error logging ServiceBus binding debug info");
+            }
+        }
+
+        private static string? ExtractDestinationFromBindingDefinition<T>(T context)
+            where T : IFunctionContext
+        {
+            try
+            {
+                // The queue/topic name should be in the ServiceBus trigger attribute
+                // Look through the function definition for ServiceBus trigger configuration
+                if (context.FunctionDefinition.InputBindings is not null)
+                {
+                    foreach (var entry in context.FunctionDefinition.InputBindings)
+                    {
+                        if (entry is DictionaryEntry dictEntry && dictEntry.Value != null)
+                        {
+                            if (dictEntry.Value.TryDuckCast<BindingMetadata>(out var bindingMeta) &&
+                                bindingMeta.BindingType?.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase) == true)
+                            {
+                                // Found ServiceBus trigger, now extract the queue/topic name from the raw binding data
+                                // This is where the actual queue name should be stored in the binding configuration
+                                var rawValue = dictEntry.Value;
+                                Log.Information("AzureFunctions: ServiceBus binding found, type: {Type}", rawValue.GetType().FullName);
+
+                                // Try to extract queue/topic name from binding properties
+                                // The actual property names may vary, so we'll try common ones
+                                var valueType = rawValue.GetType();
+                                var properties = valueType.GetProperties();
+
+                                foreach (var prop in properties)
+                                {
+                                    var propName = prop.Name.ToLowerInvariant();
+                                    if (propName.Contains("queue") || propName.Contains("topic") || propName.Contains("entity"))
+                                    {
+                                        try
+                                        {
+                                            var propValue = prop.GetValue(rawValue);
+                                            if (propValue is string strValue && !string.IsNullOrEmpty(strValue))
+                                            {
+                                                Log.Information("AzureFunctions: Found potential destination in property '{Property}': '{Value}'", prop.Name, strValue);
+                                                return strValue;
+                                            }
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Log.Debug(ex, "Error accessing property {Property}", prop.Name);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error extracting destination from binding definition");
+            }
+
+            return null;
         }
     }
 }
