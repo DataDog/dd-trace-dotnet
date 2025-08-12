@@ -4184,7 +4184,7 @@ stages:
       - template: steps/create-github-app-token.yml
       - bash: |
           REF=$(Build.SourceBranch)
-          BRANCH_NAME="master"
+          BRANCH_NAME="latest_snapshot"
           if [ "$(Build.Reason)" = "PullRequest" ]; then
             LABELS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$(System.PullRequest.PullRequestNumber)" \
