@@ -76,6 +76,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 return false;
             }
 
+            if (AzureFunctionsHostDetector.IsRunningInFunctionsHost)
+            {
+                // We're in the host process, skip adding the provider entirely
+                Log.Debug("Skipping DirectSubmissionLoggerProvider creation in Azure Functions host process");
+                return false;
+            }
+
             var provider = new DirectSubmissionLoggerProvider(
                 TracerManager.Instance.DirectLogSubmission.Sink,
                 TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel,

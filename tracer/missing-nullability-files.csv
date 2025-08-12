@@ -485,6 +485,7 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/KafkaProduceSyncDelivery
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/KafkaProduceSyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/Offset.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/Partition.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/AzureFunctionsHostDetector.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/MongoDb/IBsonDocumentProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/MongoDb/MongoDbTags.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Msmq/MessageQueueTransactionType.cs
