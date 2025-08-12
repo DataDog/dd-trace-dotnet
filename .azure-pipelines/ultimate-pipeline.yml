@@ -6448,7 +6448,7 @@ stages:
       timeoutInMinutes: 60 #default value
       pool:
         name: azure-managed-linux-tasks
-      condition: not(or(failed(), canceled())) # skips count as success, but cancelled doesn't
+      condition: or(succeeded(), not(failed()))
       steps:
         - checkout: none
         - template: steps/update-github-status.yml
@@ -6461,7 +6461,7 @@ stages:
       timeoutInMinutes: 60 #default value
       pool:
         name: azure-managed-linux-tasks
-      condition: or(failed(), canceled())
+      condition: not(or(succeeded(), not(failed())))
       steps:
         - checkout: none
         - template: steps/update-github-status.yml
