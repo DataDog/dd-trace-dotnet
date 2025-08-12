@@ -50,6 +50,7 @@ class CorProfiler : public CorProfilerBase
 {
 private:
     std::atomic_bool is_attached_ = {false};
+    bool is_libdatadog_available = false;
     RuntimeInformation runtime_information_;
     std::vector<IntegrationDefinition> integration_definitions_; // All APM Calltargets
     std::deque<std::pair<ModuleID, std::vector<MethodReference>>> rejit_module_method_pairs;
@@ -150,6 +151,8 @@ public:
     CorProfiler() = default;
 
     bool IsAttached() const;
+
+    bool IsLibdatadogAvailable() const;
 
     void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
                                     int* symbolsSize) ;

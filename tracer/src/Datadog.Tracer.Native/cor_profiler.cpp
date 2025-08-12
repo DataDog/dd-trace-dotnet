@@ -972,6 +972,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             RewritingPInvokeMaps(module_metadata, libdatadog_config_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, libdatadog_logger_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, libdatadog_libraryconfig_nativemethods_type, libdatadog_filepath);
+            is_libdatadog_available = true;
         }
         else
         {
@@ -2470,6 +2471,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
 bool CorProfiler::IsAttached() const
 {
     return is_attached_;
+}
+
+bool CorProfiler::IsLibdatadogAvailable() const
+{
+    return is_libdatadog_available;
 }
 
 //
