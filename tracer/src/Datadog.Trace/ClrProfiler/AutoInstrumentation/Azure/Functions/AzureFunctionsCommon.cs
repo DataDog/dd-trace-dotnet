@@ -370,9 +370,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
+                Log.Information("AzureFunctions: === ServiceBus Context Extraction Debug ===");
+                Log.Information("AzureFunctions: Function='{FunctionName}', BindingName='{BindingName}'", context.FunctionDefinition.Name, bindingName);
+
                 // Get bindings feature inline
                 if (context.Features == null)
                 {
+                    Log.Warning("AzureFunctions: context.Features is null - no ServiceBus context available");
                     return default;
                 }
 
@@ -388,6 +392,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (bindingsFeature == null)
                 {
+                    Log.Warning("AzureFunctions: IFunctionBindingsFeature not found - no ServiceBus context available");
                     return default;
                 }
 
@@ -395,37 +400,102 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
                 var spanContexts = new List<SpanContext>();
 
-                // Extract from single message UserProperties
-                if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
-                    TryParseJson<Dictionary<string, object>>(singlePropsObj) is { } singleProps)
+                var triggerMetadataCount = triggerMetadata?.Count ?? 0;
+                Log.Information<int>("AzureFunctions: TriggerMetadata has {Count} items", triggerMetadataCount);
+                if (triggerMetadata != null)
                 {
-                    if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
+                    foreach (var item in triggerMetadata)
                     {
-                        spanContexts.Add(singleContext);
+                        Log.Information("AzureFunctions: TriggerMetadata key {Key} found", item.Key);
+                    }
+                }
+
+                // Extract from single message UserProperties
+                if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true)
+                {
+                    Log.Information("AzureFunctions: Found UserProperties");
+                    if (TryParseJson<Dictionary<string, object>>(singlePropsObj) is { } singleProps)
+                    {
+                        Log.Information<int>("AzureFunctions: Parsed UserProperties with {Count} properties", singleProps.Count);
+                        foreach (var prop in singleProps)
+                        {
+                            var isTracingHeader = prop.Key.StartsWith("x-datadog-") || prop.Key.StartsWith("traceparent") || prop.Key.StartsWith("tracestate");
+                            if (isTracingHeader)
+                            {
+                                Log.Information("AzureFunctions: TRACING HEADER {Key}: {Value}", prop.Key, prop.Value);
+                            }
+                            else
+                            {
+                                Log.Information("AzureFunctions: Property {Key} found", prop.Key);
+                            }
+                        }
+
+                        if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
+                        {
+                            Log.Information("AzureFunctions: Successfully extracted SpanContext from UserProperties - TraceId: {TraceId}", singleContext.TraceId128);
+                            spanContexts.Add(singleContext);
+                        }
+                        else
+                        {
+                            Log.Warning("AzureFunctions: Failed to extract SpanContext from UserProperties");
+                        }
+                    }
+                    else
+                    {
+                        Log.Warning("AzureFunctions: Failed to parse UserProperties as JSON");
                     }
                 }
 
                 // Extract from batch UserPropertiesArray
-                if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true &&
-                    TryParseJson<Dictionary<string, object>[]>(arrayPropsObj) is { } propsArray)
+                if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true)
                 {
-                    foreach (var props in propsArray)
+                    Log.Information("AzureFunctions: Found UserPropertiesArray");
+                    if (TryParseJson<Dictionary<string, object>[]>(arrayPropsObj) is { } propsArray)
                     {
-                        if (ExtractSpanContextFromProperties(props) is { } batchContext)
+                        Log.Information<int>("AzureFunctions: Parsed UserPropertiesArray with {Count} messages", propsArray.Length);
+                        for (int i = 0; i < propsArray.Length; i++)
                         {
-                            spanContexts.Add(batchContext);
+                            Log.Information<int, int>("AzureFunctions: Message {Index} has {Count} properties", i, propsArray[i].Count);
+                            if (ExtractSpanContextFromProperties(propsArray[i]) is { } batchContext)
+                            {
+                                Log.Information<int>("AzureFunctions: Successfully extracted SpanContext from batch message {Index}", i);
+                                spanContexts.Add(batchContext);
+                            }
+                            else
+                            {
+                                Log.Warning<int>("AzureFunctions: Failed to extract SpanContext from batch message {Index}", i);
+                            }
                         }
+                    }
+                    else
+                    {
+                        Log.Warning("AzureFunctions: Failed to parse UserPropertiesArray as JSON");
                     }
                 }
 
+                // Also try ApplicationProperties for backward compatibility
+                if (triggerMetadata?.TryGetValue("ApplicationProperties", out var appPropsObj) == true)
+                {
+                    Log.Information("AzureFunctions: Found ApplicationProperties");
+                    if (TryParseJson<Dictionary<string, object>>(appPropsObj) is { } appProps)
+                    {
+                        Log.Information<int>("AzureFunctions: Parsed ApplicationProperties with {Count} properties", appProps.Count);
+                    }
+                }
+
+                Log.Information<int>("AzureFunctions: Extracted {Count} SpanContext(s) from ServiceBus metadata", spanContexts.Count);
+
                 if (spanContexts.Count == 0)
                 {
+                    Log.Warning("AzureFunctions: No SpanContext found in ServiceBus metadata - returning default context");
                     return default;
                 }
 
                 // Create propagation context inline
                 bool shouldReparent = spanContexts.Count == 1 ||
                                      (spanContexts.Count > 1 && AreAllContextsIdentical(spanContexts));
+
+                Log.Information("AzureFunctions: Should reparent: {ShouldReparent}", shouldReparent);
 
                 return shouldReparent
                     ? new PropagationContext(spanContexts[0], Baggage.Current, null)
@@ -578,6 +648,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     Log.Information("AzureFunctions: Found entityPath='{EntityPath}' in TriggerMetadata", entityPath);
                 }
 
+                // Try to extract ServiceBusMetadata from TriggerMetadata.Metadata property
+                // Based on Azure SDK source: ServiceBusMetadata serviceBusMetadata = JsonConvert.DeserializeObject<ServiceBusMetadata>(triggerMetadata.Metadata.ToString());
+                if (triggerMetadata?.TryGetValue("Metadata", out var metadataObj) == true && metadataObj != null)
+                {
+                    try
+                    {
+                        var metadataString = metadataObj.ToString();
+                        Log.Information("AzureFunctions: Raw ServiceBus Metadata JSON: {Metadata}", metadataString);
+
+                        // Try to parse as ServiceBusMetadata (following Azure SDK pattern)
+                        var serviceBusMetadata = JsonConvert.DeserializeObject<ServiceBusMetadataInfo>(metadataString ?? string.Empty);
+                        if (serviceBusMetadata != null)
+                        {
+                            Log.Information("AzureFunctions: ServiceBusMetadata - Type: {Type}, QueueName: {QueueName}", serviceBusMetadata.Type, serviceBusMetadata.QueueName);
+                            Log.Information("AzureFunctions: ServiceBusMetadata - TopicName: {TopicName}, IsSessionsEnabled: {IsSessionsEnabled}", serviceBusMetadata.TopicName, serviceBusMetadata.IsSessionsEnabled);
+
+                            // Prefer queue name if available, then topic name
+                            if (!string.IsNullOrEmpty(serviceBusMetadata.QueueName))
+                            {
+                                destinationName = serviceBusMetadata.QueueName;
+                                Log.Information("AzureFunctions: Using QueueName from ServiceBusMetadata: '{QueueName}'", destinationName);
+                            }
+                            else if (!string.IsNullOrEmpty(serviceBusMetadata.TopicName))
+                            {
+                                destinationName = serviceBusMetadata.TopicName;
+                                Log.Information("AzureFunctions: Using TopicName from ServiceBusMetadata: '{TopicName}'", destinationName);
+                            }
+                        }
+                    }
+                    catch (Exception metadataEx)
+                    {
+                        Log.Debug(metadataEx, "Error parsing ServiceBusMetadata JSON: {Metadata}", metadataObj.ToString());
+                    }
+                }
+
                 return destinationName;
             }
             catch (Exception ex)
@@ -677,7 +782,103 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             {
                                 foreach (var tm in bindingsFeature.TriggerMetadata)
                                 {
-                                    sb.AppendLine($"      {tm.Key}: {tm.Value} (Type: {tm.Value?.GetType()?.Name ?? "null"})");
+                                    var valueInfo = tm.Value?.GetType()?.Name ?? "null";
+
+                                    // Special handling for UserProperties and ApplicationProperties
+                                    if (tm.Key.Equals("UserProperties", StringComparison.OrdinalIgnoreCase) ||
+                                        tm.Key.Equals("ApplicationProperties", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        if (tm.Value is string jsonString)
+                                        {
+                                            sb.AppendLine($"      {tm.Key}: {jsonString} (JSON String)");
+                                            try
+                                            {
+                                                var parsed = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+                                                if (parsed != null)
+                                                {
+                                                    sb.AppendLine($"        Parsed as Dictionary with {parsed.Count} properties:");
+                                                    foreach (var prop in parsed)
+                                                    {
+                                                        sb.AppendLine($"          {prop.Key}: {prop.Value} (Type: {prop.Value?.GetType()?.Name})");
+                                                    }
+                                                }
+                                            }
+                                            catch (Exception parseEx)
+                                            {
+                                                sb.AppendLine($"        Failed to parse as JSON: {parseEx.Message}");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            sb.AppendLine($"      {tm.Key}: {tm.Value} (Type: {valueInfo})");
+                                        }
+                                    }
+
+                                    // Special handling for UserPropertiesArray (batch scenarios)
+                                    else if (tm.Key.Equals("UserPropertiesArray", StringComparison.OrdinalIgnoreCase) ||
+                                             tm.Key.Equals("ApplicationPropertiesArray", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        if (tm.Value is string jsonArrayString)
+                                        {
+                                            sb.AppendLine($"      {tm.Key}: {jsonArrayString} (JSON Array String)");
+                                            try
+                                            {
+                                                var parsed = JsonConvert.DeserializeObject<Dictionary<string, object>[]>(jsonArrayString);
+                                                if (parsed != null)
+                                                {
+                                                    sb.AppendLine($"        Parsed as Array with {parsed.Length} elements:");
+                                                    for (int i = 0; i < parsed.Length; i++)
+                                                    {
+                                                        sb.AppendLine($"        Element {i} with {parsed[i].Count} properties:");
+                                                        foreach (var prop in parsed[i])
+                                                        {
+                                                            sb.AppendLine($"          {prop.Key}: {prop.Value} (Type: {prop.Value?.GetType()?.Name})");
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            catch (Exception parseEx)
+                                            {
+                                                sb.AppendLine($"        Failed to parse as JSON array: {parseEx.Message}");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            sb.AppendLine($"      {tm.Key}: {tm.Value} (Type: {valueInfo})");
+                                        }
+                                    }
+
+                                    // Special handling for ServiceBusMetadata in Metadata field
+                                    else if (tm.Key.Equals("Metadata", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        if (tm.Value != null)
+                                        {
+                                            var metadataString = tm.Value.ToString();
+                                            sb.AppendLine($"      {tm.Key}: {metadataString} (ServiceBus Metadata JSON)");
+                                            try
+                                            {
+                                                var serviceBusMetadata = JsonConvert.DeserializeObject<ServiceBusMetadataInfo>(metadataString ?? string.Empty);
+                                                if (serviceBusMetadata != null)
+                                                {
+                                                    sb.AppendLine($"        Parsed ServiceBusMetadata:");
+                                                    sb.AppendLine($"          Type: {serviceBusMetadata.Type}");
+                                                    sb.AppendLine($"          QueueName: {serviceBusMetadata.QueueName}");
+                                                    sb.AppendLine($"          TopicName: {serviceBusMetadata.TopicName}");
+                                                    sb.AppendLine($"          SubscriptionName: {serviceBusMetadata.SubscriptionName}");
+                                                    sb.AppendLine($"          IsSessionsEnabled: {serviceBusMetadata.IsSessionsEnabled}");
+                                                    sb.AppendLine($"          Cardinality: {serviceBusMetadata.Cardinality}");
+                                                }
+                                            }
+                                            catch (Exception parseEx)
+                                            {
+                                                sb.AppendLine($"        Failed to parse as ServiceBusMetadata: {parseEx.Message}");
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        sb.AppendLine($"      {tm.Key}: {tm.Value} (Type: {valueInfo})");
+                                    }
                                 }
                             }
 
@@ -778,6 +979,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
 
             return null;
+        }
+
+        // Helper class to deserialize ServiceBusMetadata (matching Azure SDK structure)
+        private class ServiceBusMetadataInfo
+        {
+            public string? Type { get; set; }
+
+            public string? Connection { get; set; }
+
+            public string? QueueName { get; set; }
+
+            public string? TopicName { get; set; }
+
+            public string? SubscriptionName { get; set; }
+
+            public bool IsSessionsEnabled { get; set; }
+
+            public string? Cardinality { get; set; }
         }
     }
 }
