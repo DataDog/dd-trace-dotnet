@@ -23,7 +23,7 @@ namespace Samples.Wcf
             string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? WcfPort;
             LoggingHelper.WriteLineWithDate($"Port {port}");
 
-            if (args.Length > 0 && args[0].Equals("WebHttpBinding", StringComparison.OrdinalIgnoreCase))
+            if (true)
             {
                 await RunHttpServer(args, port);
             }
@@ -145,6 +145,14 @@ namespace Samples.Wcf
             result = calculator.ServerSyncAddWrapped("1", "2");
             AssertResult(result);
             LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+
+            Console.WriteLine();
+            LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerComplexHttpFlow(1, 2)");
+            result = await calculator.ServerComplexHttpFlow(new() { Arg1 = 1, Arg2 = 2 });
+            AssertResult(result);
+            LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+
+            System.Threading.Thread.Sleep(2000); // Allow time for any final messages to be logged
         }
 
         private static void AssertResult(double result)

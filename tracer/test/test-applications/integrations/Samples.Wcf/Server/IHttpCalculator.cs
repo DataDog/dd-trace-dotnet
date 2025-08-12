@@ -1,4 +1,4 @@
-﻿using System.ServiceModel;
+using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Threading.Tasks;
 
@@ -7,6 +7,10 @@ namespace Samples.Wcf.Server;
 [ServiceContract(Namespace = "WcfSample.Http")]
 public interface IHttpCalculator
 {
+    [OperationContract]
+    [WebInvoke(Method = "POST", UriTemplate = "ServerComplexHttpFlow", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+    Task<double> ServerComplexHttpFlow(CalculatorArguments arguments);
+
     [OperationContract]
     [WebGet(UriTemplate = "ServerSyncAddJson/{n1}/n2={n2}", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json, BodyStyle = WebMessageBodyStyle.Bare)]
     double ServerSyncAddJson(string n1, string n2);
