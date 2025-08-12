@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -18,6 +18,7 @@
       runtime-id: Guid_2,
       scheduler.id: NON_CLUSTERED,
       scheduler.name: DefaultQuartzScheduler,
+      span.kind: internal,
       trigger.group: group1,
       trigger.name: helloTrigger,
       version: 1.0.0
@@ -48,6 +49,7 @@
       runtime-id: Guid_2,
       scheduler.id: NON_CLUSTERED,
       scheduler.name: DefaultQuartzScheduler,
+      span.kind: internal,
       trigger.group: group2,
       trigger.name: exceptionTrigger,
       version: 1.0.0
