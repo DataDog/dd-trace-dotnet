@@ -402,12 +402,46 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 var triggerMetadataCount = triggerMetadata?.Count ?? 0;
                 Log.Information<int>("AzureFunctions: TriggerMetadata has {Count} items", triggerMetadataCount);
+
+                // COMPREHENSIVE TRIGGERMETADATA ANALYSIS - Print ALL keys and values
                 if (triggerMetadata != null)
                 {
+                    Log.Information("=== COMPLETE TRIGGERMETADATA DUMP START ===");
                     foreach (var item in triggerMetadata)
                     {
-                        Log.Information("AzureFunctions: TriggerMetadata key {Key} found", item.Key);
+                        try
+                        {
+                            var key = item.Key;
+                            var value = item.Value;
+                            var valueType = value?.GetType()?.FullName ?? "null";
+                            var valueString = value?.ToString() ?? "null";
+
+                            Log.Information("TriggerMetadata[{Key}] = {Value} (Type: {Type})", key, valueString, valueType);
+
+                            // For complex objects, try JSON serialization
+                            if (value != null && value.GetType() != typeof(string) && !value.GetType().IsPrimitive)
+                            {
+                                try
+                                {
+                                    var jsonValue = JsonConvert.SerializeObject(value, Formatting.Indented);
+                                    if (jsonValue.Length > 50 && jsonValue != valueString)
+                                    {
+                                        Log.Information("TriggerMetadata[{Key}] JSON: {JsonValue}", key, jsonValue);
+                                    }
+                                }
+                                catch
+                                {
+                                    // Ignore JSON serialization errors
+                                }
+                            }
+                        }
+                        catch (Exception itemEx)
+                        {
+                            Log.Error(itemEx, "Error analyzing TriggerMetadata item: {Key}", item.Key);
+                        }
                     }
+
+                    Log.Information("=== COMPLETE TRIGGERMETADATA DUMP END ===");
                 }
 
                 // Extract from single message UserProperties
@@ -680,6 +714,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     catch (Exception metadataEx)
                     {
                         Log.Debug(metadataEx, "Error parsing ServiceBusMetadata JSON: {Metadata}", metadataObj.ToString());
+                    }
+                }
+
+                // FALLBACK: Try to parse Client identifier for queue/topic information
+                if (string.IsNullOrEmpty(destinationName) && triggerMetadata?.TryGetValue("Client", out var clientObj) == true && clientObj != null)
+                {
+                    try
+                    {
+                        var clientJson = clientObj.ToString();
+                        Log.Information("AzureFunctions: Raw ServiceBus Client JSON: {ClientJson}", clientJson);
+
+                        // Try to parse as ServiceBusClient info
+                        var clientInfo = JsonConvert.DeserializeObject<ServiceBusClientInfo>(clientJson ?? string.Empty);
+                        if (clientInfo != null)
+                        {
+                            Log.Information("AzureFunctions: ServiceBusClient - FullyQualifiedNamespace: {Namespace}", clientInfo.FullyQualifiedNamespace);
+                            Log.Information("AzureFunctions: ServiceBusClient - Identifier: {Identifier}", clientInfo.Identifier);
+                            Log.Information<bool, int>("AzureFunctions: ServiceBusClient - IsClosed: {IsClosed}, TransportType: {TransportType}", clientInfo.IsClosed, clientInfo.TransportType);
+                            // Try to extract entity information from identifier
+                            destinationName = ParseEntityFromClientIdentifier(clientInfo.Identifier, clientInfo.FullyQualifiedNamespace);
+
+                            if (!string.IsNullOrEmpty(destinationName))
+                            {
+                                Log.Information("AzureFunctions: Extracted destination from Client identifier: '{DestinationName}'", destinationName);
+                            }
+                            else
+                            {
+                                Log.Warning("AzureFunctions: Could not extract entity information from Client identifier");
+                            }
+                        }
+                    }
+                    catch (Exception clientEx)
+                    {
+                        Log.Debug(clientEx, "Error parsing ServiceBus Client JSON: {Client}", clientObj.ToString());
                     }
                 }
 
@@ -979,6 +1047,101 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
 
             return null;
+        }
+
+        private static string? ParseEntityFromClientIdentifier(string? identifier, string? fullyQualifiedNamespace)
+        {
+            if (string.IsNullOrEmpty(identifier))
+            {
+                return null;
+            }
+
+            try
+            {
+                Log.Information("AzureFunctions: Parsing Client identifier for entity info: '{Identifier}'", identifier);
+
+                // Common patterns we might see in ServiceBus client identifiers:
+                // Pattern 1: "namespace-guid" (no entity info)
+                // Pattern 2: "namespace/entity-guid" (contains entity)
+                // Pattern 3: "namespace:entity-guid" (contains entity)
+                // Pattern 4: Could contain queue or topic name in various formats
+
+                var namespacePart = fullyQualifiedNamespace?.Replace(".servicebus.windows.net", string.Empty);
+
+                // Try different separators
+                var separators = new[] { "/", ":", "-", "_" };
+
+                foreach (var separator in separators)
+                {
+                    if (identifier!.Contains(separator))
+                    {
+                        var parts = identifier!.Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries);
+                        Log.Information<string, int, string>(
+                            "AzureFunctions: Split identifier by '{Separator}' into {Count} parts: [{Parts}]",
+                            separator,
+                            parts.Length,
+                            string.Join(", ", parts));
+                        // Look for parts that might be entity names (not GUIDs, not namespace)
+                        foreach (var part in parts)
+                        {
+                            // Skip if it's the namespace part
+                            if (!string.IsNullOrEmpty(namespacePart) && part.Contains(namespacePart))
+                            {
+                                continue;
+                            }
+
+                            // Skip if it looks like a GUID (36 chars with dashes)
+                            if (part.Length == 36 && part.Count(c => c == '-') == 4)
+                            {
+                                Log.Information("AzureFunctions: Skipping GUID part: '{Part}'", part);
+                                continue;
+                            }
+
+                            // Skip if it's too short to be meaningful
+                            if (part.Length < 3)
+                            {
+                                continue;
+                            }
+
+                            // This might be an entity name
+                            Log.Information("AzureFunctions: Potential entity name found: '{Part}'", part);
+                            return part;
+                        }
+                    }
+                }
+
+                // If no separators worked, log the full identifier for analysis
+                Log.Warning("AzureFunctions: Could not parse entity from identifier pattern: '{Identifier}'", identifier);
+
+                // As a last resort, try to extract anything after the namespace
+                if (!string.IsNullOrEmpty(namespacePart) && identifier!.StartsWith(namespacePart))
+                {
+                    var remainder = identifier!.Substring(namespacePart!.Length).Trim('-', '_', '/', ':');
+                    if (!string.IsNullOrEmpty(remainder) && remainder.Length > 5)
+                    {
+                        Log.Information("AzureFunctions: Extracted remainder as potential entity: '{Remainder}'", remainder);
+                        return remainder;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error parsing entity from Client identifier: {Identifier}", identifier);
+            }
+
+            return null;
+        }
+
+        // Helper class to deserialize ServiceBus Client info
+        private class ServiceBusClientInfo
+        {
+            public string? FullyQualifiedNamespace { get; set; }
+
+            public bool IsClosed { get; set; }
+
+            public int TransportType { get; set; }
+
+            public string? Identifier { get; set; }
         }
 
         // Helper class to deserialize ServiceBusMetadata (matching Azure SDK structure)
