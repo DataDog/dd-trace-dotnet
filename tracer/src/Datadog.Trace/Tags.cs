@@ -322,6 +322,21 @@ namespace Datadog.Trace
         internal const string MessagingMessageId = "messaging.message_id";
 
         /// <summary>
+        /// The messaging destination kind (queue, topic, etc.).
+        /// </summary>
+        internal const string MessagingDestinationKind = "messaging.destination.kind";
+
+        /// <summary>
+        /// The network destination name (host).
+        /// </summary>
+        internal const string NetworkDestinationName = "network.destination.name";
+
+        /// <summary>
+        /// The network destination port.
+        /// </summary>
+        internal const string NetworkDestinationPort = "network.destination.port";
+
+        /// <summary>
         /// The AMQP method.
         /// </summary>
         internal const string AmqpCommand = "amqp.command";
