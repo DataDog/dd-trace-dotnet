@@ -11,11 +11,13 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Iast;
 using Datadog.Trace.LibDatadog;
+using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -107,6 +109,17 @@ namespace Datadog.Trace
             ISpanEventsManager spanEventsManager)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
+            var result = GlobalConfigurationSource.CreationResult;
+            if (result.Result is not Result.Success)
+            {
+                Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
+            }
+
+            var libdatadogAvailaibility = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
+            if (libdatadogAvailaibility.Exception is not null)
+            {
+                Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
+            }
 
             var defaultServiceName = settings.ServiceName ??
                 GetApplicationName(settings) ??
