@@ -19,7 +19,12 @@ namespace Samples.Hangfire
                                .UseMemoryStorage();
             
             
-            
+            GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute
+            {
+                Attempts = 0,
+                OnAttemptsExceeded = AttemptsExceededAction.Delete, // or Fail
+                LogEvents = false
+            });
             GlobalJobFilters.Filters.Add(new LogEverythingAttribute());
             
             using var localActivity = AdditionalActivitySource.StartActivity(name: "OtelParent");
