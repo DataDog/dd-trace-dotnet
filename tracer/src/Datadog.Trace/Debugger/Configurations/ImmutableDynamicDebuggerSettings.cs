@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Debugger.Configurations
 {
-    internal class ImmutableDynamicDebuggerSettings
+    internal record ImmutableDynamicDebuggerSettings
     {
         public bool? DynamicInstrumentationEnabled { get; init; }
 
