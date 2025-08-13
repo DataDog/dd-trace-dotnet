@@ -50,7 +50,7 @@ namespace Datadog.Trace.Debugger
             ExceptionReplaySettings = exceptionReplaySettings;
             ServiceName = string.Empty;
             _syncLock = new();
-            _diDebounceDelay = TimeSpan.FromMilliseconds(300);
+            _diDebounceDelay = TimeSpan.FromMilliseconds(250);
             _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
@@ -177,7 +177,7 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                if (_processExit.Task.IsCompleted)
+                if (_processExit.Task.IsCompleted || !DebuggerSettings.SymbolDatabaseUploadEnabled)
                 {
                     return;
                 }
@@ -191,17 +191,18 @@ namespace Datadog.Trace.Debugger
                 var tracerManager = TracerManager.Instance;
                 SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, ServiceName, tracerSettings, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
 
-                _ = Task.Run(async () =>
-                {
-                    try
+                _ = Task.Run(
+                    async () =>
                     {
-                        await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Failed to initialize symbol uploader");
-                    }
-                });
+                        try
+                        {
+                            await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Failed to initialize symbol uploader");
+                        }
+                    });
             }
             catch (Exception ex)
             {
@@ -310,11 +311,8 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            var requestedState = debuggerSettings.DynamicInstrumentationEnabled;
-            var currentState = DynamicInstrumentation is { IsDisposed: false };
-
             // Only proceed if state actually needs to change
-            if (requestedState == currentState)
+            if (ShouldSkipUpdate(debuggerSettings.DynamicInstrumentationEnabled, DynamicInstrumentation is { IsDisposed: false }))
             {
                 return;
             }
@@ -322,6 +320,7 @@ namespace Datadog.Trace.Debugger
             // Cancel any pending operation and start new one
             var cts = new CancellationTokenSource();
             var prevCts = Interlocked.Exchange(ref _diDebounceCts, cts);
+            Log.Debug("Is previous Dynamic Instrumentation update request exist? {Value}", prevCts != null);
 
             try
             {
@@ -334,18 +333,18 @@ namespace Datadog.Trace.Debugger
 
             try
             {
+                Log.Debug("Waiting {Timeout}ms before updating Dynamic Instrumentation", _diDebounceDelay.TotalMilliseconds);
                 await Task.Delay(_diDebounceDelay, cts.Token).ConfigureAwait(false);
 
                 // Re-check if state change is still needed after debounce
                 if (!cts.IsCancellationRequested)
                 {
-                    var finalRequestedState = DebuggerSettings.DynamicInstrumentationEnabled;
-                    var finalCurrentState = DynamicInstrumentation is { IsDisposed: false };
-
-                    if (finalRequestedState != finalCurrentState)
+                    if (ShouldSkipUpdate(DebuggerSettings.DynamicInstrumentationEnabled, DynamicInstrumentation is { IsDisposed: false }))
                     {
-                        await SetDynamicInstrumentationStateAsync(tracerSettings, DebuggerSettings, cts.Token).ConfigureAwait(false);
+                        return;
                     }
+
+                    await SetDynamicInstrumentationStateAsync(tracerSettings, DebuggerSettings, cts.Token).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
@@ -360,6 +359,17 @@ namespace Datadog.Trace.Debugger
                 Interlocked.CompareExchange(ref _diDebounceCts, null, cts);
                 SafeDisposal.TryDispose(cts);
                 SafeDisposal.TryDispose(prevCts);
+            }
+
+            bool ShouldSkipUpdate(bool requested, bool current)
+            {
+                if (requested && (requested == current))
+                {
+                    Log.Debug("Skip update Dynamic Instrumentation. Requested is {Requested}, Current is {Current}", requested, current);
+                    return true;
+                }
+
+                return false;
             }
         }
 
@@ -394,6 +404,7 @@ namespace Datadog.Trace.Debugger
                     var isDiscoverySuccessful = await WaitForDebuggerEndpointAsync(discoveryService, _processExit.Task, Task.FromCanceled(cancellationToken)).ConfigureAwait(false);
                     if (!isDiscoverySuccessful)
                     {
+                        Log.Debug("Debugger endpoint is not available");
                         return;
                     }
                 }
@@ -420,6 +431,8 @@ namespace Datadog.Trace.Debugger
 
             void DisableDynamicInstrumentation(bool currentState)
             {
+                Log.Debug("Disabling Dynamic Instrumentation");
+
                 var origin = debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false
                                  ? ConfigurationOrigins.RemoteConfig
                                  : ConfigurationOrigins.AppConfig;
