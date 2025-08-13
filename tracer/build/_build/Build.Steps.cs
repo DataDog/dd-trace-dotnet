@@ -2422,11 +2422,11 @@ partial class Build
            {
                new(@".*Unable to resolve method MongoDB\..*", RegexOptions.Compiled),
                // Expected errors in CallTargetNativeTests
-               new(@".*Noop\dArgumentsIntegration\.OnAsyncMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled),
-               new(@".*Noop\dArgumentsIntegration\.OnMethodBegin.*CallTargetNativeTest.*", RegexOptions.Compiled),
-               new(@".*Noop\dArgumentsIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled),
-               new(@".*Noop\dArgumentsVoidIntegration\.OnMethodBegin.*CallTargetNativeTest.*", RegexOptions.Compiled),
-               new(@".*Noop\dArgumentsVoidIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled),
+               new(@".*Noop\dArgumentsIntegration\.OnAsyncMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsIntegration\.OnMethodBegin.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsVoidIntegration\.OnMethodBegin.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsVoidIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
                new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
                new(@".*System.InvalidOperationException: Module Samples.Trimming.dll has no HINSTANCE.*", RegexOptions.Compiled),
                // CI Visibility known errors
