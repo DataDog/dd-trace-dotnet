@@ -1,4 +1,4 @@
-﻿FROM gleocadie/centos7-clang16 as base
+﻿FROM gleocadie/centos7-clang16 AS base
 
 ARG DOTNETSDK_VERSION
 
@@ -85,7 +85,7 @@ ENV \
     CXX=clang++ \
     CC=clang
 
-FROM base as builder
+FROM base AS builder
 
 ENV USE_NATIVE_SDK_VERSION=true
 

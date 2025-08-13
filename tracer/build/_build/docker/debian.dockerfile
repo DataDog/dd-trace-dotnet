@@ -1,5 +1,5 @@
 # We used a fixed, older version of debian for linking reasons
-FROM mcr.microsoft.com/dotnet/runtime-deps:5.0-buster-slim as base
+FROM mcr.microsoft.com/dotnet/runtime-deps:5.0-buster-slim AS base
 ARG DOTNETSDK_VERSION
 
 # Based on https://github.com/dotnet/dotnet-docker/blob/34c81d5f9c8d56b36cc89da61702ccecbf00f249/src/sdk/6.0/bullseye-slim/amd64/Dockerfile
@@ -84,7 +84,7 @@ ENV \
     CXX=clang++ \
     CC=clang
 
-FROM base as builder
+FROM base AS builder
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
@@ -94,7 +94,7 @@ RUN dotnet build /build --no-restore
 
 WORKDIR /project
 
-FROM base as tester
+FROM base AS tester
 
 # Install ASP.NET Core runtimes using install script
 # There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
