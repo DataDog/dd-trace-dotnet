@@ -26,14 +26,6 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> BindingSourceBytes => new byte[] { 180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 98, 105, 110, 100, 105, 110, 103 };
         // TriggerTypeBytes = MessagePack.Serialize("aas.function.trigger");
         private static ReadOnlySpan<byte> TriggerTypeBytes => new byte[] { 180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 116, 114, 105, 103, 103, 101, 114 };
-        // MessagingDestinationNameBytes = MessagePack.Serialize("messaging.destination.name");
-        private static ReadOnlySpan<byte> MessagingDestinationNameBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
-        // MessagingMessageIdBytes = MessagePack.Serialize("messaging.message_id");
-        private static ReadOnlySpan<byte> MessagingMessageIdBytes => new byte[] { 180, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 95, 105, 100 };
-        // MessagingOperationBytes = MessagePack.Serialize("messaging.operation");
-        private static ReadOnlySpan<byte> MessagingOperationBytes => new byte[] { 179, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
-        // MessagingSystemBytes = MessagePack.Serialize("messaging.system");
-        private static ReadOnlySpan<byte> MessagingSystemBytes => new byte[] { 176, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 121, 115, 116, 101, 109 };
 
         public override string? GetTag(string key)
         {
@@ -45,10 +37,6 @@ namespace Datadog.Trace.Tagging
                 "aas.function.method" => FullName,
                 "aas.function.binding" => BindingSource,
                 "aas.function.trigger" => TriggerType,
-                "messaging.destination.name" => MessagingDestinationName,
-                "messaging.message_id" => MessagingMessageId,
-                "messaging.operation" => MessagingOperation,
-                "messaging.system" => MessagingSystem,
                 _ => base.GetTag(key),
             };
         }
@@ -69,16 +57,8 @@ namespace Datadog.Trace.Tagging
                 case "aas.function.trigger": 
                     TriggerType = value;
                     break;
-                case "messaging.destination.name": 
-                    MessagingDestinationName = value;
-                    break;
-                case "messaging.message_id": 
-                    MessagingMessageId = value;
-                    break;
                 case "span.kind": 
                 case "component": 
-                case "messaging.operation": 
-                case "messaging.system": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AzureFunctionsTags));
                     break;
                 default: 
@@ -117,26 +97,6 @@ namespace Datadog.Trace.Tagging
             if (TriggerType is not null)
             {
                 processor.Process(new TagItem<string>("aas.function.trigger", TriggerType, TriggerTypeBytes));
-            }
-
-            if (MessagingDestinationName is not null)
-            {
-                processor.Process(new TagItem<string>("messaging.destination.name", MessagingDestinationName, MessagingDestinationNameBytes));
-            }
-
-            if (MessagingMessageId is not null)
-            {
-                processor.Process(new TagItem<string>("messaging.message_id", MessagingMessageId, MessagingMessageIdBytes));
-            }
-
-            if (MessagingOperation is not null)
-            {
-                processor.Process(new TagItem<string>("messaging.operation", MessagingOperation, MessagingOperationBytes));
-            }
-
-            if (MessagingSystem is not null)
-            {
-                processor.Process(new TagItem<string>("messaging.system", MessagingSystem, MessagingSystemBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -183,34 +143,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("aas.function.trigger (tag):")
                   .Append(TriggerType)
-                  .Append(',');
-            }
-
-            if (MessagingDestinationName is not null)
-            {
-                sb.Append("messaging.destination.name (tag):")
-                  .Append(MessagingDestinationName)
-                  .Append(',');
-            }
-
-            if (MessagingMessageId is not null)
-            {
-                sb.Append("messaging.message_id (tag):")
-                  .Append(MessagingMessageId)
-                  .Append(',');
-            }
-
-            if (MessagingOperation is not null)
-            {
-                sb.Append("messaging.operation (tag):")
-                  .Append(MessagingOperation)
-                  .Append(',');
-            }
-
-            if (MessagingSystem is not null)
-            {
-                sb.Append("messaging.system (tag):")
-                  .Append(MessagingSystem)
                   .Append(',');
             }
 
