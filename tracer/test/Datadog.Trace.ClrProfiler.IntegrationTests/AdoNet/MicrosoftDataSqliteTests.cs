@@ -28,21 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             : base("Microsoft.Data.Sqlite", output)
         {
             SetServiceVersion("1.0.0");
-            // this is a workaround for the fact that .NET Core 3.1 and .NET 5 don't
-            // support the version of alpine we're currently using, and so we need to
-            // force the runtime id to use
-#if NETCOREAPP3_1 || NET5_0
-            if (EnvironmentHelper.IsAlpine())
-            {
-                var rid = RuntimeInformation.ProcessArchitecture switch
-                {
-                    Architecture.Arm64 => "linux-musl-arm64",
-                    Architecture.X64 => "linux-musl-x64",
-                    _ => throw new Exception("Unknown architecture " + RuntimeInformation.ProcessArchitecture)
-                };
-                SetEnvironmentVariable("DOTNET_RUNTIME_ID", rid);
-            }
-#endif
+            UseNativeLibraryAlpineWorkaround();
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlite(metadataSchemaVersion);
