@@ -284,10 +284,49 @@ public abstract class AzureFunctionsTests : TestHelper
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
-
-                await AssertIsolatedSpans(spans);
+                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+                await AssertIsolatedSpans(filteredSpans);
 
                 spans.Count.Should().Be(expectedSpanCount);
+            }
+        }
+
+        [SkippableTheory]
+        [InlineData(true)]   // Disable host logs enabled
+        [InlineData(false)]  // Disable host logs disabled
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task IsolatedRuntime_DisableHostLogs_Configuration(bool disableHostLogs)
+        {
+            // Configure the new environment variable
+            SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_DISABLE_FOR_AZURE_FUNCTIONS_HOST", disableHostLogs.ToString());
+            SetInstrumentationVerification();
+            var hostName = "integration_ilogger_tests";
+            using var logsIntake = new MockLogsIntake();
+            EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.ILogger), hostName);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            {
+                const int expectedSpanCount = 21;
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+
+                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+
+                await AssertIsolatedSpans(filteredSpans);
+
+                var logs = logsIntake.Logs;
+
+                if (disableHostLogs)
+                {
+                    // i should probably look for the log :)
+                    logs.Should().HaveCount(11);
+                }
+                else
+                {
+                    logs.Should().HaveCount(14);
+                }
             }
         }
     }

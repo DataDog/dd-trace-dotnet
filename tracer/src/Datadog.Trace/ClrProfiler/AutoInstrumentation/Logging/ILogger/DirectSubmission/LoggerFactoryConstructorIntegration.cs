@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 return CallTargetReturn.GetDefault();
             }
 
-            if (AzureFunctionsHostDetector.IsRunningInFunctionsHost)
+            if (TracerManager.Instance.DirectLogSubmission.Settings.DisableForAzureFunctionsHost && AzureFunctionsHostDetector.IsRunningInFunctionsHost)
             {
                 return CallTargetReturn.GetDefault();
             }

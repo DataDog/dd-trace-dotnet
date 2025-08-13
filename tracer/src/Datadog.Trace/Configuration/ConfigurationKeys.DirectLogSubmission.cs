@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigurationKeys.DirectLogSubmission.cs" company="Datadog">
+// <copyright file="ConfigurationKeys.DirectLogSubmission.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -79,6 +79,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DirectLogSubmissionSettings.BatchPeriod"/>
             public const string BatchPeriodSeconds = "DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS";
+
+            /// <summary>
+            /// Configuration key to disable direct log submission for Azure Functions host.
+            /// Default value is <c>false</c>.
+            /// </summary>
+            /// <seealso cref="DirectLogSubmissionSettings.DisableForAzureFunctionsHost"/>
+            public const string DisableForAzureFunctionsHost = "DD_LOGS_DIRECT_SUBMISSION_DISABLE_FOR_AZURE_FUNCTIONS_HOST";
         }
     }
 }

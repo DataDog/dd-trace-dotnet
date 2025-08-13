@@ -98,6 +98,10 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             BatchPeriod = TimeSpan.FromSeconds(seconds);
 
+            DisableForAzureFunctionsHost = config
+                                             .WithKeys(ConfigurationKeys.DirectLogSubmission.DisableForAzureFunctionsHost)
+                                             .AsBool(false);
+
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString() ?? string.Empty;
             bool[]? enabledIntegrations = null;
 
@@ -229,6 +233,12 @@ namespace Datadog.Trace.Logging.DirectSubmission
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds"/>
         internal TimeSpan BatchPeriod { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether direct log submission is disabled for Azure Functions.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.DisableForAzureFunctionsHost"/>
+        internal bool DisableForAzureFunctionsHost { get; } = false;
 
         /// <summary>
         /// Gets the Datadog API key
