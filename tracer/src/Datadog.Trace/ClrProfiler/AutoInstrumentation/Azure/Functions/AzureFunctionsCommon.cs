@@ -17,6 +17,7 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -264,7 +265,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     tags.MessagingMessageId = messageId;
 
                     // Try to extract destination name from binding metadata
-                    // TODO: @pmartinez there must be a better way than this to get the queue
                     var destinationName = ExtractQueueNameFromFunctionMethod(context.FunctionDefinition.EntryPoint);
                     if (!string.IsNullOrEmpty(destinationName))
                     {
@@ -519,106 +519,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        // TODO: @pmartinez I hate this
         private static string? ExtractQueueNameFromFunctionMethod(string? entryPoint)
         {
-            try
+            if (string.IsNullOrEmpty(entryPoint))
             {
-                if (string.IsNullOrEmpty(entryPoint))
-                {
-                    return null;
-                }
-
-                var parts = entryPoint!.Split('.');
-                if (parts.Length < 3)
-                {
-                    return null;
-                }
-
-                var methodName = parts[parts.Length - 1];
-                var className = string.Join(".", parts.Take(parts.Length - 1));
-
-                Type? functionType = null;
-
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    try
-                    {
-                        functionType = assembly.GetType(className);
-                        if (functionType != null)
-                        {
-                            break;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Debug(ex, "Error getting type {ClassName} from assembly {AssemblyName}", className, assembly.FullName);
-                    }
-                }
-
-                if (functionType == null)
-                {
-                    return null;
-                }
-
-                var method = functionType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
-                if (method == null)
-                {
-                    return null;
-                }
-
-                var parameters = method.GetParameters();
-                foreach (var parameter in parameters)
-                {
-                    var attributes = parameter.GetCustomAttributes(false);
-                    foreach (var attribute in attributes)
-                    {
-                        var attributeType = attribute.GetType();
-
-                        if (attributeType.Name == "ServiceBusTriggerAttribute")
-                        {
-                            var queueName = ExtractQueueNameFromServiceBusTriggerAttribute(attribute);
-                            if (!string.IsNullOrEmpty(queueName))
-                            {
-                                return queueName;
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error extracting queue name from function method: {EntryPoint}", entryPoint);
+                return null;
             }
 
-            return null;
-        }
-
-        // TODO: @pmartinez I hate this
-        private static string? ExtractQueueNameFromServiceBusTriggerAttribute(object serviceBusTriggerAttribute)
-        {
-            try
-            {
-                var attributeType = serviceBusTriggerAttribute.GetType();
-
-                var properties = attributeType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-                foreach (var property in properties)
-                {
-                    var propValue = property.GetValue(serviceBusTriggerAttribute);
-                    if ((property.Name.Equals("QueueName") || property.Name.Equals("TopicName")) &&
-                        propValue is string strValue && !string.IsNullOrEmpty(strValue))
-                    {
-                        return strValue;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error extracting queue name from ServiceBusTrigger attribute");
-            }
-
-            return null;
+            return AttributeReflectionHelper.ExtractAttributeProperty(entryPoint!, "ServiceBusTriggerAttribute", "QueueName", "TopicName");
         }
     }
 }
