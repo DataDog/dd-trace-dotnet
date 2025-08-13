@@ -26,19 +26,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerforming(object context)
         {
+            Log.Debug("Beginning of OnPerforming");
+            Log.Debug("Beginning of Duckcasting PerformingContext");
             if (!context.TryDuckCast<IPerformingContextProxy>(out var performingContext))
             {
                 return;
             }
 
+            Log.Debug("After Duckcasting PerformingContext, grabbing context");
             var spanContextData = performingContext.GetJobParameter<Dictionary<string, string?>?>(HangfireConstants.DatadogContextKey);
+            Log.Debug("grabbed context data");
             Log.Debug("Extracting context from the following data: {SpanContextData}", spanContextData);
 
             PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData).MergeBaggageInto(Baggage.Current);
+            Log.Debug("Finish Extracted Context");
             var parentContext = propagationContext.SpanContext;
-
+            Log.Debug("Creating Span via context");
             Scope? scope = HangfireCommon.CreateScope(Tracer.Instance, new HangfireTags(), performingContext, parentContext);
+            Log.Debug("Started Adding Span span tags");
             ((Dictionary<string, object?>)performingContext.Items).Add(HangfireConstants.DatadogScopeKey, scope);
+            Log.Debug("Finished Span span tags");
         }
 
         /// <summary>
@@ -48,15 +55,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerformed(object context)
         {
+            Log.Debug("Beginning of OnPerformed, duckcasting performingContext");
             if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
             {
+                Log.Debug("Finished Duckcasting performingContext");
                 ((Dictionary<string, object>)performedContext.Items).TryGetValue(HangfireConstants.DatadogScopeKey, out var scope);
+                Log.Debug("geting span context from performedContext");
                 if (performedContext.Exception is not null)
                 {
+                    Log.Debug("Checking if there's an exception");
                     HangfireCommon.SetStatusAndRecordException((Scope?)scope, performedContext.Exception);
+                    Log.Debug("recording exception");
                 }
 
                 ((Scope?)scope)?.Dispose();
+                Log.Debug("Closing span");
             }
         }
     }

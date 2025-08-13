@@ -22,7 +22,7 @@ namespace Samples.Hangfire
             
             GlobalJobFilters.Filters.Add(new LogEverythingAttribute());
             
-            // using var localActivity = AdditionalActivitySource.StartActivity(name: "OtelParent");
+            using var localActivity = AdditionalActivitySource.StartActivity(name: "OtelParent");
             Console.WriteLine("before starting server");
             using var server = new BackgroundJobServer();
             Console.WriteLine("after starting server");

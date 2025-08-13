@@ -83,6 +83,7 @@ internal static class HangfireCommon
         serverFilter = null;
         clientFilter = null;
 
+        Log.Debug("doing the assmebly thing");
         Assembly? hangfireAssembly = AppDomain.CurrentDomain
                                               .GetAssemblies()
                                               .FirstOrDefault(asm => asm.GetName().Name == "Hangfire.Core");
