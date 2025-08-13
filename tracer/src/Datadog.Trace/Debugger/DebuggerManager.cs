@@ -83,7 +83,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private async Task<bool> WaitForDebuggerEndpointAsync(IDiscoveryService discoveryService, Task processExitTask, Task ongoingInitializationTask)
+        private async Task<bool> WaitForDebuggerEndpointAsync(IDiscoveryService discoveryService, Task processExitTask)
         {
             if (_isDebuggerEndpointAvailable)
             {
@@ -97,7 +97,7 @@ namespace Datadog.Trace.Debugger
             {
                 var debuggerEndpointTimeout = TimeSpan.FromMinutes(5);
                 var timeoutTask = Task.Delay(debuggerEndpointTimeout);
-                var completedTask = await Task.WhenAny(debuggerEndpointTcs.Task, timeoutTask, processExitTask, ongoingInitializationTask).ConfigureAwait(false);
+                var completedTask = await Task.WhenAny(debuggerEndpointTcs.Task, timeoutTask, processExitTask).ConfigureAwait(false);
                 if (completedTask == timeoutTask)
                 {
                     Log.Warning("Debugger endpoint is not available after waiting {Timeout} seconds.", debuggerEndpointTimeout.TotalSeconds);
@@ -105,6 +105,11 @@ namespace Datadog.Trace.Debugger
                 }
 
                 return completedTask == debuggerEndpointTcs.Task;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while waiting for discovery service");
+                return false;
             }
             finally
             {
@@ -401,10 +406,10 @@ namespace Datadog.Trace.Debugger
                 var discoveryService = tracerManager.DiscoveryService;
                 if (!_isDebuggerEndpointAvailable)
                 {
-                    var isDiscoverySuccessful = await WaitForDebuggerEndpointAsync(discoveryService, _processExit.Task, Task.FromCanceled(cancellationToken)).ConfigureAwait(false);
+                    var isDiscoverySuccessful = await WaitForDebuggerEndpointAsync(discoveryService, _processExit.Task).ConfigureAwait(false);
                     if (!isDiscoverySuccessful)
                     {
-                        Log.Debug("Debugger endpoint is not available");
+                        Log.Information("Debugger endpoint is not available");
                         return;
                     }
                 }
