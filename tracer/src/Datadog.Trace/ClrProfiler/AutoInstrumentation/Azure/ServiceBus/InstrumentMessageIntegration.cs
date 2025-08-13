@@ -30,8 +30,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class InstrumentMessageIntegration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InstrumentMessageIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
