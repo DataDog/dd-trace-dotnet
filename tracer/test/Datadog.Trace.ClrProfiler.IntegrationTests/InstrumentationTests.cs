@@ -84,6 +84,7 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
 
             logDir = await RunDotnet("restore");
@@ -116,17 +117,8 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
-
-            // Force the project to target .NET 8 instead of whatever the SDK defaults to
-            var projectFile = Path.Combine(workingDir, $"{excludedProcess}.csproj");
-            var projectContent = File.ReadAllText(projectFile);
-
-            // Replace any target framework with net8.0
-            var updatedContent = System.Text.RegularExpressions.Regex.Replace(
-                projectContent,
-                @"<TargetFramework>net\d+\.\d+</TargetFramework>",
-                "<TargetFramework>net8.0</TargetFramework>");
 
             var programCs = GetProgramCSThatMakesSpans();
 
@@ -136,7 +128,7 @@ namespace Foo
             // Currently, today, we instrument dotnet run, which results in some "spurious" spans (e.g. command_execution)
             // In the future, we may change that. But hte important part is that we don't instrument the target process itself
             var publishDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
-            logDir = await RunDotnet($"publish -o \"{publishDir}\" --self-contained");
+            logDir = await RunDotnet($"publish -o \"{publishDir}\"");
             AssertNotInstrumented(agent, logDir);
 
             // this _should NOT_ be instrumented
@@ -164,17 +156,8 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
-
-            // Force the project to target .NET 8 instead of whatever the SDK defaults to
-            var projectFile = Path.Combine(workingDir, $"{allowedProcess}.csproj");
-            var projectContent = File.ReadAllText(projectFile);
-
-            // Replace any target framework with net8.0
-            var updatedContent = System.Text.RegularExpressions.Regex.Replace(
-                projectContent,
-                @"<TargetFramework>net\d+\.\d+</TargetFramework>",
-                "<TargetFramework>net8.0</TargetFramework>");
 
             var programCs = GetProgramCSThatMakesSpans();
 
@@ -184,7 +167,7 @@ namespace Foo
             // Currently, today, we instrument dotnet run, which results in some "spurious" spans (e.g. command_execution)
             // In the future, we may change that. But hte important part is that we don't instrument the target process itself
             var publishDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
-            logDir = await RunDotnet($"publish -o \"{publishDir}\" --self-contained");
+            logDir = await RunDotnet($"publish -o \"{publishDir}\"");
             AssertNotInstrumented(agent, logDir);
 
             // this _SHOULD_ be instrumented
