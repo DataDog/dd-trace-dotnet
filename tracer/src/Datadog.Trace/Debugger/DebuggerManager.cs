@@ -262,13 +262,16 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                // if nothing is enabled and this is the first initialization,
-                // avoid initializing everything to avoid taking the perf hit
-                var isFirstInitialization = ReferenceEquals(DebuggerSettings, newDebuggerSettings);
-                if (!isFirstInitialization
-                 || newDebuggerSettings.DynamicInstrumentationEnabled
-                 || newDebuggerSettings.CodeOriginForSpansEnabled
-                 || ExceptionReplaySettings.Enabled)
+                var wasEnabled = DebuggerSettings.DynamicInstrumentationEnabled
+                              || newDebuggerSettings.CodeOriginForSpansEnabled
+                              || ExceptionReplaySettings.Enabled;
+                var isEnabled = newDebuggerSettings.DynamicInstrumentationEnabled
+                             || newDebuggerSettings.CodeOriginForSpansEnabled
+                             || ExceptionReplaySettings.Enabled;
+
+                // If everything is disabled and was _previously_ disabled, then
+                // there's no need to initialize
+                if (wasEnabled || isEnabled)
                 {
                     OneTimeSetup(tracerSettings);
                     DebuggerSettings = newDebuggerSettings;
