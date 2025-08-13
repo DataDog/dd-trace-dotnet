@@ -155,13 +155,9 @@ namespace Datadog.Trace.Configuration
                            .ContinueWith(
                                 t =>
                                 {
-                                    if (t is { IsFaulted: true, Exception: not null })
+                                    if (t is { Exception: not null })
                                     {
                                         Log.Error(t.Exception.Flatten(), "Error updating dynamic configuration for debugger");
-                                    }
-                                    else if (t.IsFaulted)
-                                    {
-                                        Log.Warning("UpdateConfiguration task faulted without exception");
                                     }
                                 },
                                 TaskContinuationOptions.OnlyOnFaulted);

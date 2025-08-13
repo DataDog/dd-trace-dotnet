@@ -508,10 +508,6 @@ namespace Datadog.Trace.ClrProfiler
                                     {
                                         Log.Error(t.Exception.Flatten(), "Error initializing debugger");
                                     }
-                                    else
-                                    {
-                                        Log.Warning("Unhandled error in debugger initialization task");
-                                    }
                                 },
                                 TaskContinuationOptions.OnlyOnFaulted);
 								 }
