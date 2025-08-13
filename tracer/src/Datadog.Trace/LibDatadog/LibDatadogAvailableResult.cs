@@ -8,7 +8,7 @@ using System;
 
 namespace Datadog.Trace.LibDatadog;
 
-internal struct LibDatadogAvailableResult(bool isAvailable, Exception? exception = null)
+internal readonly struct LibDatadogAvailableResult(bool isAvailable, Exception? exception = null)
 {
     public bool IsAvailable { get; } = isAvailable;
 

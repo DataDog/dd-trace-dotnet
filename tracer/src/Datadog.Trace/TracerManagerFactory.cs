@@ -118,7 +118,7 @@ namespace Datadog.Trace
             var libdatadogAvailaibility = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
             if (libdatadogAvailaibility.Exception is not null)
             {
-                Log.Warning(libdatadogAvailaibility.Exception, "An exception happened when trying to see if libdatadog was available");
+                Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
             }
 
             var defaultServiceName = settings.ServiceName ??

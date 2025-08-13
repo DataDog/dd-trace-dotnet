@@ -17,7 +17,7 @@ internal struct ConfiguratorHelper
     {
         if (isLibdatadogAvailable is false)
         {
-            return new ConfigurationResult(null, "Skipping hands-off configuration: as LibDatadog is not available", Result.LibDatadogUnavailable);
+            return new ConfigurationResult(null, "Skipping hands-off configuration because LibDatadog is not available", Result.LibDatadogUnavailable);
         }
 
         if (isLibdatadogAvailable is null)
