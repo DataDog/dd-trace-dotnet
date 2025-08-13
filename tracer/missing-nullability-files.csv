@@ -254,7 +254,6 @@ src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
 src/Datadog.Trace/ClrProfiler/Helpers/Interception.cs
 src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/LambdaMetadata.cs
-src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/ServerlessMiniAgent.cs
 src/Datadog.Trace/DataStreamsMonitoring/Transport/DataStreamsHttpHeaderNames.cs
 src/Datadog.Trace/DataStreamsMonitoring/Transport/DataStreamsTransportStrategy.cs
 src/Datadog.Trace/DataStreamsMonitoring/Utils/BinaryPrimitivesHelper.cs
