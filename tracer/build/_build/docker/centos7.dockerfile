@@ -81,6 +81,7 @@ RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f
     && dotnet help
 
 ENV \
+    DOTNET_ROOT=/usr/share/dotnet \
     DOTNET_ROLL_FORWARD_TO_PRERELEASE=1 \
     CXX=clang++ \
     CC=clang
