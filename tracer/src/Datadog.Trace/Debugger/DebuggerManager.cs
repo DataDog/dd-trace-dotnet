@@ -166,26 +166,14 @@ namespace Datadog.Trace.Debugger
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
             SetGeneralConfig(tracerSettings, DebuggerSettings);
-            Task.Run(
-                async () =>
-                {
-                    try
-                    {
-                        await InitializeSymbolUploader(tracerSettings).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Failed to initialize symbol uploader");
-                    }
-                });
-
+            InitializeSymbolUploader(tracerSettings);
             if (tracerSettings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(WriteStartupDebuggerDiagnosticLog);
             }
         }
 
-        private async Task InitializeSymbolUploader(TracerSettings tracerSettings)
+        private void InitializeSymbolUploader(TracerSettings tracerSettings)
         {
             try
             {
@@ -203,8 +191,17 @@ namespace Datadog.Trace.Debugger
                 var tracerManager = TracerManager.Instance;
                 SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, ServiceName, tracerSettings, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
 
-                // it will do nothing if it is an instance of NoOpSymbolUploader
-                await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to initialize symbol uploader");
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -483,9 +480,9 @@ namespace Datadog.Trace.Debugger
 
                 Log.Information("DATADOG DEBUGGER CONFIGURATION - {Configuration}", stringWriter.ToString());
             }
-            catch (Exception ex)
+            catch
             {
-                Log.Warning(ex, "DATADOG DEBUGGER DIAGNOSTICS - Error fetching configuration");
+                // ignored
             }
         }
 
