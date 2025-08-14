@@ -17,7 +17,7 @@ internal sealed class HandsOffConfigurationSource(Dictionary<string, string> con
     private readonly Dictionary<string, string> _configurations = configurations;
     private readonly bool _localFile = localFile;
 
-    internal override ConfigurationOrigins Origin => _localFile ? ConfigurationOrigins.LocalStableConfig : ConfigurationOrigins.FleetStableConfig;
+    public override ConfigurationOrigins Origin => _localFile ? ConfigurationOrigins.LocalStableConfig : ConfigurationOrigins.FleetStableConfig;
 
     protected override string? GetString(string key)
     {
