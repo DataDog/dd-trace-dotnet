@@ -976,19 +976,13 @@ namespace Datadog.Trace.TestHelpers
                 h => h.Value.ToList(),
                 StringComparer.OrdinalIgnoreCase);
 
-            object deserializedData = null;
+            MetricsData metricsData = null;
 
             if (request.PathAndQuery.StartsWith("/v1/metrics") && contentType.Contains("protobuf"))
             {
                 try
                 {
-                    var metricsData = MetricsData.Parser.ParseFrom(body);
-                    var resource = metricsData.ResourceMetrics;
-
-                    if (resource is not null)
-                    {
-                        deserializedData = resource;
-                    }
+                    metricsData = MetricsData.Parser.ParseFrom(body);
                 }
                 catch (Exception ex)
                 {
@@ -996,14 +990,14 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
 
-            if (deserializedData is not null)
+            if (metricsData is not null)
             {
                 OtlpRequests.Enqueue(new MockOtlpRequest(
                                          request.PathAndQuery,
                                          headersDict,
                                          body,
                                          contentType,
-                                         deserializedData));
+                                         metricsData));
             }
         }
 
@@ -1710,13 +1704,13 @@ namespace Datadog.Trace.TestHelpers
 
         public class MockOtlpRequest
         {
-            public MockOtlpRequest(string pathAndQuery, Dictionary<string, List<string>> headers, byte[] body, string contentType, object deserializedData)
+            public MockOtlpRequest(string pathAndQuery, Dictionary<string, List<string>> headers, byte[] body, string contentType, MetricsData metricsData)
             {
                 PathAndQuery = pathAndQuery;
                 Headers = headers;
                 Body = body;
                 ContentType = contentType;
-                DeserializedData = deserializedData;
+                MetricsData = metricsData;
             }
 
             public string PathAndQuery { get; }
@@ -1730,7 +1724,7 @@ namespace Datadog.Trace.TestHelpers
             /// <summary>
             /// Gets the deserialized protobuf data (if available)
             /// </summary>
-            public object DeserializedData { get; }
+            public MetricsData MetricsData { get; }
         }
     }
 }

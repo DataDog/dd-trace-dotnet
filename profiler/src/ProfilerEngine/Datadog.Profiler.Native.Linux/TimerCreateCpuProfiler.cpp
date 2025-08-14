@@ -17,7 +17,7 @@
 #include <ucontext.h>
 #include <unistd.h>
 
-TimerCreateCpuProfiler* TimerCreateCpuProfiler::Instance = nullptr;
+std::atomic<TimerCreateCpuProfiler*> TimerCreateCpuProfiler::Instance = nullptr;
 
 TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IConfiguration* pConfiguration,
@@ -29,7 +29,8 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
-    _samplingInterval{pConfiguration->GetCpuProfilingInterval()}
+    _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
+    _nbThreadsInSignalHandler{0}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
@@ -91,6 +92,15 @@ bool TimerCreateCpuProfiler::StartImpl()
 
 bool TimerCreateCpuProfiler::StopImpl()
 {
+    Instance = nullptr;
+    // we cannot unregister. We would replace the current action by the default one
+    // which will cause the termination of the process
+    // Instead, mark SIGPROF as ignored.
+    if (!_pSignalManager->IgnoreSignal())
+    {
+        Log::Warn("Failed to mark the signal SIGPROF as ignored.");
+    }
+
     {
         std::unique_lock lock(_registerLock);
 
@@ -99,15 +109,27 @@ bool TimerCreateCpuProfiler::StopImpl()
         _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) { UnregisterThreadImpl(thread); });
     }
 
-    Instance = nullptr;
-    _pSignalManager->UnRegisterHandler();
+    std::uint64_t nbThreadsInSignalHandler = _nbThreadsInSignalHandler;
+    if (nbThreadsInSignalHandler != 0)
+    {
+        Log::Info("Waiting for all threads exiting the signal handler (#threads ", _nbThreadsInSignalHandler, ")");
+    
+        // TODO: for now we sleep.
+        std::this_thread::sleep_for(500ms);
+        if (_nbThreadsInSignalHandler != 0)
+        {
+            Log::Warn("There are threads that are still executing the signal handler: ", _nbThreadsInSignalHandler);
+            return false;
+        }
+        Log::Info("All threads exited the signal handler");
+    }
 
     return true;
 }
 
 bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext)
 {
-    auto instance = Instance;
+    auto instance = Instance.load();
     if (instance == nullptr)
     {
         return false;
@@ -122,7 +144,6 @@ extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak)
 
 bool TimerCreateCpuProfiler::CanCollect(void* ctx)
 {
-    // TODO (in another PR): add metrics about reasons we could not collect
     if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
         _discardMetrics->Incr<DiscardReason::InsideWrappedFunction>();
@@ -189,12 +210,14 @@ private:
 
 bool TimerCreateCpuProfiler::Collect(void* ctx)
 {
+    _nbThreadsInSignalHandler++;
     _totalSampling->Incr();
 
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (threadInfo == nullptr)
     {
         _discardMetrics->Incr<DiscardReason::UnknownThread>();
+        _nbThreadsInSignalHandler--;
         // Ooops should never happen
         return false;
     }
@@ -203,11 +226,13 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     if (!l.IsLockAcquired())
     {
         _discardMetrics->Incr<DiscardReason::FailedAcquiringLock>();
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
     if (!CanCollect(ctx))
     {
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
@@ -217,6 +242,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     auto rawCpuSample = _pProvider->GetRawSample();
     if (!rawCpuSample)
     {
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
@@ -229,6 +255,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     {
         rawCpuSample.Discard();
         _discardMetrics->Incr<DiscardReason::EmptyBacktrace>();
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
@@ -240,6 +267,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     rawCpuSample->AppDomainId = threadInfo->GetAppDomainId();
     rawCpuSample->ThreadInfo = std::move(threadInfo);
     rawCpuSample->Duration = _samplingInterval;
+    _nbThreadsInSignalHandler--;
     return true;
 }
 
