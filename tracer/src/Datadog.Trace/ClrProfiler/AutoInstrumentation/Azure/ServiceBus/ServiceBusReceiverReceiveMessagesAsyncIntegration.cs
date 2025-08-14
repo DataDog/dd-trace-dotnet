@@ -99,11 +99,11 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         return returnValue;
     }
 
-    private static (SpanContext? ParentContext, SpanLink[]? SpanLinks, string? MessageId) ExtractContextAndMessageId(Tracer tracer, System.Collections.IList? messagesList)
+    private static ContextExtractionResult ExtractContextAndMessageId(Tracer tracer, System.Collections.IList? messagesList)
     {
         if (messagesList == null || messagesList.Count == 0)
         {
-            return (null, null, null);
+            return new ContextExtractionResult(null, null, null);
         }
 
         // Single message case: extract both context and message ID
@@ -115,10 +115,10 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
                 var context = ExtractContextFromMessage(tracer, serviceBusMessage);
                 var messageId = string.IsNullOrEmpty(serviceBusMessage.MessageId) ? null : serviceBusMessage.MessageId;
 
-                return (context, null, messageId);
+                return new ContextExtractionResult(context, null, messageId);
             }
 
-            return (null, null, null);
+            return new ContextExtractionResult(null, null, null);
         }
 
         // Multiple messages case: collect all contexts
@@ -139,7 +139,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
         if (contexts.Count == 0)
         {
-            return (null, null, null);
+            return new ContextExtractionResult(null, null, null);
         }
 
         // Check if all contexts are the same
@@ -148,12 +148,12 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
         if (allSame)
         {
-            return (firstContext, null, null); // Use as parent
+            return new ContextExtractionResult(firstContext, null, null); // Use as parent
         }
         else
         {
             var spanLinks = contexts.Select(c => new SpanLink(c)).ToArray();
-            return (null, spanLinks, null); // Use span links instead of parent
+            return new ContextExtractionResult(null, spanLinks, null); // Use span links instead of parent
         }
     }
 
@@ -260,6 +260,20 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         {
             Instance = instance;
             StartTime = startTime;
+        }
+    }
+
+    private readonly struct ContextExtractionResult
+    {
+        public readonly SpanContext? ParentContext;
+        public readonly SpanLink[]? SpanLinks;
+        public readonly string? MessageId;
+
+        public ContextExtractionResult(SpanContext? parentContext, SpanLink[]? spanLinks, string? messageId)
+        {
+            ParentContext = parentContext;
+            SpanLinks = spanLinks;
+            MessageId = messageId;
         }
     }
 }
