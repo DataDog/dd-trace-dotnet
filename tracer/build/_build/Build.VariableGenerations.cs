@@ -587,7 +587,6 @@ partial class Build : NukeBuild
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -626,6 +625,7 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
                             new (publishFramework: TargetFramework.NET9_0, "trixie-9.0"),
                             new (publishFramework: TargetFramework.NET8_0, "trixie-8.0"),
                         },
@@ -830,7 +830,6 @@ partial class Build : NukeBuild
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
@@ -867,6 +866,7 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
                             new (publishFramework: TargetFramework.NET9_0, "trixie-9.0"),
                             new (publishFramework: TargetFramework.NET8_0, "trixie-8.0"),
                         },
