@@ -47,7 +47,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        // Store start time and instance for use in OnAsyncMethodEnd where we'll create the span with proper parent context
         var startTime = DateTimeOffset.UtcNow;
         return new CallTargetState(null, new ReceiveMessagesState(instance, startTime));
     }
@@ -56,7 +55,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
     {
         Log.Information("ServiceBusReceiverReceiveMessagesAsyncIntegration.OnAsyncMethodEnd called");
 
-        // Early exit if integration is disabled or state is missing
         var tracer = Tracer.Instance;
         if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus) ||
             !(state.State is ReceiveMessagesState stateData))
@@ -64,24 +62,17 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             return returnValue;
         }
 
-        // Extract the stored data from OnMethodBegin
         var receiverInstance = stateData.Instance;
         var startTime = stateData.StartTime;
-
-        // Get the messages list if available
         var messagesList = returnValue as System.Collections.IList;
         var messageCount = messagesList?.Count ?? 0;
 
-        // Only create span if we have messages or an exception
         if (exception == null && messageCount == 0)
         {
             return returnValue;
         }
 
-        // Extract parent context from first message if available
         var parentContext = ExtractParentContextFromFirstMessage(tracer, messagesList);
-
-        // Create and configure the span
         CreateAndConfigureSpan(tracer, parentContext, receiverInstance, startTime, exception);
 
         return returnValue;
