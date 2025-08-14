@@ -29,7 +29,7 @@
     <When Condition="'$(BuildStandalone)' == 'true'">
       <PropertyGroup>
         <!-- When building standalone we have to exclude <netcoreapp3.1 from the targets otherwise the SDK has a fit -->
-        <TargetFrameworks>net9.0;net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;</TargetFrameworks>
+        <TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;</TargetFrameworks>
         <OutputPath>bin\$(Configuration)\Console</OutputPath>
         <PublishDir Condition="'$(PublishDir)' == '' ">bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
         <AssemblyName>dd-trace</AssemblyName>
