@@ -28,7 +28,9 @@ public static class TargetFrameworkExtensions
         var compareTo = (string)target;
 
         if (IgnoredFrameworks.Contains(source) || IgnoredFrameworks.Contains(compareTo))
+        {
             return false;
+        }
 
         int sourceIndex = OrderedFrameworks.IndexOf(source);
         int targetIndex = OrderedFrameworks.IndexOf(compareTo);
