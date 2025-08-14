@@ -118,6 +118,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
 
+                // Try to extract entity path for ServiceBus triggers
+                string? entityPath = null;
+                if (triggerType == "ServiceBus")
+                {
+                    Log.Debug("ServiceBus trigger detected, attempting to extract EntityPath");
+
+                    // Try to extract from the BindingSource if it's a ServiceBusTriggerInput
+                    entityPath = ExtractEntityPathFromBindingSource(instanceParam.BindingSource);
+                    if (!string.IsNullOrEmpty(entityPath))
+                    {
+                        Log.Information("Successfully extracted EntityPath from BindingSource: {EntityPath}", entityPath);
+                    }
+                    else
+                    {
+                        Log.Debug("Could not extract EntityPath from BindingSource, falling back to attribute extraction");
+                        // Fallback to extracting from attributes
+                        entityPath = ExtractQueueNameFromFunctionMethod(instanceParam.FunctionDescriptor.FullName);
+                        if (!string.IsNullOrEmpty(entityPath))
+                        {
+                            Log.Information("Successfully extracted EntityPath from attributes: {EntityPath}", entityPath);
+                        }
+                        else
+                        {
+                            Log.Warning("Could not extract EntityPath from ServiceBus trigger");
+                        }
+                    }
+                }
+
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
@@ -137,6 +165,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
                         bindingSource: bindingSourceType.FullName,
                         triggerType: triggerType);
+
+                    // Add ServiceBus-specific tags if we have entity path
+                    if (!string.IsNullOrEmpty(entityPath))
+                    {
+                        rootSpan.SetTag(Tags.MessagingDestinationName, entityPath);
+                    }
+
                     rootSpan.Type = SpanType;
                     return null;
                 }
@@ -151,6 +186,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         BindingSource = bindingSourceType.FullName
                     };
 
+                    // Add ServiceBus-specific tags if we have entity path
+                    if (!string.IsNullOrEmpty(entityPath))
+                    {
+                        tags.MessagingDestinationName = entityPath;
+                    }
+
                     // This is the root scope
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags);
@@ -164,6 +205,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         fullName: instanceParam.FunctionDescriptor.FullName,
                         bindingSource: bindingSourceType.FullName,
                         triggerType: triggerType);
+
+                    // Add ServiceBus-specific tags if we have entity path
+                    if (!string.IsNullOrEmpty(entityPath))
+                    {
+                        scope.Root.Span.SetTag(Tags.MessagingDestinationName, entityPath);
+                    }
                 }
 
                 scope.Root.Span.Type = SpanType;
@@ -474,6 +521,151 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
 
             return AttributeReflectionHelper.ExtractAttributeProperty(entryPoint!, "ServiceBusTriggerAttribute", "QueueName", "TopicName");
+        }
+
+        /// <summary>
+        /// Extracts entity path from a binding source that may contain a ServiceBusTriggerInput
+        /// </summary>
+        /// <param name="bindingSource">The binding source object</param>
+        /// <returns>The entity path if found, otherwise null</returns>
+        private static string? ExtractEntityPathFromBindingSource(object? bindingSource)
+        {
+            if (bindingSource == null)
+            {
+                Log.Debug("ExtractEntityPathFromBindingSource: bindingSource is null");
+                return null;
+            }
+
+            try
+            {
+                var bindingSourceType = bindingSource.GetType();
+                Log.Debug("ExtractEntityPathFromBindingSource: bindingSource type = {TypeName}", bindingSourceType.FullName);
+
+                // Check if this is a TriggerBindingSource<ServiceBusTriggerInput>
+                if (!bindingSourceType.IsGenericType)
+                {
+                    Log.Debug("ExtractEntityPathFromBindingSource: bindingSource is not a generic type");
+                    return null;
+                }
+
+                // Try to get the Value property which should contain the ServiceBusTriggerInput
+                var valueProperty = bindingSourceType.GetProperty("Value", BindingFlags.Public | BindingFlags.Instance);
+                if (valueProperty == null)
+                {
+                    Log.Debug("ExtractEntityPathFromBindingSource: Value property not found on bindingSource");
+                    return null;
+                }
+
+                var triggerInput = valueProperty.GetValue(bindingSource);
+                if (triggerInput == null)
+                {
+                    Log.Debug("ExtractEntityPathFromBindingSource: Value property returned null");
+                    return null;
+                }
+
+                // Check if this is a ServiceBusTriggerInput
+                var triggerInputTypeName = triggerInput.GetType().FullName;
+                Log.Debug("ExtractEntityPathFromBindingSource: triggerInput type = {TypeName}", triggerInputTypeName);
+
+                if (triggerInputTypeName?.Contains("ServiceBusTriggerInput") == true)
+                {
+                    Log.Debug("ExtractEntityPathFromBindingSource: Found ServiceBusTriggerInput, extracting EntityPath");
+                    return ExtractEntityPathFromServiceBusTriggerInput(triggerInput);
+                }
+                else
+                {
+                    Log.Debug("ExtractEntityPathFromBindingSource: triggerInput is not ServiceBusTriggerInput");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "ExtractEntityPathFromBindingSource: Error extracting entity path from binding source");
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Safely explores a ServiceBusTriggerInput instance to extract the EntityPath using duck typing.
+        /// </summary>
+        /// <param name="serviceBusTriggerInput">The ServiceBusTriggerInput instance to explore</param>
+        /// <returns>The entity path if found, otherwise null</returns>
+        private static string? ExtractEntityPathFromServiceBusTriggerInput(object? serviceBusTriggerInput)
+        {
+            if (serviceBusTriggerInput == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var triggerInputType = serviceBusTriggerInput.GetType();
+                Log.Debug("ExtractEntityPathFromServiceBusTriggerInput: Exploring type: {TypeName}", triggerInputType.FullName);
+
+                // Log available properties and fields for debugging
+                Log.Debug("ExtractEntityPathFromServiceBusTriggerInput: Available properties:");
+                foreach (var prop in triggerInputType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    Log.Debug("  - {PropertyName} ({PropertyType})", prop.Name, prop.PropertyType.Name);
+                }
+
+                // Try to duck type to IServiceBusTriggerInput
+                if (!serviceBusTriggerInput.TryDuckCast<IServiceBusTriggerInput>(out var triggerInput))
+                {
+                    Log.Warning("ExtractEntityPathFromServiceBusTriggerInput: Could not duck cast to IServiceBusTriggerInput. Type: {TypeName}", triggerInputType.FullName);
+                    return null;
+                }
+
+                Log.Debug("ExtractEntityPathFromServiceBusTriggerInput: Successfully duck casted to IServiceBusTriggerInput");
+
+                // Try to access ReceiveActions
+                var receiveActions = triggerInput.ReceiveActions;
+                if (receiveActions == null)
+                {
+                    Log.Debug("ExtractEntityPathFromServiceBusTriggerInput: ReceiveActions is null on ServiceBusTriggerInput");
+                    return null;
+                }
+
+                var receiveActionsType = receiveActions.GetType();
+                Log.Debug("ExtractEntityPathFromServiceBusTriggerInput: ReceiveActions type: {TypeName}", receiveActionsType.FullName);
+
+                // Log available fields for debugging
+                Log.Debug("ExtractEntityPathFromServiceBusTriggerInput: ReceiveActions fields:");
+                foreach (var field in receiveActionsType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    Log.Debug("  - {FieldName} ({FieldType})", field.Name, field.FieldType.Name);
+                }
+
+                // Try to access the internal _receiver field (already duck typed to IServiceBusReceiver)
+                var receiver = receiveActions.Receiver;
+                if (receiver == null)
+                {
+                    Log.Warning("ExtractEntityPathFromServiceBusTriggerInput: Receiver (_receiver field) is null on ServiceBusReceiveActions");
+                    return null;
+                }
+
+                var receiverType = receiver.Instance?.GetType();
+                Log.Debug("ExtractEntityPathFromServiceBusTriggerInput: Found receiver of type: {TypeName}", receiverType?.FullName ?? "null");
+
+                var entityPath = receiver.EntityPath;
+                Log.Debug("ExtractEntityPathFromServiceBusTriggerInput: EntityPath value = '{EntityPath}'", entityPath ?? "<null>");
+
+                if (!string.IsNullOrEmpty(entityPath))
+                {
+                    Log.Information("ExtractEntityPathFromServiceBusTriggerInput: Successfully extracted EntityPath: {EntityPath}", entityPath);
+                    return entityPath;
+                }
+                else
+                {
+                    Log.Warning("ExtractEntityPathFromServiceBusTriggerInput: EntityPath is null or empty on ServiceBusReceiver");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error extracting EntityPath from ServiceBusTriggerInput");
+            }
+
+            return null;
         }
     }
 }
