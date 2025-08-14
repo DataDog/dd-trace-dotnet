@@ -66,6 +66,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus) ||
             !(state.State is ReceiveMessagesState stateData))
         {
+            Log.Debug("ServiceBusReceiverReceiveMessagesAsyncIntegration: Integration disabled or no state data, returning early");
             return returnValue;
         }
 
@@ -74,8 +75,11 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         var messagesList = returnValue as System.Collections.IList;
         var messageCount = messagesList?.Count ?? 0;
 
+        Log.Debug("ServiceBusReceiverReceiveMessagesAsyncIntegration: Message count = {0}, Exception = {1}", messageCount, exception != null);
+
         if (exception == null && messageCount == 0)
         {
+            Log.Debug("ServiceBusReceiverReceiveMessagesAsyncIntegration: No messages and no exception, returning early");
             return returnValue;
         }
 
@@ -84,15 +88,26 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         var spanLinks = contextInfo.SpanLinks;
         var messageId = contextInfo.MessageId;
 
+        Log.Debug(
+            "ServiceBusReceiverReceiveMessagesAsyncIntegration: Extracted context - ParentContext={0}, SpanLinks={1}, MessageId={2}",
+            parentContext != null,
+            spanLinks?.Length ?? 0,
+            messageId ?? "null");
+
         // Check if we're in an Azure Functions ServiceBus context only when we need to create/modify a span
         var azureFunctionsSpan = GetAzureFunctionsServiceBusSpan(tracer);
 
         if (azureFunctionsSpan != null)
         {
+            Log.Information(
+                "ServiceBusReceiverReceiveMessagesAsyncIntegration: Azure Functions span detected, modifying existing span. SpanId={0}, ResourceName={1}",
+                azureFunctionsSpan.SpanId,
+                azureFunctionsSpan.ResourceName);
             ModifyAzureFunctionsSpan(azureFunctionsSpan, receiverInstance, messageId, exception);
         }
         else
         {
+            Log.Information("ServiceBusReceiverReceiveMessagesAsyncIntegration: No Azure Functions span detected, creating new span");
             CreateAndConfigureSpan(tracer, parentContext, spanLinks, receiverInstance, startTime, messageId, exception);
         }
 
@@ -219,11 +234,24 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
     private static Span? GetAzureFunctionsServiceBusSpan(Tracer tracer)
     {
-        var rootSpan = tracer.InternalActiveScope?.Root?.Span;
-        return rootSpan?.Type == SpanTypes.Serverless &&
-               rootSpan.ResourceName?.StartsWith("ServiceBus ", StringComparison.OrdinalIgnoreCase) == true
-               ? rootSpan
-               : null;
+        var activeScope = tracer.InternalActiveScope;
+        var rootScope = activeScope?.Root;
+        var rootSpan = rootScope?.Span;
+
+        Log.Debug(
+            "ServiceBusReceiverReceiveMessagesAsyncIntegration.GetAzureFunctionsServiceBusSpan: " +
+            "ActiveScope={0}, RootScope={1}, RootSpan={2}, " +
+            "RootSpanType={3}, RootSpanResourceName={4}",
+            new object?[] { activeScope != null, rootScope != null, rootSpan != null, rootSpan?.Type ?? "null", rootSpan?.ResourceName ?? "null" });
+
+        var isAzureFunctionsSpan = rootSpan?.Type == SpanTypes.Serverless &&
+                                  rootSpan.ResourceName?.StartsWith("ServiceBus ", StringComparison.OrdinalIgnoreCase) == true;
+
+        Log.Debug(
+            "ServiceBusReceiverReceiveMessagesAsyncIntegration.GetAzureFunctionsServiceBusSpan: IsAzureFunctionsSpan={0}",
+            isAzureFunctionsSpan);
+
+        return isAzureFunctionsSpan ? rootSpan : null;
     }
 
     private static void ModifyAzureFunctionsSpan(Span azureFunctionsSpan, IServiceBusReceiver receiverInstance, string? messageId, Exception? exception)
