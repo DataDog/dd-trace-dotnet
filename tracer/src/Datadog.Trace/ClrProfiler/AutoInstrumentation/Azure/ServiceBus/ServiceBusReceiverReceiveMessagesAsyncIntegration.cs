@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reflection;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -45,130 +46,139 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        // Create span with correct start time, we'll set parent context later in OnAsyncMethodEnd
-        var scope = tracer.StartActiveInternal(OperationName);
-        var span = scope.Span;
-
-        span.Type = SpanTypes.Queue;
-        span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
-
-        var entityPath = instance.EntityPath ?? "unknown";
-        span.ResourceName = entityPath;
-
-        span.SetTag(Tags.MessagingDestinationName, entityPath);
-        span.SetTag(Tags.MessagingOperation, "receive");
-        span.SetTag(Tags.MessagingSystem, "servicebus");
-
-        return new CallTargetState(scope);
+        // Store start time and instance for use in OnAsyncMethodEnd where we'll create the span with proper parent context
+        var startTime = DateTimeOffset.UtcNow;
+        return new CallTargetState(null, new { Instance = instance, StartTime = startTime });
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
     {
-        var scope = state.Scope;
-
-        if (scope is null)
+        var tracer = Tracer.Instance;
+        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus) || state.State == null)
         {
             return returnValue;
         }
 
-        try
+        // Extract the stored data from OnMethodBegin
+        var stateData = state.State;
+        if (!(stateData is object obj))
         {
-            // Log the values before checking the condition
-            var hasException = exception != null;
-            var returnValueType = returnValue?.GetType().FullName ?? "null";
-            var isCorrectType = returnValue is IReadOnlyList<IServiceBusReceivedMessage>;
-            var isListType = returnValue is System.Collections.IList;
-            var messageCount = returnValue is System.Collections.ICollection collection ? collection.Count : -1;
+            return returnValue;
+        }
 
-            Log.Information("OnAsyncMethodEnd - Exception present: {HasException}", hasException);
-            Log.Information("OnAsyncMethodEnd - ReturnValue type: {ReturnValueType}", returnValueType);
-            Log.Information("OnAsyncMethodEnd - Is duck type: {IsCorrectType}", isCorrectType);
-            Log.Information("OnAsyncMethodEnd - Is IList: {IsListType}", isListType);
-            Log.Information("OnAsyncMethodEnd - Message count: {MessageCount}", (object)messageCount);
+        var stateType = obj.GetType();
+        var instanceProperty = stateType.GetProperty("Instance");
+        var startTimeProperty = stateType.GetProperty("StartTime");
 
-            // Try to extract parent context from received messages and update span if needed
-            // Handle the actual List<ServiceBusReceivedMessage> return type from Azure SDK
-            if (exception == null && returnValue is System.Collections.IList messageList && messageList.Count > 0)
+        var instanceValue = instanceProperty?.GetValue(obj);
+        var startTimeValue = startTimeProperty?.GetValue(obj);
+
+        if (!(instanceValue is TTarget receiverInstance) || !(startTimeValue is DateTimeOffset startTime))
+        {
+            return returnValue;
+        }
+
+        // Extract parent context first if messages are available
+        SpanContext? parentContext = null;
+
+        if (exception == null && returnValue is System.Collections.IList messageList && messageList.Count > 0)
+        {
+            try
             {
-                Log.Information("ServiceBus ReceiveMessagesAsync completed successfully. Received {MessageCount} messages, attempting context extraction from first message", (object)messageList.Count);
-
-                try
+                // Duck cast the first message to extract context
+                var firstMessageObj = messageList[0];
+                if (firstMessageObj?.TryDuckCast<IServiceBusReceivedMessage>(out var firstMessage) == true)
                 {
-                    // Duck cast the first message to our interface
-                    var firstMessageObj = messageList[0];
-                    if (firstMessageObj?.TryDuckCast<IServiceBusReceivedMessage>(out var firstMessage) == true)
+                    if (firstMessage.ApplicationProperties != null)
                     {
-                        var messageId = firstMessage.Instance?.GetType().GetProperty("MessageId")?.GetValue(firstMessage.Instance);
-                        var hasApplicationProperties = firstMessage.ApplicationProperties != null;
+                        var headerAdapter = new ServiceBusHeadersCollectionAdapter(firstMessage.ApplicationProperties);
+                        var extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+                        parentContext = extractedContext.SpanContext;
 
-                        Log.Information(
-                            "First message details - MessageId: {MessageId}, ApplicationProperties null: {ApplicationPropertiesNull}",
-                            messageId,
-                            !hasApplicationProperties);
-
-                        if (firstMessage.ApplicationProperties != null)
+                        if (parentContext != null)
                         {
-                            var propertyKeys = string.Join(", ", firstMessage.ApplicationProperties.Keys);
                             Log.Information(
-                                "ApplicationProperties found with {PropertyCount} properties: {PropertyKeys}",
-                                (object)firstMessage.ApplicationProperties.Count,
-                                propertyKeys);
-
-                            var headerAdapter = new ServiceBusHeadersCollectionAdapter(firstMessage.ApplicationProperties);
-                            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-
-                            // If we found a parent context, update the span's parent
-                            if (extractedContext.SpanContext != null)
-                            {
-                                Log.Information(
-                                    "Successfully extracted parent context - TraceId: {TraceId}, SpanId: {SpanId}",
-                                    extractedContext.SpanContext.TraceId128,
-                                    extractedContext.SpanContext.SpanId);
-
-                                // Note: We can't change the parent after the span is created, but we can add trace links
-                                // This is a limitation of how spans work - the parent is set at creation time
-                                // For now, we'll just extract the context for demonstration purposes
-                            }
-                            else
-                            {
-                                Log.Information("No parent context found in message ApplicationProperties");
-                            }
-                        }
-                        else
-                        {
-                            Log.Information("ApplicationProperties is null, cannot extract context");
+                                "Successfully extracted parent context - TraceId: {TraceId}, SpanId: {SpanId}",
+                                parentContext.TraceId128,
+                                parentContext.SpanId);
                         }
                     }
-                    else
-                    {
-                        Log.Warning("Failed to duck cast first message to IServiceBusReceivedMessage. Message type: {MessageType}", firstMessageObj?.GetType().FullName ?? "null");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting context from ServiceBus message");
                 }
             }
-            else if (exception == null && returnValue is System.Collections.IList emptyMessages && emptyMessages.Count == 0)
+            catch (Exception ex)
             {
-                Log.Information("ServiceBus ReceiveMessagesAsync completed with no messages received");
+                Log.Error(ex, "Error extracting parent context from ServiceBus message");
+            }
+        }
+
+        // Log the values for debugging
+        var hasException = exception != null;
+        var returnValueType = returnValue?.GetType().FullName ?? "null";
+        var isCorrectType = returnValue is IReadOnlyList<IServiceBusReceivedMessage>;
+        var isListType = returnValue is System.Collections.IList;
+        var messageCount = returnValue is System.Collections.ICollection collection ? collection.Count : -1;
+
+        Log.Information("OnAsyncMethodEnd - Exception present: {HasException}", hasException);
+        Log.Information("OnAsyncMethodEnd - ReturnValue type: {ReturnValueType}", returnValueType);
+        Log.Information("OnAsyncMethodEnd - Is duck type: {IsCorrectType}", isCorrectType);
+        Log.Information("OnAsyncMethodEnd - Is IList: {IsListType}", isListType);
+        Log.Information("OnAsyncMethodEnd - Message count: {MessageCount}", (object)messageCount);
+        Log.Information("OnAsyncMethodEnd - Parent context extracted: {HasParent}", parentContext != null);
+
+        // Only create span if we have messages or an exception worth tracking
+        var shouldCreateSpan = (exception == null && returnValue is System.Collections.IList msgList && msgList.Count > 0) ||
+                               (exception != null);
+
+        if (shouldCreateSpan)
+        {
+            // Create span with the extracted parent context
+            var scope = tracer.StartActiveInternal(OperationName, parent: parentContext);
+            var span = scope.Span;
+
+            try
+            {
+                // Set span properties
+                span.Type = SpanTypes.Queue;
+                span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+
+                var entityPath = ((IServiceBusReceiver)receiverInstance).EntityPath ?? "unknown";
+                span.ResourceName = entityPath;
+
+                span.SetTag(Tags.MessagingDestinationName, entityPath);
+                span.SetTag(Tags.MessagingOperation, "receive");
+                span.SetTag(Tags.MessagingSystem, "servicebus");
+
+                // Additional detailed logging for the messages (already extracted context above)
+                if (exception == null && returnValue is System.Collections.IList successMsgList && successMsgList.Count > 0)
+                {
+                    Log.Information("ServiceBus ReceiveMessagesAsync completed successfully. Received {MessageCount} messages with parent context: {HasParent}", (object)successMsgList.Count, parentContext != null);
+                }
+
+                if (exception != null)
+                {
+                    span.SetException(exception);
+                    Log.Information("ServiceBus ReceiveMessagesAsync failed with exception, span created to track the error");
+                }
+            }
+            finally
+            {
+                scope.Dispose();
+            }
+        }
+        else
+        {
+            // No span created for successful operations with no messages
+            if (exception == null && returnValue is System.Collections.IList emptyMessages && emptyMessages.Count == 0)
+            {
+                Log.Information("ServiceBus ReceiveMessagesAsync completed with no messages received - no span created");
             }
             else if (exception == null)
             {
                 var unexpectedReturnValueType = returnValue?.GetType().FullName ?? "null";
                 Log.Warning(
-                    "ServiceBus ReceiveMessagesAsync completed but return value is not the expected IReadOnlyList<IServiceBusReceivedMessage> type: {ReturnValueType}",
+                    "ServiceBus ReceiveMessagesAsync completed but return value is not the expected IList type: {ReturnValueType} - no span created",
                     unexpectedReturnValueType);
             }
-
-            if (exception != null)
-            {
-                scope.Span.SetException(exception);
-            }
-        }
-        finally
-        {
-            scope.Dispose();
         }
 
         return returnValue;
