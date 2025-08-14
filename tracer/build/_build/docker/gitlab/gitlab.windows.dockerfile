@@ -1,7 +1,7 @@
 ﻿# To build this file locally, starting from the root directory:
 # cd tracer/build/_build/docker/gitlab
-# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet10 .
-# docker push datadog/dd-trace-dotnet-docker-build:dotnet10
+# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet10-preview7 .
+# docker push datadog/dd-trace-dotnet-docker-build:dotnet10-preview7
 
 ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019
 FROM ${BASE_IMAGE}
