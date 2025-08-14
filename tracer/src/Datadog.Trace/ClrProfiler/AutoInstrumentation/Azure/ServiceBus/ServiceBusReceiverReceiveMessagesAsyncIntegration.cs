@@ -40,6 +40,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int maxMessages, TimeSpan? maxWaitTime, bool isProcessor, CancellationToken cancellationToken)
         where TTarget : IServiceBusReceiver, IDuckType
     {
+        Log.Information("ServiceBusReceiverReceiveMessagesAsyncIntegration.OnMethodBegin called");
         var tracer = Tracer.Instance;
         if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
         {
@@ -48,11 +49,12 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
         // Store start time and instance for use in OnAsyncMethodEnd where we'll create the span with proper parent context
         var startTime = DateTimeOffset.UtcNow;
-        return new CallTargetState(null, new { Instance = instance, StartTime = startTime });
+        return new CallTargetState(null, new ReceiveMessagesState { Instance = instance, StartTime = startTime });
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
     {
+        Log.Information("ServiceBusReceiverReceiveMessagesAsyncIntegration.OnAsyncMethodEnd called");
         var tracer = Tracer.Instance;
         if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus) || state.State == null)
         {
@@ -60,23 +62,13 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         }
 
         // Extract the stored data from OnMethodBegin
-        var stateData = state.State;
-        if (!(stateData is object obj))
+        if (!(state.State is ReceiveMessagesState stateData) || stateData.Instance == null)
         {
             return returnValue;
         }
 
-        var stateType = obj.GetType();
-        var instanceProperty = stateType.GetProperty("Instance");
-        var startTimeProperty = stateType.GetProperty("StartTime");
-
-        var instanceValue = instanceProperty?.GetValue(obj);
-        var startTimeValue = startTimeProperty?.GetValue(obj);
-
-        if (!(instanceValue is TTarget receiverInstance) || !(startTimeValue is DateTimeOffset startTime))
-        {
-            return returnValue;
-        }
+        var receiverInstance = stateData.Instance;
+        var startTime = stateData.StartTime;
 
         // Extract parent context first if messages are available
         SpanContext? parentContext = null;
@@ -141,7 +133,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
                 span.Type = SpanTypes.Queue;
                 span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
 
-                var entityPath = ((IServiceBusReceiver)receiverInstance).EntityPath ?? "unknown";
+                var entityPath = receiverInstance.EntityPath ?? "unknown";
                 span.ResourceName = entityPath;
 
                 span.SetTag(Tags.MessagingDestinationName, entityPath);
@@ -182,5 +174,13 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         }
 
         return returnValue;
+    }
+
+    // State class to pass data between OnMethodBegin and OnAsyncMethodEnd
+    internal class ReceiveMessagesState
+    {
+        public IServiceBusReceiver? Instance { get; set; }
+
+        public DateTimeOffset StartTime { get; set; }
     }
 }
