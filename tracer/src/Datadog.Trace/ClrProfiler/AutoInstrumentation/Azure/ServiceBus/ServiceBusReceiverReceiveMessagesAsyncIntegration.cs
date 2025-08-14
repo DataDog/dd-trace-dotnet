@@ -49,7 +49,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
         // Store start time and instance for use in OnAsyncMethodEnd where we'll create the span with proper parent context
         var startTime = DateTimeOffset.UtcNow;
-        return new CallTargetState(null, new ReceiveMessagesState { Instance = instance, StartTime = startTime });
+        return new CallTargetState(null, new ReceiveMessagesState(instance, startTime));
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
@@ -62,7 +62,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         }
 
         // Extract the stored data from OnMethodBegin
-        if (!(state.State is ReceiveMessagesState stateData) || stateData.Instance == null)
+        if (!(state.State is ReceiveMessagesState stateData))
         {
             return returnValue;
         }
@@ -176,11 +176,15 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         return returnValue;
     }
 
-    // State class to pass data between OnMethodBegin and OnAsyncMethodEnd
-    internal class ReceiveMessagesState
+    private readonly struct ReceiveMessagesState
     {
-        public IServiceBusReceiver? Instance { get; set; }
+        public readonly IServiceBusReceiver Instance;
+        public readonly DateTimeOffset StartTime;
 
-        public DateTimeOffset StartTime { get; set; }
+        public ReceiveMessagesState(IServiceBusReceiver instance, DateTimeOffset startTime)
+        {
+            Instance = instance;
+            StartTime = startTime;
+        }
     }
 }
