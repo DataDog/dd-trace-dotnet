@@ -8,17 +8,24 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 /// <summary>
 /// System.Threading.Tasks.Task`1[System.Collections.Generic.IReadOnlyList`1[Azure.Messaging.ServiceBus.ServiceBusReceivedMessage]] Azure.Messaging.ServiceBus.ServiceBusReceiver::ReceiveMessagesAsync(System.Int32,System.Nullable`1[System.TimeSpan],System.Boolean,System.Threading.CancellationToken) calltarget instrumentation
+///
+/// This integration has special handling for Azure Functions with ServiceBus triggers:
+/// - When running in an Azure Functions ServiceBus trigger context, it modifies the existing Azure Functions span
+///   instead of creating a new servicebus.receive span to avoid duplicate spans
+/// - When running outside of Azure Functions, it creates a normal servicebus.receive span
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Azure.Messaging.ServiceBus",
@@ -72,56 +79,114 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             return returnValue;
         }
 
-        var parentContext = ExtractParentContextFromFirstMessage(tracer, messagesList);
-        CreateAndConfigureSpan(tracer, parentContext, receiverInstance, startTime, exception);
+        var contextInfo = ExtractContextAndMessageId(tracer, messagesList);
+        var parentContext = contextInfo.ParentContext;
+        var spanLinks = contextInfo.SpanLinks;
+        var messageId = contextInfo.MessageId;
+
+        // Check if we're in an Azure Functions ServiceBus context only when we need to create/modify a span
+        var azureFunctionsSpan = GetAzureFunctionsServiceBusSpan(tracer);
+
+        if (azureFunctionsSpan != null)
+        {
+            ModifyAzureFunctionsSpan(azureFunctionsSpan, receiverInstance, messageId, exception);
+        }
+        else
+        {
+            CreateAndConfigureSpan(tracer, parentContext, spanLinks, receiverInstance, startTime, messageId, exception);
+        }
 
         return returnValue;
     }
 
-    private static SpanContext? ExtractParentContextFromFirstMessage(Tracer tracer, System.Collections.IList? messagesList)
+    private static (SpanContext? ParentContext, SpanLink[]? SpanLinks, string? MessageId) ExtractContextAndMessageId(Tracer tracer, System.Collections.IList? messagesList)
     {
         if (messagesList == null || messagesList.Count == 0)
+        {
+            return (null, null, null);
+        }
+
+        // Single message case: extract both context and message ID
+        if (messagesList.Count == 1)
+        {
+            var message = messagesList[0];
+            if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
+            {
+                var context = ExtractContextFromMessage(tracer, serviceBusMessage);
+                var messageId = string.IsNullOrEmpty(serviceBusMessage.MessageId) ? null : serviceBusMessage.MessageId;
+
+                return (context, null, messageId);
+            }
+
+            return (null, null, null);
+        }
+
+        // Multiple messages case: collect all contexts
+        var contexts = new List<SpanContext>();
+
+        for (int i = 0; i < messagesList.Count; i++)
+        {
+            var message = messagesList[i];
+            if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
+            {
+                var context = ExtractContextFromMessage(tracer, serviceBusMessage);
+                if (context != null)
+                {
+                    contexts.Add(context);
+                }
+            }
+        }
+
+        if (contexts.Count == 0)
+        {
+            return (null, null, null);
+        }
+
+        // Check if all contexts are the same
+        var firstContext = contexts[0];
+        bool allSame = contexts.All(c => c.TraceId128 == firstContext.TraceId128 && c.SpanId == firstContext.SpanId);
+
+        if (allSame)
+        {
+            return (firstContext, null, null); // Use as parent
+        }
+        else
+        {
+            var spanLinks = contexts.Select(c => new SpanLink(c)).ToArray();
+            return (null, spanLinks, null); // Use span links instead of parent
+        }
+    }
+
+    private static SpanContext? ExtractContextFromMessage(Tracer tracer, IServiceBusReceivedMessage message)
+    {
+        if (message.ApplicationProperties == null)
         {
             return null;
         }
 
         try
         {
-            var firstMessage = messagesList[0];
-            if (firstMessage?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true &&
-                serviceBusMessage.ApplicationProperties != null)
-            {
-                var headerAdapter = new ServiceBusHeadersCollectionAdapter(serviceBusMessage.ApplicationProperties);
-                var extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-                var parentContext = extractedContext.SpanContext;
-
-                if (parentContext != null)
-                {
-                    Log.Information(
-                        "Successfully extracted parent context - TraceId: {TraceId}, SpanId: {SpanId}",
-                        parentContext.TraceId128,
-                        parentContext.SpanId);
-                }
-
-                return parentContext;
-            }
+            var headerAdapter = new ServiceBusHeadersCollectionAdapter(message.ApplicationProperties);
+            var extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+            return extractedContext.SpanContext;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error extracting parent context from ServiceBus message");
+            Log.Error(ex, "Error extracting context from ServiceBus message");
+            return null;
         }
-
-        return null;
     }
 
     private static void CreateAndConfigureSpan(
         Tracer tracer,
         SpanContext? parentContext,
+        SpanLink[]? spanLinks,
         IServiceBusReceiver receiverInstance,
         DateTimeOffset startTime,
+        string? messageId,
         Exception? exception)
     {
-        var scope = tracer.StartActiveInternal(OperationName, parent: parentContext, startTime: startTime);
+        var scope = tracer.StartActiveInternal(OperationName, parent: parentContext, links: spanLinks, startTime: startTime);
         var span = scope.Span;
 
         try
@@ -136,6 +201,11 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             span.SetTag(Tags.MessagingOperation, "receive");
             span.SetTag(Tags.MessagingSystem, "servicebus");
 
+            if (messageId != null)
+            {
+                span.SetTag(Tags.MessagingMessageId, messageId);
+            }
+
             if (exception != null)
             {
                 span.SetException(exception);
@@ -144,6 +214,40 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         finally
         {
             scope.Dispose();
+        }
+    }
+
+    private static Span? GetAzureFunctionsServiceBusSpan(Tracer tracer)
+    {
+        var rootSpan = tracer.InternalActiveScope?.Root?.Span;
+        return rootSpan?.Type == SpanTypes.Serverless &&
+               rootSpan.ResourceName?.StartsWith("ServiceBus ", StringComparison.OrdinalIgnoreCase) == true
+               ? rootSpan
+               : null;
+    }
+
+    private static void ModifyAzureFunctionsSpan(Span azureFunctionsSpan, IServiceBusReceiver receiverInstance, string? messageId, Exception? exception)
+    {
+        var entityPath = receiverInstance.EntityPath ?? "unknown";
+
+        // Azure Functions has already extracted and set the parent context from the ServiceBus message
+        // We only need to add the messaging-specific tags here
+        azureFunctionsSpan.SetTag(Tags.MessagingDestinationName, entityPath);
+        azureFunctionsSpan.SetTag(Tags.MessagingOperation, "receive");
+        azureFunctionsSpan.SetTag(Tags.MessagingSystem, "servicebus");
+        azureFunctionsSpan.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+
+        if (messageId != null)
+        {
+            azureFunctionsSpan.SetTag(Tags.MessagingMessageId, messageId);
+        }
+
+        // We don't modify span.Type or span.ResourceName as those are already
+        // set appropriately by AzureFunctionsCommon (Type = "serverless", ResourceName = "ServiceBus {functionName}")
+
+        if (exception != null)
+        {
+            azureFunctionsSpan.SetException(exception);
         }
     }
 
