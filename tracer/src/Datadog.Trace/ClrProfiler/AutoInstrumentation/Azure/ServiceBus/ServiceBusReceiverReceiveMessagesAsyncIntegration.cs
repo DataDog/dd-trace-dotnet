@@ -77,62 +77,71 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             var hasException = exception != null;
             var returnValueType = returnValue?.GetType().FullName ?? "null";
             var isCorrectType = returnValue is IReadOnlyList<IServiceBusReceivedMessage>;
-            var messageCount = returnValue is IReadOnlyList<IServiceBusReceivedMessage> msgs ? msgs.Count : -1;
+            var isListType = returnValue is System.Collections.IList;
+            var messageCount = returnValue is System.Collections.ICollection collection ? collection.Count : -1;
 
-            Log.Information(
-                "OnAsyncMethodEnd - Exception present: {HasException}, ReturnValue type: {ReturnValueType}, Is correct type: {IsCorrectType}, Message count: {MessageCount}",
-                hasException,
-                returnValueType,
-                isCorrectType,
-                messageCount);
+            Log.Information("OnAsyncMethodEnd - Exception present: {HasException}", hasException);
+            Log.Information("OnAsyncMethodEnd - ReturnValue type: {ReturnValueType}", returnValueType);
+            Log.Information("OnAsyncMethodEnd - Is duck type: {IsCorrectType}", isCorrectType);
+            Log.Information("OnAsyncMethodEnd - Is IList: {IsListType}", isListType);
+            Log.Information("OnAsyncMethodEnd - Message count: {MessageCount}", (object)messageCount);
 
             // Try to extract parent context from received messages and update span if needed
-            if (exception == null && returnValue is IReadOnlyList<IServiceBusReceivedMessage> messages && messages.Count > 0)
+            // Handle the actual List<ServiceBusReceivedMessage> return type from Azure SDK
+            if (exception == null && returnValue is System.Collections.IList messageList && messageList.Count > 0)
             {
-                Log.Information("ServiceBus ReceiveMessagesAsync completed successfully. Received {MessageCount} messages, attempting context extraction from first message", (object)messages.Count);
+                Log.Information("ServiceBus ReceiveMessagesAsync completed successfully. Received {MessageCount} messages, attempting context extraction from first message", (object)messageList.Count);
 
                 try
                 {
-                    var firstMessage = messages[0];
-                    var messageId = firstMessage.Instance?.GetType().GetProperty("MessageId")?.GetValue(firstMessage.Instance);
-                    var hasApplicationProperties = firstMessage.ApplicationProperties != null;
-
-                    Log.Information(
-                        "First message details - MessageId: {MessageId}, ApplicationProperties null: {ApplicationPropertiesNull}",
-                        messageId,
-                        !hasApplicationProperties);
-
-                    if (firstMessage.ApplicationProperties != null)
+                    // Duck cast the first message to our interface
+                    var firstMessageObj = messageList[0];
+                    if (firstMessageObj?.TryDuckCast<IServiceBusReceivedMessage>(out var firstMessage) == true)
                     {
-                        var propertyKeys = string.Join(", ", firstMessage.ApplicationProperties.Keys);
+                        var messageId = firstMessage.Instance?.GetType().GetProperty("MessageId")?.GetValue(firstMessage.Instance);
+                        var hasApplicationProperties = firstMessage.ApplicationProperties != null;
+
                         Log.Information(
-                            "ApplicationProperties found with {PropertyCount} properties: {PropertyKeys}",
-                            (object)firstMessage.ApplicationProperties.Count,
-                            propertyKeys);
+                            "First message details - MessageId: {MessageId}, ApplicationProperties null: {ApplicationPropertiesNull}",
+                            messageId,
+                            !hasApplicationProperties);
 
-                        var headerAdapter = new ServiceBusHeadersCollectionAdapter(firstMessage.ApplicationProperties);
-                        var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-
-                        // If we found a parent context, update the span's parent
-                        if (extractedContext.SpanContext != null)
+                        if (firstMessage.ApplicationProperties != null)
                         {
+                            var propertyKeys = string.Join(", ", firstMessage.ApplicationProperties.Keys);
                             Log.Information(
-                                "Successfully extracted parent context - TraceId: {TraceId}, SpanId: {SpanId}",
-                                extractedContext.SpanContext.TraceId128,
-                                extractedContext.SpanContext.SpanId);
+                                "ApplicationProperties found with {PropertyCount} properties: {PropertyKeys}",
+                                (object)firstMessage.ApplicationProperties.Count,
+                                propertyKeys);
 
-                            // Note: We can't change the parent after the span is created, but we can add trace links
-                            // This is a limitation of how spans work - the parent is set at creation time
-                            // For now, we'll just extract the context for demonstration purposes
+                            var headerAdapter = new ServiceBusHeadersCollectionAdapter(firstMessage.ApplicationProperties);
+                            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+
+                            // If we found a parent context, update the span's parent
+                            if (extractedContext.SpanContext != null)
+                            {
+                                Log.Information(
+                                    "Successfully extracted parent context - TraceId: {TraceId}, SpanId: {SpanId}",
+                                    extractedContext.SpanContext.TraceId128,
+                                    extractedContext.SpanContext.SpanId);
+
+                                // Note: We can't change the parent after the span is created, but we can add trace links
+                                // This is a limitation of how spans work - the parent is set at creation time
+                                // For now, we'll just extract the context for demonstration purposes
+                            }
+                            else
+                            {
+                                Log.Information("No parent context found in message ApplicationProperties");
+                            }
                         }
                         else
                         {
-                            Log.Information("No parent context found in message ApplicationProperties");
+                            Log.Information("ApplicationProperties is null, cannot extract context");
                         }
                     }
                     else
                     {
-                        Log.Information("ApplicationProperties is null, cannot extract context");
+                        Log.Warning("Failed to duck cast first message to IServiceBusReceivedMessage. Message type: {MessageType}", firstMessageObj?.GetType().FullName ?? "null");
                     }
                 }
                 catch (Exception ex)
@@ -140,7 +149,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
                     Log.Error(ex, "Error extracting context from ServiceBus message");
                 }
             }
-            else if (exception == null && returnValue is IReadOnlyList<IServiceBusReceivedMessage> emptyMessages && emptyMessages.Count == 0)
+            else if (exception == null && returnValue is System.Collections.IList emptyMessages && emptyMessages.Count == 0)
             {
                 Log.Information("ServiceBus ReceiveMessagesAsync completed with no messages received");
             }
