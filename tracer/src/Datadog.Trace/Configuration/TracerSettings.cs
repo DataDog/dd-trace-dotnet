@@ -20,7 +20,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -1270,12 +1269,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in Azure Functions.
         /// </summary>
         internal bool IsRunningInAzureFunctions => AzureAppServiceMetadata?.IsFunctionsApp ?? false;
-
-        /// <summary>
-        /// Gets a value indicating whether the tracer is running in an Azure Function on a
-        /// consumption plan
-        /// </summary>
-        internal bool IsRunningMiniAgentInAzureFunctions => AzureAppServiceMetadata?.IsRunningMiniAgentInAzureFunctions ?? false;
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions
