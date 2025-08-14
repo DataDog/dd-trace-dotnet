@@ -42,8 +42,8 @@ internal class ServiceDiscoveryHelper
 
                 if (result.Tag == ResultTag.Error)
                 {
-                    Log.Error("Failed to store tracer metadata with message: {Error}", result.Error.Message.ToUtf8String());
-                    NativeInterop.Common.DropError(ref result.Error);
+                    Log.Error("Failed to store tracer metadata with message: {Error}", result.Result.Error.Message.ToUtf8String());
+                    NativeInterop.Common.DropError(ref result.Result.Error);
                     return StoreMetadataResult.Error;
                 }
 
