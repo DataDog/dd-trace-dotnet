@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Serilog;
 using FluentAssertions;
@@ -21,7 +22,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [UsesVerify]
 public class QuartzTests : TracingIntegrationTest
 {
-    private static readonly HashSet<string> ExcludeTags = ["fire.instance.id"];
     private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
     private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
 
@@ -33,7 +33,7 @@ public class QuartzTests : TracingIntegrationTest
 
     public static IEnumerable<object[]> GetData() => PackageVersions.Quartz;
 
-    public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsQuartz(metadataSchemaVersion, ExcludeTags);
+    public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsQuartz(metadataSchemaVersion);
 
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
@@ -73,7 +73,7 @@ public class QuartzTests : TracingIntegrationTest
                               .UseFileName(filename);
 
             // this isn't real
-            // await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Quartz);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
         }
     }
 

@@ -38,7 +38,8 @@ public static class SchedulerHolder
 // The original HelloJob
 public class HelloJob : IJob
 {
-    public async Task Execute(IJobExecutionContext context)
+#if QUARTZ_4_0
+    async ValueTask IJob.Execute(IJobExecutionContext context)
     {
         await Console.Out.WriteLineAsync("Greetings from HelloJob!");
 
@@ -54,29 +55,31 @@ public class HelloJob : IJob
 
         await SchedulerHolder.Scheduler.ScheduleJob(exceptionJob, exceptionTrigger);
     }
-    
-    // async ValueTask IJob.Execute(IJobExecutionContext context)
-    // {
-    //     await Console.Out.WriteLineAsync("Greetings from HelloJob!");
-    //
-    //     // Create and schedule ExceptionJob
-    //     IJobDetail exceptionJob = JobBuilder.Create<ExceptionJob>()
-    //                                         .WithIdentity("exceptionJob", "group2")
-    //                                         .Build();
-    //
-    //     ITrigger exceptionTrigger = TriggerBuilder.Create()
-    //                                               .WithIdentity("exceptionTrigger", "group2")
-    //                                               .StartNow()
-    //                                               .Build();
-    //
-    //     await SchedulerHolder.Scheduler.ScheduleJob(exceptionJob, exceptionTrigger);
-    // }
+#else
+    async Task IJob.Execute(IJobExecutionContext context)
+    {
+        await Console.Out.WriteLineAsync("Greetings from HelloJob!");
+
+        // Create and schedule ExceptionJob
+        IJobDetail exceptionJob = JobBuilder.Create<ExceptionJob>()
+                                            .WithIdentity("exceptionJob", "group2")
+                                            .Build();
+
+        ITrigger exceptionTrigger = TriggerBuilder.Create()
+                                                  .WithIdentity("exceptionTrigger", "group2")
+                                                  .StartNow()
+                                                  .Build();
+
+        await SchedulerHolder.Scheduler.ScheduleJob(exceptionJob, exceptionTrigger);
+    }
+#endif
 }
 
 // A new job that throws an exception
 public class ExceptionJob : IJob
 {
-    public async Task Execute(IJobExecutionContext context)
+#if QUARTZ_4_0
+    async ValueTask IJob.Execute(IJobExecutionContext context)
     {
         try
         {
@@ -90,19 +93,20 @@ public class ExceptionJob : IJob
             throw new JobExecutionException(ex, refireImmediately: false);
         }                              // set true to retry instantly
     }
-    //
-    // async ValueTask IJob.Execute(IJobExecutionContext context)
-    // {
-    //     try
-    //     {
-    //         // Normal work that might blow up
-    //         await Console.Out.WriteLineAsync("Doing work...");
-    //         throw new InvalidOperationException("Something went wrong");
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         // Let Quartz decide what to do next
-    //         throw new JobExecutionException(ex, refireImmediately: false);
-    //     }                              // set true to retry instantly
-    // }
+#else
+    async Task IJob.Execute(IJobExecutionContext context)
+    {
+        try
+        {
+            // Normal work that might blow up
+            await Console.Out.WriteLineAsync("Doing work...");
+            throw new InvalidOperationException("Something went wrong");
+        }
+        catch (Exception ex)
+        {
+            // Let Quartz decide what to do next
+            throw new JobExecutionException(ex, refireImmediately: false);
+        } // set true to retry instantly
+    }
+#endif
 }

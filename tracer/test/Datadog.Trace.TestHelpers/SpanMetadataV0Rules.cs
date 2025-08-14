@@ -761,18 +761,19 @@ namespace Datadog.Trace.TestHelpers
                 .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
                 .Matches("span.kind", "client"));
 
-        public static Result IsQuartzV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+        public static Result IsQuartzV0(this MockSpan span) => Result.FromSpan(span)
           .Properties(s => s
                          .MatchesOneOf(Name,  "internal"))
           .Tags(s => s
                     .Matches("component", "Quartz")
                     .Matches("span.kind", "internal")
-                    .IsOptional("job.group")
-                    .IsOptional("job.name")
+                    .IsOptional("fire.instance.id")
+                    .IsPresent("job.group")
+                    .IsPresent("job.name")
                     .IsOptional("job.type")
                     .IsOptional("scheduler.id")
                     .IsOptional("scheduler.name")
-                    .IsOptional("trigger.group")
-                    .IsOptional("trigger.name"));
+                    .IsPresent("trigger.group")
+                    .IsPresent("trigger.name"));
     }
 }

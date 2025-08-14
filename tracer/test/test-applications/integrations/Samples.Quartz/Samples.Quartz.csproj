@@ -5,7 +5,7 @@
     <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <ApiVersion Condition="'$(ApiVersion)' == ''">3.15.0</ApiVersion>
-    <DefineConstants Condition="'$(ApiVersion)'&gt;='1.2.0'">$(DefineConstants);OTEL_1_2</DefineConstants>
+    <DefineConstants Condition="'$(ApiVersion)'&gt;='4.0.0'">$(DefineConstants);QUARTZ_4_0</DefineConstants>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
