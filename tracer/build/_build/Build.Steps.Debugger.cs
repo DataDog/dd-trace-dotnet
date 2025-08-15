@@ -21,9 +21,6 @@ partial class Build
     [Parameter("Optimize generated code. Used for debugger integrations tests", List = false)]
     readonly bool? Optimize;
 
-    TargetFramework[] TestingFrameworksDebugger =>
-        TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, TargetFramework.NETCOREAPP3_0, TargetFramework.NET5_0 });
-
     Project DebuggerIntegrationTests => Solution.GetProject(Projects.DebuggerIntegrationTests);
 
     Project DebuggerSamples => Solution.GetProject(Projects.DebuggerSamples);
