@@ -125,42 +125,81 @@ public class NativeValidationHelper
                      .OrderBy(x => x)
                      .ToList();
 
-
-        var received = string.Join(Environment.NewLine, symbols);
-        var verifiedPath = BuildProjectDirectory / nameof(NativeValidation) / $"{snapshotNamePrefix}.verified.txt";
-        var verified = File.Exists(verifiedPath)
-                           ? File.ReadAllText(verifiedPath)
-                           : string.Empty;
-
         var libraryName = Path.GetFileNameWithoutExtension(libraryPath);
-        Logger.Information("Comparing snapshot of Undefined symbols in the {LibraryName} using {Path}...", libraryName, verifiedPath);
 
-        var dmp = new diff_match_patch();
-        var diff = dmp.diff_main(verified, received);
-        dmp.diff_cleanupSemantic(diff);
+        var onlyHasValidAlpineSymbols = OnlyHasValidAlpineSymbols();
+        var hasValidSnapshot = HasValidSnapshot();
 
-        var changedSymbols = diff
-                            .Where(x => x.operation != Operation.EQUAL)
-                            .Select(x => x.text.Trim())
-                            .ToList();
-
-        if (changedSymbols.Count == 0)
+        if (onlyHasValidAlpineSymbols && hasValidSnapshot)
         {
-            Logger.Information("No changes found in Undefined symbols in {LibraryName}", libraryName);
             return;
         }
 
-        // Print the expected values, so it's easier to copy-paste them into the snapshot file as required
-        Logger.Information("Received snapshot for {LibraryName}{Break}{Symbols}", libraryName, Environment.NewLine, received);
+        throw new Exception("There were problems with the symbols exposed by the native libraries. Please see previous messages for details");
 
-        Logger.Information("Changed symbols for {LibraryName}:", libraryName);
+        bool OnlyHasValidAlpineSymbols()
+        {
+            var allowedSymbols = Symbols.Alpine3_14;
 
-        DiffHelper.PrintDiff(diff);
+            // We assume all the ddog_ and blaze_ symbols are provided by libdatadog and leave it at that
+            var missingSymbols = symbols
+                                .Where(x => !(
+                                                 x.StartsWith("ddog_")
+                                              || x.StartsWith("blaze_")
+                                              || allowedSymbols.Contains(x)))
+                                .ToList();
 
-        throw new Exception($"Found differences in undefined symbols in {libraryName}. {Environment.NewLine} These are shown above as both a diff and the" +
-                            "full expected snapshot. Verify that these changes are expected, and will not cause problems. " +
-                            "Removing symbols is generally a safe operation, but adding them could cause crashes. " +
-                            $"If the new symbols are safe to add, update the snapshot file at {verifiedPath} with the " +
-                            "new values");
+            if (missingSymbols.Count == 0)
+            {
+                Logger.Information("All Undefined symbols in {LibraryName} are available in alpine:3.14", libraryName);
+                return true;
+            }
+
+            var symbolList = string.Join(Environment.NewLine, missingSymbols);
+            Logger.Error("Found Undefined symbols in {LibraryName} which are not provided by musl or libgcc{Break}:{Symbols}", libraryName, Environment.NewLine, symbolList);
+            return false;
+        }
+
+        bool HasValidSnapshot()
+        {
+            var received = string.Join(Environment.NewLine, symbols);
+            var verifiedPath = BuildProjectDirectory / nameof(NativeValidation) / $"{snapshotNamePrefix}.verified.txt";
+            var verified = File.Exists(verifiedPath)
+                               ? File.ReadAllText(verifiedPath)
+                               : string.Empty;
+
+            Logger.Information("Comparing snapshot of Undefined symbols in the {LibraryName} using {Path}...", libraryName, verifiedPath);
+
+            var dmp = new diff_match_patch();
+            var diff = dmp.diff_main(verified, received);
+            dmp.diff_cleanupSemantic(diff);
+
+            var changedSymbols = diff
+                                .Where(x => x.operation != Operation.EQUAL)
+                                .Select(x => x.text.Trim())
+                                .ToList();
+
+            if (changedSymbols.Count == 0)
+            {
+                Logger.Information("No changes found in Undefined symbols in {LibraryName}", libraryName);
+                return true;
+            }
+
+            // Print the expected values, so it's easier to copy-paste them into the snapshot file as required
+            Logger.Information("Received snapshot for {LibraryName}{Break}{Symbols}", libraryName, Environment.NewLine, received);
+            Logger.Information("Expected snapshot for {LibraryName}{Break}{Symbols}", libraryName, Environment.NewLine, verified);
+
+            Logger.Information("Changed symbols for {LibraryName}:", libraryName);
+
+            DiffHelper.PrintDiff(diff);
+
+            Logger.Error("Found differences in undefined symbols in {LibraryName}. These are shown above as both a diff and the" +
+                                "full expected snapshot. Verify that these changes are expected, and will not cause problems. " +
+                                "Removing symbols is generally a safe operation, but adding them could cause crashes. " +
+                                "If the new symbols are safe to add, update the snapshot file at {VerifiedPath} with the " +
+                                "new values", libraryName, verifiedPath);
+
+            return true;
+        }
     }
 }
