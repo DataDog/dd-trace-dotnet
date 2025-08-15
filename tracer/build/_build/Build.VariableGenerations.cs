@@ -1419,7 +1419,7 @@ partial class Build : NukeBuild
                     );
 
                     // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
-                    AddToLinuxSmokeTestsMatrix(
+                    AddToLinuxTrimmingSmokeTestsMatrix(
                         matrix,
                         "debian",
                         new SmokeTestImage[]
