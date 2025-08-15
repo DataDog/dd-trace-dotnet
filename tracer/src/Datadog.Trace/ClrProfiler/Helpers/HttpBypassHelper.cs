@@ -27,6 +27,16 @@ namespace Datadog.Trace.ClrProfiler.Helpers
 
         private static bool UriContainsAnyOfSlow(Uri requestUri, string[] substrings)
         {
+#if NETCOREAPP3_1_OR_GREATER
+            var uriString = requestUri.ToString();
+            foreach (var substring in substrings)
+            {
+                if (uriString.Contains(substring, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+#else
             var uriString = requestUri.ToString().ToUpperInvariant();
 
             for (var index = 0; index < substrings.Length; index++)
@@ -36,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Helpers
                     return true;
                 }
             }
-
+#endif
             return false;
         }
     }
