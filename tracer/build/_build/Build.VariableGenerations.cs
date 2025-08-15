@@ -992,7 +992,6 @@ partial class Build : NukeBuild
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -1088,13 +1087,13 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToNuGetSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
@@ -1107,6 +1106,19 @@ partial class Build : NukeBuild
                         relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
                         relativeApiWrapperPath: "datadog/linux-arm64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToNuGetSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
+                        },
+                        relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-arm64/Datadog.Linux.ApiWrapper.x64.so",
+                        dockerName: "andrewlock/dotnet-debian"
                     );
 
                     AddToNuGetSmokeTestsMatrix(
@@ -1164,13 +1176,13 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -1182,6 +1194,18 @@ partial class Build : NukeBuild
                         },
                         platformSuffix: "linux-x64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
+                        },
+                        platformSuffix: "linux-x64",
+                        dockerName: "andrewlock/dotnet-debian"
                     );
 
                     AddToDotNetToolSmokeTestsMatrix(
@@ -1261,13 +1285,13 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -1278,6 +1302,18 @@ partial class Build : NukeBuild
                         },
                         platformSuffix: "linux-arm64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
+                        },
+                        platformSuffix: "linux-arm64",
+                        dockerName: "andrewlock/dotnet-debian"
                     );
 
                     AddToDotNetToolSmokeTestsMatrix(
@@ -1307,13 +1343,13 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -1324,6 +1360,18 @@ partial class Build : NukeBuild
                         }.Where(x=> !IsPrerelease || x.PublishFramework != TargetFramework.NETCOREAPP3_1).ToArray(),
                         platformSuffix: "linux-x64",
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
+                    );
+
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
+                        },
+                        platformSuffix: "linux-x64",
+                        dockerName: "andrewlock/dotnet-debian"
                     );
 
                     AddToDotNetToolSmokeTestsMatrix(
@@ -1352,13 +1400,13 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToLinuxTrimmingSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-trixie-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -1370,6 +1418,20 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
+                        },
+                        installer: "datadog-dotnet-apm*_amd64.deb",
+                        installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
+                        dockerName: "andrewlock/dotnet-debian"
+                    );
                     // Alpine tests with the musl-specific package
                     AddToLinuxTrimmingSmokeTestsMatrix(
                         matrix,
