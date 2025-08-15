@@ -159,11 +159,10 @@ partial class Build : NukeBuild
 
             void GenerateUnitTestFrameworkMatrices()
             {
-                GenerateTfmsMatrix("unit_tests_windows_matrix", TestingFrameworks);
-                var unixFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 }).ToList();
-                GenerateTfmsMatrix("unit_tests_macos_matrix", unixFrameworks);
-                GenerateLinuxMatrix("x64", unixFrameworks);
-                GenerateLinuxMatrix("arm64", unixFrameworks);
+                GenerateTfmsMatrix("unit_tests_windows_matrix", GetTestingFrameworks(PlatformFamily.Windows));
+                GenerateTfmsMatrix("unit_tests_macos_matrix", GetTestingFrameworks(PlatformFamily.OSX));
+                GenerateLinuxMatrix("x64", GetTestingFrameworks(PlatformFamily.Linux));
+                GenerateLinuxMatrix("arm64", GetTestingFrameworks(PlatformFamily.Linux, isArm64: true));
 
                 void GenerateTfmsMatrix(string name, IEnumerable<TargetFramework> frameworks)
                 {
@@ -211,7 +210,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsWindowsMatrix()
             {
-                var targetFrameworks = TestingFrameworks;
+                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
                 var targetPlatforms = new[] { "x86", "x64" };
                 var areas = new[] { TracerArea, AsmArea };
                 var matrix = new Dictionary<string, object>();
@@ -235,7 +234,7 @@ partial class Build : NukeBuild
             }
             void GenerateIntegrationTestsDebuggerWindowsMatrix()
             {
-                var targetFrameworks = TestingFrameworksDebugger;
+                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
                 var targetPlatforms = new[] { "x86", "x64" };
                 var debugTypes = new[] { "portable", "full" };
                 var optimizations = new[] { "true", "false" };
@@ -356,7 +355,7 @@ partial class Build : NukeBuild
                     (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
 
-                var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 });
+                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux);
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -395,7 +394,7 @@ partial class Build : NukeBuild
                     (baseImage: "alpine", artifactSuffix: "linux-musl-arm64"),
                 };
 
-                var targetFrameworks = GetTestingFrameworks(isArm64: true).Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 });
+                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux, isArm64: true);
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -420,7 +419,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsDebuggerLinuxMatrix()
             {
-                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET48 });
+                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux);
                 var baseImages = new []
                 {
                     (baseImage: "debian", artifactSuffix: "linux-x64"),
@@ -1690,7 +1689,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsDebuggerArm64Matrices()
             {
-                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1,  });
+                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux, isArm64: true);
                 var baseImages = new []
                 {
                     (baseImage: "debian", artifactSuffix: "linux-arm64"),
