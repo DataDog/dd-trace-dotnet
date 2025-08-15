@@ -1319,6 +1319,7 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
 
         SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
+        UseNativeLibraryAlpineWorkaround();
     }
 
     protected AspNetCoreTestFixture Fixture { get; }

@@ -1,4 +1,4 @@
-﻿FROM andrewlockdd/alpine-clang:1.0 as base
+﻿FROM andrewlockdd/alpine-clang:dotnet10 AS base
 ARG DOTNETSDK_VERSION
 
 ENV \
@@ -66,8 +66,6 @@ RUN apk update \
     && apk add --allow-untrusted nfpm_2.39.0_${apkArch}.apk \
     && rm nfpm_2.39.0_${apkArch}.apk
 
-ENV IsAlpine=true \
-    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 
 # Install the .NET SDK
 RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
@@ -77,7 +75,11 @@ RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
     && dotnet help
 
-FROM base as builder
+ENV IsAlpine=true \
+    DOTNET_ROOT=/usr/share/dotnet \
+    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
+
+FROM base AS builder
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
@@ -86,7 +88,7 @@ COPY . /build
 RUN dotnet build /build --no-restore
 WORKDIR /project
 
-FROM base as tester
+FROM base AS tester
 
 # Install .NET Core runtimes using install script (don't install 2.1 on ARM64, because it's not available)
 RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
@@ -100,6 +102,7 @@ RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f
     && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 

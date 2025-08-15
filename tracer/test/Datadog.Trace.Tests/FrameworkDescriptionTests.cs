@@ -49,7 +49,7 @@ public class FrameworkDescriptionTests
         var expectedOs = (EnvironmentHelper.IsAlpine(), RuntimeInformation.OSArchitecture) switch
         {
             (true, Architecture.Arm64) => "Alpine Linux v3.18",
-            (true, Architecture.X64) => "Alpine Linux v3.14",
+            (true, Architecture.X64) => "Alpine Linux v3.17",
             _ => "Debian GNU/Linux 10 (buster)",
         };
 

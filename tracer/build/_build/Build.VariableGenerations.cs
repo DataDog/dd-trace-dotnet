@@ -280,6 +280,7 @@ partial class Build : NukeBuild
                     new {framework = TargetFramework.NET7_0 },
                     new {framework = TargetFramework.NET8_0 },
                     new {framework = TargetFramework.NET9_0 },
+                    new {framework = TargetFramework.NET10_0 },
                 };
 
                 var matrix = new Dictionary<string, object>();
@@ -585,6 +586,7 @@ partial class Build : NukeBuild
                         "ubuntu",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -623,6 +625,7 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
                             new (publishFramework: TargetFramework.NET9_0, "trixie-9.0"),
                             new (publishFramework: TargetFramework.NET8_0, "trixie-8.0"),
                         },
@@ -663,6 +666,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
@@ -688,6 +693,8 @@ partial class Build : NukeBuild
                         "alpine_musl",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
@@ -793,6 +800,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble-chiseled"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble-chiseled-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
@@ -820,6 +829,7 @@ partial class Build : NukeBuild
                         "ubuntu",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
@@ -856,6 +866,7 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
                             new (publishFramework: TargetFramework.NET9_0, "trixie-9.0"),
                             new (publishFramework: TargetFramework.NET8_0, "trixie-8.0"),
                         },
@@ -890,6 +901,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19-composite"),
@@ -920,6 +933,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble-chiseled"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble-chiseled-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
@@ -976,6 +991,7 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -1012,6 +1028,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
@@ -1069,11 +1087,13 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToNuGetSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
@@ -1088,11 +1108,26 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToNuGetSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
+                        },
+                        relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-arm64/Datadog.Linux.ApiWrapper.x64.so",
+                        dockerName: "andrewlock/dotnet-debian"
+                    );
+
                     AddToNuGetSmokeTestsMatrix(
                         matrix,
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20"),
@@ -1141,11 +1176,13 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -1157,6 +1194,18 @@ partial class Build : NukeBuild
                         },
                         platformSuffix: "linux-x64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
+                        },
+                        platformSuffix: "linux-x64",
+                        dockerName: "andrewlock/dotnet-debian"
                     );
 
                     AddToDotNetToolSmokeTestsMatrix(
@@ -1180,6 +1229,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
@@ -1234,11 +1285,13 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -1251,11 +1304,25 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
+                        },
+                        platformSuffix: "linux-arm64",
+                        dockerName: "andrewlock/dotnet-debian"
+                    );
+
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19"),
@@ -1276,11 +1343,13 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -1293,11 +1362,24 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
                     );
 
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
+                        },
+                        platformSuffix: "linux-x64",
+                        dockerName: "andrewlock/dotnet-debian"
+                    );
+
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
@@ -1318,11 +1400,13 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>();
 
+                    // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
                     AddToLinuxTrimmingSmokeTestsMatrix(
                         matrix,
-                        "debian",
+                        "ubuntu",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
@@ -1334,12 +1418,28 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
+                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
+                    AddToLinuxTrimmingSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview"),
+                        },
+                        installer: "datadog-dotnet-apm*_amd64.deb",
+                        installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
+                        dockerName: "andrewlock/dotnet-debian"
+                    );
                     // Alpine tests with the musl-specific package
                     AddToLinuxTrimmingSmokeTestsMatrix(
                         matrix,
                         "alpine_musl",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0-preview-alpine3.22-composite"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
@@ -1463,6 +1563,7 @@ partial class Build : NukeBuild
                     };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
@@ -1497,6 +1598,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
@@ -1565,6 +1667,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                     };
@@ -1596,6 +1699,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
@@ -1631,6 +1735,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
@@ -1673,9 +1778,11 @@ partial class Build : NukeBuild
                         { "macos-14_net6.0", new { vmImage = "macos-14", publishFramework = "net6.0" } },
                         { "macos-14_net8.0", new { vmImage = "macos-14", publishFramework = "net8.0" } },
                         { "macos-14_net9.0", new { vmImage = "macos-14", publishFramework = "net9.0" } },
+                        { "macos-14_net10.0", new { vmImage = "macos-14", publishFramework = "net10.0" } },
                         { "macos-15_net6.0", new { vmImage = "macos-15", publishFramework = "net6.0" } },
                         { "macos-15_net8.0", new { vmImage = "macos-15", publishFramework = "net8.0" } },
                         { "macos-15_net9.0", new { vmImage = "macos-15", publishFramework = "net9.0" } },
+                        { "macos-15_net10.0", new { vmImage = "macos-15", publishFramework = "net10.0" } },
                     };
 
                     Logger.Information($"Installer smoke tests dotnet-tool NuGet matrix MacOs");
