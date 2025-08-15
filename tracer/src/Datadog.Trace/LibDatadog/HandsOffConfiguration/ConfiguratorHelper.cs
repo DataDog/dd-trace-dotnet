@@ -13,7 +13,7 @@ namespace Datadog.Trace.LibDatadog.HandsOffConfiguration;
 
 internal struct ConfiguratorHelper
 {
-    internal static ConfigurationResult GetConfiguration(bool debugEnabled, string? handsOffLocalConfigPath, string? handsOffFleetConfigPath, bool? isLibdatadogAvailable = null)
+    internal static ConfigurationResult GetConfiguration(string? handsOffLocalConfigPath, string? handsOffFleetConfigPath, bool? isLibdatadogAvailable = null)
     {
         if (isLibdatadogAvailable is false)
         {
@@ -38,7 +38,10 @@ internal struct ConfiguratorHelper
         try
         {
             languageCs = new CharSlice(TracerConstants.Language);
-            configHandle = NativeInterop.LibraryConfig.ConfiguratorNew(debugEnabled ? (byte)1 : (byte)0, languageCs.Value);
+
+            // We have to force disable debug logs because otherwise they write directly to the console
+            // which could be breaking.
+            configHandle = NativeInterop.LibraryConfig.ConfiguratorNew(debugLogs: 0, languageCs.Value);
 
             if (handsOffLocalConfigPath is not null)
             {
