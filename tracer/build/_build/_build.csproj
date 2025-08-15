@@ -74,6 +74,10 @@
       <!-- We have to force this name because somehow on macOS, it's named without the first 'Honeypot.' -->
       <LogicalName>Honeypot.Datadog.Dependabot.Honeypot.template</LogicalName>
     </EmbeddedResource>
+    <None Remove="NativeValidation\alpine3_14_Libgcc10_3_1.txt" />
+    <EmbeddedResource Include="NativeValidation\alpine3_14_Libgcc10_3_1.txt" />
+    <None Remove="NativeValidation\alpine3_14_Musl1_2_2.txt" />
+    <EmbeddedResource Include="NativeValidation\alpine3_14_Musl1_2_2.txt" />
   </ItemGroup>
 
 </Project>
