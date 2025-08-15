@@ -18,6 +18,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
@@ -43,6 +44,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
@@ -71,6 +73,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
@@ -96,6 +99,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
@@ -125,6 +129,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
@@ -151,6 +156,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
@@ -179,6 +185,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
@@ -204,6 +211,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
@@ -233,6 +241,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
@@ -259,6 +268,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.base_service: Samples.ProcessStart
     },
     Metrics: {
