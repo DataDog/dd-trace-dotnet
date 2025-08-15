@@ -415,7 +415,7 @@ namespace iast
             this->_paramShift.push_back(0);
         }
 
-        for (int x = 0; x < this->_paramShift.size(); x++)
+        for (size_t x = 0; x < this->_paramShift.size(); x++)
         {
             this->_boxParam.push_back(false);
         }
