@@ -81,7 +81,6 @@ namespace Samples.Security.AspNetCore5
                 services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(Configuration.GetDefaultConnectionString()));
                 identityBuilder.AddEntityFrameworkStores<ApplicationDbContext>();
 #else
-                raw.SetProvider(new SQLite3Provider_e_sqlite3());
                 identityBuilder.AddUserStore<UserStoreSqlLite>();
                 identityBuilder.AddRoleStore<RoleStore>();
 #endif
