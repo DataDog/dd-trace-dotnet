@@ -29,6 +29,11 @@ ServiceBase::ServiceBase() :
 {
 }
 
+bool ServiceBase::IsStarted()
+{
+    return (_currentState.load() == State::Started);
+}
+
 bool ServiceBase::Start()
 {
     auto expected = State::Init;

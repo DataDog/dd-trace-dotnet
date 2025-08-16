@@ -1012,17 +1012,93 @@ TEST_F(ConfigurationTest, CheckSsiIsDeployedIfProfilerEnabledVarIsSetToFalse)
     ASSERT_THAT(configuration.GetDeploymentMode(), expectedValue);
 }
 
-TEST_F(ConfigurationTest, CheckSsiIsActivatedIfEnvVarConstainsProfiler)
+
+// with Stable Configuration, ALL enablement/SSI decisions are delayed at runtime so by default become disabled
+// Use the DD_PROFILING_MANAGED_ACTIVATION_ENABLED kill switch to test per env vars configuration
+TEST_F(ConfigurationTest, CheckStandbyIfSsiEnabledAndStableConfigurationByDefault)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiler"));
     auto configuration = Configuration{};
-    auto expectedValue = EnablementStatus::SsiEnabled;
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Standby);
+}
+
+TEST_F(ConfigurationTest, CheckStandbyIfSsiEnabledAndStableConfigurationEnabled)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::SsiDeployed, WStr("tracer,profiler"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Standby);
+}
+
+TEST_F(ConfigurationTest, CheckStandbyIfSsiEnvVarDoesNotContainProfilerAndStableConfigurationByDefault)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Standby);
+}
+
+TEST_F(ConfigurationTest, CheckStandbyIfSsiEnvVarEmptyAndStableConfigurationByDefault)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Standby);
+}
+
+TEST_F(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAutoAndStableConfigurationByDefault)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("auto"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Standby);
+}
+
+TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotSetAndStableConfigurationByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Standby);
+}
+
+TEST_F(ConfigurationTest, CheckProfilerIsDisabledIfEnvVarIsEmptyAndStableConfigurationByDefault)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("  "));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Standby);
+}
+
+TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToTrueAndStableConfigurationByDefault)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("1 ")); // add a space on purpose to ensure that it's correctly parsed
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Standby);
+}
+
+TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotParsableAndStableConfigurationByDefault)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("not_parsable_ "));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Standby);
+}
+
+TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToFalseAndStableConfigurationByDefault)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("  0 ")); // add a space on purpose to ensure that it's correctly parsed
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Standby);
+}
+
+// use the Stable Configuration kill switch to validate per env vars enablement configuration
+TEST_F(ConfigurationTest, CheckNoMoreSupportedSsiActivationModeIfEnvVarConstainsProfiler)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::SsiDeployed, WStr("profiler"));
+    auto configuration = Configuration{};
+    auto expectedValue = EnablementStatus::NotSet;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
 TEST_F(ConfigurationTest, CheckSsiIsDisableddIfEnvVarDoesNotContainProfiler)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::SsiDeployed, WStr("tracer"));
     auto configuration = Configuration{};
     auto expectedValue = EnablementStatus::NotSet;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
@@ -1030,7 +1106,8 @@ TEST_F(ConfigurationTest, CheckSsiIsDisableddIfEnvVarDoesNotContainProfiler)
 
 TEST_F(ConfigurationTest, CheckSsiIsDisabledIfEnvVarIsEmpty)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::SsiDeployed, WStr(""));
     auto configuration = Configuration{};
     auto expectedValue = EnablementStatus::NotSet;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
@@ -1038,7 +1115,8 @@ TEST_F(ConfigurationTest, CheckSsiIsDisabledIfEnvVarIsEmpty)
 
 TEST_F(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAuto)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("auto"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("auto"));
     auto configuration = Configuration{};
     auto expectedValue = EnablementStatus::Auto;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
@@ -1046,19 +1124,22 @@ TEST_F(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAuto)
 
 TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotSet)
 {
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::NotSet) << "Env var is not set. Profiler enablement should be the default one.";
 }
 
 TEST_F(ConfigurationTest, CheckProfilerIsDisabledIfEnvVarIsEmpty)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("  "));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("  "));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyDisabled);
 }
 
 TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToTrue)
 {
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("1 ")); // add a space on purpose to ensure that it's correctly parsed
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyEnabled) << "Env var is to 1. Profiler must be enabled.";
@@ -1066,6 +1147,7 @@ TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToTrue)
 
 TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotParsable)
 {
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("not_parsable_ "));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyDisabled) << "Profiler must disabled is value for DD_PROLIFER_ENABLED cannot be converted to bool.";
@@ -1073,6 +1155,7 @@ TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotParsable)
 
 TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToFalse)
 {
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("  0 ")); // add a space on purpose to ensure that it's correctly parsed
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyDisabled) << "Env var is to 0. Profiler must be disabled.";
