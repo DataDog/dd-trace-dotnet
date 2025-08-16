@@ -255,22 +255,21 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
                 }
             }
 
-            auto relativeAddress = currentFrame.ip - currentFrame.moduleAddress;
             CHECK_RESULT(ddog_crasht_StackFrame_with_ip(&frame, currentFrame.ip));
             CHECK_RESULT(ddog_crasht_StackFrame_with_sp(&frame, currentFrame.sp));
             CHECK_RESULT(ddog_crasht_StackFrame_with_module_base_address(&frame, currentFrame.moduleAddress));
-            CHECK_RESULT(ddog_crasht_StackFrame_with_relative_address(&frame, relativeAddress));
+#ifdef _WINDOWS
+            CHECK_RESULT(ddog_crasht_StackFrame_with_relative_address(&frame, currentFrame.ip - currentFrame.moduleAddress));
+#endif
 
             CHECK_RESULT(ddog_crasht_StackFrame_with_symbol_address(&frame, currentFrame.symbolAddress));
 
             auto buildId = currentFrame.buildId;
             if (buildId.size() != 0)
             {
-                CHECK_RESULT(ddog_crasht_StackFrame_with_build_id(&frame, {buildId.data(), buildId.size()}));
 #ifdef _WINDOWS
+                CHECK_RESULT(ddog_crasht_StackFrame_with_build_id(&frame, {buildId.data(), buildId.size()}));
                 CHECK_RESULT(ddog_crasht_StackFrame_with_build_id_type(&frame, DDOG_CRASHT_BUILD_ID_TYPE_PDB));
-#else
-                CHECK_RESULT(ddog_crasht_StackFrame_with_build_id_type(&frame, DDOG_CRASHT_BUILD_ID_TYPE_GNU));
 #endif
             }
             CHECK_RESULT(ddog_crasht_StackFrame_with_function(&frame, libdatadog::to_char_slice(currentFrame.method)));
@@ -327,6 +326,8 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
 
 int32_t CrashReporting::Send()
 {
+    // for now we do not call ddog_crasht_CrashInfo_resolve_names because we already do it for linux
+    // but later we would want to do it
     return ExportImpl(nullptr);
 }
 
@@ -347,6 +348,9 @@ int32_t CrashReporting::ExportImpl(ddog_Endpoint* endpoint)
         return 1;
     }
 
+#ifdef LINUX
+    CHECK_RESULT(ddog_crasht_CrashInfo_normalize_ips(&crashInfo, _pid));
+#endif
     CHECK_RESULT(ddog_crasht_CrashInfo_upload_to_endpoint(&crashInfo, endpoint));
 
     return 0;
