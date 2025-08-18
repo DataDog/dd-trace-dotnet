@@ -1105,6 +1105,8 @@ namespace Datadog.Trace.TestHelpers
                     .IsPresent("job.group")
                     .IsPresent("job.name")
                     .IsOptional("job.type")
+                    .IsPresent("otel.trace_id")
+                    .IsPresent("otel.status_code")
                     .IsOptional("scheduler.id")
                     .IsOptional("scheduler.name")
                     .IsPresent("trigger.group")
