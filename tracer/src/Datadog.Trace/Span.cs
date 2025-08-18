@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -434,7 +435,7 @@ namespace Datadog.Trace
                     SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
                     SetTag(Trace.Tags.ErrorStack, exception.ToString());
 
-                    ExceptionDebugging.Report(this, exception);
+                    DebuggerManager.Instance.ExceptionReplay?.Report(this, exception);
                 }
                 catch (Exception ex)
                 {
@@ -471,7 +472,7 @@ namespace Datadog.Trace
             {
                 if (IsRootSpan)
                 {
-                    ExceptionDebugging.EndRequest();
+                    DebuggerManager.Instance.ExceptionReplay?.EndRequest();
                 }
 
                 Duration = duration;
@@ -525,9 +526,9 @@ namespace Datadog.Trace
             Duration = duration;
         }
 
-        internal void MarkSpanForExceptionDebugging()
+        internal void MarkSpanForExceptionReplay()
         {
-            ExceptionDebugging.BeginRequest();
+            DebuggerManager.Instance.ExceptionReplay?.BeginRequest();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

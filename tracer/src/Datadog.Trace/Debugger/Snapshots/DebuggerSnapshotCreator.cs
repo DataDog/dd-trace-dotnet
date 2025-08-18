@@ -730,7 +730,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(DynamicInstrumentationHelper.ServiceName, traceId, spanId)
+            .AddGeneralInfo(DebuggerManager.Instance.ServiceName, traceId, spanId)
             .AddMessage()
             .Complete();
         }

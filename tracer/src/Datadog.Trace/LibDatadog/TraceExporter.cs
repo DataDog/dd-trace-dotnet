@@ -22,6 +22,7 @@ internal class TraceExporter : SafeHandle, IApi
 {
     private readonly IDatadogLogger _log;
     private readonly Action<Dictionary<string, float>> _updateSampleRates;
+    private string _cachedResponse;
 
     public TraceExporter(
         TraceExporterConfiguration configuration,
@@ -32,6 +33,7 @@ internal class TraceExporter : SafeHandle, IApi
         _updateSampleRates = updateSampleRates;
         _log = log ?? DatadogLogging.GetLoggerFor<TraceExporter>();
         _log.Debug("Creating new TraceExporter");
+        _cachedResponse = string.Empty;
         using var errPtr = NativeInterop.Exporter.New(out var ptr, configuration);
         errPtr.ThrowIfError();
         SetHandle(ptr);
@@ -95,23 +97,6 @@ internal class TraceExporter : SafeHandle, IApi
         return true;
     }
 
-    private unsafe int GetBodyLen(IntPtr body)
-    {
-        if (body == IntPtr.Zero)
-        {
-            return 0;
-        }
-
-        byte* p = (byte*)body;
-        int len = 0;
-        while (p[len] != 0)
-        {
-            len++;
-        }
-
-        return len;
-    }
-
     private unsafe void Send(ArraySegment<byte> traces, int numberOfTraces, ref IntPtr responsePtr)
     {
         fixed (byte* ptr = traces.Array)
@@ -134,23 +119,38 @@ internal class TraceExporter : SafeHandle, IApi
 
     private unsafe void ProcessResponse(IntPtr response)
     {
+        if (_updateSampleRates is null)
+        {
+            return;
+        }
+
         if (response == IntPtr.Zero)
         {
             // If response is Null bail out immediately.
             return;
         }
 
-        // TODO: replace GetBodyLen with a native function in order to avoid iterating over the response to get its length.
-        var body = NativeInterop.Exporter.GetResponseBody(response);
-        var len = GetBodyLen(body);
-        if (len <= 0)
+        var len = UIntPtr.Zero;
+        var body = NativeInterop.Exporter.GetResponseBody(response, ref len);
+        var bodyLen = (ulong)len;
+        if (body == IntPtr.Zero || bodyLen == 0)
         {
+            _log.Warning("Agent response is null or empty");
             return;
         }
 
-        var json = System.Text.Encoding.UTF8.GetString((byte*)body, len);
-        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
+        if (bodyLen > int.MaxValue)
+        {
+            _log.Warning("Agent response is too large");
+            return;
+        }
 
-        _updateSampleRates(apiResponse.RateByService);
+        var json = System.Text.Encoding.UTF8.GetString((byte*)body, (int)bodyLen);
+        if (json != _cachedResponse)
+        {
+            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
+            _updateSampleRates(apiResponse.RateByService);
+            _cachedResponse = json;
+        }
     }
 }

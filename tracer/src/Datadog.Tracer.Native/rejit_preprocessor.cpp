@@ -527,9 +527,10 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
     }
 
     Logger::Debug("RejitHandler::EnqueueRequestRejitForLoadedModules");
+    auto enqueueMeasure = trace::Stats::Instance()->EnqueueRequestRejitForLoadedModulesMeasure();
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
-                                    localPromise = promise]() mutable {
+                                    localPromise = promise, enqueueMeasure = std::move(enqueueMeasure)]() mutable {
         // Process modules for rejit
         const auto rejitCount = RequestRejitForLoadedModules(modules, definitions, true);
 
@@ -538,6 +539,8 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
         {
             localPromise->set_value(rejitCount);
         }
+
+        enqueueMeasure.Refresh();
     };
 
     // Enqueue

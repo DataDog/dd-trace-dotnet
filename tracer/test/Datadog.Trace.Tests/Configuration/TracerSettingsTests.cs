@@ -979,7 +979,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), true)]
+        [MemberData(nameof(BooleanTestCases), false)]
         public void IsDataStreamsLegacyHeadersEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, value));
@@ -1147,51 +1147,6 @@ namespace Datadog.Trace.Tests.Configuration
             #error Unexpected TFM
 #endif
             value.Value.Should().Be(expected);
-        }
-
-        // profiling takes precedence over SSI
-        // "auto" is a special profiling value that enables profiling when deployed via SSI
-        // the profiler will also be enabled when "profiler" will be added to the DD_INJECTION_ENABLED environment variable
-        [Theory]
-        [InlineData("1", null, true)]
-        [InlineData("0", null, false)]
-        [InlineData("true", null, true)]
-        [InlineData("false", null, false)]
-        [InlineData("auto", null, true)]
-        [InlineData("1", "not used", true)]
-        [InlineData("0", "not used", false)]
-        [InlineData("true", "not used", true)]
-        [InlineData("false", "not used", false)]
-        [InlineData("auto", "not used", true)]
-        [InlineData("invalid", "foo, profiler, bar", true)]
-        [InlineData("invalid", "anything else", true)]
-        [InlineData("invalid", "", true)]
-        [InlineData("invalid", null, false)]
-        [InlineData("", "foo, profiler, bar", true)]
-        [InlineData("", "anything else", true)]
-        [InlineData("", "", true)]
-        [InlineData("", null, false)]
-        [InlineData(null, "foo, profiler, bar", true)]
-        [InlineData(null, "anything else", true)]
-        [InlineData(null, null, false)]
-        [InlineData(null, "", true)]
-        public void ProfilingEnabled(string profilingValue, string ssiValue, bool expected)
-        {
-            var values = new List<(string, string)>();
-            if (profilingValue is not null)
-            {
-                values.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.ProfilingEnabled, profilingValue));
-            }
-
-            if (ssiValue is not null)
-            {
-                values.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.SsiDeployed, ssiValue));
-            }
-
-            var source = CreateConfigurationSource(values.ToArray());
-            var settings = new TracerSettings(source);
-
-            settings.ProfilingEnabledInternal.Should().Be(expected);
         }
 
         [Theory]
@@ -1415,6 +1370,16 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.GraphQLErrorExtensions.Should().BeEquivalentTo(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void LogsInjectionEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.LogsInjectionEnabled, value));
+            var tracerSettings = new TracerSettings(source);
+
+            tracerSettings.LogsInjectionEnabled.Should().Be(expected);
         }
 
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)

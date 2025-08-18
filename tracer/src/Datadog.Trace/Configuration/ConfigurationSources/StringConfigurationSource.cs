@@ -24,7 +24,7 @@ namespace Datadog.Trace.Configuration
     {
         private static readonly char[] DictionarySeparatorChars = { ',' };
 
-        internal abstract ConfigurationOrigins Origin { get; }
+        public abstract ConfigurationOrigins Origin { get; }
 
         /// <summary>
         /// Returns a <see cref="IDictionary{TKey, TValue}"/> from parsing
@@ -113,14 +113,6 @@ namespace Datadog.Trace.Configuration
         }
 
         protected abstract string? GetString(string key);
-
-        /// <inheritdoc />
-        public bool IsPresent(string key)
-        {
-            var value = GetString(key);
-
-            return value is not null;
-        }
 
         /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
@@ -237,7 +229,7 @@ namespace Datadog.Trace.Configuration
                 if (validator is null || validator(result.Result))
                 {
                     telemetry.Record(key, value, recordValue, Origin);
-                    return ConfigurationResult<T>.Valid(result.Result);
+                    return ConfigurationResult<T>.Valid(result.Result, value);
                 }
 
                 telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
@@ -270,7 +262,7 @@ namespace Datadog.Trace.Configuration
             if (validator is null || validator(result))
             {
                 telemetry.Record(key, value, recordValue: true, Origin);
-                return ConfigurationResult<IDictionary<string, string>>.Valid(result);
+                return ConfigurationResult<IDictionary<string, string>>.Valid(result, value);
             }
 
             telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
@@ -295,7 +287,7 @@ namespace Datadog.Trace.Configuration
             if (validator is null || validator(result))
             {
                 telemetry.Record(key, value, recordValue: true, Origin);
-                return ConfigurationResult<IDictionary<string, string>>.Valid(result);
+                return ConfigurationResult<IDictionary<string, string>>.Valid(result, value);
             }
 
             telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);

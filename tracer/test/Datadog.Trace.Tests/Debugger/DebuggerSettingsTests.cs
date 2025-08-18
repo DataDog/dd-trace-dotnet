@@ -46,13 +46,13 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(null)]
         [InlineData("")]
         [InlineData("false")]
-        public void DebuggerDisabled(string enabled)
+        public void DynamicInstrumentationDisabled(string enabled)
         {
             var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, enabled }, }),
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
                 NullConfigurationTelemetry.Instance);
 
-            settings.Enabled.Should().BeFalse();
+            settings.DynamicInstrumentationEnabled.Should().BeFalse();
         }
 
         [Theory]
@@ -87,14 +87,14 @@ namespace Datadog.Trace.Tests.Debugger
             var settings = new DebuggerSettings(
                 new NameValueConfigurationSource(new()
                 {
-                    { ConfigurationKeys.Debugger.Enabled, "true" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true" },
                     { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" },
                     { ConfigurationKeys.Debugger.MaxDepthToSerialize, "100" },
                     { ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000" },
                 }),
                 NullConfigurationTelemetry.Instance);
 
-            settings.Enabled.Should().BeTrue();
+            settings.DynamicInstrumentationEnabled.Should().BeTrue();
             settings.SymbolDatabaseCompressionEnabled.Should().BeTrue();
             settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
             settings.MaximumDepthOfMembersToCopy.Should().Be(100);

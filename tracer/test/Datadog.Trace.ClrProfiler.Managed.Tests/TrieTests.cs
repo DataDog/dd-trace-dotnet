@@ -1,4 +1,4 @@
-﻿// <copyright file="TrieTests.cs" company="Datadog">
+// <copyright file="TrieTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -43,7 +43,7 @@ public class TrieTests
         {
             var trie = new Trie();
             trie.Insert("cs.ArrayExtensions/ExtensionMethods/Datadog.Trace/src/tracer/dd-trace-dotnet");
-            trie.Insert("cs.LiveDebugger/Debugger/Datadog.Trace/src/tracer/dd-trace-dotnet/dev");
+            trie.Insert("cs.DynamicInstrumentation/Debugger/Datadog.Trace/src/tracer/dd-trace-dotnet/dev");
             Assert.EndsWith(
                 "cs.ArrayExtensions/ExtensionMethods/Datadog.Trace/src/tracer/dd-trace-dotnet",
                 trie.GetStringStartingWith("cs.ArrayExtensions/ExtensionMethods/Datadog.Trace/src"));

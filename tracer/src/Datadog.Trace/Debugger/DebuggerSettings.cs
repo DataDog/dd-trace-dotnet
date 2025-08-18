@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            Enabled = config.WithKeys(ConfigurationKeys.Debugger.Enabled).AsBool(false);
+            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(false);
             SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
 
             MaximumDepthOfMembersToCopy = config
@@ -141,7 +141,7 @@ namespace Datadog.Trace.Debugger
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
         }
 
-        public bool Enabled { get; }
+        public bool DynamicInstrumentationEnabled { get; }
 
         public bool SymbolDatabaseUploadEnabled { get; }
 

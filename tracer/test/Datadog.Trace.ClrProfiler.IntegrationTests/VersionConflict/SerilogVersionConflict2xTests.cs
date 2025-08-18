@@ -42,8 +42,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         [Trait("RunOnWindows", "True")]
         public async Task InjectsLogsWhenEnabled()
         {
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
-
             var expectedCorrelatedTraceCount = 1;
             var expectedCorrelatedSpanCount = 8;
 

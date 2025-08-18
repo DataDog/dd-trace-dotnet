@@ -69,7 +69,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             MinimumLevel = config
                                              .WithKeys(ConfigurationKeys.DirectLogSubmission.MinimumLevel)
                                              .GetAs(
-                                                  () => new DefaultResult<DirectSubmissionLogLevel>(DefaultMinimumLevel, nameof(DirectSubmissionLogLevel.Information)),
+                                                  defaultValue: new(DefaultMinimumLevel, nameof(DirectSubmissionLogLevel.Information)),
                                                   converter: x => DirectSubmissionLogLevelExtensions.Parse(x) ?? ParsingResult<DirectSubmissionLogLevel>.Failure(),
                                                   validator: null);
 
@@ -169,9 +169,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             ValidationErrors = validationErrors;
             IsEnabled = isEnabled;
-
-            // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
-            LogsInjectionEnabled = config.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(defaultValue: isEnabled);
         }
 
         /// <summary>
@@ -237,11 +234,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
         /// Gets the Datadog API key
         /// </summary>
         internal string ApiKey { get; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether logs injection is enabled or disabled
-        /// </summary>
-        internal bool LogsInjectionEnabled { get; set; }
 
         public IEnumerable<string> EnabledIntegrationNames
             => SupportedIntegrations.Where(x => _enabledIntegrations?[(int)x] == true).Select(x => IntegrationRegistry.GetName(x));

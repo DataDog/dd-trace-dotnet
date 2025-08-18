@@ -17,6 +17,6 @@ internal interface IS3EtagResponse : IDuckType
     /// <summary>
     /// Gets the S3 response eTag, which is usually wrapped in quotes.
     /// </summary>
-    [DuckField(Name = "eTag")]
-    string ETag { get; }
+    [Duck(Name = "ETag")]
+    string? ETag { get; }
 }
