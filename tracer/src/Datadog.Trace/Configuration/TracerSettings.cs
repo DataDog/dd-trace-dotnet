@@ -398,20 +398,61 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 
-            var otelRuntimeMetricsEnabled = config
-                                          .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter)
-                                          .AsBoolResult(
-                                               value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
-                                                            ? ParsingResult<bool>.Success(result: false)
-                                                            : ParsingResult<bool>.Failure());
+            OtelMetricsExporter = config
+                        .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter)
+                        .AsString(defaultValue: "otlp");
+
+            var otelRuntimeMetricsEnabled = string.Equals(OtelMetricsExporter, "none", StringComparison.OrdinalIgnoreCase)
+                ? ParsingResult<bool>.Success(result: false)
+                : ParsingResult<bool>.Failure();
+            
             _runtimeMetricsEnabled = config
-                                   .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
-                                   .AsBoolResult()
-                                   .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
+                            .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
+                            .AsBoolResult()
+                            .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
+
+            OtelMetricExportInterval = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportInterval)
+                            .AsInt32(defaultValue: 10000);
+
+            OtelMetricExportTimeout = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportTimeout)
+                            .AsInt32(defaultValue: 7500);
+
+            var otlpMetricsProtocol = config
+                          .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
+                          .AsString(defaultValue: "http/protobuf");
+              
+            OtlpProtocol = otlpMetricsProtocol switch
+            {
+                "http/protobuf" or "grpc" or "http/json" => otlpMetricsProtocol,
+                _ => (Log.Error("Unsupported OTLP protocol '{Protocol}'. Using default: http/protobuf", otlpMetricsProtocol), "http/protobuf").Item2
+            };
+
+            OtlpEndpoint = config
+                          .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
+                          .AsString(defaultValue: "http://localhost:4318/v1/metrics");
+
+            if (OtlpProtocol.StartsWith("http/", StringComparison.OrdinalIgnoreCase) && !OtlpEndpoint.EndsWith("/v1/metrics"))
+            {
+                OtlpEndpoint = $"{OtlpEndpoint.TrimEnd('/')}/v1/metrics";
+            }
+
+            OtlpMetricsHeaders = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders)
+                            .AsDictionaryResult(separator: '=');
+
+            OtlpMetricsTimeout = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeout, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeout)
+                            .AsInt32(defaultValue: 10000);
+
+            OtlpMetricsTemporalityPreference = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference)
+                            .AsString(defaultValue: "delta");
 
             DataPipelineEnabled = config
-                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: false);
+                            .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
+                            .AsBool(defaultValue: false);
 
             if (DataPipelineEnabled)
             {
@@ -911,6 +952,64 @@ namespace Datadog.Trace.Configuration
         /// Gets the names of enabled Meters.
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
         internal string[] OpenTelemetryMeterNames { get; }
+
+        /// <summary>
+        /// Gets the OpenTelemetry metrics exporter to use.
+        /// Valid values are 'otlp' and 'none'. Default is 'otlp'.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.MetricsExporter"/>
+        internal string OtelMetricsExporter { get; }
+
+        /// <summary>
+        /// Gets the OTLP protocol for metrics export with fallback behavior.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+        internal string OtlpProtocol { get; }
+
+        /// <summary>
+        /// Gets the OTLP endpoint URL for metrics export with fallback behavior.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
+        internal string OtlpEndpoint { get; }
+
+        /// <summary>
+        /// Gets the OTLP headers for metrics export with fallback behavior.
+        /// Parsed from comma-separated key-value pairs (api-key=key,other=value).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
+        internal IDictionary<string, string> OtlpMetricsHeaders { get; }
+
+        /// <summary>
+        /// Gets the OpenTelemetry metric export interval (in milliseconds) between export attempts.
+        /// Default is 10000ms (10s) for Datadog - deviates from OTel spec default of 60000ms (60s).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.MetricExportInterval"/>
+        internal int OtelMetricExportInterval { get; }
+
+        /// <summary>
+        /// Gets the OpenTelemetry metric export timeout (in milliseconds) for collection and export.
+        /// Default is 7500ms (7.5s) for Datadog - deviates from OTel spec default of 30000ms (30s).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.MetricExportTimeout"/>
+        internal int OtelMetricExportTimeout { get; }
+
+        /// <summary>
+        /// Gets the OTLP request timeout (in milliseconds).
+        /// Default is 10000ms (10s).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeout"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeout"/>
+        internal int OtlpMetricsTimeout { get; }
+
+        /// <summary>
+        /// Gets the OTLP metrics temporality preference.
+        /// Default is 'delta' for Datadog - deviates from OTel spec default of 'cumulative'.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference"/>
+        internal string OtlpMetricsTemporalityPreference { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.
