@@ -54,7 +54,9 @@ public class QuartzTests : TracingIntegrationTest
             using var s = new AssertionScope();
             spans.Count.Should().Be(expectedSpanCount);
 
-            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", isExternalSpan: false);
+            var myServiceNameSpans = spans.Where(s => s.Service == "Samples.Quartz");
+            ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.Quartz", isExternalSpan: false);
+
             var settings = VerifyHelper.GetSpanVerifierSettings();
             var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
             var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
@@ -70,7 +72,6 @@ public class QuartzTests : TracingIntegrationTest
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename);
 
-            // this isn't real
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
         }
     }
@@ -84,12 +85,6 @@ public class QuartzTests : TracingIntegrationTest
             return "V315plusNETCOREAPP31";
         }
 #endif
-        if (!string.IsNullOrEmpty(packageVersion)
-         && new Version(packageVersion) >= new Version("3.15.0") && new Version(packageVersion) < new Version("4.0.0"))
-        {
-            return "V315plus";
-        }
-
         if (!string.IsNullOrEmpty(packageVersion)
          && new Version(packageVersion) >= new Version("3.1.0") && new Version(packageVersion) < new Version("4.0.0"))
         {
