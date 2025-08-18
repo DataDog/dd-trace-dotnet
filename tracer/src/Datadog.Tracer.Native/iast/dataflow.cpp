@@ -413,17 +413,26 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     }
 
     AppDomainInfo* appDomain = GetAppDomain(appDomainId);
+    if (appDomain == nullptr)
+    {
+        trace::Logger::Error("GetAppDomain failed for AppDomainId ", appDomainId);
+        return E_FAIL;
+    }
+
     WSTRING moduleName = WSTRING(wszName);
     WSTRING modulePath = WSTRING(wszPath);
-
     ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, moduleId, modulePath, assemblyId, moduleName);
+    if (trace::Logger::IsDebugEnabled())
+    {
+        trace::Logger::Debug("Dataflow::ModuleLoaded -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
+    }
+
     CSGUARD(_cs);
     _modules[moduleId] = moduleInfo;
     if (pModuleInfo)
     {
         *pModuleInfo = moduleInfo;
     }
-    trace::Logger::Debug("Dataflow::ModuleLoaded -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
     return S_OK;
 }
 
