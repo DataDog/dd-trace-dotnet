@@ -22,17 +22,7 @@ namespace Datadog.Trace.Tests.Util
 
             sw.Stop();
 
-            // Extract the internal ticks
-#if NET6_0_OR_GREATER
-            // Since at least .NET 6, Stopwatch.GetRawElapsedTicks is directly exposed as ElapsedTicks
-            // and in .NET 10+ the GetRawElapsedTicks method doesn't exist
-            var stopwatchTicks = sw.ElapsedTicks;
-#else
-            var stopwatchTicks = (long)typeof(Stopwatch)
-                .GetMethod("GetRawElapsedTicks", BindingFlags.Instance | BindingFlags.NonPublic)
-                .Invoke(sw, null);
-#endif
-            var elapsed = StopwatchHelpers.GetElapsed(stopwatchTicks);
+            var elapsed = StopwatchHelpers.GetElapsed(sw.ElapsedTicks);
 
             Assert.Equal(sw.Elapsed, elapsed);
         }
