@@ -54,9 +54,7 @@ public class QuartzTests : TracingIntegrationTest
             using var s = new AssertionScope();
             spans.Count.Should().Be(expectedSpanCount);
 
-            var myServiceNameSpans = spans.Where(s => s.Service == "samples.quartz.consoleapp");
-
-            ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "samples.quartz.consoleapp", isExternalSpan: false);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", isExternalSpan: false);
             var settings = VerifyHelper.GetSpanVerifierSettings();
             var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
             var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
