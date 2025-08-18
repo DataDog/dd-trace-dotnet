@@ -219,7 +219,7 @@ partial class Build
 
             // Fixes an issue (ambiguous argument) when we do git diff in the Action.
             GitTasks.Git("fetch origin master:master", logOutput: false);
-            var changedFiles = GitTasks.Git("diff --name-only master").Select(f => f.Text);
+            var changedFiles = GitTasks.Git("diff --name-only master").Select(f => f.Text).ToList();
             var config = GetLabellerConfiguration();
             Console.WriteLine($"Checking labels for PR {PullRequestNumber}");
 
@@ -242,7 +242,7 @@ partial class Build
 
             Console.WriteLine($"PR labels updated");
 
-            HashSet<String> ComputeLabels(LabbelerConfiguration config, string prTitle, IEnumerable<string> labels, IEnumerable<string> changedFiles)
+            static HashSet<string> ComputeLabels(LabbelerConfiguration config, string prTitle, IEnumerable<string> labels, ICollection<string> changedFiles)
             {
                 var updatedLabels = new HashSet<string>(labels);
 
@@ -257,7 +257,7 @@ partial class Build
                             if (regex.IsMatch(prTitle))
                             {
                                 Console.WriteLine("Yes it does. Adding label " + label.Name);
-                                updatedLabels.Add(label.Name);
+                                updatedLabels.AddRange(label.Name.Split(','));
                             }
                         }
                         else if (!string.IsNullOrEmpty(label.AllFilesIn))
@@ -267,7 +267,7 @@ partial class Build
                             if(!changedFiles.Any(x => !regex.IsMatch(x)))
                             {
                                 Console.WriteLine("Yes they do. Adding label " + label.Name);
-                                updatedLabels.Add(label.Name);
+                                updatedLabels.AddRange(label.Name.Split(','));
                             }
                         }
                     }
