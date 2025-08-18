@@ -21,13 +21,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private volatile int _initializationOrTearDownInProgress;
 
-        public TrackedExceptionCase(ExceptionIdentifier exceptionId, string exceptionToString, int maxFramesToCapture)
+        public TrackedExceptionCase(ExceptionIdentifier exceptionId, string exceptionToString)
         {
             ExceptionIdentifier = exceptionId;
             ErrorHash = MD5HashProvider.GetHash(exceptionId);
             ExceptionToString = exceptionToString;
             StartCollectingTime = DateTime.MaxValue;
-            MaxFramesToCapture = maxFramesToCapture;
         }
 
         public bool IsCollecting => TrackingExceptionCollectionState == ExceptionCollectionState.Collecting;
@@ -39,8 +38,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public string ExceptionToString { get; }
 
         public int NormalizedExceptionHash { get; private set; }
-
-        public int MaxFramesToCapture { get; }
 
         public ExceptionCollectionState TrackingExceptionCollectionState { get; private set; } = ExceptionCollectionState.None;
 
@@ -79,7 +76,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             // else - If there is a concurrent initialization or tearing down, ignore this case
             if (Initialized())
             {
-                var @case = ExceptionCaseInstrumentationManager.Instrument(ExceptionIdentifier, ExceptionToString, MaxFramesToCapture);
+                var @case = ExceptionCaseInstrumentationManager.Instrument(ExceptionIdentifier, ExceptionToString);
                 BeginCollect(@case);
                 CachedDoneExceptions.Remove(NormalizedExceptionHash);
             }
@@ -92,9 +89,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             StartCollectingTime = DateTime.UtcNow;
         }
 
-        public bool Revert(int normalizedExceptionHash, TimeSpan rateLimit)
+        public bool Revert(int normalizedExceptionHash)
         {
-            if (rateLimit.TotalMilliseconds == 0)
+            if (ExceptionDebugging.Settings.RateLimit.TotalMilliseconds == 0)
             {
                 // No rate limit, avoid reverting
                 return false;

@@ -61,7 +61,8 @@ namespace Datadog.Trace.DiagnosticListeners
         private readonly Tracer _tracer;
         private readonly Security _security;
         private readonly Iast.Iast _iast;
-        private readonly SpanCodeOrigin _spanCodeOrigin;
+        private readonly LiveDebugger _liveDebugger;
+        private readonly SpanCodeOriginManager _spanOriginManager;
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
         private string _mvcAfterActionEventKey;
@@ -71,16 +72,17 @@ namespace Datadog.Trace.DiagnosticListeners
         private string _routingEndpointMatchedKey;
 
         public AspNetCoreDiagnosticObserver()
-            : this(null, null, null, null)
+            : this(null, null, null, null, null)
         {
         }
 
-        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, SpanCodeOrigin spanCodeOrigin)
+        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, LiveDebugger liveDebugger, SpanCodeOriginManager spanOriginManager)
         {
             _tracer = tracer;
             _security = security;
             _iast = iast;
-            _spanCodeOrigin = spanCodeOrigin;
+            _liveDebugger = liveDebugger;
+            _spanOriginManager = spanOriginManager;
         }
 
         protected override string ListenerName => DiagnosticListenerName;
@@ -91,7 +93,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
 
-        private SpanCodeOrigin CurrentCodeOrigin => _spanCodeOrigin ?? DebuggerManager.Instance.CodeOrigin;
+        private LiveDebugger CurrentLiveDebugger => _liveDebugger ?? LiveDebugger.Instance;
+
+        private SpanCodeOriginManager CurrentCodeOriginManager => _spanOriginManager ?? SpanCodeOriginManager.Instance;
 
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
@@ -524,16 +528,17 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                var isCodeOriginEnabled = CurrentLiveDebugger?.Settings.CodeOriginForSpansEnabled ?? false;
+                if (isCodeOriginEnabled)
                 {
                     var method = routeEndpoint?.RequestDelegate?.Method;
                     if (method != null)
                     {
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
+                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
                     }
                     else if (routeEndpoint?.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
                     {
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
                     }
                 }
 
@@ -599,10 +604,11 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
+            var liveDebugger = CurrentLiveDebugger;
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.AppsecEnabled;
             var shouldUseIast = CurrentIast.Settings.Enabled;
-            var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
+            var isCodeOriginEnabled = liveDebugger?.Settings.CodeOriginForSpansEnabled ?? false;
 
             if (!shouldTrace && !shouldSecure && !shouldUseIast && !isCodeOriginEnabled)
             {
@@ -635,7 +641,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     if (isCodeOriginEnabled && TryGetTypeAndMethod(typedArg, out var type, out var method))
                     {
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }
 
                     CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);

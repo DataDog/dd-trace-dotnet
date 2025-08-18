@@ -84,7 +84,7 @@ namespace Datadog.Trace.Debugger.Upload
 
             MultipartFormItem symbolsItem;
 
-            if (!_enableCompression)
+            if (!this._enableCompression)
             {
                 symbolsItem = new MultipartFormItem("file", MimeTypes.Json, "file.json", symbols);
             }

@@ -37,7 +37,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private readonly int _hashCode;
 
-        public ExceptionCase(HashSet<Type> exceptionTypes, ExceptionReplayProbe[] probes)
+        public ExceptionCase(HashSet<Type> exceptionTypes, ExceptionDebuggingProbe[] probes)
         {
             ExceptionTypes = exceptionTypes;
             Probes = probes;
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public HashSet<Type> ExceptionTypes { get; }
 
-        public ExceptionReplayProbe[] Probes { get; }
+        public ExceptionDebuggingProbe[] Probes { get; }
 
         public ConcurrentDictionary<ExceptionProbeProcessor, byte> Processors { get; } = new();
 

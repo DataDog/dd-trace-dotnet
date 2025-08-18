@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -13,7 +14,6 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -29,6 +29,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.DiagnosticListeners
 {
@@ -48,8 +49,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var client = testServer.CreateClient();
             var tracer = GetTracer();
             var (security, iast) = GetSecurity();
-            var spanCodeOrigin = GetSpanCodeOrigin();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin) };
+            var liveDebugger = GetLiveDebugger();
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null) };
             string retValue = null;
 
             using (var diagnosticManager = new DiagnosticManager(observers))
@@ -74,9 +75,9 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             var tracer = GetTracer(hasResourceBasedSamplingRules);
             var (security, iast) = GetSecurity();
-            var spanCodeOrigin = GetSpanCodeOrigin();
+            var liveDebugger = GetLiveDebugger();
 
-            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin);
+            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null);
 
             var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
 
@@ -145,15 +146,9 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             return (security, iast);
         }
 
-        private static SpanCodeOrigin GetSpanCodeOrigin()
+        private static LiveDebugger GetLiveDebugger()
         {
-            var settings = new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "0" },
-            });
-
-            var co = new SpanCodeOrigin(new DebuggerSettings(settings, new NullConfigurationTelemetry()));
-            return co;
+            return LiveDebuggerFactory.Create(null, null, new TracerSettings(), null, null, DebuggerSettings.FromDefaultSource(), null);
         }
 
         private static HttpContext GetHttpContext()
