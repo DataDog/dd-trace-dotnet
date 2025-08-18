@@ -17,6 +17,8 @@ update-bp-infra:
   allow_failure: true
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks-2
+  rules:
+    - when: manual
 
   script:
     - git clone --branch dd-trace-dotnet/micro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
@@ -34,9 +36,7 @@ update-bp-infra:
       infra cleanup --provision ./platform/ephemeral-infra/base-instance.yaml \
         --region "${AWS_REGION}" \
         --bypass-stack-destroy
-    
-  rules:
-    - when: manual
+
   variables:
     AWS_REGION: "us-east-1"
     CLEANUP: "false"
@@ -51,9 +51,11 @@ run-benchmarks:
   timeout: 2h
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks-2
+  rules:
+    - when: on_success
 
   script:
-    - git clone --branch dd-trace-dotnet/micro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - git clone --branch ddyurchenko/dotnet-micro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/launch-instance.sh
   after_script:
     - !reference [.setup, script]
@@ -62,31 +64,6 @@ run-benchmarks:
         --region "${AWS_REGION}" \
         --bypass-stack-destroy
     - ./platform/steps/post-pr-comment.sh
-    # Temporarely commented out pending issue resolution with sending files to backend
-    # - ./platform/steps/upload-to-bp-ui.sh
-    
-  rules:
-    - when: on_success
-  variables:
-    AWS_REGION: "us-east-1"
-    CLEANUP: "false"
-    AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
-    AWS_EPHEMERAL_INFRA_PROFILE_NAME: "ephemeral-infra-ci"
-    AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
-    AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
-
-upload-to-bp-ui:
-  stage: benchmarks
-  tags: ["arch:amd64"]
-  timeout: 1h
-  # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks
-
-  script:
-    - git clone --branch fayssal/test-micro-delivery https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    # - ./platform/steps/launch-instance.sh
-    # - ./platform/steps/post-pr-comment.sh
-    # Temporarely commented out pending issue resolution with sending files to backend
     - ./platform/steps/upload-to-bp-ui.sh
 
   artifacts:
@@ -95,9 +72,6 @@ upload-to-bp-ui:
     paths:
       - candidate-results/
     expire_in: 3 months
-    
-  rules:
-    - when: manual
   variables:
     AWS_REGION: "us-east-1"
     CLEANUP: "false"
