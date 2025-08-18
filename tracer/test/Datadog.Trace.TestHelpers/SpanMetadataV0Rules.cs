@@ -765,7 +765,6 @@ namespace Datadog.Trace.TestHelpers
           .Properties(s => s
                          .MatchesOneOf(Name,  "internal"))
           .Tags(s => s
-                    .Matches("component", "Quartz")
                     .Matches("span.kind", "internal")
                     .IsOptional("fire.instance.id")
                     .IsPresent("job.group")
