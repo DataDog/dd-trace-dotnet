@@ -100,7 +100,6 @@ jobs:
         id: release_notes
         run: ./tracer/build.sh GenerateReleaseNotes
         env:
-          PIPELINE_ARTIFACTS_LINK: ${{steps.assets.outputs.artifacts_link}}
           GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: "Rename vNext milestone"

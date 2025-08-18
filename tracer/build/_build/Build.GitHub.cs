@@ -577,7 +577,6 @@ partial class Build
             const string debugger = "Debugger";
             const string serverless = "Serverless";
 
-            var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
             var nextVersion = FullVersion;
 
             var client = GetGitHubClient();
