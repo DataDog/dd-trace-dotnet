@@ -271,7 +271,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         public async Task InjectsLogsWhenEnabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType, Enable128BitInjection enable128BitInjection)
         {
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection == Enable128BitInjection.Enable ? "true" : "false");
             SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();

@@ -16,6 +16,7 @@ internal class TracerValues
         TracerHomeDirectory = tracerHomeDirectory;
         NativeLoaderX86Path = Path.Combine(tracerHomeDirectory, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll");
         NativeLoaderX64Path = Path.Combine(tracerHomeDirectory, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll");
+        TelemetryForwarderPath = PathHelper.GetTelemetryForwarderPath(tracerHomeDirectory);
         IisRequiredEnvVariables = new(new Dictionary<string, string>
         {
             { "COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" },
@@ -28,6 +29,7 @@ internal class TracerValues
             { "COR_ENABLE_PROFILING", "1" },
             { "CORECLR_ENABLE_PROFILING", "1" },
             { "DD_INJECTION_ENABLED", "tracer" },
+            { "DD_TELEMETRY_FORWARDER_PATH", TelemetryForwarderPath },
             { Defaults.InstrumentationInstallTypeKey, Defaults.InstrumentationInstallTypeValue },
         });
 
@@ -47,6 +49,7 @@ internal class TracerValues
             // { "COR_ENABLE_PROFILING", "1" },
             { "CORECLR_ENABLE_PROFILING", "1" },
             { "DD_TRACING_ENABLED", "tracing" },
+            { "DD_TELEMETRY_FORWARDER_PATH", TelemetryForwarderPath },
             { Defaults.InstrumentationInstallTypeKey, Defaults.InstrumentationInstallTypeValue },
         });
 
@@ -62,6 +65,8 @@ internal class TracerValues
     public string NativeLoaderX86Path { get; }
 
     public string NativeLoaderX64Path { get; }
+
+    public string TelemetryForwarderPath { get; }
 
     public ReadOnlyDictionary<string, string> IisRequiredEnvVariables { get; }
 

@@ -125,7 +125,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private async Task InjectsLogsWhenEnabledBase(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
         {
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
             SetSerilogConfiguration(loadFromConfig);
             SetInstrumentationVerification();
@@ -184,7 +183,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetInstrumentationVerification();
             SetSerilogConfiguration(loadFromConfig);
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL", "false");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Serilog), hostName);

@@ -46,7 +46,7 @@ public class TraceExporterTests
         var udsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         using var agent = GetAgent();
         var settings = GetSettings();
-        var tracerSettings = TracerSettings.Create(settings, isLibDatadogAvailable: true);
+        var tracerSettings = TracerSettings.Create(settings, isLibDatadogAvailable: new LibDatadogAvailableResult(true));
         tracerSettings.DataPipelineEnabled.Should().BeTrue();
 
         agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse
@@ -93,19 +93,36 @@ public class TraceExporterTests
                 span.Type = "test";
                 span.SetMetaStruct("test-meta-struct", metaStructBytes);
             }
+
+            using (var span2 = tracer.StartSpan("operationName2"))
+            {
+                span2.ResourceName = "resourceName2";
+                span2.Type = "test";
+                span2.SetMetaStruct("test-meta-struct", metaStructBytes);
+            }
         }
 
-        var recordedSpans = await agent.WaitForSpansAsync(1);
-        recordedSpans.Should().ContainSingle();
+        var recordedSpans = await agent.WaitForSpansAsync(2);
+        recordedSpans.Should().HaveCount(2);
 
-        var recordedSpan = recordedSpans.Should().ContainSingle().Subject;
-        recordedSpan.Name.Should().Be("operationName");
-        recordedSpan.Resource.Should().Be("resourceName");
-        recordedSpan.Service.Should().Be("default-service");
+        var firstSpan = recordedSpans.Should()
+                                        .Contain(s => s.Name == "operationName")
+                                        .Subject;
+        firstSpan.Resource.Should().Be("resourceName");
+        firstSpan.Service.Should().Be("default-service");
 
-        recordedSpan.MetaStruct.Should().ContainSingle();
-        var recordedMetaStructBytes = recordedSpan.MetaStruct["test-meta-struct"];
+        firstSpan.MetaStruct.Should().ContainSingle();
+        var recordedMetaStructBytes = firstSpan.MetaStruct["test-meta-struct"];
         recordedMetaStructBytes.Should().BeEquivalentTo(metaStructBytes);
+
+        var secondSpan = recordedSpans.Should()
+                                      .Contain(s => s.Name == "operationName2")
+                                      .Subject;
+        secondSpan.Resource.Should().Be("resourceName2");
+        secondSpan.Service.Should().Be("default-service");
+
+        var recordedMetaStructBytes2 = secondSpan.MetaStruct["test-meta-struct"];
+        recordedMetaStructBytes2.Should().BeEquivalentTo(metaStructBytes);
 
         var expectedRates = new Dictionary<string, float>
         {
@@ -115,6 +132,7 @@ public class TraceExporterTests
         sampleRateResponses.Should()
                            .NotBeEmpty()
                            .And.AllSatisfy(rates => rates.Should().BeEquivalentTo(expectedRates));
+        sampleRateResponses.Should().HaveCount(1);
 
         Dictionary<string, object> GetSettings()
         {

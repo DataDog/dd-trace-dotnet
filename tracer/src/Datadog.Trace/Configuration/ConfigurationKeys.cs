@@ -572,6 +572,12 @@ namespace Datadog.Trace.Configuration
         public const string GraphQLErrorExtensions = "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS";
 
         /// <summary>
+        /// Configuration key for deactivating reading the application monitoring config file through libdatadog (hands off config).
+        /// True by default
+        /// </summary>
+        public const string ApplicationMonitoringConfigFileEnabled = "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -963,7 +969,7 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for enabling legacy binary headers in Data Streams Monitoring.
-            /// Default is true.
+            /// false by default if DSM is in default state, true otherwise
             /// </summary>
              /// <see cref="TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
             public const string LegacyHeadersEnabled = "DD_DATA_STREAMS_LEGACY_HEADERS";

@@ -15,7 +15,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionProbe
     {
-        internal ExceptionProbe(HashSet<Type> exceptionTypes, ExceptionDebuggingProbe[] parentProbes, ExceptionDebuggingProbe[] childProbes)
+        internal ExceptionProbe(HashSet<Type> exceptionTypes, ExceptionReplayProbe[] parentProbes, ExceptionReplayProbe[] childProbes)
         {
             ExceptionTypes = exceptionTypes;
             ParentProbes = parentProbes;
@@ -24,8 +24,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal HashSet<Type> ExceptionTypes { get; }
 
-        internal ExceptionDebuggingProbe[] ChildProbes { get; }
+        internal ExceptionReplayProbe[] ChildProbes { get; }
 
-        internal ExceptionDebuggingProbe[] ParentProbes { get; }
+        internal ExceptionReplayProbe[] ParentProbes { get; }
     }
 }

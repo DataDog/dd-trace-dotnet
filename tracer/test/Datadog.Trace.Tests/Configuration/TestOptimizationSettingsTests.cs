@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests.Configuration
         private static readonly string ExpectedExcludedSession = "/session/FakeSessionIdForPollingPurposes".ToUpperInvariant();
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), null)]
+        [MemberData(nameof(NullableBooleanTestCases), null)]
         public void Enabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.Enabled, value));
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), parameters: new object[] { null })]
+        [MemberData(nameof(NullableBooleanTestCases), null)]
         public void TestsSkippingEnabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.TestsSkippingEnabled, value));
@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), parameters: new object[] { null })]
+        [MemberData(nameof(NullableBooleanTestCases), null)]
         public void CodeCoverageEnabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.CodeCoverage, value));
@@ -170,7 +170,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), parameters: new object[] { null })]
+        [MemberData(nameof(NullableBooleanTestCases), null)]
         public void GitUploadEnabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.GitUploadEnabled, value));
@@ -197,7 +197,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.ServiceName, serviceName));
 
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
-            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
             tracerSettings.GlobalTags.Should()
                           .ContainKey(Datadog.Trace.Ci.Tags.CommonTags.UserProvidedTestServiceTag)
@@ -214,7 +214,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.ServiceName, originalName));
 
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
-            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
             tracerSettings.ServiceName.Should().Be(normalizedName);
         }
@@ -225,7 +225,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource();
 
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
-            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
             tracerSettings.HttpClientExcludedUrlSubstrings
                           .Should()
@@ -239,7 +239,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.HttpClientExcludedUrlSubstrings, "/some-url/path"));
 
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
-            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
             tracerSettings.HttpClientExcludedUrlSubstrings
                           .Should()
@@ -254,7 +254,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.HttpClientExcludedUrlSubstrings, "/some-url/path"));
 
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
-            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
             tracerSettings.HttpClientExcludedUrlSubstrings
                           .Should()
@@ -268,7 +268,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.CIVisibility.Logs, "true"));
 
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
-            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
             tracerSettings.LogSubmissionSettings
                           .EnabledIntegrationNames
@@ -283,7 +283,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource();
 
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
-            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
             tracerSettings.LogSubmissionSettings
                           .EnabledIntegrationNames

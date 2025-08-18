@@ -26,6 +26,12 @@ std::string const Configuration::DefaultEmptyString = "";
 std::chrono::seconds const Configuration::DefaultDevUploadInterval = 20s;
 std::chrono::seconds const Configuration::DefaultProdUploadInterval = 60s;
 std::chrono::milliseconds const Configuration::DefaultCpuProfilingInterval = 9ms;
+CpuProfilerType const Configuration::DefaultCpuProfilerType =
+#ifdef _WINDOWS
+    CpuProfilerType::ManualCpuTime;
+#else
+    CpuProfilerType::TimerCreate;
+#endif
 
 Configuration::Configuration()
 {
@@ -107,7 +113,7 @@ Configuration::Configuration()
         );
     _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
     _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
-    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
+    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
 }
 

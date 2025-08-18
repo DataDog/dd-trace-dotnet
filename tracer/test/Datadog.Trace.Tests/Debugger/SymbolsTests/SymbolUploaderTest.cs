@@ -43,8 +43,11 @@ public class SymbolUploaderTest
         var settings = new DebuggerSettings(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" }, { ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes, "10000" } }),
             NullConfigurationTelemetry.Instance);
+
+        var tracerSettings = new TracerSettings(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Environment, "SymbolUploaderTests" }, { ConfigurationKeys.ServiceVersion, "1" } }));
         EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
-        _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, settings, TracerSettings.FromDefaultSourcesInternal(), "test");
+        _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, tracerSettings, settings, "test");
     }
 
     [Fact]
@@ -78,7 +81,7 @@ public class SymbolUploaderTest
             Assert.NotNull(root1);
             var assembly = root1.Scopes?[0];
             Assert.NotNull(assembly);
-            var classesScope = assembly.Value.Scopes;
+            var classesScope = assembly!.Value.Scopes;
             Assert.NotNull(root1.Scopes);
             Assert.NotNull(root.Scopes);
             Assert.NotNull(classesScope);

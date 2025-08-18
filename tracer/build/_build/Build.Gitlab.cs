@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement;
@@ -19,6 +22,32 @@ using Logger = Serilog.Log;
 
 partial class Build
 {
+    Target DownloadWinSsiTelemetryForwarder => _ => _
+       .Description("Downloads the telemetry forwarder executable used by SSI ")
+       .Unlisted()
+       .Requires(() => IsWin)
+       .Before(SignDlls)
+       .Executes(async () =>
+        {
+            // Download the forwarder from Azure for now.
+            // We will likely change this in the future, but it'll do for now.
+            const string url = "https://apmdotnetci.blob.core.windows.net/apm-datadog-win-ssi-telemetry-forwarder/c83ee9ad2f93c7314779051662e2e00086a213e0/telemetry_forwarder.exe";
+            const string expectedHash = "0B192C1901C670FC9A55464AFDF39774AB7CD0D667ECFB37BC22C27184B49C37D4658383E021F792A2F0C7024E1091F35C3CAD046EC68871FAEEE3C98A40163A";
+
+            var tempFile = await DownloadFile(url);
+            var actualHash = GetSha512Hash(tempFile);
+            if (!string.Equals(expectedHash, actualHash, StringComparison.Ordinal))
+            {
+                throw new Exception($"Downloaded file did not have expected hash. Expected hash {expectedHash}, actual hash {actualHash}");
+            }
+
+            Logger.Information("Hash verified: '{Hash}'", expectedHash);
+
+            // Move to expected location
+            var output = ArtifactsDirectory / "telemetry_forwarder.exe";
+            FileSystemTasks.CopyFile(tempFile, output, FileExistsPolicy.Overwrite);
+        });
+
     Target SignDlls => _ => _
        .Description("Sign the dlls produced by building the Tracer, Profiler, and Monitoring home directory, as well as the dd-dotnet exes")
        .Unlisted()
