@@ -423,7 +423,7 @@ namespace Datadog.Trace.Configuration
                           .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
                           .AsString(defaultValue: "http/protobuf");
               
-            OtlpProtocol = otlpMetricsProtocol switch
+            OtlpMetricsProtocol = otlpMetricsProtocol switch
             {
                 "http/protobuf" or "grpc" or "http/json" => otlpMetricsProtocol,
                 _ => (Log.Error("Unsupported OTLP protocol '{Protocol}'. Using default: http/protobuf", otlpMetricsProtocol), "http/protobuf").Item2
@@ -965,7 +965,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
-        internal string OtlpProtocol { get; }
+        internal string OtlpMetricsProtocol { get; }
 
         /// <summary>
         /// Gets the OTLP endpoint URL for metrics export with fallback behavior.
