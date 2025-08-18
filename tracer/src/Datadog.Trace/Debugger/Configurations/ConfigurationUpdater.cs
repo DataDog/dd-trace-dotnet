@@ -124,12 +124,12 @@ namespace Datadog.Trace.Debugger.Configurations
 
         private void HandleAddedProbesChanges(ProbeConfigurationComparer comparer)
         {
-            DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions);
+            LiveDebugger.Instance.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions);
         }
 
         private void HandleRemovedProbesChanges(string[] removedProbesIds)
         {
-            DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(removedProbesIds);
+            LiveDebugger.Instance.UpdateRemovedProbeInstrumentations(removedProbesIds);
         }
 
         private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)

@@ -287,7 +287,7 @@ namespace Datadog.Trace.Pdb
         {
             if (_isDnlibPdbReader)
             {
-                return GetMethodSourceLocationDnlib(methodToken, searchMoveNext);
+                return this.GetMethodSourceLocationDnlib(methodToken, searchMoveNext);
             }
 
             if (PdbReader != null)

@@ -290,7 +290,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            return _redactedKeywordsCache.GetOrAdd(name, CheckForRedactedKeyword);
+            return _redactedKeywordsCache.GetOrAdd(name, this.CheckForRedactedKeyword);
         }
 
         internal bool CheckForRedactedKeyword(string keyword)

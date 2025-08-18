@@ -36,7 +36,7 @@ internal class SpanProbe : ProbeDefinition, IEquatable<SpanProbe>
             return true;
         }
 
-        if (obj.GetType() != GetType())
+        if (obj.GetType() != this.GetType())
         {
             return false;
         }

@@ -1,4 +1,4 @@
-// <copyright file="DebuggerFactory.cs" company="Datadog">
+// <copyright file="LiveDebuggerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,39 +18,52 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.StatsdClient;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
 namespace Datadog.Trace.Debugger;
 
-internal class DebuggerFactory
+internal class LiveDebuggerFactory
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerFactory));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebuggerFactory));
 
-    internal static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
+        if (!debuggerSettings.Enabled)
+        {
+            Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
+            return LiveDebugger.Create(debuggerSettings, string.Empty, null, null, null, null, null, null, null, null, null);
+        }
+
+        telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
+
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
         var snapshotStatusSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
         var diagnosticsSink = DiagnosticsSink.Create(serviceName, debuggerSettings);
 
-        var debuggerUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), snapshotStatusSink);
+        var debuggerUploader = CreateSnaphotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), snapshotStatusSink);
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
+        var symbolsUploader = CreateSymbolsUploader(discoveryService, remoteConfigurationManager, tracerSettings, serviceName, debuggerSettings, gitMetadataTagsProvider);
 
         var statsd = GetDogStatsd(tracerSettings, serviceName);
 
-        return new DynamicInstrumentation(
-            settings: debuggerSettings,
-            discoveryService: discoveryService,
-            remoteConfigurationManager: remoteConfigurationManager,
-            lineProbeResolver: lineProbeResolver,
-            snapshotUploader: debuggerUploader,
-            diagnosticsUploader: diagnosticsUploader,
-            probeStatusPoller: probeStatusPoller,
-            configurationUpdater: configurationUpdater,
-            dogStats: statsd);
+        return LiveDebugger
+           .Create(
+                settings: debuggerSettings,
+                serviceName: serviceName,
+                discoveryService: discoveryService,
+                remoteConfigurationManager: remoteConfigurationManager,
+                lineProbeResolver: lineProbeResolver,
+                snapshotUploader: debuggerUploader,
+                diagnosticsUploader: diagnosticsUploader,
+                symbolsUploader: symbolsUploader,
+                probeStatusPoller: probeStatusPoller,
+                configurationUpdater: configurationUpdater,
+                dogStats: statsd);
     }
 
     private static IDogStatsd GetDogStatsd(TracerSettings tracerSettings, string serviceName)
@@ -70,7 +83,7 @@ internal class DebuggerFactory
         return statsd;
     }
 
-    private static SnapshotUploader CreateSnapshotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotStatusSink)
+    private static SnapshotUploader CreateSnaphotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotStatusSink)
     {
         var snapshotBatchUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
         var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
@@ -90,16 +103,15 @@ internal class DebuggerFactory
         return debuggerSink;
     }
 
-    internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, string serviceName, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    private static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, serviceName, settings.SymbolDatabaseCompressionEnabled);
-        var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, tracerSettings, settings, serviceName);
+        var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
         return symbolsUploader;
     }
 
     private static IApiRequestFactory GetApiFactory(TracerSettings tracerSettings, bool isMultipart)
     {
-        // TODO: we need to be able to update the tracer settings dynamically
         return AgentTransportStrategy.Get(
             tracerSettings.Exporter,
             productName: "debugger",

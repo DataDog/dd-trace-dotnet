@@ -4,9 +4,9 @@
 namespace debugger
 {
 
-bool IsDynamicInstrumentationEnabled()
+bool IsDebuggerEnabled()
 {
-    CheckIfTrue(GetEnvironmentValue(environment::dynamic_instrumentation_enabled));
+    CheckIfTrue(GetEnvironmentValue(environment::debugger_enabled));
 }
 
 bool IsExceptionReplayEnabled()
@@ -18,7 +18,6 @@ bool IsExceptionReplayEnabled()
         const auto new_exception_replay_flag = GetEnvironmentValue(environment::exception_replay_enabled);
         sValue = (IsTrue(old_exception_replay_flag) || IsTrue(new_exception_replay_flag)) ? 1 : 0;
     }
-
     return sValue == 1;
 }
 

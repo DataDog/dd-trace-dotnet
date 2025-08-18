@@ -13,7 +13,6 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Sampling;
@@ -529,7 +528,7 @@ namespace Datadog.Trace
             // write them directly to the <see cref="TraceChunkModel"/>.
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
 
-            DebuggerManager.Instance.CodeOrigin?.SetCodeOriginForExitSpan(span);
+            SpanCodeOriginManager.Instance.SetCodeOriginForExitSpan(span);
 
             return span;
         }
