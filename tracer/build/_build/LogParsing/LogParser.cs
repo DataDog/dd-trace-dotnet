@@ -32,7 +32,7 @@ public static class LogParser
     {
         if (!logDirectory.Exists())
         {
-            Log.Information($"Skipping log parsing, directory '{logDirectory}' not found");
+            Log.Information("Skipping log parsing, directory '{LogDirectory}' not found", logDirectory);
             if (allFilesMustExist)
             {
                 return true;
@@ -45,7 +45,7 @@ public static class LogParser
         var managedErrors = managedFiles
                            .SelectMany(ParseManagedLogFiles)
                            .Where(IsProblematic)
-                           .ToList<ParsedLogLine>();
+                           .ToList();
 
         var nativeTracerFiles = logDirectory.GlobFiles("**/dotnet-tracer-native-*");
         var nativeTracerErrors = nativeTracerFiles
@@ -118,10 +118,10 @@ public static class LogParser
                 if (errors.Any())
                 {
                     Log.Information("");
-                    Log.Error($"Found errors in log file '{erroredFile.Key}':");
+                    Log.Error("Found errors in log file '{ErroredFileKey}':", erroredFile.Key);
                     foreach (var error in errors)
                     {
-                        Log.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
+                        Log.Error("{ErrorTimestamp} [{ErrorLevel}] {ErrorMessage}", error.Timestamp, error.Level, error.Message);
                     }
                 }
 
@@ -129,10 +129,10 @@ public static class LogParser
                 if (canaries.Any())
                 {
                     Log.Information("");
-                    Log.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
+                    Log.Error("Found usage of canary environment variable in log file '{ErroredFileKey}':", erroredFile.Key);
                     foreach (var canary in canaries)
                     {
-                        Log.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
+                        Log.Error("{CanaryTimestamp} [{CanaryLevel}] {CanaryMessage}", canary.Timestamp, canary.Level, canary.Message);
                     }
                 }
             }
@@ -212,14 +212,14 @@ public static class LogParser
                 }
                 catch (Exception ex)
                 {
-                    Log.Information($"Error parsing line: '{line}. {ex}");
+                    Log.Information(ex, "Error parsing line: '{Line}'", line);
                 }
             }
             else
             {
                 if (currentLine is null)
                 {
-                    Log.Warning("Incomplete log line: " + line);
+                    Log.Warning("Incomplete log line: {Line}", line);
                 }
                 else
                 {
@@ -291,14 +291,14 @@ public static class LogParser
                     }
                     catch (Exception ex)
                     {
-                        Log.Information($"Error parsing line: '{line}. {ex}");
+                        Log.Information(ex, "Error parsing line: '{Line}'", line);
                     }
                 }
                 else
                 {
                     if (currentLine is null)
                     {
-                        Log.Warning("Incomplete log line: " + line);
+                        Log.Warning("Incomplete log line: {Line}", line);
                     }
                     else
                     {
