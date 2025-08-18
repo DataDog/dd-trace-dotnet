@@ -1,0 +1,36 @@
+﻿name: Verify ultimate-pipeline.yml changes have been persisted
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify_solution_changes_are_persisted:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '9.0.203'
+
+      - name: "Running GenerateUpdateGitHubPipelineStep"
+        run: .\tracer\build.ps1 GenerateUpdateGitHubPipelineStep
+
+      - name: "Verify no changes in generated templates"
+        run: |
+          git diff --quiet -- .\.azure-pipelines\steps\update-github-pipeline-status.yml
+          if ($LASTEXITCODE -eq 1) {
+            git diff
+            Write-Error "Found changes in generated template. Did you change the stages in ultimate-pipeline? Regenerate the template locally by running the target 'GenerateUpdateGitHubPipelineStep', and ensure the changed files are committed to git."
+            Exit 1
+          } else {
+            echo "No changes found to generated template"
+          }
