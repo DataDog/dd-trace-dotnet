@@ -576,6 +576,7 @@ partial class Build
             const string profiler = "Continuous Profiler";
             const string debugger = "Debugger";
             const string serverless = "Serverless";
+            const string dsm = "Data Streams Monitoring";
 
             var nextVersion = FullVersion;
 
@@ -663,9 +664,11 @@ partial class Build
                     { "area:tracer", tracer },
                     { "area:ci-visibility", ciVisibility },
                     { "area:asm", appSecMonitoring },
+                    { "asm-iast", appSecMonitoring },
                     { "area:profiler", profiler },
                     { "area:debugger", debugger },
-                    { "area:serverless", serverless }
+                    { "area:serverless", serverless },
+                    { "area:data-streams-monitoring", dsm },
                 };
 
                 var buildAndTestIssues = new []
