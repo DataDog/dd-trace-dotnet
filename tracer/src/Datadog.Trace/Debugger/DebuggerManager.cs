@@ -38,16 +38,19 @@ namespace Datadog.Trace.Debugger
 
         private static volatile bool _discoveryServiceReady;
         private readonly SemaphoreSlim _semaphore;
-        private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly CancellationTokenSource _cancellationToken;
+        private volatile bool _isShuttingDown;
         private int _initialized;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
             _initialized = 0;
             _discoveryServiceReady = false;
+            _isShuttingDown = false;
             _semaphore = new SemaphoreSlim(1, 1);
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
+            _cancellationToken = new CancellationTokenSource();
             ServiceName = string.Empty;
         }
 
@@ -67,7 +70,7 @@ namespace Datadog.Trace.Debugger
 
         internal string ServiceName { get; private set; }
 
-        private async Task<bool> WaitForDiscoveryServiceAsync(IDiscoveryService discoveryService, Task shutdownTask)
+        private async Task<bool> WaitForDiscoveryServiceAsync(IDiscoveryService discoveryService, CancellationToken cancellationToken)
         {
             if (_discoveryServiceReady)
             {
@@ -76,10 +79,10 @@ namespace Datadog.Trace.Debugger
 
             var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            discoveryService.SubscribeToChanges(Callback);
-            var completedTask = await Task.WhenAny(shutdownTask, tc.Task).ConfigureAwait(false);
+            using var registration = cancellationToken.Register(() => tc.TrySetResult(false));
 
-            _discoveryServiceReady = completedTask == tc.Task;
+            discoveryService.SubscribeToChanges(Callback);
+            _discoveryServiceReady = await tc.Task.ConfigureAwait(false);
             return _discoveryServiceReady;
 
             void Callback(AgentConfiguration x)
@@ -206,7 +209,7 @@ namespace Datadog.Trace.Debugger
                 var sw = Stopwatch.StartNew();
                 if (!_discoveryServiceReady)
                 {
-                    var isDiscoverySuccessful = await WaitForDiscoveryServiceAsync(discoveryService, _processExit.Task).ConfigureAwait(false);
+                    var isDiscoverySuccessful = await WaitForDiscoveryServiceAsync(discoveryService, _cancellationToken.Token).ConfigureAwait(false);
                     if (!isDiscoverySuccessful)
                     {
                         Log.Warning("Discovery service is not ready, Dynamic Instrumentation will not be initialized.");
@@ -235,7 +238,7 @@ namespace Datadog.Trace.Debugger
 
         private async Task UpdateProductsState(TracerSettings tracerSettings, DebuggerSettings newDebuggerSettings)
         {
-            if (_processExit.Task.IsCompleted)
+            if (_isShuttingDown)
             {
                 return;
             }
@@ -245,20 +248,8 @@ namespace Datadog.Trace.Debugger
             bool semaphoreAcquired = false;
             try
             {
-                var attemptsRemaining = 6; // 5*6 = 30s timeout
-                while (!_processExit.Task.IsCompleted && !semaphoreAcquired && attemptsRemaining > 0)
-                {
-                    attemptsRemaining--;
-                    semaphoreAcquired = await _semaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
-                }
-
-                if (_processExit.Task.IsCompleted)
-                {
-                    Log.Debug("Skipping update debugger state due to process exit");
-                    return;
-                }
-
-                if (!semaphoreAcquired)
+                semaphoreAcquired = await _semaphore.WaitAsync(TimeSpan.FromSeconds(30), _cancellationToken.Token).ConfigureAwait(false);
+                if (!semaphoreAcquired || _isShuttingDown)
                 {
                     Log.Debug("Skipping update debugger state due to semaphore timed out");
                     return;
@@ -354,12 +345,7 @@ namespace Datadog.Trace.Debugger
 
         private void ShutdownTasks(Exception? ex)
         {
-            if (_processExit.Task.IsCompleted)
-            {
-                return;
-            }
-
-            _processExit.TrySetResult(true);
+            _isShuttingDown = true;
 
             if (ex != null)
             {
@@ -367,9 +353,11 @@ namespace Datadog.Trace.Debugger
             }
 
             SafeDisposal.New()
+                        .Execute(() => _cancellationToken.Cancel(), "cancelling DebuggerManager operations")
                         .Add(DynamicInstrumentation)
                         .Add(ExceptionReplay)
                         .Add(SymbolsUploader)
+                        .Add(_cancellationToken)
                         .Add(_semaphore)
                         .DisposeAll();
         }
