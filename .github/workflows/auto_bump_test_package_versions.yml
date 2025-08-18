@@ -51,6 +51,7 @@ jobs:
           base: master
           title: "[Test Package Versions Bump] Updating package versions "
           milestone: "${{steps.rename.outputs.milestone}}"
+          labels: "area:dependabot,area:test-apps,dependencies"
           body: |
             Updates the package versions for integration tests.
 
