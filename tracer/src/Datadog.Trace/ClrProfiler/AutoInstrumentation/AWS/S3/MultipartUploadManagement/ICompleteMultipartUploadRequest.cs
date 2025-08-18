@@ -17,12 +17,12 @@ internal interface ICompleteMultipartUploadRequest : IDuckType
     /// <summary>
     /// Gets the S3 bucket name.
     /// </summary>
-    [DuckField(Name = "bucketName")]
-    string BucketName { get; }
+    [Duck(Name = "BucketName")]
+    string? BucketName { get; }
 
     /// <summary>
     /// Gets the S3 request key.
     /// </summary>
-    [DuckField(Name = "key")]
-    string ObjectKey { get; }
+    [Duck(Name = "Key")]
+    string? ObjectKey { get; }
 }

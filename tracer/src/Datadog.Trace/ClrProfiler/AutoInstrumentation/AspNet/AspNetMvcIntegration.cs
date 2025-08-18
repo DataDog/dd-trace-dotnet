@@ -40,21 +40,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetMvc;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetMvcIntegration));
 
-        private static void AddBaggageTagsToSpan(ISpan span, Baggage baggage, Tracer tracer)
-        {
-            if (baggage != null)
-            {
-                try
-                {
-                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, baggage, tracer.Settings.BaggageTagKeys);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error adding baggage tags to span.");
-                }
-            }
-        }
-
         /// <summary>
         /// Creates a scope used to instrument an MVC action and populates some common details.
         /// </summary>
@@ -198,7 +183,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers.Value, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
 
-                    AddBaggageTagsToSpan(span, extractedContext.Baggage, tracer);
+                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
                     if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                     {

@@ -8,11 +8,12 @@
 using System;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.Serilog.Events;
+using LogEventLevel = Datadog.Trace.Vendors.Serilog.Events.LogEventLevel;
 
 namespace Datadog.Trace.Configuration
 {
@@ -121,8 +122,13 @@ namespace Datadog.Trace.Configuration
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_Reload);
             DatadogLogging.Reset();
-            LibDatadog.Logger.Instance.SetLogLevel(debugEnabled: false);
-            GlobalConfigurationSource.Reload();
+            var isLibdatadogAvailable = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
+            if (isLibdatadogAvailable.IsAvailable)
+            {
+                LibDatadog.Logger.Instance.SetLogLevel(debugEnabled: false);
+            }
+
+            GlobalConfigurationSource.Reload(isLibdatadogAvailable.IsAvailable);
             Instance = CreateFromDefaultSources();
         }
 

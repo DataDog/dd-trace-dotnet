@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
-using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.XUnit.CodeFixVerifier<
+using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer.ThreadAbortAnalyzer,
-    Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer.ThreadAbortCodeFixProvider>;
+    Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer.ThreadAbortCodeFixProvider,
+    Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests
 {

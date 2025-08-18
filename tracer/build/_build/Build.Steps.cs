@@ -882,9 +882,9 @@ partial class Build
         .DependsOn(PublishNativeTracerUnix)
         .DependsOn(PublishNativeTracerOsx);
 
-    Target PublishFleetInstaller => _ => _
+    Target BuildFleetInstaller => _ => _
         .Unlisted()
-        .Description("Builds and publishes the fleet installer binary files as a zip")
+        .Description("Builds and publishes the fleet installer binary files")
         .After(Clean, Restore, CompileManagedSrc)
         .Before(SignDlls)
         .OnlyWhenStatic(() => IsWin)
@@ -905,7 +905,17 @@ partial class Build
                               .SetConfiguration(BuildConfiguration)
                               .SetOutput(publishFolder)
                               .CombineWith(tfms, (p, tfm) => p.SetFramework(tfm)));
+        });
 
+    Target PublishFleetInstaller => _ => _
+        .Unlisted()
+        .Description("Publishes the fleet installer binary files as a zip")
+        .DependsOn(BuildFleetInstaller)
+        .After(SignDlls)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            var publishFolder = ArtifactsDirectory / "Datadog.FleetInstaller";
             CompressZip(publishFolder, ArtifactsDirectory / "fleet-installer.zip", fileMode: FileMode.Create);
         });
 
@@ -2405,7 +2415,7 @@ partial class Build
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines")
-       .Executes(() =>
+       .Executes(async () =>
        {
            // we expect to see _some_ errors, so explicitly ignore them
            var knownPatterns = new List<Regex>
@@ -2443,13 +2453,13 @@ partial class Build
                new(@".*Some errors were found while applying waf configuration \(RulesFile: rasp-rule-set.json\).*", RegexOptions.Compiled),
            };
 
-           CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error, new ());
        });
 
     Target CheckSmokeTestsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines in the smoke test logs")
-       .Executes(() =>
+       .Executes(async () =>
        {
            var knownPatterns = new List<Regex>();
 
@@ -2497,10 +2507,18 @@ partial class Build
 
            // glibc TLS-reuse bug warnings
            knownPatterns.Add(new(@".*GLIBC version 2.34-2.36 has a TLS-reuse bug.*", RegexOptions.Compiled));
-           CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
+
+           // These patterns should be ignored, but we should send a metric when they occur
+           // so that we can track they don't happen too often and gate releases on them etc
+           var reportablePatterns = new List<(string IgnoreReasonTag, Regex Regex)>
+           {
+               new("rejit_thread_timeout", new(@".*Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented.*", RegexOptions.Compiled))
+           };
+
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning, reportablePatterns);
        });
 
-    private void CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel)
+    private async Task CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel, List<(string IgnoreReasonTag, Regex Regex)> reportablePatterns)
     {
         var logDirectory = BuildDataDirectory / "logs";
         if (!logDirectory.Exists())
@@ -2512,6 +2530,8 @@ partial class Build
                 return;
             }
         }
+
+        Dictionary<string, int> reportableMetrics = new();
 
         var managedFiles = logDirectory.GlobFiles("**/dotnet-tracer-managed-*");
         var managedErrors = managedFiles
@@ -2554,6 +2574,12 @@ partial class Build
                      || nativeTracerErrors.Count != 0
                      || nativeProfilerErrors.Count != 0
                      || nativeLoaderErrors.Count != 0;
+
+        if (reportableMetrics.Count > 0)
+        {
+            Logger.Warning("Found reportable (but ignored) problems in the logs");
+            await MetricHelper.SendReportableErrorMetrics(Logger.Logger, reportableMetrics);
+        }
 
         if (hasRequiredFiles && !hasErrors)
         {
@@ -2616,6 +2642,16 @@ partial class Build
             if (logLine.Level < minLogLevel)
             {
                 return false;
+            }
+
+            foreach (var pattern in reportablePatterns)
+            {
+                if (pattern.Regex.IsMatch(logLine.Message))
+                {
+                    var previous = reportableMetrics.GetValueOrDefault(pattern.IgnoreReasonTag, 0);
+                    reportableMetrics[pattern.IgnoreReasonTag] = previous + 1;
+                    return false;
+                }
             }
 
             foreach (var pattern in knownPatterns)

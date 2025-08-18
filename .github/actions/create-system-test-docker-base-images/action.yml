@@ -22,6 +22,10 @@ inputs:
     description: 'Github token for pushing images to ghcr.io Docker repository'
     required: true
 
+  image_tag:
+    description: 'Docker image tag (optional, defaults to latest_snapshot)'
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -47,7 +51,7 @@ runs:
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
       with:
         push: true
-        tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot
+        tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:${{ inputs.image_tag || 'latest_snapshot' }}
         platforms: 'linux/amd64,linux/arm64'
         context: ${{inputs.artifacts_path}}
         file: ${{inputs.artifacts_path}}/system-tests.dockerfile

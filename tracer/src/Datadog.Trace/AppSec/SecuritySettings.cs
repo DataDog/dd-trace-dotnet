@@ -60,8 +60,8 @@ namespace Datadog.Trace.AppSec
 
             WafTimeoutMicroSeconds = (ulong)config
                                            .WithKeys(ConfigurationKeys.AppSec.WafTimeout)
-                                           .GetAs<int>(
-                                                getDefaultValue: () => 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
+                                           .AsInt32(
+                                                defaultValue: 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
                                                 converter: ParseWafTimeout,
                                                 validator: wafTimeout => wafTimeout > 0);
 

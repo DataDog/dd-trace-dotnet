@@ -5,7 +5,9 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 using FluentAssertions;
@@ -129,15 +131,15 @@ public class CompositeConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData("string1")]
-    [InlineData("string2")]
-    [InlineData("string3")]
-    [InlineData("string4")]
-    public void AttemptsToGrabStringFromEverySource(string key)
+    [InlineData("string1", 4)]
+    [InlineData("string2", 3)]
+    [InlineData("string3", 2)]
+    [InlineData("string4", 1)]
+    public void AttemptsToGrabStringFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetString(key, telemetry, validator: null, recordValue: true);
-        telemetry.Accesses[key].Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
     [Theory]
@@ -152,15 +154,15 @@ public class CompositeConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData("int1")]
-    [InlineData("int2")]
-    [InlineData("int3")]
-    [InlineData("int4")]
-    public void AttemptsToGrabIntFromEverySource(string key)
+    [InlineData("int1", 4)]
+    [InlineData("int2", 3)]
+    [InlineData("int3", 2)]
+    [InlineData("int4", 1)]
+    public void AttemptsToGrabIntFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetInt32(key, telemetry, validator: null);
-        telemetry.Accesses[key].Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
     [Theory]
@@ -175,15 +177,15 @@ public class CompositeConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData("double1")]
-    [InlineData("double2")]
-    [InlineData("double3")]
-    [InlineData("double4")]
-    public void AttemptsToGrabDoubleFromEverySource(string key)
+    [InlineData("double1", 4)]
+    [InlineData("double2", 3)]
+    [InlineData("double3", 2)]
+    [InlineData("double4", 1)]
+    public void AttemptsToGrabDoubleFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetDouble(key, telemetry, validator: null);
-        telemetry.Accesses[key].Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
     [Theory]
@@ -198,15 +200,15 @@ public class CompositeConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData("bool1")]
-    [InlineData("bool2")]
-    [InlineData("bool3")]
-    [InlineData("bool4")]
-    public void AttemptsToGrabBoolFromEverySource(string key)
+    [InlineData("bool1", 4)]
+    [InlineData("bool2", 3)]
+    [InlineData("bool3", 2)]
+    [InlineData("bool4", 1)]
+    public void AttemptsToGrabBoolFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetBool(key, telemetry, validator: null);
-        telemetry.Accesses[key].Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
     [Theory]
@@ -221,38 +223,116 @@ public class CompositeConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData("dict1")]
-    [InlineData("dict2")]
-    [InlineData("dict3")]
-    [InlineData("dict4")]
-    public void AttemptsToGrabDictionaryFromEverySource(string key)
+    [InlineData("dict1", 4)]
+    [InlineData("dict2", 3)]
+    [InlineData("dict3", 2)]
+    [InlineData("dict4", 1)]
+    public void AttemptsToGrabDictionaryFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
         var actual = _source.GetDictionary(key, telemetry, validator: null);
-        telemetry.Accesses[key].Should().Be(1);
+        telemetry.GetInstanceCount(key).Should().Be(occurrences);
+    }
+
+    [Fact]
+    public void Telemetry_WhenMissingDoesNotRecordTelemetry()
+    {
+        var telemetry = new StubTelemetry();
+        const string key = "int_value";
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.Calculated),
+            new NameValueConfigurationSource(new() { { "something_else", "456" } }, ConfigurationOrigins.EnvVars),
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.AppConfig),
+        };
+
+        // not present
+        var actual = source.GetInt32(key, telemetry, validator: null);
+        actual.Should().Be(ConfigurationResult<int>.NotFound());
+
+        // final telemetry value should be the "real" value
+        telemetry.Telemetry.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Telemetry_WhenErrorRecordsTelemetry()
+    {
+        var telemetry = new StubTelemetry();
+        const string key = "int_value";
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.Calculated),
+            new NameValueConfigurationSource(new() { { key, "not_an_int" } }, ConfigurationOrigins.DdConfig),
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.AppConfig),
+        };
+
+        // no valid value
+        var actual = source.GetInt32(key, telemetry, validator: null);
+        actual.Should().Be(ConfigurationResult<int>.NotFound());
+
+        // only telemetry value should be the error
+        telemetry.Telemetry.Should()
+                 .ContainSingle()
+                 .Which.Should()
+                 .BeEquivalentTo(new ConfigurationTelemetryTests.ConfigDto(key, "not_an_int", ConfigurationOrigins.DdConfig, true, TelemetryErrorCode.ParsingInt32Error));
+    }
+
+    [Fact]
+    public void RecordsTelemetry_WhenPresentInMultipleSources()
+    {
+        var telemetry = new StubTelemetry();
+        const string key = "int_value";
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.Calculated),
+            new NameValueConfigurationSource(new() { { key, "not_an_int" } }, ConfigurationOrigins.DdConfig),
+            new NameValueConfigurationSource(new() { { key, "123" } }, ConfigurationOrigins.Code),
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.AppConfig),
+            new NameValueConfigurationSource(new() { { key, "not_an_int" } }, ConfigurationOrigins.RemoteConfig),
+            new NameValueConfigurationSource(new() { { key, "456" } }, ConfigurationOrigins.EnvVars),
+        };
+
+        // first wins
+        var expected = 123;
+        var actual = source.GetInt32(key, telemetry, validator: null);
+        actual.Should().Be(ConfigurationResult<int>.Valid(expected));
+
+        // final telemetry value should be the "real" value
+        telemetry.Telemetry.Last().Value.Should().Be(expected);
+
+        // telemetry records everything where a value was found. The last value is the "current" value
+        telemetry.Telemetry.Should()
+                 .BeEquivalentTo(
+                  [
+                      new ConfigurationTelemetryTests.ConfigDto(key, 456, ConfigurationOrigins.EnvVars, true, null),
+                      new ConfigurationTelemetryTests.ConfigDto(key, "not_an_int", ConfigurationOrigins.RemoteConfig, true, TelemetryErrorCode.ParsingInt32Error),
+                      new ConfigurationTelemetryTests.ConfigDto(key, 123, ConfigurationOrigins.Code, true, null),
+                      new ConfigurationTelemetryTests.ConfigDto(key, "not_an_int", ConfigurationOrigins.DdConfig, true, TelemetryErrorCode.ParsingInt32Error),
+                      new ConfigurationTelemetryTests.ConfigDto(key, 123, ConfigurationOrigins.Code, true, null),
+                  ]);
     }
 
     internal class StubTelemetry : IConfigurationTelemetry
     {
-        public Dictionary<string, int> Accesses { get; } = new();
+        public List<ConfigurationTelemetryTests.ConfigDto> Telemetry { get; } = new();
 
         public void Record(string key, string value, bool recordValue, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue, error));
 
         public void Record(string key, bool value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
         public void Record(string key, double value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
         public void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
         public void Record(string key, double? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
         public void Record(string key, int? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-            => IncrementAccess(key);
+            => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
         public ICollection<ConfigurationKeyValue> GetData() => null;
 
@@ -264,16 +344,7 @@ public class CompositeConfigurationSourceTests
         {
         }
 
-        private void IncrementAccess(string key)
-        {
-            if (Accesses.TryGetValue(key, out var i))
-            {
-                Accesses[key] = i + 1;
-            }
-            else
-            {
-                Accesses[key] = 1;
-            }
-        }
+        public int GetInstanceCount(string key)
+            => Telemetry.Count(x => x.Name == key);
     }
 }

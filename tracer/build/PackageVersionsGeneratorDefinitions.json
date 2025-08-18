@@ -744,6 +744,9 @@
       "8.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "8.1.0",
+      "ExcludeTargetFrameworks": ["net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
+    },{
       "MinVersion": "6.0.0",
       "ExcludeTargetFrameworks": ["net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     },{
