@@ -209,9 +209,9 @@ internal static class DatadogLoggingFactory
         string logDirectory;
         var isWindows = FrameworkDescription.Instance.IsWindows();
 
-        if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry) ||
-            ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry))
+        if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
         {
+            // this includes Azure Web Apps and Azure Functions
             return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
         }
 
