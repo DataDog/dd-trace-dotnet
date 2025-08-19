@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -41,7 +42,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int maxMessages, TimeSpan? maxWaitTime, bool isProcessor, CancellationToken cancellationToken)
         where TTarget : IServiceBusReceiver, IDuckType
     {
-        Log.Information("ServiceBusReceiverReceiveMessagesAsyncIntegration.OnMethodBegin called");
         var tracer = Tracer.Instance;
         if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
         {
@@ -54,13 +54,10 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
     {
-        Log.Information("ServiceBusReceiverReceiveMessagesAsyncIntegration.OnAsyncMethodEnd called");
-
         var tracer = Tracer.Instance;
         if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus) ||
             !(state.State is ReceiveMessagesState stateData))
         {
-            Log.Debug("ServiceBusReceiver: Integration not enabled or invalid state");
             return returnValue;
         }
 
@@ -70,140 +67,94 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         // The returnValue is actually the IReadOnlyList<ServiceBusReceivedMessage>, not a Task
         // In OnAsyncMethodEnd, the CallTarget infrastructure has already unwrapped the Task for us
         var messagesList = returnValue as System.Collections.IList;
-
-        // Log the actual type we're getting
-        Log.Debug(
-            "ServiceBusReceiver: ReturnValue type: {Type}, is IList: {IsList}",
-            returnValue?.GetType().FullName ?? "null",
-            (messagesList != null).ToString());
-
         var messageCount = messagesList?.Count ?? 0;
-
-        Log.Information("ServiceBusReceiver: Processing {MessageCount} messages", messageCount.ToString());
 
         // Don't create spans when there's an exception or no messages
         if (exception != null || messageCount == 0)
         {
-            if (exception != null)
-            {
-                Log.Debug("ServiceBusReceiver: Exception occurred, not creating span");
-            }
-            else
-            {
-                Log.Debug("ServiceBusReceiver: No messages to process");
-            }
-
             return returnValue;
         }
 
-        var parentContext = ExtractParentContextFromFirstMessage(tracer, messagesList);
-        var scope = CreateAndConfigureSpan(tracer, parentContext, receiverInstance, startTime);
+        var extractionResult = ExtractContextsFromMessages(tracer, messagesList);
+        var scope = CreateAndConfigureSpan(tracer, extractionResult.ParentContext, extractionResult.SpanLinks, receiverInstance, startTime);
 
         // Re-inject the new span context into all messages so Azure Functions will use it as parent
+        // We access the internal AmqpMessage to modify the mutable ApplicationProperties
         if (scope != null && messagesList != null && messageCount > 0)
         {
-            Log.Information("ServiceBusReceiver: Attempting to re-inject context into {MessageCount} messages", messageCount.ToString());
             ReinjectContextIntoMessages(tracer, scope, messagesList);
-        }
-        else
-        {
-            Log.Warning(
-                "ServiceBusReceiver: Cannot re-inject - scope={ScopeNull}, messagesList={ListNull}, messageCount={Count}",
-                (scope == null).ToString(),
-                (messagesList == null).ToString(),
-                messageCount.ToString());
         }
 
         return returnValue;
     }
 
-    private static SpanContext? ExtractParentContextFromFirstMessage(Tracer tracer, System.Collections.IList? messagesList)
+    private static ContextExtractionResult ExtractContextsFromMessages(Tracer tracer, System.Collections.IList? messagesList)
     {
         if (messagesList == null || messagesList.Count == 0)
         {
-            Log.Debug("ServiceBusReceiver: No messages to extract context from");
-            return null;
+            return new ContextExtractionResult(null, null);
         }
+
+        var extractedContexts = new List<SpanContext>();
 
         try
         {
-            var firstMessage = messagesList[0];
-            Log.Debug(
-                "ServiceBusReceiver: First message is null? {IsNull}, Type: {Type}",
-                (firstMessage == null).ToString(),
-                firstMessage?.GetType().FullName ?? "null");
-            if (firstMessage?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
+            foreach (var message in messagesList)
             {
-                Log.Debug(
-                    "ServiceBusReceiver: Duck cast successful, ApplicationProperties null? {IsNull}",
-                    (serviceBusMessage.ApplicationProperties == null).ToString());
-
-                if (serviceBusMessage.ApplicationProperties != null)
+                if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true &&
+                    serviceBusMessage.ApplicationProperties != null)
                 {
-                    Log.Information(
-                        "ServiceBusReceiver: ApplicationProperties count: {Count}",
-                        serviceBusMessage.ApplicationProperties.Count.ToString());
-
-                    // Log all properties for debugging
-                    foreach (var kvp in serviceBusMessage.ApplicationProperties)
-                    {
-                        Log.Debug("ServiceBusReceiver: Property [{Key}] = {Value}", kvp.Key, kvp.Value);
-                    }
-
                     var headerAdapter = new ServiceBusHeadersCollectionAdapter(serviceBusMessage.ApplicationProperties);
                     var extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-                    var parentContext = extractedContext.SpanContext;
-
-                    if (parentContext != null)
+                    if (extractedContext.SpanContext != null)
                     {
-                        Log.Information(
-                            "ServiceBusReceiver: Successfully extracted parent context - TraceId: {TraceId}, SpanId: {SpanId}",
-                            parentContext.TraceId128,
-                            parentContext.SpanId);
+                        extractedContexts.Add(extractedContext.SpanContext);
                     }
-                    else
-                    {
-                        Log.Warning("ServiceBusReceiver: Extract returned null SpanContext");
-                    }
-
-                    return parentContext;
                 }
+            }
+
+            if (extractedContexts.Count == 0)
+            {
+                return new ContextExtractionResult(null, null);
+            }
+
+            // Check if all contexts are the same (same trace ID and span ID)
+            var firstContext = extractedContexts[0];
+            var comparer = new SpanContextComparer();
+            var allSame = extractedContexts.All(ctx => comparer.Equals(ctx, firstContext));
+
+            if (allSame)
+            {
+                // All messages have the same context, use it as parent
+                return new ContextExtractionResult(firstContext, null);
             }
             else
             {
-                Log.Warning(
-                    "ServiceBusReceiver: Duck cast failed for message type {Type}",
-                    firstMessage?.GetType().FullName ?? "null");
+                // Heterogeneous contexts, create span links to all of them
+                var spanLinks = extractedContexts
+                    .Distinct(new SpanContextComparer())
+                    .Select(ctx => new SpanLink(ctx))
+                    .ToList();
+                return new ContextExtractionResult(null, spanLinks);
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "ServiceBusReceiver: Error extracting parent context from ServiceBus message");
+            Log.Error(ex, "ServiceBusReceiver: Error extracting contexts from ServiceBus messages");
         }
 
-        Log.Warning("ServiceBusReceiver: Failed to extract parent context from first message");
-        return null;
+        return new ContextExtractionResult(null, null);
     }
 
     private static Scope? CreateAndConfigureSpan(
         Tracer tracer,
         SpanContext? parentContext,
+        IEnumerable<SpanLink>? spanLinks,
         IServiceBusReceiver receiverInstance,
         DateTimeOffset startTime)
     {
-        Log.Information(
-            "ServiceBusReceiver: Creating span with parent context - TraceId: {TraceId}, SpanId: {SpanId}",
-            parentContext?.TraceId128.ToString() ?? "null",
-            parentContext?.SpanId.ToString() ?? "0");
-
-        var scope = tracer.StartActiveInternal(OperationName, parent: parentContext, startTime: startTime);
+        var scope = tracer.StartActiveInternal(OperationName, parent: parentContext, startTime: startTime, links: spanLinks);
         var span = scope.Span;
-
-        Log.Information(
-            "ServiceBusReceiver: Created span - TraceId: {TraceId}, SpanId: {SpanId}, ParentId: {ParentId}",
-            span.Context.TraceId128.ToString(),
-            span.Context.SpanId.ToString(),
-            (span.Context.ParentId ?? 0).ToString());
 
         try
         {
@@ -230,89 +181,25 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         try
         {
             var context = new Propagators.PropagationContext(scope.Span.Context, Baggage.Current);
-            var injectedCount = 0;
-
-            Log.Information("ServiceBusReceiver: Starting re-injection for {Count} messages", messagesList.Count.ToString());
 
             foreach (var message in messagesList)
             {
-                Log.Debug(
-                    "ServiceBusReceiver: Processing message {Index}, Type: {Type}",
-                    injectedCount.ToString(),
-                    message?.GetType().FullName ?? "null");
-
                 if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
                 {
-                    Log.Debug("ServiceBusReceiver: Duck cast successful, checking AmqpMessage");
-
                     // Access the internal AmqpMessage to get the mutable ApplicationProperties
                     var amqpMessage = serviceBusMessage.AmqpMessage;
-
-                    Log.Debug(
-                        "ServiceBusReceiver: AmqpMessage is null? {IsNull}, Instance is null? {InstanceNull}",
-                        (amqpMessage == null).ToString(),
-                        (amqpMessage?.Instance == null).ToString());
                     if (amqpMessage?.ApplicationProperties != null)
                     {
-                        var countBefore = amqpMessage.ApplicationProperties.Count;
-                        Log.Information(
-                            "ServiceBusReceiver: Using AmqpMessage.ApplicationProperties for injection, count before: {Count}",
-                            countBefore.ToString());
-
-                        // Log existing trace headers before injection
-                        foreach (var kvp in amqpMessage.ApplicationProperties)
-                        {
-                            if (kvp.Key.StartsWith("x-datadog") || kvp.Key.StartsWith("traceparent"))
-                            {
-                                Log.Debug("ServiceBusReceiver: Before injection - [{Key}] = {Value}", kvp.Key, kvp.Value?.ToString() ?? "null");
-                            }
-                        }
-
                         // Use the mutable ApplicationProperties from AmqpMessage
                         var headerAdapter = new ServiceBusHeadersCollectionAdapter(amqpMessage.ApplicationProperties);
                         tracer.TracerManager.SpanContextPropagator.Inject(context, headerAdapter);
-                        injectedCount++;
-
-                        // Log trace headers after injection
-                        foreach (var kvp in amqpMessage.ApplicationProperties)
-                        {
-                            if (kvp.Key.StartsWith("x-datadog") || kvp.Key.StartsWith("traceparent"))
-                            {
-                                Log.Debug("ServiceBusReceiver: After injection - [{Key}] = {Value}", kvp.Key, kvp.Value?.ToString() ?? "null");
-                            }
-                        }
-
-                        Log.Information(
-                            "ServiceBusReceiver: Successfully re-injected context into message {Index} - TraceId: {TraceId}, SpanId: {SpanId}, Count after: {CountAfter}",
-                            injectedCount,
-                            scope.Span.Context.TraceId128,
-                            scope.Span.Context.SpanId,
-                            amqpMessage.ApplicationProperties.Count);
                     }
-                    else
-                    {
-                        Log.Warning(
-                            "ServiceBusReceiver: AmqpMessage is {AmqpNull}, ApplicationProperties is {PropsNull}",
-                            (amqpMessage == null).ToString(),
-                            (amqpMessage?.ApplicationProperties == null).ToString());
-                    }
-                }
-                else
-                {
-                    Log.Warning(
-                        "ServiceBusReceiver: Failed to duck cast message type {Type} for re-injection",
-                        message?.GetType().FullName ?? "null");
                 }
             }
-
-            Log.Information(
-                "ServiceBusReceiver: Re-injection complete. Successfully injected into {Count} of {Total} messages",
-                injectedCount.ToString(),
-                messagesList.Count.ToString());
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "ServiceBusReceiver: Error re-injecting context into ServiceBus messages - {Message}", ex.Message);
+            Log.Error(ex, "ServiceBusReceiver: Error re-injecting context into ServiceBus messages");
         }
     }
 
@@ -325,6 +212,36 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         {
             Instance = instance;
             StartTime = startTime;
+        }
+    }
+
+    private readonly struct ContextExtractionResult
+    {
+        public readonly SpanContext? ParentContext;
+        public readonly IEnumerable<SpanLink>? SpanLinks;
+
+        public ContextExtractionResult(SpanContext? parentContext, IEnumerable<SpanLink>? spanLinks)
+        {
+            ParentContext = parentContext;
+            SpanLinks = spanLinks;
+        }
+    }
+
+    private class SpanContextComparer : IEqualityComparer<SpanContext>
+    {
+        public bool Equals(SpanContext? x, SpanContext? y)
+        {
+            if (x == null || y == null)
+            {
+                return x == y;
+            }
+
+            return x.TraceId128 == y.TraceId128 && x.SpanId == y.SpanId;
+        }
+
+        public int GetHashCode(SpanContext obj)
+        {
+            return HashCode.Combine(obj.TraceId128, obj.SpanId);
         }
     }
 }
