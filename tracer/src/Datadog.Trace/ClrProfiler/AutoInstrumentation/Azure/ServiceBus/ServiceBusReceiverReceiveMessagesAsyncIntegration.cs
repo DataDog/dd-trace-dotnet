@@ -66,19 +66,38 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
         var receiverInstance = stateData.Instance;
         var startTime = stateData.StartTime;
+
+        // The returnValue is actually the IReadOnlyList<ServiceBusReceivedMessage>, not a Task
+        // In OnAsyncMethodEnd, the CallTarget infrastructure has already unwrapped the Task for us
         var messagesList = returnValue as System.Collections.IList;
+
+        // Log the actual type we're getting
+        Log.Debug(
+            "ServiceBusReceiver: ReturnValue type: {Type}, is IList: {IsList}",
+            returnValue?.GetType().FullName ?? "null",
+            (messagesList != null).ToString());
+
         var messageCount = messagesList?.Count ?? 0;
 
         Log.Information("ServiceBusReceiver: Processing {MessageCount} messages", messageCount.ToString());
 
-        if (exception == null && messageCount == 0)
+        // Don't create spans when there's an exception or no messages
+        if (exception != null || messageCount == 0)
         {
-            Log.Debug("ServiceBusReceiver: No messages to process");
+            if (exception != null)
+            {
+                Log.Debug("ServiceBusReceiver: Exception occurred, not creating span");
+            }
+            else
+            {
+                Log.Debug("ServiceBusReceiver: No messages to process");
+            }
+
             return returnValue;
         }
 
         var parentContext = ExtractParentContextFromFirstMessage(tracer, messagesList);
-        var scope = CreateAndConfigureSpan(tracer, parentContext, receiverInstance, startTime, exception);
+        var scope = CreateAndConfigureSpan(tracer, parentContext, receiverInstance, startTime);
 
         // Re-inject the new span context into all messages so Azure Functions will use it as parent
         if (scope != null && messagesList != null && messageCount > 0)
@@ -170,8 +189,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         Tracer tracer,
         SpanContext? parentContext,
         IServiceBusReceiver receiverInstance,
-        DateTimeOffset startTime,
-        Exception? exception)
+        DateTimeOffset startTime)
     {
         Log.Information(
             "ServiceBusReceiver: Creating span with parent context - TraceId: {TraceId}, SpanId: {SpanId}",
@@ -198,11 +216,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             span.SetTag(Tags.MessagingDestinationName, entityPath);
             span.SetTag(Tags.MessagingOperation, "receive");
             span.SetTag(Tags.MessagingSystem, "servicebus");
-
-            if (exception != null)
-            {
-                span.SetException(exception);
-            }
         }
         finally
         {
