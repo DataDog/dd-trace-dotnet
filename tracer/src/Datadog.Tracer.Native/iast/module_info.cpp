@@ -845,7 +845,7 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
     auto methodInfo = moduleInfo->GetMethod(typeName, methodName, methodParams);
     if (methodInfo == nullptr)
     {
-        trace::Logger::Debug("DefineMemberRef : Could not find Method ", shared::ToString(typeName), ".", shared::ToString(methodName), shared::ToString(methodParams));
+        DBG("DefineMemberRef : Could not find Method ", shared::ToString(typeName), ".", shared::ToString(methodName), shared::ToString(methodParams));
         return 0;
     }
 
@@ -864,11 +864,7 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
     {
         _mMemberImports[memberKey] = methodRef;
         auto memberRefInfo = GetMemberRefInfo(methodRef);
-        if (trace::Logger::IsDebugEnabled())
-        {
-            trace::Logger::Debug("DefineMemberRef : ", Hex(methodRef), " for ", memberKey,
-                                 " MethodName: ", memberRefInfo->GetFullName(), " Module: ", GetModuleFullName());
-        }
+        DBG("DefineMemberRef : ", Hex(methodRef), " for ", memberKey, " MethodName: ", memberRefInfo->GetFullName(), " Module: ", GetModuleFullName());
         return methodRef;
     }
     else
