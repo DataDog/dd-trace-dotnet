@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -10,7 +11,7 @@ using Serilog;
 
 namespace LogParsing;
 
-public static class LogParser
+public static partial class LogParser
 {
     /// <summary>
     /// Checks all the logs in the log directory for any unexpected errors
@@ -176,6 +177,110 @@ public static class LogParser
         bool ContainsCanary(ParsedLogLine logLine)
             => logLine.Message.Contains("SUPER_SECRET_CANARY")
             || logLine.Message.Contains("MySuperSecretCanary");
+    }
+
+
+    /// <summary>
+    /// Extracts the native tracer metrics from the logs and reports them to Datadog
+    /// </summary>
+    /// <param name="logDirectory">The root directory containing the tracer logs. All child directories will be searched </param>
+    /// <returns></returns>
+    public static async Task ReportNativeMetrics(AbsolutePath logDirectory)
+    {
+        if (!logDirectory.Exists())
+        {
+            Log.Information("Skipping metric extraction, directory '{LogDirectory}' not found", logDirectory);
+            return;
+        }
+
+        // Matches log lines like this:
+        // Total time: 12011ms | Total time in Callbacks: 530ms [Initialize=0ms, ModuleLoadFinished=301ms/139, CallTargetRequestRejit=54ms/56, CallTargetRewriter=14ms/7, AssemblyLoadFinished=0ms/139, ModuleUnloadStarted=0ms/0, JitCompilationStarted=59ms/9679, JitInlining=8ms/19931, JitCacheFunctionSearchStarted=89ms/8599, InitializeProfiler=2ms/3, EnqueueRequestRejitForLoadedModules=71ms/42]
+        var nativeStatsRegex = new Regex(@"Total time:\s*(\d+)ms\s*\|\s*Total time in Callbacks:\s*(\d+)ms\s*\[(.*)\]\s*$", RegexOptions.Compiled);
+
+        var nativeTracerFiles = logDirectory.GlobFiles("**/dotnet-tracer-native-*");
+        var nativeTracerMetrics = nativeTracerFiles
+                                 .SelectMany(ParseNativeTracerLogFiles)
+                                 .SelectMany(line => ParseMetrics(nativeStatsRegex, line));
+
+        await MetricHelper.SendTracerMetricDistributions(Log.Logger, nativeTracerMetrics);
+
+        static IEnumerable<NativeFunctionMetrics> ParseMetrics(Regex nativeStatsRegex, ParsedLogLine line)
+        {
+            if (nativeStatsRegex.Match(line.Message) is not { Success: true } m)
+            {
+                return Enumerable.Empty<NativeFunctionMetrics>();
+            }
+
+            var entries = new List<NativeFunctionMetrics>();
+
+            var totalTimeMs = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+            entries.Add(new(line.Timestamp, NativeFunctionMetrics.TotalInitializationTime, totalTimeMs, Count: null));
+
+            // We don't bother collecting total time in callbacks because it's the sum of the individual components
+            // var totalTimeInCallbacks = int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
+            var innerItems = m.Groups[3].Value.AsSpan().Trim();
+
+            // [Initialize=0ms, ModuleLoadFinished=301ms/139, CallTargetRequestRejit=54ms/56, CallTargetRewriter=14ms/7, AssemblyLoadFinished=0ms/139, ModuleUnloadStarted=0ms/0, JitCompilationStarted=59ms/9679, JitInlining=8ms/19931, JitCacheFunctionSearchStarted=89ms/8599, InitializeProfiler=2ms/3, EnqueueRequestRejitForLoadedModules=71ms/42]
+            var remainingItems = innerItems;
+            do
+            {
+                var nextIndex = remainingItems.IndexOf(' ');
+                var item = remainingItems.Slice(0, nextIndex >= 0 ? nextIndex : remainingItems.Length);
+                remainingItems = remainingItems.Slice(item.Length).Trim();
+
+                // Initialize=0ms,
+                // ModuleLoadFinished=301ms/139,
+                // EnqueueRequestRejitForLoadedModules=71ms/42
+                var equalsIndex = item.IndexOf('=');
+                var name = item.Slice(0, equalsIndex);
+
+                var remainder = item.Slice(equalsIndex + 1);
+                var msIndex = remainder.IndexOf("ms");
+                var timeMs = int.Parse(remainder.Slice(0, msIndex));
+
+                int? count = null;
+                var slashIndex = remainder.IndexOf('/');
+                if (slashIndex != -1)
+                {
+                    remainder = remainder.Slice(slashIndex + 1);
+                    var length = remainder.IndexOf(',') is var i and >= 0 ? i : remainder.Length;
+                    count = int.Parse(remainder.Slice(0, length), CultureInfo.InvariantCulture);
+                }
+
+                entries.Add(new NativeFunctionMetrics(line.Timestamp, ToSnakeCase(name), timeMs, count));
+            } while (remainingItems.Length > 0);
+
+            return entries;
+        }
+
+        static string ToSnakeCase(ReadOnlySpan<char> span)
+        {
+            // assumes it starts with a capital, but skip it
+            var capitalCount = 0;
+            foreach (var c in span.Slice(1))
+            {
+                capitalCount += char.IsUpper(c) ? 1 : 0;
+            }
+
+            Span<char> dest = stackalloc char[span.Length + capitalCount];
+            var pos = -1;
+            foreach (var c in span)
+            {
+                pos++;
+                var isUpper = char.IsUpper(c);
+                var charToAdd = isUpper ? char.ToLowerInvariant(c) : c;
+
+                if (isUpper && pos >0)
+                {
+                    dest[pos] = '_';
+                    pos++;
+                }
+
+                dest[pos] = charToAdd;
+            }
+
+            return dest.ToString();
+        }
     }
 
     static List<ParsedLogLine> ParseManagedLogFiles(AbsolutePath logFile)
