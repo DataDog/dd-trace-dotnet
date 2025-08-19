@@ -1,0 +1,20 @@
+﻿<!-- These build step is a workaround for the Azure Functions SDK moving our *.dll files from datadog/ to bin/datadog/
+     See https://github.com/Azure/azure-functions-vs-build-sdk/blob/7a3e505c2382ee9c461985baef1603e980740ca6/src/Microsoft.NET.Sdk.Functions.MSBuild/Targets/Microsoft.NET.Sdk.Functions.Publish.targets#L134-L154 -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="_RestoreDatadogFiles"
+          AfterTargets="_GenerateFunctionsAndCopyContentFiles"
+          Condition="'$(RestoreDatadogFiles)' == 'true'">
+    <!-- get a list of files that were moved -->
+    <ItemGroup>
+      <DatadogFilesAfter Include="$(PublishDir)bin\datadog\**\*.dll"/>
+    </ItemGroup>
+
+    <!-- move the files back -->
+    <Move SourceFiles="@(DatadogFilesAfter)"
+          DestinationFiles="$(PublishDir)datadog\%(RecursiveDir)%(Filename)%(Extension)"
+          OverwriteReadOnlyFiles="true" />
+
+    <Message Importance="High"
+             Text="[Datadog.AzureFunctions] Restored Datadog files from &quot;$(PublishDir)bin/datadog/&quot; back to &quot;$(PublishDir)datadog/&quot;" />
+  </Target>
+</Project>
