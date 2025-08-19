@@ -116,7 +116,7 @@ public static class MetricHelper
             return $$"""
                      {
                          "metric": "{{metricName}}",
-                         "points": [[{{string.Join(',', points)}}]],
+                         "points": [{{string.Join(',', points)}}],
                          "tags": [{{tags}}]
                      }
                      """;
