@@ -1382,22 +1382,6 @@ namespace Datadog.Trace.Tests.Configuration
             tracerSettings.LogsInjectionEnabled.Should().Be(expected);
         }
 
-        private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)
-        {
-            if (newErrorKeyValue is not null || deprecatedErrorKeyValue is not null)
-            {
-                Assert.True(result[int.Parse(expectedErrorRange)]);
-            }
-            else
-            {
-                var statusCodeLimitsRange = expectedErrorRange.Split('-');
-                for (var i = int.Parse(statusCodeLimitsRange[0]); i <= int.Parse(statusCodeLimitsRange[1]); i++)
-                {
-                    Assert.True(result[i]);
-                }
-            }
-        }
-
         [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
         public void OpenTelemetryMetricsEnabled(string value, bool expected)
@@ -1422,7 +1406,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(null, 10000)]
+        [InlineData(null, 10000)]
         [InlineData("5000", 5000)]  // User custom value
         [InlineData("60000", 60000)]  // OTel spec default
         public void OtelMetricExportIntervalCustomValues(string value, int expected)
@@ -1433,31 +1417,45 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(null, 7500)]
+        [InlineData(null, 7500)]
         [InlineData("3000", 3000)]  // User custom value
         [InlineData("30000", 30000)]  // OTel spec default
         public void OtelMetricExportTimeoutCustomValues(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricExportTimeout, value));
             var settings = new TracerSettings(source);
-            settings.OtelMetricExporterTimeout.Should().Be(expected);
+
+            settings.OtelMetricExportTimeout.Should().Be(expected);
         }
 
         [Theory]
-        [InlineData("grpc", "http/protobuf", "grpc")]
-        [InlineData("grpc", null, "grpc")]
-        [InlineData("http/protobuf", null, "http/protobuf")]
-        [InlineData(null, "grpc", "grpc")]
-        [InlineData(null, null, "http/protobuf")]
-        [InlineData("invalid", null, "http/protobuf")]
-        public void OtlpProtocolFallbacks(string metricsProtocol, string generalProtocol, string expected)
+        [InlineData(null, null, OtlpProtocol.HttpProtobuf)]
+        [InlineData("invalid", null, OtlpProtocol.HttpProtobuf)]
+        [InlineData("grpc", null, OtlpProtocol.Grpc)]
+        [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
+        [InlineData(null, "http/json", OtlpProtocol.HttpJson)]
+        public void OtlpProtocolFallbacks(string metricsProtocol, string generalProtocol, object expected)
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, metricsProtocol),
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol));
             var settings = new TracerSettings(source);
 
-            settings.OtlpProtocol.Should().Be(expected);
+            settings.OtlpMetricsProtocol.Should().Be((OtlpProtocol)expected);
+        }
+
+        [Theory]
+        [InlineData("v1", SchemaVersion.V1)]
+        [InlineData("V1", SchemaVersion.V1)]
+        [InlineData("", SchemaVersion.V0)]
+        [InlineData(null, SchemaVersion.V0)]
+        [InlineData("v1 ", SchemaVersion.V0)]
+        public void MetadatsaSchemaVersion(string value, object expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.MetadataSchemaVersion, value));
+            var settings = new TracerSettings(source);
+
+            settings.MetadataSchemaVersion.Should().Be((SchemaVersion)expected);
         }
 
         [Theory]
@@ -1472,20 +1470,20 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, metricsEndpoint));
             var settings = new TracerSettings(source);
 
-            settings.OtlpEndpoint.Should().Be(expected);
+            settings.OtlpMetricsEndpoint.Should().Be(expected);
         }
 
         [Theory]
-        [InlineData("delta", "delta")]
-        [InlineData("cumulative", "cumulative")]
-        [InlineData("lowmemory", "lowmemory")]
-        [InlineData(null, "delta")]
-        public void OtlpTemporalityPreference(string value, string expected)
+        [InlineData("DELTA", OtlpTemporality.Delta)]
+        [InlineData("cumulative", OtlpTemporality.Cumulative)]
+        [InlineData("loWmemOry", OtlpTemporality.LowMemory)]
+        [InlineData(null, OtlpTemporality.Delta)]
+        public void OtlpTemporalityPreference(string value, object expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, value));
             var settings = new TracerSettings(source);
 
-            settings.OtlpTemporalityPreference.Should().Be(expected);
+            settings.OtlpMetricsTemporalityPreference.Should().Be((OtlpTemporality)expected);
         }
 
         [Fact]
@@ -1493,10 +1491,26 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, "api-key=secret,auth=token"));
             var settings = new TracerSettings(source);
-            
+
             settings.OtlpMetricsHeaders.Should().HaveCount(2);
             settings.OtlpMetricsHeaders["api-key"].Should().Be("secret");
             settings.OtlpMetricsHeaders["auth"].Should().Be("token");
+        }
+
+        private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)
+        {
+            if (newErrorKeyValue is not null || deprecatedErrorKeyValue is not null)
+            {
+                Assert.True(result[int.Parse(expectedErrorRange)]);
+            }
+            else
+            {
+                var statusCodeLimitsRange = expectedErrorRange.Split('-');
+                for (var i = int.Parse(statusCodeLimitsRange[0]); i <= int.Parse(statusCodeLimitsRange[1]); i++)
+                {
+                    Assert.True(result[i]);
+                }
+            }
         }
     }
 }

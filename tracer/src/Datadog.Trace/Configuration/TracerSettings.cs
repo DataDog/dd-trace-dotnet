@@ -402,10 +402,12 @@ namespace Datadog.Trace.Configuration
                         .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter)
                         .AsString(defaultValue: "otlp");
 
-            var otelRuntimeMetricsEnabled = string.Equals(OtelMetricsExporter, "none", StringComparison.OrdinalIgnoreCase)
-                ? ParsingResult<bool>.Success(result: false)
-                : ParsingResult<bool>.Failure();
-            
+            var otelRuntimeMetricsEnabled = config
+                              .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter)
+                              .AsBoolResult(
+                                   value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                                ? ParsingResult<bool>.Success(result: false)
+                                                : ParsingResult<bool>.Failure());
             _runtimeMetricsEnabled = config
                             .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
                             .AsBoolResult()
@@ -419,28 +421,34 @@ namespace Datadog.Trace.Configuration
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportTimeout)
                             .AsInt32(defaultValue: 7500);
 
-            var otlpMetricsProtocol = config
-                          .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
-                          .AsString(defaultValue: "http/protobuf");
-              
-            OtlpMetricsProtocol = otlpMetricsProtocol switch
-            {
-                "http/protobuf" or "grpc" or "http/json" => otlpMetricsProtocol,
-                _ => (Log.Error("Unsupported OTLP protocol '{Protocol}'. Using default: http/protobuf", otlpMetricsProtocol), "http/protobuf").Item2
-            };
+            OtlpMetricsProtocol = config
+                                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
+                                 .GetAs(
+                                      defaultValue: new(OtlpProtocol.HttpProtobuf, "http/protobuf"),
+                                      converter: x => x.ToLowerInvariant() switch
+                                      {
+                                          "http/protobuf" => OtlpProtocol.HttpProtobuf,
+                                          "grpc" => OtlpProtocol.Grpc,
+                                          "http/json" => OtlpProtocol.HttpJson,
+                                          _ => UnsupportedOtlpProtocol(x),
+                                      },
+                                      validator: null);
 
-            OtlpEndpoint = config
+            OtlpMetricsEndpoint = config
                           .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
                           .AsString(defaultValue: "http://localhost:4318/v1/metrics");
 
-            if (OtlpProtocol.StartsWith("http/", StringComparison.OrdinalIgnoreCase) && !OtlpEndpoint.EndsWith("/v1/metrics"))
+            if ((OtlpMetricsProtocol == OtlpProtocol.HttpProtobuf || OtlpMetricsProtocol == OtlpProtocol.HttpJson) && !OtlpMetricsEndpoint.EndsWith("/v1/metrics"))
             {
-                OtlpEndpoint = $"{OtlpEndpoint.TrimEnd('/')}/v1/metrics";
+                OtlpMetricsEndpoint = $"{OtlpMetricsEndpoint.TrimEnd('/')}/v1/metrics";
             }
 
             OtlpMetricsHeaders = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders)
-                            .AsDictionaryResult(separator: '=');
+                                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders)
+                                .AsDictionaryResult(separator: '=')
+                                .WithDefault(defaultValue: ReadOnlyDictionary.Empty)
+                                .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 
             OtlpMetricsTimeout = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeout, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeout)
@@ -448,7 +456,16 @@ namespace Datadog.Trace.Configuration
 
             OtlpMetricsTemporalityPreference = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference)
-                            .AsString(defaultValue: "delta");
+                            .GetAs(
+                                   defaultValue: new(OtlpTemporality.Delta, "delta"),
+                                   converter: x => x.ToLowerInvariant() switch
+                                   {
+                                       "cumulative" => OtlpTemporality.Cumulative,
+                                       "delta" => OtlpTemporality.Delta,
+                                       "lowmemory" => OtlpTemporality.LowMemory,
+                                       _ => ParsingResult<OtlpTemporality>.Failure(),
+                                   },
+                                   validator: null);
 
             DataPipelineEnabled = config
                             .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
@@ -965,14 +982,14 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
-        internal string OtlpMetricsProtocol { get; }
+        internal OtlpProtocol OtlpMetricsProtocol { get; }
 
         /// <summary>
         /// Gets the OTLP endpoint URL for metrics export with fallback behavior.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
-        internal string OtlpEndpoint { get; }
+        internal string OtlpMetricsEndpoint { get; }
 
         /// <summary>
         /// Gets the OTLP headers for metrics export with fallback behavior.
@@ -980,7 +997,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
-        internal IDictionary<string, string> OtlpMetricsHeaders { get; }
+        internal IReadOnlyDictionary<string, string> OtlpMetricsHeaders { get; }
 
         /// <summary>
         /// Gets the OpenTelemetry metric export interval (in milliseconds) between export attempts.
@@ -1009,7 +1026,7 @@ namespace Datadog.Trace.Configuration
         /// Default is 'delta' for Datadog - deviates from OTel spec default of 'cumulative'.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference"/>
-        internal string OtlpMetricsTemporalityPreference { get; }
+        internal OtlpTemporality OtlpMetricsTemporalityPreference { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.
@@ -1718,6 +1735,12 @@ namespace Datadog.Trace.Configuration
                 Log.Warning("Wrong setting '{PropagationInput}' for DD_DBM_PROPAGATION_MODE supported values include: disabled, service or full", inputValue);
                 return null;
             }
+        }
+
+        private static ParsingResult<OtlpProtocol> UnsupportedOtlpProtocol(string inputValue)
+        {
+            Log.Error("Unsupported OTLP protocol '{Protocol}'. Supported values are 'http/protobuf', 'grpc', 'http/json'. Using default: http/protobuf", inputValue);
+            return ParsingResult<OtlpProtocol>.Failure();
         }
 
         internal static TracerSettings Create(Dictionary<string, object?> settings)
