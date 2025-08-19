@@ -190,7 +190,7 @@ internal static class DatadogLoggingFactory
             logDirectory = GetDefaultLogDirectory(source, telemetry);
         }
 
-        if (Directory.Exists(logDirectory) || TryCreateLogDirectory(logDirectory))
+        if (logDirectory != null && (Directory.Exists(logDirectory) || TryCreateLogDirectory(logDirectory)))
         {
             return logDirectory;
         }
