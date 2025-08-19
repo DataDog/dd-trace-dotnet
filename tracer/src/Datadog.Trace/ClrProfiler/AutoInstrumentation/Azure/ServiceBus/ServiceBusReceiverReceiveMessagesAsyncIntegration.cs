@@ -232,68 +232,87 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             var context = new Propagators.PropagationContext(scope.Span.Context, Baggage.Current);
             var injectedCount = 0;
 
+            Log.Information("ServiceBusReceiver: Starting re-injection for {Count} messages", messagesList.Count.ToString());
+
             foreach (var message in messagesList)
             {
                 Log.Debug(
-                    "ServiceBusReceiver: Processing message for re-injection, null? {IsNull}, Type: {Type}",
-                    (message == null).ToString(),
+                    "ServiceBusReceiver: Processing message {Index}, Type: {Type}",
+                    injectedCount.ToString(),
                     message?.GetType().FullName ?? "null");
 
                 if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
                 {
-                    if (serviceBusMessage.ApplicationProperties != null)
-                    {
-                        Log.Debug(
-                            "ServiceBusReceiver: Before re-injection, ApplicationProperties count: {Count}",
-                            serviceBusMessage.ApplicationProperties.Count.ToString());
+                    Log.Debug("ServiceBusReceiver: Duck cast successful, checking AmqpMessage");
 
-                        // Log properties before injection
-                        foreach (var kvp in serviceBusMessage.ApplicationProperties)
+                    // Access the internal AmqpMessage to get the mutable ApplicationProperties
+                    var amqpMessage = serviceBusMessage.AmqpMessage;
+
+                    Log.Debug(
+                        "ServiceBusReceiver: AmqpMessage is null? {IsNull}, Instance is null? {InstanceNull}",
+                        (amqpMessage == null).ToString(),
+                        (amqpMessage?.Instance == null).ToString());
+                    if (amqpMessage?.ApplicationProperties != null)
+                    {
+                        var countBefore = amqpMessage.ApplicationProperties.Count;
+                        Log.Information(
+                            "ServiceBusReceiver: Using AmqpMessage.ApplicationProperties for injection, count before: {Count}",
+                            countBefore.ToString());
+
+                        // Log existing trace headers before injection
+                        foreach (var kvp in amqpMessage.ApplicationProperties)
                         {
                             if (kvp.Key.StartsWith("x-datadog") || kvp.Key.StartsWith("traceparent"))
                             {
-                                Log.Debug("ServiceBusReceiver: Before - Property [{Key}] = {Value}", kvp.Key, kvp.Value);
+                                Log.Debug("ServiceBusReceiver: Before injection - [{Key}] = {Value}", kvp.Key, kvp.Value?.ToString() ?? "null");
                             }
                         }
 
-                        var headerAdapter = new ServiceBusHeadersCollectionAdapter(serviceBusMessage.ApplicationProperties);
+                        // Use the mutable ApplicationProperties from AmqpMessage
+                        var headerAdapter = new ServiceBusHeadersCollectionAdapter(amqpMessage.ApplicationProperties);
                         tracer.TracerManager.SpanContextPropagator.Inject(context, headerAdapter);
                         injectedCount++;
 
-                        // Log properties after injection
-                        foreach (var kvp in serviceBusMessage.ApplicationProperties)
+                        // Log trace headers after injection
+                        foreach (var kvp in amqpMessage.ApplicationProperties)
                         {
                             if (kvp.Key.StartsWith("x-datadog") || kvp.Key.StartsWith("traceparent"))
                             {
-                                Log.Debug("ServiceBusReceiver: After - Property [{Key}] = {Value}", kvp.Key, kvp.Value);
+                                Log.Debug("ServiceBusReceiver: After injection - [{Key}] = {Value}", kvp.Key, kvp.Value?.ToString() ?? "null");
                             }
                         }
 
                         Log.Information(
-                            "ServiceBusReceiver: Re-injected context into message {Index} - TraceId: {TraceId}, SpanId: {SpanId}",
+                            "ServiceBusReceiver: Successfully re-injected context into message {Index} - TraceId: {TraceId}, SpanId: {SpanId}, Count after: {CountAfter}",
                             injectedCount,
                             scope.Span.Context.TraceId128,
-                            scope.Span.Context.SpanId);
+                            scope.Span.Context.SpanId,
+                            amqpMessage.ApplicationProperties.Count);
                     }
                     else
                     {
-                        Log.Warning("ServiceBusReceiver: Message has null ApplicationProperties, cannot re-inject");
+                        Log.Warning(
+                            "ServiceBusReceiver: AmqpMessage is {AmqpNull}, ApplicationProperties is {PropsNull}",
+                            (amqpMessage == null).ToString(),
+                            (amqpMessage?.ApplicationProperties == null).ToString());
                     }
                 }
                 else
                 {
-                    Log.Warning("ServiceBusReceiver: Failed to duck cast message for re-injection");
+                    Log.Warning(
+                        "ServiceBusReceiver: Failed to duck cast message type {Type} for re-injection",
+                        message?.GetType().FullName ?? "null");
                 }
             }
 
             Log.Information(
-                "ServiceBusReceiver: Re-injection complete. Injected into {Count} of {Total} messages",
+                "ServiceBusReceiver: Re-injection complete. Successfully injected into {Count} of {Total} messages",
                 injectedCount.ToString(),
                 messagesList.Count.ToString());
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "ServiceBusReceiver: Error re-injecting context into ServiceBus messages");
+            Log.Error(ex, "ServiceBusReceiver: Error re-injecting context into ServiceBus messages - {Message}", ex.Message);
         }
     }
 
