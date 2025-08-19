@@ -114,6 +114,8 @@ update-bp-infra:
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
     K6_OPTIONS_HIGH_LOAD_VUS: 2
 
+    DD_RUNTIME_METRICS_ENABLED: true
+
 baseline-x86:
   extends: .benchmarks-x86
   variables:
@@ -292,6 +294,8 @@ profiler_cpu_timer_create-x86:
     K6_OPTIONS_HIGH_LOAD_DURATION: 5m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
     K6_OPTIONS_HIGH_LOAD_VUS: 2
+
+    DD_RUNTIME_METRICS_ENABLED: true
 
 baseline-arm64:
   extends: .benchmarks-arm64
@@ -480,6 +484,8 @@ profiler_cpu_timer_create-arm64:
     K6_OPTIONS_HIGH_LOAD_DURATION: 5m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
     K6_OPTIONS_HIGH_LOAD_VUS: 2
+
+    DD_RUNTIME_METRICS_ENABLED: true
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
@@ -599,4 +605,3 @@ profiler_cpu_timer_create-win:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-
