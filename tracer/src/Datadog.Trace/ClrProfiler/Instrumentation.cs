@@ -463,6 +463,10 @@ namespace Datadog.Trace.ClrProfiler
                         }
                     });
             }
+            else
+            {
+                Log.Information($"Dynamic Instrumentation is disabled. To enable it, please set {ConfigurationKeys.Debugger.DynamicInstrumentationEnabled} environment variable to 'true'.");
+            }
         }
 
         // /!\ This method is called by reflection in the SampleHelpers
