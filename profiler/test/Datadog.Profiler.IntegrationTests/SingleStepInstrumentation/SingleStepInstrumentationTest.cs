@@ -99,7 +99,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             // For preview and old runtimes we have to force injection
-            runner.Environment.SetVariable(EnvironmentVariables.DD_INJECT_FORCE, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiInjectionForced, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -114,7 +114,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             // For preview and old runtimes we have to force injection
-            runner.Environment.SetVariable(EnvironmentVariables.DD_INJECT_FORCE, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiInjectionForced, "1");
             runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
@@ -222,7 +222,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             // For preview and old runtimes we have to force injection
-            runner.Environment.SetVariable(EnvironmentVariables.DD_INJECT_FORCE, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiInjectionForced, "1");
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
 
@@ -305,7 +305,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed and enabled with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
             // For preview and old runtimes we have to force injection
-            runner.Environment.SetVariable(EnvironmentVariables.DD_INJECT_FORCE, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiInjectionForced, "1");
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, TimeSpan.FromSeconds(6).TotalMilliseconds.ToString());
 
