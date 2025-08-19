@@ -2523,6 +2523,15 @@ partial class Build
            await CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning, reportablePatterns);
        });
 
+    Target ExtractMetricsFromLogs => _ => _
+       .Unlisted()
+       .Description("Reads the logs from build_data, extracts the metrics, and submits them to Datadog")
+       .Executes(async () =>
+       {
+           var logDirectory = BuildDataDirectory / "logs";
+           await LogParser.ReportNativeMetrics(logDirectory);
+       });
+
     private async Task CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel, List<(string IgnoreReasonTag, Regex Regex)> reportablePatterns)
     {
         var logDirectory = BuildDataDirectory / "logs";

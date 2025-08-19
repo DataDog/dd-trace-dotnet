@@ -4902,7 +4902,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
         apikey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: installer_chiseled_smoke_tests
@@ -5065,7 +5065,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: trimmed_installer_smoke_tests
   dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
@@ -5137,7 +5137,7 @@ stages:
           parameters:
             build: true
             baseImage: alpine
-            command: "CheckSmokeTestsForErrors"
+            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_nuget_smoke_tests_linux
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5201,7 +5201,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_smoke_tests_linux
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5269,7 +5269,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_self_instrument_smoke_tests_linux
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5346,7 +5346,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: installer_smoke_tests_arm64
   dependsOn: [package_arm64, generate_variables, merge_commit_id]
@@ -5428,7 +5428,7 @@ stages:
           parameters:
             build: true
             baseImage: alpine
-            command: "CheckSmokeTestsForErrors"
+            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: installer_chiseled_smoke_tests_arm64
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5591,7 +5591,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_smoke_tests_arm64
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5654,7 +5654,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: nuget_installer_smoke_tests_windows
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
