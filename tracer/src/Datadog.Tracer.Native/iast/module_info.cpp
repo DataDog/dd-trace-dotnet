@@ -112,7 +112,7 @@ HRESULT ModuleInfo::GetTypeDef(const WSTRING& typeName, mdTypeDef* pTypeDef)
     {
         mdTypeDef parentTypeDef;
         mdTypeDef typeDef = 0;
-        for (int x = 0; x < parts.size(); x++)
+        for (size_t x = 0; x < parts.size(); x++)
         {
             hr = _metadataImport->FindTypeDefByName(parts[x].c_str(), typeDef, &parentTypeDef);
             if (SUCCEEDED(hr))
