@@ -389,7 +389,7 @@ public static partial class LogParser
                     try
                     {
                         // native logs are on one line
-                        var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, dateFormat, null);
+                        var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, dateFormat, CultureInfo.InvariantCulture);
                         var level = ParseNativeLogLevel(match.Groups[2].Value);
                         var message = match.Groups[3].Value;
                         currentLine = new ParsedLogLine(timestamp, level, message, logFile);
