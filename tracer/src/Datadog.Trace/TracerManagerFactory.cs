@@ -19,7 +19,6 @@ using Datadog.Trace.Iast;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
-using Datadog.Trace.LibDatadog.Logging;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -388,7 +387,7 @@ namespace Datadog.Trace
                     // If this was previously initialized, it will be re-initialized with the new settings, which is fine
                     if (Log.FileLoggingConfiguration is { } fileConfig)
                     {
-                        var logger = Logger.Instance;
+                        var logger = LibDatadog.Logging.Logger.Instance;
                         logger.Enable(fileConfig, DomainMetadata.Instance);
 
                         // hacky to use the global setting, but about the only option we have atm

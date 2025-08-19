@@ -9,7 +9,6 @@ using System;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog;
-using Datadog.Trace.LibDatadog.Logging;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -109,7 +108,7 @@ namespace Datadog.Trace.Configuration
                 DatadogLogging.UseDefaultLevel();
             }
 
-            Logger.Instance.SetLogLevel(debugEnabled: enabled);
+            LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: enabled);
 
             TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }
@@ -126,7 +125,7 @@ namespace Datadog.Trace.Configuration
             var isLibdatadogAvailable = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
             if (isLibdatadogAvailable.IsAvailable)
             {
-                Logger.Instance.SetLogLevel(debugEnabled: false);
+                LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: false);
             }
 
             GlobalConfigurationSource.Reload(isLibdatadogAvailable.IsAvailable);
