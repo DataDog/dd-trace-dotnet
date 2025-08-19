@@ -7,6 +7,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.LibDatadog.DataPipeline;
 
@@ -15,11 +16,18 @@ namespace Datadog.Trace.LibDatadog.DataPipeline;
 /// </summary>
 internal class TraceExporterException : Exception
 {
+    private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<TraceExporterException>();
+
     public TraceExporterException(TraceExporterError exporterError)
         : base(Marshal.PtrToStringAnsi(exporterError.Msg))
     {
-        TraceExporterErrorCode = exporterError.Code;
+        if (!Enum.IsDefined(typeof(TraceExporterErrorCode), exporterError.Code))
+        {
+            Logger.Warning("Invalid TraceExporterErrorCode: {ErrorCode}", exporterError.Code);
+        }
+
+        ErrorCode = exporterError.Code;
     }
 
-    public TraceExporterErrorCode TraceExporterErrorCode { get; }
+    public TraceExporterErrorCode ErrorCode { get; }
 }
