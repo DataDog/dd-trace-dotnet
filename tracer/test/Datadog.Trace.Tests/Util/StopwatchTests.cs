@@ -22,12 +22,7 @@ namespace Datadog.Trace.Tests.Util
 
             sw.Stop();
 
-            // Extract the internal ticks
-            var stopwatchTicks = (long)typeof(Stopwatch)
-                .GetMethod("GetRawElapsedTicks", BindingFlags.Instance | BindingFlags.NonPublic)
-                .Invoke(sw, null);
-
-            var elapsed = StopwatchHelpers.GetElapsed(stopwatchTicks);
+            var elapsed = StopwatchHelpers.GetElapsed(sw.ElapsedTicks);
 
             Assert.Equal(sw.Elapsed, elapsed);
         }

@@ -87,8 +87,7 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             std::vector<mdMethodDef> methods;
             while (methodEnum->Next(1, &method, nullptr) == S_OK)
             {
-                Logger::Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId,
-                              ",MethodDef=", method.methodId, "]");
+                DBG("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId, ",MethodDef=", method.methodId, "]");
                 modules.push_back(method.moduleId);
                 methods.push_back(method.methodId);
                 total++;
@@ -346,7 +345,7 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
         return;
     }
 
-    Logger::Debug("RejitHandler::EnqueueForRejit");
+    DBG("RejitHandler::EnqueueForRejit");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), methods = std::move(modulesMethodDef),
                                     localPromise = promise, callRevertExplicitly = callRevertExplicitly]() mutable {
@@ -366,7 +365,7 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
 
 void RejitHandler::Shutdown()
 {
-    Logger::Debug("RejitHandler::Shutdown");
+    DBG("RejitHandler::Shutdown");
 
     // Wait for exiting the thread
     m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
