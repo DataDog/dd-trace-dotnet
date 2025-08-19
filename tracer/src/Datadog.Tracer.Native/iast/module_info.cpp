@@ -71,7 +71,7 @@ bool ModuleInfo::IsCoreLib()
 WSTRING ModuleInfo::GetModuleFullName()
 {
     std::stringstream res;
-    res << "(" << Hex((ULONG)_id) << ") " << shared::ToString(_name) << " [" << shared::ToString(_appDomain.Name) << "]  on "
+    res << "(" << Hex((ULONG)_id) << ") " << shared::ToString(_name) << " [" << shared::ToString(_appDomain.Name) << "]  on " 
         << shared::ToString(_path);
     return ToWSTRING(res.str());
 }
@@ -821,7 +821,7 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
         moduleInfo = GetModuleInfoByName(moduleName);
         if (!moduleInfo)
         {
-            trace::Logger::Info("Module ", moduleName, " NOT FOUND for ", GetModuleFullName());
+            trace::Logger::Info("Module ", moduleName, " NOT FOUND");
             return 0;
         }
         mdAssemblyRef assemblyRef;
@@ -864,8 +864,11 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
     {
         _mMemberImports[memberKey] = methodRef;
         auto memberRefInfo = GetMemberRefInfo(methodRef);
-        trace::Logger::Debug("DefineMemberRef : ", Hex(methodRef), " for ", memberKey,
-                             " MethodName: ", memberRefInfo->GetFullName(), " Module: ", GetModuleFullName());
+        if (trace::Logger::IsDebugEnabled())
+        {
+            trace::Logger::Debug("DefineMemberRef : ", Hex(methodRef), " for ", memberKey,
+                                 " MethodName: ", memberRefInfo->GetFullName(), " Module: ", GetModuleFullName());
+        }
         return methodRef;
     }
     else
