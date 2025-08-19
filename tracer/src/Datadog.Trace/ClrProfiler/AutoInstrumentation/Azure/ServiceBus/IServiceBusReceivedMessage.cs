@@ -15,6 +15,8 @@ internal interface IServiceBusReceivedMessage : IServiceBusMessage
 {
     public DateTimeOffset EnqueuedTime { get; }
 
+    public string? MessageId { get; }
+
     /// <summary>
     /// Gets the internal AmqpMessage - accessing internal property via duck typing
     /// </summary>

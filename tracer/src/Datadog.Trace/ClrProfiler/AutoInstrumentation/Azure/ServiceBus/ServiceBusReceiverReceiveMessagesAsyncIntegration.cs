@@ -42,27 +42,17 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int maxMessages, TimeSpan? maxWaitTime, bool isProcessor, CancellationToken cancellationToken)
         where TTarget : IServiceBusReceiver, IDuckType
     {
-        var tracer = Tracer.Instance;
-        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
-        {
-            return CallTargetState.GetDefault();
-        }
-
-        var startTime = DateTimeOffset.UtcNow;
-        return new CallTargetState(null, new ReceiveMessagesState(instance, startTime));
+        return CallTargetState.GetDefault();
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
+        where TTarget : IServiceBusReceiver, IDuckType
     {
         var tracer = Tracer.Instance;
-        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus) ||
-            !(state.State is ReceiveMessagesState stateData))
+        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
         {
             return returnValue;
         }
-
-        var receiverInstance = stateData.Instance;
-        var startTime = stateData.StartTime;
 
         // The returnValue is actually the IReadOnlyList<ServiceBusReceivedMessage>, not a Task
         // In OnAsyncMethodEnd, the CallTarget infrastructure has already unwrapped the Task for us
@@ -76,7 +66,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         }
 
         var extractionResult = ExtractContextsFromMessages(tracer, messagesList);
-        var scope = CreateAndConfigureSpan(tracer, extractionResult.ParentContext, extractionResult.SpanLinks, receiverInstance, startTime);
+        var scope = CreateAndConfigureSpan(tracer, extractionResult.ParentContext, extractionResult.SpanLinks, instance, messagesList);
 
         // Re-inject the new span context into all messages so Azure Functions will use it as parent
         // We access the internal AmqpMessage to modify the mutable ApplicationProperties
@@ -146,14 +136,15 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         return new ContextExtractionResult(null, null);
     }
 
-    private static Scope? CreateAndConfigureSpan(
+    private static Scope? CreateAndConfigureSpan<TTarget>(
         Tracer tracer,
         SpanContext? parentContext,
         IEnumerable<SpanLink>? spanLinks,
-        IServiceBusReceiver receiverInstance,
-        DateTimeOffset startTime)
+        TTarget receiverInstance,
+        System.Collections.IList? messagesList)
+        where TTarget : IServiceBusReceiver
     {
-        var scope = tracer.StartActiveInternal(OperationName, parent: parentContext, startTime: startTime, links: spanLinks);
+        var scope = tracer.StartActiveInternal(OperationName, parent: parentContext, links: spanLinks);
         var span = scope.Span;
 
         try
@@ -167,6 +158,20 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             span.SetTag(Tags.MessagingDestinationName, entityPath);
             span.SetTag(Tags.MessagingOperation, "receive");
             span.SetTag(Tags.MessagingSystem, "servicebus");
+
+            // Set MessagingMessageId if single message received
+            if (messagesList?.Count == 1)
+            {
+                var message = messagesList[0];
+                if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
+                {
+                    var messageId = serviceBusMessage.MessageId;
+                    if (!string.IsNullOrEmpty(messageId))
+                    {
+                        span.SetTag(Tags.MessagingMessageId, messageId);
+                    }
+                }
+            }
         }
         finally
         {
@@ -200,18 +205,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         catch (Exception ex)
         {
             Log.Error(ex, "ServiceBusReceiver: Error re-injecting context into ServiceBus messages");
-        }
-    }
-
-    private readonly struct ReceiveMessagesState
-    {
-        public readonly IServiceBusReceiver Instance;
-        public readonly DateTimeOffset StartTime;
-
-        public ReceiveMessagesState(IServiceBusReceiver instance, DateTimeOffset startTime)
-        {
-            Instance = instance;
-            StartTime = startTime;
         }
     }
 
