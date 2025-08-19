@@ -175,6 +175,7 @@ internal class TraceExporterConfiguration : SafeHandle
         catch (Exception ex)
         {
             Logger.Error(ex, "An error occurred while releasing the handle for TraceExporterConfiguration.");
+            return false;
         }
 
         return true;

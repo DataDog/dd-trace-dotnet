@@ -37,6 +37,7 @@ internal class TraceExporterErrorHandle : SafeHandle
         catch (Exception ex)
         {
             Logger.Error(ex, "An error occurred while releasing the handle for TraceExporterErrorHandle.");
+            return false;
         }
 
         return true;
