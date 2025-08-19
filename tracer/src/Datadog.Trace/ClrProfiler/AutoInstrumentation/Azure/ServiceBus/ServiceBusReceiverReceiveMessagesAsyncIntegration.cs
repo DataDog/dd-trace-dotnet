@@ -14,6 +14,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
@@ -73,7 +74,13 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         }
 
         var parentContext = ExtractParentContextFromFirstMessage(tracer, messagesList);
-        CreateAndConfigureSpan(tracer, parentContext, receiverInstance, startTime, exception);
+        var scope = CreateAndConfigureSpan(tracer, parentContext, receiverInstance, startTime, exception);
+
+        // Re-inject the new span context into all messages so Azure Functions will use it as parent
+        if (scope != null && messagesList != null && messageCount > 0)
+        {
+            ReinjectContextIntoMessages(tracer, scope, messagesList);
+        }
 
         return returnValue;
     }
@@ -114,7 +121,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         return null;
     }
 
-    private static void CreateAndConfigureSpan(
+    private static Scope? CreateAndConfigureSpan(
         Tracer tracer,
         SpanContext? parentContext,
         IServiceBusReceiver receiverInstance,
@@ -144,6 +151,35 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         finally
         {
             scope.Dispose();
+        }
+
+        return scope;
+    }
+
+    private static void ReinjectContextIntoMessages(Tracer tracer, Scope scope, System.Collections.IList messagesList)
+    {
+        try
+        {
+            var context = new Propagators.PropagationContext(scope.Span.Context, Baggage.Current);
+
+            foreach (var message in messagesList)
+            {
+                if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true &&
+                    serviceBusMessage.ApplicationProperties != null)
+                {
+                    var headerAdapter = new ServiceBusHeadersCollectionAdapter(serviceBusMessage.ApplicationProperties);
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, headerAdapter);
+
+                    Log.Information(
+                        "Re-injected context into message - TraceId: {TraceId}, SpanId: {SpanId}",
+                        scope.Span.Context.TraceId128,
+                        scope.Span.Context.SpanId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error re-injecting context into ServiceBus messages");
         }
     }
 
