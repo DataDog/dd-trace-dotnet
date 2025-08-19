@@ -14,6 +14,8 @@
           DestinationFiles="$(PublishDir)datadog\%(RecursiveDir)%(Filename)%(Extension)"
           OverwriteReadOnlyFiles="true" />
 
+    <RemoveDir Directories="$(PublishDir)bin\datadog"/>
+
     <Message Importance="High"
              Text="[Datadog.AzureFunctions] Restored Datadog files from &quot;$(PublishDir)bin/datadog/&quot; back to &quot;$(PublishDir)datadog/&quot;" />
   </Target>
