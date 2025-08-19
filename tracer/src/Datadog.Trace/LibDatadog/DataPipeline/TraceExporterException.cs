@@ -18,8 +18,8 @@ internal class TraceExporterException : Exception
     public TraceExporterException(TraceExporterError exporterError)
         : base(Marshal.PtrToStringAnsi(exporterError.Msg))
     {
-        ErrorCode = exporterError.Code;
+        TraceExporterErrorCode = exporterError.Code;
     }
 
-    public ErrorCode ErrorCode { get; }
+    public TraceExporterErrorCode TraceExporterErrorCode { get; }
 }

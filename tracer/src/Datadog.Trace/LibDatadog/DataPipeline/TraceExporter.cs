@@ -109,7 +109,7 @@ internal class TraceExporter : SafeHandle, IApi
             if (!error.IsInvalid)
             {
                 var ex = error.ToException();
-                _log.Error(ex, "An error occurred while sending data to the agent. Error Code: {ErrorCode}, Message: {Message}", ex.ErrorCode, ex.Message);
+                _log.Error(ex, "An error occurred while sending data to the agent. Error Code: {ErrorCode}, Message: {Message}", ex.TraceExporterErrorCode, ex.Message);
                 throw ex;
             }
         }
