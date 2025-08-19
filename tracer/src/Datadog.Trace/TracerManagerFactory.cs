@@ -117,7 +117,7 @@ namespace Datadog.Trace
                 Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
             }
 
-            var libdatadogAvailaibility = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
+            var libdatadogAvailaibility = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
             if (libdatadogAvailaibility.Exception is not null)
             {
                 Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");

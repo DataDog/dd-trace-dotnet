@@ -123,7 +123,7 @@ namespace Datadog.Trace.Configuration
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_Reload);
             DatadogLogging.Reset();
-            var isLibdatadogAvailable = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
+            var isLibdatadogAvailable = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
             if (isLibdatadogAvailable.IsAvailable)
             {
                 Logger.Instance.SetLogLevel(debugEnabled: false);
