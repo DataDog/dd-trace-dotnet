@@ -758,6 +758,11 @@ namespace iast
     {
         try
         {
+            if (debugLevel && !trace::Logger::IsDebugEnabled())
+            {
+                return;
+            }
+
             auto method = _body->GetMethodInfo();
             auto module = method->GetModuleInfo();
             Log(debugLevel, "Dumping IL ", extraMessage, " : ", method->GetFullName(), " ",
