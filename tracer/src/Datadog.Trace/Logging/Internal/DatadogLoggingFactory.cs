@@ -210,8 +210,7 @@ internal static class DatadogLoggingFactory
         string logDirectory;
         var isWindows = FrameworkDescription.Instance.IsWindows();
 
-        if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry) ||
-            ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry))
+        if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
         {
             var isWindows = FrameworkDescription.Instance.IsWindows();
 
