@@ -42,6 +42,15 @@ namespace Datadog.Trace
         internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
         {
             Tags = tags ?? new TagsList();
+
+            string version = string.Empty;
+
+            for (int i = 0; i < 1024; i++)
+            {
+                version += "0";
+            }
+
+            Tags.SetTag(Trace.Tags.AppSecWafVersion, version);
             Context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
 
