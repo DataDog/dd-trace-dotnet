@@ -5989,7 +5989,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-windows-x64-2
+      vmImage: windows-2022
 
     steps:
     - template: steps/install-docker-compose-v1.yml
