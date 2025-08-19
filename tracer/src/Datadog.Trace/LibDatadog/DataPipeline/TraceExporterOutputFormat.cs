@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.DataPipeline;
 
 /// <summary>
 /// Represents the format of the output traces, as expected by the trace exporter.

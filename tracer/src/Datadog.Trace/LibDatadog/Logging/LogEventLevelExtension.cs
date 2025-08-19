@@ -5,9 +5,7 @@
 
 #nullable enable
 
-using System;
-
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.Logging;
 
 internal static class LogEventLevelExtension
 {

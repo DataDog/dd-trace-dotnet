@@ -7,7 +7,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.Logging;
 
 /// <summary>
 /// Represents a configuration for a file logger.
