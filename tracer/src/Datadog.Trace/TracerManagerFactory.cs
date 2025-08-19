@@ -17,6 +17,7 @@ using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Iast;
 using Datadog.Trace.LibDatadog;
+using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -115,7 +116,7 @@ namespace Datadog.Trace
                 Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
             }
 
-            var libdatadogAvailaibility = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
+            var libdatadogAvailaibility = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
             if (libdatadogAvailaibility.Exception is not null)
             {
                 Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
@@ -386,7 +387,7 @@ namespace Datadog.Trace
                     // If this was previously initialized, it will be re-initialized with the new settings, which is fine
                     if (Log.FileLoggingConfiguration is { } fileConfig)
                     {
-                        var logger = LibDatadog.Logger.Instance;
+                        var logger = LibDatadog.Logging.Logger.Instance;
                         logger.Enable(fileConfig, DomainMetadata.Instance);
 
                         // hacky to use the global setting, but about the only option we have atm
