@@ -1486,15 +1486,19 @@ namespace Datadog.Trace.Tests.Configuration
             settings.OtlpMetricsTemporalityPreference.Should().Be((OtlpTemporality)expected);
         }
 
-        [Fact]
-        public void OtlpHeadersParsing()
+        [Theory]
+        [InlineData("api-key=secret,auth=token", null, new[] { "api-key=secret", "auth=token" })]
+        [InlineData(null, "key1 = value1 , key2 = value2 ", new[] { "key1=value1", "key2=value2" })]
+        [InlineData("valid=value,invalid-no-equals,another=valid", "fallback-key=fallback-value", new[] { "valid=value", "another=valid" })]
+        public void OtlpHeadersParsing(string primaryValue, string fallbackValue, string[] expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, "api-key=secret,auth=token"));
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, primaryValue),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, fallbackValue));
+
             var settings = new TracerSettings(source);
 
-            settings.OtlpMetricsHeaders.Should().HaveCount(2);
-            settings.OtlpMetricsHeaders["api-key"].Should().Be("secret");
-            settings.OtlpMetricsHeaders["auth"].Should().Be("token");
+            settings.OtlpMetricsHeaders.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split('=').First(), v => v.Split('=').Last()));
         }
 
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)
