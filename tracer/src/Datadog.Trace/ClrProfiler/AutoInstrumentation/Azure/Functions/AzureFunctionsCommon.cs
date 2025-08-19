@@ -17,7 +17,6 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -208,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
-                var bindingName = default(string);
+                string? bindingName = null;
                 PropagationContext extractedContext = default;
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
@@ -239,11 +238,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // e.g. Cosmos + ServiceBus, so we should handle those too
                     if (triggerType == "Http")
                     {
-                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                        bindingName = entry.Key as string;
+                        extractedContext = ExtractPropagatedContextFromHttp(context, bindingName).MergeBaggageInto(Baggage.Current);
                     }
                     else if (triggerType == "ServiceBus")
                     {
-                        extractedContext = ExtractPropagatedContextFromServiceBus(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                        extractedContext = ExtractPropagatedContextFromServiceBus(context).MergeBaggageInto(Baggage.Current);
                     }
 
                     break;
@@ -257,20 +257,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     ShortName = functionName,
                     FullName = context.FunctionDefinition.EntryPoint,
                 };
-
-                // Extract ServiceBus messaging metadata if this is a ServiceBus trigger
-                if (triggerType == "ServiceBus")
-                {
-                    var messageId = ExtractServiceBusMessageId(context, bindingName);
-                    tags.MessagingMessageId = messageId;
-
-                    // Try to extract destination name from binding metadata
-                    var destinationName = ExtractQueueNameFromFunctionMethod(context.FunctionDefinition.EntryPoint);
-                    if (!string.IsNullOrEmpty(destinationName))
-                    {
-                        tags.MessagingDestinationName = destinationName;
-                    }
-                }
 
                 if (tracer.InternalActiveScope == null)
                 {
@@ -357,7 +343,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static PropagationContext ExtractPropagatedContextFromServiceBus<T>(T context, string? bindingName)
+        private static PropagationContext ExtractPropagatedContextFromServiceBus<T>(T context)
             where T : IFunctionContext
         {
             try
@@ -415,13 +401,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return default;
                 }
 
-                // Create propagation context inline
-                bool shouldReparent = spanContexts.Count == 1 ||
+                bool areAllTheSame = spanContexts.Count == 1 ||
                                      (spanContexts.Count > 1 && AreAllContextsIdentical(spanContexts));
 
-                return shouldReparent
-                    ? new PropagationContext(spanContexts[0], Baggage.Current, null)
-                    : new PropagationContext(null, Baggage.Current, spanContexts.Select(ctx => new SpanLink(ctx)).ToList());
+                if (!areAllTheSame)
+                {
+                    Log.Warning("Multiple different contexts found in ServiceBus messages. Using first context for parentship.");
+                }
+
+                return new PropagationContext(spanContexts[0], Baggage.Current, null);
             }
             catch (Exception ex)
             {
@@ -467,66 +455,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return contexts.All(ctx =>
                 ctx.TraceId128.Equals(first.TraceId128) &&
                 ctx.SpanId == first.SpanId);
-        }
-
-        private static string? ExtractServiceBusMessageId<T>(T context, string? bindingName)
-            where T : IFunctionContext
-        {
-            try
-            {
-                // Get bindings feature
-                if (context.Features == null)
-                {
-                    return null;
-                }
-
-                GrpcBindingsFeatureStruct? bindingsFeature = null;
-                foreach (var kvp in context.Features)
-                {
-                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
-                    {
-                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
-                        break;
-                    }
-                }
-
-                if (bindingsFeature == null)
-                {
-                    return null;
-                }
-
-                var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
-
-                // Extract message ID for single message only (not for batches)
-                string? messageId = null;
-                if (triggerMetadata?.TryGetValue("MessageId", out var msgIdObj) == true && msgIdObj is string msgId)
-                {
-                    messageId = msgId;
-                }
-
-                // Don't extract messageId if this is a batch (UserPropertiesArray indicates batch)
-                else if (triggerMetadata?.ContainsKey("UserPropertiesArray") == true)
-                {
-                    messageId = null; // Explicitly null for batch triggers
-                }
-
-                return messageId;
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error extracting ServiceBus message ID");
-                return null;
-            }
-        }
-
-        private static string? ExtractQueueNameFromFunctionMethod(string? entryPoint)
-        {
-            if (string.IsNullOrEmpty(entryPoint))
-            {
-                return null;
-            }
-
-            return AttributeReflectionHelper.ExtractAttributeProperty(entryPoint!, "ServiceBusTriggerAttribute", "QueueName", "TopicName");
         }
     }
 }
