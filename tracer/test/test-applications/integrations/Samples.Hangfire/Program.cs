@@ -1,52 +1,71 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Hangfire;
 using Hangfire.MemoryStorage;
+using Hangfire.States;
+using Samples.Hangfire.Infrastructure;
+using Samples.Hangfire.Jobs;
 
-namespace Samples.Hangfire
+namespace Samples.Hangfire;
+
+public class Program
 {
-    public class Program
+    private static readonly ActivitySource AdditionalActivitySource = new("AdditionalActivitySource");
+    public static async Task Main(string[] args)
     {
-        private static readonly ActivitySource AdditionalActivitySource = new("AdditionalActivitySource");
+        GlobalConfiguration.Configuration
+                           .UseSimpleAssemblyNameTypeSerializer()
+                           .UseRecommendedSerializerSettings()
+                           .UseMemoryStorage();
 
-        public static async Task Main(string[] args)
+        GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute
         {
-            GlobalConfiguration.Configuration
-                               .UseSimpleAssemblyNameTypeSerializer()
-                               .UseRecommendedSerializerSettings()
-                               .UseColouredConsoleLogProvider()
-                               .UseMemoryStorage();
-            
-            
-            GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute
-            {
-                Attempts = 0,
-                OnAttemptsExceeded = AttemptsExceededAction.Delete, // or Fail
-                LogEvents = false
-            });
-            GlobalJobFilters.Filters.Add(new LogEverythingAttribute());
-            
+            Attempts = 0,
+            OnAttemptsExceeded = AttemptsExceededAction.Fail,
+            LogEvents = false
+        });
+        GlobalJobFilters.Filters.Add(new JobCompletionFilter());
+
+        Console.WriteLine("Starting Hangfire server...");
+        using var server = new BackgroundJobServer();
+
+        try
+        {
             using var localActivity = AdditionalActivitySource.StartActivity(name: "OtelParent");
-            Console.WriteLine("before starting server");
-            using var server = new BackgroundJobServer();
-            Console.WriteLine("after starting server");
+            // run tests
             await Should_Create_Span();
             await Should_Create_Span_With_Status_Error_When_Job_Failed();
-            
-            Console.ReadLine();
         }
-
-        public static async Task Should_Create_Span()
+        finally
         {
-            Console.WriteLine("before Should_Create_Span");
-            BackgroundJob.Enqueue<TestJob>(x => x.Execute());
-            Console.WriteLine("after Should_Create_Span");
+            Console.WriteLine("All jobs done. Stopping server...");
+            // disposing will wait for workers to drain
         }
+    }
 
-        public static async Task Should_Create_Span_With_Status_Error_When_Job_Failed()
+    private static async Task Should_Create_Span()
+    {
+        var jobId = BackgroundJob.Enqueue<TestJob>(x => x.Execute());
+
+        var result = await JobCompletion.Register(jobId, new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token);
+
+        Console.WriteLine($"Job {result.JobId} completed successfully = {result.Succeeded}");
+    }
+
+    private static async Task Should_Create_Span_With_Status_Error_When_Job_Failed()
+    {
+        var jobId = BackgroundJob.Enqueue<TestJob>(x => x.ThrowException());
+
+        try
         {
-            BackgroundJob.Enqueue<TestJob>(x => x.ThrowException());
+            await JobCompletion.Register(jobId, new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token);
+            throw new Exception("Expected failure but job succeeded.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Expected failure observed for job {jobId}: {ex.Message}");
         }
     }
 }
