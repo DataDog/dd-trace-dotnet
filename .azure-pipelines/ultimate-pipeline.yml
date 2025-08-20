@@ -6037,6 +6037,14 @@ stages:
       condition: always()
       continueOnError: true
 
+    - bash: |
+        echo "os: $smokeTestOs"
+        echo "os: $SMOKETESTOS"
+        echo "publishFramework: $publishFramework"
+        echo "publishFramework: $PUBLISHFRAMEWORK"
+        echo "$DD_API_KEY_PROD"
+      displayName: "Debugging"
+
     - template: steps/install-latest-dotnet-sdk.yml
     - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
       displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
