@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             try
             {
-                return info.UseShellExecute ? null : info.Environment;
+                return info.Environment;
             }
             catch (ArgumentException ex)
             {
