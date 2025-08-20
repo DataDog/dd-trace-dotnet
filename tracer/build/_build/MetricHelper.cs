@@ -32,9 +32,9 @@ public static class MetricHelper
                              "ci.stage:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_STAGEDISPLAYNAME"))}}",
                              "ci.job:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_JOBDISPLAYNAME"))}}",
                              "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
-                             "target_framework:{{SanitizeTagValue(Environment.GetEnvironmentVariable("publishFramework"))}}",
-                             "os:{{SanitizeTagValue(Environment.GetEnvironmentVariable("smokeTestOs"))}}",
-                             "os_version:{{SanitizeTagValue(Environment.GetEnvironmentVariable("smokeTestOsVersion"))}}",
+                             "target_framework:{{SanitizeTagValue(Environment.GetEnvironmentVariable("PUBLISHFRAMEWORK"))}}",
+                             "os:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOS"))}}",
+                             "os_version:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOSVERSION"))}}",
                              "error_reason:{{SanitizeTagValue(errorReason)}}"
                          """;
 
@@ -60,9 +60,9 @@ public static class MetricHelper
                              "ci.stage:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_STAGEDISPLAYNAME"))}}",
                              "ci.job:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_JOBDISPLAYNAME"))}}",
                              "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
-                             "target_framework:{{SanitizeTagValue(Environment.GetEnvironmentVariable("publishFramework"))}}",
-                             "os:{{SanitizeTagValue(Environment.GetEnvironmentVariable("smokeTestOs"))}}",
-                             "os_version:{{SanitizeTagValue(Environment.GetEnvironmentVariable("smokeTestOsVersion"))}}"
+                             "target_framework:{{SanitizeTagValue(Environment.GetEnvironmentVariable("PUBLISHFRAMEWORK"))}}",
+                             "os:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOS"))}}",
+                             "os_version:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOSVERSION"))}}"
                          """;
 
         var allSeries = distributions
