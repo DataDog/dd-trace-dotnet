@@ -64,6 +64,6 @@ internal class TraceExporterResponse(IntPtr handle) : SafeHandle(handle, true)
             return null;
         }
 
-        return System.Text.Encoding.UTF8.GetString((byte*)body, (int)bodyLen);
+        return Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetString((byte*)body, (int)bodyLen);
     }
 }
