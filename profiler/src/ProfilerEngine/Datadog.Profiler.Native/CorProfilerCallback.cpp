@@ -64,7 +64,6 @@
 #include "CpuSampleProvider.h"
 #endif
 
-#include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
 
@@ -719,7 +718,7 @@ void CorProfilerCallback::OnStartDelayedProfiling()
 
 // This function is called from managed code to enable/disable/auto the profiler + provide per runtimeID details
 // The enablement is taken into account only for the first call and for the others, only runtimeID details are updated.
-bool CorProfilerCallback::SetConfiguration(SharedConfig config)
+bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig config)
 {
     if (!_IsManagedConfigurationSet)
     {
@@ -728,22 +727,22 @@ bool CorProfilerCallback::SetConfiguration(SharedConfig config)
         // Take into account the enablement computed by the managed layer:
         Log::Info("Managed layer provides Stable Configuration.");
         EnablementStatus enablementStatus =
-            (config.profilingEnabled == ProfilingEnabled::ProfilingAuto) ? EnablementStatus::Auto
-            : (config.profilingEnabled == ProfilingEnabled::ProfilingEnabledTrue)
+            (config.profilingEnabled == shared::StableConfig::ProfilingEnabled::ProfilingAuto) ? EnablementStatus::Auto
+            : (config.profilingEnabled == shared::StableConfig::ProfilingEnabled::ProfilingEnabledTrue)
                 ? EnablementStatus::ManuallyEnabled
                 : EnablementStatus::ManuallyDisabled;
         _pConfiguration->SetEnablementStatus(enablementStatus);
 
         // propagate the enablement status
-        if (config.profilingEnabled == ProfilingEnabled::ProfilingDisabled)
+        if (config.profilingEnabled == shared::StableConfig::ProfilingEnabled::ProfilingDisabled)
         {
             Log::Info("Profiler is disabled via Stable Configuration");
             return true;
         }
         else
         if (
-            (config.profilingEnabled == ProfilingEnabled::ProfilingAuto) ||
-            (config.profilingEnabled == ProfilingEnabled::ProfilingEnabledTrue)
+            (config.profilingEnabled == shared::StableConfig::ProfilingEnabled::ProfilingAuto) ||
+            (config.profilingEnabled == shared::StableConfig::ProfilingEnabled::ProfilingEnabledTrue)
             )
         {
             _pSsiManager->OnStableConfiguration();

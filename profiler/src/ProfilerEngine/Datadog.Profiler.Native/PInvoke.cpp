@@ -189,7 +189,7 @@ extern "C" void __stdcall FlushProfile()
     profiler->GetSamplesCollector()->Export();
 }
 
-extern "C" bool SetConfiguration(SharedConfig config)
+extern "C" bool SetConfiguration(shared::StableConfig::SharedConfig config)
 {
     const auto profiler = CorProfilerCallback::GetInstance();
 

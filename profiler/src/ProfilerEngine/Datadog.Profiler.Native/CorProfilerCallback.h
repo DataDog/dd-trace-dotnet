@@ -208,7 +208,7 @@ public:
 
     // for Stable Configuration, the managed layer will enable/disable the profiler
     // but also will provide values "dynamically" computed for environment/version/service name
-    bool SetConfiguration(SharedConfig config);
+    bool SetConfiguration(shared::StableConfig::SharedConfig config);
 
 // Access to global services
 // All services are allocated/started and stopped/deleted by the CorProfilerCallback (no need to use unique_ptr/shared_ptr)
