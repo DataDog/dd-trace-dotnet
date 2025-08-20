@@ -489,7 +489,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
-                Log.Information($"Dynamic Instrumentation is disabled. To enable it, please set {ConfigurationKeys.Debugger.DynamicInstrumentationEnabled} environment variable to 'true'.");
+                Log.Information($"Dynamic Instrumentation is disabled. To enable it, please set {Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled} environment variable to 'true'.");
             }
         }
 
