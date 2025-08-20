@@ -411,7 +411,7 @@ namespace Datadog.Trace.Configuration
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: FrameworkDescription.Instance.IsWindows());
+                                  .AsBool(defaultValue: FrameworkDescription.Instance.IsWindows() || FrameworkDescription.Instance.IsLinux());
 
             if (DataPipelineEnabled)
             {
