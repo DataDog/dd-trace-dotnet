@@ -422,7 +422,7 @@ namespace Datadog.Trace.TestHelpers
                                      "target.framework:{{SanitizeTagValue(FrameworkDescription.Instance.ProductVersion)}}",
                                      "test.name:{{SanitizeTagValue(testFullName)}}",
                                      "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
-                                     "flaky_retry_reason: {{SanitizeTagValue(reason)}}",
+                                     "flaky_retry_reason: {{SanitizeTagValue(reason)}}"
                                  """;
 
                     var payload = $$"""

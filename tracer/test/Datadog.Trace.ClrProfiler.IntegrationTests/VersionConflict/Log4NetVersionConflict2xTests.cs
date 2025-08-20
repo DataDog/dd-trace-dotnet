@@ -42,8 +42,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         [Trait("RunOnWindows", "True")]
         public async Task InjectsLogsWhenEnabled()
         {
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
-
             var expectedCorrelatedTraceCount = 1;
             var expectedCorrelatedSpanCount = 8;
 
@@ -51,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             using (var agent = MockTracerAgent.Create(Output, agentPort))
             using (await RunSampleAndWaitForExit(agent))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 ValidateLogCorrelation(spans, _nlog205LogFileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount);

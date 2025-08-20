@@ -87,8 +87,7 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             std::vector<mdMethodDef> methods;
             while (methodEnum->Next(1, &method, nullptr) == S_OK)
             {
-                Logger::Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId,
-                              ",MethodDef=", method.methodId, "]");
+                DBG("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId, ",MethodDef=", method.methodId, "]");
                 modules.push_back(method.moduleId);
                 methods.push_back(method.methodId);
                 total++;
@@ -294,7 +293,7 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
             if (enable_rejit_tracking)
             {
                 WriteLock wlock(m_rejit_history_lock);
-                for (auto i = 0; i < modulesVector.size(); i++)
+                for (size_t i = 0; i < modulesVector.size(); i++)
                 {
                     m_rejit_history.push_back({modulesVector[i], modulesMethodDef[i]});
                 }
@@ -346,7 +345,7 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
         return;
     }
 
-    Logger::Debug("RejitHandler::EnqueueForRejit");
+    DBG("RejitHandler::EnqueueForRejit");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), methods = std::move(modulesMethodDef),
                                     localPromise = promise, callRevertExplicitly = callRevertExplicitly]() mutable {
@@ -366,7 +365,7 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
 
 void RejitHandler::Shutdown()
 {
-    Logger::Debug("RejitHandler::Shutdown");
+    DBG("RejitHandler::Shutdown");
 
     // Wait for exiting the thread
     m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
@@ -533,7 +532,7 @@ bool RejitHandler::HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef) {
     }
 
     ReadLock rlock(m_rejit_history_lock);
-    for (auto i = 0; i < m_rejit_history.size(); i++)
+    for (size_t i = 0; i < m_rejit_history.size(); i++)
     {
         const auto mod_met_pair = m_rejit_history[i];
         if (get<0>(mod_met_pair) == moduleId && get<1>(mod_met_pair) == methodDef)

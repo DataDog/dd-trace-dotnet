@@ -90,6 +90,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+            FilterConnectionHeader(settings);
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
         }
 
@@ -103,6 +104,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url = "/api/Health";
 
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            FilterConnectionHeader(settings);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
 
@@ -117,6 +119,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+            FilterConnectionHeader(settings);
 
             var expectedSpans = test == AddressesConstants.RequestPathParams ? 1 : 2;
 
@@ -136,11 +139,12 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url2 = "/api/home/null-action-async/pathparam/appscan_fingerprint";
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseTextForParameters($"scenario=null-action");
+            FilterConnectionHeader(settings);
             var dateTime = DateTime.UtcNow;
             var res = await SubmitRequest(url, null, null);
             var res2 = await SubmitRequest(url2, null, null);
-            var spans = WaitForSpans(_iisFixture.Agent, 2, null, minDateTime: dateTime, url: url);
-            var spans2 = WaitForSpans(_iisFixture.Agent, 2, null, minDateTime: dateTime, url: url2);
+            var spans = await WaitForSpansAsync(_iisFixture.Agent, 2, null, minDateTime: dateTime, url: url);
+            var spans2 = await WaitForSpansAsync(_iisFixture.Agent, 2, null, minDateTime: dateTime, url: url2);
             await VerifySpans(spans.Concat(spans2).ToImmutableList(), settings);
         }
 

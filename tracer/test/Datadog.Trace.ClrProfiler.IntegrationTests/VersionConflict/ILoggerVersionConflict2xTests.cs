@@ -29,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             : base(output, "LogsInjection.ILogger.VersionConflict.2x")
         {
             SetServiceVersion("1.0.0");
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
             // When doing log injection for CI, only emit 64-bit trace-ids.
             // By default, the version conflict results in both 64-bit trace-ids
@@ -62,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, aspNetCorePort: 0))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);
 
                 ValidateLogCorrelation(spans, _logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, use128Bits: false);

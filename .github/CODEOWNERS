@@ -11,6 +11,27 @@
 # IDM
 /tracer/test/test-applications/integrations/                                                            @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 
+# Capabilities, API, and OpenTelemetry
+
+/tracer/src/Datadog.Trace.Manual/                                                                       @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/Activity/                                                                     @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/                                @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/                        @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/                             @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+
+/tracer/test/test-applications/integrations/Samples.ManualInstrumentation/                              @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.NetActivitySdk/                                     @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.OpenTelemetrySdk/                                   @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.TraceAnnotations/                                   @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.AfterFeature/      @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.BeforeFeature/     @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.NewerNuGet/        @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/ManualInstrumentationTests.cs                   @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/NetActivitySdkTests.cs                          @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/OpenTelemetrySdkTests.cs                        @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TraceAnnotationsTests.cs                        @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+
 ## DBM and DSM
 /tracer/src/Datadog.Trace/DatabaseMonitoring/                                                           @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/DataStreamsMonitoring/                                                        @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
@@ -44,16 +65,6 @@
 
 ## NON-IDM
 
-/tracer/test/test-applications/integrations/Samples.ManualInstrumentation/                              @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.NetActivitySdk/                                     @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.OpenTelemetrySdk/                                   @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.TraceAnnotations/                                   @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.AfterFeature/      @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.BeforeFeature/     @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.NewerNuGet/        @DataDog/tracing-dotnet
-
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/                                @DataDog/tracing-dotnet
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/                             @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Helpers/                                        @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/SmokeTests/                                     @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TestCollections/                                @DataDog/tracing-dotnet
@@ -65,11 +76,8 @@
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CustomTestFramework.cs                          @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/DynamicConfigurationTests.cs                    @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/InstrumentationVerificationSanityCheckTests.cs  @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/ManualInstrumentationTests.cs                   @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/NativeProfilerChecks.cs                         @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/NetActivitySdkTests.cs                          @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/NoMultiLoaderTests.cs                           @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/OpenTelemetrySdkTests.cs                        @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersions.g.cs                            @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersionsLatestMajors.g.cs                @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersionsLatestMinors.g.cs                @DataDog/tracing-dotnet
@@ -77,7 +85,6 @@
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/RemotingTests.cs                                @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/RuntimeMetricsTests.cs                          @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TelemetryTests.cs                               @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TraceAnnotationsTests.cs                        @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TracerFlareTests.cs                             @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TracingIntegrationTest.cs                       @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TransportTests.cs                               @DataDog/tracing-dotnet
@@ -134,6 +141,8 @@ Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 
 # Serverless (General)
 /tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/                         @DataDog/tracing-dotnet @DataDog/apm-serverless
+/tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/HttpBypassTests.cs                  @DataDog/tracing-dotnet @DataDog/apm-serverless
+/tracer/test/Datadog.Trace.Tests/Configuration/TracerSettingsServerlessTests.cs          @DataDog/tracing-dotnet @DataDog/apm-serverless
 
 # Serverless (AWS)
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/                           @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
@@ -150,7 +159,10 @@ docker-compose.serverless.yml                                                   
 # Serverless (Azure/GCP)
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/ServerlessMiniAgent.cs   @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
+/tracer/src/Datadog.Trace/Configuration/ImmutableAzureAppServiceSettings.cs              @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
+/tracer/src/Datadog.AzureFunctions/                                                      @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/test/Datadog.Trace.Tests/ServerlessMiniAgentTests.cs                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AzureFunctionsTests.cs           @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/test/test-applications/azure-functions/                                          @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 
 # Shared code we could move to the root folder
@@ -187,6 +199,9 @@ missing-nullability-files.csv             @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/MetricTags.cs @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs @DataDog/apm-dotnet
 
+# Native loader
+/shared/src/Datadog.Trace.ClrProfiler.Native/                       @DataDog/profiling-dotnet @DataDog/apm-dotnet
+
 # Version Bump Related Files - overriding to have wider coverage
 
 /profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt @DataDog/profiling-dotnet @DataDog/apm-dotnet
@@ -221,3 +236,6 @@ missing-nullability-files.csv             @DataDog/apm-dotnet
 /tracer/src/Datadog.Tracer.Native/Resource.rc @DataDog/apm-dotnet
 /tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h @DataDog/apm-dotnet
 /tracer/tools/PipelineMonitor/PipelineMonitor.csproj @DataDog/apm-dotnet
+
+# Impacts multiple teams, so should trigger all of ASM/Debugger/tracing
+/tracer/src/Datadog.Trace/ClrProfiler/Instrumentation.cs  @DataDog/apm-dotnet @DataDog/ci-app-libraries-dotnet @DataDog/tracing-dotnet @DataDog/asm-dotnet @DataDog/debugger-dotnet

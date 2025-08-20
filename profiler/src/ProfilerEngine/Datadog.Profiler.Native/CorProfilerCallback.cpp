@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 // from dotnet coreclr includes
+
 #include "cor.h"
 #include "corprof.h"
 // end
@@ -59,6 +60,8 @@
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
 #include "LibrariesInfoCache.h"
+#include "RingBuffer.h"
+#include "CpuSampleProvider.h"
 #endif
 
 #include "shared/src/native-src/environment_variables.h"
@@ -66,6 +69,32 @@
 #include "shared/src/native-src/string.h"
 
 #include "dd_profiler_version.h"
+
+#include <cmath>
+
+void LogServiceStart(bool success, const char* name )
+{
+    if (success)
+    {
+        Log::Info(name, " started successfully.");
+    }
+    else
+    {
+        Log::Info(name, " failed to start. This service might have been started earlier.");
+    }
+}
+
+void LogServiceStop(bool success, const char* name )
+{
+    if (success)
+    {
+        Log::Info(name, " stopped successfully.");
+    }
+    else
+    {
+        Log::Info(name, " failed to stopped. This service might have been stopped earlier.");
+    }
+}
 
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
@@ -196,17 +225,35 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        shared::pmr::memory_resource* memoryResource = MemoryResourceManager::GetDefault();
-
 #ifdef LINUX
-        if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
+        if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime)
         {
-            auto const useMmap = true;
-            memoryResource = _memoryResourceManager.GetSynchronizedPool(100, 4096, useMmap);
+            _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
+                valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
         }
-#endif
+        else
+        {
+            unsigned long long nbTicks = SamplesCollector::CollectingPeriod / _pConfiguration->GetCpuProfilingInterval();
+            auto nbSamplesCollectorTick = std::max(nbTicks, 1ull);
+            double cpuAllocated = 0;
+            if (!CGroup::GetCpuLimit(&cpuAllocated))
+            {
+                cpuAllocated = OsSpecificApi::GetProcessorCount();
+            }
+
+            // It's safe to cast double to std::size_t. The value will always fit into a std::size_t
+            // Reason:
+            // We know that profiling interval is at most every 1 ms.
+            // So, cpuAllocated will have to be over 37 trillion to have a value that cannot be represented by a std::size_t
+            std::size_t rbSize = std::ceil(nbSamplesCollectorTick * cpuAllocated * RawSampleCollectorBase<RawCpuSample>::SampleSize);
+            Log::Info("RingBuffer size estimate (bytes): ", rbSize);
+            auto ringBuffer = std::make_unique<RingBuffer>(rbSize, CpuSampleProvider::SampleSize);
+            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer), _metricsRegistry);
+        }
+#else // WINDOWS
         _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
-            valueTypeProvider, _rawSampleTransformer.get(), memoryResource);
+            valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
+#endif
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -497,18 +544,18 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
-        auto const useMmap = true;
-        _pCpuProfiler = RegisterService<TimerCreateCpuProfiler>(
+        // Other alternative in case of crash-at-shutdown, do not register it as a service
+        // we will have to start it by hand (already stopped by hand)
+        _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
             _pConfiguration.get(),
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
-            _pCpuTimeProvider,
-            CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize, useMmap)),
+            _pCpuSampleProvider,
             _metricsRegistry);
     }
 #endif
 
-    _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get(), _pRuntimeInfo.get(), _pSsiManager.get());
+    _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get(), _pRuntimeInfo.get());
 
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
@@ -525,7 +572,7 @@ void CorProfilerCallback::InitializeServices()
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
-        _pCpuTimeProvider != nullptr &&
+        _pConfiguration->IsCpuProfilingEnabled() && // CPU profiling must be enabled
         _pRuntimeInfo->GetMajorVersion() >= 5)
     {
         _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(valueTypeProvider, _rawSampleTransformer.get(), _metricsRegistry);
@@ -560,7 +607,18 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
+#ifdef LINUX
+        if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime)
+        {
+            _pSamplesCollector->Register(_pCpuTimeProvider);
+        }
+        else
+        {
+            _pSamplesCollector->Register(_pCpuSampleProvider);
+        }
+#else // WINDOWS
         _pSamplesCollector->Register(_pCpuTimeProvider);
+#endif
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -682,16 +740,21 @@ bool CorProfilerCallback::StartServices()
     {
         auto name = service->GetName();
         success = service->Start();
-        if (success)
-        {
-            Log::Info(name, " started successfully.");
-        }
-        else
-        {
-            Log::Info(name, " failed to start. This service might have been started earlier.");
-        }
+        LogServiceStart(success, name);
         result &= success;
     }
+
+#ifdef LINUX
+    // We cannot add the timer_create-based CPU profiler to the _services list
+    // we have to control the Stop
+    // If we fail to stop, we mustn't release the memory associated to it
+    // otherwise we might crash.
+    if (_pCpuProfiler != nullptr)
+    {
+        auto success = _pCpuProfiler->Start();
+        LogServiceStart(success, _pCpuProfiler->GetName());
+    }
+#endif
 
     return result;
 }
@@ -727,14 +790,7 @@ bool CorProfilerCallback::StopServices()
         const auto& service = _services[i - 1];
         const auto* name = service->GetName();
         success = service->Stop();
-        if (success)
-        {
-            Log::Info(name, " stopped successfully.");
-        }
-        else
-        {
-            Log::Info(name, " failed to stop. This service might have been stopped earlier.");
-        }
+        LogServiceStop(success, name);
         result &= success;
     }
 
@@ -1481,7 +1537,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 #ifdef LINUX
     if (_pCpuProfiler != nullptr)
     {
-        _pCpuProfiler->Stop();
+        // if we failed at stopping the time_create-based CPU profiler,
+        // it's safer to not release the memory.
+        // Otherwise, we might crash the application.
+        // Reason: one thread could be executing the signal handler and accessing some field
+        auto stopped = _pCpuProfiler->Stop();
+        LogServiceStop(stopped, _pCpuProfiler->GetName());
+        if (stopped)
+        {
+            _pCpuProfiler = nullptr;
+        }
     }
 #endif
 
@@ -1505,6 +1570,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     {
         _pCpuTimeProvider->Stop();
     }
+#ifdef LINUX
+    if (_pCpuSampleProvider != nullptr)
+    {
+        _pCpuSampleProvider->Stop();
+    }
+#endif
     if (_pExceptionsProvider != nullptr)
     {
         _pExceptionsProvider->Stop();
@@ -1738,7 +1809,7 @@ void CorProfilerCallback::OnThreadRoutineFinished()
         return;
     }
 
-    auto* cpuProfiler = myThis->_pCpuProfiler;
+    auto* cpuProfiler = myThis->_pCpuProfiler.get();
     if (cpuProfiler == nullptr)
     {
         return;

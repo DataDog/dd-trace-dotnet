@@ -43,17 +43,7 @@ internal sealed partial class TestOptimizationClient
 
         try
         {
-            // We need to check if the git clone is a shallow one before uploading anything.
-            // In the case is a shallow clone we need to reconfigure it to upload the git tree
-            // without blobs so no content will be downloaded.
-            var gitRevParseShallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse --is-shallow-repository", MetricTags.CIVisibilityCommands.CheckShallow);
-            if (gitRevParseShallowOutput is null)
-            {
-                Log.Warning("TestOptimizationClient: 'git rev-parse --is-shallow-repository' command is null");
-                return 0;
-            }
-
-            var isShallow = gitRevParseShallowOutput.Output.IndexOf("true", StringComparison.OrdinalIgnoreCase) > -1;
+            var isShallow = GitCommandHelper.IsShallowCloneRepository(_workingDirectory);
             if (!isShallow)
             {
                 // Repo is not in a shallow state, we continue with the pack files upload with the initial commit data we retrieved earlier.
@@ -83,9 +73,7 @@ internal sealed partial class TestOptimizationClient
                 // `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`
                 // ***
 
-                // git config --default origin --get clone.defaultRemoteName
-                var originNameOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
-                var originName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
+                var originName = GitCommandHelper.GetRemoteName(_workingDirectory);
 
                 // git rev-parse HEAD
                 var headOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);

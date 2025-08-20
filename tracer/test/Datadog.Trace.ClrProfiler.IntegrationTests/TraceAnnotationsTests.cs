@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent))
             {
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 var orderedSpans = spans.OrderBy(s => s.Start).ToList();
                 var rootSpan = orderedSpans.First();
@@ -151,8 +151,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 rootSpan.Start.Should().BeLessThan(remainingSpans.First().Start);
                 (rootSpan.Start + rootSpan.Duration).Should().BeGreaterThan(lastEndTime);
 
-                telemetry?.AssertIntegrationEnabled(IntegrationId.TraceAnnotations);
-                telemetry?.AssertConfiguration("DD_TRACE_METHODS"); // normalised to trace_methods in the backend
+                if (telemetry != null)
+                {
+                    await telemetry.AssertIntegrationEnabledAsync(IntegrationId.TraceAnnotations);
+                    await telemetry.AssertConfigurationAsync("DD_TRACE_METHODS"); // normalised to trace_methods in the backend
+                }
 
                 // Run snapshot verification
                 var settings = VerifyHelper.GetSpanVerifierSettings(
@@ -198,8 +201,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var spans = agent.Spans;
 
             Assert.Empty(spans);
-            telemetry?.AssertIntegration(IntegrationId.TraceAnnotations, enabled: false, autoEnabled: false);
-            telemetry?.Dispose();
+            if (telemetry != null)
+            {
+                await telemetry.AssertIntegrationAsync(IntegrationId.TraceAnnotations, enabled: false, autoEnabled: false);
+                telemetry.Dispose();
+            }
         }
     }
 }

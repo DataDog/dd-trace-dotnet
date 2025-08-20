@@ -53,7 +53,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsStepFunctionsCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, out var tags);
+            var tracer = Tracer.Instance;
+            var scope = AwsStepFunctionsCommon.CreateScope(tracer, Operation, SpanKinds.Producer, out var tags);
             if (tags is not null && request.StateMachineArn is not null)
             {
                 tags.StateMachineName = AwsStepFunctionsCommon.GetStateMachineName(request.StateMachineArn);
@@ -62,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
             if (request.Input is not null && scope?.Span.Context is { } spanContext)
             {
                 var context = new PropagationContext(spanContext, Baggage.Current);
-                ContextPropagation.InjectContextIntoInput<TTarget, TStartExecutionRequest>(request, context);
+                ContextPropagation.InjectContextIntoInput<TTarget, TStartExecutionRequest>(tracer, request, context);
             }
 
             return new CallTargetState(scope, state: request);

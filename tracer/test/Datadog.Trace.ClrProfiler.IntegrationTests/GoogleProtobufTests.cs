@@ -50,7 +50,7 @@ public class GoogleProtobufTests : TracingIntegrationTest
         using (await RunSampleAndWaitForExit(agent, "AddressBook", packageVersion))
         {
             using var assertionScope = new AssertionScope();
-            var spans = agent.WaitForSpans(2);
+            var spans = await agent.WaitForSpansAsync(2);
 
             ValidateIntegrationSpans(spans, metadataSchemaVersion, "Samples.GoogleProtobuf", isExternalSpan: true);
             var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -82,7 +82,7 @@ public class GoogleProtobufTests : TracingIntegrationTest
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, "TimeStamp"))
         {
-            var spans = agent.WaitForSpans(2);
+            var spans = await agent.WaitForSpansAsync(2);
             foreach (var span in spans)
             {
                 span.Tags.Should().NotContain(t => t.Key.StartsWith("schema."));
@@ -94,12 +94,12 @@ public class GoogleProtobufTests : TracingIntegrationTest
     [Trait("Category", "EndToEnd")]
     public async Task OnlyEnabledWithDsm()
     {
-        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, null);
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, "AddressBook"))
         {
-            var spans = agent.WaitForSpans(2);
+            var spans = await agent.WaitForSpansAsync(2);
             foreach (var span in spans)
             {
                 span.Tags.Should().NotContain(t => t.Key.StartsWith("schema."));

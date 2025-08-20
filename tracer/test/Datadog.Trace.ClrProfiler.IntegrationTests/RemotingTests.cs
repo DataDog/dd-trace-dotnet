@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=http"))
             {
                 const int expectedSpanCount = 8;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(RemotingTests) + ".http" + $".Schema{metadataSchemaVersion.ToUpper()}");
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.Remoting);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Remoting);
             }
         }
 
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=tcp"))
             {
                 const int expectedSpanCount = 6;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(RemotingTests) + ".tcp" + $".Schema{metadataSchemaVersion.ToUpper()}");
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.Remoting);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Remoting);
             }
         }
 
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=ipc"))
             {
                 const int expectedSpanCount = 6;
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
@@ -147,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(RemotingTests) + ".ipc" + $".Schema{metadataSchemaVersion.ToUpper()}");
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.Remoting);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Remoting);
             }
         }
 

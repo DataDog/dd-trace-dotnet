@@ -3,12 +3,13 @@
 
 #include "TimerCreateCpuProfiler.h"
 
-#include "CpuTimeProvider.h"
+#include "CpuSampleProvider.h"
 #include "DiscardMetrics.h"
 #include "IManagedThreadList.h"
 #include "Log.h"
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
+#include "IConfiguration.h"
 
 #include <libunwind.h>
 #include <sys/syscall.h> /* Definition of SYS_* constants */
@@ -16,21 +17,20 @@
 #include <ucontext.h>
 #include <unistd.h>
 
-TimerCreateCpuProfiler* TimerCreateCpuProfiler::Instance = nullptr;
+std::atomic<TimerCreateCpuProfiler*> TimerCreateCpuProfiler::Instance = nullptr;
 
 TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IConfiguration* pConfiguration,
     ProfilerSignalManager* pSignalManager,
     IManagedThreadList* pManagedThreadsList,
-    CpuTimeProvider* pProvider,
-    CallstackProvider callstackProvider,
+    CpuSampleProvider* pProvider,
     MetricsRegistry& metricsRegistry) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
-    _callstackProvider{std::move(callstackProvider)},
-    _samplingInterval{pConfiguration->GetCpuProfilingInterval()}
+    _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
+    _nbThreadsInSignalHandler{0}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
@@ -92,6 +92,15 @@ bool TimerCreateCpuProfiler::StartImpl()
 
 bool TimerCreateCpuProfiler::StopImpl()
 {
+    Instance = nullptr;
+    // we cannot unregister. We would replace the current action by the default one
+    // which will cause the termination of the process
+    // Instead, mark SIGPROF as ignored.
+    if (!_pSignalManager->IgnoreSignal())
+    {
+        Log::Warn("Failed to mark the signal SIGPROF as ignored.");
+    }
+
     {
         std::unique_lock lock(_registerLock);
 
@@ -100,15 +109,27 @@ bool TimerCreateCpuProfiler::StopImpl()
         _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) { UnregisterThreadImpl(thread); });
     }
 
-    Instance = nullptr;
-    _pSignalManager->UnRegisterHandler();
+    std::uint64_t nbThreadsInSignalHandler = _nbThreadsInSignalHandler;
+    if (nbThreadsInSignalHandler != 0)
+    {
+        Log::Info("Waiting for all threads exiting the signal handler (#threads ", _nbThreadsInSignalHandler, ")");
+    
+        // TODO: for now we sleep.
+        std::this_thread::sleep_for(500ms);
+        if (_nbThreadsInSignalHandler != 0)
+        {
+            Log::Warn("There are threads that are still executing the signal handler: ", _nbThreadsInSignalHandler);
+            return false;
+        }
+        Log::Info("All threads exited the signal handler");
+    }
 
     return true;
 }
 
 bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext)
 {
-    auto instance = Instance;
+    auto instance = Instance.load();
     if (instance == nullptr)
     {
         return false;
@@ -123,7 +144,6 @@ extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak)
 
 bool TimerCreateCpuProfiler::CanCollect(void* ctx)
 {
-    // TODO (in another PR): add metrics about reasons we could not collect
     if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
         _discardMetrics->Incr<DiscardReason::InsideWrappedFunction>();
@@ -190,12 +210,14 @@ private:
 
 bool TimerCreateCpuProfiler::Collect(void* ctx)
 {
+    _nbThreadsInSignalHandler++;
     _totalSampling->Incr();
 
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (threadInfo == nullptr)
     {
         _discardMetrics->Incr<DiscardReason::UnknownThread>();
+        _nbThreadsInSignalHandler--;
         // Ooops should never happen
         return false;
     }
@@ -204,49 +226,48 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     if (!l.IsLockAcquired())
     {
         _discardMetrics->Incr<DiscardReason::FailedAcquiringLock>();
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
     if (!CanCollect(ctx))
     {
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
     // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
     ErrnoSaveAndRestore errnoScope;
 
-    auto callstack = _callstackProvider.Get();
-
-    if (callstack.Capacity() <= 0)
+    auto rawCpuSample = _pProvider->GetRawSample();
+    if (!rawCpuSample)
     {
-        _discardMetrics->Incr<DiscardReason::UnsufficientSpace>();
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
-    auto buffer = callstack.Data();
+    auto buffer = rawCpuSample->Stack.AsSpan();
     auto* context = reinterpret_cast<unw_context_t*>(ctx);
     auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
-    callstack.SetCount(count);
+    rawCpuSample->Stack.SetCount(count);
 
     if (count == 0)
     {
+        rawCpuSample.Discard();
         _discardMetrics->Incr<DiscardReason::EmptyBacktrace>();
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
-    RawCpuSample rawCpuSample;
-
     // TO FIX this breaks the CI Visibility.
     // No Cpu samples will have the predefined span id, root local span id
-    std::tie(rawCpuSample.LocalRootSpanId, rawCpuSample.SpanId) = threadInfo->GetTracingContext();
+    std::tie(rawCpuSample->LocalRootSpanId, rawCpuSample->SpanId) = threadInfo->GetTracingContext();
 
-    rawCpuSample.Timestamp = OpSysTools::GetTimestampSafe();
-    rawCpuSample.AppDomainId = threadInfo->GetAppDomainId();
-    rawCpuSample.Stack = std::move(callstack);
-    rawCpuSample.ThreadInfo = std::move(threadInfo);
-    rawCpuSample.Duration = _samplingInterval;
-    _pProvider->Add(std::move(rawCpuSample));
-
+    rawCpuSample->Timestamp = OpSysTools::GetTimestampSafe();
+    rawCpuSample->AppDomainId = threadInfo->GetAppDomainId();
+    rawCpuSample->ThreadInfo = std::move(threadInfo);
+    rawCpuSample->Duration = _samplingInterval;
+    _nbThreadsInSignalHandler--;
     return true;
 }
 

@@ -78,7 +78,7 @@ public class AspNetCore5BlockingTemplatesHtml : AspNetCore5BlockingTemplates
         var (x, page) = await SubmitRequest(url, body: null, contentType: null, accept: "text/html");
         var normalizedPage = page.Replace("\r\n", "\n");
         normalizedPage.Should().Be($"""<!DOCTYPE html>{"\n"}<html lang="en"></html>""");
-        var spans = WaitForSpans(agent, 1, string.Empty, minDateTime, url);
+        var spans = await WaitForSpansAsync(agent, 1, string.Empty, minDateTime, url);
         await VerifySpans(spans, settings);
     }
 }
@@ -104,7 +104,7 @@ public class AspNetCore5BlockingTemplatesJson : AspNetCore5BlockingTemplates
         var minDateTime = DateTime.UtcNow;
         var (x, page) = await SubmitRequest(url, body: null, contentType: null);
         page.Should().Be("{}");
-        var spans = WaitForSpans(agent, 1, string.Empty, minDateTime, url);
+        var spans = await WaitForSpansAsync(agent, 1, string.Empty, minDateTime, url);
         await VerifySpans(spans, settings);
     }
 }

@@ -26,6 +26,12 @@ std::string const Configuration::DefaultEmptyString = "";
 std::chrono::seconds const Configuration::DefaultDevUploadInterval = 20s;
 std::chrono::seconds const Configuration::DefaultProdUploadInterval = 60s;
 std::chrono::milliseconds const Configuration::DefaultCpuProfilingInterval = 9ms;
+CpuProfilerType const Configuration::DefaultCpuProfilerType =
+#ifdef _WINDOWS
+    CpuProfilerType::ManualCpuTime;
+#else
+    CpuProfilerType::TimerCreate;
+#endif
 
 Configuration::Configuration()
 {
@@ -99,8 +105,6 @@ Configuration::Configuration()
     _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();
     _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
-    _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
-    _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
     _isHttpProfilingEnabled =
         GetEnvironmentValue(
             EnvironmentVariables::HttpProfilingEnabled,
@@ -109,7 +113,7 @@ Configuration::Configuration()
         );
     _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
     _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
-    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
+    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
 }
 
@@ -767,16 +771,6 @@ std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
     if (value < 0ms)
         return defaultValue;
     return std::chrono::milliseconds(value);
-}
-
-bool Configuration::IsTelemetryToDiskEnabled() const
-{
-    return _isTelemetryToDiskEnabled;
-}
-
-bool Configuration::IsSsiTelemetryEnabled() const
-{
-    return _isSsiTelemetryEnabled;
 }
 
 bool Configuration::IsHttpProfilingEnabled() const

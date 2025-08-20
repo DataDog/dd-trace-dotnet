@@ -65,7 +65,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.25.1";
+    const string LibDdwafVersion = "1.27.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0", "1.23.0" };
 
@@ -179,16 +179,20 @@ partial class Build
                ? new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests) }
                : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
 
-    TargetFramework[] TestingFrameworks => GetTestingFrameworks(IsArm64);
+    TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
-    TargetFramework[] GetTestingFrameworks(bool isArm64) => (isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
+    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
-        // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
-        (false, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (false, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
-        (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
+        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        // Everything else e.g. MaxOS, linux-x64 etc
+        // Same as Windows just without the .NET FX
+        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -444,7 +448,8 @@ partial class Build
             );
 
             var exclude = TracerDirectory.GlobFiles(
-                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
+                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",     // no code, used to generate nuget package
+                "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
                 "src/Datadog.AutoInstrumentation.Generator/*.csproj",
@@ -881,9 +886,9 @@ partial class Build
         .DependsOn(PublishNativeTracerUnix)
         .DependsOn(PublishNativeTracerOsx);
 
-    Target PublishFleetInstaller => _ => _
+    Target BuildFleetInstaller => _ => _
         .Unlisted()
-        .Description("Builds and publishes the fleet installer binary files as a zip")
+        .Description("Builds and publishes the fleet installer binary files")
         .After(Clean, Restore, CompileManagedSrc)
         .Before(SignDlls)
         .OnlyWhenStatic(() => IsWin)
@@ -904,7 +909,17 @@ partial class Build
                               .SetConfiguration(BuildConfiguration)
                               .SetOutput(publishFolder)
                               .CombineWith(tfms, (p, tfm) => p.SetFramework(tfm)));
+        });
 
+    Target PublishFleetInstaller => _ => _
+        .Unlisted()
+        .Description("Publishes the fleet installer binary files as a zip")
+        .DependsOn(BuildFleetInstaller)
+        .After(SignDlls)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            var publishFolder = ArtifactsDirectory / "Datadog.FleetInstaller";
             CompressZip(publishFolder, ArtifactsDirectory / "fleet-installer.zip", fileMode: FileMode.Create);
         });
 
@@ -1518,13 +1533,30 @@ partial class Build
               var samples = GetSamplesToBuild();
               Logger.Information("Building {SampleName}", samples);
 
-              // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
-              DotNetBuild(config => config
-                                   .SetConfiguration(BuildConfiguration)
-                                   .SetProperty("BuildInParallel", "true")
-                                   .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                                   .When(Framework is not null, x => x.SetFramework(Framework))
-                                   .SetProjectFile(samples));
+              // If we are building a specific sample, with a specific NuGet version, we can target just that one with MSBuild
+              // Windows only at the moment as I couldn't get `dotnet build` to work with the ApiVersion parameter
+              // As it needs to be restored first, but when it did it couldn't find the assets file
+              if (IsWin && !string.IsNullOrEmpty(ApiVersion) && !string.IsNullOrEmpty(SampleName))
+              {
+                  Logger.Information("Building sample {SampleName} with ApiVersion {ApiVersion} using MSBuild", SampleName, ApiVersion);
+
+                  MSBuild(x => x.SetTargetPath(samples)
+                                .SetTargets("Restore", "Build")
+                                .SetConfiguration(BuildConfiguration)
+                                .SetProperty("ApiVersion", ApiVersion)
+                                .When(Framework is not null, o => o.SetProperty("TargetFramework", Framework.ToString()))
+                                .SetProperty("BuildInParallel", "true")
+                                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")));
+              }
+              else
+              {
+                  // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
+                  DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
+                                              .SetProperty("BuildInParallel", "true")
+                                              .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                                              .When(Framework is not null, x => x.SetFramework(Framework))
+                                              .SetProjectFile(samples));
+              }
 
               string GetSamplesToBuild()
               {
@@ -2387,7 +2419,7 @@ partial class Build
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines")
-       .Executes(() =>
+       .Executes(async () =>
        {
            // we expect to see _some_ errors, so explicitly ignore them
            var knownPatterns = new List<Regex>
@@ -2418,15 +2450,20 @@ partial class Build
                new(@".*Exception occurred when calling the CallTarget integration continuation. Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvokerException: Throwing a call target invoker exception.*"),
                // error thrown to check error handling in RC tests
                new(@".*haha, you weren't expect this!*", RegexOptions.Compiled),
+               // known errors in waf config
+               new(@".*rc::asm_dd::diagnostic Error: missing key.*", RegexOptions.Compiled),
+               new(@".*rc::asm_dd::diagnostic Warning: unknown operator.*", RegexOptions.Compiled),
+               new(@".*Some errors were found while applying waf configuration \(RulesFile: wrong-tags-name-rule-set.json\).*", RegexOptions.Compiled),
+               new(@".*Some errors were found while applying waf configuration \(RulesFile: rasp-rule-set.json\).*", RegexOptions.Compiled),
            };
 
-           CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error, new ());
        });
 
     Target CheckSmokeTestsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines in the smoke test logs")
-       .Executes(() =>
+       .Executes(async () =>
        {
            var knownPatterns = new List<Regex>();
 
@@ -2475,10 +2512,17 @@ partial class Build
            // glibc TLS-reuse bug warnings
            knownPatterns.Add(new(@".*GLIBC version 2.34-2.36 has a TLS-reuse bug.*", RegexOptions.Compiled));
 
-           CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
+           // These patterns should be ignored, but we should send a metric when they occur
+           // so that we can track they don't happen too often and gate releases on them etc
+           var reportablePatterns = new List<(string IgnoreReasonTag, Regex Regex)>
+           {
+               new("rejit_thread_timeout", new(@".*Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented.*", RegexOptions.Compiled))
+           };
+
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning, reportablePatterns);
        });
 
-    private void CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel)
+    private async Task CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel, List<(string IgnoreReasonTag, Regex Regex)> reportablePatterns)
     {
         var logDirectory = BuildDataDirectory / "logs";
         if (!logDirectory.Exists())
@@ -2490,6 +2534,8 @@ partial class Build
                 return;
             }
         }
+
+        Dictionary<string, int> reportableMetrics = new();
 
         var managedFiles = logDirectory.GlobFiles("**/dotnet-tracer-managed-*");
         var managedErrors = managedFiles
@@ -2515,50 +2561,75 @@ partial class Build
                                   .Where(IsProblematic)
                                   .ToList();
 
+        var libdatadogFiles = logDirectory.GlobFiles("**/dotnet-tracer-libdatadog-*");
+        var libdatadogErrors = libdatadogFiles
+                              .SelectMany(ParseLibdatadogLogFiles) // native loader has same format as profiler
+                              .Where(IsProblematic)
+                              .ToList();
+
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
+                             // && libdatadogFiles.Count > 0 Libdatadog exporter is off by default, so we don't require it to be there
                              && nativeTracerFiles.Count > 0
-                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac
+                             && (nativeProfilerFiles.Count > 0 || IsOsx || IsArm64) // profiler doesn't support mac or ARM64
                              && nativeLoaderFiles.Count > 0);
+        var hasErrors = managedErrors.Count != 0
+                     || libdatadogErrors.Count != 0
+                     || nativeTracerErrors.Count != 0
+                     || nativeProfilerErrors.Count != 0
+                     || nativeLoaderErrors.Count != 0;
 
-        if (hasRequiredFiles
-         && managedErrors.Count == 0
-         && nativeTracerErrors.Count == 0
-         && nativeProfilerErrors.Count == 0
-         && nativeLoaderErrors.Count == 0)
+        if (reportableMetrics.Count > 0)
+        {
+            Logger.Warning("Found reportable (but ignored) problems in the logs");
+            await MetricHelper.SendReportableErrorMetrics(Logger.Logger, reportableMetrics);
+        }
+
+        if (hasRequiredFiles && !hasErrors)
         {
             Logger.Information("No problems found in managed or native logs");
             return;
         }
 
-        Logger.Warning("Found the following problems in log files:");
-        var allErrors = managedErrors
-                       .Concat(nativeTracerErrors)
-                       .Concat(nativeProfilerErrors)
-                       .Concat(nativeLoaderErrors)
-                       .GroupBy(x => x.FileName);
-
-        foreach (var erroredFile in allErrors)
+        if (!hasRequiredFiles)
         {
-            var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
-            if (errors.Any())
-            {
-                Logger.Information("");
-                Logger.Error($"Found errors in log file '{erroredFile.Key}':");
-                foreach (var error in errors)
-                {
-                    Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
-                }
-            }
+            Logger.Error(
+                "Some log files were missing: managed: {ManagedFiles}, native tracer: {NativeTracerFiles}, native profiler: {NativeProfilerFiles}, native loader: {NativeLoaderFiles}, libdatadog {LibdatadogFiles}",
+                managedFiles.Count, nativeTracerFiles.Count, nativeProfilerFiles.Count, nativeLoaderFiles.Count, libdatadogFiles.Count);
+        }
 
-            var canaries = erroredFile.Where(ContainsCanary).ToList();
-            if (canaries.Any())
+        if (hasErrors)
+        {
+            Logger.Warning("Found the following problems in log files:");
+            var allErrors = managedErrors
+                           .Concat(libdatadogErrors)
+                           .Concat(nativeTracerErrors)
+                           .Concat(nativeProfilerErrors)
+                           .Concat(nativeLoaderErrors)
+                           .GroupBy(x => x.FileName);
+
+            foreach (var erroredFile in allErrors)
             {
-                Logger.Information("");
-                Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
-                foreach (var canary in canaries)
+                var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
+                if (errors.Any())
                 {
-                    Logger.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
+                    Logger.Information("");
+                    Logger.Error($"Found errors in log file '{erroredFile.Key}':");
+                    foreach (var error in errors)
+                    {
+                        Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
+                    }
+                }
+
+                var canaries = erroredFile.Where(ContainsCanary).ToList();
+                if (canaries.Any())
+                {
+                    Logger.Information("");
+                    Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
+                    foreach (var canary in canaries)
+                    {
+                        Logger.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
+                    }
                 }
             }
         }
@@ -2575,6 +2646,16 @@ partial class Build
             if (logLine.Level < minLogLevel)
             {
                 return false;
+            }
+
+            foreach (var pattern in reportablePatterns)
+            {
+                if (pattern.Regex.IsMatch(logLine.Message))
+                {
+                    var previous = reportableMetrics.GetValueOrDefault(pattern.IgnoreReasonTag, 0);
+                    reportableMetrics[pattern.IgnoreReasonTag] = previous + 1;
+                    return false;
+                }
             }
 
             foreach (var pattern in knownPatterns)
@@ -2718,6 +2799,34 @@ partial class Build
             return allLogs;
         }
 
+        static List<ParsedLogLine> ParseLibdatadogLogFiles(AbsolutePath logFile)
+        {
+            var logs = new List<ParsedLogLine>();
+            using var reader = new StreamReader(logFile);
+            while (reader.ReadLine() is { } line)
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                var log = LibdatadogLogParser.ParseEntry(line);
+                if (log is null)
+                {
+                    continue;
+                }
+
+                logs.Add(new ParsedLogLine(
+                             log.Timestamp,
+                             ParseLibdatadogLogLevel(log.Level),
+                             string.Join(", ", log.Fields.Select(kvp => $"{kvp.Key}:{kvp.Value}")),
+                             logFile));
+
+            }
+
+            return logs;
+        }
+
         static LogLevel ParseManagedLogLevel(string value)
             => value switch
             {
@@ -2738,6 +2847,17 @@ partial class Build
                 "warning" => LogLevel.Warning,
                 "error" => LogLevel.Error,
                 _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
+            };
+
+        static LogLevel ParseLibdatadogLogLevel(string value)
+            => value switch
+            {
+                "TRACE" => LogLevel.Trace,
+                "DEBUG" => LogLevel.Trace,
+                "INFO" => LogLevel.Normal,
+                "WARN" => LogLevel.Warning,
+                "ERROR" => LogLevel.Error,
+                _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown log level")
             };
     }
 
@@ -2960,5 +3080,40 @@ partial class Build
         CompressionTasks.UncompressZip(vcpkgZip, parentFolder);
 
         RenameDirectory(parentFolder / $"vcpkg-{vcpkgVersion}", destinationFolder.Name);
+    }
+
+    public static class LibdatadogLogParser
+    {
+        private static readonly JsonSerializerOptions Options = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+        };
+
+        public static LogEntry ParseEntry(string json)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<LogEntry>(json, Options);
+            }
+            catch (JsonException ex)
+            {
+                Console.Error.WriteLine($"Failed to parse JSON: {ex.Message}");
+                return null;
+            }
+        }
+
+        public record LogEntry(
+            DateTimeOffset Timestamp,
+            string Level,
+            Dictionary<string, object> Fields,
+            string Target,
+            string Filename,
+            // ReSharper disable once InconsistentNaming
+            int? Line_number,
+            string ThreadName,
+            string ThreadId
+        );
     }
 }

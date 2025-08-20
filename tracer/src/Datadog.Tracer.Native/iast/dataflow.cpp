@@ -16,18 +16,15 @@ using namespace std::chrono;
 
 namespace iast
 {
-static const WSTRING LastEntry = WStr("-");
-static const WSTRING _fixedAppDomainIncludeFilters[] = {
-    LastEntry, // Can't have an empty array
+static std::vector<WSTRING> _domainIncludeFilters = {
 };
-static const WSTRING _fixedAppDomainExcludeFilters[] = {
-    WStr("DD*"), WStr("DataDog*"),
-    LastEntry, // Can't have an empty array. This must be the last element
+static std::vector<WSTRING> _domainExcludeFilters = {
+    WStr("DD*"), 
+    WStr("DataDog*"),
 };
-static const WSTRING _fixedAssemblyIncludeFilters[] = {
-    LastEntry, // Can't have an empty array. This must be the last element
+static std::vector<WSTRING> _assemblyIncludeFilters = {
 };
-static const WSTRING _fixedAssemblyExcludeFilters[] = {
+static std::vector<WSTRING> _assemblyExcludeFilters = {
     WStr("System*"),
     WStr("Datadog.*"),
     WStr("Kudu*"),
@@ -84,25 +81,23 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("FluentValidation*"),
     WStr("NHibernate*"),
     WStr("Npgsql*"),
-    WStr("Grpc.Net.Client"),    
-    WStr("Amazon.Runtime*"),    
+    WStr("Grpc.Net.Client"),
+    WStr("Amazon.Runtime*"),
     WStr("App.Metrics.Concurrency*"),
     WStr("AWSSDK.SimpleEmail"),
     WStr("AWSSDK.Core"),
     WStr("MailKit"),
     WStr("MimeKit"),
-    LastEntry, // Can't have an empty array. This must be the last element
 };
-static const WSTRING _fixedMethodIncludeFilters[] = {
+static std::vector<WSTRING> _methodIncludeFilters = {
     WStr("System.Web.Mvc.ControllerActionInvoker::InvokeAction*"),
     WStr("System.Web.Mvc.Async.AsyncControllerActionInvoker*"),
     WStr("System.Web.Http.Controllers.ReflectedHttpActionDescriptor::ExecuteAsync*"),
     WStr("System.Net.Http.HttpRequestMessage*"),
     WStr("System.ServiceModel.Dispatcher*"),
     WStr("MongoDB.Bson.Serialization.Serializers.StringSerializer*"),
-    LastEntry, // Can't have an empty array. This must be the last element
 };
-static const WSTRING _fixedMethodExcludeFilters[] = {
+static std::vector<WSTRING> _methodExcludeFilters = {
     WStr("DataDog*"),
     WStr("System.Web.Mvc*"),
     WStr("System.Web.PrefixContainer*"),
@@ -118,11 +113,11 @@ static const WSTRING _fixedMethodExcludeFilters[] = {
     WStr("MongoDB.*"),
     WStr("JetBrains*"),
     WStr("RestSharp.Extensions.StringExtensions::UrlEncode*"),
-    LastEntry, // Can't have an empty array. This must be the last element
 };
-static const WSTRING _fixedMethodAttributeExcludeFilters[] = {
+static std::vector<WSTRING> _methodAttributeIncludeFilters = {
     WStr("DelegateDecompiler.ComputedAttribute"),
-    LastEntry, // Can't have an empty array. This must be the last element
+};
+static std::vector<WSTRING> _methodAttributeExcludeFilters = {
 };
 
 ModuleAspects::ModuleAspects(Dataflow* dataflow, ModuleInfo* module)
@@ -188,101 +183,22 @@ Dataflow::~Dataflow()
     Destroy();
 }
 
-HRESULT Dataflow::Init()
+void Dataflow::Destroy()
 {
     if (_initialized)
     {
-        return S_FALSE;
-    }
-    if (_profiler == nullptr)
-    {
-        return E_FAIL;
-    }
-    HRESULT hr = S_OK;
-    try
-    {
-        // Init config
-        // Domain filters
-        for (int x = 0; _fixedAppDomainIncludeFilters[x] != LastEntry; x++)
-        {
-            _domainIncludeFilters.push_back(_fixedAppDomainIncludeFilters[x]);
-        }
-        for (int x = 0; _fixedAppDomainExcludeFilters[x] != LastEntry; x++)
-        {
-            _domainExcludeFilters.push_back(_fixedAppDomainExcludeFilters[x]);
-        }
-
-        // Assembly filters
-        for (int x = 0; _fixedAssemblyIncludeFilters[x] != LastEntry; x++)
-        {
-            _assemblyIncludeFilters.push_back(_fixedAssemblyIncludeFilters[x]);
-        }
-        for (int x = 0; _fixedAssemblyExcludeFilters[x] != LastEntry; x++)
-        {
-            _assemblyExcludeFilters.push_back(_fixedAssemblyExcludeFilters[x]);
-        }
-
-        // Method filters
-        for (int x = 0; _fixedMethodIncludeFilters[x] != LastEntry; x++)
-        {
-            _methodIncludeFilters.push_back(_fixedMethodIncludeFilters[x]);
-        }
-        for (int x = 0; _fixedMethodExcludeFilters[x] != LastEntry; x++)
-        {
-            _methodExcludeFilters.push_back(_fixedMethodExcludeFilters[x]);
-        }
-
-        // Method attribute filters
-        for (int x = 0; _fixedMethodAttributeExcludeFilters[x] != LastEntry; x++)
-        {
-            _methodAttributeExcludeFilters.push_back(_fixedMethodAttributeExcludeFilters[x]);
-        }
-    }
-    catch (std::exception& err)
-    {
-        trace::Logger::Error("ERROR: ", err.what());
-        hr = E_FAIL;
-    }
-    catch (...)
-    {
-        trace::Logger::Error("ERROR initializing dataflow");
-        hr = E_FAIL;
-    }
-    if (SUCCEEDED(hr))
-    {
-        _initialized = true;
-    }
-    else
-    {
-        REL(_profiler);
         _initialized = false;
+        REL(_profiler);
+        DEL_MAP_VALUES(_modules);
+        DEL_MAP_VALUES(_appDomains);
+        DEL_MAP_VALUES(_moduleAspects);
     }
-    return hr;
-}
-HRESULT Dataflow::Destroy()
-{
-    if (!_initialized)
-    {
-        return S_FALSE;
-    }
-    _initialized = false;
-    HRESULT hr = S_OK;
-    REL(_profiler);
-    DEL_MAP_VALUES(_modules);
-    DEL_MAP_VALUES(_appDomains);
-    DEL_MAP_VALUES(_moduleAspects);
-    return hr;
-}
-
-bool Dataflow::IsInitialized()
-{
-    return _initialized;
 }
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     // Init aspects
-    trace::Logger::Debug("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " ", enabledCategories, " ", platform);
+    DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " ", enabledCategories, " ", platform);
 
     DataflowAspectClass* aspectClass = nullptr;
     for (int x = 0; x < aspectsLength; x++)
@@ -293,7 +209,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
             aspectClass = new DataflowAspectClass(this, line, enabledCategories);
             if (!aspectClass->IsValid())
             {
-                trace::Logger::Debug("Dataflow::LoadAspects -> Detected invalid aspect class ", line);
+                DBG("Dataflow::LoadAspects -> Detected invalid aspect class ", line);
                 DEL(aspectClass);
             }
             else
@@ -307,7 +223,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
             auto aspect = new DataflowAspect(aspectClass, line, platform);
             if (!aspect->IsValid())
             {
-                trace::Logger::Debug("Dataflow::LoadAspects -> Detected invalid aspect ", line);
+                DBG("Dataflow::LoadAspects -> Detected invalid aspect ", line);
                 DEL(aspect);
             }
             else
@@ -334,8 +250,7 @@ void Dataflow::LoadSecurityControls()
     {
         DataflowAspectClass* aspectClass = nullptr;
 
-        trace::Logger::Debug("Dataflow::LoadSecurityControls -> Processing Security Controls Config... ",
-                             securityControlsConfig);
+        DBG("Dataflow::LoadSecurityControls -> Processing Security Controls Config... ", securityControlsConfig);
         auto securityControls = shared::Split(securityControlsConfig, ';');
         for (auto const& securityControlLine : securityControls)
         {
@@ -427,24 +342,24 @@ void Dataflow::LoadSecurityControls()
             {
                 aspectClass = new SecurityControlAspectClass(this);
                 _aspectClasses.push_back(aspectClass);
-                trace::Logger::Debug("Dataflow::LoadSecurityControls -> Created AspectClass");
+                DBG("Dataflow::LoadSecurityControls -> Created AspectClass");
             }
 
             auto aspect = new SecurityControlAspect(aspectClass, secureMarks, securityControlType, targetAssembly,
                                                     targetType, targetMethod, targetParams, parameterIndexes);
 
-            if (trace::Logger::IsDebugEnabled())
+            if (Logger::IsDebugEnabled())
             {
                 auto params = iast::Join(parameterIndexes, ",");
-                trace::Logger::Debug("Dataflow::LoadSecurityControls -> Created Aspect: ", (int) securityControlType,
-                                     "  ", targetAssembly, " | ", targetType, " :: ", targetMethod, "  ", targetParams,
-                                     " [", params, "]");
+                Logger::Debug("Dataflow::LoadSecurityControls -> Created Aspect: ", (int) securityControlType,
+                              "  ", targetAssembly, " | ", targetType, " :: ", targetMethod, "  ", targetParams,
+                              " [", params, "]");
             }
 
             _aspects.push_back(aspect);
         }
 
-        trace::Logger::Debug("Dataflow::LoadSecurityControls -> Exit");
+        DBG("Dataflow::LoadSecurityControls -> Exit");
     }
 }
 
@@ -455,8 +370,7 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
     {
-        trace::Logger::Debug("AppDomainShutdown: AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name,
-                             " ] ");
+        DBG("AppDomainShutdown: AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
         DEL(it->second);
         _appDomains.erase(appDomainId);
         return S_OK;
@@ -497,17 +411,23 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     }
 
     AppDomainInfo* appDomain = GetAppDomain(appDomainId);
+    if (appDomain == nullptr)
+    {
+        trace::Logger::Error("GetAppDomain failed for AppDomainId ", appDomainId);
+        return E_FAIL;
+    }
+
     WSTRING moduleName = WSTRING(wszName);
     WSTRING modulePath = WSTRING(wszPath);
-
     ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, moduleId, modulePath, assemblyId, moduleName);
+    DBG("Dataflow::ModuleLoaded -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
+
     CSGUARD(_cs);
     _modules[moduleId] = moduleInfo;
     if (pModuleInfo)
     {
         *pModuleInfo = moduleInfo;
     }
-    trace::Logger::Debug("Dataflow::ModuleLoaded -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
     return S_OK;
 }
 
@@ -527,13 +447,12 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         auto it = _modules.find(moduleId);
         if (it != _modules.end())
         {
-            trace::Logger::Debug("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " [ ",
-                                 it->second->_appDomain.Name, " ] ", it->second->_name);
+            DBG("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " [ ", it->second->_appDomain.Name, " ] ", it->second->_name);
             DEL(it->second);
         }
         else
         {
-            trace::Logger::Debug("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " (Not found)");
+            DBG("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " (Not found)");
         }
         _modules.erase(moduleId);
     }
@@ -816,7 +735,7 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
             {
                 std::vector<ModuleID> modulesVector = {module->_id};
                 std::vector<mdMethodDef> methodsVector = {method->GetMemberId()}; // methodId
-                trace::Logger::Debug("RewriteMethod: REJIT requested for ", method->GetKey());
+                DBG("RewriteMethod: REJIT requested for ", method->GetKey());
                 m_rejitHandler->RequestRejit(modulesVector, methodsVector);
             }
         }

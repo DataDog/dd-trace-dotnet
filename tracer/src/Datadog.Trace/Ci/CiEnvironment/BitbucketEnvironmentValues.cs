@@ -39,5 +39,6 @@ internal sealed class BitbucketEnvironmentValues<TValueProvider>(TValueProvider 
         JobUrl = PipelineUrl;
 
         PrBaseBranch = ValueProvider.GetValue(Constants.BitBucketPullRequestDestinationBranch);
+        PrNumber = ValueProvider.GetValue(Constants.BitBucketPullRequestNumber);
     }
 }

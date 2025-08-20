@@ -125,6 +125,7 @@ namespace Datadog.Trace.PlatformHelpers
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
             AddHeaderTagsToSpan(scope.Span, request, tracer);
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
             var requestTrackingFeature = new RequestTrackingFeature(originalPath, scope);
@@ -201,8 +202,9 @@ namespace Datadog.Trace.PlatformHelpers
                 }
 
                 CoreHttpContextStore.Instance.Remove();
-                proxyScope?.Dispose();
+
                 rootScope.Dispose();
+                proxyScope?.Dispose();
             }
         }
 

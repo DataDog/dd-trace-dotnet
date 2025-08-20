@@ -11,7 +11,7 @@ jobs:
   - job: set_pending
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-task-scale-set
+      name: azure-managed-linux-tasks
     steps:
     - checkout: none
     - template: update-github-status.yml
@@ -23,7 +23,7 @@ jobs:
   - job: set_succeeded
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-task-scale-set
+      name: azure-managed-linux-tasks
     dependsOn:
     - set_pending
     - ${{ each job in parameters.jobs }}:
@@ -47,7 +47,7 @@ jobs:
   - job: set_failed
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-task-scale-set
+      name: azure-managed-linux-tasks
     dependsOn:
       - set_pending
       - ${{ each job in parameters.jobs }}:
@@ -66,4 +66,4 @@ jobs:
       parameters:
         checkName: $(System.StageName)
         status: 'failure'
-        description: 'Run failed'
+        description: 'Run failed, please investigate and/or retry this (if flake) via Azure DevOps'

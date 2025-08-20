@@ -75,11 +75,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName);
 
             spans.Count.Should().Be(expectedSpanCount);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
-            telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.SqlClient);
 
             // Testing that spans yield the expected output when using DBM
 
@@ -132,11 +132,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
+            var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
-            Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-            telemetry.AssertIntegrationDisabled(IntegrationId.SqlClient);
+            spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
+            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.SqlClient);
         }
     }
 }

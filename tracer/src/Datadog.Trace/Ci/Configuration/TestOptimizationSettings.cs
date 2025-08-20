@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
@@ -345,10 +346,10 @@ namespace Datadog.Trace.Ci.Configuration
         }
 
         private TracerSettings InitializeTracerSettings()
-            => InitializeTracerSettings(GlobalConfigurationSource.CreateDefaultConfigurationSource());
+            => InitializeTracerSettings(GlobalConfigurationSource.Instance);
 
         // Internal for testing
-        internal TracerSettings InitializeTracerSettings(CompositeConfigurationSource source)
+        internal TracerSettings InitializeTracerSettings(IConfigurationSource source)
         {
             // This is a somewhat hacky way to "tell" TracerSettings that we're running in CI Visibility
             // There's no doubt various other ways we could flag it based on values we're _already_ extracting,
@@ -368,7 +369,7 @@ namespace Datadog.Trace.Ci.Configuration
             }
 
             var newSource = new CompositeConfigurationSource([new DictionaryObjectConfigurationSource(additionalSource), source]);
-            return new TracerSettings(newSource, telemetry, new OverrideErrorLog());
+            return new TracerSettings(newSource, telemetry, new OverrideErrorLog(), new LibDatadogAvailableResult(false));
         }
     }
 }

@@ -348,6 +348,7 @@ services:
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -426,6 +427,7 @@ services:
       - COUCHBASE_PORT=8091
       - CONTAINER_HOSTNAME=http://integrationtests
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -496,6 +498,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -552,6 +555,7 @@ services:
       - CONTAINER_HOSTNAME=http://integrationtests
       - IncludeAllTestFrameworks
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -602,6 +606,7 @@ services:
       - IncludeAllTestFrameworks
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -693,6 +698,7 @@ services:
       - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SDK_HOST=localstack_arm64:4566
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -771,6 +777,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
       - DD_LOGGER_ENABLED
@@ -817,7 +824,7 @@ services:
     - SNAPSHOT_CI=1
     # network.client.ip and http.client_ip differs between docker compose v1 and v2 - once we're migrated to v2 completely we can remove it from here
     # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,meta._dd.appsec.fp.http.endpoint,meta._dd.appsec.fp.http.header,meta._dd.appsec.fp.http.network
 
   smoke-tests:
     build:
@@ -1177,3 +1184,7 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Strong!Passw0rd
+
+  # keep syncronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\AerospikeFixture.cs
+  aerospike:
+    image: aerospike/aerospike-server:6.2.0.6

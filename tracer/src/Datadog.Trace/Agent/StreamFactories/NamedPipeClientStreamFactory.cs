@@ -14,34 +14,27 @@ namespace Datadog.Trace.Agent.StreamFactories
 {
     internal class NamedPipeClientStreamFactory : IStreamFactory
     {
+        private const string ServerName = ".";
+        private const PipeOptions PipeOptions = System.IO.Pipes.PipeOptions.Asynchronous;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NamedPipeClientStreamFactory));
 
         private readonly string _pipeName;
-        private readonly string _serverName;
-        private readonly PipeOptions _pipeOptions;
         private readonly int _timeoutMs;
 
         public NamedPipeClientStreamFactory(string pipeName, int timeoutMs)
-            : this(pipeName, ".", PipeOptions.Asynchronous, timeoutMs)
-        {
-        }
-
-        public NamedPipeClientStreamFactory(string pipeName, string serverName, PipeOptions pipeOptions, int timeoutMs)
         {
             _pipeName = pipeName;
-            _serverName = serverName;
-            _pipeOptions = pipeOptions;
             _timeoutMs = timeoutMs;
         }
 
         public string Info()
         {
-            return $@"\\{_serverName}\pipe\{_pipeName}";
+            return $@"\\{ServerName}\pipe\{_pipeName}";
         }
 
         public Stream GetBidirectionalStream()
         {
-            var pipeStream = new NamedPipeClientStream(_serverName, _pipeName, PipeDirection.InOut, _pipeOptions);
+            var pipeStream = new NamedPipeClientStream(ServerName, _pipeName, PipeDirection.InOut, PipeOptions);
             pipeStream.Connect(_timeoutMs);
             return pipeStream;
         }
@@ -52,7 +45,7 @@ namespace Datadog.Trace.Agent.StreamFactories
             NamedPipeClientStream pipeStream = null;
             try
             {
-                pipeStream = new NamedPipeClientStream(_serverName, _pipeName, PipeDirection.InOut, _pipeOptions);
+                pipeStream = new NamedPipeClientStream(ServerName, _pipeName, PipeDirection.InOut, PipeOptions);
                 await pipeStream.ConnectAsync(_timeoutMs, token).ConfigureAwait(false);
                 return pipeStream;
             }

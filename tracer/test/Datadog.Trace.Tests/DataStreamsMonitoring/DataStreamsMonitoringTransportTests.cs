@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -21,6 +22,7 @@ using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 
@@ -60,8 +62,9 @@ public class DataStreamsMonitoringTransportTests
 
         var discovery = new DiscoveryServiceMock();
         var writer = new DataStreamsWriter(
+            tracerSettings,
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(tracerSettings, "service"),
+                new DataStreamsMessagePackFormatter(tracerSettings, new ProfilerSettings(ProfilerState.Disabled), "service"),
                 bucketDurationMs),
             api,
             bucketDurationMs: bucketDurationMs,
@@ -75,7 +78,7 @@ public class DataStreamsMonitoringTransportTests
 
         await writer.DisposeAsync();
 
-        var result = agent.WaitForDataStreams(1);
+        var result = await agent.WaitForDataStreamsAsync(1);
 
         // we can't guarantee only having a single payload due to race conditions in the flushing code
         result.Should().OnlyContain(payload => payload.Env == "env");

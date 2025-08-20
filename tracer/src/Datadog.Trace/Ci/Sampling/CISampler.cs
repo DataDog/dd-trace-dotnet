@@ -11,13 +11,12 @@ namespace Datadog.Trace.Ci.Sampling
 {
     internal class CISampler : ITraceSampler
     {
+        // The Ci Sampler keeps all spans, so it doesn't depend on the resource name
+        public bool HasResourceBasedSamplingRule => false;
+
         public SamplingDecision MakeSamplingDecision(Span span)
         {
             return new SamplingDecision(SamplingPriorityValues.UserKeep, mechanism: null, rate: null, limiterRate: null);
-        }
-
-        public void RegisterRule(ISamplingRule rule)
-        {
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)

@@ -209,16 +209,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             settings.ApiKey.Should().Be(expected);
         }
 
-        [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
-        public void LogsInjectionEnabled(string value, bool expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.LogsInjectionEnabled, value));
-            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
-
-            settings.LogsInjectionEnabled.Should().Be(expected);
-        }
-
         [Fact]
         public void ValidSettingsAreValid()
         {
@@ -387,25 +377,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
 
             tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
             tracerSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
-        }
-
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void WhenLogsInjectionIsNotSetThenValueIsSameAsLogSubmissionEnabled(bool directLogSubmissionEnabled)
-        {
-            var config = new NameValueCollection(Defaults);
-            config.Remove(ConfigurationKeys.LogsInjectionEnabled);
-
-            if (!directLogSubmissionEnabled)
-            {
-                config.Remove(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations);
-            }
-
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
-
-            tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
-            tracerSettings.LogsInjectionEnabled.Should().Be(directLogSubmissionEnabled);
         }
     }
 }

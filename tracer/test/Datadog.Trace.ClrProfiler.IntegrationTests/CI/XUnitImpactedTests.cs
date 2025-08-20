@@ -21,7 +21,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     [UsesVerify]
     public class XUnitImpactedTests : TestingFrameworkImpactedTests
     {
-        private const int ExpectedSpanCount = 41;
         private const string IsModifiedTag = "test.is_modified";
 
         public XUnitImpactedTests(ITestOutputHelper output)
@@ -39,36 +38,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             InjectGitHubActionsSession();
             return SubmitTests(packageVersion, 2, TestIsModified);
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "TestIntegrations")]
-        public Task BaseShaFromBackend(string packageVersion)
-        {
-            InjectGitHubActionsSession(false);
-            return SubmitTests(packageVersion, 2, TestIsModified);
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "TestIntegrations")]
-        public Task FilesFromBackend(string packageVersion)
-        {
-            InjectGitHubActionsSession(false);
-            Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> agentRequestProcessor = (request, receivedTests) =>
-            {
-                if (request.PathAndQuery.EndsWith("ci/tests/diffs"))
-                {
-                    request.Response = new MockTracerResponse(GetDiffFilesJson(false), 200);
-                    return;
-                }
-
-                ProcessAgentRequest(request, receivedTests);
-            };
-            return SubmitTests(packageVersion, 12, TestIsModified, agentRequestProcessor);
         }
 
         [SkippableTheory]
@@ -176,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             const int timeoutMs = 5000;
             testFilter ??= _ => true;
 
-            List<MockCIVisibilityTest> filteredTests = tests;
+            var filteredTests = tests;
             while (stopwatch.ElapsedMilliseconds < timeoutMs)
             {
                 filteredTests = tests.Where(testFilter).ToList();

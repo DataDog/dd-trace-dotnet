@@ -93,7 +93,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             if (!probeData.Processor.ShouldProcess(in probeData))
             {
-                Log.Warning("BeginMethod_StartMarker: Skipping the instrumentation. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
                 return CreateInvalidatedDebuggerState();
             }
 
@@ -234,7 +233,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="returnValue">Return value</param>
         /// <param name="exception">Exception value</param>
         /// <param name="state">Debugger state</param>
-        /// <returns>LiveDebugger return structure</returns>
+        /// <returns>Dynamic Instrumentation return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref MethodDebuggerState state)
         {

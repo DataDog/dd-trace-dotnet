@@ -30,6 +30,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
+using OpenTelemetry.Proto.Metrics.V1; // used to deserialize otlp data using proto folder
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -92,6 +93,11 @@ namespace Datadog.Trace.TestHelpers
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
         /// <summary>
+        /// Gets the OTLP requests received by the agent
+        /// </summary>
+        public ConcurrentQueue<MockOtlpRequest> OtlpRequests { get; } = new();
+
+        /// <summary>
         /// Gets the wrapped <see cref="TelemetryData"/> requests received by the telemetry endpoint
         /// </summary>
         public ConcurrentStack<object> Telemetry { get; } = new();
@@ -105,6 +111,8 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<NameValueCollection> DataStreamsRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
+
+        public bool ConfigSent { get; set; } = false;
 
         /// <summary>
         /// Gets or sets a value indicating whether to skip deserialization of traces.
@@ -120,6 +128,23 @@ namespace Datadog.Trace.TestHelpers
 
         public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config, AgentConfiguration agentConfiguration = null) => new NamedPipeAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
 
+        public async Task<bool> WaitForConfigSentAsync(int timeoutInMilliseconds = 10000)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                if (ConfigSent)
+                {
+                    return true;
+                }
+
+                await Task.Delay(100);
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Wait for the given number of spans to appear.
         /// </summary>
@@ -130,7 +155,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
         /// <param name="assertExpectedCount">When true, asserts that the number of spans to return matches the count</param>
         /// <returns>The list of spans.</returns>
-        public IImmutableList<MockSpan> WaitForSpans(
+        public async Task<IImmutableList<MockSpan>> WaitForSpansAsync(
             int count,
             int timeoutInMilliseconds = 20000,
             string operationName = null,
@@ -174,7 +199,7 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                Thread.Sleep(500);
+                await Task.Delay(250);
             }
 
             if (assertExpectedCount)
@@ -234,7 +259,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="timeoutInMilliseconds">The timeout</param>
         /// <param name="sleepTime">The time between checks</param>
         /// <returns>The telemetry that satisfied <paramref name="hasExpectedValues"/></returns>
-        public object WaitForLatestTelemetry(
+        public async Task<object> WaitForLatestTelemetryAsync(
             Func<object, bool> hasExpectedValues,
             int timeoutInMilliseconds = 5000,
             int sleepTime = 200)
@@ -252,13 +277,13 @@ namespace Datadog.Trace.TestHelpers
                     }
                 }
 
-                Thread.Sleep(sleepTime);
+                await Task.Delay(sleepTime);
             }
 
             return null;
         }
 
-        public IImmutableList<MockClientStatsPayload> WaitForStats(
+        public async Task<IImmutableList<MockClientStatsPayload>> WaitForStatsAsync(
             int count,
             int timeoutInMilliseconds = 20000)
         {
@@ -275,13 +300,13 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                Thread.Sleep(500);
+                await Task.Delay(250);
             }
 
             return stats;
         }
 
-        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
             int timeoutInMilliseconds,
             Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
         {
@@ -298,17 +323,17 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                Thread.Sleep(500);
+                await Task.Delay(250);
             }
 
             return stats;
         }
 
-        public IImmutableList<MockDataStreamsPayload> WaitForDataStreamsPoints(
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsPointsAsync(
             int statsCount,
             int timeoutInMilliseconds = 20000)
         {
-            return WaitForDataStreams(
+            return await WaitForDataStreamsAsync(
                 timeoutInMilliseconds,
                 (stats) =>
                 {
@@ -316,11 +341,11 @@ namespace Datadog.Trace.TestHelpers
                 });
         }
 
-        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
             int payloadCount,
             int timeoutInMilliseconds = 20000)
         {
-            return WaitForDataStreams(
+            return await WaitForDataStreamsAsync(
                 timeoutInMilliseconds,
                 (stats) => stats.Count == payloadCount);
         }
@@ -535,6 +560,11 @@ namespace Datadog.Trace.TestHelpers
                 HandleTracerFlarePayload(request);
                 responseType = MockTracerResponseType.TracerFlare;
             }
+            else if (request.PathAndQuery.StartsWith("/v1/traces") || request.PathAndQuery.StartsWith("/v1/metrics") || request.PathAndQuery.StartsWith("/v1/logs"))
+            {
+                HandlePotentialOtlpData(request);
+                responseType = MockTracerResponseType.Otlp;
+            }
             else
             {
                 HandlePotentialTraces(request);
@@ -543,7 +573,10 @@ namespace Datadog.Trace.TestHelpers
 
             return CustomResponses.TryGetValue(responseType, out var custom)
                        ? custom // custom response, use that
-                       : new MockTracerResponse(response ?? "{}");
+                       : new MockTracerResponse(response ?? "{}")
+                       {
+                           IsConfigResponse = responseType == MockTracerResponseType.Info,
+                       };
         }
 
         private void HandlePotentialTraces(MockHttpRequest request)
@@ -926,6 +959,48 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        private void HandlePotentialOtlpData(MockHttpRequest request)
+        {
+            var body = request.ReadStreamBody();
+            if (body == null || body.Length == 0)
+            {
+                return;
+            }
+
+            var contentType = request.Headers.TryGetValue("Content-Type", out var ct) && !string.IsNullOrEmpty(ct)
+                ? ct
+                : "application/x-protobuf";
+
+            var headersDict = request.Headers.ToDictionary(
+                h => h.Key,
+                h => h.Value.ToList(),
+                StringComparer.OrdinalIgnoreCase);
+
+            MetricsData metricsData = null;
+
+            if (request.PathAndQuery.StartsWith("/v1/metrics") && contentType.Contains("protobuf"))
+            {
+                try
+                {
+                    metricsData = MetricsData.Parser.ParseFrom(body);
+                }
+                catch (Exception ex)
+                {
+                    Output?.WriteLine($"[OTLP] Failed to deserialize metrics data: {ex.Message}");
+                }
+            }
+
+            if (metricsData is not null)
+            {
+                OtlpRequests.Enqueue(new MockOtlpRequest(
+                                         request.PathAndQuery,
+                                         headersDict,
+                                         body,
+                                         contentType,
+                                         metricsData));
+            }
+        }
+
         private void AssertHeader(
             NameValueCollection headers,
             string headerKey,
@@ -981,6 +1056,12 @@ namespace Datadog.Trace.TestHelpers
                    .Append(Version);
             }
 
+            // The state header is used to indicate if the agent config (i.e. the data at /info) has changed
+            sb
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Datadog-Agent-State: ")
+               .Append(Configuration?.GetHashCode().ToString() ?? "0");
+
             var responseBody = Encoding.UTF8.GetBytes(body);
             var contentLength64 = responseBody.LongLength;
             sb
@@ -1016,7 +1097,7 @@ namespace Datadog.Trace.TestHelpers
             public MockTracerResponse Response { get; set; }
         }
 
-        public class AgentConfiguration
+        public record AgentConfiguration
         {
             [JsonProperty("endpoints")]
             public string[] Endpoints { get; set; } = DiscoveryService.AllSupportedEndpoints.Select(s => s.StartsWith("/") ? s : "/" + s).ToArray();
@@ -1167,6 +1248,9 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
 
+                            // The state header is used to indicate if the agent config (i.e. the data at /info) has changed
+                            ctx.Response.AddHeader("Datadog-Agent-State", Configuration?.GetHashCode().ToString() ?? "0");
+
                             var request = MockHttpRequest.Create(ctx.Request);
 
                             OnRequestReceived(request);
@@ -1191,6 +1275,7 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.ContentLength64 = buffer.LongLength;
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                                 ctx.Response.Close();
+                                ConfigSent |= mockTracerResponse.IsConfigResponse;
                             }
                         }
                         catch (Exception ex)
@@ -1610,5 +1695,30 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 #endif
+
+        public class MockOtlpRequest
+        {
+            public MockOtlpRequest(string pathAndQuery, Dictionary<string, List<string>> headers, byte[] body, string contentType, MetricsData metricsData)
+            {
+                PathAndQuery = pathAndQuery;
+                Headers = headers;
+                Body = body;
+                ContentType = contentType;
+                MetricsData = metricsData;
+            }
+
+            public string PathAndQuery { get; }
+
+            public Dictionary<string, List<string>> Headers { get; }
+
+            public byte[] Body { get; }
+
+            public string ContentType { get; }
+
+            /// <summary>
+            /// Gets the deserialized protobuf data (if available)
+            /// </summary>
+            public MetricsData MetricsData { get; }
+        }
     }
 }

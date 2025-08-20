@@ -19,14 +19,14 @@ internal class ServiceDiscoveryHelper
         Success,
         Skipped,
         Error,
-        Exception,
+        Exception
     }
 
     internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings)
     {
         var platformIsSupported = FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess;
-        var deploymentIsSupported = LibDatadog.NativeInterop.IsLibDatadogAvailable;
-        if (platformIsSupported && deploymentIsSupported)
+        var deploymentIsSupported = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
+        if (platformIsSupported && deploymentIsSupported.IsAvailable)
         {
             try
             {
@@ -42,8 +42,8 @@ internal class ServiceDiscoveryHelper
 
                 if (result.Tag == ResultTag.Error)
                 {
-                    Log.Error("Failed to store tracer metadata with message: {Error}", Error.Read(ref result.Error));
-                    NativeInterop.Common.DropError(ref result.Error);
+                    Log.Error("Failed to store tracer metadata with message: {Error}", result.Result.Error.Message.ToUtf8String());
+                    NativeInterop.Common.DropError(ref result.Result.Error);
                     return StoreMetadataResult.Error;
                 }
 
@@ -60,7 +60,8 @@ internal class ServiceDiscoveryHelper
         Log.Debug(
             "Skipping storage of tracer metadata with LibDatadog: Platform supported: {PlatformIsSupported}, Deployment supported: {DeploymentIsSupported}",
             platformIsSupported,
-            deploymentIsSupported);
+            deploymentIsSupported.IsAvailable);
+
         return StoreMetadataResult.Skipped;
     }
 
@@ -82,6 +83,6 @@ internal class ServiceDiscoveryHelper
         using var serviceEnvCharSlice = new CharSlice(serviceEnv);
         using var serviceVersionCharSlice = new CharSlice(serviceVersion);
 
-        return NativeInterop.Common.StoreTracerMetadata(schemaVersion, runtimeIdCharSlice, tracerLanguageCharSlice, tracerVersionCharSlice, hostnameCharSlice, serviceNameCharSlice, serviceEnvCharSlice, serviceVersionCharSlice);
+        return NativeInterop.LibraryConfig.StoreTracerMetadata(schemaVersion, runtimeIdCharSlice, tracerLanguageCharSlice, tracerVersionCharSlice, hostnameCharSlice, serviceNameCharSlice, serviceEnvCharSlice, serviceVersionCharSlice);
     }
 }

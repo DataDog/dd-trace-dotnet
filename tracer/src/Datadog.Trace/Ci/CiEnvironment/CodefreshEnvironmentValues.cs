@@ -43,5 +43,6 @@ internal sealed class CodefreshEnvironmentValues<TValueProvider>(TValueProvider 
             Constants.CodefreshBuildId);
 
         PrBaseBranch = ValueProvider.GetValue(Constants.CodefreshPullRequestTarget);
+        PrNumber = ValueProvider.GetValue(Constants.CodefreshPullRequestNumber);
     }
 }

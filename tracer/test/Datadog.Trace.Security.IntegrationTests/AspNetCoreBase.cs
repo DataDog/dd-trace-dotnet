@@ -67,8 +67,9 @@ namespace Datadog.Trace.Security.IntegrationTests
                                  new("Akamai-User-Risk", "Test"),
                                  new("X-SigSci-RequestID", "Test")
                              });
-            var spans = WaitForSpans(agent, 1, string.Empty, now, url);
+            var spans = await WaitForSpansAsync(agent, 1, string.Empty, now, url);
             var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.ScrubSessionFingerprint();
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName($"{GetTestName()}.test-external-waf-headers");
         }

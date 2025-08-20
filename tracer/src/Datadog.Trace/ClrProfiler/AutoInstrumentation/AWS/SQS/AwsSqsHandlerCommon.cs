@@ -30,7 +30,8 @@ internal static class AwsSqsHandlerCommon
         // for the Inject call below
         var requestProxy = request.DuckCast<IAmazonSQSRequestWithQueueUrl>();
 
-        var scope = AwsSqsCommon.CreateScope(Tracer.Instance, sendType.OperationName, out var tags, spanKind: SpanKinds.Producer);
+        var tracer = Tracer.Instance;
+        var scope = AwsSqsCommon.CreateScope(tracer, sendType.OperationName, out var tags, spanKind: SpanKinds.Producer);
 
         var queueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
         if (tags is not null && requestProxy.QueueUrl is not null)
@@ -41,22 +42,20 @@ internal static class AwsSqsHandlerCommon
 
         if (scope?.Span.Context != null && !string.IsNullOrEmpty(queueName))
         {
-            var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-
             if (sendType == SendType.SingleMessage)
             {
-                InjectForSingleMessage(dataStreamsManager, request, scope, queueName);
+                InjectForSingleMessage(tracer, request, scope, queueName);
             }
             else if (sendType == SendType.Batch)
             {
-                InjectForBatch(dataStreamsManager, request, scope, queueName);
+                InjectForBatch(tracer, request, scope, queueName);
             }
         }
 
         return new CallTargetState(scope);
     }
 
-    private static void InjectForSingleMessage<TSendMessageRequest>(DataStreamsManager? dataStreamsManager, TSendMessageRequest request, Scope scope, string queueName)
+    private static void InjectForSingleMessage<TSendMessageRequest>(Tracer tracer, TSendMessageRequest request, Scope scope, string queueName)
     {
         var requestProxy = request.DuckCast<IContainsMessageAttributes>();
         if (requestProxy == null)
@@ -64,16 +63,17 @@ internal static class AwsSqsHandlerCommon
             return;
         }
 
+        var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
         if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
         {
             var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
             scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
         }
 
-        ContextPropagation.InjectHeadersIntoMessage(requestProxy, scope.Span.Context, dataStreamsManager, CachedMessageHeadersHelper<TSendMessageRequest>.Instance);
+        ContextPropagation.InjectHeadersIntoMessage(tracer, requestProxy, scope.Span.Context, dataStreamsManager, CachedMessageHeadersHelper<TSendMessageRequest>.Instance);
     }
 
-    private static void InjectForBatch<TSendMessageBatchRequest>(DataStreamsManager? dataStreamsManager, TSendMessageBatchRequest request, Scope scope, string queueName)
+    private static void InjectForBatch<TSendMessageBatchRequest>(Tracer tracer, TSendMessageBatchRequest request, Scope scope, string queueName)
     {
         var requestProxy = request.DuckCast<ISendMessageBatchRequest>();
         if (requestProxy == null || requestProxy.Entries == null)
@@ -88,10 +88,11 @@ internal static class AwsSqsHandlerCommon
             if (entry != null)
             {
                 // this has no effect if DSM is disabled
+                var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
                 scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                 // this needs to be done for context propagation even when DSM is disabled
                 // (when DSM is enabled, it injects the pathway context on top of the trace context)
-                ContextPropagation.InjectHeadersIntoMessage(entry, scope.Span.Context, dataStreamsManager, CachedMessageHeadersHelper<TSendMessageBatchRequest>.Instance);
+                ContextPropagation.InjectHeadersIntoMessage(tracer, entry, scope.Span.Context, dataStreamsManager, CachedMessageHeadersHelper<TSendMessageBatchRequest>.Instance);
             }
         }
     }

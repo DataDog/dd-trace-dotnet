@@ -21,10 +21,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     {
         private const string KinesisKey = "_datadog";
         private const int MaxKinesisDataSize = 1024 * 1024; // 1MB
+        private const int MaxDsmHeaderSize = 34;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
-        public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, Scope? scope, string? streamName)
-            where TRecordsRequest : IPutRecordsRequest
+        public static void InjectTraceIntoRecords<TRecordsRequest>(Tracer tracer, TRecordsRequest request, Scope? scope, string? streamName)
+            where TRecordsRequest : IContainsRecords
         {
             // request.Records is not null and has at least one element
             if (request.Records is not { Count: > 0 })
@@ -34,34 +35,53 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             if (request.Records[0].DuckCast<IContainsData>() is { } record)
             {
-                InjectTraceIntoData(record, scope, streamName);
+                InjectTraceIntoData(tracer, record, scope, streamName);
             }
         }
 
-        public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, Scope? scope, string? streamName)
+        public static void InjectTraceIntoData<TRecordRequest>(Tracer tracer, TRecordRequest record, Scope? scope, string? streamName)
             where TRecordRequest : IContainsData
         {
-            Dictionary<string, object> propagatedContext = new Dictionary<string, object>();
-            if (scope?.Span.Context != null && !string.IsNullOrEmpty(streamName))
-            {
-                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-                if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
-                {
-                    var edgeTags = new[] { "direction:out", $"topic:{streamName}", "type:kinesis" };
-                    scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                    var adapter = new KinesisContextAdapter();
-                    dataStreamsManager.InjectPathwayContext(scope.Span.Context.PathwayContext, adapter);
-                    propagatedContext = adapter.GetDictionary();
-                }
-            }
-
-            var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-            if (record.Data is null)
+            if (scope is null)
             {
                 return;
             }
 
-            var jsonData = ParseDataObject(record.Data);
+            Dictionary<string, object>? jsonData = null;
+            var context = new PropagationContext(scope.Span.Context, Baggage.Current);
+            if (record.Data is not null)
+            {
+                jsonData = ParseDataObject(record.Data);
+            }
+
+            var propagatedContext = new Dictionary<string, object>();
+            if (scope.Span.Context != null && !string.IsNullOrEmpty(streamName))
+            {
+                var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+                if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
+                {
+                    var payloadSize = jsonData?.Count > 0 && record.Data != null ? record.Data.Length : 0;
+                    var edgeTags = new[] { "direction:out", $"topic:{streamName}", "type:kinesis" };
+                    scope.Span.SetDataStreamsCheckpoint(
+                        dataStreamsManager,
+                        CheckpointKind.Produce,
+                        edgeTags,
+                        payloadSizeBytes: payloadSize,
+                        timeInQueueMs: 0);
+
+                    var adapter = new KinesisContextAdapter();
+                    // We should not inject context if its size is comparable to the message size itself.
+                    // This block doesn't modify the payload, the actual injection will happen later and only if the
+                    // payload was parsed to json.
+                    if (payloadSize != 0 && payloadSize > MaxDsmHeaderSize)
+                    {
+                        dataStreamsManager.InjectPathwayContext(scope.Span.Context.PathwayContext, adapter);
+                    }
+
+                    propagatedContext = adapter.GetDictionary();
+                }
+            }
+
             if (jsonData is null || jsonData.Count == 0)
             {
                 return;
@@ -69,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             try
             {
-                Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
+                tracer.TracerManager.SpanContextPropagator.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
                 jsonData[KinesisKey] = propagatedContext;
 
                 var memoryStreamData = DictionaryToMemoryStream(jsonData);
