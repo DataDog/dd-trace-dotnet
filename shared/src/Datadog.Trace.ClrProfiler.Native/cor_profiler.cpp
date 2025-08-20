@@ -118,7 +118,7 @@ namespace datadog::shared::nativeloader
 
     HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
     {
-        Log::Debug("CorProfiler::Initialize");
+        Log::Debug("CorProfiler::Initialize [DAMINOU]");
 
         const auto inferredVersion = InspectRuntimeCompatibility(pICorProfilerInfoUnk);
 
@@ -265,8 +265,11 @@ namespace datadog::shared::nativeloader
           UNKNOWN
         } injection_status = InjectionStatus::UNKNOWN;
 
+        auto proc = ToString(process_name);
+        std::string_view p(proc.data(), proc.size());
+
         wls::init();
-        wls::set_params(wls::StringEvaluator::PROCESS_EXE_PATH, ToString(process_name));
+        wls::set_params(wls::StringEvaluator::PROCESS_EXE_PATH, p);
         wls::set_params(wls::StringEvaluator::RUNTIME_LANGUAGE, "dotnet");
         wls::set_params(wls::NumericEvaluator::RUNTIME_VERSION_MAJOR, (unsigned long)runtimeInformation.major_version);
         wls::set_params(wls::NumericEvaluator::RUNTIME_VERSION_MINOR, (unsigned long)runtimeInformation.minor_version);
@@ -278,11 +281,20 @@ namespace datadog::shared::nativeloader
           });
 
         wls::register_action(wls::Action::INJECT_ALLOW, [&injection_status](wls::Result eval_result, const std::vector<const char*>&, const char* desc) -> std::optional<wls::Error> {
-            injection_status = InjectionStatus::ALLOW;
+            if (eval_result == wls::Result::TTRUE)
+            {
+                injection_status = InjectionStatus::ALLOW;
+            }
+            else
+            {
+                injection_status = InjectionStatus::DENY;
+            }
+            
             return std::nullopt;
         });
 
-        if (const auto wls_file = fs::path{GetDatadogLogsDirectoryPath()} / "workload_selection.fb"; fs::exists(wls_file)) {
+        if (const auto wls_file = fs::path{GetDatadogProgramDataFolderPath()} / "protected" / "workload_selection.fb"; fs::exists(wls_file))
+        {
           auto maybe_error = wls::evaluate_buffer_from_file(wls_file);
           if (maybe_error || injection_status != InjectionStatus::ALLOW) {
             Log::Info("CorProfiler::Initialize: Instrumentation denied due to workload selection.");
