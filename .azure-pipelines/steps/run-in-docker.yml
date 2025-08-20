@@ -103,6 +103,7 @@ steps:
         --env RANDOM_SEED \
         --env smokeTestOs \
         --env smokeTestOsVersion \
+        --env publishFramework \
         ${{ parameters.extraArgs }} \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }}:$sdkVersion \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
