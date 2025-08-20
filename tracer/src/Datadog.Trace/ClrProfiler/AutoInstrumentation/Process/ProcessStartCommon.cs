@@ -33,13 +33,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             if (info is not null)
             {
 #if NETCOREAPP3_1_OR_GREATER
-                return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment, info.UseShellExecute, info.Arguments, info.ArgumentList);
+                return CreateScope(info.FileName, info.UseShellExecute ? null : SafeGetEnvironmentVariables(info), info.UseShellExecute, info.Arguments, info.ArgumentList);
 #else
-                return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment, info.UseShellExecute, info.Arguments);
+                return CreateScope(info.FileName, info.UseShellExecute ? null : SafeGetEnvironmentVariables(info), info.UseShellExecute, info.Arguments);
 #endif
             }
 
             return null;
+        }
+
+        private static IDictionary<string, string?>? SafeGetEnvironmentVariables(ProcessStartInfo info)
+        {
+            try
+            {
+                // We only collect environment variables when UseShellExecute is false (to match previous behaviour)
+                return info.UseShellExecute ? null : info.Environment;
+            }
+            catch (ArgumentException ex)
+            {
+                // Duplicate environment variable keys (differing only by case) can cause ArgumentException on some platforms
+                Log.Warning(ex, "Failed to read environment variables for process start due to duplicate keys. Skipping variable collection.");
+                return null;
+            }
         }
 
         private static Scope? CreateScope(string filename, IDictionary<string, string?>? environmentVariables, bool useShellExecute, string arguments, Collection<string>? argumentList = null)
