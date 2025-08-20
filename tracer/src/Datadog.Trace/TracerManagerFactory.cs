@@ -590,9 +590,9 @@ namespace Datadog.Trace
                     return true;
                 }
             }
-            catch (TypeLoadException)
+            catch (TypeLoadException ex)
             {
-                Log.Warning("Unable to determine ASP.NET site name: HostingEnvironment type could not be loaded. This is expected when running ASP.NET Core on the .NET Framework CLR, which is not supported.");
+                Log.Warning(ex, "Unable to determine ASP.NET site name: HostingEnvironment type could not be loaded. This is expected when running ASP.NET Core on the .NET Framework CLR, which is not supported.");
             }
 #endif
             siteName = default;
