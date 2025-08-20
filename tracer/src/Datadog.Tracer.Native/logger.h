@@ -88,4 +88,6 @@ public:
     }
 };
 
+    #define DBG if (Logger::IsDebugEnabled()) Logger::Debug
+
 } // namespace trace

@@ -179,16 +179,20 @@ partial class Build
                ? new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests) }
                : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
 
-    TargetFramework[] TestingFrameworks => GetTestingFrameworks(IsArm64);
+    TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
-    TargetFramework[] GetTestingFrameworks(bool isArm64) => (isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
+    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
-        // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
-        (false, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (false, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
-        (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
+        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        // Everything else e.g. MaxOS, linux-x64 etc
+        // Same as Windows just without the .NET FX
+        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -2415,7 +2419,7 @@ partial class Build
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines")
-       .Executes(() =>
+       .Executes(async () =>
        {
            // we expect to see _some_ errors, so explicitly ignore them
            var knownPatterns = new List<Regex>
@@ -2453,13 +2457,13 @@ partial class Build
                new(@".*Some errors were found while applying waf configuration \(RulesFile: rasp-rule-set.json\).*", RegexOptions.Compiled),
            };
 
-           CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error, new ());
        });
 
     Target CheckSmokeTestsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines in the smoke test logs")
-       .Executes(() =>
+       .Executes(async () =>
        {
            var knownPatterns = new List<Regex>();
 
@@ -2507,10 +2511,18 @@ partial class Build
 
            // glibc TLS-reuse bug warnings
            knownPatterns.Add(new(@".*GLIBC version 2.34-2.36 has a TLS-reuse bug.*", RegexOptions.Compiled));
-           CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
+
+           // These patterns should be ignored, but we should send a metric when they occur
+           // so that we can track they don't happen too often and gate releases on them etc
+           var reportablePatterns = new List<(string IgnoreReasonTag, Regex Regex)>
+           {
+               new("rejit_thread_timeout", new(@".*Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented.*", RegexOptions.Compiled))
+           };
+
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning, reportablePatterns);
        });
 
-    private void CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel)
+    private async Task CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel, List<(string IgnoreReasonTag, Regex Regex)> reportablePatterns)
     {
         var logDirectory = BuildDataDirectory / "logs";
         if (!logDirectory.Exists())
@@ -2522,6 +2534,8 @@ partial class Build
                 return;
             }
         }
+
+        Dictionary<string, int> reportableMetrics = new();
 
         var managedFiles = logDirectory.GlobFiles("**/dotnet-tracer-managed-*");
         var managedErrors = managedFiles
@@ -2564,6 +2578,12 @@ partial class Build
                      || nativeTracerErrors.Count != 0
                      || nativeProfilerErrors.Count != 0
                      || nativeLoaderErrors.Count != 0;
+
+        if (reportableMetrics.Count > 0)
+        {
+            Logger.Warning("Found reportable (but ignored) problems in the logs");
+            await MetricHelper.SendReportableErrorMetrics(Logger.Logger, reportableMetrics);
+        }
 
         if (hasRequiredFiles && !hasErrors)
         {
@@ -2626,6 +2646,16 @@ partial class Build
             if (logLine.Level < minLogLevel)
             {
                 return false;
+            }
+
+            foreach (var pattern in reportablePatterns)
+            {
+                if (pattern.Regex.IsMatch(logLine.Message))
+                {
+                    var previous = reportableMetrics.GetValueOrDefault(pattern.IgnoreReasonTag, 0);
+                    reportableMetrics[pattern.IgnoreReasonTag] = previous + 1;
+                    return false;
+                }
             }
 
             foreach (var pattern in knownPatterns)

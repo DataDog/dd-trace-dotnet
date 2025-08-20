@@ -52,27 +52,6 @@ namespace Datadog.Trace.ClrProfiler
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Instrumentation));
 
         /// <summary>
-        /// Gets a value indicating whether Datadog's profiler is attached to the current process.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if the profiler is currently attached; <c>false</c> otherwise.
-        /// </value>
-        public static bool ProfilerAttached
-        {
-            get
-            {
-                try
-                {
-                    return NativeMethods.IsProfilerAttached();
-                }
-                catch (DllNotFoundException)
-                {
-                    return false;
-                }
-            }
-        }
-
-        /// <summary>
         /// Gets a value indicating the version of the native Datadog profiler. This method
         /// is rewritten by the profiler.
         /// </summary>
@@ -490,18 +469,28 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
-            _ = Task.Run(
-                async () =>
-                {
-                    try
+            var manager = DebuggerManager.Instance;
+            if (manager.DebuggerSettings.CodeOriginForSpansEnabled
+                || manager.DebuggerSettings.DynamicInstrumentationEnabled
+                || manager.ExceptionReplaySettings.Enabled)
+            {
+                _ = Task.Run(
+                    async () =>
                     {
-                        await DebuggerManager.Instance.UpdateConfiguration(tracerSettings).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error initializing debugger");
-                    }
-                });
+                        try
+                        {
+                            await DebuggerManager.Instance.UpdateConfiguration(tracerSettings).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error initializing debugger");
+                        }
+                    });
+            }
+            else
+            {
+                Log.Information($"Dynamic Instrumentation is disabled. To enable it, please set {ConfigurationKeys.Debugger.DynamicInstrumentationEnabled} environment variable to 'true'.");
+            }
         }
 
         // /!\ This method is called by reflection in the SampleHelpers

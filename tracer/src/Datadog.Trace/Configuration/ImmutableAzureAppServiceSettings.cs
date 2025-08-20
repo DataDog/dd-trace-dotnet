@@ -79,12 +79,6 @@ namespace Datadog.Trace.Configuration
                 SiteKind = "functionapp";
                 SiteType = "function";
 
-                // NOTE: the mini-agent is deprecated, but keep the code for now for backward compatibility.
-                // Start mini agent on all Linux function apps and only Windows function apps on consumption plans
-                // Windows function apps on non-consumption plans do not use the mini agent and instead use
-                // the AAS Site Extension which packages the Go trace agent.
-                IsRunningMiniAgentInAzureFunctions = Environment.OSVersion.Platform == PlatformID.Unix || WebsiteSKU is "Dynamic" or null;
-
                 IsIsolatedFunctionsApp = FunctionsWorkerRuntime?.EndsWith("-isolated", StringComparison.OrdinalIgnoreCase) == true;
                 PlatformStrategy.ShouldSkipClientSpan = ShouldSkipClientSpanWithinFunctions;
             }
@@ -123,8 +117,6 @@ namespace Datadog.Trace.Configuration
         public string? ResourceId { get; }
 
         public bool IsFunctionsApp { get; }
-
-        public bool IsRunningMiniAgentInAzureFunctions { get; }
 
         public string? WebsiteSKU { get; }
 

@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -83,6 +84,7 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
 
             logDir = await RunDotnet("restore");
@@ -115,6 +117,7 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
 
             var programCs = GetProgramCSThatMakesSpans();
@@ -153,7 +156,9 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
+
             var programCs = GetProgramCSThatMakesSpans();
 
             File.WriteAllText(Path.Combine(workingDir, "Program.cs"), programCs);
@@ -594,7 +599,7 @@ namespace Foo
         {
             // Disable .NET CLI telemetry to prevent extra HTTP spans
             SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1");
-            return RunCommand(workingDirectory, mockTracerAgent, EnvironmentHelper.GetDotnetExe(), arguments);
+            return RunCommand(workingDirectory, mockTracerAgent, "dotnet", arguments);
         }
 
         private async Task<string> RunCommand(string workingDirectory, MockTracerAgent mockTracerAgent, string exe, string arguments = null)
@@ -756,6 +761,28 @@ namespace Foo
 
             var loggingDisabled = isSsi && EnvironmentTools.IsWindows() && !bufferingDisabled;
             return loggingDisabled;
+        }
+
+        private void FixTfm(string workingDir)
+        {
+            // This is a hack because for _some_ reason, we can't set the -f flag in the Linux CI.
+            // Force the project to target .NET 8 instead of whatever the SDK defaults to
+            foreach (var projectFile in Directory.GetFiles(workingDir, "*.csproj"))
+            {
+                var projectContent = File.ReadAllText(projectFile);
+
+                // Replace any target framework with the updated version
+                // and add a langversion update to ensure we still compile
+                var replacement = $"""
+                                   <TargetFramework>{EnvironmentHelper.GetTargetFramework()}</TargetFramework>
+                                   <LangVersion>latest</LangVersion>
+                                   """;
+                var updatedContent = Regex.Replace(
+                    projectContent,
+                    @"<TargetFramework>.+</TargetFramework>",
+                    replacement);
+                File.WriteAllText(projectFile, updatedContent);
+            }
         }
 
         public class TelemetryReporterFixture : IDisposable

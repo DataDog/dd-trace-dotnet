@@ -9,7 +9,7 @@ using System;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.DataPipeline;
 
 /// <summary>
 /// Represents a configuration for the trace exporter.

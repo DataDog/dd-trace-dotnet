@@ -100,7 +100,6 @@ jobs:
         id: release_notes
         run: ./tracer/build.sh GenerateReleaseNotes
         env:
-          PIPELINE_ARTIFACTS_LINK: ${{steps.assets.outputs.artifacts_link}}
           GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: "Rename vNext milestone"
@@ -138,7 +137,7 @@ jobs:
           dotnet nuget push "*.${{steps.versions.outputs.full_version}}*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
 
       - name: "Copy gitlab artifacts to artifacts_path"
-        run: cp "${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip" "${{steps.assets.outputs.artifacts_path}}/"
+        run: cp "${{steps.assets.outputs.gitlab_artifacts_path}}/"*.zip "${{steps.assets.outputs.artifacts_path}}/"
 
       - name: 'Push debug symbols to datadog'
         uses: ./.github/actions/publish-debug-symbols

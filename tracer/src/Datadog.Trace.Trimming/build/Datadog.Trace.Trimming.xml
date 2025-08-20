@@ -242,8 +242,6 @@
       <type fullname="System.Diagnostics.DistributedContextPropagator" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
-      <type fullname="System.Diagnostics.DataReceivedEventArgs" />
-      <type fullname="System.Diagnostics.DataReceivedEventHandler" />
       <type fullname="System.Diagnostics.Process" />
       <type fullname="System.Diagnostics.ProcessStartInfo" />
       <type fullname="System.Diagnostics.ProcessThreadCollection" />

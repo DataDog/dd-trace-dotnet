@@ -1,0 +1,7 @@
+config_id: a1
+apm_configuration_default:
+  KEY2: false
+  KEY1: "local_file_env"
+  KEY5: "local_file_service"
+  KEY4: "true"
+  

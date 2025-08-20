@@ -213,7 +213,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &info10);
     if (SUCCEEDED(hr))
     {
-        Logger::Debug("Interface ICorProfilerInfo10 found.");
+        DBG("Interface ICorProfilerInfo10 found.");
     }
     else
     {
@@ -225,7 +225,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &info8);
     if (SUCCEEDED(hr))
     {
-        Logger::Debug("Interface ICorProfilerInfo8 found.");
+        DBG("Interface ICorProfilerInfo8 found.");
     }
     else
     {
@@ -291,7 +291,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
     else
     {
-        Logger::Debug("JIT Inlining is enabled.");
+        DBG("JIT Inlining is enabled.");
     }
 
     if (DisableOptimizations())
@@ -302,7 +302,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     if (IsNGENEnabled())
     {
-        Logger::Debug("NGEN is enabled.");
+        DBG("NGEN is enabled.");
         event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
     }
     else
@@ -407,7 +407,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     const auto& assembly_info = GetAssemblyInfo(this->info_, assembly_id);
     if (!assembly_info.IsValid())
     {
-        Logger::Debug("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
+        DBG("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
         return S_OK;
     }
 
@@ -415,10 +415,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 
     if (is_instrumentation_assembly)
     {
-        if (Logger::IsDebugEnabled())
-        {
-            Logger::Debug("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
-        }
+        DBG("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
 
         ComPtr<IUnknown> metadata_interfaces;
         auto hr = this->info_->GetModuleMetaData(assembly_info.manifest_module_id, ofRead,
@@ -439,11 +436,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         // used multiple times for logging
         const auto& assembly_version = assembly_metadata.version.str();
 
-        if (Logger::IsDebugEnabled())
-        {
-            Logger::Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name,
-                          " AssemblyVersion=", assembly_version);
-        }
+        DBG("AssemblyLoadFinished: AssemblyName=", assembly_info.name, " AssemblyVersion=", assembly_version);
 
         const auto& expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
 
@@ -554,7 +547,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
                 auto methodDef = *enumIterator;
 
                 const auto& caller = GetFunctionInfo(module_metadata.metadata_import, methodDef);
-                Logger::Debug("Rewriting PInvoke method: ", caller.name);
+                DBG("Rewriting PInvoke method: ", caller.name);
 
                 // Get the current PInvoke map to extract the flags and the entrypoint name
                 DWORD pdwMappingFlags;
@@ -672,8 +665,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             const auto& methodReferences = rejit_module_method_pair.second;
             integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
 
-            Logger::Debug("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id,
-                          ", methodReferences.size()=", methodReferences.size());
+            DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id, ", methodReferences.size()=", methodReferences.size());
 
             // Push integration definitions from the given module
             for (const auto& methodReference : methodReferences)
@@ -700,7 +692,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             if (status != std::future_status::timeout)
             {
                 const auto& numReJITs = future.get();
-                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+                DBG("Total number of ReJIT Requested: ", numReJITs);
             }
             else
             {
@@ -751,7 +743,7 @@ std::string GetNativeLoaderFilePath()
     }
 
     // variable not set - try to infer the location instead
-    Logger::Debug("DD_INTERNAL_NATIVE_LOADER_PATH variable not found. Inferring native loader path");
+    DBG("DD_INTERNAL_NATIVE_LOADER_PATH variable not found. Inferring native loader path");
 
     auto native_loader_filename =
 #ifdef LINUX
@@ -793,13 +785,10 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         return S_OK;
     }
 
-    if (Logger::IsDebugEnabled())
-    {
-        Logger::Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name, " AppDomain ",
-                      module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name, std::boolalpha,
-                      " | IsNGEN = ", module_info.IsNGEN(), " | IsDynamic = ", module_info.IsDynamic(),
-                      " | IsResource = ", module_info.IsResource(), std::noboolalpha);
-    }
+    DBG("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name, " AppDomain ",
+        module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name, std::boolalpha,
+        " | IsNGEN = ", module_info.IsNGEN(), " | IsDynamic = ", module_info.IsDynamic(),
+        " | IsResource = ", module_info.IsResource(), std::noboolalpha);
 
     if (module_info.IsNGEN())
     {
@@ -868,7 +857,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
     {
         // We cannot obtain writable metadata interfaces on Windows Runtime modules
         // or instrument their IL.
-        Logger::Debug("ModuleLoadFinished skipping Windows Metadata module: ", module_id, " ",
+        DBG("ModuleLoadFinished skipping Windows Metadata module: ", module_id, " ",
                       module_info.assembly.name);
         return S_OK;
     }
@@ -876,14 +865,14 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
     if (module_info.IsResource())
     {
         // We don't need to load metadata on resources modules.
-        Logger::Debug("ModuleLoadFinished skipping Resources module: ", module_id, " ", module_info.assembly.name);
+        DBG("ModuleLoadFinished skipping Resources module: ", module_id, " ", module_info.assembly.name);
         return S_OK;
     }
 
     if (module_info.IsDynamic())
     {
         // For CallTarget we don't need to load metadata on dynamic modules.
-        Logger::Debug("ModuleLoadFinished skipping Dynamic module: ", module_id, " ", module_info.assembly.name);
+        DBG("ModuleLoadFinished skipping Dynamic module: ", module_id, " ", module_info.assembly.name);
         return S_OK;
     }
 
@@ -891,7 +880,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
     {
         if (module_info.assembly.name == skip_assembly)
         {
-            Logger::Debug("ModuleLoadFinished skipping known module: ", module_id, " ", module_info.assembly.name);
+            DBG("ModuleLoadFinished skipping known module: ", module_id, " ", module_info.assembly.name);
             return S_OK;
         }
     }
@@ -913,14 +902,14 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
             if (is_included)
             {
-                Logger::Debug("ModuleLoadFinished matched module by pattern: ", module_id, " ",
+                DBG("ModuleLoadFinished matched module by pattern: ", module_id, " ",
                               module_info.assembly.name,
                               "but assembly is explicitly included");
                 break;
             }
             else
             {
-                Logger::Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ",
+                DBG("ModuleLoadFinished skipping module by pattern: ", module_id, " ",
                               module_info.assembly.name);
                 return S_OK;
             }
@@ -971,6 +960,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             RewritingPInvokeMaps(module_metadata, libdatadog_exporter_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, libdatadog_config_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, libdatadog_logger_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, libdatadog_libraryconfig_nativemethods_type, libdatadog_filepath);
         }
         else
         {
@@ -1015,8 +1005,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                 if (runtime_information_.is_core() && assemblyImport.version > managed_profiler_assembly_reference->
                     version)
                 {
-                    Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
-                                  " because running on .NET Core with a higher version than expected");
+                    DBG("Skipping version conflict fix for ", assemblyVersion,
+                        " because running on .NET Core with a higher version than expected");
                 }
                 else
                 {
@@ -1026,8 +1016,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         }
         else
         {
-            Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
-                          " because the version matches the expected one");
+            DBG("Skipping version conflict fix for ", assemblyVersion,
+                " because the version matches the expected one");
         }
 
         // Rewrite methods for exposing the native tracer version to managed for telemetry purposes
@@ -1083,8 +1073,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             {
                 if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
                 {
-                    Logger::Debug("ModuleLoadFinished skipping [Trace] search for module by pattern: ", module_id, " ",
-                                  module_info.assembly.name);
+                    DBG("ModuleLoadFinished skipping [Trace] search for module by pattern: ", module_id, " ", module_info.assembly.name);
                     searchForTraceAttribute = false;
                     break;
                 }
@@ -1117,8 +1106,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             if (SUCCEEDED(hr))
             {
                 foundType = true;
-                Logger::Debug("ModuleLoadFinished found the TypeDef for ", traceattribute_typename,
-                              " defined in Module ", module_info.assembly.name);
+                DBG("ModuleLoadFinished found the TypeDef for ", traceattribute_typename,
+                    " defined in Module ", module_info.assembly.name);
             }
             else
             {
@@ -1144,8 +1133,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                     if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
                     {
                         foundType = true;
-                        Logger::Debug("ModuleLoadFinished found the TypeRef for ", traceattribute_typename,
-                                      " defined in Module ", module_info.assembly.name);
+                        DBG("ModuleLoadFinished found the TypeRef for ", traceattribute_typename,
+                            " defined in Module ", module_info.assembly.name);
                         break;
                     }
 
@@ -1276,8 +1265,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
                 if (trace_annotation_integration_type == nullptr)
                 {
-                    Logger::Debug(
-                        "ModuleLoadFinished pushing [Trace] methods to rejit_module_method_pairs for a later ReJIT, ModuleId=",
+                    DBG("ModuleLoadFinished pushing [Trace] methods to rejit_module_method_pairs for a later ReJIT, ModuleId=",
                         module_id,
                         ", ModuleName=", module_info.assembly.name,
                         ", methodReferences.size()=", methodReferences.size());
@@ -1289,9 +1277,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                 }
                 else
                 {
-                    Logger::Debug("ModuleLoadFinished including [Trace] methods for ReJIT, ModuleId=", module_id,
-                                  ", ModuleName=", module_info.assembly.name,
-                                  ", methodReferences.size()=", methodReferences.size());
+                    DBG("ModuleLoadFinished including [Trace] methods for ReJIT, ModuleId=", module_id,
+                        ", ModuleName=", module_info.assembly.name,
+                        ", methodReferences.size()=", methodReferences.size());
 
                     integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
 
@@ -1319,7 +1307,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             if (status != std::future_status::timeout)
             {
                 const auto& numReJITs = future.get();
-            Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+                DBG("[Tracer] Total number of ReJIT Requested: ", numReJITs);
             }
             else
             {
@@ -1377,15 +1365,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
     const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
     if (!moduleInfo.IsValid())
     {
-        Logger::Debug("ModuleUnloadStarted: ", module_id);
+        DBG("ModuleUnloadStarted: ", module_id);
         return S_OK;
     }
 
-    if (Logger::IsDebugEnabled())
-    {
-        Logger::Debug("ModuleUnloadStarted: ", module_id, " ", moduleInfo.assembly.name, " AppDomain ",
-                      moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
-    }
+    DBG("ModuleUnloadStarted: ", module_id, " ", moduleInfo.assembly.name, " AppDomain ",
+        moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
 
     const auto is_instrumentation_assembly = moduleInfo.assembly.name == managed_profiler_name;
     if (is_instrumentation_assembly)
@@ -1425,11 +1410,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     auto definitions = definitions_ids.Get();
 
     Logger::Info("Exiting...");
-    Logger::Debug("   ModuleIds: ", modules->size());
-    Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
-    Logger::Debug("   DefinitionsIds: ", definitions->size());
-    Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
-    Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
+    if (Logger::IsDebugEnabled())
+    {
+        Logger::Debug("   ModuleIds: ", modules->size());
+        Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
+        Logger::Debug("   DefinitionsIds: ", definitions->size());
+        Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
+        Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
+    }
     Logger::Info("Stats: ", Stats::Instance()->ToString());
     return S_OK;
 }
@@ -1585,8 +1573,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     const auto& assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
     const auto& assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-    Logger::Debug("Temporaly allocating the ModuleMetadata for injection. ModuleId=", module_id,
-                  " ModuleName=", module_info.assembly.name);
+    DBG("Temporaly allocating the ModuleMetadata for injection. ModuleId=", module_id, " ModuleName=", module_info.assembly.name);
 
     std::unique_ptr<ModuleMetadata> module_metadata = std::make_unique<ModuleMetadata>(
         metadataImport, metadataEmit, assemblyImport, assemblyEmit, module_info.assembly.name,
@@ -1600,11 +1587,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    if (Logger::IsDebugEnabled())
-    {
-        Logger::Debug("JITCompilationStarted: function_id=", function_id, " token=", function_token,
-                      " name=", caller.type.name, ".", caller.name, "()");
-    }
+    DBG("JITCompilationStarted: function_id=", function_id, " token=", function_token,
+        " name=", caller.type.name, ".", caller.name, "()");
 
     // In NETFx, NInject creates a temporary appdomain where the tracer can be loaded
     // If Runtime metrics are enabled, we can encounter a CannotUnloadAppDomainException
@@ -1670,7 +1654,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
         if (caller.type.id == mdTypeDefNil || caller.type.id == moduleTypeDef)
         {
-            Logger::Debug("JITCompilationStarted: Startup hook skipped from <Module>.", caller.name, "()");
+            DBG("JITCompilationStarted: Startup hook skipped from <Module>.", caller.name, "()");
             return S_OK;
         }
 
@@ -1680,7 +1664,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         {
             if (pType->id == mdTypeDefNil || pType->id == moduleTypeDef)
             {
-                Logger::Debug("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
+                DBG("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
                 return S_OK;
             }
 
@@ -1693,7 +1677,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
         if (caller.type.name.find(WStr("<CrtImplementationDetails>")) != shared::WSTRING::npos)
         {
-            Logger::Debug("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "()");
+            DBG("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "()");
             return S_OK;
         }
 
@@ -1708,7 +1692,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
             hr = metadataImport->FindMethod(caller.type.id, WStr(".cctor"), 0, 0, &memberDef);
             if (FAILED(hr))
             {
-                Logger::Debug("JITCompilationStarted: No .cctor found for type ", caller.type.name);
+                DBG("JITCompilationStarted: No .cctor found for type ", caller.type.name);
             }
             else
             {
@@ -1719,18 +1703,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                 hr = metadataImport->GetTypeDefProps(caller.type.id, nullptr, 0, nullptr, &typeDefFlags, nullptr);
                 if (FAILED(hr))
                 {
-                    Logger::Debug("JITCompilationStarted: Error calling GetTypeDefProps for type ", caller.type.name,
-                        ", allowing injection into ", caller.name, "()");
+                    DBG("JITCompilationStarted: Error calling GetTypeDefProps for type ", caller.type.name, ", allowing injection into ", caller.name, "()");
                 }
                 else if(typeDefFlags & tdBeforeFieldInit)
                 {
-                    Logger::Debug("JITCompilationStarted: Found .cctor for type ", caller.type.name,
-                        " but allowing startup hook injection as tdBeforeFieldInit indicates an implicit static constructor");
+                    DBG("JITCompilationStarted: Found .cctor for type ", caller.type.name, " but allowing startup hook injection as tdBeforeFieldInit indicates an implicit static constructor");
                 }
                 else
                 {
-                    Logger::Debug("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".",
-                        caller.name, "() as found .cctor");
+                    DBG("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "() as found .cctor");
                     return S_OK;
                 }
             }
@@ -1766,7 +1747,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
             }
         }
 
-        Logger::Debug("JITCompilationStarted: Startup hook registered.");
+        DBG("JITCompilationStarted: Startup hook registered.");
     }
 
     return S_OK;
@@ -1792,7 +1773,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
     // remove appdomain metadata from map
     const auto& count = first_jit_compilation_app_domains.erase(appDomainId);
 
-    Logger::Debug("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
+    DBG("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
     return S_OK;
 }
 
@@ -1829,8 +1810,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
             )
        )
     {
-        Logger::Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
-                      ", MethodDef=", shared::TokenStr(&calleFunctionToken), "]");
+        DBG("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId, ", MethodDef=", shared::TokenStr(&calleFunctionToken), "]");
         *pfShouldInline = false;
     }
 
@@ -1970,12 +1950,9 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 -1,
                 enable ? -1 : 0);
 
-            if (Logger::IsDebugEnabled())
-            {
-                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
-                              signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
-                              integrationAssembly, " | ", integrationType, "]");
-            }
+            DBG("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
+                signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
+                integrationAssembly, " | ", integrationType, "]");
 
             integrationDefinitions.push_back(integration);
         }
@@ -2024,7 +2001,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 
             // wait and get the value from the future<int>
             const auto& numReJITs = future.get();
-            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            DBG("Total number of ReJIT Requested: ", numReJITs);
         }
 
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
@@ -2123,7 +2100,7 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
 
             // wait and get the value from the future<int>
             numReJITs = future.get();
-            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            DBG("Total number of ReJIT Requested: ", numReJITs);
         }
 
         Logger::Info("RegisterCallTargetDefinitions: Added ", size, " call targets (enabled: ", enabledTargets,
@@ -2160,7 +2137,7 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
             // wait and get the value from the future<int>
             numReJITs = future.get();
         }
-        Logger::Debug("  Total number of ReJIT Requested: ", numReJITs);
+        DBG("  Total number of ReJIT Requested: ", numReJITs);
     }
     return numReJITs;
 }
@@ -2191,7 +2168,7 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
             // wait and get the value from the future<int>
             numReverts = future.get();
         }
-        Logger::Debug("  Total number of Reverts Requested: ", numReverts);
+        DBG("  Total number of Reverts Requested: ", numReverts);
     }
     return numReverts;
 }
@@ -2295,7 +2272,7 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
                 *trace_annotation_integration_type.get(), configuration_string);
             auto modules = module_ids.Get();
 
-            Logger::Debug("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
+            DBG("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
             if (rejit_handler != nullptr)
             {
                 auto promise = std::make_shared<std::promise<ULONG>>();
@@ -2306,7 +2283,7 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
 
                 // wait and get the value from the future<int>
                 const auto& numReJITs = future.get();
-                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+                DBG("Total number of ReJIT Requested: ", numReJITs);
             }
 
             integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
@@ -2370,8 +2347,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
 {
     if (IsAzureAppServices())
     {
-        Logger::Debug(
-            "GetAssemblyReferences skipping entire callback because this is running in Azure App Services, which "
+        DBG("GetAssemblyReferences skipping entire callback because this is running in Azure App Services, which "
             "isn't yet supported for this feature. AssemblyPath=",
             wszAssemblyPath);
         return S_OK;
@@ -2401,8 +2377,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
     {
         if (assembly_name.rfind(skip_assembly_pattern, 0) == 0)
         {
-            Logger::Debug("GetAssemblyReferences skipping module by pattern: Name=", assembly_name,
-                          " Path=", wszAssemblyPath);
+            DBG("GetAssemblyReferences skipping module by pattern: Name=", assembly_name, " Path=", wszAssemblyPath);
             return S_OK;
         }
     }
@@ -2411,8 +2386,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
     {
         if (assembly_name == skip_assembly)
         {
-            Logger::Debug("GetAssemblyReferences skipping known assembly: Name=", assembly_name,
-                          " Path=", wszAssemblyPath);
+            DBG("GetAssemblyReferences skipping known assembly: Name=", assembly_name, " Path=", wszAssemblyPath);
             return S_OK;
         }
     }
@@ -2460,8 +2434,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
         return S_OK;
     }
 
-    Logger::Debug("GetAssemblyReferences extending assembly closure for ", assembly_name, " to include ",
-                  asmRefInfo.szName, ". Path=", wszAssemblyPath);
+    DBG("GetAssemblyReferences extending assembly closure for ", assembly_name, " to include ", asmRefInfo.szName, ". Path=", wszAssemblyPath);
 
     return S_OK;
 }
@@ -2752,7 +2725,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                 module_metadata.metadata_import));
     }
 
-    Logger::Debug("MethodDef was added as an internal rewrite: ", getDistributedTraceMethodDef);
+    DBG("MethodDef was added as an internal rewrite: ", getDistributedTraceMethodDef);
     getDistributedTraceMethodDef_ = getDistributedTraceMethodDef;
     return hr;
 }
@@ -2827,7 +2800,7 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
     }
 
     // Store this methodDef token in the internal tokens list
-    Logger::Debug("MethodDef was added as an internal rewrite: ", getNativeTracerVersionMethodDef);
+    DBG("MethodDef was added as an internal rewrite: ", getNativeTracerVersionMethodDef);
     getNativeTracerVersionMethodDef_ = getNativeTracerVersionMethodDef;
 
     return hr;
@@ -2893,7 +2866,7 @@ HRESULT CorProfiler::RewriteIsManualInstrumentationOnly(const ModuleMetadata& mo
     }
 
     // Store this methodDef token in the internal tokens list
-    Logger::Debug("MethodDef was added as an internal rewrite: ", isAutoEnabledMethodDef);
+    DBG("MethodDef was added as an internal rewrite: ", isAutoEnabledMethodDef);
     isManualInstrumentationOnlyMethodDef_ = isAutoEnabledMethodDef;
 
     return hr;
@@ -3227,7 +3200,7 @@ bool CorProfiler::EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMet
     // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException available
     const auto bubble_up_type_name = calltargetbubbleexception_tracer_type_name.c_str();
     const auto found_call_target_bubble_up_exception_type = module_metadata.metadata_import->FindTypeDefByName(bubble_up_type_name, mdTokenNil, typeDef);
-    Logger::Debug("CallTargetBubbleUpException type available test, hresult is: ", found_call_target_bubble_up_exception_type);
+    DBG("CallTargetBubbleUpException type available test, hresult is: ", found_call_target_bubble_up_exception_type);
     return SUCCEEDED(found_call_target_bubble_up_exception_type);
 }
 
@@ -3239,7 +3212,7 @@ bool CorProfiler::EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const Mod
     const auto found_call_target_bubble_up_exception_function = module_metadata.metadata_import->FindMethod(typeDef, bubble_up_function_name, 0, 0, &methodDef);
 
     auto res = SUCCEEDED(found_call_target_bubble_up_exception_function);
-    Logger::Debug("CallTargetBubbleUpException.IsCallTargetBubbleUpException method found: ", res);
+    DBG("CallTargetBubbleUpException.IsCallTargetBubbleUpException method found: ", res);
     return res;
 }
 
@@ -3252,11 +3225,11 @@ bool CorProfiler::EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const Mod
         mdMethodDef methodDef = mdTokenNil;
         const auto function_found = module_metadata.metadata_import->FindMethod(typeDef, calltargetstate_skipmethodbody_function_name.c_str(), 0, 0, &methodDef);
         const auto res = SUCCEEDED(function_found);
-        Logger::Debug("CallTargetState.SkipMethodBody property found: ", res);
+        DBG("CallTargetState.SkipMethodBody property found: ", res);
         return res;
     }
 
-    Logger::Debug("CallTargetState.SkipMethodBody property not found: ", type_found);
+    DBG("CallTargetState.SkipMethodBody property not found: ", type_found);
     return false;
 }
 
@@ -3750,8 +3723,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     shared::WSTRING native_profiler_file = shared::GetCurrentModuleFileName();
-    Logger::Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
-                  native_profiler_file);
+    DBG("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ", native_profiler_file);
 
     mdModuleRef profiler_ref;
     hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
@@ -4371,7 +4343,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
         return S_OK;
     }
 
-    Logger::Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", Hex(methodId), "]");
+    DBG("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", Hex(methodId), "]");
 
     // we notify the reJIT handler of this event and pass the module_metadata.
     return rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl);
@@ -4501,7 +4473,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     if (!has_loader_injected_in_appdomain)
     {
-        Logger::Debug("JITCachedFunctionSearchStarted: Disabling NGEN due to missing loader.");
+        DBG("JITCachedFunctionSearchStarted: Disabling NGEN due to missing loader.");
         // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject
         // it.
         *pbUseCachedFunction = false;

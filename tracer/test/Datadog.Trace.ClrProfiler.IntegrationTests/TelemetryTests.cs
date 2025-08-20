@@ -48,6 +48,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(Data))]
         public async Task Telemetry_Agentless_IsSentOnAppClose(bool? enableDependencies)
         {
+            // This is the default, we're just setting it to test the telemetry sent
+            SetEnvironmentVariable(ConfigurationKeys.GitMetadataEnabled, "1");
+
             using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 
@@ -70,6 +73,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             await telemetry.AssertConfigurationAsync(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
             await telemetry.AssertConfigurationAsync(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage");
             await telemetry.AssertConfigurationAsync(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage");
+
+            // verify that we report both the default and explicit value to telemetry
+            var allConfigKeys = (await telemetry.GetConfigurationValuesAsync(ConfigurationKeys.GitMetadataEnabled)).ToList();
+            allConfigKeys
+               .Should()
+               .HaveCount(2)
+               .And
+               .BeEquivalentTo(
+                [
+                    new { Name = ConfigurationKeys.GitMetadataEnabled, Value = true, Origin = "default" },
+                    new { Name = ConfigurationKeys.GitMetadataEnabled, Value = true, Origin = "env_var" }
+                ]);
+            allConfigKeys[0].SeqId.Should().BeLessThan(allConfigKeys[1].SeqId);
 
             await AssertServiceAsync(telemetry, "Samples.Telemetry", ServiceVersion);
             await AssertDependenciesAsync(telemetry, enableDependencies);

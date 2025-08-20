@@ -31,6 +31,8 @@ namespace Datadog.Trace.Configuration
             _sources = [..sources];
         }
 
+        public ConfigurationOrigins Origin => ConfigurationOrigins.Unknown;
+
         /// <summary>
         /// Adds a new configuration source to this instance.
         /// </summary>
@@ -51,50 +53,260 @@ namespace Datadog.Trace.Configuration
 
         /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
-            => _sources
-              .Select(source => source.GetString(key, telemetry, validator, recordValue))
-              .FirstOrDefault(value => value.IsValid, ConfigurationResult<string>.NotFound());
+        {
+            // We iterate in reverse order, and keep the last successful value
+            // because we need to record the data for all the sources in telemetry
+            // We also have to keep track of whether the last value was the last _found_ value
+            // as we need to "restore" the telemetry if so.
+            var result = ConfigurationResult<string>.NotFound();
+            var isLastFound = false;
+            var origin = ConfigurationOrigins.Unknown;
+            for (var i = _sources.Count - 1; i >= 0; i--)
+            {
+                var source = _sources[i];
+                var value = source.GetString(key, telemetry, validator, recordValue);
+                if (value.IsValid)
+                {
+                    result = value;
+                    isLastFound = true;
+                    origin = source.Origin;
+                }
+                else if (value.IsPresent)
+                {
+                    isLastFound = false;
+                }
+            }
+
+            if (result.IsValid && !isLastFound)
+            {
+                telemetry.Record(key, result.Result, recordValue, origin);
+            }
+
+            return result;
+        }
 
         /// <inheritdoc />
         public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
-            => _sources
-              .Select(source => source.GetInt32(key, telemetry, validator))
-              .FirstOrDefault(value => value.IsValid, ConfigurationResult<int>.NotFound());
+        {
+            // We iterate in reverse order, and keep the last successful value
+            // because we need to record the data for all the sources in telemetry
+            var result = ConfigurationResult<int>.NotFound();
+            var isLastFound = false;
+            var origin = ConfigurationOrigins.Unknown;
+            for (var i = _sources.Count - 1; i >= 0; i--)
+            {
+                var source = _sources[i];
+                var value = source.GetInt32(key, telemetry, validator);
+                if (value.IsValid)
+                {
+                    result = value;
+                    isLastFound = true;
+                    origin = source.Origin;
+                }
+                else if (value.IsPresent)
+                {
+                    isLastFound = false;
+                }
+            }
+
+            if (result.IsValid && !isLastFound)
+            {
+                telemetry.Record(key, result.Result, origin);
+            }
+
+            return result;
+        }
 
         /// <inheritdoc />
         public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
-            => _sources
-              .Select(source => source.GetDouble(key, telemetry, validator))
-              .FirstOrDefault(value => value.IsValid, ConfigurationResult<double>.NotFound());
+        {
+            // We iterate in reverse order, and keep the last successful value
+            // because we need to record the data for all the sources in telemetry
+            var result = ConfigurationResult<double>.NotFound();
+            var isLastFound = false;
+            var origin = ConfigurationOrigins.Unknown;
+            for (var i = _sources.Count - 1; i >= 0; i--)
+            {
+                var source = _sources[i];
+                var value = source.GetDouble(key, telemetry, validator);
+                if (value.IsValid)
+                {
+                    result = value;
+                    isLastFound = true;
+                    origin = source.Origin;
+                }
+                else if (value.IsPresent)
+                {
+                    isLastFound = false;
+                }
+            }
+
+            if (result.IsValid && !isLastFound)
+            {
+                telemetry.Record(key, result.Result, origin);
+            }
+
+            return result;
+        }
 
         /// <inheritdoc />
         public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
-            => _sources
-              .Select(source => source.GetBool(key, telemetry, validator))
-              .FirstOrDefault(value => value.IsValid, ConfigurationResult<bool>.NotFound());
+        {
+            // We iterate in reverse order, and keep the last successful value
+            // because we need to record the data for all the sources in telemetry
+            var result = ConfigurationResult<bool>.NotFound();
+            var isLastFound = false;
+            var origin = ConfigurationOrigins.Unknown;
+            for (var i = _sources.Count - 1; i >= 0; i--)
+            {
+                var source = _sources[i];
+                var value = source.GetBool(key, telemetry, validator);
+                if (value.IsValid)
+                {
+                    result = value;
+                    isLastFound = true;
+                    origin = source.Origin;
+                }
+                else if (value.IsPresent)
+                {
+                    isLastFound = false;
+                }
+            }
+
+            if (result.IsValid && !isLastFound)
+            {
+                telemetry.Record(key, result.Result, origin);
+            }
+
+            return result;
+        }
 
         /// <inheritdoc />
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-            => _sources
-              .Select(source => source.GetDictionary(key, telemetry, validator))
-              .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
+        {
+            // We iterate in reverse order, and keep the last successful value
+            // because we need to record the data for all the sources in telemetry
+            var result = ConfigurationResult<IDictionary<string, string>>.NotFound();
+            var isLastFound = false;
+            var origin = ConfigurationOrigins.Unknown;
+            for (var i = _sources.Count - 1; i >= 0; i--)
+            {
+                var source = _sources[i];
+                var value = source.GetDictionary(key, telemetry, validator);
+                if (value.IsValid)
+                {
+                    result = value;
+                    isLastFound = true;
+                    origin = source.Origin;
+                }
+                else if (value.IsPresent)
+                {
+                    isLastFound = false;
+                }
+            }
+
+            if (result.IsValid && !isLastFound)
+            {
+                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+            }
+
+            return result;
+        }
 
         /// <inheritdoc />
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
-            => _sources
-              .Select(source => source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator))
-              .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
+        {
+            // We iterate in reverse order, and keep the last successful value
+            // because we need to record the data for all the sources in telemetry
+            var result = ConfigurationResult<IDictionary<string, string>>.NotFound();
+            var isLastFound = false;
+            var origin = ConfigurationOrigins.Unknown;
+            for (var i = _sources.Count - 1; i >= 0; i--)
+            {
+                var source = _sources[i];
+                var value = source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator);
+                if (value.IsValid)
+                {
+                    result = value;
+                    isLastFound = true;
+                    origin = source.Origin;
+                }
+                else if (value.IsPresent)
+                {
+                    isLastFound = false;
+                }
+            }
+
+            if (result.IsValid && !isLastFound)
+            {
+                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+            }
+
+            return result;
+        }
 
         /// <inheritdoc />
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
-            => _sources
-              .Select(source => source.GetDictionary(key, telemetry, validator, parser))
-              .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
+        {
+            // We iterate in reverse order, and keep the last successful value
+            // because we need to record the data for all the sources in telemetry
+            var result = ConfigurationResult<IDictionary<string, string>>.NotFound();
+            var isLastFound = false;
+            var origin = ConfigurationOrigins.Unknown;
+            for (var i = _sources.Count - 1; i >= 0; i--)
+            {
+                var source = _sources[i];
+                var value = source.GetDictionary(key, telemetry, validator, parser);
+                if (value.IsValid)
+                {
+                    result = value;
+                    isLastFound = true;
+                    origin = source.Origin;
+                }
+                else if (value.IsPresent)
+                {
+                    isLastFound = false;
+                }
+            }
+
+            if (result.IsValid && !isLastFound)
+            {
+                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+            }
+
+            return result;
+        }
 
         /// <inheritdoc />
         public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
-            => _sources
-              .Select(source => source.GetAs<T>(key, telemetry, converter, validator, recordValue))
-              .FirstOrDefault(value => value.IsValid, ConfigurationResult<T>.NotFound());
+        {
+            // We iterate in reverse order, and keep the last successful value
+            // because we need to record the data for all the sources in telemetry
+            var result = ConfigurationResult<T>.NotFound();
+            var isLastFound = false;
+            var origin = ConfigurationOrigins.Unknown;
+            for (var i = _sources.Count - 1; i >= 0; i--)
+            {
+                var source = _sources[i];
+                var value = source.GetAs(key, telemetry, converter, validator, recordValue);
+                if (value.IsValid)
+                {
+                    result = value;
+                    isLastFound = true;
+                    origin = source.Origin;
+                }
+                else if (value.IsPresent)
+                {
+                    isLastFound = false;
+                }
+            }
+
+            if (result.IsValid && !isLastFound)
+            {
+                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+            }
+
+            return result;
+        }
     }
 }
