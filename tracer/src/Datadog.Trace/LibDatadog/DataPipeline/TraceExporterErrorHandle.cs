@@ -9,7 +9,7 @@ using System;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.DataPipeline;
 
 internal class TraceExporterErrorHandle : SafeHandle
 {

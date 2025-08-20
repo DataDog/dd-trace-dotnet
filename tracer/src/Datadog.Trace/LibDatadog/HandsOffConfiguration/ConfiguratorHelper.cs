@@ -22,7 +22,7 @@ internal struct ConfiguratorHelper
 
         if (isLibdatadogAvailable is null)
         {
-            var isLibdatadogAvailableEval = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
+            var isLibdatadogAvailableEval = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
             if (!isLibdatadogAvailableEval.IsAvailable)
             {
                 return new ConfigurationResult(null, "Skipping hands-off configuration: as LibDatadog is not available", Result.LibDatadogUnavailable, isLibdatadogAvailableEval.Exception);
