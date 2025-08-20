@@ -46,7 +46,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             try
             {
-                // We only collect environment variables when UseShellExecute is false (to match previous behaviour)
                 return info.UseShellExecute ? null : info.Environment;
             }
             catch (ArgumentException ex)
