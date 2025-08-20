@@ -354,6 +354,10 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public IDictionary<string, string> AsDictionary(Func<IDictionary<string, string>> getDefaultValue, string defaultValueForTelemetry)
             => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue, defaultValueForTelemetry);
 
+        [return: NotNullIfNotNull(nameof(defaultValue))]
+        public IDictionary<string, string>? AsDictionary(IDictionary<string, string>? defaultValue, string defaultValueForTelemetry)
+            => AsDictionary(allowOptionalMappings: false, defaultValue, defaultValueForTelemetry);
+
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         public IDictionary<string, string>? AsDictionary(
             bool allowOptionalMappings,
@@ -373,6 +377,32 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
             Telemetry.Record(Key, defaultValueForTelemetry, recordValue: true, ConfigurationOrigins.Default);
             return value;
+        }
+
+        [return: NotNullIfNotNull(nameof(defaultValue))]
+        public IDictionary<string, string>? AsDictionary(
+            bool allowOptionalMappings,
+            IDictionary<string, string>? defaultValue,
+            string defaultValueForTelemetry)
+        {
+            // pre-record the default value, so it's in the "correct" place in the stack
+            if (defaultValue is not null)
+            {
+                Telemetry.Record(Key, defaultValueForTelemetry, recordValue: true, ConfigurationOrigins.Default);
+            }
+
+            var result = GetDictionaryResult(allowOptionalMappings, separator: ':');
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            if (result.IsPresent)
+            {
+                Telemetry.Record(Key, defaultValueForTelemetry, recordValue: true, ConfigurationOrigins.Default);
+            }
+
+            return defaultValue;
         }
 
         // ****************
