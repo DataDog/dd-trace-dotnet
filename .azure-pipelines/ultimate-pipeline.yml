@@ -6366,3 +6366,5 @@ stages:
             echo $result
 
           displayName: Run artifact test (expecting failure)
+
+- template: steps/update-github-pipeline-status.yml # Template reference

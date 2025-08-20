@@ -236,3 +236,6 @@ missing-nullability-files.csv             @DataDog/apm-dotnet
 /tracer/src/Datadog.Tracer.Native/Resource.rc @DataDog/apm-dotnet
 /tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h @DataDog/apm-dotnet
 /tracer/tools/PipelineMonitor/PipelineMonitor.csproj @DataDog/apm-dotnet
+
+# Impacts multiple teams, so should trigger all of ASM/Debugger/tracing
+/tracer/src/Datadog.Trace/ClrProfiler/Instrumentation.cs  @DataDog/apm-dotnet @DataDog/ci-app-libraries-dotnet @DataDog/tracing-dotnet @DataDog/asm-dotnet @DataDog/debugger-dotnet

@@ -25,7 +25,7 @@ internal class ServiceDiscoveryHelper
     internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings)
     {
         var platformIsSupported = FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess;
-        var deploymentIsSupported = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
+        var deploymentIsSupported = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
         if (platformIsSupported && deploymentIsSupported.IsAvailable)
         {
             try

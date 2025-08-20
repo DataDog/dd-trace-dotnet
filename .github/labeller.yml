@@ -5,11 +5,23 @@ labels:
   - name: "area:ci-visibility"
     title: "^\\[?(?i)(ci visibility)"
 
+  - name: "area:ci-visibility"
+    title: "^\\[?(?i)(test optimization)"
+
   - name: "area:serverless"
     title: "^\\[?(?i)serverless"
 
+  - name: "area:serverless"
+    title: "^\\[?(?i)(azure functions)"
+
   - name: "area:asm"
     title: "^\\[?(?i)ASM"
+
+  - name: "area:asm"
+    title: "^\\[?(?i)aap"
+
+  - name: "area:asm-iast"
+    title: "^\\[?(?i)iast"
   
   - name: "area:remote-config"
     title: "^\\[?(?i)(RCM|remote config)"
@@ -23,14 +35,29 @@ labels:
   - name: "area:debugger"
     title: "^\\[?(?i)(dynamic instrumentation)"
 
+  - name: "area:debugger,exception-replay"
+    title: "^\\[?(?i)(exception replay)"
+
+  - name: "area:data-streams-monitoring"
+    title: "^\\[?(?i)(dsm)"
+
+  - name: "area:data-streams-monitoring"
+    title: "^\\[?(?i)(data stream monitoring)"
+
   - name: "area:builds"
     title: "^\\[?(?i)build"
+
+  - name: "area:ssi"
+    title: "^\\[?(?i)(fleet installer)"
 
   - name: "area:profiler"
     allFilesIn: "profiler\/.*"
 
+  - name: "area:data-streams-monitoring"
+    allFilesIn: "tracer\/src\/Datadog\\.Trace\/DataStreamsMonitoring\/.*"
+
   - name: "area:debugger"
-    allFilesIn: "debugger\/.*"
+    allFilesIn: "tracer\/src\/Datadog\\.Trace\/Debugger\/.*"
 
   - name: "area:builds"
     allFilesIn: "\\.github\/.*|tracer\/build\/.*|\\.azure-pipelines\/.*|gitlab-ci\\.yml"

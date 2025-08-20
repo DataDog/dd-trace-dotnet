@@ -7,7 +7,9 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration.InteropStructs;
+using Datadog.Trace.LibDatadog.Logging;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
 
 namespace Datadog.Trace.LibDatadog;

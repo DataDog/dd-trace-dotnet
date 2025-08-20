@@ -106,13 +106,13 @@ internal class CoverageSettings
             {
                 if (element is not null)
                 {
-                    var item = element.InnerText;
+                    var item = element?.InnerText;
                     if (string.IsNullOrWhiteSpace(item))
                     {
                         continue;
                     }
 
-                    var value = item.Trim();
+                    var value = item!.Trim();
                     if (!lstElements.Contains(value))
                     {
                         lstElements.Add(value);
