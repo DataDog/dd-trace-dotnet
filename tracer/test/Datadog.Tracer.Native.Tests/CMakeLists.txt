@@ -43,6 +43,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
     integration_test.cpp
     version_struct_test.cpp
     iast_util_test.cpp
+    string_test.cpp
 )
 
 # Define directories includes
