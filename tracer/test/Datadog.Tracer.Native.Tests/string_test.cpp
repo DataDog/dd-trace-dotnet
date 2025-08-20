@@ -32,3 +32,60 @@ TEST(StringTests, ToWString)
     EXPECT_EQ(ToWSTRING("C:\\Users\\\xE7\x94\xA8\xE6\x88\xB7\\\xE6\x96\x87\xE6\xA1\xA3\\\xE6\x88\x91\xE7\x9A\x84\xE6\x96\x87\xE4\xBB\xB6.txt"), WStr("C:\\Users\\用户\\文档\\我的文件.txt"));
     EXPECT_EQ(ToWSTRING("~/my_path/_path1/a.txt\xF0\x9F\x99\x88"), WStr("~/my_path/_path1/a.txt🙈"));
 }
+
+TEST(StringTests, SurrogatesAndTruncation)
+{
+    // helper: build WSTRING from raw UTF-16 code units
+    auto w16 = [](std::initializer_list<char16_t> u) { return WSTRING((const WCHAR*) u.begin(), u.size()); };
+
+    WSTRING high_only = w16({0xD83D});     // unpaired high
+    WSTRING low_only = w16({0xDC00});      // unpaired low
+    WSTRING poop = w16({0xD83D, 0xDCA9});  // U+1F4A9
+    WSTRING maxcp = w16({0xDBFF, 0xDFFF}); // U+10FFFF
+    // (ptr,len) truncated in the middle of surrogate pair
+    EXPECT_NO_FATAL_FAILURE((void) ToString((const WCHAR*) poop.data(), 1));
+    EXPECT_NO_FATAL_FAILURE((void) ToString((const WCHAR*) high_only.data(), high_only.size()));
+    EXPECT_NO_FATAL_FAILURE((void) ToString((const WCHAR*) low_only.data(), low_only.size()));
+    // Must not crash; compare against replacement char UTF-8 if your policy does replacement
+}
+
+TEST(StringTests, EmbeddedNulls)
+{
+    const char16_t data[] = u"A\0B🙈C";
+    auto w = WSTRING((const WCHAR*) data, std::size(data) - 1); // include the NULs
+    auto s = ToString((const WCHAR*) w.data(), w.size());
+    // Expect "A\0B\xF0\x9F\x99\x88C" length 6 bytes; ensure no early termination
+    EXPECT_EQ(s.size(), 1 + 1 + 1 + 4 + 1);
+    EXPECT_EQ(s[0], 'A');
+    EXPECT_EQ(s[1], '\0');
+    EXPECT_EQ(s[2], 'B');
+}
+
+TEST(StringTests, LargeStrings)
+{
+    std::u16string u(300000, u'α'); // BMP non-ASCII
+    u.append({0xD83D, 0xDE80});     // 🚀 sprinkled
+    WSTRING w((const WCHAR*) u.data(), u.size());
+    auto s = ToString((const WCHAR*) w.data(), w.size());
+    EXPECT_GT(s.size(), 300000); // sanity; should not crash
+}
+
+TEST(StringTests, Controls) 
+{
+    const char* utf8 = "A\xE2\x80\x8E" "B"; // A LRM B
+    EXPECT_EQ(ToString(ToWSTRING(utf8)), utf8);
+}
+
+TEST(StringTests, InvalidUtf8ToWString)
+{
+    EXPECT_NO_FATAL_FAILURE((void) ToWSTRING(std::string("\x80", 1)));
+    EXPECT_NO_FATAL_FAILURE((void) ToWSTRING(std::string("\xC0\xAF", 2)));
+    EXPECT_NO_FATAL_FAILURE((void) ToWSTRING(std::string("\xF0\x9F\x92", 3)));
+}
+
+TEST(StringTests, NullAndEmpty)
+{
+    EXPECT_EQ(ToString((const WCHAR*) nullptr), "");
+    WSTRING empty;
+    EXPECT_EQ(ToString(empty), "");
+}
