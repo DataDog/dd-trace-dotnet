@@ -85,7 +85,7 @@ public static class MetricHelper
                 // other metrics produce multiple series
                 var tags = $$"""
                              {{baseTags}},
-                                "native:"{{SanitizeTagValue(group.Key.Name)}}"
+                                "native:{{SanitizeTagValue(group.Key.Name)}}"
                              """;
 
                 yield return CreateSeries(
