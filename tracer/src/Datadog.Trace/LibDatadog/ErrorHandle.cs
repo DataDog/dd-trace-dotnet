@@ -37,7 +37,6 @@ internal class ErrorHandle() : SafeHandle(IntPtr.Zero, true)
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to drop error handle");
-                return false;
             }
         }
 

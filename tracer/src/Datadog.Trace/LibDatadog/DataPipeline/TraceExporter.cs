@@ -99,7 +99,6 @@ internal class TraceExporter : SafeHandle, IApi
         catch (Exception ex)
         {
             _log.Error(ex, "An error occurred while releasing the handle for TraceExporter.");
-            return false;
         }
 
         return true;

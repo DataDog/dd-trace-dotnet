@@ -31,7 +31,6 @@ internal class TraceExporterResponse(IntPtr handle) : SafeHandle(handle, true)
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to free TraceExporterResponse handle");
-                return false;
             }
         }
 
