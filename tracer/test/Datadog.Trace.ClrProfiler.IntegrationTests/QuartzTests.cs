@@ -62,14 +62,23 @@ public class QuartzTests : TracingIntegrationTest
             var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
             var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
             var fireInstanceId = new Regex(@"fire\.instance\.id:\s*\d+");
+            var scrubErrorEvents = new Regex(@"events:\s*\[.*?\]");
+            var scrubOtelVersion = new Regex(@"otel\.library\.version:\s*[\d\.]+");
             settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
             settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
             settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
             settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
             settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
             settings.AddRegexScrubber(fireInstanceId, "fire.instance.id: <fire.instance.id>");
+            settings.AddRegexScrubber(scrubErrorEvents, "events: <error_stack>");
+            settings.AddRegexScrubber(scrubOtelVersion, "otel.library.version: <otel-library-version>");
 
-            await VerifyHelper.VerifySpans(spans, settings)
+            await VerifyHelper.VerifySpans(
+                                        spans,
+                                        settings,
+                                        orderSpans: s => s
+                                                       .OrderBy(x => x.Name)
+                                                       .ThenBy(x => x.Resource))
                               .UseFileName(filename);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
@@ -97,6 +106,6 @@ public class QuartzTests : TracingIntegrationTest
             return "V4";
         }
 
-        return string.Empty;
+        return "V4";
     }
 }

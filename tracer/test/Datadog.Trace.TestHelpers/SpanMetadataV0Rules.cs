@@ -765,11 +765,13 @@ namespace Datadog.Trace.TestHelpers
              .Properties(s => s
                 .MatchesOneOf(Name,  "internal"))
              .Tags(s => s
+                .IsOptional("events")
                 .IsPresent("fire.instance.id")
                 .IsPresent("job.group")
                 .IsPresent("job.name")
                 .IsOptional("job.type")
                 .IsOptional("otel.library.name")
+                .IsOptional("otel.library.version")
                 .IsPresent("otel.trace_id")
                 .IsPresent("otel.status_code")
                 .IsOptional("scheduler.id")

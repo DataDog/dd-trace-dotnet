@@ -4,6 +4,7 @@ namespace QuartzSampleApp.Jobs;
 
 public class HelloJob : IJob
 {
+    // Quartz 4x uses ValueTask instead of Task
 #if QUARTZ_4_0
     async ValueTask IJob.Execute(IJobExecutionContext context)
 #else

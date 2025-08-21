@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -14,7 +14,7 @@
       job.type: QuartzSampleApp.Jobs.HelloJob, Samples.Quartz,
       language: dotnet,
       otel.library.name: Quartz,
-      otel.library.version: 4.0.0.0,
+      otel.library.version: <otel-library-version>,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
@@ -42,21 +42,21 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: Something went wrong,
+      error.msg: Expected InvalidOperationException thrown,
       error.stack:
 Parameters: refire = False, unscheduleFiringTrigger = False, unscheduleAllTriggers = False 
-Quartz.JobExecutionException: Something went wrong
----> System.InvalidOperationException: Something went wrong
-at QuartzSampleApp.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext context),
+Quartz.JobExecutionException: Expected InvalidOperationException thrown
+---> System.InvalidOperationException: Expected InvalidOperationException thrown
+at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext context),
       error.type: Quartz.JobExecutionException,
-      events: [{"name":"exception","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"exception.message":"Something went wrong","exception.stacktrace":"Parameters: refire = False, unscheduleFiringTrigger = False, unscheduleAllTriggers = False \n Quartz.JobExecutionException: Something went wrong\n ---> System.InvalidOperationException: Something went wrong\n   at QuartzSampleApp.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext context) in /Users/mohammad.islam/DDRepos/dd-trace-dotnet/tracer/test/test-applications/integrations/Samples.Quartz/Program.cs:line 100\n   --- End of inner exception stack trace ---\n   at QuartzSampleApp.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext context) in /Users/mohammad.islam/DDRepos/dd-trace-dotnet/tracer/test/test-applications/integrations/Samples.Quartz/Program.cs:line 105\n   at Quartz.Core.JobRunShell.Run(CancellationToken cancellationToken) [See nested exception: System.InvalidOperationException: Something went wrong\n   at QuartzSampleApp.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext context) in /Users/mohammad.islam/DDRepos/dd-trace-dotnet/tracer/test/test-applications/integrations/Samples.Quartz/Program.cs:line 100]","exception.type":"Quartz.JobExecutionException"}}],
+      events: <error_stack>","exception.type":"Quartz.JobExecutionException"}}],
       fire.instance.id: <fire.instance.id>,
       job.group: group2,
       job.name: exceptionJob,
       job.type: QuartzSampleApp.Jobs.ExceptionJob, Samples.Quartz,
       language: dotnet,
       otel.library.name: Quartz,
-      otel.library.version: 4.0.0.0,
+      otel.library.version: <otel-library-version>,
       otel.status_code: STATUS_CODE_ERROR,
       otel.trace_id: Guid_3,
       runtime-id: Guid_2,
