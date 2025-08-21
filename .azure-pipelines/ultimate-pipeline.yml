@@ -3261,7 +3261,7 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3288,8 +3288,20 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory.yml
-
+    - task: DownloadPipelineArtifact@2
+      displayName: "Download build-windows-working-directory"
+      timeoutInMinutes: 10
+      retryCountOnTaskFailure: 3
+      inputs:
+        buildType: 'specific'
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 186133
+        artifact: build-windows-working-directory
+        path: $(System.DefaultWorkingDirectory)
+        patterns: "**/@(bin|obj|packages)/**"
+        
     - script: tracer\build.cmd SetupExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
 
