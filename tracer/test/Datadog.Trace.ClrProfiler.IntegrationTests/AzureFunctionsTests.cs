@@ -301,7 +301,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
                 // ~327 (ish) logs but we kill func.exe so some logs are lost
                 // and since sometimes the batch of logs can be 100+ it can be a LOT of logs that we lose
-                // so just check that we have more than the 13 that we get when host logs are disabled
+                // so just check that we have much more than when we have host logs disabled
                 logs.Should().HaveCountGreaterThanOrEqualTo(200);
             }
         }
@@ -347,7 +347,10 @@ public abstract class AzureFunctionsTests : TestHelper
 
                 var logs = logsIntake.Logs;
                 // we expect some logs still from the worker process
-                logs.Should().HaveCount(13);
+                // this just seems flaky I THINK because of killing the func.exe process (even though we aren't using the host logs)
+                // commonly see 13, 14, 15, 16 logs, but IF we were logging the host logs we'd see 300+
+                logs.Should().HaveCountGreaterThan(10);
+                logs.Should().HaveCountLessThanOrEqualTo(20);
             }
         }
     }
