@@ -3296,7 +3296,7 @@ stages:
     # Wait for the Agent health endpoint on the mapped host port.
     # On non-container jobs you reach service containers via localhost with published ports
     - powershell: |
-        $uri = "http://127.0.0.1:5555/health"
+        $uri = "http://localhost:5555/health"
         $retries = 60
         $delay   = 2
         Write-Host "Waiting for Datadog Agent health at $uri ..."
