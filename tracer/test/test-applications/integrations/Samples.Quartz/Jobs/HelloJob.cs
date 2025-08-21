@@ -1,5 +1,4 @@
 using Quartz;
-using QuartzSampleApp.Infrastructure;
 
 namespace QuartzSampleApp.Jobs;
 
@@ -12,17 +11,6 @@ public class HelloJob : IJob
 #endif
     {
         await Console.Out.WriteLineAsync("Greetings from HelloJob!");
-
-        // Create and schedule ExceptionJob
-        var exceptionJob = JobBuilder.Create<ExceptionJob>()
-                                     .WithIdentity("exceptionJob", "group2")
-                                     .Build();
-
-        var exceptionTrigger = TriggerBuilder.Create()
-                                             .WithIdentity("exceptionTrigger", "group2")
-                                             .StartNow()
-                                             .Build();
-
-        await SchedulerHolder.Scheduler.ScheduleJob(exceptionJob, exceptionTrigger);
+        // No longer schedules any other jobs.
     }
 }

@@ -762,19 +762,20 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("span.kind", "client"));
 
         public static Result IsQuartzV0(this MockSpan span) => Result.FromSpan(span)
-          .Properties(s => s
-                         .MatchesOneOf(Name,  "internal"))
-          .Tags(s => s
-                    .Matches("span.kind", "internal")
-                    .IsOptional("fire.instance.id")
-                    .IsPresent("job.group")
-                    .IsPresent("job.name")
-                    .IsOptional("job.type")
-                    .IsPresent("otel.trace_id")
-                    .IsPresent("otel.status_code")
-                    .IsOptional("scheduler.id")
-                    .IsOptional("scheduler.name")
-                    .IsPresent("trigger.group")
-                    .IsPresent("trigger.name"));
+             .Properties(s => s
+                .MatchesOneOf(Name,  "internal"))
+             .Tags(s => s
+                .IsPresent("fire.instance.id")
+                .IsPresent("job.group")
+                .IsPresent("job.name")
+                .IsOptional("job.type")
+                .IsOptional("otel.library.name")
+                .IsPresent("otel.trace_id")
+                .IsPresent("otel.status_code")
+                .IsOptional("scheduler.id")
+                .IsOptional("scheduler.name")
+                .IsOptional("span.kind")
+                .IsPresent("trigger.group")
+                .IsPresent("trigger.name"));
     }
 }

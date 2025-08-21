@@ -5,8 +5,13 @@ namespace QuartzSampleApp.Infrastructure;
 public sealed class FinalJobListener : IJobListener
 {
     private readonly JobKey _target;
+    private readonly TaskCompletionSource<bool> _tcs;
 
-    public FinalJobListener(JobKey target) => _target = target;
+    public FinalJobListener(JobKey target, TaskCompletionSource<bool> tcs)
+    {
+        _target = target;
+        _tcs = tcs;
+    }
 
     public string Name => $"FinalJobListener({_target})";
 
@@ -27,7 +32,7 @@ public sealed class FinalJobListener : IJobListener
             return Task.CompletedTask;
 
         // Final success or failure -> signal completion
-        JobCompletion.Tcs.TrySetResult(true);
+        _tcs.TrySetResult(true);
         return Task.CompletedTask;
     }
 }

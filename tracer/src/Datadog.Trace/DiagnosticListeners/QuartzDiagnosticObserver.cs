@@ -5,6 +5,9 @@
 
 #nullable enable
 
+// Currently to our DiagnosticObserver class isn't available for .NET Framework.
+// Our QuartzDiagnosticObserver only works for .NET Framework due to this limitation
+// We are purposely avoiding adding a dependency to System.Diagnostics.DiagnosticSource
 #if !NETFRAMEWORK
 namespace Datadog.Trace.DiagnosticListeners
 {
