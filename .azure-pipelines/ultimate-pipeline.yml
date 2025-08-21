@@ -4902,7 +4902,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
         apikey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: installer_chiseled_smoke_tests
@@ -4976,6 +4976,12 @@ stages:
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
           continueOnError: true
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: alpine
+            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: nuget_installer_smoke_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5065,7 +5071,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: trimmed_installer_smoke_tests
   dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
@@ -5137,7 +5143,7 @@ stages:
           parameters:
             build: true
             baseImage: alpine
-            command: "CheckSmokeTestsForErrors"
+            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_nuget_smoke_tests_linux
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5201,7 +5207,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_smoke_tests_linux
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5269,7 +5275,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_self_instrument_smoke_tests_linux
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5346,7 +5352,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: installer_smoke_tests_arm64
   dependsOn: [package_arm64, generate_variables, merge_commit_id]
@@ -5428,7 +5434,7 @@ stages:
           parameters:
             build: true
             baseImage: alpine
-            command: "CheckSmokeTestsForErrors"
+            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: installer_chiseled_smoke_tests_arm64
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5502,6 +5508,12 @@ stages:
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
           continueOnError: true
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: alpine
+            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: nuget_installer_smoke_tests_arm64
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5591,7 +5603,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_smoke_tests_arm64
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5654,7 +5666,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: nuget_installer_smoke_tests_windows
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5750,8 +5762,10 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors
-      displayName: CheckSmokeTestsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: dotnet_tool_smoke_tests_windows
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5823,8 +5837,10 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors
-      displayName: CheckSmokeTestsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: msi_installer_smoke_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5895,8 +5911,10 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors
-      displayName: CheckSmokeTestsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: dd_dotnet_msi_installer_smoke_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5968,8 +5986,10 @@ stages:
           continueOnError: true
 
         - template: steps/install-latest-dotnet-sdk.yml
-        - script: tracer\build.cmd CheckSmokeTestsForErrors
-          displayName: CheckSmokeTestsForErrors
+        - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: tracer_home_smoke_tests
   dependsOn: [package_windows, generate_variables, merge_commit_id]
@@ -5989,7 +6009,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-windows-x64-2
+      vmImage: windows-2022
 
     steps:
     - template: steps/install-docker-compose-v1.yml
@@ -6038,8 +6058,10 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors
-      displayName: CheckSmokeTestsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: fleet_installer_iis_smoke_tests
   dependsOn: [package_windows, generate_variables, merge_commit_id]
@@ -6121,8 +6143,10 @@ stages:
           continueOnError: true
 
         - template: steps/install-latest-dotnet-sdk.yml
-        - script: tracer\build.cmd CheckSmokeTestsForErrors
-          displayName: CheckSmokeTestsForErrors
+        - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: dotnet_tool_nuget_smoke_tests_macos
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -6250,8 +6274,10 @@ stages:
           condition: always()
           continueOnError: true
 
-        - script: ./tracer/build.sh CheckSmokeTestsForErrors
-          displayName: CheckSmokeTestsForErrors
+        - script: ./tracer/build.sh CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
         - script: kill -15 $(AGENT_PID)
           displayName: Close test agent
