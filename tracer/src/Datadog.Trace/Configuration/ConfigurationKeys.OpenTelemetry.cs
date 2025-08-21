@@ -75,7 +75,7 @@ namespace Datadog.Trace.Configuration
             /// Default value is 10000ms (10s) for Datadog.
             /// This deviates from OpenTelemetry specification default of 60000ms (60s).
             /// </summary>
-            public const string MetricExportInterval = "OTEL_METRIC_EXPORT_INTERVAL";
+            public const string MetricExportIntervalMs = "OTEL_METRIC_EXPORT_INTERVAL";
 
             /// <summary>
             /// Configuration key to set the export timeout for metrics in milliseconds.
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Configuration
             /// Default value is 7500ms (7.5s) for Datadog.
             /// This deviates from OpenTelemetry specification default of 30000ms (30s).
             /// </summary>
-            public const string MetricExportTimeout = "OTEL_METRIC_EXPORT_TIMEOUT";
+            public const string MetricExportTimeoutMs = "OTEL_METRIC_EXPORT_TIMEOUT";
 
             /// <summary>
             /// Configuration key to set the OTLP protocol for metrics export.
@@ -95,43 +95,46 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key to set the OTLP endpoint URL for metrics.
             /// Takes precedence over <see cref="ExporterOtlpEndpoint"/>.
-            /// Expects values like `http://localhost:4317` for grpc, `unix:///path/to/socket.sock` for UDS,
-            /// `\\.\pipename\` for Windows Named Pipes.
-            /// When using HTTP protocol with fallback, v1/metrics should be appended.
-            /// Default value for http/protobuf: `http://localhost:4318/v1/metrics`.
+            /// This value typically ends with v1/metrics when using OTLP/HTTP.
+            /// Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipename\` for Windows Named Pipes.
+            /// Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318/v1/metrics
             /// </summary>
             public const string ExporterOtlpMetricsEndpoint = "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT";
 
             /// <summary>
             /// Configuration key to set custom headers for OTLP metrics export.
+            /// Takes precedence over <see cref="ExporterOtlpHeaders"/>.
             /// Format: api-key=key,other=value.
             /// </summary>
             public const string ExporterOtlpMetricsHeaders = "OTEL_EXPORTER_OTLP_METRICS_HEADERS";
 
             /// <summary>
             /// Configuration key to set the request timeout for OTLP metrics export in milliseconds.
+            /// Takes precedence over <see cref="ExporterOtlpTimeoutMs"/>.
             /// Default value is 10000ms.
             /// </summary>
-            public const string ExporterOtlpMetricsTimeout = "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT";
+            public const string ExporterOtlpMetricsTimeoutMs = "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT";
 
             /// <summary>
             /// Configuration key to set the temporality preference for OTLP metrics export.
             /// Supported values: delta, cumulative, lowmemory.
             /// Default value is delta for Datadog.
+            /// This deviates from OpenTelemetry specification default of cumulative.
             /// </summary>
             public const string ExporterOtlpMetricsTemporalityPreference = "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE";
 
             /// <summary>
             /// Configuration key to set the OTLP protocol (fallback for metrics-specific protocol).
             /// Used when <see cref="ExporterOtlpMetricsProtocol"/> is not set.
-            /// Valid values: grpc, http/protobuf, http/json.
+            /// Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
             /// </summary>
             public const string ExporterOtlpProtocol = "OTEL_EXPORTER_OTLP_PROTOCOL";
 
             /// <summary>
             /// Configuration key to set the OTLP endpoint URL (fallback for metrics-specific endpoint).
             /// Used when <see cref="ExporterOtlpMetricsEndpoint"/> is not set.
-            /// When using HTTP protocol with fallback, v1/metrics should be appended.
+            /// Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipename\` for Windows Named Pipes.
+            /// Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318
             /// </summary>
             public const string ExporterOtlpEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT";
 
@@ -144,10 +147,10 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key to set the request timeout for OTLP export (fallback for metrics-specific timeout).
-            /// Used when <see cref="ExporterOtlpMetricsTimeout"/> is not set.
+            /// Used when <see cref="ExporterOtlpMetricsTimeoutMs"/> is not set.
             /// Default value is 10000ms.
             /// </summary>
-            public const string ExporterOtlpTimeout = "OTEL_EXPORTER_OTLP_TIMEOUT";
+            public const string ExporterOtlpTimeoutMs = "OTEL_EXPORTER_OTLP_TIMEOUT";
         }
     }
 }

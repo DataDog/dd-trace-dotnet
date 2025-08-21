@@ -413,23 +413,23 @@ namespace Datadog.Trace.Configuration
                             .AsBoolResult()
                             .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
 
-            OtelMetricExportInterval = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportInterval)
-                            .AsInt32(defaultValue: 10000);
+            OtelMetricExportIntervalMs = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
+                            .AsInt32(defaultValue: 10_000);
 
-            OtelMetricExportTimeout = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportTimeout)
-                            .AsInt32(defaultValue: 7500);
+            OtelMetricExportTimeoutMs = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportTimeoutMs)
+                            .AsInt32(defaultValue: 7_500);
 
             OtlpMetricsProtocol = config
                                  .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
                                  .GetAs(
                                       defaultValue: new(OtlpProtocol.HttpProtobuf, "http/protobuf"),
-                                      converter: x => x.ToLowerInvariant() switch
+                                      converter: x => x switch
                                       {
-                                          "http/protobuf" => OtlpProtocol.HttpProtobuf,
-                                          "grpc" => OtlpProtocol.Grpc,
-                                          "http/json" => OtlpProtocol.HttpJson,
+                                          not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
+                                          not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
+                                          not null when string.Equals(x, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
                                           _ => UnsupportedOtlpProtocol(x),
                                       },
                                       validator: null);
@@ -450,9 +450,9 @@ namespace Datadog.Trace.Configuration
                                 .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                                 .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 
-            OtlpMetricsTimeout = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeout, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeout)
-                            .AsInt32(defaultValue: 10000);
+            OtlpMetricsTimeoutMs = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
+                            .AsInt32(defaultValue: 10_000);
 
             OtlpMetricsTemporalityPreference = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference)
@@ -1003,15 +1003,15 @@ namespace Datadog.Trace.Configuration
         /// Gets the OpenTelemetry metric export interval (in milliseconds) between export attempts.
         /// Default is 10000ms (10s) for Datadog - deviates from OTel spec default of 60000ms (60s).
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.MetricExportInterval"/>
-        internal int OtelMetricExportInterval { get; }
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs"/>
+        internal int OtelMetricExportIntervalMs { get; }
 
         /// <summary>
         /// Gets the OpenTelemetry metric export timeout (in milliseconds) for collection and export.
         /// Default is 7500ms (7.5s) for Datadog - deviates from OTel spec default of 30000ms (30s).
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.MetricExportTimeout"/>
-        internal int OtelMetricExportTimeout { get; }
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.MetricExportTimeoutMs"/>
+        internal int OtelMetricExportTimeoutMs { get; }
 
         /// <summary>
         /// Gets the OTLP request timeout (in milliseconds).
@@ -1739,7 +1739,7 @@ namespace Datadog.Trace.Configuration
 
         private static ParsingResult<OtlpProtocol> UnsupportedOtlpProtocol(string inputValue)
         {
-            Log.Error("Unsupported OTLP protocol '{Protocol}'. Supported values are 'http/protobuf', 'grpc', 'http/json'. Using default: http/protobuf", inputValue);
+            Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'http/protobuf', 'grpc', 'http/json'. Using default: http/protobuf", inputValue);
             return ParsingResult<OtlpProtocol>.Failure();
         }
 

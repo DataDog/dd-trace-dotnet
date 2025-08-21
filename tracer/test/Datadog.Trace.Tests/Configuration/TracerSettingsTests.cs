@@ -1445,20 +1445,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("v1", SchemaVersion.V1)]
-        [InlineData("V1", SchemaVersion.V1)]
-        [InlineData("", SchemaVersion.V0)]
-        [InlineData(null, SchemaVersion.V0)]
-        [InlineData("v1 ", SchemaVersion.V0)]
-        public void MetadatsaSchemaVersion(string value, object expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.MetadataSchemaVersion, value));
-            var settings = new TracerSettings(source);
-
-            settings.MetadataSchemaVersion.Should().Be((SchemaVersion)expected);
-        }
-
-        [Theory]
         [InlineData("http://custom:4318/v1/metrics", null, "http://custom:4318/v1/metrics")]
         [InlineData("http://custom:4318/v1/metrics", "http://fallback:4318", "http://custom:4318/v1/metrics")]
         [InlineData(null, "http://fallback:8080", "http://fallback:8080/v1/metrics")]  // HTTP fallback gets v1/metrics
@@ -1478,6 +1464,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("cumulative", OtlpTemporality.Cumulative)]
         [InlineData("loWmemOry", OtlpTemporality.LowMemory)]
         [InlineData(null, OtlpTemporality.Delta)]
+        [InlineData("bad-value", OtlpTemporality.Delta)]
         public void OtlpTemporalityPreference(string value, object expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, value));

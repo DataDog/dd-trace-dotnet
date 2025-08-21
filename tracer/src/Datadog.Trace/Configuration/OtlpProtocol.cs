@@ -18,7 +18,7 @@ internal enum OtlpProtocol
     HttpProtobuf = 0,
 
     /// <summary>
-    /// gRPC protocol
+    /// gRPC with Protocol Buffers encoding
     /// </summary>
     Grpc = 1,
 
