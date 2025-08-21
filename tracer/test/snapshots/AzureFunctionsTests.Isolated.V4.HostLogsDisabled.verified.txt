@@ -318,7 +318,7 @@ Microsoft.Azure.WebJobs.Host.FunctionInvocationException: Exception while execut
 ---> Microsoft.Azure.WebJobs.Script.Workers.Rpc.RpcException: Result: Failure
 Exception: Task failed successfully.
 Stack:    at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req)
-at Samples.AzureFunctions.V4Isolated.DirectFunctionExecutor.ExecuteAsync(FunctionContext context),
+at Samples.AzureFunctions.V4Isolated.HostLogsDisabled.DirectFunctionExecutor.ExecuteAsync(FunctionContext context),
       error.type: Microsoft.Azure.WebJobs.Host.FunctionInvocationException,
       http.method: GET,
       http.request.headers.host: localhost:00000,
