@@ -110,7 +110,7 @@ public static class MetricHelper
 
         static string CreateSeries(string metricName, IEnumerable<(DateTimeOffset Timestamp, double Value)> values, string tags)
         {
-            var points = values.Select(x => $"[{x.Timestamp.ToUnixTimeSeconds()},{x.Value}]");
+            var points = values.Select(x => $"[{x.Timestamp.ToUnixTimeSeconds()},[{x.Value}]]");
 
             //lang=json
             return $$"""
