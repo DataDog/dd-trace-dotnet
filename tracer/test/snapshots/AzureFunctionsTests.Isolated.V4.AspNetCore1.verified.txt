@@ -317,7 +317,7 @@
 Microsoft.Azure.WebJobs.Host.FunctionInvocationException: Exception while executing function: Functions.Exception
 ---> Microsoft.Azure.WebJobs.Script.Workers.Rpc.RpcException: Result: Failure
 Exception: System.InvalidOperationException: Task failed successfully.
-at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req, ILogger log),
+at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req),
       error.type: Microsoft.Azure.WebJobs.Host.FunctionInvocationException,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -469,7 +469,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       error.msg: Task failed successfully.,
       error.stack:
 System.InvalidOperationException: Task failed successfully.
-at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req, ILogger log),
+at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req),
       error.type: System.InvalidOperationException,
       language: dotnet,
       runtime-id: Guid_1,
