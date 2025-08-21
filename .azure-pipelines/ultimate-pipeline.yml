@@ -3311,6 +3311,21 @@ stages:
         $ErrorActionPreference = "Continue"
         $container = "dd_agent_no_pull"
 
+         Write-Host "===== Docker engine info ====="
+        docker version
+
+        Write-Host "`n===== Containers ====="
+        docker ps -a
+
+        Write-Host "`n===== $container state ====="
+        docker inspect $container --format "{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}" 2>$null
+
+        Write-Host "`n===== Port mappings ====="
+        docker port $container 2>$null
+
+        Write-Host "`n===== Recent logs ====="
+        docker logs --tail 200 $container 2>$null
+
         # Discover mapped host port
         $hostPort = 5555
         $mapped = (docker port $container 5555 2>$null)
