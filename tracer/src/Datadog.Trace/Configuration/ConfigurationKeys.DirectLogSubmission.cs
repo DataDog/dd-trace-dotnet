@@ -79,6 +79,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DirectLogSubmissionSettings.BatchPeriod"/>
             public const string BatchPeriodSeconds = "DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS";
+
+            /// <summary>
+            /// Configuration key to enable or disable direct log submission for Azure Functions host.
+            /// Default value is <c>true</c>.
+            /// </summary>
+            /// <seealso cref="DirectLogSubmissionSettings.AzureFunctionsHostEnabled"/>
+            public const string AzureFunctionsHostEnabled = "DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED";
         }
     }
 }

@@ -528,6 +528,7 @@
   "DD_LOGS_DIRECT_SUBMISSION_MAX_BATCH_SIZE": "logs_direct_submission_max_batch_size",
   "DD_LOGS_DIRECT_SUBMISSION_MAX_QUEUE_SIZE": "logs_direct_submission_max_queue_size",
   "DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS": "logs_direct_submission_batch_period_seconds",
+  "DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED": "logs_direct_submission_azure_functions_host_enabled",
   "DD_AGENT_HOST": "agent_host",
   "DATADOG_TRACE_AGENT_HOSTNAME": "agent_host",
   "DD_TRACE_AGENT_HOSTNAME": "agent_host",
