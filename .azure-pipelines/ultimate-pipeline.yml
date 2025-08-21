@@ -148,9 +148,12 @@ resources:
     localImage: true
     ports:
     - 8126:8126
+    - 5555:5555
     env:
       DD_API_KEY: $(ddApiKey)
       DD_INSIDE_CI: true
+      DD_HEALTH_PORT: 5555
+    options: --name dd_agent_no_pull
 
 # Stages
 stages:
@@ -3290,6 +3293,29 @@ stages:
     - script: tracer\build.cmd SetupExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
 
+    # Wait for the Agent health endpoint on the mapped host port.
+    # On non-container jobs you reach service containers via localhost with published ports
+    - powershell: |
+        $uri = "http://127.0.0.1:5555/health"
+        $retries = 60
+        $delay   = 2
+        Write-Host "Waiting for Datadog Agent health at $uri ..."
+        for ($i=1; $i -le $retries; $i++) {
+          try {
+            $resp = Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 2
+            if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 500) {
+              Write-Host "Datadog Agent is healthy (HTTP $($resp.StatusCode))."
+              break
+            }
+          } catch { }
+          Start-Sleep -Seconds $delay
+          if ($i -eq $retries) {
+            Write-Error "Datadog Agent failed health check after $($retries*$delay)s"
+            exit 1
+          }
+        }
+      displayName: "Wait for Datadog Agent health"
+
     - script: tracer\build.cmd RunExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest $(explorationTestUseCase) $(explorationTestName)
       env:
@@ -3298,6 +3324,18 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading exploration_tests_windows tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - powershell: |
+        Write-Host "===== datadog agent logs (last 15m) ====="
+        docker logs --since 15m dd_agent_no_pull || (
+          Write-Warning "Fell back to auto-detecting container ID"
+          $cid = docker ps --filter "name=dd_agent_no_pull" --format "{{.ID}}"
+          if (-not $cid) { $cid = docker ps --filter "ancestor=public.ecr.aws/datadog/agent" --format "{{.ID}}" }
+          if ($cid) { docker logs --since 15m $cid } else { Write-Error "Could not find the agent container"; exit 1 }
+        )
+      displayName: "Dump Datadog Agent logs"
       condition: always()
       continueOnError: true
 
