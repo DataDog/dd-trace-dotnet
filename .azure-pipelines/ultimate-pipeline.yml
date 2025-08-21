@@ -153,6 +153,7 @@ resources:
       DD_API_KEY: $(ddApiKey)
       DD_INSIDE_CI: true
       DD_HEALTH_PORT: 5555
+      DD_LOG_LEVEL: debug
     options: --name dd_agent_no_pull
 
 # Stages
