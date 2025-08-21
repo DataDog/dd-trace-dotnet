@@ -14,7 +14,7 @@ public class ExceptionJob : IJob
         try
         {
             await Console.Out.WriteLineAsync("Doing work...");
-            throw new InvalidOperationException("Something went wrong");
+            throw new InvalidOperationException("Expected InvalidOperationException thrown");
         }
         catch (Exception ex)
         {
