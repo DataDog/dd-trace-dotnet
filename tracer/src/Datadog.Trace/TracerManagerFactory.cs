@@ -130,7 +130,6 @@ namespace Datadog.Trace
 
             bool runtimeMetricsEnabled = settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer;
 
-            // Even if a previous statsd instance is provided, we need to update it with potentially new settings
             statsd = (settings.TracerMetricsEnabled || runtimeMetricsEnabled)
                          ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
                          : null;
