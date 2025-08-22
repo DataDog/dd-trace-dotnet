@@ -87,6 +87,7 @@
    <assembly fullname="Microsoft.AspNetCore.StaticFiles" />
    <assembly fullname="Microsoft.Azure.Cosmos.Client" />
    <assembly fullname="Microsoft.Azure.Functions.Worker.Core" />
+   <assembly fullname="Microsoft.Azure.WebJobs.Extensions.EventHubs" />
    <assembly fullname="Microsoft.Azure.WebJobs.Host" />
    <assembly fullname="Microsoft.Azure.WebJobs.Script.Grpc" />
    <assembly fullname="Microsoft.Azure.WebJobs.Script.WebHost" />

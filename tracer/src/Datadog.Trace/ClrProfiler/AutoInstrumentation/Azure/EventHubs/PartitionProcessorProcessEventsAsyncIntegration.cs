@@ -1,4 +1,4 @@
-// <copyright file="EventHubListenerPartitionProcessorProcessEventsAsyncIntegration.cs" company="Datadog">
+// <copyright file="PartitionProcessorProcessEventsAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -19,31 +20,27 @@ using Datadog.Trace.Tagging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 {
     /// <summary>
-    /// Azure WebJobs EventHub Listener ProcessEventsAsync instrumentation for reparenting
-    /// Instruments Microsoft.Azure.WebJobs.EventHubs.Listeners.EventHubListener+PartitionProcessor.ProcessEventsAsync
+    /// System.Threading.Tasks.Task Microsoft.Azure.WebJobs.EventHubs.Listeners.EventHubListener/PartitionProcessor::ProcessEventsAsync(Microsoft.Azure.WebJobs.EventHubs.Processor.EventProcessorHostPartition,System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventHubs.EventData]) calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "Microsoft.Azure.WebJobs.Extensions.EventHubs",
         TypeName = "Microsoft.Azure.WebJobs.EventHubs.Listeners.EventHubListener+PartitionProcessor",
         MethodName = "ProcessEventsAsync",
         ReturnTypeName = ClrNames.Task,
-        ParameterTypeNames = new[] { "Microsoft.Azure.WebJobs.EventHubs.Processor.EventProcessorHostPartition", "System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventHubs.EventData]" },
-        MinimumVersion = "5.0.0",
-        MaximumVersion = "5.*.*",
+        ParameterTypeNames = ["Microsoft.Azure.WebJobs.EventHubs.Processor.EventProcessorHostPartition", "System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventHubs.EventData]"],
+        MinimumVersion = "6.0.0",
+        MaximumVersion = "6.*.*",
         IntegrationName = nameof(IntegrationId.AzureEventHubs))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class EventHubListenerPartitionProcessorProcessEventsAsyncIntegration
+    public class PartitionProcessorProcessEventsAsyncIntegration
     {
         private const string OperationName = "azure-eventhubs.receive";
         private const string LogPrefix = "[EventHubs] ";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubListenerPartitionProcessorProcessEventsAsyncIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PartitionProcessorProcessEventsAsyncIntegration));
 
-        internal static CallTargetState OnMethodBegin<TTarget, TPartition, TMessages>(
-            TTarget instance,
-            TPartition context,
-            TMessages messages)
-            where TPartition : IDuckType
+        internal static CallTargetState OnMethodBegin<TTarget, TContext, TMessages>(TTarget instance, ref TContext? context, ref TMessages? messages)
+            where TContext : IDuckType
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
             {
@@ -84,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             return new CallTargetState(scope);
         }
 
-        internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
+        internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
         {
             var scope = state.Scope;
             if (scope == null)
