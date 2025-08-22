@@ -134,7 +134,7 @@ namespace Datadog.Trace.Tests
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
             using var agent = MockTracerAgent.Create(_output, useStatsd: true, requestedStatsDPort: expectedPort);
 
-            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient("test service", settings.Environment, settings.ServiceVersion, settings.Exporter, constantTags: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
             dogStatsD.Should()
@@ -159,7 +159,7 @@ namespace Datadog.Trace.Tests
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
-            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient("test service", settings.Environment, settings.ServiceVersion, settings.Exporter, constantTags: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
             dogStatsD.Should()
@@ -189,7 +189,7 @@ namespace Datadog.Trace.Tests
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
-            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient("test service", settings.Environment, settings.ServiceVersion, settings.Exporter, constantTags: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
             dogStatsD.Should()
@@ -217,7 +217,7 @@ namespace Datadog.Trace.Tests
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
-            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient("test service", settings.Environment, settings.ServiceVersion, settings.Exporter, constantTags: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
             dogStatsD.Should()
