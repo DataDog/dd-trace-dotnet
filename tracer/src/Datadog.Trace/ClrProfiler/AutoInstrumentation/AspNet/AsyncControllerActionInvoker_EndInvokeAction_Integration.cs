@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             Scope? scope = null;
             Scope? proxyScope = null;
-            var httpContext = HttpContext.Current;
+            HttpContext? httpContext = HttpContext.Current;
 
             try
             {
@@ -67,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeAction()");
             }
 
+            // If httpcontext is null, the scopes will be null too
             if (scope != null)
             {
                 if (exception != null)
