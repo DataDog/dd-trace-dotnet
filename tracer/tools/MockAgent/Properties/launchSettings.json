@@ -1,4 +1,4 @@
-{
+﻿{
   "profiles": {
     "MockAgent.UnixDomainSocket": {
       "commandName": "Project",

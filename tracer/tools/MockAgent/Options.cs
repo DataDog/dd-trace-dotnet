@@ -12,11 +12,11 @@ namespace MockAgent
         public static readonly string DefaultPipesTrace = "apm.mock.windows.pipe";
         public static readonly string DefaultPipesStats = "dsd.mock.windows.pipe";
 
-        public static readonly int DefaultPortTrace = 11126;
-        public static readonly int DefaultPortStats = 11125;
+        public static readonly int DefaultPortTrace = 8126;
+        public static readonly int DefaultPortStats = 8125;
 
         [Option('u', "uds", Required = false, HelpText = $"Receive traces and stats over unix domain sockets.")]
-        public bool UnixDomainSockets { get; set; }
+        public bool UnixDomainSockets { get; set; } = true;
 
         [Option("trace-uds-path", Required = false, HelpText = "Set the unix domain socket for traces.")]
         public string TracesUnixDomainSocketPath { get; set; } = DefaultUdsTrace;
@@ -34,12 +34,18 @@ namespace MockAgent
         public string MetricsPipeName { get; set; } = DefaultPipesStats;
 
         [Option('t', "tcp", Required = false, HelpText = "Receive traces and stats over TCP")]
-        public bool Tcp { get; set; }
+        public bool Tcp { get; set; } = true;
 
         [Option("trace-port", Required = false, HelpText = "Set the TCP port for traces.")]
         public int TracesPort { get; set; } = DefaultPortTrace;
 
         [Option("stats-port", Required = false, HelpText = "Set the UDP port for metrics.")]
         public int MetricsPort { get; set; } = DefaultPortStats;
+
+        [Option("show-traces", Required = false, HelpText = "Print traces to the logs")]
+        public bool ShowTraces { get; set; } = true;
+
+        [Option("show-metrics", Required = false, HelpText = "Print metrics to the logs")]
+        public bool ShowMetrics { get; set; } = true;
     }
 }
