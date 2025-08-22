@@ -72,11 +72,10 @@ public class Worker : BackgroundService, ITestOutputHelper
        if (_opts.UnixDomainSockets)
        {
            // can't enable on windows
-           string? metricsUds = null;
-           if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX)
-           {
-               metricsUds = _opts.MetricsUnixDomainSocketPath;
-           }
+           var metricsUds = Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX
+                            ? _opts.MetricsUnixDomainSocketPath
+                            : null;
+
            bool useMetrics = !string.IsNullOrEmpty(metricsUds);
            var config = new UnixDomainSocketConfig(_opts.TracesUnixDomainSocketPath,  metricsUds)
            {
