@@ -64,7 +64,7 @@ internal class DebuggerFactory
         }
         else
         {
-            statsd = TracerManagerFactory.CreateDogStatsdClient(serviceName, tracerSettings.Environment, tracerSettings.ServiceVersion, tracerSettings.Exporter, constantTags: null, prefix: DebuggerSettings.DebuggerMetricPrefix);
+            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, serviceName, constantTags: null, DebuggerSettings.DebuggerMetricPrefix);
         }
 
         return statsd;

@@ -132,7 +132,7 @@ namespace Datadog.Trace
 
             // Even if a previous statsd instance is provided, we need to update it with potentially new settings
             statsd = (settings.TracerMetricsEnabled || runtimeMetricsEnabled)
-                         ? (statsd ?? CreateDogStatsdClient(serviceName: defaultServiceName, environment: settings.Environment, serviceVersion: settings.ServiceVersion, exporterSettings: settings.Exporter, constantTags: GetDogStatsdClientConstantTags(settings.GlobalTags)))
+                         ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
                          : null;
             sampler ??= GetSampler(settings);
             agentWriter ??= GetAgentWriter(settings, settings.TracerMetricsEnabled ? statsd : null, rates => sampler.SetDefaultSampleRates(rates), discoveryService);
@@ -466,7 +466,7 @@ namespace Datadog.Trace
         protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
             => DiscoveryService.Create(settings.Exporter);
 
-        internal static IDogStatsd CreateDogStatsdClient(string serviceName, string environment, string serviceVersion, ExporterSettings exporterSettings, List<string> constantTags, string prefix = null)
+        internal static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, List<string> constantTags, string prefix = null)
         {
             try
             {
@@ -477,27 +477,27 @@ namespace Datadog.Trace
                     Prefix = prefix,
                     // note that if these are null, statsd tries to grab them directly from the environment, which could be unsafe
                     ServiceName = NormalizerTraceProcessor.NormalizeService(serviceName),
-                    Environment = environment,
-                    ServiceVersion = serviceVersion,
+                    Environment = settings.Environment,
+                    ServiceVersion = settings.ServiceVersion,
                     Advanced = { TelemetryFlushInterval = null }
                 };
 
-                switch (exporterSettings.MetricsTransport)
+                switch (settings.Exporter.MetricsTransport)
                 {
                     case MetricsTransportType.NamedPipe:
-                        config.PipeName = exporterSettings.MetricsPipeName;
+                        config.PipeName = settings.Exporter.MetricsPipeName;
                         Log.Information("Using windows named pipes for metrics transport: {PipeName}.", config.PipeName);
                         break;
 #if NETCOREAPP3_1_OR_GREATER
                     case MetricsTransportType.UDS:
-                        config.StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{exporterSettings.MetricsUnixDomainSocketPath}";
+                        config.StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.Exporter.MetricsUnixDomainSocketPath}";
                         Log.Information("Using unix domain sockets for metrics transport: {Socket}.", config.StatsdServerName);
                         break;
 #endif
                     case MetricsTransportType.UDP:
                     default:
-                        config.StatsdServerName = exporterSettings.MetricsHostname;
-                        config.StatsdPort = exporterSettings.DogStatsdPort;
+                        config.StatsdServerName = settings.Exporter.MetricsHostname;
+                        config.StatsdPort = settings.Exporter.DogStatsdPort;
                         Log.Information<string, int>("Using UDP for metrics transport: {Hostname}:{Port}.", config.StatsdServerName, config.StatsdPort);
                         break;
                 }
@@ -512,9 +512,9 @@ namespace Datadog.Trace
             }
         }
 
-        private static List<string> GetDogStatsdClientConstantTags(IReadOnlyCollection<KeyValuePair<string, string>> globalTags)
+        private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
         {
-            var customTagCount = globalTags.Count;
+            var customTagCount = settings.GlobalTags.Count;
             var constantTags = new List<string>(5 + customTagCount)
             {
                 "lang:.NET",
@@ -527,7 +527,7 @@ namespace Datadog.Trace
             if (customTagCount > 0)
             {
                 var tagProcessor = new TruncatorTagsProcessor();
-                foreach (var kvp in globalTags)
+                foreach (var kvp in settings.GlobalTags)
                 {
                     var key = kvp.Key;
                     var value = kvp.Value;
@@ -536,7 +536,7 @@ namespace Datadog.Trace
                 }
             }
 
-            return constantTags;
+            return CreateDogStatsdClient(settings, serviceName, constantTags);
         }
 
         /// <summary>
