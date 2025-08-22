@@ -60,8 +60,8 @@ namespace Datadog.Trace
                 agentWriter: null,
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
-                statsd: null,
-                runtimeMetrics: null,
+                statsd: null, // For now, let's continue to always create a new StatsD instance
+                runtimeMetrics: previous?.RuntimeMetrics,
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
@@ -130,6 +130,7 @@ namespace Datadog.Trace
 
             bool runtimeMetricsEnabled = settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer;
 
+            // Even if a previous statsd instance is provided, we need to update it with potentially new settings
             statsd = (settings.TracerMetricsEnabled || runtimeMetricsEnabled)
                          ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
                          : null;
@@ -137,9 +138,13 @@ namespace Datadog.Trace
             agentWriter ??= GetAgentWriter(settings, settings.TracerMetricsEnabled ? statsd : null, rates => sampler.SetDefaultSampleRates(rates), discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
 
-            if (runtimeMetricsEnabled)
+            if (runtimeMetricsEnabled && runtimeMetrics is { })
             {
-                runtimeMetrics ??= new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
+                runtimeMetrics.UpdateStatsd(statsd);
+            }
+            else if (runtimeMetricsEnabled)
+            {
+                runtimeMetrics = new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
             }
             else
             {
