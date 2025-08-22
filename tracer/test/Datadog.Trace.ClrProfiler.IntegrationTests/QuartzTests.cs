@@ -77,8 +77,9 @@ public class QuartzTests : TracingIntegrationTest
                                         spans,
                                         settings,
                                         orderSpans: s => s
-                                                       .OrderBy(x => x.Name)
-                                                       .ThenBy(x => x.Resource))
+                                                        .OrderBy(x => x.Name)
+                                                        .ThenBy(x => x.Resource)
+                                                        .ThenBy(x => x.Error))
                               .UseFileName(filename);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
@@ -87,25 +88,18 @@ public class QuartzTests : TracingIntegrationTest
 
     private static string GetSuffix(string packageVersion)
     {
-#if NETCOREAPP3_1
-        if (!string.IsNullOrEmpty(packageVersion)
-         && new Version(packageVersion) >= new Version("3.15.0") && new Version(packageVersion) < new Version("4.0.0"))
-        {
-            return "V315plusNETCOREAPP31";
-        }
-#endif
-        if (!string.IsNullOrEmpty(packageVersion)
-         && new Version(packageVersion) >= new Version("3.1.0") && new Version(packageVersion) < new Version("4.0.0"))
-        {
-            return "V3";
-        }
-
-        if (!string.IsNullOrEmpty(packageVersion)
-         && new Version(packageVersion) >= new Version("4.0.0"))
+        if (string.IsNullOrEmpty(packageVersion))
         {
             return "V4";
         }
 
-        return "V4";
+        return new Version(packageVersion) switch
+        {
+            { } v when v >= new Version("4.0.0") => "V4",
+#if NETCOREAPP3_1
+            { } v when v >= new Version("3.15.0") => "V315plusNETCOREAPP31",
+#endif
+            _ => "V3",
+        };
     }
 }
