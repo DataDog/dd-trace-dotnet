@@ -133,7 +133,7 @@ public class TraceExporterTests
         sampleRateResponses.Should()
                            .NotBeEmpty()
                            .And.AllSatisfy(rates => rates.Should().BeEquivalentTo(expectedRates));
-        sampleRateResponses.Should().HaveCount(1);
+        sampleRateResponses.Should().ContainSingle();
 
         Dictionary<string, object> GetSettings()
         {

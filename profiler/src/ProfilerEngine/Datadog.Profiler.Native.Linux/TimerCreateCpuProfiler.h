@@ -42,7 +42,7 @@ public:
 
 private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
-    static std::atomic<TimerCreateCpuProfiler*> Instance;
+    static TimerCreateCpuProfiler* Instance;
 
     bool CanCollect(void* context);
     bool Collect(void* ucontext);
@@ -59,5 +59,4 @@ private:
     std::shared_mutex _registerLock;
     std::shared_ptr<CounterMetric> _totalSampling;
     std::shared_ptr<DiscardMetrics> _discardMetrics;
-    std::atomic<std::uint64_t> _nbThreadsInSignalHandler;
 };

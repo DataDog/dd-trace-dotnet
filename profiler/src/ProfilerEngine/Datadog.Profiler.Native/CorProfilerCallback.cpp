@@ -72,30 +72,6 @@
 
 #include <cmath>
 
-void LogServiceStart(bool success, const char* name )
-{
-    if (success)
-    {
-        Log::Info(name, " started successfully.");
-    }
-    else
-    {
-        Log::Info(name, " failed to start. This service might have been started earlier.");
-    }
-}
-
-void LogServiceStop(bool success, const char* name )
-{
-    if (success)
-    {
-        Log::Info(name, " stopped successfully.");
-    }
-    else
-    {
-        Log::Info(name, " failed to stopped. This service might have been stopped earlier.");
-    }
-}
-
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
     return _pClrLifetime.get();
@@ -544,9 +520,7 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
-        // Other alternative in case of crash-at-shutdown, do not register it as a service
-        // we will have to start it by hand (already stopped by hand)
-        _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
+        _pCpuProfiler = RegisterService<TimerCreateCpuProfiler>(
             _pConfiguration.get(),
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
@@ -740,21 +714,16 @@ bool CorProfilerCallback::StartServices()
     {
         auto name = service->GetName();
         success = service->Start();
-        LogServiceStart(success, name);
+        if (success)
+        {
+            Log::Info(name, " started successfully.");
+        }
+        else
+        {
+            Log::Info(name, " failed to start. This service might have been started earlier.");
+        }
         result &= success;
     }
-
-#ifdef LINUX
-    // We cannot add the timer_create-based CPU profiler to the _services list
-    // we have to control the Stop
-    // If we fail to stop, we mustn't release the memory associated to it
-    // otherwise we might crash.
-    if (_pCpuProfiler != nullptr)
-    {
-        auto success = _pCpuProfiler->Start();
-        LogServiceStart(success, _pCpuProfiler->GetName());
-    }
-#endif
 
     return result;
 }
@@ -790,7 +759,14 @@ bool CorProfilerCallback::StopServices()
         const auto& service = _services[i - 1];
         const auto* name = service->GetName();
         success = service->Stop();
-        LogServiceStop(success, name);
+        if (success)
+        {
+            Log::Info(name, " stopped successfully.");
+        }
+        else
+        {
+            Log::Info(name, " failed to stop. This service might have been stopped earlier.");
+        }
         result &= success;
     }
 
@@ -1537,16 +1513,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 #ifdef LINUX
     if (_pCpuProfiler != nullptr)
     {
-        // if we failed at stopping the time_create-based CPU profiler,
-        // it's safer to not release the memory.
-        // Otherwise, we might crash the application.
-        // Reason: one thread could be executing the signal handler and accessing some field
-        auto stopped = _pCpuProfiler->Stop();
-        LogServiceStop(stopped, _pCpuProfiler->GetName());
-        if (stopped)
-        {
-            _pCpuProfiler = nullptr;
-        }
+        _pCpuProfiler->Stop();
     }
 #endif
 
@@ -1809,7 +1776,7 @@ void CorProfilerCallback::OnThreadRoutineFinished()
         return;
     }
 
-    auto* cpuProfiler = myThis->_pCpuProfiler.get();
+    auto* cpuProfiler = myThis->_pCpuProfiler;
     if (cpuProfiler == nullptr)
     {
         return;
