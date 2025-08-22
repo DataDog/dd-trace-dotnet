@@ -1,9 +1,14 @@
-﻿using System.Diagnostics;
-using Quartz;
+﻿using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
 using QuartzSampleApp.Infrastructure;
 using QuartzSampleApp.Jobs;
+using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using OpenTelemetry;
+using OpenTelemetry.Exporter;
+using Microsoft.Extensions.Hosting;
 
 namespace QuartzSampleApp;
 
@@ -11,6 +16,23 @@ public class Program
 {
     private static async Task Main(string[] args)
     {
+        // Setting up OTEL to see if there's any conflict
+        
+
+        // var tracerProvider = Sdk.CreateTracerProviderBuilder()
+        //                         .AddQuartzInstrumentation()
+        //                         .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("OTEL_QUARTZ_SAMPLE_APP"))
+        //                         .AddConsoleExporter(options =>
+        //                          {
+        //                              options.Targets = OpenTelemetry.Exporter.ConsoleExporterOutputTargets.Console;
+        //                          })
+        //                         .AddOtlpExporter(otlpOptions =>
+        //                          {
+        //                              otlpOptions.Endpoint = new Uri("http://localhost:4318/v1/traces");
+        //                              otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+        //                          })
+        //                         .Build();
+
         var factory = new StdSchedulerFactory();
         var scheduler = await factory.GetScheduler();
         SchedulerHolder.Scheduler = scheduler;
@@ -57,5 +79,6 @@ public class Program
         await Task.WhenAll(JobCompletion.HelloTcs.Task, JobCompletion.ExceptionTcs.Task);
 
         await scheduler.Shutdown(); // or Shutdown(waitForJobsToComplete: true)
+        // tracerProvider?.Dispose();
     }
 }

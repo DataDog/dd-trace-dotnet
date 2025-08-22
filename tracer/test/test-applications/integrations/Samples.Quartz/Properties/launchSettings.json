@@ -5,7 +5,7 @@
       "environmentVariables": {
         "DD_VERSION": "",
         "COR_ENABLE_PROFILING": "1",
-        "DD_TRACE_OTEL_ENABLED": true,
+        "DD_TRACE_OTEL_ENABLED": "true",
         "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
         "COR_PROFILER_PATH": "$(SolutionDir)shared/bin/monitoring-home/osx/Datadog.Trace.ClrProfiler.Native.dylib",
 
