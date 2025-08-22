@@ -9,9 +9,11 @@ using System;
 using System.Linq;
 using Datadog.Trace;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz.QuartzCommon;
 
 namespace Datadog.Trace.Activity.Handlers
 {
@@ -32,7 +34,16 @@ namespace Datadog.Trace.Activity.Handlers
 
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
-            => ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: new OpenTelemetryTags(), out _);
+        {
+            ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: new OpenTelemetryTags(), out var activityMapping);
+
+            // Update the span's resource name and span.kind tag if available
+            if (activityMapping.Scope?.Span is Span span)
+            {
+                UpdateSpanResourceName(span, activity);
+                UpdateSpanKind(span, activity);
+            }
+        }
 
         private static string DetermineSpanKind<T>(T activity)
             where T : IActivity
@@ -45,14 +56,15 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             // Look for job.name tag in the activity tags
-            if (activity.Tags != null)
+            if (activity.Tags is not null && activity.OperationName is not null)
             {
                 var jobNameTag = activity.Tags.FirstOrDefault(tag => tag.Key == "job.name");
                 if (!string.IsNullOrEmpty(jobNameTag.Value))
                 {
                     // Update the span's resource name by appending the job name
                     var originalResourceName = span.ResourceName;
-                    var newResourceName = $"{span.OperationName} {jobNameTag.Value}";
+                    string prefix = GetDisplayNamePrefix(activity.OperationName);
+                    var newResourceName = $"{prefix} {jobNameTag.Value}";
                     span.ResourceName = newResourceName;
                     Log.Debug("Updated span resource name from '{OriginalResourceName}' to '{NewResourceName}' for job '{JobName}'", originalResourceName, newResourceName, jobNameTag.Value);
                 }
@@ -63,7 +75,7 @@ namespace Datadog.Trace.Activity.Handlers
             }
             else
             {
-                Log.Debug("Activity tags are null");
+                Log.Debug("Activity tags or resource name are null");
             }
         }
 
@@ -82,7 +94,7 @@ namespace Datadog.Trace.Activity.Handlers
         public void ActivityStopped<T>(string sourceName, T activity)
             where T : IActivity
         {
-            // Update the span's resource name and span.kind tag if available
+            // Log the final resource name before the span is closed
             string key;
             if (activity is IW3CActivity w3cActivity)
             {
@@ -93,21 +105,12 @@ namespace Datadog.Trace.Activity.Handlers
                 key = activity.Id;
             }
 
-            if (key != null && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope?.Span is Span span)
+            if (key != null && ActivityHandlerCommon.ActivityMappingById.TryGetValue(key, out var activityMapping) && activityMapping.Scope?.Span is Span span)
             {
-                Log.Debug("Found span for activity '{ActivityId}', updating resource name and span kind", activity.Id);
-                UpdateSpanResourceName(span, activity);
-                UpdateSpanKind(span, activity);
-                // Finish the span manually since we removed it from the mapping
-                span.Finish(activity.StartTimeUtc.Add(activity.Duration));
-                activityMapping.Scope.Close();
+                Log.Debug("ActivityStopped: Final resource name for activity '{ActivityId}' is '{ResourceName}'", activity.Id, span.ResourceName);
             }
-            else
-            {
-                Log.Debug("Could not find span for activity '{ActivityId}' with key '{Key}'", activity.Id, key);
-                // Fallback to common handler if we couldn't find the span
-                ActivityHandlerCommon.ActivityStopped(sourceName, activity);
-            }
+
+            ActivityHandlerCommon.ActivityStopped(sourceName, activity);
         }
     }
 }
