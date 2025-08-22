@@ -612,7 +612,6 @@ namespace Datadog.Trace.Debugger
                         .Add(_snapshotUploader)
                         .Add(_diagnosticsUploader)
                         .Add(_probeStatusPoller)
-                        .Add(_dogStats)
                         .Add(_rcmAvailabilitySemaphore)
                         .Add(_cancellationTokenSource)
                         .DisposeAll();

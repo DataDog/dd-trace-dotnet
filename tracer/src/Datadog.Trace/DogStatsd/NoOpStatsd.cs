@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.DogStatsd
@@ -74,9 +75,7 @@ namespace Datadog.Trace.DogStatsd
         {
         }
 
-        public void Dispose()
-        {
-        }
+        public Task DisposeAsync() => Task.CompletedTask;
 
         private class NoOpTimer : IDisposable
         {
