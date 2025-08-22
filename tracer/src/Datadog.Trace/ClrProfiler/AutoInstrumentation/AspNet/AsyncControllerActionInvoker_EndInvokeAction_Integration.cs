@@ -10,8 +10,9 @@ using System.Web;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+
+#nullable enable
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -52,8 +53,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <returns>Return value of the method</returns>
         internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
         {
-            Scope scope = null;
-            Scope proxyScope = null;
+            Scope? scope = null;
+            Scope? proxyScope = null;
             var httpContext = HttpContext.Current;
 
             try
@@ -108,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return new CallTargetReturn<TResult>(returnValue);
         }
 
-        private static void OnRequestCompletedAfterException(HttpContext httpContext, Scope scope, Scope proxyScope, DateTimeOffset finishTime)
+        private static void OnRequestCompletedAfterException(HttpContext httpContext, Scope scope, Scope? proxyScope, DateTimeOffset finishTime)
         {
             try
             {
@@ -131,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     proxyScope.Span.Finish(finishTime);
                 }
 
-                HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
+                HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
                 scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
                 scope.Span.Finish(finishTime);
             }
