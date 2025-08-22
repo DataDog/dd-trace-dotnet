@@ -5,8 +5,11 @@
 
 #nullable enable
 
+using System;
 using System.Linq;
+using Datadog.Trace;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -22,31 +25,17 @@ namespace Datadog.Trace.Activity.Handlers
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzActivityHandler>();
 
         public bool ShouldListenTo(string sourceName, string? version)
-            => sourceName.StartsWith("Quartz");
+        {
+            // Listen to Quartz diagnostic source
+            return sourceName.StartsWith("Quartz");
+        }
 
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
-        {
-            var tags = new OpenTelemetryTags();
+            => ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: new OpenTelemetryTags(), out _);
 
-            // Add span.kind tag if not present
-            if (activity.Tags.All(tag => tag.Key != "span.kind"))
-            {
-                // Determine appropriate span kind based on activity operation name or source
-                var spanKind = DetermineSpanKind();
-                tags.SetTag("span.kind", spanKind);
-            }
-
-            ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: tags, out var activityMapping);
-
-            // Update the span's resource name with job.name tag if available
-            if (activityMapping.Scope.Span is Span span)
-            {
-                UpdateSpanResourceName(span, activity);
-            }
-        }
-
-        private static string DetermineSpanKind()
+        private static string DetermineSpanKind<T>(T activity)
+            where T : IActivity
         {
             // Default to internal for Quartz operations until we learn there are other span kinds
             return "internal";
@@ -62,17 +51,63 @@ namespace Datadog.Trace.Activity.Handlers
                 if (!string.IsNullOrEmpty(jobNameTag.Value))
                 {
                     // Update the span's resource name by appending the job name
-                    var currentResourceName = span.ResourceName;
-                    var newResourceName = $"{currentResourceName} - {jobNameTag.Value}";
+                    var originalResourceName = span.ResourceName;
+                    var newResourceName = $"{span.OperationName} {jobNameTag.Value}";
                     span.ResourceName = newResourceName;
+                    Log.Debug("Updated span resource name from '{OriginalResourceName}' to '{NewResourceName}' for job '{JobName}'", originalResourceName, newResourceName, jobNameTag.Value);
                 }
+                else
+                {
+                    Log.Debug("No job.name tag found in activity tags");
+                }
+            }
+            else
+            {
+                Log.Debug("Activity tags are null");
+            }
+        }
+
+        private static void UpdateSpanKind<T>(Span span, T activity)
+            where T : IActivity
+        {
+            // Add span.kind tag if not present
+            if (activity.Tags != null && !activity.Tags.Any(tag => tag.Key == "span.kind"))
+            {
+                // Determine appropriate span kind based on activity operation name or source
+                string spanKind = DetermineSpanKind(activity);
+                span.SetTag("span.kind", spanKind);
             }
         }
 
         public void ActivityStopped<T>(string sourceName, T activity)
             where T : IActivity
         {
-            ActivityHandlerCommon.ActivityStopped(sourceName, activity);
+            // Update the span's resource name and span.kind tag if available
+            string key;
+            if (activity is IW3CActivity w3cActivity)
+            {
+                key = w3cActivity.TraceId + w3cActivity.SpanId;
+            }
+            else
+            {
+                key = activity.Id;
+            }
+
+            if (key != null && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope?.Span is Span span)
+            {
+                Log.Debug("Found span for activity '{ActivityId}', updating resource name and span kind", activity.Id);
+                UpdateSpanResourceName(span, activity);
+                UpdateSpanKind(span, activity);
+                // Finish the span manually since we removed it from the mapping
+                span.Finish(activity.StartTimeUtc.Add(activity.Duration));
+                activityMapping.Scope.Close();
+            }
+            else
+            {
+                Log.Debug("Could not find span for activity '{ActivityId}' with key '{Key}'", activity.Id, key);
+                // Fallback to common handler if we couldn't find the span
+                ActivityHandlerCommon.ActivityStopped(sourceName, activity);
+            }
         }
     }
 }
