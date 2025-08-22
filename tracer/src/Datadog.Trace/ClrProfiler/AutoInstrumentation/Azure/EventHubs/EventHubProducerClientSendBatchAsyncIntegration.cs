@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             }
         }
 
-        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
+        internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
             var scope = state.Scope;
             if (scope != null)
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 scope.Dispose();
             }
 
-            return CallTargetReturn.GetDefault();
+            return returnValue;
         }
     }
 }
