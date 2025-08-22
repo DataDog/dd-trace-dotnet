@@ -3327,31 +3327,21 @@ stages:
         Write-Host "`n===== Recent logs ====="
         docker logs --tail 200 $container 2>$null
 
-        # Discover mapped host port
         $hostPort = 5555
-        $mapped = (docker port $container 5555 2>$null)
-        if ($mapped -match ":(\d+)$") { $hostPort = $Matches[1] }
 
-        $uri = "http://127.0.0.1:$hostPort/health"
-        Write-Host "Waiting for Datadog Agent health at $uri ..."
-        $retries = 180; $delay = 2; $ok = $false
-        for ($i=1; $i -le $retries; $i++) {
-          try {
-            $resp = Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 2
-            Write-Host ("Probe #{0}: HTTP {1}" -f $i, $resp.StatusCode)
-            if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 500) { $ok = $true; break }
-          } catch {
-            Write-Host ("Probe #{0}: " -f $i) $_.Exception.Message
+        $retries=180; $delay=2
+        Write-Host "Waiting for Datadog Agent health (in-container)..."
+        for($i=1;$i -le $retries;$i++){
+          $cmd = "try {(Invoke-WebRequest -Uri 'http://127.0.0.1:5555/$hostPort' -UseBasicParsing -TimeoutSec 2).StatusCode} catch { \$_.Exception.Message }"
+          $out = docker exec $container powershell -NoProfile -Command $cmd
+          if ($LASTEXITCODE -eq 0 -and $out -match '^\d+$' -and [int]$out -ge 200 -and [int]$out -lt 500){
+            Write-Host "Healthy (HTTP $out)";
+            exit 0
           }
           Start-Sleep -Seconds $delay
         }
-
-        if (-not $ok) {
-          Write-Error ("Datadog Agent failed health check after {0}s on {1}" -f ($retries*$delay), $uri)
-          exit 1
-        } else {
-          Write-Host "Datadog Agent is healthy."
-        }
+        Write-Error "Datadog Agent health never came up in-container"
+        exit 1
       displayName: "Wait for Datadog Agent health"
 
     - script: tracer\build.cmd RunExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
