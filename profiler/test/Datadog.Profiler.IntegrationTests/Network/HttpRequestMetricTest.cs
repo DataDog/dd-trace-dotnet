@@ -22,7 +22,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             _output = output;
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0" })]
+        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0" })]
         public void CheckAllMetrics(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: All);

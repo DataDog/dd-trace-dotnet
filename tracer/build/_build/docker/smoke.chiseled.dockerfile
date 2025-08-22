@@ -36,7 +36,7 @@ WORKDIR /app
 COPY --from=builder /src/publish /app/.
 
 ###########################################################
-FROM publish as installer-base
+FROM publish AS installer-base
 
 # Add and extract the installer files to the expected location
 # from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
@@ -44,7 +44,7 @@ ADD ./test/test-applications/regression/AspNetCoreSmokeTest/artifacts/datadog-do
 
 ###########################################################
 # The final image, with "manual" configuration
-FROM installer-base as installer-final
+FROM installer-base AS installer-final
 
 # Set the required env vars
 ENV CORECLR_ENABLE_PROFILING=1
