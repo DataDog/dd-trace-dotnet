@@ -40,7 +40,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PartitionProcessorProcessEventsAsyncIntegration));
 
         internal static CallTargetState OnMethodBegin<TTarget, TContext, TMessages>(TTarget instance, ref TContext? context, ref TMessages? messages)
-            where TContext : IDuckType
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
             {
