@@ -154,7 +154,8 @@ resources:
       DD_INSIDE_CI: true
       DD_HEALTH_PORT: 5555
       DD_LOG_LEVEL: debug
-    options: --name dd_agent_no_pull
+    options: --name dd_agent_no_pull --cpu-count=2 --memory=2g
+    
 
 # Stages
 stages:
