@@ -73,12 +73,11 @@ public class Worker : BackgroundService, ITestOutputHelper
        {
            // can't enable on windows
            string? metricsUds = null;
-           bool useMetrics = !string.IsNullOrEmpty(metricsUds);
            if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX)
            {
                metricsUds = _opts.MetricsUnixDomainSocketPath;
            }
-
+           bool useMetrics = !string.IsNullOrEmpty(metricsUds);
            var config = new UnixDomainSocketConfig(_opts.TracesUnixDomainSocketPath,  metricsUds)
            {
                UseDogstatsD = useMetrics,
