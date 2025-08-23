@@ -697,17 +697,17 @@ namespace Datadog.Trace.TestHelpers
 
                 throw;
             }
+        }
 
-            void ReceiveDebuggerBatch(string batch)
-            {
-                var snapshots =
-                    JArray
-                       .Parse(batch)
-                       .Select(token => token.ToString())
-                       .ToList();
+        private void ReceiveDebuggerBatch(string batch)
+        {
+            var snapshots =
+                JArray
+                   .Parse(batch)
+                   .Select(token => token.ToString())
+                   .ToList();
 
-                Snapshots = Snapshots.AddRange(snapshots);
-            }
+            Snapshots = Snapshots.AddRange(snapshots);
         }
 
         private void HandlePotentialDiagnosticsData(MockHttpRequest request)
@@ -724,7 +724,14 @@ namespace Datadog.Trace.TestHelpers
                 using var streamReader = new StreamReader(stream);
                 var batch = streamReader.ReadToEnd();
 
-                ReceiveDiagnosticsBatch(batch);
+                if (batch.StartsWith("[{\"debugger\":{\"snapshot\":", StringComparison.OrdinalIgnoreCase))
+                {
+                    ReceiveDebuggerBatch(batch);
+                }
+                else
+                {
+                    ReceiveDiagnosticsBatch(batch);
+                }
             }
             catch (Exception ex)
             {
