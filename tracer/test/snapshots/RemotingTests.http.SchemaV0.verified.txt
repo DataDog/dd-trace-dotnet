@@ -33,6 +33,7 @@
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Remoting
     },
     Metrics: {
@@ -54,6 +55,7 @@
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Remoting
     },
     Metrics: {
@@ -78,6 +80,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Remoting
     },
     Metrics: {
@@ -108,6 +111,7 @@ at System.Net.HttpWebRequest.GetResponse(),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Remoting
     },
     Metrics: {
