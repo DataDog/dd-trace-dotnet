@@ -465,6 +465,11 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
+            if (DataPipelineEnabled)
+            {
+                Log.Information($"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled");
+            }
+
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
 
