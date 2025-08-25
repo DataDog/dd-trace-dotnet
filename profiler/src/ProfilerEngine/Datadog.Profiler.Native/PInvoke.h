@@ -44,4 +44,4 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
 
 extern "C" void __stdcall FlushProfile();
 
-extern "C" bool SetConfiguration(shared::StableConfig::SharedConfig config);
+extern "C" bool __stdcall SetConfiguration(shared::StableConfig::SharedConfig config);
