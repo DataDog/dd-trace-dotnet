@@ -25,34 +25,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
     public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
 
-    private static void RecordTelemetry<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, T defaultValue)
-    {
-        switch (defaultValue)
-        {
-            case DefaultResult<T> defaultResult:
-                telemetry.Record(key, defaultResult.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
-                break;
-            case int intVal:
-                telemetry.Record(key, intVal, ConfigurationOrigins.Default);
-                break;
-            case double doubleVal:
-                telemetry.Record(key, doubleVal, ConfigurationOrigins.Default);
-                break;
-            case bool boolVal:
-                telemetry.Record(key, boolVal, ConfigurationOrigins.Default);
-                break;
-            case string stringVal:
-                telemetry.Record(key, stringVal, recordValue, ConfigurationOrigins.Default);
-                break;
-            case null: // can't actually be called in practice
-                break;
-            default:
-                // TODO: this shouldn't be calleable in practice, we need to revise it
-                telemetry.Record(key, defaultValue.ToString(), recordValue, ConfigurationOrigins.Default);
-                break;
-        }
-    }
-
     internal readonly struct HasKeys
     {
         public HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string? fallbackKey1 = null, string? fallbackKey2 = null, string? fallbackKey3 = null)
@@ -157,7 +129,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var defaultValue = getDefaultValue();
-            RecordTelemetry(Telemetry, Key, recordValue, defaultValue);
+            Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
             return defaultValue;
         }
 
@@ -193,7 +165,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var defaultValue = getDefaultValue();
-            RecordTelemetry(Telemetry, Key, true, defaultValue.TelemetryValue);
+            Telemetry.Record(Key, defaultValue.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
             return defaultValue.Result;
         }
 
@@ -266,7 +238,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var defaultValue = getDefaultValue();
-            RecordTelemetry(Telemetry, Key, true, defaultValue);
+            Telemetry.Record(Key, defaultValue, ConfigurationOrigins.Default);
             return defaultValue;
         }
 
@@ -354,6 +326,10 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public IDictionary<string, string> AsDictionary(Func<IDictionary<string, string>> getDefaultValue, string defaultValueForTelemetry)
             => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue, defaultValueForTelemetry);
 
+        [return: NotNullIfNotNull(nameof(defaultValue))]
+        public IDictionary<string, string>? AsDictionary(IDictionary<string, string>? defaultValue, string defaultValueForTelemetry)
+            => AsDictionary(allowOptionalMappings: false, defaultValue, defaultValueForTelemetry);
+
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         public IDictionary<string, string>? AsDictionary(
             bool allowOptionalMappings,
@@ -373,6 +349,32 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
             Telemetry.Record(Key, defaultValueForTelemetry, recordValue: true, ConfigurationOrigins.Default);
             return value;
+        }
+
+        [return: NotNullIfNotNull(nameof(defaultValue))]
+        public IDictionary<string, string>? AsDictionary(
+            bool allowOptionalMappings,
+            IDictionary<string, string>? defaultValue,
+            string defaultValueForTelemetry)
+        {
+            // pre-record the default value, so it's in the "correct" place in the stack
+            if (defaultValue is not null)
+            {
+                Telemetry.Record(Key, defaultValueForTelemetry, recordValue: true, ConfigurationOrigins.Default);
+            }
+
+            var result = GetDictionaryResult(allowOptionalMappings, separator: ':');
+            if (result is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            if (result.IsPresent)
+            {
+                Telemetry.Record(Key, defaultValueForTelemetry, recordValue: true, ConfigurationOrigins.Default);
+            }
+
+            return defaultValue;
         }
 
         // ****************
@@ -401,13 +403,13 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
         // bool
         public StructConfigurationResultWithKey<bool> AsBoolResult()
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetBoolResult(validator: null, converter: null));
+            => StructConfigurationResultWithKey<bool>.Create(Telemetry, Key, configurationResult: GetBoolResult(validator: null, converter: null));
 
         public StructConfigurationResultWithKey<bool> AsBoolResult(Func<string, ParsingResult<bool>>? converter)
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetBoolResult(validator: null, converter));
+            => StructConfigurationResultWithKey<bool>.Create(Telemetry, Key, configurationResult: GetBoolResult(validator: null, converter));
 
         public StructConfigurationResultWithKey<bool> AsBoolResult(Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetBoolResult(validator, converter));
+            => StructConfigurationResultWithKey<bool>.Create(Telemetry, Key, configurationResult: GetBoolResult(validator, converter));
 
         // T
         public ClassConfigurationResultWithKey<T> GetAsClassResult<T>(Func<string, ParsingResult<T>> converter)
@@ -418,33 +420,25 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             where T : class
             => new(Telemetry, Key, recordValue: true, configurationResult: GetAs(validator, converter));
 
-        public StructConfigurationResultWithKey<T> GetAsStructResult<T>(Func<string, ParsingResult<T>> converter)
-            where T : struct
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetAs(validator: null, converter));
-
-        public StructConfigurationResultWithKey<T> GetAsStructResult<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
-            where T : struct
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetAs(validator, converter));
-
         // int
         public StructConfigurationResultWithKey<int> AsInt32Result()
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetInt32Result(validator: null, converter: null));
+            => StructConfigurationResultWithKey<int>.Create(Telemetry, Key, configurationResult: GetInt32Result(validator: null, converter: null));
 
         public StructConfigurationResultWithKey<int> AsInt32Result(Func<string, ParsingResult<int>>? converter)
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetInt32Result(validator: null, converter));
+            => StructConfigurationResultWithKey<int>.Create(Telemetry, Key, configurationResult: GetInt32Result(validator: null, converter));
 
         public StructConfigurationResultWithKey<int> AsInt32Result(Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetInt32Result(validator, converter));
+            => StructConfigurationResultWithKey<int>.Create(Telemetry, Key, configurationResult: GetInt32Result(validator, converter));
 
         // double
         public StructConfigurationResultWithKey<double> AsDoubleResult()
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetDoubleResult(validator: null, converter: null));
+            => StructConfigurationResultWithKey<double>.Create(Telemetry, Key, configurationResult: GetDoubleResult(validator: null, converter: null));
 
         public StructConfigurationResultWithKey<double> AsDoubleResult(Func<string, ParsingResult<double>>? converter)
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetDoubleResult(validator: null, converter));
+            => StructConfigurationResultWithKey<double>.Create(Telemetry, Key, configurationResult: GetDoubleResult(validator: null, converter));
 
         public StructConfigurationResultWithKey<double> AsDoubleResult(Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
-            => new(Telemetry, Key, recordValue: true, configurationResult: GetDoubleResult(validator, converter));
+            => StructConfigurationResultWithKey<double>.Create(Telemetry, Key, configurationResult: GetDoubleResult(validator, converter));
 
         // dictionary
         public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult()
@@ -591,13 +585,41 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         }
     }
 
-    internal readonly struct StructConfigurationResultWithKey<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, ConfigurationResult<T> configurationResult)
+    internal readonly struct StructConfigurationResultWithKey<T>
         where T : struct
     {
-        public readonly string Key = key;
-        public readonly IConfigurationTelemetry Telemetry = telemetry;
-        public readonly bool RecordValue = recordValue;
-        public readonly ConfigurationResult<T> ConfigurationResult = configurationResult;
+        public readonly string Key;
+        public readonly IConfigurationTelemetry Telemetry;
+        public readonly ConfigurationResult<T> ConfigurationResult;
+
+        // Private so that it can only be created with specific T types
+        private StructConfigurationResultWithKey(IConfigurationTelemetry telemetry, string key, ConfigurationResult<T> configurationResult)
+        {
+            Key = key;
+            Telemetry = telemetry;
+            ConfigurationResult = configurationResult;
+        }
+
+        public static StructConfigurationResultWithKey<bool> Create(IConfigurationTelemetry telemetry, string key, ConfigurationResult<bool> configurationResult)
+            => new(telemetry, key, configurationResult);
+
+        public static StructConfigurationResultWithKey<int> Create(IConfigurationTelemetry telemetry, string key, ConfigurationResult<int> configurationResult)
+            => new(telemetry, key, configurationResult);
+
+        public static StructConfigurationResultWithKey<double> Create(IConfigurationTelemetry telemetry, string key, ConfigurationResult<double> configurationResult)
+            => new(telemetry, key, configurationResult);
+
+        [return:NotNullIfNotNull(nameof(defaultValue))]
+        public T? WithDefault(T? defaultValue)
+        {
+            if (ConfigurationResult is { Result: { } ddResult, IsValid: true })
+            {
+                return ddResult;
+            }
+
+            RecordTelemetry(defaultValue);
+            return defaultValue;
+        }
 
         public T WithDefault(T defaultValue)
         {
@@ -606,7 +628,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 return ddResult;
             }
 
-            RecordTelemetry(Telemetry, Key, RecordValue, defaultValue);
+            RecordTelemetry(defaultValue);
             return defaultValue;
         }
 
@@ -634,8 +656,26 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 return null;
             }
 
-            RecordTelemetry(Telemetry, Key, RecordValue, defaultValue);
+            RecordTelemetry(defaultValue);
             return defaultValue;
+        }
+
+        private void RecordTelemetry(T? defaultValue)
+        {
+            switch (defaultValue)
+            {
+                case null:
+                    break;
+                case int intVal:
+                    Telemetry.Record(Key, intVal, ConfigurationOrigins.Default);
+                    break;
+                case double doubleVal:
+                    Telemetry.Record(Key, doubleVal, ConfigurationOrigins.Default);
+                    break;
+                case bool boolVal:
+                    Telemetry.Record(Key, boolVal, ConfigurationOrigins.Default);
+                    break;
+            }
         }
     }
 
@@ -647,21 +687,21 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public readonly bool RecordValue = recordValue;
         public readonly ConfigurationResult<T> ConfigurationResult = configurationResult;
 
-        public T WithDefault(T defaultValue)
+        public T WithDefault(DefaultResult<T> defaultValue)
         {
             if (ConfigurationResult is { Result: { } ddResult, IsValid: true })
             {
                 return ddResult;
             }
 
-            RecordTelemetry(Telemetry, Key, RecordValue, defaultValue);
-            return defaultValue;
+            Telemetry.Record(Key, defaultValue.TelemetryValue, RecordValue, ConfigurationOrigins.Default);
+            return defaultValue.Result;
         }
 
         public T? OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler)
             => CalculateOverrides(in otelConfig, overrideHandler, defaultValue: null);
 
-        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, T defaultValue)
+        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, DefaultResult<T> defaultValue)
             => CalculateOverrides(in otelConfig, overrideHandler, defaultValue);
 
         public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>> getDefaultValue)
@@ -677,12 +717,12 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var defaultValue = getDefaultValue();
-            RecordTelemetry(Telemetry, Key, RecordValue, defaultValue.TelemetryValue);
+            Telemetry.Record(Key, defaultValue.TelemetryValue, RecordValue, ConfigurationOrigins.Default);
             return defaultValue.Result;
         }
 
         [return: NotNullIfNotNull(nameof(defaultValue))]
-        private T? CalculateOverrides(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, T? defaultValue)
+        private T? CalculateOverrides(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, DefaultResult<T>? defaultValue)
         {
             if (overrideHandler.TryHandleOverrides(Key, ConfigurationResult, otelConfig.Key, otelConfig.ConfigurationResult, out var overridden))
             {
@@ -699,8 +739,8 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 return null;
             }
 
-            RecordTelemetry(Telemetry, Key, RecordValue, defaultValue);
-            return defaultValue;
+            Telemetry.Record(Key, defaultValue.Value.TelemetryValue, RecordValue, ConfigurationOrigins.Default);
+            return defaultValue.Value.Result;
         }
     }
 

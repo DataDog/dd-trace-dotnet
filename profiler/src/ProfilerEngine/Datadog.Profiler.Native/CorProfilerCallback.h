@@ -34,11 +34,8 @@
 #include "ProxyMetric.h"
 #include "IAllocationsRecorder.h"
 #include "IMetadataProvider.h"
-#include "shared/src/native-src/string.h"
 #include "ThreadLifetimeProvider.h"
-#ifdef LINUX
-#include "TimerCreateCpuProfiler.h"
-#endif
+#include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
 #include "PInvoke.h"
@@ -58,6 +55,7 @@ class IConfiguration;
 class IExporter;
 class RawSampleTransformer;
 class RuntimeIdStore;
+class TimerCreateCpuProfiler;
 class CpuSampleProvider;
 class NetworkProvider;
 
@@ -260,7 +258,7 @@ private :
     RuntimeIdStore* _pRuntimeIdStore = nullptr;
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
-    std::unique_ptr<TimerCreateCpuProfiler> _pCpuProfiler = nullptr;
+    TimerCreateCpuProfiler* _pCpuProfiler = nullptr;
     CpuSampleProvider* _pCpuSampleProvider = nullptr;
 #endif
 

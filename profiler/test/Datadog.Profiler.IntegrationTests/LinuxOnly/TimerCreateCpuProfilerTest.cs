@@ -25,7 +25,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckTimerCreateIsDefault(string appName, string framework, string appAssembly)
+        public void CheckTimerCreateIsNotDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
             // disable default profilers except CPU
@@ -41,8 +41,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             var logLines = File.ReadLines(logFile);
 
-            logLines.Should().ContainMatch("*timer_create Cpu profiler is enabled*");
-            logLines.Should().NotContainMatch("*Manual Cpu profiler is enabled*");
+            logLines.Should().NotContainMatch("*timer_create Cpu profiler is enabled*");
+            logLines.Should().ContainMatch("*Manual Cpu profiler is enabled*");
 
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotBeEmpty("No samples were found");
         }
