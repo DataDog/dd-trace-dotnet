@@ -10,6 +10,8 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     internal static class HttpContextHelper
