@@ -160,7 +160,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         internal void UpdateStatsd(IDogStatsd statsd)
         {
-            _statsd = statsd;
+            Interlocked.Exchange(ref _statsd, statsd);
         }
 
         internal void PushEvents()
