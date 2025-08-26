@@ -16,7 +16,7 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory)]
     public class DatadogHttpClientBenchmark
     {
-        private const string ResponseString = @"HTTP/1.1 200 OK
+        private const string ResponseHeadersBaseString = @"HTTP/1.1 200 OK
 Connection: keep-alive
 Content-Length: 2468
 Server: localhost
@@ -354,9 +354,13 @@ Access-Control-Allow-Origin: *";
 """;
         private static readonly DatadogHttpClient _client;
         private static readonly MemoryStream _requestStream;
-        private static readonly MemoryStream _responseStreamMinimal;
-        private static readonly MemoryStream _responseStreamSmall;
-        private static readonly MemoryStream _responseStreamLarge;
+        private static readonly MemoryStream _responseStreamBodyMinimal;
+        private static readonly MemoryStream _responseStreamBodySmall;
+        private static readonly MemoryStream _responseStreamBodyLarge;
+        private static readonly MemoryStream _responseStreamHeadersBase;
+        private static readonly MemoryStream _responseStreamHeadersPlus40;
+        private static readonly MemoryStream _responseStreamHeadersPlus80;
+        private static readonly MemoryStream _responseStreamHeadersPlus120;
         private static readonly HttpRequest _request;
         private static readonly byte[] _outBuffer;
 
@@ -365,9 +369,14 @@ Access-Control-Allow-Origin: *";
             _client = new DatadogHttpClient(new TraceAgentHttpHeaderHelper());
             var requestContent = new Datadog.Trace.HttpOverStreams.HttpContent.BufferContent(new ArraySegment<byte>(new byte[0]));
             _requestStream = new MemoryStream();
-            _responseStreamMinimal = ConvertStringToMemoryStream(ResponseString + Environment.NewLine + Environment.NewLine + MinimalJson);
-            _responseStreamSmall = ConvertStringToMemoryStream(ResponseString  + Environment.NewLine + Environment.NewLine + SmallJson);
-            _responseStreamLarge = ConvertStringToMemoryStream(ResponseString  + Environment.NewLine + Environment.NewLine + LargeJson);
+            _responseStreamBodyMinimal = ConvertStringToMemoryStream(ResponseHeadersBaseString + Environment.NewLine + Environment.NewLine + MinimalJson);
+            _responseStreamBodySmall = ConvertStringToMemoryStream(ResponseHeadersBaseString  + Environment.NewLine + Environment.NewLine + SmallJson);
+            _responseStreamBodyLarge = ConvertStringToMemoryStream(ResponseHeadersBaseString  + Environment.NewLine + Environment.NewLine + LargeJson);
+            _responseStreamBodyLarge = ConvertStringToMemoryStream(ResponseHeadersBaseString  + Environment.NewLine + Environment.NewLine + LargeJson);
+            _responseStreamHeadersBase = ConvertStringToMemoryStream(ResponseHeadersBaseString  + Environment.NewLine + Environment.NewLine + MinimalJson);
+            _responseStreamHeadersPlus40 = ConvertStringToMemoryStream(ResponseHeadersBaseString + MakeHeaders(40) + Environment.NewLine + Environment.NewLine + MinimalJson);
+            _responseStreamHeadersPlus80 = ConvertStringToMemoryStream(ResponseHeadersBaseString + MakeHeaders(80) + Environment.NewLine + Environment.NewLine + MinimalJson);
+            _responseStreamHeadersPlus120 = ConvertStringToMemoryStream(ResponseHeadersBaseString + MakeHeaders(120)  + Environment.NewLine + Environment.NewLine + MinimalJson);
 // GET / HTTP/1.1
 // Host: localhost
 // User-Agent: curl/8.14.1
@@ -381,6 +390,16 @@ Access-Control-Allow-Origin: *";
             _request = new HttpRequest("GET", "localhost", "/", headers, requestContent);
 
             _outBuffer = new byte[12_000];
+        }
+
+        static string MakeHeaders(int headers)
+        {
+            var sb = new StringBuilder();
+            for(int i = 0; i < headers; i++)
+            {
+                sb.AppendLine($"x-this-header-{i}: this-value-{i}");
+            }
+            return sb.ToString();
         }
 
         static MemoryStream ConvertStringToMemoryStream(string inputString)
@@ -403,12 +422,24 @@ Access-Control-Allow-Origin: *";
         }
 
         [Benchmark]
-        public async Task SendAsyncMinimal() => await SendAsync(_responseStreamMinimal);
+        public async Task SendAsyncBodyMinimal() => await SendAsync(_responseStreamBodyMinimal);
 
         [Benchmark]
-        public async Task SendAsyncSmall() => await SendAsync(_responseStreamSmall);
+        public async Task SendAsyncBodySmall() => await SendAsync(_responseStreamBodySmall);
 
         [Benchmark]
-        public async Task SendAsyncLarge() => await SendAsync(_responseStreamLarge);
+        public async Task SendAsyncBodyLarge() => await SendAsync(_responseStreamBodyLarge);
+
+        [Benchmark]
+        public async Task SendAsyncHeadersBase() => await SendAsync(_responseStreamHeadersBase);
+
+        [Benchmark]
+        public async Task SendAsyncHeadersPlus40() => await SendAsync(_responseStreamHeadersPlus40);
+
+        [Benchmark]
+        public async Task SendAsyncHeadersPlus80() => await SendAsync(_responseStreamHeadersPlus80);
+
+        [Benchmark]
+        public async Task SendAsyncHeadersPlus120() => await SendAsync(_responseStreamHeadersPlus120);
     }
 }
