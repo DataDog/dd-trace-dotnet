@@ -39,7 +39,6 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private readonly TimeSpan _delay;
 
-        private readonly IDogStatsd _statsd;
         private readonly Timer _timer;
 
         private readonly IRuntimeMetricsListener _listener;
@@ -52,6 +51,7 @@ namespace Datadog.Trace.RuntimeMetrics
 #endif
 
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
+        private IDogStatsd _statsd;
         private int _outOfMemoryCount;
 
         // The time when the runtime metrics were last pushed
@@ -156,6 +156,11 @@ namespace Datadog.Trace.RuntimeMetrics
             _listener?.Dispose();
 #endif
             _exceptionCounts.Clear();
+        }
+
+        internal void UpdateStatsd(IDogStatsd statsd)
+        {
+            Interlocked.Exchange(ref _statsd, statsd);
         }
 
         internal void PushEvents()
