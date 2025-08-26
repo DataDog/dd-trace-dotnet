@@ -188,6 +188,7 @@ void Dataflow::Destroy()
     if (_initialized)
     {
         _initialized = false;
+        _loaded = false;
         REL(_profiler);
         DEL_MAP_VALUES(_modules);
         DEL_MAP_VALUES(_appDomains);
@@ -366,6 +367,11 @@ void Dataflow::LoadSecurityControls()
 
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
+    if (!_loaded)
+    {
+        return S_OK;
+    }
+
     CSGUARD(_cs);
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
@@ -380,59 +386,22 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
-    LPCBYTE pbBaseLoadAddr;
-    WCHAR wszPath[300];
-    ULONG cchNameIn = 300;
-    ULONG cchNameOut;
-    AssemblyID assemblyId;
-    AppDomainID appDomainId;
-    ModuleID modIDDummy;
-    WCHAR wszName[1024];
-
-    DWORD dwModuleFlags;
-    HRESULT hr = _profiler->GetModuleInfo2(moduleId, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId,
-                                           &dwModuleFlags);
-    if (FAILED(hr))
-    {
-        trace::Logger::Error("GetModuleInfo2 failed for ModuleId ", moduleId);
-        return hr;
-    }
-    if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
+    if (!_loaded)
     {
         return S_OK;
-    } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their
-      // IL
-
-    hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
-    if (FAILED(hr))
-    {
-        trace::Logger::Error("GetAssemblyInfo failed for ModuleId ", moduleId, " AssemblyId ", assemblyId);
-        return hr;
     }
 
-    AppDomainInfo* appDomain = GetAppDomain(appDomainId);
-    if (appDomain == nullptr)
-    {
-        trace::Logger::Error("GetAppDomain failed for AppDomainId ", appDomainId);
-        return E_FAIL;
-    }
-
-    WSTRING moduleName = WSTRING(wszName);
-    WSTRING modulePath = WSTRING(wszPath);
-    ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, moduleId, modulePath, assemblyId, moduleName);
-    DBG("Dataflow::ModuleLoaded -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
-
-    CSGUARD(_cs);
-    _modules[moduleId] = moduleInfo;
-    if (pModuleInfo)
-    {
-        *pModuleInfo = moduleInfo;
-    }
+    GetModuleInfo(moduleId);
     return S_OK;
 }
 
 HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
 {
+    if (!_loaded)
+    {
+        return S_OK;
+    }
+
     CSGUARD(_cs);
     {
         auto it = _moduleAspects.find(moduleId);
@@ -568,7 +537,50 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     {
         return found->second;
     }
-    return nullptr;
+
+    // Retrieve module information if not found
+    LPCBYTE pbBaseLoadAddr;
+    WCHAR wszPath[300];
+    ULONG cchNameIn = 300;
+    ULONG cchNameOut;
+    AssemblyID assemblyId;
+    AppDomainID appDomainId;
+    ModuleID modIDDummy;
+    WCHAR wszName[1024];
+
+    DWORD dwModuleFlags;
+    HRESULT hr = _profiler->GetModuleInfo2(id, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId, &dwModuleFlags);
+    if (FAILED(hr))
+    {
+        trace::Logger::Error("GetModuleInfo2 failed for ModuleId ", id);
+        return nullptr;
+    }
+    if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
+    {
+        return nullptr;
+    } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their IL
+
+    hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
+    if (FAILED(hr))
+    {
+        trace::Logger::Error("GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ", assemblyId);
+        return nullptr;
+    }
+
+    AppDomainInfo* appDomain = GetAppDomain(appDomainId);
+    if (appDomain == nullptr)
+    {
+        trace::Logger::Error("GetAppDomain failed for AppDomainId ", appDomainId);
+        return nullptr;
+    }
+
+    WSTRING moduleName = WSTRING(wszName);
+    WSTRING modulePath = WSTRING(wszPath);
+    ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, id, modulePath, assemblyId, moduleName);
+    DBG("Dataflow::ModuleLoaded -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
+
+    _modules[id] = moduleInfo;
+    return moduleInfo;
 }
 ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos)
 {
@@ -628,6 +640,11 @@ MethodInfo* Dataflow::GetMethodInfo(FunctionID functionId)
 
 bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
+    if (!_loaded)
+    {
+        return false;
+    }
+
     auto method = JITProcessMethod(calleeModuleId, calleeMethodId);
     if (method)
     {
@@ -647,12 +664,12 @@ bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
 {
-    MethodInfo* method = nullptr;
     if (!_loaded)
     {
-        return method;
+        return nullptr;
     }
 
+    MethodInfo* method = nullptr;
     auto module = GetModuleInfo(moduleId);
     if (module && !module->IsExcluded())
     {
