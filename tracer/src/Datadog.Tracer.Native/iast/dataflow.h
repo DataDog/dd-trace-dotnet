@@ -105,12 +105,8 @@ namespace iast
 
         AppDomainInfo* GetAppDomain(AppDomainID id);
         ModuleInfo* GetModuleInfo(ModuleID moduleId);
-        ModuleInfo* GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos = false);
-
-        mdMethodDef GetFunctionInfo(FunctionID functionId, ModuleInfo** ppModuleInfo);
-
+        ModuleInfo* GetAspectsModule(AppDomainID id);
         MethodInfo* GetMethodInfo(ModuleID moduleId, mdMethodDef methodId);
-        MethodInfo* GetMethodInfo(FunctionID functionId);
 
         bool IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId);
         bool JITCompilationStarted(ModuleID moduleId, mdToken methodId);

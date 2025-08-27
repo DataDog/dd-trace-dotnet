@@ -6,6 +6,7 @@
 #include "dataflow_aspects.h"
 #include "dataflow_il_rewriter.h"
 #include "aspect_filter_factory.h"
+#include "../cor_profiler.h"
 #include "../function_control_wrapper.h"
 #include <fstream>
 #include <chrono>
@@ -199,7 +200,7 @@ void Dataflow::Destroy()
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     // Init aspects
-    DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " ", enabledCategories, " ", platform);
+    DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " Enabled categories: ", enabledCategories, " Platform: ", platform);
 
     DataflowAspectClass* aspectClass = nullptr;
     for (int x = 0; x < aspectsLength; x++)
@@ -509,25 +510,29 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 {
     CSGUARD(_cs);
     auto found = _appDomains.find(id);
-    if (found == _appDomains.end())
-    {
-        HRESULT hr = S_OK;
-        WCHAR wszAppDomainName[256];
-        ULONG cchAppDomainName;
-        ProcessID pProcID;
-        BOOL fShared = FALSE;
-
-        hr = _profiler->GetAppDomainInfo(id, 256, &cchAppDomainName, wszAppDomainName, &pProcID);
-        AppDomainInfo* info = new AppDomainInfo(id, wszAppDomainName, IsAppDomainExcluded(wszAppDomainName));
-        _appDomains[id] = info;
-
-        found = _appDomains.find(id);
-    }
     if (found != _appDomains.end())
     {
         return found->second;
     }
-    return nullptr;
+
+    HRESULT hr = S_OK;
+    WCHAR wszAppDomainName[256];
+    ULONG cchAppDomainName;
+    ProcessID pProcID;
+    BOOL fShared = FALSE;
+
+    hr = _profiler->GetAppDomainInfo(id, 256, &cchAppDomainName, wszAppDomainName, &pProcID);
+    if (FAILED(hr))
+    {
+        trace::Logger::Error("GetAppDomainInfo failed for AppDomainId ", id);
+        _appDomains[id] = nullptr; // Cache the failure
+        return nullptr;
+    }
+
+    AppDomainInfo* info = new AppDomainInfo(id, wszAppDomainName, IsAppDomainExcluded(wszAppDomainName));
+    _appDomains[id] = info;
+
+    return info;
 }
 ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 {
@@ -552,69 +557,52 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     HRESULT hr = _profiler->GetModuleInfo2(id, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId, &dwModuleFlags);
     if (FAILED(hr))
     {
-        trace::Logger::Error("GetModuleInfo2 failed for ModuleId ", id);
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id);
+        _modules[id] = nullptr; 
         return nullptr;
     }
     if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
     {
+        _modules[id] = nullptr;
         return nullptr;
     } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their IL
 
     hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
     if (FAILED(hr))
     {
-        trace::Logger::Error("GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ", assemblyId);
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ", assemblyId);
+        _modules[id] = nullptr;
         return nullptr;
     }
 
     AppDomainInfo* appDomain = GetAppDomain(appDomainId);
     if (appDomain == nullptr)
     {
-        trace::Logger::Error("GetAppDomain failed for AppDomainId ", appDomainId);
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetAppDomain failed for AppDomainId ", appDomainId);
+        _modules[id] = nullptr;
         return nullptr;
     }
 
     WSTRING moduleName = WSTRING(wszName);
     WSTRING modulePath = WSTRING(wszPath);
     ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, id, modulePath, assemblyId, moduleName);
-    DBG("Dataflow::ModuleLoaded -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
+    DBG("Dataflow::GetModuleInfo -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
 
     _modules[id] = moduleInfo;
     return moduleInfo;
 }
-ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos)
+
+ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 {
     CSGUARD(_cs);
-    for (auto iterator = _modules.begin(); iterator != _modules.end(); iterator++)
-    {
-        if (iterator->second->_name == moduleName)
-        {
-            auto ppModuleInfo = iterator->second;
+    ModuleID moduleId = trace::profiler->GetProfilerAssemblyModuleId(id);
 
-            if ((ppModuleInfo->_appDomain.Id == appDomainId) ||
-                (lookInSharedRepos && ppModuleInfo->_appDomain.IsSharedAssemblyRepository))
-            {
-                return ppModuleInfo;
-            }
-        }
+    if (moduleId > 0)
+    {
+        return GetModuleInfo(moduleId);
     }
 
     return nullptr;
-}
-mdMethodDef Dataflow::GetFunctionInfo(FunctionID functionId, ModuleInfo** ppModuleInfo)
-{
-    HRESULT hr = S_OK;
-    ModuleID moduleId;
-    *ppModuleInfo = nullptr;
-    mdMethodDef methodDef = 0;
-    if (SUCCEEDED(_profiler->GetFunctionInfo(functionId, nullptr, &moduleId, &methodDef)))
-    {
-        if (ppModuleInfo)
-        {
-            *ppModuleInfo = GetModuleInfo(moduleId);
-        }
-    }
-    return methodDef;
 }
 
 MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
@@ -623,17 +611,6 @@ MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
     if (module)
     {
         return module->GetMethodInfo(methodId);
-    }
-    return nullptr;
-}
-MethodInfo* Dataflow::GetMethodInfo(FunctionID functionId)
-{
-    HRESULT hr = S_OK;
-    ModuleInfo* pModuleInfo;
-    mdMethodDef methodDef = GetFunctionInfo(functionId, &pModuleInfo);
-    if (pModuleInfo)
-    {
-        return pModuleInfo->GetMethodInfo(methodDef);
     }
     return nullptr;
 }
