@@ -1,4 +1,4 @@
-﻿FROM datadog/libddwaf:toolchain as base
+﻿FROM datadog/libddwaf:toolchain AS base
 
 ARG DOTNETSDK_VERSION
 
@@ -67,7 +67,7 @@ ENV \
     CXX=clang++ \
     CC=clang
 
-FROM base as builder
+FROM base AS builder
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
