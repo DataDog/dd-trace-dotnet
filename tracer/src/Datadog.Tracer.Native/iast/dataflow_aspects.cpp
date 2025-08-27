@@ -74,22 +74,34 @@ namespace iast
     {
         size_t offset = 0;
         auto pos0 = IndexOf(line, WStr("[AspectClass("), &offset);
-        if (pos0 == std::string::npos) { return; }
+        if (pos0 == std::string::npos) 
+        {
+            DBG("DataflowAspectClass::DataflowAspectClass -> Skipping aspect class, no opening [AspectClass( found. Line: ", line);
+            return; 
+        }
         pos0 = offset;
         auto pos1 = IndexOf(line, WStr(")] "), &offset);
         if (pos1 == std::string::npos) 
         {
             //Check for version limitation
             pos1 = IndexOf(line, WStr(");V"), &offset);
-            if (pos1 == std::string::npos) { return; }
+            if (pos1 == std::string::npos) 
+            {
+                DBG("DataflowAspectClass::DataflowAspectClass -> Skipping aspect class, no closing )] found. Line: ", line);
+                return; 
+            }
             auto pos2 = IndexOf(line, WStr("] "), &offset);
-            if (pos2 == std::string::npos) { return; }
+            if (pos2 == std::string::npos) 
+            {
+                DBG("DataflowAspectClass::DataflowAspectClass -> Skipping aspect class, no closing ] found. Line: ", line);
+                return; 
+            }
             auto versionTxt = shared::ToString(line.substr(pos1 + 3, pos2 - pos1 - 3));
             auto version = GetVersionInfo(versionTxt);
             if (Compare(currentVersion, version) < 0)
             {
                 DBG("DataflowAspectClass::DataflowAspectClass -> Skipping aspect class, current version ",
-                    currentVersion.ToString(), " is lower than required ", version.ToString());
+                    currentVersion.ToString(), " is lower than required ", version.ToString(), ". Line: ", line);
                 return; // Current version is lower than minimum required
             }
         }
@@ -127,7 +139,7 @@ namespace iast
             if ((category & enabledCategories) == 0)
             {
                 DBG("DataflowAspectClass::DataflowAspectClass -> Skipping aspect class, category ", category,
-                    " is not enabled in ", enabledCategories);
+                    " is not enabled in ", enabledCategories, ". Line: ", line);
                 return; // Current category is not enabled
             }
         }
@@ -160,14 +172,14 @@ namespace iast
         auto pos0 = IndexOf(line, WStr("["), &offset);
         if (pos0 == std::string::npos) 
         {
-            DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no opening [ found");
+            DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no opening [ found. Line: ", line);
             return; 
         }
         pos0 = offset;
         auto pos1 = IndexOf(line, WStr("("), &offset);
         if (pos1 == std::string::npos) 
         {
-            DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no opening ( found");
+            DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no opening ( found. Line: ", line);
             return; 
         }
         auto aspectAttribute = line.substr(pos0, pos1 - pos0);
@@ -175,7 +187,7 @@ namespace iast
         if (_behavior == AspectBehavior::Unknown) 
         {
             DBG("DataflowAspect::DataflowAspect -> Skipping aspect, unknown behavior ",
-                shared::ToString(aspectAttribute));
+                shared::ToString(aspectAttribute), ". Line: ", line);
             return; 
         }
 
@@ -187,13 +199,13 @@ namespace iast
             pos1 = IndexOf(line, WStr(");V"), &offset);
             if (pos1 == std::string::npos) 
             {
-                DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no closing )] found");
+                DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no closing )] found. Line: ", line);
                 return; 
             }
             auto pos2 = IndexOf(line, WStr("] "), &offset);
             if (pos2 == std::string::npos) 
             {
-                DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no closing ] found");
+                DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no closing ] found. Line: ", line);
                 return; 
             }
             auto versionTxt = shared::ToString(line.substr(pos1 + 3, pos2 - pos1 - 3));
@@ -201,7 +213,7 @@ namespace iast
             if (Compare(currentVersion, version) < 0)
             {
                 DBG("DataflowAspect::DataflowAspect -> Skipping aspect, current version ", currentVersion.ToString(),
-                    " is lower than required ", version.ToString());
+                    " is lower than required ", version.ToString(), ". Line: ", line);
                 return; // Current version is lower than minimum required
             }
         }
@@ -268,7 +280,7 @@ namespace iast
             if ((platform & enabledPlatforms) == 0)
             {
                 DBG("DataflowAspect::DataflowAspect -> Skipping aspect, platform ", platform, " is not enabled in ",
-                    enabledPlatforms);
+                    enabledPlatforms, ". Line: ", line);
                 return; // Current platform is not enabled
             }
         }

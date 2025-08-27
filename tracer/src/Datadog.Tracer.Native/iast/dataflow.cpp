@@ -189,7 +189,7 @@ void Dataflow::Destroy()
     if (_initialized)
     {
         _initialized = false;
-        _loaded = false;
+        _aspectsLoaded = false;
         REL(_profiler);
         DEL_MAP_VALUES(_modules);
         DEL_MAP_VALUES(_appDomains);
@@ -211,7 +211,6 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
             aspectClass = new DataflowAspectClass(this, line, enabledCategories);
             if (!aspectClass->IsValid())
             {
-                DBG("Dataflow::LoadAspects -> Detected invalid aspect class ", line);
                 DEL(aspectClass);
             }
             else
@@ -225,7 +224,6 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
             auto aspect = new DataflowAspect(aspectClass, line, platform);
             if (!aspect->IsValid())
             {
-                DBG("Dataflow::LoadAspects -> Detected invalid aspect ", line);
                 DEL(aspect);
             }
             else
@@ -242,7 +240,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
     DEL_MAP_VALUES(moduleAspects);
 
     trace::Logger::Info("Dataflow::LoadAspects -> read ", _aspects.size(), " aspects");
-    _loaded = true;
+    _aspectsLoaded = true;
 }
 
 void Dataflow::LoadSecurityControls()
@@ -368,7 +366,7 @@ void Dataflow::LoadSecurityControls()
 
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
-    if (!_loaded)
+    if (!_aspectsLoaded)
     {
         return S_OK;
     }
@@ -377,7 +375,7 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
     {
-        DBG("AppDomainShutdown: AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
+        DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
         DEL(it->second);
         _appDomains.erase(appDomainId);
         return S_OK;
@@ -387,7 +385,7 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
-    if (!_loaded)
+    if (!_aspectsLoaded)
     {
         return S_OK;
     }
@@ -398,7 +396,7 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 
 HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
 {
-    if (!_loaded)
+    if (!_aspectsLoaded)
     {
         return S_OK;
     }
@@ -417,12 +415,12 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         auto it = _modules.find(moduleId);
         if (it != _modules.end())
         {
-            DBG("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " [ ", it->second->_appDomain.Name, " ] ", it->second->_name);
+            DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " [ ", it->second->_appDomain.Name, " ] ", it->second->_name);
             DEL(it->second);
         }
         else
         {
-            DBG("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " (Not found)");
+            DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " (Not found)");
         }
         _modules.erase(moduleId);
     }
@@ -524,7 +522,7 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
     hr = _profiler->GetAppDomainInfo(id, 256, &cchAppDomainName, wszAppDomainName, &pProcID);
     if (FAILED(hr))
     {
-        trace::Logger::Error("GetAppDomainInfo failed for AppDomainId ", id);
+        trace::Logger::Error("Dataflow::GetAppDomain -> GetAppDomainInfo failed for AppDomainId ", id);
         _appDomains[id] = nullptr; // Cache the failure
         return nullptr;
     }
@@ -617,7 +615,7 @@ MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
 
 bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
-    if (!_loaded)
+    if (!_aspectsLoaded)
     {
         return false;
     }
@@ -631,7 +629,7 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 }
 bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 {
-    if (!_loaded)
+    if (!_aspectsLoaded)
     {
         return false;
     }
@@ -641,7 +639,7 @@ bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
 {
-    if (!_loaded)
+    if (!_aspectsLoaded)
     {
         return nullptr;
     }
@@ -729,7 +727,7 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
             {
                 std::vector<ModuleID> modulesVector = {module->_id};
                 std::vector<mdMethodDef> methodsVector = {method->GetMemberId()}; // methodId
-                DBG("RewriteMethod: REJIT requested for ", method->GetKey());
+                DBG("Dataflow::RewriteMethod -> REJIT requested for ", method->GetKey());
                 m_rejitHandler->RequestRejit(modulesVector, methodsVector);
             }
         }
