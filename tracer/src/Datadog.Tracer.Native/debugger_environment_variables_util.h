@@ -10,6 +10,8 @@ namespace debugger
 
 bool IsDynamicInstrumentationEnabled();
 bool IsExceptionReplayEnabled();
+bool IsDynamicInstrumentationStableConfigDisabled();
+bool IsExceptionReplayStableConfigDisabled();
 bool IsDebuggerInstrumentAllEnabled();
 bool IsDebuggerInstrumentAllLinesEnabled();
 
