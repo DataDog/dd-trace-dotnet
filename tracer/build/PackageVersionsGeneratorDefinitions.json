@@ -865,6 +865,17 @@
     ]
   },
   {
+    "IntegrationName": "AzureServiceBusAPM",
+    "SampleProjectName": "Samples.AzureServiceBus.APM",
+    "NugetPackageSearchName": "Azure.Messaging.ServiceBus",
+    "MinVersion": "7.18.0",
+    "MaxVersionExclusive": "7.21.0",
+    "SpecificVersions": [
+      "7.18.*",
+      "7.*.*"
+    ]
+  },
+  {
     "IntegrationName": "Selenium",
     "SampleProjectName": "Samples.Selenium",
     "NugetPackageSearchName": "Selenium.WebDriver",
