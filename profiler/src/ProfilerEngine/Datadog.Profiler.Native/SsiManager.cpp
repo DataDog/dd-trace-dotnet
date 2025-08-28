@@ -28,7 +28,8 @@ SsiManager::SsiManager(IConfiguration* pConfiguration, ISsiLifetime* pSsiLifetim
     _isLongLived{false},
     _pConfiguration(pConfiguration),
     _deploymentMode{pConfiguration->GetDeploymentMode()},
-    _longLivedThreshold{pConfiguration->GetSsiLongLivedThreshold()}
+    _longLivedThreshold{pConfiguration->GetSsiLongLivedThreshold()},
+    _isStableConfigurationSet{false}
 {
 }
 
