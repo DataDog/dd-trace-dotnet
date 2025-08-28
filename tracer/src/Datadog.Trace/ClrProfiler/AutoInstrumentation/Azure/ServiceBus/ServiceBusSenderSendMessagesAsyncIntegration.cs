@@ -42,27 +42,26 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
         where TTarget : IServiceBusSender, IDuckType
     {
         var tracer = Tracer.Instance;
-        var scope = tracer.StartActiveInternal(OperationName);
+        var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
+
+        var entityPath = instance.EntityPath ?? "unknown";
+        tags.MessagingDestinationName = entityPath;
+        tags.MessagingOperation = "send";
+        tags.MessagingSystem = "servicebus";
+
+        var scope = tracer.StartActiveInternal(OperationName, tags: tags);
         var span = scope.Span;
 
         span.Type = SpanTypes.Queue;
-        span.SetTag(Tags.SpanKind, SpanKinds.Producer);
-
-        var entityPath = instance.EntityPath ?? "unknown";
-
         span.ResourceName = entityPath;
-
-        span.SetTag(Tags.MessagingDestinationName, entityPath);
-        span.SetTag(Tags.MessagingOperation, "send");
-        span.SetTag(Tags.MessagingSystem, "servicebus");
 
         var endpoint = instance.Connection?.ServiceEndpoint;
         if (endpoint != null)
         {
-            span.SetTag(Tags.NetworkDestinationName, endpoint.Host);
+            tags.NetworkDestinationName = endpoint.Host;
             // https://learn.microsoft.com/en-us/dotnet/api/system.uri.port?view=net-8.0#remarks
             var port = endpoint.Port == -1 ? DefaultServiceBusPort : endpoint.Port;
-            span.SetTag(Tags.NetworkDestinationPort, port.ToString());
+            tags.NetworkDestinationPort = port.ToString();
         }
 
         return new CallTargetState(scope);
