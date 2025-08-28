@@ -29,6 +29,12 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.LegacyMessageBusDestination)]
         public string LegacyMessageBusDestination { get; set; }
 
+        [Tag(Trace.Tags.NetworkDestinationName)]
+        public string NetworkDestinationName { get; set; }
+
+        [Tag(Trace.Tags.NetworkDestinationPort)]
+        public string NetworkDestinationPort { get; set; }
+
         public override string SpanKind
         {
             get => MessagingOperation switch

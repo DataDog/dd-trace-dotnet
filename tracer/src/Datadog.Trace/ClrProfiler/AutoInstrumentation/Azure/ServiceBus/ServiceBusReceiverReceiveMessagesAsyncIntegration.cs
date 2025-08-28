@@ -72,6 +72,11 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             ReinjectContextIntoMessages(tracer, scope, messagesList);
         }
 
+        if (scope != null)
+        {
+            scope.Dispose();
+        }
+
         return returnValue;
     }
 
@@ -141,38 +146,31 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         System.Collections.IList? messagesList)
         where TTarget : IServiceBusReceiver
     {
-        var scope = tracer.StartActiveInternal(OperationName, parent: parentContext, links: spanLinks);
+        var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Consumer);
+
+        var entityPath = receiverInstance.EntityPath ?? "unknown";
+        tags.MessagingDestinationName = entityPath;
+        tags.MessagingOperation = "receive";
+        tags.MessagingSystem = "servicebus";
+
+        var scope = tracer.StartActiveInternal(OperationName, parent: parentContext, links: spanLinks, tags: tags);
         var span = scope.Span;
 
-        try
+        span.Type = SpanTypes.Queue;
+        span.ResourceName = entityPath;
+
+        // Set MessagingMessageId if single message received
+        if (messagesList?.Count == 1)
         {
-            span.Type = SpanTypes.Queue;
-            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
-
-            var entityPath = receiverInstance.EntityPath ?? "unknown";
-            span.ResourceName = entityPath;
-
-            span.SetTag(Tags.MessagingDestinationName, entityPath);
-            span.SetTag(Tags.MessagingOperation, "receive");
-            span.SetTag(Tags.MessagingSystem, "servicebus");
-
-            // Set MessagingMessageId if single message received
-            if (messagesList?.Count == 1)
+            var message = messagesList[0];
+            if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
             {
-                var message = messagesList[0];
-                if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
+                var messageId = serviceBusMessage.MessageId;
+                if (!string.IsNullOrEmpty(messageId))
                 {
-                    var messageId = serviceBusMessage.MessageId;
-                    if (!string.IsNullOrEmpty(messageId))
-                    {
-                        span.SetTag(Tags.MessagingMessageId, messageId);
-                    }
+                    span.SetTag(Tags.MessagingMessageId, messageId);
                 }
             }
-        }
-        finally
-        {
-            scope.Dispose();
         }
 
         return scope;
