@@ -257,15 +257,18 @@ public static partial class LogParser
         {
             // assumes it starts with a capital, but skip it
             var capitalCount = 0;
-            foreach (var c in span.Slice(1))
+
+            // can't use foreach on span with .NET 10 here apparently https://github.com/dotnet/runtime/issues/119096
+            for (int i = 1; i < span.Length; i++)
             {
-                capitalCount += char.IsUpper(c) ? 1 : 0;
+                capitalCount += char.IsUpper(span[i]) ? 1 : 0;
             }
 
             Span<char> dest = stackalloc char[span.Length + capitalCount];
             var pos = -1;
-            foreach (var c in span)
+            for (int i = 0; i < span.Length; i++)
             {
+                var c = span[i];
                 pos++;
                 var isUpper = char.IsUpper(c);
                 var charToAdd = isUpper ? char.ToLowerInvariant(c) : c;

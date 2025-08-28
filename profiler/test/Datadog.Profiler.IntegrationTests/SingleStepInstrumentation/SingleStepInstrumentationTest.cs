@@ -100,6 +100,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            ForceInjectionIfRequired(runner, framework);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -114,6 +115,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            ForceInjectionIfRequired(runner, framework);
             runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
@@ -133,6 +135,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            ForceInjectionIfRequired(runner, framework);
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
@@ -173,6 +176,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            ForceInjectionIfRequired(runner, framework);
             // short lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
 
@@ -190,6 +194,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            ForceInjectionIfRequired(runner, framework);
 
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
@@ -208,6 +213,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            ForceInjectionIfRequired(runner, framework);
             // short lived with span
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
 
@@ -225,6 +231,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            ForceInjectionIfRequired(runner, framework);
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
 
@@ -242,6 +249,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed and enabled with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
+            ForceInjectionIfRequired(runner, framework);
+
             // short lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
 
@@ -259,6 +268,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed and enabled with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
+            ForceInjectionIfRequired(runner, framework);
 
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
@@ -277,6 +287,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed and enabled with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
+            ForceInjectionIfRequired(runner, framework);
+
             // short lived with span
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
 
@@ -294,6 +306,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed and enabled with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
+            ForceInjectionIfRequired(runner, framework);
+
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
 
@@ -311,6 +325,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed and enabled with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
+            ForceInjectionIfRequired(runner, framework);
+
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, TimeSpan.FromSeconds(6).TotalMilliseconds.ToString());
 
@@ -335,6 +351,23 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         {
             var x = JObject.Parse(s);
             return x.SelectTokens("$.payload[*].payload.series[?(@.namespace=='profilers')]")?.Select(serie => serie.ToObject<Serie>())?.ToList() ?? [];
+        }
+
+        private static void ForceInjectionIfRequired(TestApplicationRunner runner, string framework)
+        {
+            // For preview and old runtimes we have to force injection
+            // after .NET 10 preview, can remove this
+            if (framework == "net10.0")
+            {
+                runner.Environment.SetVariable(EnvironmentVariables.SsiInjectionForced, "1");
+            }
+
+            if (EnvironmentHelper.IsRunningOnWindows())
+            {
+                // in SSI on Windows log buffering is enabled, which means we don't write
+                // any logs unless we inject, which makes debugging issues harder
+                runner.Environment.SetVariable(EnvironmentVariables.SsiLogBufferingEnabled, "0");
+            }
         }
 
         private class Serie
