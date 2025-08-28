@@ -2501,7 +2501,7 @@ bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleI
     return true;
 }
 
-bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id, ModuleID* pModuleId)
+bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id)
 {
     return managed_profiler_domain_neutral_module_id > 0 ||
            managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();

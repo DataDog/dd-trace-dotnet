@@ -122,7 +122,7 @@ private:
     static void __stdcall NativeLog(int32_t level, const WCHAR* message, int32_t length);
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
-    bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id, ModuleID* pModuleId = nullptr);
+    bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
                            const ComPtr<IMetaDataImport2>& metadata_import);
     HRESULT RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id);
