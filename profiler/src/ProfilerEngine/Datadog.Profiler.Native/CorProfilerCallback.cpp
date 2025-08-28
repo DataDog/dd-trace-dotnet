@@ -1545,7 +1545,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
         LogServiceStop(stopped, _pCpuProfiler->GetName());
         if (stopped)
         {
-            _pCpuProfiler = nullptr;
+            //_pCpuProfiler = nullptr;
         }
     }
 #endif
