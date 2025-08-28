@@ -29,8 +29,6 @@ namespace iast
         const WSTRING AspNetCoreMvcViewFeatures = WStr("Microsoft.AspNetCore.Mvc.ViewFeatures");
 
         const WSTRING AspectsAssemblyName = WStr("Datadog.Trace");
-        const WSTRING AspectsAssemblyFileName = AspectsAssemblyName + WStr(".dll");
-        const WSTRING AspectsFileName = AspectsAssemblyName + WStr(".aspects");
 
         const WSTRING VulnerabilityType_SqlInjection = WStr("SQL_INJECTION");
         const WSTRING VulnerabilityType_XSS = WStr("XSS");
