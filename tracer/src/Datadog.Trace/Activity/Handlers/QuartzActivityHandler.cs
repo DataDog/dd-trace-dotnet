@@ -37,10 +37,9 @@ namespace Datadog.Trace.Activity.Handlers
         {
             ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: new OpenTelemetryTags(), out var activityMapping);
 
-            // Update the span's resource name and span.kind tag if available
+            // Update the span.kind tag if available
             if (activityMapping.Scope?.Span is Span span)
             {
-                UpdateSpanResourceName(span, activity);
                 UpdateSpanKind(span, activity);
             }
         }
@@ -94,7 +93,7 @@ namespace Datadog.Trace.Activity.Handlers
         public void ActivityStopped<T>(string sourceName, T activity)
             where T : IActivity
         {
-            // Log the final resource name before the span is closed
+            // Find the span and update it before the common handler processes it
             string key;
             if (activity is IW3CActivity w3cActivity)
             {
@@ -105,12 +104,26 @@ namespace Datadog.Trace.Activity.Handlers
                 key = activity.Id;
             }
 
-            if (key != null && ActivityHandlerCommon.ActivityMappingById.TryGetValue(key, out var activityMapping) && activityMapping.Scope?.Span is Span span)
+            if (key != null && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope?.Span is Span span)
             {
-                Log.Debug("ActivityStopped: Final resource name for activity '{ActivityId}' is '{ResourceName}'", activity.Id, span.ResourceName);
-            }
+                Log.Debug("ActivityStopped: Processing span for activity '{ActivityId}'", activity.Id);
 
-            ActivityHandlerCommon.ActivityStopped(sourceName, activity);
+                // Apply OTLP processing manually (this is what ActivityHandlerCommon.ActivityStopped would do)
+                OtlpHelpers.UpdateSpanFromActivity(activity, span);
+
+                // Now update the resource name after OTLP processing
+                UpdateSpanResourceName(span, activity);
+
+                // Finish the span manually
+                span.Finish(activity.StartTimeUtc.Add(activity.Duration));
+                activityMapping.Scope.Close();
+            }
+            else
+            {
+                Log.Debug("Could not find span for activity '{ActivityId}' with key '{Key}'", activity.Id, key);
+                // Fallback to common handler if we couldn't find the span
+                ActivityHandlerCommon.ActivityStopped(sourceName, activity);
+            }
         }
     }
 }

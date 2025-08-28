@@ -37,9 +37,10 @@ public class Program
         var scheduler = await factory.GetScheduler();
         SchedulerHolder.Scheduler = scheduler;
 
-        // Register listeners for both jobs
+        // Register listeners for all jobs
         var helloKey = new JobKey("helloJob", "group1");
         var exceptionKey = new JobKey("exceptionJob", "group2");
+        var vetoableKey = new JobKey("vetoableJob", "group3");
 
         scheduler.ListenerManager.AddJobListener(
             new FinalJobListener(helloKey, JobCompletion.HelloTcs),
@@ -48,6 +49,10 @@ public class Program
         scheduler.ListenerManager.AddJobListener(
             new FinalJobListener(exceptionKey, JobCompletion.ExceptionTcs),
             KeyMatcher<JobKey>.KeyEquals(exceptionKey));
+
+        // Add trigger listener for veto functionality
+        scheduler.ListenerManager.AddTriggerListener(
+            new VetoTriggerListener(vetoableKey, JobCompletion.VetoTcs));
 
         await scheduler.Start();
 
@@ -75,8 +80,20 @@ public class Program
 
         await scheduler.ScheduleJob(exceptionJob, exceptionTrigger);
 
-        // Wait for both jobs to finish (final success or failure)
-        await Task.WhenAll(JobCompletion.HelloTcs.Task, JobCompletion.ExceptionTcs.Task);
+        // VetoableJob: will be vetoed by the trigger listener
+        var vetoableJob = JobBuilder.Create<VetoableJob>()
+                                    .WithIdentity(vetoableKey)
+                                    .Build();
+
+        var vetoableTrigger = TriggerBuilder.Create()
+                                           .WithIdentity("vetoableTrigger", "group3")
+                                           .StartNow()
+                                           .Build();
+
+        await scheduler.ScheduleJob(vetoableJob, vetoableTrigger);
+
+        // Wait for all jobs to finish (success, failure, or veto)
+        await Task.WhenAll(JobCompletion.HelloTcs.Task, JobCompletion.ExceptionTcs.Task, JobCompletion.VetoTcs.Task);
 
         await scheduler.Shutdown(); // or Shutdown(waitForJobsToComplete: true)
         // tracerProvider?.Dispose();
