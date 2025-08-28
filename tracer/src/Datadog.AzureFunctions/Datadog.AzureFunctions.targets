@@ -1,4 +1,4 @@
-﻿<!-- These build step is a workaround for the Azure Functions SDK moving our *.dll files from datadog/ to bin/datadog/
+<!-- This build step is a workaround for the Azure Functions SDK moving our *.dll files from datadog/ to bin/datadog/
      See https://github.com/Azure/azure-functions-vs-build-sdk/blob/7a3e505c2382ee9c461985baef1603e980740ca6/src/Microsoft.NET.Sdk.Functions.MSBuild/Targets/Microsoft.NET.Sdk.Functions.Publish.targets#L134-L154 -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Target Name="_RestoreDatadogFiles"
