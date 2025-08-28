@@ -11,13 +11,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// <summary>
     /// Duck type for IList&lt;LoggingRule&gt;
     /// </summary>
-    internal interface ILoggingRulesListProxy
+    internal interface ILoggingRulesListProxy : IDuckType
     {
+        public int Count { get; }
+
+        object this[int index] { get; }
+
+        public void RemoveAt(int index);
+
         /// <summary>
         /// Adds the logging rule to the collection
         /// </summary>
+        /// <param name="index">The zero-based index at which the item should be inserted</param>
         /// <param name="item">The logging rule to add to the collection</param>
-        [Duck(ParameterTypeNames = new[] { "NLog.Config.LoggingRule, NLog" })]
-        public void Add(object item);
+        [Duck(ParameterTypeNames = new[] { ClrNames.Int32, "NLog.Config.LoggingRule, NLog" })]
+        public void Insert(int index, object item);
     }
 }
