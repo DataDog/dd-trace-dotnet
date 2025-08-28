@@ -3,6 +3,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Target Name="_RestoreDatadogFiles"
           AfterTargets="_GenerateFunctionsAndCopyContentFiles"
+          BeforeTargets="_FunctionsPostPublish"
           Condition="'$(RestoreDatadogFiles)' == 'true'">
     <!-- get a list of files that were moved -->
     <ItemGroup>
