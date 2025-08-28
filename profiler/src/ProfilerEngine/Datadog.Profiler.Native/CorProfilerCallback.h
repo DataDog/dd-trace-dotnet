@@ -192,7 +192,7 @@ public:
     // from which services could be retrieved
     static CorProfilerCallback* GetInstance()
     {
-        return _this;
+        return _this.load();
     }
 
     std::string const& GetRuntimeDescription()
@@ -224,7 +224,7 @@ public:
     void TraceContextHasBeenSet() { _pSsiManager->OnSpanCreated(); }
 
 private :
-    static CorProfilerCallback* _this;
+    static std::atomic<CorProfilerCallback*> _this;
     std::string _runtimeDescription;
     std::unique_ptr<IClrLifetime> _pClrLifetime = nullptr;
 
@@ -260,7 +260,7 @@ private :
     RuntimeIdStore* _pRuntimeIdStore = nullptr;
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
-    std::unique_ptr<TimerCreateCpuProfiler> _pCpuProfiler = nullptr;
+    std::shared_ptr<TimerCreateCpuProfiler> _pCpuProfiler = nullptr;
     CpuSampleProvider* _pCpuSampleProvider = nullptr;
 #endif
 

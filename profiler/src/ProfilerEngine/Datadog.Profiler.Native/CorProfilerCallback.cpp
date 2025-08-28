@@ -110,7 +110,7 @@ extern "C" __attribute__((visibility("default"))) const char* Profiler_Version =
 #endif
 
 // Initialization
-CorProfilerCallback* CorProfilerCallback::_this = nullptr;
+std::atomic<CorProfilerCallback*> CorProfilerCallback::_this = nullptr;
 
 #ifdef LINUX
 extern "C" void (*volatile dd_on_thread_routine_finished)() __attribute__((weak));
@@ -545,7 +545,7 @@ void CorProfilerCallback::InitializeServices()
     {
         // Other alternative in case of crash-at-shutdown, do not register it as a service
         // we will have to start it by hand (already stopped by hand)
-        _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
+        _pCpuProfiler = std::make_shared<TimerCreateCpuProfiler>(
             _pConfiguration.get(),
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
@@ -1898,13 +1898,13 @@ void CorProfilerCallback::OnThreadRoutineFinished()
         return;
     }
 
-    auto myThis = _this;
+    auto myThis = _this.load();
     if (myThis == nullptr)
     {
         return;
     }
 
-    auto* cpuProfiler = myThis->_pCpuProfiler.get();
+    auto cpuProfiler = myThis->_pCpuProfiler; // shared_ptr copied
     if (cpuProfiler == nullptr)
     {
         return;
