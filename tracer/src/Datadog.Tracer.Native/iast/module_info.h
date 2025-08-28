@@ -87,8 +87,6 @@ namespace iast
 
         virtual HRESULT InstrumentModule_Internal() { return S_FALSE; }
 
-        // ModuleInfo* GetModuleInfoByName(WSTRING moduleName);
-
     public:
         ModuleID                        _id = 0;
         WSTRING                         _path = EmptyWStr;

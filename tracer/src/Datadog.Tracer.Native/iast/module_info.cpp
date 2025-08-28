@@ -766,30 +766,6 @@ HRESULT ModuleInfo::CommitILRewriter(ILRewriter** rewriter)
     return hr;
 }
 
-/*
-ModuleInfo* ModuleInfo::GetModuleInfoByName(WSTRING moduleName)
-{
-    auto res = _dataflow->GetModuleInfo(moduleName, _appDomain.Id);
-    if (res)
-    {
-        return res;
-    }
-    if (moduleName == managed_profiler_name)
-    {
-        // In .NetFramework, "Datadog.trace" might be in the shared assembly repository
-        res = _dataflow->GetModuleInfo(moduleName, _appDomain.Id, true);
-
-        if (res) 
-        {
-            return res;
-        }            
-    }
-    
-    trace::Logger::Info("Module ", moduleName, " NOT FOUND for AppDomain ", _appDomain.Name, " using fallback...");
-    return res;
-}
-*/
-
 mdToken ModuleInfo::DefineAspectMemberRef(const WSTRING& typeName, const WSTRING& methodName, const WSTRING& methodParams)
 {
     HRESULT hr = S_OK;
