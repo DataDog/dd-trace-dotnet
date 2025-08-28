@@ -178,6 +178,9 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
         _profiler = nullptr;
         trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. Disabling Dataflow. HRESULT : ", Hex(hr));
     }
+
+    _initialized = (_profiler != nullptr);
+    _aspectsLoaded = false;
 }
 Dataflow::~Dataflow()
 {
@@ -617,7 +620,7 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
     if (!_aspectsLoaded)
     {
-        return false;
+        return true;
     }
 
     auto method = JITProcessMethod(calleeModuleId, calleeMethodId);
@@ -781,6 +784,11 @@ void Dataflow::AddNGenInlinerModule(ModuleID moduleId)
 
 HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
 {
+    if (!_aspectsLoaded)
+    {
+        return S_FALSE;
+    }
+
     auto method = JITProcessMethod(functionControl.GetModuleId(), functionControl.GetMethodId(), &functionControl);
     if (method && method->IsWritten())
     {
