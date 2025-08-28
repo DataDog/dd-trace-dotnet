@@ -338,8 +338,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             return true;
         }
 
-        private static void ReorderLoggingRules<T>(T rules)
-            where T : ILoggingRulesListProxy
+        private static void ReorderLoggingRules(IList rules)
         {
             // We're making an assumption here that _we_ added the last rule.
             // We don't have a good way to make sure it's _our_ rule without a bunch of duck typing
