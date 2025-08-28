@@ -13,6 +13,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerializatio
 /// </summary>
 internal interface IBsonSerializerProxy
 {
-    [Duck(ParameterTypeNames = ["MongoDB.Bson.Serialization.BsonSerializationContext", "MongoDB.Bson.Serialization.BsonSerializationArgs", ClrNames.Object])]
+    [Duck(ParameterTypeNames = ["MongoDB.Bson.Serialization.BsonSerializationContext, MongoDB.Bson", "MongoDB.Bson.Serialization.BsonSerializationArgs, MongoDB.Bson", ClrNames.Object])]
     void Serialize(object context, object args, object value);
 }
