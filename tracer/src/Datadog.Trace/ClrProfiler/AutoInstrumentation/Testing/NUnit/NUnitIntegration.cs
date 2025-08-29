@@ -93,7 +93,7 @@ internal static class NUnitIntegration
 
     internal static TestModule? GetTestModuleFrom(ITest? test)
     {
-        if (test is null)
+        if (test?.Instance is null)
         {
             return null;
         }
@@ -103,7 +103,7 @@ internal static class NUnitIntegration
             test = GetParentWithTestType(test, TestModuleConst);
         }
 
-        if (test is not null &&
+        if (test?.Instance is not null &&
             ModulesItems.TryGetValue(test.Instance!, out var moduleObject) &&
             moduleObject is TestModule module)
         {
@@ -127,7 +127,7 @@ internal static class NUnitIntegration
 
     internal static TestSuite? GetTestSuiteFrom(ITest? test)
     {
-        if (test is null)
+        if (test?.Instance is null)
         {
             return null;
         }
@@ -137,7 +137,7 @@ internal static class NUnitIntegration
             test = GetParentWithTestType(test, TestSuiteConst);
         }
 
-        if (test is not null &&
+        if (test?.Instance is not null &&
             SuiteItems.TryGetValue(test.Instance!, out var suiteObject) &&
             suiteObject is TestSuite suite)
         {
