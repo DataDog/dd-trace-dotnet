@@ -34,8 +34,11 @@
 #include "ProxyMetric.h"
 #include "IAllocationsRecorder.h"
 #include "IMetadataProvider.h"
-#include "ThreadLifetimeProvider.h"
 #include "shared/src/native-src/string.h"
+#include "ThreadLifetimeProvider.h"
+#ifdef LINUX
+#include "TimerCreateCpuProfiler.h"
+#endif
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
 
@@ -54,7 +57,6 @@ class IConfiguration;
 class IExporter;
 class RawSampleTransformer;
 class RuntimeIdStore;
-class TimerCreateCpuProfiler;
 class CpuSampleProvider;
 class NetworkProvider;
 
@@ -189,7 +191,7 @@ public:
     // from which services could be retrieved
     static CorProfilerCallback* GetInstance()
     {
-        return _this;
+        return _this.load();
     }
 
     std::string const& GetRuntimeDescription()
@@ -218,7 +220,7 @@ public:
     void TraceContextHasBeenSet() { _pSsiManager->OnSpanCreated(); }
 
 private :
-    static CorProfilerCallback* _this;
+    static std::atomic<CorProfilerCallback*> _this;
     std::string _runtimeDescription;
     std::unique_ptr<IClrLifetime> _pClrLifetime = nullptr;
 
@@ -254,7 +256,7 @@ private :
     RuntimeIdStore* _pRuntimeIdStore = nullptr;
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
-    TimerCreateCpuProfiler* _pCpuProfiler = nullptr;
+    std::shared_ptr<TimerCreateCpuProfiler> _pCpuProfiler = nullptr;
     CpuSampleProvider* _pCpuSampleProvider = nullptr;
 #endif
 
