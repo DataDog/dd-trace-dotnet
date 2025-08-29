@@ -65,7 +65,7 @@ namespace iast
 
         void LoadSecurityControls();
     protected:
-        bool _aspectsLoaded = false;
+        bool _initialized = false;
         bool _setILOnJit = false;
 
         std::vector<DataflowAspectClass*> _aspectClasses;
