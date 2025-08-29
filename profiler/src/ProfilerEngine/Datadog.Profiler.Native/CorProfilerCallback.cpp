@@ -3,6 +3,7 @@
 
 // from dotnet coreclr includes
 
+/* TO REMOVE only to run the TSAN jobs */
 #include "cor.h"
 #include "corprof.h"
 // end
