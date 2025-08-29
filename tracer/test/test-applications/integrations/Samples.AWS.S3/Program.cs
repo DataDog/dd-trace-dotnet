@@ -63,7 +63,12 @@ namespace Samples.AWS.S3
                 ServiceURL = "http://no-such-host-is-known-is-expected-if-you-see-it:9999",
                 ForcePathStyle = true,
                 UseHttp = true,
+                Timeout = TimeSpan.FromSeconds(2),
             };
+
+#if NETFRAMEWORK
+            s3Config.ReadWriteTimeout = TimeSpan.FromSeconds(2);
+#endif
 
             return new AmazonS3Client(awsCredentials, s3Config);
         }
