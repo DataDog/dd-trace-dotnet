@@ -2173,7 +2173,6 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
 
-    iast::Dataflow* dataflow = _dataflow;
     if (_dataflow == nullptr && IsCallSiteManagedActivationEnabled())
     {
         _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
