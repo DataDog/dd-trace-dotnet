@@ -54,7 +54,7 @@ public static class TestMethodRunnerExecuteIntegration3_8
                 {
                     if (testResult.Outcome is UnitTestOutcome.Inconclusive)
                     {
-                        if (instance.TestMethodInfo is not null)
+                        if (instance?.TestMethodInfo?.Instance is not null)
                         {
                             var skipHandled =
                                 MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _) ||
