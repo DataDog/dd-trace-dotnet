@@ -2173,16 +2173,17 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
 
-    iast::Dataflow* dataflow = _dataflow;
-    if (_dataflow == nullptr && IsCallSiteManagedActivationEnabled())
+    auto dataflow = _dataflow;
+    if (dataflow == nullptr && IsCallSiteManagedActivationEnabled())
     {
-        _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+        dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
     }
 
-    if (_dataflow != nullptr)
+    if (dataflow != nullptr)
     {
         Logger::Info("Registering Callsite Aspects.");
-        _dataflow->LoadAspects(aspects, aspectsLength, enabledCategories, platform);
+        dataflow->LoadAspects(aspects, aspectsLength, enabledCategories, platform);
+        _dataflow = dataflow;
         return aspectsLength;
     }
     else
