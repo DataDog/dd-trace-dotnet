@@ -255,5 +255,21 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             success.Should().BeTrue();
             inode.Should().BeGreaterThan(0);
         }
+
+        [SkippableFact]
+        public void Parse_TryGetInode_ShouldGetSameValueFromPinvokeAndProcess()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+            string currentDirectory = Environment.CurrentDirectory;
+            bool success1 = ContainerMetadata.TryGetInodeUsingStat(currentDirectory, out long inode1);
+            bool success2 = ContainerMetadata.TryGetInodeUsingPInvoke(currentDirectory, out long inode2);
+
+            success1.Should().BeTrue();
+            success2.Should().BeTrue();
+            inode1.Should().BeGreaterThan(0);
+            inode2.Should().Be(inode1);
+        }
     }
 }
