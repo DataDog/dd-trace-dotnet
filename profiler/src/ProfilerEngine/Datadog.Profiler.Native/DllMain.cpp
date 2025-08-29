@@ -50,6 +50,17 @@ bool IsProfilingEnabled(Configuration const& configuration)
 {
     // If we are in this function, then the user has already configured profiling by setting CORECLR_ENABLE_PROFILING to 1
     // and by correctly pointing the CORECLR_PROFILER_XXX variables.
+    //
+    // With Stable Configuration, there is a kill switch to read the env vars instead of waiting for the managed layer
+    // to decide if the profiler should be disabled/enabled/auto
+    if (configuration.IsManagedActivationEnabled())
+    {
+        Log::Info("Waiting for managed configuration to enable/disable the profiler");
+        return true;
+    }
+
+    Log::Warn("Managed configuration will be skipped to enable/disable the profiler: reading local configuration instead");
+
     // With Single Step Instrumentation deployment, it is possible that the profiler needs to be loaded (to emit telemetry metrics)
     // but not started (i.e. no profiling) so this function will return true in that case.
     //
@@ -60,22 +71,14 @@ bool IsProfilingEnabled(Configuration const& configuration)
 
     if (enablementStatus == EnablementStatus::ManuallyEnabled)
     {
-        Log::Info(".NET Profiler is explictly enabled.");
+        Log::Info(".NET Profiler is explicitly enabled.");
         return true;
     }
 
     if (enablementStatus == EnablementStatus::ManuallyDisabled)
     {
-        Log::Info(".NET Profiler is explictly disabled.");
+        Log::Info(".NET Profiler is explicitly disabled.");
         return false;
-    }
-
-    if (enablementStatus == EnablementStatus::SsiEnabled)
-    {
-        Log::Info(".NET Profiler is enabled via Single Step Instrumentation. It will start later.");
-
-        // delay start with SSI is now supported
-        return true;
     }
 
     if (enablementStatus == EnablementStatus::Auto)

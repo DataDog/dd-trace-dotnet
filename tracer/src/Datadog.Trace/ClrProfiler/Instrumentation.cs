@@ -14,6 +14,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
@@ -91,6 +92,39 @@ namespace Datadog.Trace.ClrProfiler
 
                     try
                     {
+                        // Set the Stable Configuration to the native parts
+
+                        // TODO: only for profiler here
+                        Log.Debug("Enabling Profiling integration in native library.");
+                        var tracerSettings = Tracer.Instance.Settings;
+                        var profilerSettings = Profiler.Instance.Settings;
+
+                        NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
+                        {
+                            ProfilingEnabled = (profilerSettings.ProfilerState == ProfilerState.Auto) ? NativeInterop.ProfilingEnabled.Auto :
+                                               (profilerSettings.ProfilerState == ProfilerState.Enabled) ? NativeInterop.ProfilingEnabled.Enabled :
+                                               NativeInterop.ProfilingEnabled.Disabled,
+                            TracingEnabled = tracerSettings.TraceEnabled,
+                            IastEnabled = Iast.Iast.Instance.Settings.Enabled,
+                            RaspEnabled = Security.Instance.Settings.RaspEnabled,
+                            DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
+                            RuntimeId = RuntimeId.Get(),
+                            Environment = tracerSettings.Environment,
+                            ServiceName = TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? string.Empty),
+                            Version = tracerSettings.ServiceVersion
+                        };
+
+                        // It is possible that the profiler binary is not "there" such as Azure Function and some CI tests
+                        // So, ensure that no exception bubbles up
+                        try
+                        {
+                            NativeInterop.ProfilerSetConfiguration(config);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, "Error when setting profiler configuration.");
+                        }
+
                         Log.Debug("Enabling CallTarget integration definitions in native library.");
 
                         InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
@@ -421,8 +455,8 @@ namespace Datadog.Trace.ClrProfiler
             var observers = new List<DiagnosticObserver>();
 
             // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
+            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
+            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
 
             if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
             {
@@ -465,7 +499,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
-                Log.Information($"Dynamic Instrumentation is disabled. To enable it, please set {ConfigurationKeys.Debugger.DynamicInstrumentationEnabled} environment variable to 'true'.");
+                Log.Information($"Dynamic Instrumentation is disabled. To enable it, please set {Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled} environment variable to 'true'.");
             }
         }
 

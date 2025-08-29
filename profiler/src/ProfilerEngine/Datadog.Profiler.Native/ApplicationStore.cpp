@@ -7,6 +7,7 @@
 #include "IConfiguration.h"
 #include "IRuntimeInfo.h"
 #include "ISsiManager.h"
+#include "Log.h"
 #include "ProfileExporter.h"
 
 ApplicationStore::ApplicationStore(IConfiguration* configuration, IRuntimeInfo* runtimeInfo) :
@@ -36,12 +37,16 @@ ApplicationInfo ApplicationStore::GetApplicationInfo(const std::string& runtimeI
             _pConfiguration->GetGitRepositoryUrl(),
             _pConfiguration->GetGitCommitSha()};
 
+        Log::Debug("Creating new application info for runtimeId: ", runtimeId, ", serviceName: ", info.ServiceName, ", environment: ", info.Environment, ", version: ", info.Version);
+
         _infos[runtimeId] = info;
         return info;
     }
 }
 void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version)
 {
+    Log::Debug("Setting application info for runtimeId: ", runtimeId, ", serviceName: ", serviceName, ", environment: ", environment, ", version: ", version);
+
     std::lock_guard lock(_infosLock);
     auto& info = _infos[runtimeId];
     info.ServiceName = serviceName;
@@ -51,11 +56,11 @@ void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const st
     info.CommitSha = _pConfiguration->GetGitCommitSha();
 }
 
-void ApplicationStore::SetGitMetadata(std::string runtimeId, std::string respositoryUrl, std::string commitSha)
+void ApplicationStore::SetGitMetadata(std::string runtimeId, std::string repositoryUrl, std::string commitSha)
 {
     std::lock_guard lock(_infosLock);
     auto& info = _infos[std::move(runtimeId)];
-    info.RepositoryUrl = std::move(respositoryUrl);
+    info.RepositoryUrl = std::move(repositoryUrl);
     info.CommitSha = std::move(commitSha);
     // no need to create worker, it has already been created
 }

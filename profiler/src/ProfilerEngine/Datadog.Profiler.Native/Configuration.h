@@ -83,6 +83,8 @@ public:
     std::chrono::milliseconds GetHttpRequestDurationThreshold() const override;
     bool ForceHttpSampling() const override;
     bool IsWaitHandleProfilingEnabled() const override;
+    bool IsManagedActivationEnabled() const override;
+    void SetEnablementStatus(EnablementStatus status) override;
 
 private:
     static tags ExtractUserTags();
@@ -172,6 +174,7 @@ private:
     std::uint64_t _internalCIVisibilitySpanId;
     bool _isEtwEnabled;
     DeploymentMode _deploymentMode;
+    bool _isManagedActivationEnabled;
     bool _isEtwLoggingEnabled;
     std::string _etwReplayEndpoint;
     EnablementStatus _enablementStatus;

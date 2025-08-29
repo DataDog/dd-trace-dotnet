@@ -908,6 +908,7 @@ partial class Build
                 { "DD_PROFILING_HEAP_ENABLED", "1"},
                 { "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED", "1" },
                 { "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED", "1" },
+                { "DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0" },  // disable StableConfig (i.e. don't wait for the tracer to set the configuration)
             };
 
         if (IsLinux)

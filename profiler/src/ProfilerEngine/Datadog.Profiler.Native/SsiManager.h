@@ -25,6 +25,7 @@ public:
 
 public:
     // Inherited via ISsiManager
+    void OnStableConfiguration() override;
     void OnSpanCreated() override;
     bool IsSpanCreated() const override;
     bool IsLongLived() const override;
@@ -42,13 +43,18 @@ public:
 private:
     void OnShortLivedEnds();
 
+    // The enablement status is changed by the managed layer AFTER the profiler is loaded
+    // It starts as Standby, then it can be set to ManuallyEnabled, ManuallyDisabled, SsiEnabled or Auto
+    EnablementStatus GetCurrentEnabledStatus();
+
 private:
     ISsiLifetime* _pSsiLifetime;
+    IConfiguration* _pConfiguration;
+    bool _isStableConfigurationSet;
     bool _hasSpan;
     bool _isLongLived;
     std::future<void> _longLivedTimerFuture;
     std::promise<void> _stopTimerPromise;
-    DeploymentMode _deploymentMode;
-    EnablementStatus _enablementStatus;
+    DeploymentMode _deploymentMode; // TODO: this should depend on pConfiguration->GetDeploymentMode()
     std::chrono::milliseconds _longLivedThreshold;
 };
