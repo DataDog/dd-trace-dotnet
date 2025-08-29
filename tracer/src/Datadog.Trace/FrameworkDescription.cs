@@ -69,6 +69,11 @@ namespace Datadog.Trace
             return string.Equals(OSPlatform, OSPlatformName.Windows, StringComparison.OrdinalIgnoreCase);
         }
 
+        public bool IsLinux()
+        {
+            return string.Equals(OSPlatform, OSPlatformName.Linux, StringComparison.OrdinalIgnoreCase);
+        }
+
         public override string ToString()
         {
             // examples:

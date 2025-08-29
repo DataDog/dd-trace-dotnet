@@ -411,7 +411,7 @@ namespace Datadog.Trace.Configuration
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: false);
+                                  .AsBool(defaultValue: FrameworkDescription.Instance.IsWindows());
 
             if (DataPipelineEnabled)
             {
@@ -420,7 +420,7 @@ namespace Datadog.Trace.Configuration
                 if (StatsComputationEnabled)
                 {
                     DataPipelineEnabled = false;
-                    Log.Warning(
+                    Log.Information(
                         $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
@@ -430,7 +430,7 @@ namespace Datadog.Trace.Configuration
                 if (Exporter.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
                 {
                     DataPipelineEnabled = false;
-                    Log.Warning(
+                    Log.Information(
                         $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
@@ -440,13 +440,13 @@ namespace Datadog.Trace.Configuration
                     DataPipelineEnabled = false;
                     if (isLibDatadogAvailable.Exception is not null)
                     {
-                        Log.Warning(
+                        Log.Information(
                             isLibDatadogAvailable.Exception,
                             $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
                     }
                     else
                     {
-                        Log.Warning(
+                        Log.Information(
                             $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
                     }
 
@@ -459,7 +459,7 @@ namespace Datadog.Trace.Configuration
                 if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")))
                 {
                     DataPipelineEnabled = false;
-                    Log.Warning(
+                    Log.Information(
                         $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
