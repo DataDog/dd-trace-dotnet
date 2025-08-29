@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         /// <summary>
         /// Gets the collection of logging rules
         /// </summary>
-        public ILoggingRulesListProxy LoggingRules { get; }
+        public IList LoggingRules { get; }
 
         /// <summary>
         /// Registers the specified target object under a given name.
