@@ -714,25 +714,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     return hr;
 }
 
-bool ShouldRewriteProfilerMaps()
-{
-    const auto envVarKey = WStr("DD_PROFILING_ENABLED");
-    if (shared::EnvironmentExist(envVarKey))
-    {
-        bool is_profiler_enabled;
-        auto strValue = shared::GetEnvironmentValue(envVarKey);
-
-        if (shared::TryParseBooleanEnvironmentValue(strValue, is_profiler_enabled))
-        {
-            return is_profiler_enabled;
-        }
-
-        return (strValue == WStr("auto"));
-    }
-
-    return shared::EnvironmentExist(WStr("DD_INJECTION_ENABLED"));
-}
-
 std::string GetNativeLoaderFilePath()
 {
     // should be set by native loader
@@ -983,13 +964,11 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             RewritingPInvokeMaps(module_metadata, native_loader_nativemethods_type, native_loader_file_path);
         }
 
-        if (ShouldRewriteProfilerMaps())
+        // with StableConfig, the env vars cannot be used any more so just check if the profiler binary file is present 
+        auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
+        if (!profiler_library_path.empty() && fs::exists(profiler_library_path))
         {
-            auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
-            if (!profiler_library_path.empty() && fs::exists(profiler_library_path))
-            {
-                RewritingPInvokeMaps(module_metadata, profiler_nativemethods_type, profiler_library_path);
-            }
+            RewritingPInvokeMaps(module_metadata, profiler_nativemethods_type, profiler_library_path);
         }
 
         if (IsVersionCompatibilityEnabled())
