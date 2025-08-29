@@ -142,7 +142,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -lstdc++fs
     -pthread
     -ldl
-    -Wl,--build-id
+    -Wl,--build-id=sha1
 )
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
