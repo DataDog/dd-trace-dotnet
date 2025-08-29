@@ -74,20 +74,34 @@ namespace iast
     {
         size_t offset = 0;
         auto pos0 = IndexOf(line, WStr("[AspectClass("), &offset);
-        if (pos0 == std::string::npos) { return; }
+        if (pos0 == std::string::npos) 
+        {
+            DBG("DataflowAspectClass::DataflowAspectClass -> Skipping aspect class, no opening [AspectClass( found. Line: ", line);
+            return; 
+        }
         pos0 = offset;
         auto pos1 = IndexOf(line, WStr(")] "), &offset);
         if (pos1 == std::string::npos) 
         {
             //Check for version limitation
             pos1 = IndexOf(line, WStr(");V"), &offset);
-            if (pos1 == std::string::npos) { return; }
+            if (pos1 == std::string::npos) 
+            {
+                DBG("DataflowAspectClass::DataflowAspectClass -> Skipping aspect class, no closing )] found. Line: ", line);
+                return; 
+            }
             auto pos2 = IndexOf(line, WStr("] "), &offset);
-            if (pos2 == std::string::npos) { return; }
+            if (pos2 == std::string::npos) 
+            {
+                DBG("DataflowAspectClass::DataflowAspectClass -> Skipping aspect class, no closing ] found. Line: ", line);
+                return; 
+            }
             auto versionTxt = shared::ToString(line.substr(pos1 + 3, pos2 - pos1 - 3));
             auto version = GetVersionInfo(versionTxt);
             if (Compare(currentVersion, version) < 0)
             {
+                DBG("DataflowAspectClass::DataflowAspectClass -> Skipping aspect class, current version ",
+                    currentVersion.ToString(), " is lower than required ", version.ToString(), ". Line: ", line);
                 return; // Current version is lower than minimum required
             }
         }
@@ -124,6 +138,8 @@ namespace iast
             UINT32 category = ConvertToUint(Trim(parts[part]), 0xFFFFFFFF);
             if ((category & enabledCategories) == 0)
             {
+                DBG("DataflowAspectClass::DataflowAspectClass -> Skipping aspect class, category ", category,
+                    " is not enabled in ", enabledCategories, ". Line: ", line);
                 return; // Current category is not enabled
             }
         }
@@ -149,18 +165,31 @@ namespace iast
     }
 
     DataflowAspect::DataflowAspect(DataflowAspectClass* aspectClass, const WSTRING& line,
-                                   const UINT32 enabledCategories) :
+                                   const UINT32 enabledPlatforms) :
         DataflowAspect(aspectClass)
     {
         size_t offset = 0;
         auto pos0 = IndexOf(line, WStr("["), &offset);
-        if (pos0 == std::string::npos) { return; }
+        if (pos0 == std::string::npos) 
+        {
+            DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no opening [ found. Line: ", line);
+            return; 
+        }
         pos0 = offset;
         auto pos1 = IndexOf(line, WStr("("), &offset);
-        if (pos1 == std::string::npos) { return; }
+        if (pos1 == std::string::npos) 
+        {
+            DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no opening ( found. Line: ", line);
+            return; 
+        }
         auto aspectAttribute = line.substr(pos0, pos1 - pos0);
         _behavior = ParseAspectApplication(aspectAttribute);
-        if (_behavior == AspectBehavior::Unknown) { return; }
+        if (_behavior == AspectBehavior::Unknown) 
+        {
+            DBG("DataflowAspect::DataflowAspect -> Skipping aspect, unknown behavior ",
+                shared::ToString(aspectAttribute), ". Line: ", line);
+            return; 
+        }
 
         pos0 = offset;
         pos1 = IndexOf(line, WStr(")] "), &offset);
@@ -168,13 +197,23 @@ namespace iast
         {
             // Check for version limitation
             pos1 = IndexOf(line, WStr(");V"), &offset);
-            if (pos1 == std::string::npos) { return; }
+            if (pos1 == std::string::npos) 
+            {
+                DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no closing )] found. Line: ", line);
+                return; 
+            }
             auto pos2 = IndexOf(line, WStr("] "), &offset);
-            if (pos2 == std::string::npos) { return; }
+            if (pos2 == std::string::npos) 
+            {
+                DBG("DataflowAspect::DataflowAspect -> Skipping aspect, no closing ] found. Line: ", line);
+                return; 
+            }
             auto versionTxt = shared::ToString(line.substr(pos1 + 3, pos2 - pos1 - 3));
             auto version = GetVersionInfo(versionTxt);
             if (Compare(currentVersion, version) < 0)
             {
+                DBG("DataflowAspect::DataflowAspect -> Skipping aspect, current version ", currentVersion.ToString(),
+                    " is lower than required ", version.ToString(), ". Line: ", line);
                 return; // Current version is lower than minimum required
             }
         }
@@ -235,12 +274,14 @@ namespace iast
             _aspectMethodName = aspectMethod.substr(0, pos0);
             _aspectMethodParams = aspectMethod.substr(pos0);
         }
-        if ((int) parts.size() > ++part) // Category
+        if ((int) parts.size() > ++part) // Platform
         {
-            UINT32 category = ConvertToUint(Trim(parts[part]), 0xFFFFFFFF);
-            if ((category & enabledCategories) == 0)
+            UINT32 platform = ConvertToUint(Trim(parts[part]), 0xFFFFFFFF);
+            if ((platform & enabledPlatforms) == 0)
             {
-                return; // Current category is not enabled
+                DBG("DataflowAspect::DataflowAspect -> Skipping aspect, platform ", platform, " is not enabled in ",
+                    enabledPlatforms, ". Line: ", line);
+                return; // Current platform is not enabled
             }
         }
 
@@ -498,9 +539,8 @@ namespace iast
         if (_aspectMemberRef == 0)
         {
             // Import aspect
-            _aspectMemberRef = _module->DefineMemberRef(Constants::AspectsAssemblyName,
-                                                        _aspect->_aspectClass->_aspectTypeName,
-                                                        _aspect->_aspectMethodName, _aspect->_aspectMethodParams);
+            _aspectMemberRef = _module->DefineAspectMemberRef(_aspect->_aspectClass->_aspectTypeName,
+                                                              _aspect->_aspectMethodName, _aspect->_aspectMethodParams);
         }
 
         if (_aspect->IsGeneric() && _aspectMemberRef != 0 && methodSpec != nullptr)
