@@ -221,7 +221,7 @@ elseif(ISLINUX)
         $<$<BOOL:${LIBDL}>:dl>
         coreclr
         spdlog-headers
-        -Wl,--build-id
+        -Wl,--build-id=sha1
         -Wl,-version-script=${dd_profiling_linker_script}
         -Wl,--no-undefined
     )
