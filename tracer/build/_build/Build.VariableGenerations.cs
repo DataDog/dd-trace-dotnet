@@ -1365,18 +1365,6 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
                     );
 
-                    // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
-                    AddToDotNetToolSmokeTestsMatrix(
-                        matrix,
-                        "debian",
-                        new SmokeTestImage[]
-                        {
-                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
-                        },
-                        platformSuffix: "linux-x64",
-                        dockerName: "andrewlock/dotnet-debian"
-                    );
-
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "alpine",
