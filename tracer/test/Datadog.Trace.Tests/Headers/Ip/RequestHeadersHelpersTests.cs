@@ -23,7 +23,8 @@ namespace Datadog.Trace.Tests.Headers.Ip
                         { "referer", "https://example.com/" },
                         { "hello-world", "irrelevant" },
                         { "x-forwarded-for", "80.19.10.10:32" },
-                        { "true-client-ip", "81.202.236.243:82" }
+                        { "true-client-ip", "81.202.236.243:82" },
+                        { "forwarded", "82.20.36.23:800" }
                     },
                     name: "http headers should be read in order",
                     customIpHeader: string.Empty,
@@ -38,8 +39,27 @@ namespace Datadog.Trace.Tests.Headers.Ip
                     data: new()
                     {
                         { "user-agent", "Mozilla firefox" },
+                        { "referer", "https://example.com/" },
+                        { "hello-world", "irrelevant" },
+                        { "forwarded", "for=80.19.10.10:32" },
+                        { "true-client-ip", "81.202.236.243:82" }
+                    },
+                    name: "forwarded header is parsed correctly",
+                    customIpHeader: string.Empty,
+                    expectedIp: "80.19.10.10",
+                    expectedPort: 32,
+                    peerIp: "80.19.14.16",
+                    peerPort: 32)
+            },
+            new object[]
+            {
+                new TestScenario(
+                    data: new()
+                    {
+                        { "user-agent", "Mozilla firefox" },
                         { "referer", "https://example1.com/" },
                         { "hello-world", "irrelevant" },
+                        { "forwarded", "82.20.36.23:800" },
                         { "x-forwarded-for", "80.19.10.10:32" },
                         { "custom-header3", "81.202.236.243:82" }
                     },

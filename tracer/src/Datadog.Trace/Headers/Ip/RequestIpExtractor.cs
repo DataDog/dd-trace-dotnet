@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -13,20 +14,51 @@ namespace Datadog.Trace.Headers.Ip
 {
     internal static class RequestIpExtractor
     {
-        private static readonly IReadOnlyList<string> IpHeaders =
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestIpExtractor));
+
+        private static readonly IReadOnlyList<HeaderExtractor> IpHeaders =
         [
-            "x-forwarded-for",
-            "x-real-ip",
-            "true-client-ip",
-            "x-client-ip",
-            "forwarded-for",
-            "x-cluster-client-ip",
-            "fastly-client-ip",
-            "cf-connecting-ip",
-            "cf-connecting-ipv6"
+            new("forwarded", ForwardedHeaderComponentParser),
+            new("x-forwarded-for", DefaultHeaderComponentParser),
+            new("x-real-ip", DefaultHeaderComponentParser),
+            new("true-client-ip", DefaultHeaderComponentParser),
+            new("x-client-ip", DefaultHeaderComponentParser),
+            new("forwarded-for", DefaultHeaderComponentParser),
+            new("x-cluster-client-ip", DefaultHeaderComponentParser),
+            new("fastly-client-ip", DefaultHeaderComponentParser),
+            new("cf-connecting-ip", DefaultHeaderComponentParser),
+            new("cf-connecting-ipv6", DefaultHeaderComponentParser),
         ];
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestIpExtractor));
+        // Regex to extract for= value (quoted or unquoted)
+        private static readonly Regex ForRegex = new Regex(@"for=\s*(?:""(?<val>[^""]+)""|(?<val>[^;,\s]+))", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        internal static string? DefaultHeaderComponentParser(string? value) => value?.Trim();
+
+        internal static string? ForwardedHeaderComponentParser(string? value)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(value))
+                {
+                    return null;
+                }
+
+                // Extract the "for" part from this segment
+                var match = ForRegex.Match(value);
+                if (!match.Success)
+                {
+                    return null;
+                }
+
+                return match.Groups["val"].Success ? match.Groups["val"].Value : null;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "An error occurred while trying to parse a Forwarded header value: {Value}", value);
+                return null;
+            }
+        }
 
         /// <summary>
         /// Extract ip and port following https://datadoghq.atlassian.net/wiki/spaces/SAAL/pages/2118779066/Client+IP+addresses+resolution
@@ -44,7 +76,7 @@ namespace Datadog.Trace.Headers.Ip
                 var value = getHeader(customIpHeader);
                 if (!string.IsNullOrEmpty(value))
                 {
-                    extractedCustomIp = IpExtractor.RealIpFromValue(value, isSecureConnection);
+                    extractedCustomIp = IpExtractor.RealIpFromValue(value, isSecureConnection, DefaultHeaderComponentParser);
                     if (extractedCustomIp == null)
                     {
                         Log.Debug("A custom header for ip with value {Value} was configured but no correct ip could be extracted", value);
@@ -61,10 +93,10 @@ namespace Datadog.Trace.Headers.Ip
 
             foreach (var headerIp in IpHeaders)
             {
-                var potentialIp = getHeader(headerIp);
+                var potentialIp = getHeader(headerIp.HeaderName);
                 if (!string.IsNullOrEmpty(potentialIp))
                 {
-                    var ipInfo = IpExtractor.RealIpFromValue(potentialIp, isSecureConnection);
+                    var ipInfo = IpExtractor.RealIpFromValue(potentialIp, isSecureConnection, headerIp.Extractor);
                     if (ipInfo != null)
                     {
                         return ipInfo;
@@ -99,6 +131,10 @@ namespace Datadog.Trace.Headers.Ip
             {
                 tags.HttpClientIp = ipInfo.IpAddress;
             }
+        }
+
+        internal record struct HeaderExtractor(string HeaderName, Func<string?, string?> Extractor)
+        {
         }
     }
 }
