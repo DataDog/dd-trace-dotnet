@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.AzureServiceBus
+            => from packageVersionArray in PackageVersions.AzureServiceBusAPM
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
