@@ -352,11 +352,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // CallSite stuff
-    if (IsCallSiteManagedActivationEnabled())
-    {
-        _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
-    }
-    else
+    if (!IsCallSiteManagedActivationEnabled())
     {
         Logger::Info("Callsite managed activation is disabled.");
         bool isRaspEnabled = IsRaspEnabled();
@@ -2176,6 +2172,12 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+
+    iast::Dataflow* dataflow = _dataflow;
+    if (_dataflow == nullptr && IsCallSiteManagedActivationEnabled())
+    {
+        _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+    }
 
     if (_dataflow != nullptr)
     {
