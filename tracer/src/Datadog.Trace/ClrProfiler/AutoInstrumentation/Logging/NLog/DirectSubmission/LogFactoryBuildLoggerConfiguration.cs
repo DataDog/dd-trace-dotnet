@@ -45,7 +45,7 @@ public class LogFactoryBuildLoggerConfiguration
         // when logging is being stopped/shutdown this instrumentation gets called again
         // The logging rules passed are "null"
         // but we have an "_isDisposing" field that is set to true in the LogFactory that we can check
-        if (instance.TryDuckCast<ILogFactoryProxy>(out var logFactoryProxy) && logFactoryProxy.IsDisposing)
+        if (instance.TryDuckCast<ILogFactoryProxy>(out var logFactoryProxy) && logFactoryProxy.Instance is not null && logFactoryProxy.IsDisposing)
         {
             // when logging is stopped (e.g., shutdown) the configuration will be set to null
             // and this instrumentation will get hit again, so to avoid creating a new configuration
@@ -66,7 +66,7 @@ public class LogFactoryBuildLoggerConfiguration
         }
 
         // first check to see if the configuration is null
-        if (logFactoryProxy is not null && logFactoryProxy.ConfigurationField is null)
+        if (logFactoryProxy?.Instance is not null && logFactoryProxy.ConfigurationField is null)
         {
             // with 5.3 a change was made to call _config?.BuildLoggingConfiguration instead of static methods
             // if a user doesn't have a configuration for NLog setup the BuildLoggingConfiguration won't be called
