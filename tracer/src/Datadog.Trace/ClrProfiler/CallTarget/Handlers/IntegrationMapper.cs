@@ -846,10 +846,12 @@ internal class IntegrationMapper
     private static TTo? UnwrapReturnValue<TFrom, TTo>(TFrom? returnValue)
         where TFrom : IDuckType
     {
+#pragma warning disable DDDUCK001 // Checking IDuckType for null
         if (returnValue is not null)
         {
             return returnValue.GetInternalDuckTypedInstance<TTo>();
         }
+#pragma warning restore DDDUCK001 // Checking IDuckType for null
 
         Log.Debug("UnwrapReturnValue<{TFrom}, {TTo}>: The return value is null.", typeof(TFrom), typeof(TTo));
         return default;
