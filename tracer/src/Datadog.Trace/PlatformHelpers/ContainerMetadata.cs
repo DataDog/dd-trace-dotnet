@@ -5,8 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -117,8 +119,8 @@ namespace Datadog.Trace.PlatformHelpers
             {
                 var tuple = ParseControllerAndPathFromCgroupLine(line);
                 if (tuple is not null
-                    && !string.IsNullOrEmpty(tuple.Item2)
-                    && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)))
+                 && !string.IsNullOrEmpty(tuple.Item2)
+                 && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)))
                 {
                     string controller = tuple.Item1;
                     string cgroupNodePath = tuple.Item2;
@@ -149,6 +151,27 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         internal static bool TryGetInode(string path, out long result)
+            => TryGetInodeUsingPInvoke(path, out result)
+            || TryGetInodeUsingStat(path, out result);
+
+        // Internal for testing
+        internal static bool TryGetInodeUsingPInvoke(string path, out long result)
+        {
+            result = 0;
+
+            try
+            {
+                return NativeInterop.GetInode(path, out result);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error obtaining inode using PInvoke");
+                return false;
+            }
+        }
+
+        // Internal for testing
+        internal static bool TryGetInodeUsingStat(string path, out long result)
         {
             result = 0;
 
@@ -159,7 +182,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Error obtaining inode.");
+                Log.Warning(ex, "Error obtaining inode using stat");
                 return false;
             }
         }
@@ -220,6 +243,106 @@ namespace Datadog.Trace.PlatformHelpers
         private static bool IsHostCgroupNamespaceInternal()
         {
             return File.Exists(ControlGroupsNamespacesFilePath) && TryGetInode(ControlGroupsNamespacesFilePath, out long output) && output == HostCgroupNamespaceInode;
+        }
+
+        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1310:Field names should not contain underscore", Justification = "Keeping the names matching the spec definitions")]
+        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1307:Accessible fields should begin with upper-case letter", Justification = "Keeping the names matching the spec definitions")]
+        private static class NativeInterop
+        {
+            /// <summary>
+            /// Get the inode for the provided path. Does so portably on x64 and arm64 Linux only.
+            /// </summary>
+            public static bool GetInode(string path, out long inode)
+            {
+                var arch = RuntimeInformation.ProcessArchitecture;
+                if (arch == Architecture.X64)
+                {
+                    if (Native.LstatX64(path, out var st) == 0)
+                    {
+                        inode = (long)st.st_ino;
+                        return true;
+                    }
+                }
+                else if (arch == Architecture.Arm64)
+                {
+                    if (Native.LstatArm64(path, out var st) == 0)
+                    {
+                        inode = (long)st.st_ino;
+                        return true;
+                    }
+                }
+
+                inode = 0;
+                return false;
+            }
+
+            // https://www.man7.org/linux/man-pages/man3/timespec.3type.html
+            [StructLayout(LayoutKind.Sequential)]
+            private struct Timespec
+            {
+                public nint tv_sec; // time_t (64-bit on 64-bit Linux)
+                public nint tv_nsec; // long
+            }
+
+            // x86_64 (glibc & musl)
+            [StructLayout(LayoutKind.Sequential, Pack = 8)]
+            private struct StatX64
+            {
+                public nuint st_dev; // dev_t
+                public nuint st_ino; // ino_t
+                public nuint st_nlink; // nlink_t (64-bit on x86_64)
+                public uint st_mode; // mode_t
+                public uint st_uid; // uid_t
+                public uint st_gid; // gid_t
+                public int __pad0; // matches glibc explicit pad
+                public nuint st_rdev; // dev_t
+                public long st_size; // off_t
+                public long st_blksize; // blksize_t (64-bit on x86_64)
+                public long st_blocks; // blkcnt_t
+                public Timespec st_atim;
+                public Timespec st_mtim;
+                public Timespec st_ctim;
+                public long __glibc_reserved0;
+                public long __glibc_reserved1;
+                public long __glibc_reserved2;
+            }
+
+            // aarch64/arm64 (glibc & musl)
+            // NOTE: nlink_t and blksize_t are 32-bit here; there is extra padding.
+            [StructLayout(LayoutKind.Sequential, Pack = 8)]
+            private struct StatArm64
+            {
+                public nuint st_dev; // dev_t (8)
+                public nuint st_ino; // ino_t (8)
+                public uint st_mode; // mode_t (4)
+                public uint st_nlink; // nlink_t (4)  <-- differs from x86_64
+                public uint st_uid; // uid_t (4)
+                public uint st_gid; // gid_t (4)
+                public nuint st_rdev; // dev_t (8)
+                public nuint __pad; // padding; glibc names it __pad1, musl uses unsigned long
+                public long st_size; // off_t (8)
+                public int st_blksize; // blksize_t (4)  <-- differs from x86_64
+                public int __pad2; // padding
+                public long st_blocks; // blkcnt_t (8)
+                public Timespec st_atim;
+                public Timespec st_mtim;
+                public Timespec st_ctim;
+                public int __reserved0; // glibc: int[2], musl: unsigned[2]
+                public int __reserved1;
+            }
+
+            // P/Invoke: use the libc wrappers (not raw syscalls)
+            private static class Native
+            {
+                private const string Lib = "libc";
+
+                // Overload by struct type; both map to the same entry point.
+                [DllImport(Lib, EntryPoint = "lstat", SetLastError = true)]
+                public static extern int LstatX64(string path, out StatX64 buf);
+
+                [DllImport(Lib, EntryPoint = "lstat", SetLastError = true)]
+                public static extern int LstatArm64(string path, out StatArm64 buf);
+            }
         }
     }
 }
