@@ -7576,58 +7576,49 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NETCOREAPP2_1
-                new object[] { "7.14.0" },
-                new object[] { "7.15.0" },
-                new object[] { "7.16.2" },
-                new object[] { "7.17.5" },
+                new object[] { "7.18.4" },
+                new object[] { "7.19.0" },
+                new object[] { "7.20.1" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "7.14.0" },
-                new object[] { "7.15.0" },
-                new object[] { "7.16.2" },
-                new object[] { "7.17.5" },
+                new object[] { "7.18.4" },
+                new object[] { "7.19.0" },
+                new object[] { "7.20.1" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "7.14.0" },
-                new object[] { "7.15.0" },
-                new object[] { "7.16.2" },
-                new object[] { "7.17.5" },
+                new object[] { "7.18.4" },
+                new object[] { "7.19.0" },
+                new object[] { "7.20.1" },
 #endif
 #if NET5_0
-                new object[] { "7.14.0" },
-                new object[] { "7.15.0" },
-                new object[] { "7.16.2" },
-                new object[] { "7.17.5" },
+                new object[] { "7.18.4" },
+                new object[] { "7.19.0" },
+                new object[] { "7.20.1" },
 #endif
 #if NET6_0
-                new object[] { "7.14.0" },
-                new object[] { "7.15.0" },
-                new object[] { "7.16.2" },
-                new object[] { "7.17.5" },
+                new object[] { "7.18.4" },
+                new object[] { "7.19.0" },
+                new object[] { "7.20.1" },
 #endif
 #if NET7_0
-                new object[] { "7.14.0" },
-                new object[] { "7.15.0" },
-                new object[] { "7.16.2" },
-                new object[] { "7.17.5" },
+                new object[] { "7.18.4" },
+                new object[] { "7.19.0" },
+                new object[] { "7.20.1" },
 #endif
 #if NET8_0
-                new object[] { "7.14.0" },
-                new object[] { "7.15.0" },
-                new object[] { "7.16.2" },
-                new object[] { "7.17.5" },
+                new object[] { "7.18.4" },
+                new object[] { "7.19.0" },
+                new object[] { "7.20.1" },
 #endif
 #if NET9_0
-                new object[] { "7.14.0" },
-                new object[] { "7.15.0" },
-                new object[] { "7.16.2" },
-                new object[] { "7.17.5" },
+                new object[] { "7.18.4" },
+                new object[] { "7.19.0" },
+                new object[] { "7.20.1" },
 #endif
 #if NET10_0
-                new object[] { "7.14.0" },
-                new object[] { "7.15.0" },
-                new object[] { "7.16.2" },
-                new object[] { "7.17.5" },
+                new object[] { "7.18.4" },
+                new object[] { "7.19.0" },
+                new object[] { "7.20.1" },
 #endif
 #endif
             };

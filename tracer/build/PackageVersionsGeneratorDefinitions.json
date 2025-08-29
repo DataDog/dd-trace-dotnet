@@ -868,10 +868,10 @@
     "IntegrationName": "AzureServiceBusAPM",
     "SampleProjectName": "Samples.AzureServiceBus.APM",
     "NugetPackageSearchName": "Azure.Messaging.ServiceBus",
-    "MinVersion": "7.14.0",
-    "MaxVersionExclusive": "7.18.0",
+    "MinVersion": "7.18.0",
+    "MaxVersionExclusive": "7.21.0",
     "SpecificVersions": [
-      "7.14.*",
+      "7.18.*",
       "7.*.*"
     ]
   },
