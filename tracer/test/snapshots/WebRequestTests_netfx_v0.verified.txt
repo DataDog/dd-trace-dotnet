@@ -16,6 +16,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -42,6 +43,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -525,6 +527,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -549,6 +552,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -573,6 +577,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -597,6 +602,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -621,6 +627,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -645,6 +652,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -669,6 +677,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -693,6 +702,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -717,6 +727,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -741,6 +752,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -765,6 +777,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -789,6 +802,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -813,6 +827,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -837,6 +852,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -861,6 +877,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -885,6 +902,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -909,6 +927,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -933,6 +952,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -957,6 +977,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -981,6 +1002,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1005,6 +1027,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1029,6 +1052,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1053,6 +1077,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1077,6 +1102,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1101,6 +1127,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1125,6 +1152,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1149,6 +1177,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1173,6 +1202,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1197,6 +1227,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1221,6 +1252,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1245,6 +1277,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1269,6 +1302,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1293,6 +1327,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1317,6 +1352,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1341,6 +1377,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1365,6 +1402,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1389,6 +1427,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1413,6 +1452,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1437,6 +1477,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1461,6 +1502,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1485,6 +1527,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1509,6 +1552,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1533,6 +1577,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1557,6 +1602,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1581,6 +1627,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1605,6 +1652,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1629,6 +1677,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1653,6 +1702,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1677,6 +1727,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1701,6 +1752,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1725,6 +1777,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1749,6 +1802,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1773,6 +1827,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1797,6 +1852,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1821,6 +1877,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1845,6 +1902,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1869,6 +1927,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1893,6 +1952,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1917,6 +1977,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1941,6 +2002,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1965,6 +2027,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -1989,6 +2052,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2013,6 +2077,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2037,6 +2102,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2061,6 +2127,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2085,6 +2152,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2109,6 +2177,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2133,6 +2202,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2487,6 +2557,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2511,6 +2582,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2535,6 +2607,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2559,6 +2632,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2583,6 +2657,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2607,6 +2682,7 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2636,6 +2712,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2666,6 +2743,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2690,6 +2768,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2714,6 +2793,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2738,6 +2818,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2762,6 +2843,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2786,6 +2868,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2810,6 +2893,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2834,6 +2918,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2858,6 +2943,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2887,6 +2973,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2917,6 +3004,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2946,6 +3034,7 @@ at System.Net.HttpWebRequest.GetResponse(),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -2976,6 +3065,7 @@ at System.Net.HttpWebRequest.GetResponse(),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
@@ -3000,6 +3090,7 @@ at System.Net.HttpWebRequest.GetResponse(),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.WebRequest
     },
     Metrics: {
