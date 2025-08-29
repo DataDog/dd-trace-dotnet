@@ -460,7 +460,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         {
             Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " matched profiler version v",
                          expected_version);
-            managed_profiler_loaded_app_domains.insert({assembly_info.app_domain_id, assembly_metadata.version});
+            managed_profiler_loaded_app_domains.insert({assembly_info.app_domain_id, assembly_info.manifest_module_id});
 
             // Load defaults values if the version are the same as expected
             if (assembly_metadata.version == expected_assembly_reference.version)
@@ -481,7 +481,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
                 if (assembly_info.app_domain_id == corlib_app_domain_id)
                 {
                     Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was loaded domain-neutral");
-                    managed_profiler_loaded_domain_neutral = true;
+                    managed_profiler_domain_neutral_module_id = assembly_info.manifest_module_id;
                 }
                 else
                 {
@@ -2482,9 +2482,26 @@ bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleI
 
 bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id)
 {
-    return managed_profiler_loaded_domain_neutral ||
+    return managed_profiler_domain_neutral_module_id > 0 ||
            managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();
 }
+
+ModuleID CorProfiler::GetProfilerAssemblyModuleId(AppDomainID appDomainId)
+{
+    if (managed_profiler_domain_neutral_module_id > 0)
+    {
+        return managed_profiler_domain_neutral_module_id;
+    }
+
+    auto it = managed_profiler_loaded_app_domains.find(appDomainId);
+    if (it != managed_profiler_loaded_app_domains.end())
+    {
+        return it->second;
+    }
+
+    return 0;
+}
+
 
 HRESULT CorProfiler::EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id)
 {
