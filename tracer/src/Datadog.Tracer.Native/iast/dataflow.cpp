@@ -179,25 +179,16 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
         trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. Disabling Dataflow. HRESULT : ", Hex(hr));
     }
 
-    _initialized = (_profiler != nullptr);
     _aspectsLoaded = false;
 }
+
 Dataflow::~Dataflow()
 {
-    Destroy();
-}
-
-void Dataflow::Destroy()
-{
-    if (_initialized)
-    {
-        _initialized = false;
-        _aspectsLoaded = false;
-        REL(_profiler);
-        DEL_MAP_VALUES(_modules);
-        DEL_MAP_VALUES(_appDomains);
-        DEL_MAP_VALUES(_moduleAspects);
-    }
+    _aspectsLoaded = false;
+    REL(_profiler);
+    DEL_MAP_VALUES(_modules);
+    DEL_MAP_VALUES(_appDomains);
+    DEL_MAP_VALUES(_moduleAspects);
 }
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
@@ -765,7 +756,6 @@ bool Dataflow::InstrumentInstruction(DataflowContext& context, std::vector<Dataf
 
 void Dataflow::Shutdown()
 {
-    Destroy();
 }
 RejitHandlerModule* Dataflow::GetOrAddModule(ModuleID moduleId)
 {
