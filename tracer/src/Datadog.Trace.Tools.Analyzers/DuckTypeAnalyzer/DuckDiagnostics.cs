@@ -20,7 +20,7 @@ public class DuckDiagnostics
     internal static readonly DiagnosticDescriptor ADuckIsNeverNullRule = new(
         DuckTypeNullCheckDiagnosticId,
         title: "Checking IDuckType for null",
-        messageFormat: "The IDuckType is almost always never null, check the Instance for null to ensure we have access to the ducked object",
+        messageFormat: "The IDuckType is almost always non-null, check the Instance for null to ensure we have access to the duck typed object",
         category: "CodeQuality",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
