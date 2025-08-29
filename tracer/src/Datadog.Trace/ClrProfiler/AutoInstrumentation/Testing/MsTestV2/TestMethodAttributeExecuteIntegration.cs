@@ -402,7 +402,7 @@ public static class TestMethodAttributeExecuteIntegration
                 }
             }
 
-            if (finalResult is null)
+            if (finalResult?.Instance is null)
             {
                 ThrowHelper.ThrowNullReferenceException("Failed to get the final result from the retries");
             }

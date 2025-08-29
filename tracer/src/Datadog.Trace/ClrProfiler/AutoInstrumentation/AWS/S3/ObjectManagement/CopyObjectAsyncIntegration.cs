@@ -47,7 +47,7 @@ public class CopyObjectAsyncIntegration
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
         where TReturn : IS3EtagResponse
     {
-        if (Tracer.Instance.Settings.SpanPointersEnabled && state.Scope is not null && state.State is ICopyObjectRequest request && returnValue is not null)
+        if (Tracer.Instance.Settings.SpanPointersEnabled && state.Scope is not null && state.State is ICopyObjectRequest request && returnValue?.Instance is not null)
         {
             var bucketName = request.DestinationBucketName;
             var key = request.DestinationObjectKey;
