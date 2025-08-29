@@ -113,7 +113,17 @@ namespace Datadog.Trace.ClrProfiler
                             ServiceName = TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? string.Empty),
                             Version = tracerSettings.ServiceVersion
                         };
-                        NativeInterop.ProfilerSetConfiguration(config);
+
+                        // It is possible that the profiler binary is not "there" such as Azure Function and some CI tests
+                        // So, ensure that no exception bubbles up
+                        try
+                        {
+                            NativeInterop.ProfilerSetConfiguration(config);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, "Error when setting profiler configuration.");
+                        }
 
                         Log.Debug("Enabling CallTarget integration definitions in native library.");
 
