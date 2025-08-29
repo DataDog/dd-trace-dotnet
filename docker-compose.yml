@@ -211,6 +211,8 @@ services:
 
   azureservicebus-emulator:
     image: mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2
+    hostname: azureservicebus-emulator
+    container_name: azureservicebus-emulator
     depends_on:
       - sqlserver
     ports:
