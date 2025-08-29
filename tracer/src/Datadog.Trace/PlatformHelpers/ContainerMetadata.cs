@@ -257,9 +257,10 @@ namespace Datadog.Trace.PlatformHelpers
             public static bool GetInode(string path, out long inode)
             {
                 var arch = RuntimeInformation.ProcessArchitecture;
+                // using AT_FDCWD and AT_SYMLINK_NOFOLLOW for lstat-like behaviour
                 if (arch == Architecture.X64)
                 {
-                    if (Native.LstatX64(path, out var st) == 0)
+                    if (Native.FstatatX64(Native.AT_FDCWD, path, out var st, Native.AT_SYMLINK_NOFOLLOW) == 0)
                     {
                         inode = (long)st.st_ino;
                         return true;
@@ -267,7 +268,7 @@ namespace Datadog.Trace.PlatformHelpers
                 }
                 else if (arch == Architecture.Arm64)
                 {
-                    if (Native.LstatArm64(path, out var st) == 0)
+                    if (Native.FstatatArm64(Native.AT_FDCWD, path, out var st, Native.AT_SYMLINK_NOFOLLOW) == 0)
                     {
                         inode = (long)st.st_ino;
                         return true;
@@ -337,13 +338,15 @@ namespace Datadog.Trace.PlatformHelpers
             private static class Native
             {
                 private const string Lib = "libc";
+                public const int AT_FDCWD = -100;
+                public const int AT_SYMLINK_NOFOLLOW = 0x100;
 
-                // Overload by struct type; both map to the same entry point.
-                [DllImport(Lib, EntryPoint = "lstat", SetLastError = true)]
-                public static extern int LstatX64(string path, out StatX64 buf);
+                // Path-based
+                [DllImport(Lib, EntryPoint = "fstatat", SetLastError = true)]
+                public static extern int FstatatX64(int dirfd, string path, out StatX64 buf, int flags);
 
-                [DllImport(Lib, EntryPoint = "lstat", SetLastError = true)]
-                public static extern int LstatArm64(string path, out StatArm64 buf);
+                [DllImport(Lib, EntryPoint = "fstatat", SetLastError = true)]
+                public static extern int FstatatArm64(int dirfd, string path, out StatArm64 buf, int flags);
             }
         }
     }
