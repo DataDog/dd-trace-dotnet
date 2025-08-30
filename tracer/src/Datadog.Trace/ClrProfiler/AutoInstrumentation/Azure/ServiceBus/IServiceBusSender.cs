@@ -5,12 +5,21 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
-internal interface IServiceBusSender
+internal interface IServiceBusSender : ITransportSender
 {
+    [DuckField(Name = "_connection")]
+    IServiceBusConnection Connection { get; }
+
     [DuckField(Name = "_innerSender")]
     object InnerSender { get; }
+}
+
+internal interface IServiceBusConnection
+{
+    Uri ServiceEndpoint { get; }
 }

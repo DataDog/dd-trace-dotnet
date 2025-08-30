@@ -3686,6 +3686,33 @@
   {
     "IntegrationName": "AzureServiceBus",
     "AssemblyName": "Azure.Messaging.ServiceBus",
+    "TargetTypeName": "Azure.Messaging.ServiceBus.ServiceBusReceiver",
+    "TargetMethodName": "ReceiveMessagesAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Collections.Generic.IReadOnlyList`1[Azure.Messaging.ServiceBus.ServiceBusReceivedMessage]]",
+    "TargetParameterTypes": [
+      "System.Int32",
+      "System.Nullable`1[System.TimeSpan]",
+      "System.Boolean",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 14,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.ServiceBusReceiverReceiveMessagesAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureServiceBus",
+    "AssemblyName": "Azure.Messaging.ServiceBus",
     "TargetTypeName": "Azure.Messaging.ServiceBus.ServiceBusSender",
     "TargetMethodName": "CreateDiagnosticScope",
     "TargetReturnType": "Azure.Core.Pipeline.DiagnosticScope",
@@ -3705,6 +3732,31 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.SendServiceBusMessagesIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureServiceBus",
+    "AssemblyName": "Azure.Messaging.ServiceBus",
+    "TargetTypeName": "Azure.Messaging.ServiceBus.ServiceBusSender",
+    "TargetMethodName": "SendMessagesAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.ServiceBus.ServiceBusMessage]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 14,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.ServiceBusSenderSendMessagesAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
