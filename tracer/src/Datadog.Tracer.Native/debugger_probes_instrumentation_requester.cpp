@@ -330,19 +330,36 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     m_work_offloader(work_offloader),
     m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
 {
-    auto diEnabled = IsDynamicInstrumentationEnabled();
+    auto diStableConfigDisabled = IsDynamicInstrumentationStableConfigDisabled();
+    if (diStableConfigDisabled)
+    {
+        Logger::Info("Dynamic Instrumentation Stable Config is explicitly disabled");
+    }
+
+    auto erStableConfigDisabled = IsExceptionReplayStableConfigDisabled();
+    if (erStableConfigDisabled)
+    {
+        Logger::Info("Exception Replay Stable Config is explicitly disabled");
+    }
+
+    auto diEnabled = !diStableConfigDisabled || IsDynamicInstrumentationEnabled();
     if (diEnabled == false)
     {
-        Logger::Debug("Dynamic Instrumentation is disabled");
+        Logger::Info("Dynamic Instrumentation hot standby is disabled");
     }
 
-    auto erEnabled = IsExceptionReplayEnabled();
+    auto erEnabled = !erStableConfigDisabled || IsExceptionReplayEnabled();
     if (erEnabled == false)
     {
-        Logger::Debug("Exception Replay is explicitly disabled");
+        Logger::Info("Exception Replay hot standby is disabled");
     }
 
-    is_debugger_or_exception_debugging_enabled = diEnabled || erEnabled;
+    is_debugger_or_exception_replay_hot_standby = diEnabled || erEnabled;
+
+    if (is_debugger_or_exception_replay_hot_standby)
+    {
+        Logger::Info("Dynamic Instrumentation/Exception Replay Hot Standby is on");
+    }
 }
 
 void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes,
@@ -1027,13 +1044,13 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
 
 HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFinished(const ModuleID moduleId)
 {
-    if (!is_debugger_or_exception_debugging_enabled)
+    if (!is_debugger_or_exception_replay_hot_standby)
     {
-        return S_OK;
+         return S_OK;
     }
 
     // IMPORTANT: The call to `ModuleLoadFinished_AddMetadataToModule` must be in `ModuleLoadFinished` as mutating the
-    // layout of types is only feasible prior the type is loaded.s
+    // layout of types is only feasible prior the type is loaded.
     ModuleLoadFinished_AddMetadataToModule(moduleId);
     RequestRejitForLoadedModule(moduleId);
     return S_OK;
