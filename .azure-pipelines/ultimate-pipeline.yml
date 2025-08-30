@@ -2313,6 +2313,44 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: |
+        echo "=== All Containers ==="
+        docker ps -a
+        echo ""
+        echo "=== Container Status ==="
+        docker ps --filter "name=azureservicebus-emulator"
+        echo ""
+        echo "=== Service Bus Emulator Logs ==="
+        docker logs $(DockerComposeProjectName)_azureservicebus-emulator_1 || docker logs azureservicebus-emulator || echo "Could not find Service Bus container"
+        echo ""
+        echo "=== SQL Server Status ==="  
+        docker logs $(DockerComposeProjectName)_sqlserver_1 || docker logs sqlserver | tail -20 || echo "Could not find SQL Server container"
+        echo ""
+        echo "=== Network Test from Integration Tests Container ==="
+        # Try different possible container names
+        docker exec $(DockerComposeProjectName)_integrationtests_1 nslookup azureservicebus-emulator || \
+        docker exec integrationtests nslookup azureservicebus-emulator || \
+        echo "DNS resolution failed"
+        
+        docker exec $(DockerComposeProjectName)_integrationtests_1 nc -zv azureservicebus-emulator 5672 || \
+        docker exec integrationtests nc -zv azureservicebus-emulator 5672 || \
+        echo "Port not accessible"
+        
+        echo ""
+        echo "=== Docker Networks ==="
+        docker network ls
+        
+        echo ""
+        echo "=== Container Network Details ==="
+        docker inspect $(DockerComposeProjectName)_azureservicebus-emulator_1 | grep -A 10 '"Networks"' || \
+        docker inspect azureservicebus-emulator | grep -A 10 '"Networks"' || \
+        echo "Could not inspect Service Bus container network"
+      displayName: 'Debug Service Bus Connectivity'
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      condition: always()
+      continueOnError: true
+
+    - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e baseImage=$(baseImage) \
