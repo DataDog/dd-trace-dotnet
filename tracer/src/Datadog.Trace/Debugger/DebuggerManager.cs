@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
@@ -165,8 +164,8 @@ namespace Datadog.Trace.Debugger
                 }
 
                 DebuggerSettings = newDebuggerSettings;
-                SetCodeOriginState(tracerSettings, newDebuggerSettings);
-                SetExceptionReplayState(tracerSettings, newDebuggerSettings);
+                SetCodeOriginState(newDebuggerSettings);
+                SetExceptionReplayState(newDebuggerSettings);
             }
 
             return ScheduleStartDynamicInstrumentation(tracerSettings, newDebuggerSettings);
@@ -225,7 +224,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void SetCodeOriginState(TracerSettings tracerSettings, DebuggerSettings debuggerSettings)
+        private void SetCodeOriginState(DebuggerSettings debuggerSettings)
         {
             try
             {
@@ -263,7 +262,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void SetExceptionReplayState(TracerSettings tracerSettings, DebuggerSettings debuggerSettings)
+        private void SetExceptionReplayState(DebuggerSettings debuggerSettings)
         {
             try
             {
