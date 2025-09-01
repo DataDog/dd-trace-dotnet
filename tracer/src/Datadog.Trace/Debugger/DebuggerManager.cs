@@ -239,7 +239,6 @@ namespace Datadog.Trace.Debugger
                     if (debuggerSettings.DynamicSettings.CodeOriginEnabled == false)
                     {
                         Log.Debug("Code Origin for Spans is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
-                        tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, false, ConfigurationOrigins.RemoteConfig);
                     }
                     else
                     {
@@ -322,7 +321,7 @@ namespace Datadog.Trace.Debugger
             }
 
             // Only proceed if state actually needs to change
-            if (ShouldSkipUpdate(debuggerSettings.DynamicInstrumentationEnabled, _dynamicInstrumentation is { IsDisposed: false }))
+            if (ShouldSkipUpdate(debuggerSettings.DynamicInstrumentationEnabled, DynamicInstrumentation != null))
             {
                 return;
             }
@@ -349,7 +348,7 @@ namespace Datadog.Trace.Debugger
                 // Re-check if state change is still needed after debounce
                 if (!cts.IsCancellationRequested)
                 {
-                    if (ShouldSkipUpdate(DebuggerSettings.DynamicInstrumentationEnabled, _dynamicInstrumentation is { IsDisposed: false }))
+                    if (ShouldSkipUpdate(DebuggerSettings.DynamicInstrumentationEnabled, DynamicInstrumentation != null))
                     {
                         return;
                     }
@@ -393,7 +392,7 @@ namespace Datadog.Trace.Debugger
                 }
 
                 var requestedState = debuggerSettings.DynamicInstrumentationEnabled;
-                var currentState = _dynamicInstrumentation is { IsDisposed: false };
+                var currentState = DynamicInstrumentation != null;
 
                 if (!requestedState)
                 {
@@ -428,11 +427,21 @@ namespace Datadog.Trace.Debugger
             }
             catch (OperationCanceledException)
             {
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
                 SafeDisposal.TryDispose(_dynamicInstrumentation);
                 _dynamicInstrumentation = null;
             }
             catch (Exception ex)
             {
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
                 TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
                 SafeDisposal.TryDispose(_dynamicInstrumentation);
                 _dynamicInstrumentation = null;
@@ -475,7 +484,6 @@ namespace Datadog.Trace.Debugger
                 Log.Debug("Dynamic Instrumentation has been created");
                 _dynamicInstrumentation.Initialize();
                 tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
-                tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, true, debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true ? ConfigurationOrigins.RemoteConfig : ConfigurationOrigins.AppConfig);
             }
         }
 
