@@ -21,7 +21,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
 {
-    internal class Api : IApi
+    internal class Api : IApi, IDisposable
     {
         private const string TracesPath = "/v0.4/traces";
         private const string StatsPath = "/v0.6/stats";
@@ -74,6 +74,13 @@ namespace Datadog.Trace.Agent
             Success,
             Failed_CanRetry,
             Failed_DontRetry,
+        }
+
+        public void Dispose()
+        {
+#if NETCOREAPP
+            AgentlessRequest.TraceAgent.Stop();
+#endif
         }
 
         public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)

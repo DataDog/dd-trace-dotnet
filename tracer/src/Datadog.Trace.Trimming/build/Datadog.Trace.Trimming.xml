@@ -931,10 +931,12 @@
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />
       <type fullname="System.Runtime.InteropServices.ComTypes.STATSTG" />
       <type fullname="System.Runtime.InteropServices.DefaultDllImportSearchPathsAttribute" />
+      <type fullname="System.Runtime.InteropServices.DllImportResolver" />
       <type fullname="System.Runtime.InteropServices.DllImportSearchPath" />
       <type fullname="System.Runtime.InteropServices.GuidAttribute" />
       <type fullname="System.Runtime.InteropServices.InterfaceTypeAttribute" />
       <type fullname="System.Runtime.InteropServices.Marshal" />
+      <type fullname="System.Runtime.InteropServices.NativeLibrary" />
       <type fullname="System.Runtime.InteropServices.SafeBuffer" />
       <type fullname="System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute" />
       <type fullname="System.Security.SecureString" />
