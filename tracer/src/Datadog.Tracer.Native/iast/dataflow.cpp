@@ -196,6 +196,12 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
     // Init aspects
     DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " Enabled categories: ", enabledCategories, " Platform: ", platform);
 
+    if (aspectsLength > 10)
+    {
+        _aspectClasses.reserve(aspectsLength / 10);
+        _aspects.reserve(aspectsLength);
+    }
+
     DataflowAspectClass* aspectClass = nullptr;
     for (int x = 0; x < aspectsLength; x++)
     {
