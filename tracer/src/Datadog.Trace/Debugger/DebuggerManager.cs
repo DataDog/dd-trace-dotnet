@@ -466,7 +466,6 @@ namespace Datadog.Trace.Debugger
                 }
                 else
                 {
-                    // we need this log for tests
                     Log.Debug("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
                 }
             }
