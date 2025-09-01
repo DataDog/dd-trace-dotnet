@@ -316,7 +316,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("net.peer.name")
                 .IsOptional("peer.address")
                 .IsOptional("server.address")
-                .IfPresentMatches("component", "servicebus")
+                .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "consumer")
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "consumer"));
@@ -356,7 +356,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("net.peer.name")
                 .IsOptional("peer.address")
                 .IsOptional("server.address")
-                .IfPresentMatches("component", "servicebus")
+                .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "producer"));

@@ -152,8 +152,15 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         tags.MessagingDestinationName = entityPath;
         tags.MessagingOperation = "receive";
         tags.MessagingSystem = "servicebus";
+        tags.InstrumentationName = "AzureServiceBus";
 
-        var scope = tracer.StartActiveInternal(OperationName, parent: parentContext, links: spanLinks, tags: tags);
+        string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
+        var scope = tracer.StartActiveInternal(
+            OperationName,
+            parent: parentContext,
+            links: spanLinks,
+            tags: tags,
+            serviceName: serviceName);
         var span = scope.Span;
 
         span.Type = SpanTypes.Queue;

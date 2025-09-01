@@ -18,6 +18,8 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> AnalyticsSampleRateBytes => new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
         // MessageQueueTimeMsBytes = MessagePack.Serialize("message.queue_time_ms");
         private static ReadOnlySpan<byte> MessageQueueTimeMsBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // MessagingSourceNameBytes = MessagePack.Serialize("messaging.source.name");
         private static ReadOnlySpan<byte> MessagingSourceNameBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
         // MessagingDestinationNameBytes = MessagePack.Serialize("messaging.destination.name");
@@ -33,6 +35,7 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
+                "component" => InstrumentationName,
                 "messaging.source.name" => MessagingSourceName,
                 "messaging.destination.name" => MessagingDestinationName,
                 "message_bus.destination" => LegacyMessageBusDestination,
@@ -46,6 +49,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "messaging.source.name": 
                     MessagingSourceName = value;
                     break;
@@ -69,6 +75,11 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
+            if (InstrumentationName is not null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
             if (MessagingSourceName is not null)
             {
                 processor.Process(new TagItem<string>("messaging.source.name", MessagingSourceName, MessagingSourceNameBytes));
@@ -99,6 +110,13 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
+            if (InstrumentationName is not null)
+            {
+                sb.Append("component (tag):")
+                  .Append(InstrumentationName)
+                  .Append(',');
+            }
+
             if (MessagingSourceName is not null)
             {
                 sb.Append("messaging.source.name (tag):")
