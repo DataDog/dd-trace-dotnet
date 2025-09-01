@@ -372,7 +372,7 @@ namespace Datadog.Trace.Debugger
 
             bool ShouldSkipUpdate(bool requested, bool current)
             {
-                if (requested && (requested == current))
+                if (requested == current)
                 {
                     Log.Debug("Skip update Dynamic Instrumentation. Requested is {Requested}, Current is {Current}", requested, current);
                     return true;
