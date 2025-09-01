@@ -52,7 +52,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _cachedInvalidatedCases = new();
 
             _exceptionProcessorTask = Task.Factory.StartNew(
-                                               async () => await StartExceptionProcessingAsync().ConfigureAwait(false),
+                                               () => StartExceptionProcessingAsync(),
                                                TaskCreationOptions.LongRunning)
                                           .Unwrap();
             IsEditAndContinueFeatureEnabled = IsEnCFeatureEnabled();
