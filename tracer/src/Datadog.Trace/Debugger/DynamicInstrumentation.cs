@@ -97,13 +97,7 @@ namespace Datadog.Trace.Debugger
             // Start initialization in background
             _ = Task.Run(InitializeAsync)
                     .ContinueWith(
-                         t =>
-                         {
-                             if (t is { Exception: not null })
-                             {
-                                 Log.Error(t.Exception.Flatten(), "Error in DI initialization");
-                             }
-                         },
+                         t => Log.Error(t?.Exception, "Error in DI initialization"),
                          TaskContinuationOptions.OnlyOnFaulted);
         }
 
