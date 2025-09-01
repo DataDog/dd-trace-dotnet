@@ -1,4 +1,4 @@
-﻿// <copyright file="GrpcProtocolHelpersBuildHttpErrorResponseIntegration.cs" company="Datadog">
+// <copyright file="GrpcProtocolHelpersBuildHttpErrorResponseIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 
 #nullable enable
 
+using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -40,16 +41,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         /// <param name="grpcStatusCode">The GRPC status code</param>
         /// <param name="message">The error message to set</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin(HttpResponse response, int httpStatusCode, int grpcStatusCode, string message)
+        internal static CallTargetState OnMethodBegin<TTarget, TGrpcStatusCode>(HttpResponse response, int httpStatusCode, TGrpcStatusCode grpcStatusCode, string message)
         {
             var tracer = Tracer.Instance;
             if (GrpcCoreApiVersionHelper.IsSupported
              && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
              && tracer.ActiveScope?.Span is Span { Tags: GrpcServerTags } span)
             {
+                int grpcCode = (int)(object)grpcStatusCode!;
                 // This code path is only called when there's a fundamental failure that isn't even processed
                 // (e.g. wrong Http protocol, invalid content-type etc)
-                GrpcCommon.RecordFinalStatus(span, grpcStatusCode, message, ex: null);
+                GrpcCommon.RecordFinalStatus(span, grpcCode, message, ex: null);
 
                 // There won't be any response metadata, as interceptors haven't executed, but we can grab
                 // the request metadata directly from the HttpRequest
