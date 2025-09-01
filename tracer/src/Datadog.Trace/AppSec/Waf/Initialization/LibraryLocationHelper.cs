@@ -30,16 +30,23 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             List<string> paths = new();
 
-            AddNativeLoaderEnginePath(paths);
-
-            foreach (var runtimeId in runtimeIds)
+            try
             {
-                AddHomeFolders(paths, runtimeId);
+                AddNativeLoaderEnginePath(paths);
+
+                foreach (var runtimeId in runtimeIds)
+                {
+                    AddHomeFolders(paths, runtimeId);
+                }
+
+                foreach (var runtimeId in runtimeIds)
+                {
+                    AddProfilerFolders(paths, frameworkDescription, runtimeId);
+                }
             }
-
-            foreach (var runtimeId in runtimeIds)
+            catch (Exception e) when (e is ArgumentException or PathTooLongException)
             {
-                AddProfilerFolders(paths, frameworkDescription, runtimeId);
+                Log.Warning(e, "When adding paths from native loader engine, home folders, and profiler folders, some path contained invalid characters or were too long");
             }
 
             return paths.Distinct().ToList();
@@ -58,8 +65,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
         private static void AddProfilerFolders(List<string> paths, FrameworkDescription frameworkDescription, string runtimeId)
         {
-            var profilerEnvVar =
-                frameworkDescription.IsCoreClr() ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+            var profilerEnvVar = frameworkDescription.IsCoreClr() ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
 
             if (TryAddProfilerFolders(paths, profilerEnvVar))
             {
