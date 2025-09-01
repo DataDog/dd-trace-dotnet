@@ -41,20 +41,7 @@ namespace Datadog.Trace.Debugger
 
             DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(false);
 
-            string diEnabledAsString =
-                config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled)
-                      .AsString(
-                           getDefaultValue: () => "null",
-                           null,
-                           x => x switch
-                           {
-                               _ when x.ToBoolean() is { } boolean => boolean ? "true" : "false",
-                               _ => ParsingResult<string>.Failure()
-                           });
-
-            _internalDynamicInstrumentationEnabled = diEnabledAsString is null or "null"
-                                                         ? null
-                                                         : diEnabledAsString.ToBoolean();
+            _internalDynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool();
 
             SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
 
@@ -154,20 +141,7 @@ namespace Datadog.Trace.Debugger
 
             CodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(false);
 
-            string coEnabledAsString =
-                config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled)
-                      .AsString(
-                           getDefaultValue: () => "null",
-                           null,
-                           x => x switch
-                           {
-                               _ when x.ToBoolean() is { } boolean => boolean ? "true" : "false",
-                               _ => ParsingResult<string>.Failure()
-                           });
-
-            _internalCodeOriginForSpansEnabled = coEnabledAsString is null or "null"
-                                                     ? null
-                                                     : coEnabledAsString.ToBoolean();
+            _internalCodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool();
 
             CodeOriginMaxUserFrames = config
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
@@ -179,11 +153,11 @@ namespace Datadog.Trace.Debugger
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
 
+        internal bool IsDebuggerProductsDisabled => _internalCodeOriginForSpansEnabled == false && _internalDynamicInstrumentationEnabled == false;
+
         public bool DynamicInstrumentationEnabled
         {
-            get =>
-                (_internalDynamicInstrumentationEnabled == true && DynamicSettings.DynamicInstrumentationEnabled == null)
-             || (_internalDynamicInstrumentationEnabled == null && DynamicSettings.DynamicInstrumentationEnabled == true);
+            get => DynamicSettings.DynamicInstrumentationEnabled ?? _internalDynamicInstrumentationEnabled == true;
             init { }
         }
 
@@ -219,9 +193,7 @@ namespace Datadog.Trace.Debugger
 
         public bool CodeOriginForSpansEnabled
         {
-            get =>
-                (_internalCodeOriginForSpansEnabled == true && DynamicSettings.CodeOriginEnabled == null)
-             || (_internalCodeOriginForSpansEnabled == null && DynamicSettings.CodeOriginEnabled == true);
+            get => DynamicSettings.CodeOriginEnabled ?? _internalCodeOriginForSpansEnabled == true;
             init { }
         }
 
