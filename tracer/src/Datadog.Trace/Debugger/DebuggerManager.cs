@@ -434,7 +434,7 @@ namespace Datadog.Trace.Debugger
             {
                 Log.Debug("Disabling Dynamic Instrumentation");
 
-                var rc = debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false;
+                var disabledViaRemoteConfig = debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false;
 
                 if (currentState)
                 {
@@ -443,7 +443,7 @@ namespace Datadog.Trace.Debugger
                     TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
                 }
 
-                if (rc)
+                if (disabledViaRemoteConfig)
                 {
                     Log.Debug("Dynamic Instrumentation is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
                 }
