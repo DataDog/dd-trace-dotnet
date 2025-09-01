@@ -23,7 +23,7 @@ internal class AgentlessResponse : IApiResponse
         _headers = headers ?? new Dictionary<string, string>();
         _stream = contentStream ?? Stream.Null;
         ContentTypeHeader = string.Empty;
-        ContentEncoding =  string.Empty;
+        ContentEncoding = string.Empty;
         ContentEncodingHeader = string.Empty;
     }
 
