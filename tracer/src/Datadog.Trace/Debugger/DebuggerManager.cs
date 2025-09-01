@@ -41,6 +41,7 @@ namespace Datadog.Trace.Debugger
         private volatile bool _isDebuggerEndpointAvailable;
         private int _initialized;
         private CancellationTokenSource? _diDebounceCts;
+        private DynamicInstrumentation? _dynamicInstrumentation;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
@@ -60,7 +61,15 @@ namespace Datadog.Trace.Debugger
 
         internal ExceptionReplaySettings ExceptionReplaySettings { get; }
 
-        internal DynamicInstrumentation? DynamicInstrumentation { get; private set; }
+        internal DynamicInstrumentation? DynamicInstrumentation
+        {
+            get
+            {
+                var instance = _dynamicInstrumentation;
+                return instance is { IsDisposed: false } ? instance : null;
+            }
+            private set => _dynamicInstrumentation = value;
+        }
 
         internal SpanCodeOrigin.SpanCodeOrigin? CodeOrigin { get; private set; }
 
@@ -313,7 +322,7 @@ namespace Datadog.Trace.Debugger
             }
 
             // Only proceed if state actually needs to change
-            if (ShouldSkipUpdate(debuggerSettings.DynamicInstrumentationEnabled, DynamicInstrumentation is { IsDisposed: false }))
+            if (ShouldSkipUpdate(debuggerSettings.DynamicInstrumentationEnabled, _dynamicInstrumentation is { IsDisposed: false }))
             {
                 return;
             }
@@ -340,7 +349,7 @@ namespace Datadog.Trace.Debugger
                 // Re-check if state change is still needed after debounce
                 if (!cts.IsCancellationRequested)
                 {
-                    if (ShouldSkipUpdate(DebuggerSettings.DynamicInstrumentationEnabled, DynamicInstrumentation is { IsDisposed: false }))
+                    if (ShouldSkipUpdate(DebuggerSettings.DynamicInstrumentationEnabled, _dynamicInstrumentation is { IsDisposed: false }))
                     {
                         return;
                     }
@@ -384,7 +393,7 @@ namespace Datadog.Trace.Debugger
                 }
 
                 var requestedState = debuggerSettings.DynamicInstrumentationEnabled;
-                var currentState = DynamicInstrumentation is { IsDisposed: false };
+                var currentState = _dynamicInstrumentation is { IsDisposed: false };
 
                 if (!requestedState)
                 {
@@ -419,14 +428,14 @@ namespace Datadog.Trace.Debugger
             }
             catch (OperationCanceledException)
             {
-                SafeDisposal.TryDispose(DynamicInstrumentation);
-                DynamicInstrumentation = null;
+                SafeDisposal.TryDispose(_dynamicInstrumentation);
+                _dynamicInstrumentation = null;
             }
             catch (Exception ex)
             {
                 TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
-                SafeDisposal.TryDispose(DynamicInstrumentation);
-                DynamicInstrumentation = null;
+                SafeDisposal.TryDispose(_dynamicInstrumentation);
+                _dynamicInstrumentation = null;
                 Log.Error(ex, "Error initializing Dynamic Instrumentation");
             }
 
@@ -438,8 +447,8 @@ namespace Datadog.Trace.Debugger
 
                 if (currentState)
                 {
-                    SafeDisposal.TryDispose(DynamicInstrumentation);
-                    DynamicInstrumentation = null;
+                    SafeDisposal.TryDispose(_dynamicInstrumentation);
+                    _dynamicInstrumentation = null;
                     TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
                 }
 
@@ -456,7 +465,7 @@ namespace Datadog.Trace.Debugger
 
             void EnableDynamicInstrumentation(IDiscoveryService discoveryService, TracerManager tracerManager)
             {
-                DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(
+                _dynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(
                     discoveryService,
                     RcmSubscriptionManager.Instance,
                     tracerSettings,
@@ -464,7 +473,7 @@ namespace Datadog.Trace.Debugger
                     debuggerSettings,
                     tracerManager.GitMetadataTagsProvider);
                 Log.Debug("Dynamic Instrumentation has been created");
-                DynamicInstrumentation.Initialize();
+                _dynamicInstrumentation.Initialize();
                 tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
                 tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, true, debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true ? ConfigurationOrigins.RemoteConfig : ConfigurationOrigins.AppConfig);
             }
@@ -513,7 +522,7 @@ namespace Datadog.Trace.Debugger
             }
 
             SafeDisposal.New()
-                        .Add(DynamicInstrumentation)
+                        .Add(_dynamicInstrumentation)
                         .Add(ExceptionReplay)
                         .Add(SymbolsUploader)
                         .DisposeAll();
