@@ -41,7 +41,7 @@ namespace Datadog.Trace.Debugger
         private volatile bool _isDebuggerEndpointAvailable;
         private int _initialized;
         private CancellationTokenSource? _diDebounceCts;
-        private DynamicInstrumentation? _dynamicInstrumentation;
+        private volatile DynamicInstrumentation? _dynamicInstrumentation;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
@@ -66,8 +66,9 @@ namespace Datadog.Trace.Debugger
             get
             {
                 var instance = _dynamicInstrumentation;
-                return instance is { IsDisposed: false } ? instance : null;
+                return instance?.IsDisposed == false ? instance : null;
             }
+
             private set => _dynamicInstrumentation = value;
         }
 
@@ -392,18 +393,20 @@ namespace Datadog.Trace.Debugger
                 }
 
                 var requestedState = debuggerSettings.DynamicInstrumentationEnabled;
-                var currentState = DynamicInstrumentation != null;
 
                 if (!requestedState)
                 {
-                    DisableDynamicInstrumentation(currentState);
+                    DisableDynamicInstrumentation();
                     return;
                 }
 
-                if (currentState)
+                lock (_syncLock)
                 {
-                    Log.Debug("Dynamic Instrumentation is already initialized");
-                    return;
+                    if (DynamicInstrumentation != null)
+                    {
+                        Log.Debug("Dynamic Instrumentation is already initialized");
+                        return;
+                    }
                 }
 
                 var tracerManager = TracerManager.Instance;
@@ -425,40 +428,37 @@ namespace Datadog.Trace.Debugger
 
                 EnableDynamicInstrumentation(discoveryService, tracerManager);
             }
-            catch (OperationCanceledException)
-            {
-                if (_processExit.Task.IsCompleted)
-                {
-                    return;
-                }
-
-                SafeDisposal.TryDispose(_dynamicInstrumentation);
-                _dynamicInstrumentation = null;
-            }
             catch (Exception ex)
             {
-                if (_processExit.Task.IsCompleted)
+                if (cancellationToken.IsCancellationRequested || _processExit.Task.IsCompleted)
                 {
                     return;
                 }
 
                 TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
-                SafeDisposal.TryDispose(_dynamicInstrumentation);
-                _dynamicInstrumentation = null;
+                lock (_syncLock)
+                {
+                    SafeDisposal.TryDispose(_dynamicInstrumentation);
+                    _dynamicInstrumentation = null;
+                }
+
                 Log.Error(ex, "Error initializing Dynamic Instrumentation");
             }
 
-            void DisableDynamicInstrumentation(bool currentState)
+            void DisableDynamicInstrumentation()
             {
                 Log.Debug("Disabling Dynamic Instrumentation");
 
                 var disabledViaRemoteConfig = debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false;
 
-                if (currentState)
+                lock (_syncLock)
                 {
-                    SafeDisposal.TryDispose(_dynamicInstrumentation);
-                    _dynamicInstrumentation = null;
-                    TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                    if (DynamicInstrumentation != null)
+                    {
+                        SafeDisposal.TryDispose(_dynamicInstrumentation);
+                        _dynamicInstrumentation = null;
+                        TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                    }
                 }
 
                 if (disabledViaRemoteConfig)
@@ -474,16 +474,31 @@ namespace Datadog.Trace.Debugger
 
             void EnableDynamicInstrumentation(IDiscoveryService discoveryService, TracerManager tracerManager)
             {
-                _dynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(
-                    discoveryService,
-                    RcmSubscriptionManager.Instance,
-                    tracerSettings,
-                    ServiceName,
-                    debuggerSettings,
-                    tracerManager.GitMetadataTagsProvider);
-                Log.Debug("Dynamic Instrumentation has been created");
-                _dynamicInstrumentation.Initialize();
-                tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
+                DynamicInstrumentation? instance = null;
+                var created = false;
+                lock (_syncLock)
+                {
+                    if (DynamicInstrumentation == null)
+                    {
+                        _dynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(
+                            discoveryService,
+                            RcmSubscriptionManager.Instance,
+                            tracerSettings,
+                            ServiceName,
+                            debuggerSettings,
+                            tracerManager.GitMetadataTagsProvider);
+                        created = true;
+                    }
+
+                    instance = _dynamicInstrumentation;
+                }
+
+                if (created && instance != null)
+                {
+                    Log.Debug("Dynamic Instrumentation has been created");
+                    instance.Initialize();
+                    tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
+                }
             }
         }
 
