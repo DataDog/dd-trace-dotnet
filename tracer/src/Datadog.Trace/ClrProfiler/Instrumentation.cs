@@ -498,10 +498,16 @@ namespace Datadog.Trace.ClrProfiler
             var manager = DebuggerManager.Instance;
             if (manager.DebuggerSettings.IsDebuggerProductsDisabled && manager.ExceptionReplaySettings.IsExceptionReplayDisabled)
             {
-                Log.Information("Debugger products are explicitly disabled via environment variables.");
+                Log.Debug("Debugger products are explicitly disabled via environment variables.");
             }
             else
             {
+                if (!manager.DebuggerSettings.DynamicInstrumentationEnabled)
+                {
+                    // we need this line for tests
+                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
+                }
+
                 DebuggerManager.Instance.UpdateConfiguration(tracerSettings)
                                .ContinueWith(t => Log.Error(t?.Exception, "Error initializing debugger"), TaskContinuationOptions.OnlyOnFaulted);
             }
