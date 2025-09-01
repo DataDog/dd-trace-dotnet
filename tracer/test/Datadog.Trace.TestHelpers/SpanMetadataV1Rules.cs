@@ -517,7 +517,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("net.peer.name")
                 .IsOptional("peer.address")
                 .IsOptional("server.address")
-                .IfPresentMatches("component", "servicebus")
+                .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "consumer")
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "consumer"));
@@ -563,7 +563,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "messaging.destination.name", "message_bus.destination", "peer.service")
-                .IfPresentMatches("component", "servicebus")
+                .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "producer"));

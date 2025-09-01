@@ -48,8 +48,13 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
         tags.MessagingDestinationName = entityPath;
         tags.MessagingOperation = "send";
         tags.MessagingSystem = "servicebus";
+        tags.InstrumentationName = "AzureServiceBus";
 
-        var scope = tracer.StartActiveInternal(OperationName, tags: tags);
+        string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
+        var scope = tracer.StartActiveInternal(
+            OperationName,
+            tags: tags,
+            serviceName: serviceName);
         var span = scope.Span;
 
         span.Type = SpanTypes.Queue;

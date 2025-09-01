@@ -49,7 +49,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
-            using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
@@ -86,7 +85,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
-            using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
