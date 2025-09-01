@@ -189,7 +189,7 @@ namespace Datadog.Trace.Debugger
 
                 if (!tracerSettings.IsRemoteConfigurationAvailable)
                 {
-                    Log.Information("Remote configuration is not available in this environment, so we don't upload symbols.");
+                    Log.Debug("Remote configuration is not available in this environment, so we don't upload symbols.");
                     return;
                 }
 
@@ -229,12 +229,12 @@ namespace Datadog.Trace.Debugger
                     CodeOrigin = null;
                     if (debuggerSettings.DynamicSettings.CodeOriginEnabled == false)
                     {
-                        Log.Information("Code Origin for Spans is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                        Log.Debug("Code Origin for Spans is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
                         tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, false, ConfigurationOrigins.RemoteConfig);
                     }
                     else
                     {
-                        Log.Information("Code Origin for Spans is disabled. To enable it, please set {CodeOriginForSpansEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
+                        Log.Debug("Code Origin for Spans is disabled. To enable it, please set {CodeOriginForSpansEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
                     }
 
                     return;
@@ -247,7 +247,6 @@ namespace Datadog.Trace.Debugger
                 }
 
                 CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(debuggerSettings);
-                tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, true, debuggerSettings.DynamicSettings.CodeOriginEnabled == true ? ConfigurationOrigins.RemoteConfig : ConfigurationOrigins.AppConfig);
             }
             catch (Exception ex)
             {
@@ -270,12 +269,11 @@ namespace Datadog.Trace.Debugger
                     ExceptionReplay = null;
                     if (debuggerSettings.DynamicSettings.ExceptionReplayEnabled == false)
                     {
-                        Log.Information("Exception Replay is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
-                        tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.ExceptionReplayEnabled, false, ConfigurationOrigins.RemoteConfig);
+                        Log.Debug("Exception Replay is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
                     }
                     else
                     {
-                        Log.Information("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.ExceptionReplayEnabled);
+                        Log.Debug("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.ExceptionReplayEnabled);
                     }
 
                     return;
@@ -290,8 +288,6 @@ namespace Datadog.Trace.Debugger
                 var exceptionReplay = ExceptionReplay.Create(ExceptionReplaySettings);
                 exceptionReplay.Initialize();
                 ExceptionReplay = exceptionReplay;
-
-                tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.ExceptionReplayEnabled, true, debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true ? ConfigurationOrigins.RemoteConfig : ConfigurationOrigins.AppConfig);
             }
             catch (Exception ex)
             {
@@ -438,25 +434,23 @@ namespace Datadog.Trace.Debugger
             {
                 Log.Debug("Disabling Dynamic Instrumentation");
 
-                var origin = debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false
-                                 ? ConfigurationOrigins.RemoteConfig
-                                 : ConfigurationOrigins.AppConfig;
+                var rc = debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false;
 
                 if (currentState)
                 {
                     SafeDisposal.TryDispose(DynamicInstrumentation);
                     DynamicInstrumentation = null;
                     TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
-                    tracerSettings.Telemetry.Record(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, false, origin);
                 }
 
-                if (origin == ConfigurationOrigins.RemoteConfig)
+                if (rc)
                 {
-                    Log.Information("Dynamic Instrumentation is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                    Log.Debug("Dynamic Instrumentation is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
                 }
                 else
                 {
-                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
+                    // we need this log for tests
+                    Log.Debug("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
                 }
             }
 

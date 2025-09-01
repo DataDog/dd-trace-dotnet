@@ -152,15 +152,7 @@ namespace Datadog.Trace.Configuration
             var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
 
             DebuggerManager.Instance.UpdateConfiguration(newSettings, newDebuggerSettings)
-                           .ContinueWith(
-                                t =>
-                                {
-                                    if (t is { Exception: not null })
-                                    {
-                                        Log.Error(t.Exception.Flatten(), "Error updating dynamic configuration for debugger");
-                                    }
-                                },
-                                TaskContinuationOptions.OnlyOnFaulted);
+                           .ContinueWith(t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         private ApplyDetails[] ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
