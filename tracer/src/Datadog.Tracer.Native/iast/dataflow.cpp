@@ -198,8 +198,8 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
 
     if (aspectsLength > 10)
     {
-        _aspectClasses.reserve(aspectsLength / 10);
-        _aspects.reserve(aspectsLength);
+        _aspects.reserve(aspectsLength); // We know the max number of aspects we are going to have, so reserve the space to avoid vector resizes
+        _aspectClasses.reserve(aspectsLength / 10); // We don't know exactly the number of aspects which are class aspects, but 1/10 is a fine approach
     }
 
     DataflowAspectClass* aspectClass = nullptr;
