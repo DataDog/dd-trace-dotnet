@@ -83,6 +83,7 @@ namespace Datadog.Trace.Tests.Headers.Ip
         [InlineData("192.168.1.1", 80, "for=192.168.1.1,for=172.16.32.41,for=172.16.32.43,by=172.31.255.255,")]
         [InlineData("83.204.236.243", 80, "for=127.0.0.1,for=83.204.236.243")]
         [InlineData("83.204.236.243", 80, "for=169.254.0.3,for=83.204.236.243")]
+        [InlineData("83.204.236.243", 80, "for=169.254.0.3;for=83.204.236.243")]
         public void ForwardedIpv4PublicDetectedLocalIgnored(string expectedIp, int expectedPort, string headerValue)
         {
             var ip = IpExtractor.RealIpFromValue(headerValue, https: false, RequestIpExtractor.ForwardedHeaderComponentParser);

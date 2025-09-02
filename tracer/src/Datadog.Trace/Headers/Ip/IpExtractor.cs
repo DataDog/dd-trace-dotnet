@@ -41,7 +41,7 @@ namespace Datadog.Trace.Headers.Ip
         internal static IpInfo? RealIpFromValue(string headerValue, bool https, Func<string?, string?> extractor)
         {
             IpInfo? privateIpInfo = null;
-            var values = headerValue.Split(',');
+            var values = headerValue.Split(',', ';');
             foreach (var potentialIp in values)
             {
                 var consideredPotentialIp = extractor(potentialIp);
