@@ -43,6 +43,8 @@ internal class TestCaseMetadata
 
     public bool AllRetriesFailed { get; set; } = true;
 
+    public bool Skipped { get; set; } = false;
+
     public bool HasAnException { get; set; } = false;
 
     public string UniqueID { get; }

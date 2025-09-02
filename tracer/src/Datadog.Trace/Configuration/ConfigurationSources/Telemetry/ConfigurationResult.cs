@@ -15,9 +15,10 @@ namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 /// <typeparam name="T">The type of the returned value</typeparam>
 public readonly record struct ConfigurationResult<T>
 {
-    private ConfigurationResult(T? result, ConfigurationLoadResult loadResult)
+    private ConfigurationResult(T? result, string? telemetryOverride, ConfigurationLoadResult loadResult)
     {
         Result = result;
+        TelemetryOverride = telemetryOverride;
         LoadResult = loadResult;
     }
 
@@ -25,6 +26,12 @@ public readonly record struct ConfigurationResult<T>
     /// Gets the extracted configuration value, if it was found
     /// </summary>
     public T? Result { get; }
+
+    /// <summary>
+    /// Gets the configuration value that represents the <see cref="Result"/> in telemetry,
+    /// where <typeparamref name="T"/> cannot be directly stored in telemetry.
+    /// </summary>
+    public string? TelemetryOverride { get; }
 
     /// <summary>
     /// Gets a value indicating whether <see cref="Result"/> result passed validation.
@@ -55,24 +62,55 @@ public readonly record struct ConfigurationResult<T>
     /// </summary>
     /// <param name="result">The value to use</param>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<T> Valid(T result) => new(result, ConfigurationLoadResult.Valid);
+    public static ConfigurationResult<int> Valid(int result) => new(result, null, ConfigurationLoadResult.Valid);
+
+    /// <summary>
+    /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value
+    /// </summary>
+    /// <param name="result">The value to use</param>
+    /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
+    public static ConfigurationResult<bool> Valid(bool result) => new(result, null, ConfigurationLoadResult.Valid);
+
+    /// <summary>
+    /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value
+    /// </summary>
+    /// <param name="result">The value to use</param>
+    /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
+    public static ConfigurationResult<double> Valid(double result) => new(result, null, ConfigurationLoadResult.Valid);
+
+    /// <summary>
+    /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value
+    /// </summary>
+    /// <param name="result">The value to use</param>
+    /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
+    public static ConfigurationResult<string> Valid(string result) => new(result, null, ConfigurationLoadResult.Valid);
+
+    /// <summary>
+    /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value
+    /// </summary>
+    /// <param name="result">The value to use</param>
+    /// <param name="telemetryOverride">The telemetry value to use where the value of <paramref name="result"/> cannot be stored directly in telemetry.
+    /// This is required if <typeparamref name="T"/> is not an int/bool/double/string</param>
+    /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
+    public static ConfigurationResult<T> Valid(T result, string? telemetryOverride)
+        => new(result, telemetryOverride, ConfigurationLoadResult.Valid);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.ValidationFailure"/> value
     /// </summary>
     /// <param name="result">The value that failed validation</param>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<T> Invalid(T result) => new(result, ConfigurationLoadResult.ValidationFailure);
+    public static ConfigurationResult<T> Invalid(T result) => new(result, null, ConfigurationLoadResult.ValidationFailure);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.NotFound"/> value
     /// </summary>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<T> NotFound() => new(default, ConfigurationLoadResult.NotFound);
+    public static ConfigurationResult<T> NotFound() => new(default, null, ConfigurationLoadResult.NotFound);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.ParsingError"/> value
     /// </summary>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<T> ParseFailure() => new(default, ConfigurationLoadResult.ParsingError);
+    public static ConfigurationResult<T> ParseFailure() => new(default, null, ConfigurationLoadResult.ParsingError);
 }

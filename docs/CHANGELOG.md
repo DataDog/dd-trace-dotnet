@@ -25,6 +25,211 @@
 
 
 
+
+
+
+## [Release 3.25.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.25.0)
+
+## Summary
+
+- Various bug fixes and optimisations
+
+## Changes
+
+### Tracer
+* Implement "enahanced telemetry reporting" (#7360)
+* Don't call `ToUpperInvariant` if we don't need to (#7393)
+* Handle TypeLoadException when retrieving HostingEnvironment (#7417)
+* Add missing `GetDictionary()` method to `ConfigurationBuilder` (#7421)
+* More `ConfigurationBuilder` refactoring to avoid incorrect usages (#7422)
+* [Tracer] fix: Re-use runtime metrics writer resources to limit memory growth (#7434)
+
+### Continuous Profiler
+* [Profiler] Make `timer_create`-based CPU profiler default (#7322)
+* Revert "[Profiler] Make `timer_create`-based CPU profiler default (#7322)" (#7427)
+
+### Debugger
+* Disable debugger initialization if it's not enabled initially (#7398)
+
+### Serverless
+* [Azure Functions] Remove all Serverless Mini-Agent (SMA) code (#7389)
+
+### ASM
+* [IAST] Fix NRE in Native IAST ModuleInfo->GetFullName() (#7404)
+
+### Fixes
+* fix: Clean up small C# and C++ build warnings (#7363)
+* chore: update malformed telemetry name (#7402)
+* Get process start info variables safely (#7423)
+* Fix null reference exception in proxy spans (#7428)
+
+### Build / Test
+* [CI] Creates PR Label Based Docker Image (#7337)
+* [Test Package Versions Bump] Updating package versions (#7315)
+* Include the target framework in our `InstrumentationTests` (#7347)
+* Ignore rejit timeout errors in smoke tests and report a metric (#7370)
+* fix: Make OTLP metrics snapshot testing more stable (#7374)
+* Add final job for blocking merges of PRs (#7376)
+* Fix debug symbol upload in release job (#7377)
+* Fix Windows SSI release (#7379)
+* Fix null ref type warning in Nuke (#7382)
+* Fix creation of label-based artifacts for system tests (#7385)
+* Filter our exit span from Azure Functions tests (#7391)
+* Fix variable generation for `linux-arm64` unit tests (#7394)
+* Add more alpine checks for native library (#7395)
+* [Test Package Versions Bump] Updating package versions (#7396)
+* Fix ASM WAF unit tests (#7397)
+* [SINT-3848] 🔒 Pin GitHub Actions to specific SHA versions for enhanced security (#7400)
+* Improve PR labelling and release note generation (#7401)
+* [Native] Add native string unit tests (#7407)
+* Add `Os`, `OsVersion`, and `Tfm` to CI flaky-smoke-test metrics (#7409)
+* Scrape native tracer stats from logs in smoke tests and track in Datadog (#7410)
+* Update `tracer_home_smoke_tests` stage to use MS hosted windows images (#7412)
+* Enable runtime metrics for macrobenchmarks (#7414)
+* Try to fix dynamic instrumentation tests (#7415)
+* Make the `Instrumentation.cs` file owned by everyone (#7416)
+* Try to fix more flake in fleet installer IIS tests (#7418)
+* Bump the gh-actions-packages group across 1 directory with 5 updates (#7429)
+* [Test Package Versions Bump] Updating package versions (#7430)
+
+### Miscellaneous
+* Fix minor warnings and issues and improvements (#7390)
+* refactor(libdatadog): namespaces and file organization, error code and typo (#7405)
+* Don't write debug logs to console for hands off config (#7392)
+* chore(trace-exporter): disable data pipeline when SSI is enabled (#7386)
+* [Service Disc] Change type layout to make it x86 safe (#7387)
+* [HandsOff Config] Read sources from libdatadog (#7282)
+* Refactor telemetry in `ConfigurationBuilder` (#7354)
+* [Native] Added DBG macro that checks for IsDebugEnabled before logging a debug trace (#7406)
+* refactor(libdatadog): error handling and trace exporter response management (#7411)
+
+[Changes since 3.24.1](https://github.com/DataDog/dd-trace-dotnet/compare/v3.24.1...v3.25.0)
+
+## [Release 3.24.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.24.0)
+
+## Summary
+
+- [Tracer] Logs injection for connecting logs with traces is enabled by default. To disable, set `DD_LOGS_INJECTION=0`
+- [Tracer] Add support for latest S3 and MSTest packages
+- [AAP] Add resource name to the collected endpoints
+- [DSM] Flush DSM stats on Lambda Stop
+
+## Changes
+
+### Tracer
+* Refactor the profiling configuration reading (#7303)
+* Minor `IConfigurationSource` clean up (#7327)
+* chore: clean up baggage span tags implementation (#7335)
+* Update default value of DD_LOGS_INJECTION to true (#7336)
+* Fix broken S3 integration (#7368)
+
+### CI Visibility
+* [Test Optimization] Support for MSTest v3.10 (#7343)
+
+### ASM
+* [AAP] Add resource name to the collected endpoints (#7317)
+* [AAP] Add latest supported waf capabilities to RC (#7332)
+* [AAP] Added WAF metrics. Reorganized other metrics to match RFC (#7356)
+* [AAP] Update WAF ruleset to v1.15.0 (#7331)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-3514 Refactor debugger code (#7304)
+* Removes exception throwing during shutdown of dynamic instrumentation (#7375)
+
+### Serverless
+* DSMS-90: Flush DSM stats on Lambda Stop (#7054)
+
+### Data Streams Monitoring
+* Do not inject DSM legacy headers by default in "default enabled" mode (#7351)
+
+### Build / Test
+* Update xunit to latest, fix analyzer warnings, and update analyzer tests (#7280)
+* Send Warm-up request in iisexpress integration tests (#7321)
+* Update CODEOWNERS with SDK capabilities team as owners (#7328)
+* Pre pull aerospike image (#7333)
+* Remove CMake warning: jobserver unavailable: using -j1. Add `+' to parent make rule. (#7334)
+* Fix typo in `create_draft_release` (#7338)
+* Fix the signing of the fleet installer exe (#7341)
+* Elaborate on Run failed description (#7344)
+* Work around flake in the Couchbase 3 integration tests (#7357)
+* Try to fix flake by using unique keys in StackExchange sample tests (#7359)
+* Mark the OTLP metrics test as `[Flaky]` (#7369)
+* Fix more flake in the IIS fleet smoke tests (#7372)
+* Don't test Aerospike.Client 8.1.0 on .NET 6 or 7 (#7349)
+
+### Miscellaneous
+* Cache response in order to avoid unnecessary deserializations (#7320)
+* Add Stats on EnqueueRequestRejitForLoadedModules (#7340)
+* Include `telemetry_forwarder.exe` in the Windows SSI OCI images (#7342)
+* Update the configuration key for controlling managed activation (#7350)
+
+* Update libdatadog to 20.0.0 (#7358)
+
+
+[Changes since 3.23.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.23.0...v3.24.0)
+
+## [Release 3.23.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.23.0)
+
+## Summary
+
+- [Tracer] Baggage tags are automatically added as span tags
+- [Tracer] Fix resource-based sampling for ASP.NET Core
+- [Test Optimization] Various fixes for commit info and codeowners
+- [Test Optimization] Fix crash with Allure.Xunit
+- [IAST] Fix potential crash on `ReadOnlySpan<>` `string.Concat()` methods
+
+## Changes
+
+### Tracer
+* feat(baggage): adding baggage to span tags (#7020)
+* Swap disposal ordering of inferred span (#7293)
+* Add `[MethodImpl(MethodImplOptions.NoInlining]` to all our instrumented APIs in Datadog.Trace.Manual (#7302)
+* Refactor `TraceSampler` to separate building from evaluation (#7311)
+* Avoid generating resource name that will be thrown away if it's not required (#7312)
+* Fix resource-based sampling for ASP.NET Core (#7316)
+
+### CI Visibility
+* [Test Optimization] Retrieve head commit info (#7285)
+* [Test Optimization] Add codeowners and test source file tag at suite level (#7295)
+* [Test Optimization] Fix base branch SHA usage (#7300)
+* [Test Optimization] Avoid crashing on Allure.Xunit usage (#7305)
+
+### ASM
+* [AAP] Update WAF to v1.27.0 (#7330)
+
+### Continuous Profiler
+* [Profiler] Use ringbuffer with timer create (#7066)
+
+### Fixes
+* [IAST] Remove troublesome string.Concat overloads with ReadOnlySpan<char> (#7318)
+
+### Miscellaneous
+* Set default timeout for Trace Exporter to 15s. (#7252)
+* [OTEL] OTLP Metrics Exporter POC (#7138)
+* [Test Package Versions Bump] Updating package versions (#7279)
+* [Profiler] Add vcpkg setup for build (#7292)
+* Ensure file_opened_ is getting updated when rotating (#7296)
+* Bump rejit timeout to 200ms (#7301)
+
+### Build / Test
+* Filter connection header in flaky tests (#7290)
+* Remove global state to try to fix flake (#7291)
+* Improve repeatability & precision of throughput tests on Linux & ARM (#7268)
+* More fixes for do-not-merge (#7274)
+* Update the Windows test agent to latest (#7275)
+* Fix potential deadlocks in `IisFixture` process code (#7281)
+* [Profiler] Fix and bump timeitsharp (#7294)
+* Fix debug symbol upload in release (#7297)
+* Additional test that requires HTTP FP connection header scrubbing (#7306)
+* Bump timeitsharp to v0.4.5 (#7308)
+* Avoid using GITHUB_TOKEN for pr creation (#7310)
+* Fix octo sts trust policy subject (#7313)
+* Write `DD_LOGGER_` logs to a separate un-checked location (#7323)
+* Add note about MergeQueue (`/merge`) to PR template (#7329)
+
+
+[Changes since 3.22.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.22.0...v3.23.0)
+
 ## [Release 3.22.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.22.0)
 
 ## Summary

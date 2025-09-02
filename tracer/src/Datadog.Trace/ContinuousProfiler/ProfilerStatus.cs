@@ -5,9 +5,7 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ContinuousProfiler
 {
@@ -15,38 +13,22 @@ namespace Datadog.Trace.ContinuousProfiler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProfilerStatus));
 
-        private readonly bool _isProfilingEnabled;
+        private readonly ProfilerState _profilerState;
         private readonly object _lockObj;
         private bool _isInitialized;
         private IntPtr _engineStatusPtr;
 
-        public ProfilerStatus()
+        public ProfilerStatus(ProfilerSettings settings)
         {
-            var fd = FrameworkDescription.Instance;
-            var isSupported =
-                (fd.OSPlatform == OSPlatformName.Windows && (fd.ProcessArchitecture == ProcessArchitecture.X64 || fd.ProcessArchitecture == ProcessArchitecture.X86)) ||
-                (fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture == ProcessArchitecture.X64);
-
-            _isProfilingEnabled = false;
-
-            if (isSupported)
+            _profilerState = settings.ProfilerState;
+            var state = _profilerState switch
             {
-                var manualDeployement = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled);
-                if (manualDeployement != null)
-                {
-                    // it is possible that SSI installation script is setting the environment variable to "auto" to enable the profiler
-                    // instead of "true" to avoid starting the profiler immediately after the installation
-                    _isProfilingEnabled = manualDeployement.ToBoolean() ?? (manualDeployement == "auto");
-                }
-                else
-                {
-                    // the profiler is declared "enabled" just if the SSI environment variable exists to be sure that telemetry metrics
-                    // will contain the right status (i.e. we need the tracer to send the spans even if the profiler is not started yet)
-                    _isProfilingEnabled = (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed) != null);
-                }
-            }
+                ProfilerState.Enabled => "enabled",
+                ProfilerState.Auto => "auto",
+                _ => "disabled"
+            };
 
-            Log.Information("Continuous Profiler is {IsEnabled}.", _isProfilingEnabled ? "enabled" : "disabled");
+            Log.Information("Continuous Profiler mode = {ProfilerState}", state);
             _lockObj = new();
             _isInitialized = false;
         }
@@ -55,7 +37,7 @@ namespace Datadog.Trace.ContinuousProfiler
         {
             get
             {
-                if (!_isProfilingEnabled)
+                if (_profilerState == ProfilerState.Disabled)
                 {
                     return false;
                 }

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.SourceGenerators;
 
@@ -28,8 +29,12 @@ public sealed class IntegrationSettings
     /// <summary>
     /// Gets the name of the integration. Used to retrieve integration-specific settings.
     /// </summary>
-    [Instrumented]
-    public string IntegrationName { get; }
+    public string IntegrationName
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether
@@ -38,6 +43,7 @@ public sealed class IntegrationSettings
     public bool? Enabled
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _enabled.Value;
         set => _enabled = _enabled.Override(value);
     }
@@ -49,6 +55,7 @@ public sealed class IntegrationSettings
     public bool? AnalyticsEnabled
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _analyticsEnabled.Value;
         set => _analyticsEnabled = _analyticsEnabled.Override(value);
     }
@@ -60,6 +67,7 @@ public sealed class IntegrationSettings
     public double AnalyticsSampleRate
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _analyticsSampleRate.Value;
         set => _analyticsSampleRate = _analyticsSampleRate.Override(value);
     }

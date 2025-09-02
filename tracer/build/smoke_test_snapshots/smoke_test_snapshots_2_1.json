@@ -38,9 +38,12 @@
       "parent_id": 1,
       "type": "web",
       "meta": {
-		"_dd.appsec.event_rules.version": "1.13.3",
-        "_dd.appsec.waf.version": "1.26.0",
+		"_dd.appsec.event_rules.version": "1.15.0",
+        "_dd.appsec.waf.version": "1.27.0",
         "_dd.runtime_family": "dotnet",
+        "_dd.appsec.fp.http.endpoint": "http-get-7460da9d--",
+        "_dd.appsec.fp.http.header": "hdr-0000000000--3-98425651",
+        "_dd.appsec.fp.http.network": "net-0-0000000000",
         "_dd.appsec.s.res.body": "H4sIAAAAAAAAA4u2iAUA8YntnQMAAAA=",
         "_dd.appsec.s.req.headers": "H4sIAAAAAAAAA4WOMQrAIBDA/uKsQ7fiVw6Ho4oVrIp3Q4v491JcLc4JJNAEVzwcMbITGgB2Y2QT0SWht27kwAWrSzzlt7LIaLNXjJ4WCuFVYkhelRpyDfws/NFVwa7S3+SfdmaarXfzAg6PMlH9AAAA",
         "_dd.appsec.s.res.headers": "H4sIAAAAAAAAA4uuVkrOzytJzSvRLaksSFWyio6OtoiN1alWyknNU7IyrI2tjQUAcaAU2yQAAAA=",
@@ -60,7 +63,7 @@
       "metrics": {
         "_dd.appsec.enabled": 1.0,
         "_dd.appsec.event_rules.error_count": 0.0,
-        "_dd.appsec.event_rules.loaded": 159.0,
+        "_dd.appsec.event_rules.loaded": 167.0,
         "_dd.top_level": 1.0,
         "_dd.tracer_kr": 0.0,
         "_sampling_priority_v1": 2.0,

@@ -19,7 +19,7 @@ internal class DictionaryConfigurationSource : StringConfigurationSource
         _dictionary = dictionary;
     }
 
-    internal override ConfigurationOrigins Origin => ConfigurationOrigins.Code;
+    public override ConfigurationOrigins Origin => ConfigurationOrigins.Code;
 
     protected override string? GetString(string key)
     {

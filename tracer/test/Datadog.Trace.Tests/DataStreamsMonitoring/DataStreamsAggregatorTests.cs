@@ -6,12 +6,14 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using FluentAssertions;
 using Xunit;
@@ -35,9 +37,10 @@ public class DataStreamsAggregatorTests
     // https://cs.github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/aggregator_test.go#L28
 
     [Fact]
-    public void Aggregator_DoesNotFlushCurrentStats()
+    public async Task Aggregator_DoesNotFlushCurrentStats()
     {
-        var aggregator = CreateAggregatorWithData(T1, T2);
+        await using var tracer = TracerHelper.Create();
+        var aggregator = CreateAggregatorWithData(tracer, T1, T2);
 
         // flush at t2 doesn't flush points at t2 (current bucket)
         // so only the last point is included
@@ -68,9 +71,10 @@ public class DataStreamsAggregatorTests
     }
 
     [Fact]
-    public void Aggregator_SecondSerializationClearsBuckets()
+    public async Task Aggregator_SecondSerializationClearsBuckets()
     {
-        var aggregator = CreateAggregatorWithData(T1, T2);
+        await using var tracer = TracerHelper.Create();
+        var aggregator = CreateAggregatorWithData(tracer, T1, T2);
 
         using var ms1 = new MemoryStream();
         var bytesWritten = aggregator.Serialize(ms1, maxBucketFlushTimeNs: T2);
@@ -83,9 +87,10 @@ public class DataStreamsAggregatorTests
     }
 
     [Fact]
-    public void Aggregator_FlushesStats()
+    public async Task Aggregator_FlushesStats()
     {
-        var aggregator = CreateAggregatorWithData(T1, T2);
+        await using var tracer = TracerHelper.Create();
+        var aggregator = CreateAggregatorWithData(tracer, T1, T2);
 
         // flush at t2 doesn't flush points at t2 (current bucket)
         // so only the last point is included
@@ -122,10 +127,10 @@ public class DataStreamsAggregatorTests
         AssertBucket(stats, hash: 3, CreateSketch(5), CreateSketch(2));
     }
 
-    private static DataStreamsAggregator CreateAggregatorWithData(long t1, long t2)
+    private static DataStreamsAggregator CreateAggregatorWithData(Tracer tracer, long t1, long t2)
     {
         var aggregator = new DataStreamsAggregator(
-            new DataStreamsMessagePackFormatter(Tracer.Instance.Settings, "service"),
+            new DataStreamsMessagePackFormatter(tracer.Settings, new ProfilerSettings(ProfilerState.Disabled),  "service"),
             BucketDurationMs);
 
         aggregator.Add(

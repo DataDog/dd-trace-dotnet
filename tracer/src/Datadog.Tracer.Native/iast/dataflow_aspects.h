@@ -96,7 +96,7 @@ namespace iast
 
     public:
         DataflowAspectClass* _aspectClass = nullptr;
-        AspectBehavior _behavior;
+        AspectBehavior _behavior = AspectBehavior::Unknown;
         WSTRING _aspectMethodName = EmptyWStr;
         WSTRING _aspectMethodParams = EmptyWStr;
 

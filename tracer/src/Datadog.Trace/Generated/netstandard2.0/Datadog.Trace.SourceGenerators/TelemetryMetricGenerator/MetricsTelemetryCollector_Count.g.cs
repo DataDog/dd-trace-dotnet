@@ -178,7 +178,7 @@ internal partial class MetricsTelemetryCollector
             // context_header.truncated, index = 140
             new(new[] { "truncation_reason:baggage_item_count_exceeded" }),
             new(new[] { "truncation_reason:baggage_byte_count_exceeded" }),
-            // context_header.malformed, index = 142
+            // context_header_style.malformed, index = 142
             new(new[] { "header_style:baggage" }),
             // stats_api.requests, index = 143
             new(null),

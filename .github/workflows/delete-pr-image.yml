@@ -1,0 +1,29 @@
+name: "Delete Docker image on PR close"
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  delete-pr-image:
+    # Only run for PRs that had the docker_image_artifacts label
+    if: contains(github.event.pull_request.labels.*.name, 'docker_image_artifacts')
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write   # required to delete GHCR container versions
+      contents: read
+
+    steps:
+      - name: Sanitize branch name to match image tag
+        id: sanitize
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          TAG="${BRANCH//\//_}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Delete image by tag from GHCR
+        run: |
+          gh api "orgs/DataDog/packages/container/dd-trace-dotnet%2Fdd-trace-dotnet/versions" \
+            --jq ".[] | select(.metadata.container.tags[]? == \"${{ steps.sanitize.outputs.tag }}\") | .id" \
+            | xargs -r -I {} gh api "orgs/DataDog/packages/container/dd-trace-dotnet%2Fdd-trace-dotnet/versions/{}" -X DELETE
+          echo "Deleted version with tag: ${{ steps.sanitize.outputs.tag }}" 

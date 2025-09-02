@@ -298,7 +298,9 @@ namespace shared
 #else
         return false;
 #endif
-}
+    }
+
+
 
 
 }  // namespace shared

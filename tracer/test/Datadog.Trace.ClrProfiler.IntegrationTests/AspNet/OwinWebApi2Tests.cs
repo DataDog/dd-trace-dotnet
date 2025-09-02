@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
@@ -112,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Name switch
             {
-                "aspnet-webapi.request" => span.IsAspNetWebApi2(metadataSchemaVersion),
+                "aspnet-webapi.request" => span.IsAspNetWebApi2(metadataSchemaVersion, excludeTags: new HashSet<string> { "baggage.user.id" }),
                 _ => Result.DefaultSuccess,
             };
 
@@ -120,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode, int expectedSpanCount)
+        public async Task SubmitsTraces(string path, int statusCode, int expectedSpanCount)
         {
             await _fixture.TryStartApp(this, _output);
 
@@ -128,13 +129,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.Owin.WebApi2", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Overriding the method name to _
             // Overriding the parameters to remove the expectedSpanCount parameter, which is necessary for operation but unnecessary for the filename
             await Verifier.Verify(spans, settings)
-                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}");
+                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={statusCode}");
         }
 
         public sealed class OwinFixture : IDisposable
@@ -147,6 +148,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _httpClient = new HttpClient();
                 _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
                 _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36");
+                _httpClient.DefaultRequestHeaders.Add("baggage", "user.id=doggo");
             }
 
             public MockTracerAgent.TcpUdpAgent Agent { get; private set; }

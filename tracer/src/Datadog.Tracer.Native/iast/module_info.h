@@ -42,12 +42,7 @@ namespace iast
         friend class DataflowAspectReference;
         friend class SignatureInfo;
     private:
-        struct AssemblyImportInfo
-        {
-            ModuleID moduleId;
-            mdAssemblyRef assemblyRef;
-        };
-        std::unordered_map<WSTRING, AssemblyImportInfo> _mAssemblyImports;
+        mdAssemblyRef _aspectsAssemblyRef = 0;
         std::unordered_map<WSTRING, mdMemberRef> _mMemberImports;
        
         std::unordered_map<mdTypeDef, TypeInfo*> _types;
@@ -92,8 +87,6 @@ namespace iast
 
         virtual HRESULT InstrumentModule_Internal() { return S_FALSE; }
 
-        ModuleInfo* GetModuleInfoByName(WSTRING moduleName);
-
     public:
         ModuleID                        _id = 0;
         WSTRING                         _path = EmptyWStr;
@@ -111,7 +104,7 @@ namespace iast
         bool IsExcluded();
         virtual bool IsCoreLib();
         WSTRING GetModuleFullName();
-        mdToken DefineMemberRef(const WSTRING& moduleName, const WSTRING& typeName, const WSTRING& methodName, const WSTRING& methodParams);
+        mdToken DefineAspectMemberRef(const WSTRING& typeName, const WSTRING& methodName, const WSTRING& methodParams);
         mdMethodSpec DefineMethodSpec(mdMemberRef targetMethod, SignatureInfo* sig);
 
         virtual bool IsInlineEnabled();

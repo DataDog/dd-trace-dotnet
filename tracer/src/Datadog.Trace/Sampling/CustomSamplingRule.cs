@@ -50,6 +50,8 @@ namespace Datadog.Trace.Sampling
             }
         }
 
+        public bool IsResourceBasedSamplingRule => _resourceNameRegex is not null;
+
         public abstract string Provenance { get; }
 
         public abstract string SamplingMechanism { get; }

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <RequiresDockerDependency>Mixed</RequiresDockerDependency>
-    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
   </PropertyGroup>
 
@@ -84,6 +84,14 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0-preview.7.25380.108" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.0-preview.7.25380.108" />
+    <PackageReference Update="Microsoft.Data.Sqlite.Core" Version="10.0.0-preview.7.25380.108" />
+    <PackageReference Update="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.11" />
+    <PackageReference Update="SQLitePCLRaw.core" Version="2.1.11" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="9.0.0" />
@@ -111,7 +119,7 @@
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="5.0.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net9.0' OR '$(TargetFramework)'=='net8.0' OR'$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0'">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))" >
     <PackageReference Include="System.DirectoryServices" Version="7.0.1" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="7.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="7.0.0" />

@@ -74,7 +74,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping, bool enable128BitInjection)
         {
             SetInstrumentationVerification();
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping)
@@ -197,7 +196,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var logsIntake = new MockLogsIntake();
 
             SetInstrumentationVerification();
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL", "false");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Log4Net), hostName);
 

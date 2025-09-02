@@ -3,8 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 // ReSharper disable once CheckNamespace
-
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ExtensionMethods;
@@ -20,6 +20,7 @@ public static class SpanExtensions
     /// <param name="span">A span that belongs to the trace.</param>
     /// <param name="samplingPriority">The new sampling priority for the trace.</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
     {
     }

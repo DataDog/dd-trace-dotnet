@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -83,6 +84,7 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
 
             logDir = await RunDotnet("restore");
@@ -115,6 +117,7 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
 
             var programCs = GetProgramCSThatMakesSpans();
@@ -153,7 +156,9 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
+
             var programCs = GetProgramCSThatMakesSpans();
 
             File.WriteAllText(Path.Combine(workingDir, "Program.cs"), programCs);
@@ -461,6 +466,99 @@ namespace Foo
 
 #endif
 #if NETCOREAPP3_1_OR_GREATER
+        // We have different behaviour depending on whether the framework is in preview
+        // This condition should always point to the "next" version of .NET
+        // e.g. if .NET 10 is in preview, use NET10_0_OR_GREATER.
+        // Once .NET 10 goes GA, update this to NET11_0_OR_GREATER
+#if NET10_0_OR_GREATER
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]
+        public async Task OnPreviewFrameworkInSsi_CallsForwarderWithExpectedTelemetry()
+        {
+            var logDir = SetLogDirectory();
+            var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
+            Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
+
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
+            // Need to force injection because we bail by default
+            SetEnvironmentVariable("DD_INJECT_FORCE", "true");
+
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, logFileName);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertInstrumented(agent, logDir);
+
+            var pointsJson = """
+                             [{
+                               "name": "library_entrypoint.complete", 
+                               "tags": ["injection_forced:true"]
+                             }]
+                             """;
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET 10 or higher", "success_forced");
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]
+        public async Task OnPreviewFrameworkInSsi_WhenForwarderPathExists_CallsForwarderWithExpectedTelemetry()
+        {
+            var logDir = SetLogDirectory();
+            var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
+
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
+            Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
+
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
+
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, logFileName);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+
+            var pointsJson = """
+                             [{
+                               "name": "library_entrypoint.abort", 
+                               "tags": ["reason:incompatible_runtime"]
+                             },{
+                               "name": "library_entrypoint.abort.runtime"
+                             }]
+                             """;
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "abort", ".NET 10 or higher", "incompatible_runtime");
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task OnPreviewFrameworkInSsi_Buffers()
+        {
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+            // this is already tested in AssertNotInstrumented, but adding an explicit check here to make sure
+            if (EnvironmentTools.IsWindows())
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
+                Directory.GetFiles(logDir).Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-"));
+            }
+            else
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
+            }
+        }
+#else
         [SkippableTheory]
         [Trait("RunOnWindows", "True")]
         [InlineData("1")]
@@ -516,6 +614,7 @@ namespace Foo
                 AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
             }
         }
+#endif
 #endif
 
         // The dynamic context switch/bail out is only available in .NET 8+
@@ -594,7 +693,7 @@ namespace Foo
         {
             // Disable .NET CLI telemetry to prevent extra HTTP spans
             SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1");
-            return RunCommand(workingDirectory, mockTracerAgent, EnvironmentHelper.GetDotnetExe(), arguments);
+            return RunCommand(workingDirectory, mockTracerAgent, "dotnet", arguments);
         }
 
         private async Task<string> RunCommand(string workingDirectory, MockTracerAgent mockTracerAgent, string exe, string arguments = null)
@@ -756,6 +855,28 @@ namespace Foo
 
             var loggingDisabled = isSsi && EnvironmentTools.IsWindows() && !bufferingDisabled;
             return loggingDisabled;
+        }
+
+        private void FixTfm(string workingDir)
+        {
+            // This is a hack because for _some_ reason, we can't set the -f flag in the Linux CI.
+            // Force the project to target .NET 8 instead of whatever the SDK defaults to
+            foreach (var projectFile in Directory.GetFiles(workingDir, "*.csproj"))
+            {
+                var projectContent = File.ReadAllText(projectFile);
+
+                // Replace any target framework with the updated version
+                // and add a langversion update to ensure we still compile
+                var replacement = $"""
+                                   <TargetFramework>{EnvironmentHelper.GetTargetFramework()}</TargetFramework>
+                                   <LangVersion>latest</LangVersion>
+                                   """;
+                var updatedContent = Regex.Replace(
+                    projectContent,
+                    @"<TargetFramework>.+</TargetFramework>",
+                    replacement);
+                File.WriteAllText(projectFile, updatedContent);
+            }
         }
 
         public class TelemetryReporterFixture : IDisposable
