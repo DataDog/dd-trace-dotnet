@@ -84,6 +84,8 @@ public class DynamicInstrumentationTests : TestHelper
 
             memoryAssertions.NoObjectsExist<SnapshotSink>();
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
+            memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
+            memoryAssertions.NoObjectsExist<Pdb.DatadogMetadataReader>();
         }
         finally
         {
