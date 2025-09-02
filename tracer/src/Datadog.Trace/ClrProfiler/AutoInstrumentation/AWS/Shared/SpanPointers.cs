@@ -35,9 +35,9 @@ internal static class SpanPointers
     private const string DynamoDbPtrKind = "aws.dynamodb.item";
 
     // S3 hashing rules: https://github.com/DataDog/dd-span-pointer-rules/blob/main/AWS/S3/Object/README.md
-    public static void AddS3SpanPointer(Span span, string bucketName, string key, string? eTag)
+    public static void AddS3SpanPointer(Span span, string? bucketName, string? key, string? eTag)
     {
-        if (eTag == null)
+        if (bucketName is null || key is null || eTag == null)
         {
             return;
         }

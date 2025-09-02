@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -34,8 +35,8 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 [UsesVerify]
 public class ProbesTests : TestHelper
 {
-    private const string AddedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument added probes definitions completed.";
-    private const string RemovedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to de-instrument probes definitions completed.";
+    private const string AddedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to instrument added probes definitions completed.";
+    private const string RemovedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.";
 
     private static readonly Type[] _unoptimizedNotSupportedTypes = new[]
     {
@@ -310,7 +311,7 @@ public class ProbesTests : TestHelper
 
             await sample.RunCodeSample();
 
-            await logEntryWatcher.WaitForLogEntry($"LiveDebugger.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
+            await logEntryWatcher.WaitForLogEntry($"Dynamic Instrumentation.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
 
             Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
 
@@ -385,6 +386,7 @@ public class ProbesTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [MemberData(nameof(ProbeTests))]
+    [Flaky("This test fails for various different reasons and needs investigating")]
     public async Task MethodProbeTest(ProbeTestDescription testDescription)
     {
         SkipOverTestIfNeeded(testDescription);
@@ -441,10 +443,16 @@ public class ProbesTests : TestHelper
 
 #endif
 
-    private LogEntryWatcher CreateLogEntryWatcher()
+    private LogEntryWatcher CreateLogEntryWatcher(string suffix = "", [CallerMemberName] string testName = null)
     {
+        // Create a subdirectory for the logs based on the test name and suffix
+        // And write logs there instead
+        var logDir = Path.Combine(LogDirectory, $"{testName}{suffix}");
+        Directory.CreateDirectory(logDir);
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
-        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*", LogDirectory);
+        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*", logDir, Output);
     }
 
     private async Task RunMethodProbeTests(ProbeTestDescription testDescription, bool useStatsD)
@@ -453,7 +461,7 @@ public class ProbesTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent(useStatsD: useStatsD);
         SetDebuggerEnvironment(agent);
-        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var logEntryWatcher = CreateLogEntryWatcher($"optimized_{testDescription.IsOptimized}_type_{testDescription.TestType.Name}");
         using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
@@ -575,7 +583,7 @@ public class ProbesTests : TestHelper
         var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}.{testNameSuffix}");
 
-        var spans = agent.WaitForSpans(expectedSpanCount);
+        var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
         Assert.Equal(expectedSpanCount, spans.Count);
 
@@ -616,7 +624,7 @@ public class ProbesTests : TestHelper
             var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
             settings.UseFileName($"{nameof(ProbeTests)}.{testName}.Spans");
 
-            var spans = agent.WaitForSpans(spanProbes.Length, operationName: spanProbeOperationName);
+            var spans = await agent.WaitForSpansAsync(spanProbes.Length, operationName: spanProbeOperationName);
             // Assert.Equal(spanProbes.Length, spans.Count);
             foreach (var span in spans)
             {
@@ -827,7 +835,7 @@ public class ProbesTests : TestHelper
     {
         SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");

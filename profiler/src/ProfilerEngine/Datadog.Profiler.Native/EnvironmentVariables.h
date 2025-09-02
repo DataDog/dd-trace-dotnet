@@ -69,8 +69,6 @@ public:
     inline static const shared::WSTRING CpuProfilerType                 = WStr("DD_INTERNAL_CPU_PROFILER_TYPE");
     inline static const shared::WSTRING CpuProfilingInterval            = WStr("DD_INTERNAL_CPU_PROFILING_INTERVAL");
     inline static const shared::WSTRING SsiLongLivedThreshold           = WStr("DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD");
-    inline static const shared::WSTRING TelemetryToDiskEnabled          = WStr("DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED");
-    inline static const shared::WSTRING SsiTelemetryEnabled             = WStr("DD_INTERNAL_PROFILING_SSI_TELEMETRY_ENABLED");
     inline static const shared::WSTRING HttpProfilingInternalEnabled    = WStr("DD_INTERNAL_PROFILING_HTTP_ENABLED");
     inline static const shared::WSTRING HttpProfilingEnabled            = WStr("DD_PROFILING_HTTP_ENABLED");
     inline static const shared::WSTRING HttpRequestDurationThreshold    = WStr("DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD");

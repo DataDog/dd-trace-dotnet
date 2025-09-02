@@ -25,6 +25,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -48,27 +49,6 @@ namespace Datadog.Trace.ClrProfiler
         public static readonly string ProfilerClsid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Instrumentation));
-
-        /// <summary>
-        /// Gets a value indicating whether Datadog's profiler is attached to the current process.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if the profiler is currently attached; <c>false</c> otherwise.
-        /// </value>
-        public static bool ProfilerAttached
-        {
-            get
-            {
-                try
-                {
-                    return NativeMethods.IsProfilerAttached();
-                }
-                catch (DllNotFoundException)
-                {
-                    return false;
-                }
-            }
-        }
 
         /// <summary>
         /// Gets a value indicating the version of the native Datadog profiler. This method
@@ -341,6 +321,33 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing activity listener");
             }
 
+#if NET6_0_OR_GREATER
+            try
+            {
+                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
+                {
+                    Log.Debug("Initializing OTel Metrics Exporter.");
+                    if (Tracer.Instance.Settings.OpenTelemetryMeterNames.Length > 0)
+                    {
+                        OTelMetrics.OtlpMetricsExporter.Initialize();
+                    }
+                    else
+                    {
+                        Log.Debug("No meters were found for DD_METRICS_OTEL_METER_NAMES, OTel Metrics Exporter won't be initialized.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing OTel Metrics Exporter");
+            }
+#else
+            if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
+            {
+                Log.Information("Unable to initialize OTel Metrics collection, this is only available starting with .NET 6.0..");
+            }
+#endif
+
             try
             {
                 if (Tracer.Instance.Settings.IsActivityListenerEnabled)
@@ -380,37 +387,11 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
-                }
-                catch (Exception e)
-                {
-                    DynamicInstrumentationHelper.ServiceName = tracer.DefaultServiceName;
-                    Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
-                }
-
-                try
-                {
-                    InitLiveDebugger(tracer);
+                    InitializeDebugger(tracer.Settings);
                 }
                 catch (Exception e)
                 {
                     Log.Error(e, "Failed to initialize Remote Configuration Management.");
-                }
-
-                try
-                {
-                    if (ExceptionDebugging.Enabled)
-                    {
-                        ExceptionDebugging.Initialize();
-                    }
-                    else
-                    {
-                        Log.Information("Exception Replay is disabled. To enable it, please set DD_EXCEPTION_REPLAY_ENABLED environment variable to '1'/'true'.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error initializing Exception Debugging");
                 }
 
                 // RCM isn't _actually_ initialized at this point, as we do it in the background, so we record that separately
@@ -439,11 +420,20 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
-            if (Tracer.Instance.Settings.AzureAppServiceMetadata?.IsFunctionsApp is not true)
+            // get environment variables directly so we don't access Trace.Instance yet
+            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
+            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
+
+            if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
             {
-                // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for Azure Functions.
-                // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal
-                // This is because user code is loaded within the functions host in a separate context
+                // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for in-process Azure Functions.
+                // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal.
+                // This is because user code is loaded within the functions host in a separate context.
+                // Even in isolated functions, we don't want the AspNetCore spans to be created.
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions.");
+            }
+            else
+            {
                 observers.Add(new AspNetCoreDiagnosticObserver());
             }
 
@@ -453,53 +443,30 @@ namespace Datadog.Trace.ClrProfiler
         }
 #endif
 
-        private static void InitLiveDebugger(Tracer tracer)
+        private static void InitializeDebugger(TracerSettings tracerSettings)
         {
-            var settings = tracer.Settings;
-            var debuggerSettings = DebuggerSettings.FromDefaultSource();
-
-            if (!settings.IsRemoteConfigurationAvailable)
+            var manager = DebuggerManager.Instance;
+            if (manager.DebuggerSettings.CodeOriginForSpansEnabled
+                || manager.DebuggerSettings.DynamicInstrumentationEnabled
+                || manager.ExceptionReplaySettings.Enabled)
             {
-                // live debugger requires RCM, so there's no point trying to initialize it if RCM is not available
-                if (debuggerSettings.Enabled)
-                {
-                    Log.Warning("Live Debugger is enabled but remote configuration is not available in this environment, so live debugger cannot be enabled.");
-                }
-
-                tracer.TracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
-                return;
-            }
-
-            // Service Name must be lowercase, otherwise the agent will not be able to find the service
-            var serviceName = DynamicInstrumentationHelper.ServiceName;
-            var discoveryService = tracer.TracerManager.DiscoveryService;
-
-            Task.Run(
-                async () =>
-                {
-                    // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
-                    // to changes in ExporterSettings etc.
-
-                    try
+                _ = Task.Run(
+                    async () =>
                     {
-                        var sw = Stopwatch.StartNew();
-                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
-                        TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
-
-                        if (isDiscoverySuccessful)
+                        try
                         {
-                            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
-
-                            Log.Debug("Initializing live debugger.");
-
-                            await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
+                            await DebuggerManager.Instance.UpdateConfiguration(tracerSettings).ConfigureAwait(false);
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error initializing live debugger.");
-                    }
-                });
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error initializing debugger");
+                        }
+                    });
+            }
+            else
+            {
+                Log.Information($"Dynamic Instrumentation is disabled. To enable it, please set {ConfigurationKeys.Debugger.DynamicInstrumentationEnabled} environment variable to 'true'.");
+            }
         }
 
         // /!\ This method is called by reflection in the SampleHelpers
@@ -518,21 +485,6 @@ namespace Datadog.Trace.ClrProfiler
                 tc.TrySetResult(true);
                 discoveryService.RemoveSubscription(Callback);
             }
-        }
-
-        internal static async Task InitializeLiveDebugger(LiveDebugger liveDebugger)
-        {
-            var sw = Stopwatch.StartNew();
-            try
-            {
-                await liveDebugger.InitializeAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to initialize Live Debugger");
-            }
-
-            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
         }
 
         internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)

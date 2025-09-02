@@ -27,13 +27,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string GcThreadsCpuTimeEnabled = "DD_GC_THREADS_CPUTIME_ENABLED";
         public const string ThreadLifetimeEnabled = "DD_THREAD_LIFETIME_ENABLED";
         public const string SsiDeployed = "DD_INJECTION_ENABLED";
+        public const string SsiInjectionForced = "DD_INJECT_FORCE";
+        public const string SsiLogBufferingEnabled = "DD_TRACE_LOG_BUFFERING_ENABLED";
         public const string EtwEnabled = "DD_INTERNAL_PROFILING_ETW_ENABLED";
         public const string CpuProfilerType = "DD_INTERNAL_CPU_PROFILER_TYPE";
         public const string CpuProfilingInterval = "DD_INTERNAL_CPU_PROFILING_INTERVAL";
         public const string SsiShortLivedThreshold = "DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD";
-        public const string TelemetryToDiskEnabled = "DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED";
         public const string EtwReplayEndpoint = "DD_INTERNAL_ETW_REPLAY_ENDPOINT";
         public const string SsiTelemetryEnabled = "DD_INTERNAL_PROFILING_SSI_TELEMETRY_ENABLED";
+        public const string TelemetryToDiskEnabled = "DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED";
         public const string HttpProfilingEnabled = "DD_INTERNAL_PROFILING_HTTP_ENABLED";
         public const string HttpRequestDurationThreshold = "DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD";
         public const string ForceHttpSamplingEnabled = "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING";

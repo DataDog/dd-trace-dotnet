@@ -4,8 +4,11 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using System.Linq;
 using System.IO;
+using DiffMatchPatch;
+using NativeValidation;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.MSBuild;
+using Nuke.Common.Utilities;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
@@ -136,6 +139,20 @@ partial class Build
 
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
+        });
+
+    Target ValidateNativeLoaderSnapshotTestsLinux => _ => _
+        .Unlisted()
+        .After(CompileNativeLoaderLinux)
+        .Before(ExtractDebugInfoLinux)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            // Compare the symbols in the native loader with the snapshot
+            var libraryPath = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.so";
+            var snapshotName = $"native-loader-symbols-{UnixArchitectureIdentifier}";
+            var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
+            nativeLibHelper.ValidateNativeSymbols(libraryPath, snapshotName);
         });
 
     Target CompileNativeLoaderOsx => _ => _
@@ -288,53 +305,7 @@ partial class Build
                 ? new Version(2, 18)
                 : new Version(2, 17);
 
-            ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
+            var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
+            nativeLibHelper.ValidateNativeLibraryCompatibility(dest, expectedGlibcVersion, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
         });
-
-    void ValidateNativeLibraryGlibcCompatibility(AbsolutePath libraryPath, Version expectedGlibcVersion, IEnumerable<string> allowedSymbols = null)
-    {
-        var filename = Path.GetFileNameWithoutExtension(libraryPath);
-        var glibcVersion = FindMaxGlibcVersion(libraryPath, allowedSymbols);
-
-        Logger.Information("Maximum required glibc version for {Filename} is {GlibcVersion}", filename, glibcVersion);
-
-        if (IsAlpine && glibcVersion is not null)
-        {
-            throw new Exception($"Alpine build of {filename} should not have glibc symbols in the binary, but found {glibcVersion}");
-        }
-        else if (!IsAlpine && glibcVersion != expectedGlibcVersion)
-        {
-            throw new Exception($"{filename} should have a maximum required glibc version of {expectedGlibcVersion} but has {glibcVersion}");
-        }
-    }
-
-    Version FindMaxGlibcVersion(AbsolutePath libraryPath, IEnumerable<string> allowedSymbols)
-    {
-        var output = Nm.Value($"--with-symbol-versions -D {libraryPath} ").Select(x => x.Text).ToList();
-
-        // Gives output similar to this:
-        // 0000000000170498 T SetGitMetadataForApplication
-        // 000000000016f944 T ThreadsCpuManager_Map
-        //                  w __cxa_finalize@GLIBC_2.17
-        //                  U __cxa_thread_atexit_impl@GLIBC_2.18
-        //                  U __duplocale@GLIBC_2.17
-        //                  U __environ@GLIBC_2.17
-        //                  U __errno_location@GLIBC_2.17
-        //                  U __freelocale@GLIBC_2.17
-        //                  U __fxstat@GLIBC_2.17
-        //                  U __fxstat64@GLIBC_2.17
-        //                  U __getdelim@GLIBC_2.17
-        //                  w __gmon_start__
-        //                  U __iswctype_l@GLIBC_2.17
-        //                  U __lxstat@GLIBC_2.17
-        //                  U __newlocale@GLIBC_2.17
-        //
-        // We only care about the Undefined symbols that are in glibc
-        // In this example, we will return 2.18
-
-        return output
-              .Where(x => x.Contains("@GLIBC_") && allowedSymbols?.Any(y => x.Contains(y)) != true)
-              .Select(x => System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
-              .Max();
-    }
 }

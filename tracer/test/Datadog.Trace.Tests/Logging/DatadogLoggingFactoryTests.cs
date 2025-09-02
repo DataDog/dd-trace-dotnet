@@ -8,7 +8,6 @@ using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.Internal.Configuration;
 using FluentAssertions;
 using Xunit;
 
@@ -38,7 +37,7 @@ public class DatadogLoggingFactoryTests
                 });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
             config.File?.LogDirectory.Should().Be(logDirectory);
         }
 
@@ -61,7 +60,7 @@ public class DatadogLoggingFactoryTests
                 });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
             config.File?.LogDirectory.Should().Be(obsoleteLogDirectory);
         }
 
@@ -82,7 +81,7 @@ public class DatadogLoggingFactoryTests
                 });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
             config.File?.LogDirectory.Should().NotBeNullOrWhiteSpace();
         }
 
@@ -95,7 +94,7 @@ public class DatadogLoggingFactoryTests
             var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogDirectory, logDirectory } });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
             config.File?.LogDirectory.Should().Be(logDirectory);
             Directory.Exists(logDirectory).Should().BeTrue();
         }
@@ -143,7 +142,7 @@ public class DatadogLoggingFactoryTests
             var source = new NameValueConfigurationSource(new());
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
         }
 
         [Theory]
@@ -156,7 +155,7 @@ public class DatadogLoggingFactoryTests
             var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeTrue();
+            config.File.Should().NotBeNull();
         }
 
         [Theory]
@@ -169,7 +168,33 @@ public class DatadogLoggingFactoryTests
             var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
-            config.File.HasValue.Should().BeFalse();
+            config.File.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData("console-experimental")]
+        [InlineData("file,console-experimental")]
+        [InlineData("console-experimental, file")]
+        [InlineData("unknown,console-experimental")]
+        public void WhenConsoleSinkIsIncluded_UsesConsoleSink(string sinks)
+        {
+            var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
+            config.Console.Should().NotBeNull();
+        }
+
+        [Theory]
+        [InlineData("file")]
+        [InlineData("datadog")]
+        [InlineData("datadog,file")]
+        [InlineData("unknown")]
+        public void WhenConsoleSinkIsNotIncluded_DoesNotUseConsoleSink(string sinks)
+        {
+            var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
+            config.Console.Should().BeNull();
         }
     }
 }

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -29,9 +30,9 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task RateLimiter_Never_Applied_For_DefaultRule()
         {
-            var sampler = new TraceSampler(new DenyAll());
+            var builder = new TraceSampler.Builder(new DenyAll());
             await RunSamplerTest(
-                sampler,
+                builder.Build(),
                 iterations: 500,
                 expectedAutoKeepRate: 1,
                 expectedUserKeepRate: 0,
@@ -41,9 +42,9 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task RateLimiter_Denies_All_Traces()
         {
-            var sampler = new TraceSampler(new DenyAll());
+            var builder = new TraceSampler.Builder(new DenyAll());
 
-            sampler.RegisterRule(
+            builder.RegisterRule(
                 new LocalCustomSamplingRule(
                     rate: 1,
                     patternFormat: SamplingRulesFormat.Regex,
@@ -54,7 +55,7 @@ namespace Datadog.Trace.Tests.Sampling
                     timeout: Timeout));
 
             await RunSamplerTest(
-                sampler,
+                builder.Build(),
                 iterations: 500,
                 expectedAutoKeepRate: 0,
                 expectedUserKeepRate: 0,
@@ -64,9 +65,9 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task Keep_Everything_Rule()
         {
-            var sampler = new TraceSampler(new NoLimits());
+            var builder = new TraceSampler.Builder(new NoLimits());
 
-            sampler.RegisterRule(
+            builder.RegisterRule(
                 new LocalCustomSamplingRule(
                     rate: 1,
                     patternFormat: SamplingRulesFormat.Regex,
@@ -77,7 +78,7 @@ namespace Datadog.Trace.Tests.Sampling
                     timeout: Timeout));
 
             await RunSamplerTest(
-                sampler,
+                builder.Build(),
                 iterations: 500,
                 expectedAutoKeepRate: 0,
                 expectedUserKeepRate: 1,
@@ -87,9 +88,9 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task Keep_Nothing_Rule()
         {
-            var sampler = new TraceSampler(new NoLimits());
+            var builder = new TraceSampler.Builder(new NoLimits());
 
-            sampler.RegisterRule(
+            builder.RegisterRule(
                 new LocalCustomSamplingRule(
                     rate: 0,
                     patternFormat: SamplingRulesFormat.Regex,
@@ -100,7 +101,7 @@ namespace Datadog.Trace.Tests.Sampling
                     timeout: Timeout));
 
             await RunSamplerTest(
-                sampler,
+                builder.Build(),
                 iterations: 500,
                 expectedAutoKeepRate: 0,
                 expectedUserKeepRate: 0,
@@ -110,9 +111,9 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task Keep_Half_Rule()
         {
-            var sampler = new TraceSampler(new NoLimits());
+            var builder = new TraceSampler.Builder(new NoLimits());
 
-            sampler.RegisterRule(
+            builder.RegisterRule(
                 new LocalCustomSamplingRule(
                     rate: 0.5f,
                     patternFormat: SamplingRulesFormat.Regex,
@@ -123,7 +124,7 @@ namespace Datadog.Trace.Tests.Sampling
                     timeout: Timeout));
 
             await RunSamplerTest(
-                sampler,
+                builder.Build(),
                 iterations: 50_000, // Higher number for lower variance
                 expectedAutoKeepRate: 0,
                 expectedUserKeepRate: 0.5f,
@@ -133,8 +134,9 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task No_Registered_Rules_Uses_Legacy_Rates()
         {
-            var sampler = new TraceSampler(new NoLimits());
-            sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
+            var builder = new TraceSampler.Builder(new NoLimits());
+            builder.RegisterAgentSamplingRule(new AgentSamplingRule());
+            var sampler = builder.Build();
             sampler.SetDefaultSampleRates(MockAgentRates);
 
             await RunSamplerTest(
@@ -155,8 +157,9 @@ namespace Datadog.Trace.Tests.Sampling
             scope.Span.Context.TraceContext.Environment = Env;
 
             var span = scope.Span;
-            var sampler = new TraceSampler(new NoLimits());
-            sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
+            var builder = new TraceSampler.Builder(new NoLimits());
+            builder.RegisterAgentSamplingRule(new AgentSamplingRule());
+            var sampler = builder.Build();
 
             // if there are no other rules, and before we have agent rates, mechanism is "Default"
             var (_, mechanism1, _, _) = sampler.MakeSamplingDecision(span);

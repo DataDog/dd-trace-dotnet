@@ -20,6 +20,10 @@ struct TracerLoggerPolicy
     inline static const shared::WSTRING folder_path = WStr(R"(Datadog .NET Tracer\logs)");
 #endif
     inline static const std::string pattern = "%D %I:%M:%S.%e %p [%P|%t] [%l] %v";
+    static bool enable_buffering() {
+        // We don't buffer logs, as we know we are definitely instrumenting
+        return false;
+    }
     struct logging_environment
     {
         // cannot reuse environment::log_path variable. On alpine, test fails
@@ -83,5 +87,7 @@ public:
         Instance->Flush();
     }
 };
+
+    #define DBG if (Logger::IsDebugEnabled()) Logger::Debug
 
 } // namespace trace

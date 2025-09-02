@@ -17,6 +17,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 using DbType = Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.DbType;
@@ -58,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
 
         public static IEnumerable<object[]> GetEnabledDbmData()
-            => from command in GetDbmCommands()
+            => from command in (IEnumerable<object[]>)GetDbmCommands()
                from dbm in new[] { "service", "full" }
                from storedProcInject in new[] { false, true }
                select new[] { command[0], dbm, storedProcInject };
@@ -744,7 +745,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Equal(expectedDbType, actualDbType);
         }
 
-        private static TracerHelper.ScopedTracer CreateTracerWithIntegrationEnabled(string integrationName, bool enabled)
+        private static ScopedTracer CreateTracerWithIntegrationEnabled(string integrationName, bool enabled)
         {
             // Set up tracer
             var tracerSettings = TracerSettings.Create(new()

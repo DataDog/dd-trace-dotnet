@@ -73,14 +73,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName);
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
             var filteredSpans = spans.Where(s => s.ParentId.HasValue).ToList();
 
             // Assert an exact match once we can correctly instrument the generic constraint case
             actualSpanCount.Should().Be(expectedSpanCount);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
-            telemetry.AssertIntegrationEnabled(IntegrationId.Npgsql);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Npgsql);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("Npgsql-Test-[a-zA-Z0-9]{32}"), "Npgsql-Test-GUID");
@@ -115,11 +115,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
+            var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
-            Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-            telemetry.AssertIntegrationDisabled(IntegrationId.Npgsql);
+            spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
+            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Npgsql);
         }
     }
 }

@@ -1,0 +1,13 @@
+issuer: https://token.actions.githubusercontent.com
+
+subject: repo:DataDog/dd-trace-dotnet:ref:refs/heads/master
+
+claim_pattern:
+  event_name: workflow_dispatch
+  ref: refs/heads/master
+  ref_protected: "true"
+  job_workflow_ref: DataDog/dd-trace-dotnet/.github/workflows/force_manual_version_bump.yml@refs/heads/master
+
+permissions:
+  contents: write
+  pull_requests: write 

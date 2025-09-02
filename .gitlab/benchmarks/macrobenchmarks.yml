@@ -13,7 +13,7 @@ stages:
   - benchmarks-win
 
 variables:
-  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-3
+  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-5
 
 check_azure_pipeline:
   stage: check-azure-pipeline
@@ -25,7 +25,7 @@ check_azure_pipeline:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
       - build-id.txt
     expire_in: 3 months
   tags: ["arch:amd64"]
@@ -60,7 +60,6 @@ update-bp-infra:
   rules:
     - when: manual
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
     AWS_REGION: "us-east-1"
     CLEANUP: "false"
     AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
@@ -68,7 +67,7 @@ update-bp-infra:
     AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
     AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
 
-.benchmarks:
+.benchmarks-x86:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
   needs: ["check_azure_pipeline"]
@@ -91,35 +90,34 @@ update-bp-infra:
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
+  after_script:
+    - mv /var/log/datadog/dotnet/* platform/artifacts
   artifacts:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-
-    K6_OPTIONS_WARMUP_RATE: 14000
+    # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
-    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 500
-    K6_OPTIONS_WARMUP_MAX_VUS: 2000
+    K6_OPTIONS_WARMUP_VUS: 2
 
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 13000
-    K6_OPTIONS_NORMAL_OPERATION_DURATION: 7m
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 5000
+    K6_OPTIONS_NORMAL_OPERATION_DURATION: 10m
     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
-    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 500
-    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 2000
+    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 2
+    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 2
 
-    K6_OPTIONS_HIGH_LOAD_RATE: 15000
-    K6_OPTIONS_HIGH_LOAD_DURATION: 3m
-    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
-    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 500
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2000
+    K6_OPTIONS_HIGH_LOAD_DURATION: 5m
+    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
+    K6_OPTIONS_HIGH_LOAD_VUS: 2
 
-baseline:
-  extends: .benchmarks
+    DD_RUNTIME_METRICS_ENABLED: true
+
+baseline-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -127,8 +125,8 @@ baseline:
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
 
-calltarget_ngen:
-  extends: .benchmarks
+calltarget_ngen-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -138,8 +136,8 @@ calltarget_ngen:
     DD_CLR_ENABLE_NGEN: 1
     ENDPOINT: "hello"
 
-trace_stats:
-  extends: .benchmarks
+trace_stats-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -150,8 +148,8 @@ trace_stats:
     DD_TRACE_STATS_COMPUTATION_ENABLED: 1
     ENDPOINT: "hello"
 
-manual_only:
-  extends: .benchmarks
+manual_only-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -160,8 +158,8 @@ manual_only:
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
     ENDPOINT: "hello"
 
-manual_and_automatic:
-  extends: .benchmarks
+manual_and_automatic-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -170,8 +168,8 @@ manual_and_automatic:
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
     ENDPOINT: "hello"
 
-ddtraceenabled_false:
-  extends: .benchmarks
+ddtraceenabled_false-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -180,8 +178,8 @@ ddtraceenabled_false:
     DD_TRACE_ENABLED: 0
     ENDPOINT: "hello"
 
-profiler_exceptions_baseline:
-  extends: .benchmarks
+profiler_exceptions_baseline-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -189,8 +187,8 @@ profiler_exceptions_baseline:
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello/Exception"
 
-profiler:
-  extends: .benchmarks
+profiler-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -200,8 +198,8 @@ profiler:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-profiler_walltime:
-  extends: .benchmarks
+profiler_walltime-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -213,8 +211,8 @@ profiler_walltime:
     DD_PROFILING_CPU_ENABLED: 0
     ENDPOINT: "hello"
 
-profiler_exceptions:
-  extends: .benchmarks
+profiler_exceptions-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -225,8 +223,8 @@ profiler_exceptions:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello/Exception"
 
-profiler_cpu:
-  extends: .benchmarks
+profiler_cpu-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -238,8 +236,8 @@ profiler_cpu:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-profiler_cpu_timer_create:
-  extends: .benchmarks
+profiler_cpu_timer_create-x86:
+  extends: .benchmarks-x86
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
@@ -279,28 +277,25 @@ profiler_cpu_timer_create:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-
-    K6_OPTIONS_WARMUP_RATE: 14000
+    # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
-    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 500
-    K6_OPTIONS_WARMUP_MAX_VUS: 2000
+    K6_OPTIONS_WARMUP_VUS: 2
 
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 13000
-    K6_OPTIONS_NORMAL_OPERATION_DURATION: 7m
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 4000
+    K6_OPTIONS_NORMAL_OPERATION_DURATION: 10m
     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
-    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 500
-    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 2000
+    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 2
+    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 2
 
-    K6_OPTIONS_HIGH_LOAD_RATE: 15000
-    K6_OPTIONS_HIGH_LOAD_DURATION: 3m
-    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
-    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 500
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2000
+    K6_OPTIONS_HIGH_LOAD_DURATION: 5m
+    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
+    K6_OPTIONS_HIGH_LOAD_VUS: 2
+
+    DD_RUNTIME_METRICS_ENABLED: true
 
 baseline-arm64:
   extends: .benchmarks-arm64
@@ -469,31 +464,28 @@ profiler_cpu_timer_create-arm64:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - platform/artifacts/
     expire_in: 3 months
   variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
 
-    K6_OPTIONS_WARMUP_RATE: 14000
+    # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
-    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 500
-    K6_OPTIONS_WARMUP_MAX_VUS: 2000
+    K6_OPTIONS_WARMUP_VUS: 2
 
     K6_OPTIONS_NORMAL_OPERATION_RATE: 13000
-    K6_OPTIONS_NORMAL_OPERATION_DURATION: 7m
+    K6_OPTIONS_NORMAL_OPERATION_DURATION: 10m
     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
     K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 500
     K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 2000
 
-    K6_OPTIONS_HIGH_LOAD_RATE: 15000
-    K6_OPTIONS_HIGH_LOAD_DURATION: 3m
-    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
-    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 500
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2000
+    K6_OPTIONS_HIGH_LOAD_DURATION: 5m
+    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
+    K6_OPTIONS_HIGH_LOAD_VUS: 2
+
+    DD_RUNTIME_METRICS_ENABLED: true
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
@@ -613,3 +605,4 @@ profiler_cpu_timer_create-win:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
+

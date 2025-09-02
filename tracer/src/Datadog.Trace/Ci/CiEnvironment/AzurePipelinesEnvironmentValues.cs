@@ -32,6 +32,7 @@ internal sealed class AzurePipelinesEnvironmentValues<TValueProvider>(TValueProv
 
         StageName = ValueProvider.GetValue(Constants.AzureSystemStageDisplayName);
 
+        JobId = ValueProvider.GetValue(Constants.AzureSystemJobId);
         JobName = ValueProvider.GetValue(Constants.AzureSystemJobDisplayName);
         JobUrl = string.Format(
             "{0}{1}/_build/results?buildId={2}&view=logs&j={3}&t={4}",
@@ -67,5 +68,6 @@ internal sealed class AzurePipelinesEnvironmentValues<TValueProvider>(TValueProv
             Constants.AzureSystemJobId);
 
         PrBaseBranch = ValueProvider.GetValue(Constants.AzureSystemPullRequestTargetBranch);
+        PrNumber = ValueProvider.GetValue(Constants.AzureSystemPullRequestNumber);
     }
 }

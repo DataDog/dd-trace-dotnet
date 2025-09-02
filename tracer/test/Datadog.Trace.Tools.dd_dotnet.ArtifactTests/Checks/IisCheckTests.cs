@@ -187,7 +187,7 @@ public class IisCheckTests : ToolTestHelper
 
     private static string IisExpressOptions(IisFixture iisFixture)
     {
-        return $"--workerProcess {iisFixture.IisExpress.Process.Id} --iisConfigPath {iisFixture.IisExpress.ConfigFile}";
+        return $"--workerProcess {iisFixture.IisExpress.Process.Process.Id} --iisConfigPath {iisFixture.IisExpress.ConfigFile}";
     }
 
     private static void EnsureWindowsAndX64()
@@ -230,7 +230,7 @@ public class IisCheckTests : ToolTestHelper
 
         try
         {
-            await fixture.TryStartIis(this, appType);
+            await fixture.TryStartIis(this, appType, false);
         }
         catch (Exception)
         {

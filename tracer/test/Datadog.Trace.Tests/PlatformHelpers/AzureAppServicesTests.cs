@@ -4,11 +4,12 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.PlatformHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -26,6 +27,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         private static readonly string SubscriptionId = "8c500027-5f00-400e-8f00-60000000000f";
         private static readonly string PlanResourceGroup = "apm-dotnet";
         private static readonly string SiteResourceGroup = "apm-dotnet-site-resource-group";
+
         private static readonly string ExpectedResourceId =
             $"/subscriptions/{SubscriptionId}/resourcegroups/{SiteResourceGroup}/providers/microsoft.web/sites/{DeploymentId}".ToLowerInvariant();
 
@@ -37,7 +39,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
-            Assert.Equal(expected: AzureContext.AzureAppService, actual: metadata.AzureContext);
+            Assert.False(metadata.IsFunctionsApp);
             Assert.Equal(expected: AppServiceKind, actual: metadata.SiteKind);
             Assert.Equal(expected: AppServiceType, actual: metadata.SiteType);
         }
@@ -54,7 +56,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                 functionsRuntime: FunctionsRuntime);
 
             var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
-            Assert.Equal(expected: AzureContext.AzureFunctions, actual: metadata.AzureContext);
+            Assert.True(metadata.IsFunctionsApp);
             Assert.Equal(expected: FunctionKind, actual: metadata.SiteKind);
             Assert.Equal(expected: FunctionType, actual: metadata.SiteType);
         }
@@ -71,7 +73,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         [Fact]
         public void IsRelevant_True_WhenVariableSetTrue()
         {
-            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, DeploymentId, null, null);
             var settings = new TracerSettings(vars);
             Assert.True(settings.IsRunningInAzureAppService);
         }
@@ -81,7 +83,8 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
             var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
-            Assert.Equal(expected: "windows", actual: metadata.OperatingSystem);
+            var expected = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" : "linux";
+            Assert.Equal(expected: expected, actual: metadata.OperatingSystem);
         }
 
         [Fact]
@@ -98,14 +101,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
             var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.Equal(expected: "instance_name", actual: metadata.InstanceName);
-        }
-
-        [Fact]
-        public void Runtime_Set()
-        {
-            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
-            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
-            Assert.True(metadata.Runtime?.Length > 0);
         }
 
         [Fact]
@@ -218,21 +213,21 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                         }
                     }
                 }
+
+                Assert.NotEmpty(spans);
+
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteName) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteKind) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteType) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSubscriptionId) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceId) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceId) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceName) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesOperatingSystem) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesRuntime) != null);
+                spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesExtensionVersion) != null);
             }
-
-            Assert.NotEmpty(spans);
-
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteName) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteKind) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteType) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSubscriptionId) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceId) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceId) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceName) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesOperatingSystem) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesRuntime) != null);
-            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesExtensionVersion) != null);
         }
     }
 }

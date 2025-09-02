@@ -387,8 +387,12 @@ internal class TelemetryController : ITelemetryController
             {
                 { IsRunningInGCPFunctions: true } => ",gcp",
                 { LambdaMetadata.IsRunningInLambda: true } => ",aws",
-                { IsRunningMiniAgentInAzureFunctions: true } => ",azf",
-                { IsRunningInAzureAppService: true } => ",aas",
+
+                // check for Azure Functions first because it's a subset of Azure App Service
+                { IsRunningInAzureFunctions: true } => ",azf",
+                // IsRunningInAzureFunctions: true is handled above, but it doesn't hurt to be safe,
+                // so test for IsRunningInAzureFunctions: false
+                { IsRunningInAzureAppService: true, IsRunningInAzureFunctions: false } => ",aas",
                 _ => null,
             };
             _isUpdateRequired = true;

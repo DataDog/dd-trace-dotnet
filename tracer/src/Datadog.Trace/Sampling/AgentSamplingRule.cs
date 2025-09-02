@@ -28,6 +28,9 @@ namespace Datadog.Trace.Sampling
                                             Datadog.Trace.Sampling.SamplingMechanism.Default :
                                             Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
 
+        // Agent sampling rules do not depend on span resource names, only service and environment names.
+        public bool IsResourceBasedSamplingRule => false;
+
         public bool IsMatch(Span span) => true;
 
         public float GetSamplingRate(Span span)

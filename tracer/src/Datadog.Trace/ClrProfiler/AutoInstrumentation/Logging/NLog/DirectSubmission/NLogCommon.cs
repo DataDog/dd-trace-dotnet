@@ -144,9 +144,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             proxy.Targets.Add(_targetProxy);
             proxy.LoggerNamePattern = "**";
             proxy.EnableLoggingForLevels(logLevelStaticsProxy.MinLevel, logLevelStaticsProxy.MaxLevel);
-            proxy.Final = true;
-
-            list.Add(loggingRule);
+            // Don't block other rules
+            proxy.Final = false;
+            // Ensure we're called first
+            list.Insert(0, loggingRule);
             Log.Information("Direct log submission via NLog 5.0+ enabled");
             return true;
         }
@@ -233,9 +234,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 }
             }
 
-            // need to add the new target to the logging configuraiton
+            // need to add the new target to the logging configuration
             loggingConfigurationProxy.AddTarget(NLogConstants.DatadogTargetName, targetProxy);
-            loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**", final: true);
+            // This adds the rule at the end, but we need to add it to the start instead
+            loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**", final: false);
+
+            if (loggingConfigurationProxy.LoggingRules is { } rules)
+            {
+                ReorderLoggingRules(rules);
+            }
+            else
+            {
+                Log.Error("Unable to move  NLog 5.0+ Direct log submission rule to correct postition, LoggingRules was missing");
+            }
 
             Log.Information("Direct log submission via NLog 5.0+ enabled");
             return true;
@@ -259,9 +270,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 }
             }
 
-            // need to add the new target to the logging configuraiton
+            // need to add the new target to the logging configuration
             loggingConfigurationProxy.AddTarget(NLogConstants.DatadogTargetName, targetProxy);
-            loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**", final: true);
+            // This adds the rule at the end, but we need to add it to the start instead
+            loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**", final: false);
+
+            if (loggingConfigurationProxy.LoggingRules is { } rules)
+            {
+                ReorderLoggingRules(rules);
+            }
+            else
+            {
+                Log.Error("Unable to move NLog 4.5+ Direct log submission rule to correct postition, LoggingRules was missing");
+            }
 
             Log.Information("Direct log submission via NLog 4.5+ enabled");
             return true;
@@ -287,10 +308,60 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
             // need to add the new target to the logging configuraiton
             loggingConfigurationProxy.AddTarget(NLogConstants.DatadogTargetName, targetProxy);
+            // This adds the rule at the end, but we need to add it to the start instead
             loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**");
+
+            if (loggingConfigurationProxy.LoggingRules is { } rules)
+            {
+                // We're making an assumption here that _we_ added the last rule.
+                // We don't have a good way to make sure it's _our_ rule without a bunch of duck typing
+                // so just assuming it is ours for now. That _should_ always be the case, seeing as we just added a rule
+                var count = rules.Count;
+                if (count > 0)
+                {
+                    var lastIndex = count - 1;
+                    var rule = rules[lastIndex];
+                    rules.RemoveAt(lastIndex);
+                    rules.Insert(0, rule);
+                }
+                else
+                {
+                    Log.Error("Unable to move NLog 4.3-4.5 Direct log submission rule to correct position - LoggingRules was empty");
+                }
+            }
+            else
+            {
+                Log.Error("Unable to move NLog 4.3-4.5 Direct log submission rule to correct postition, LoggingRules was missing");
+            }
 
             Log.Information("Direct log submission via NLog 4.3-4.5 enabled");
             return true;
+        }
+
+        private static void ReorderLoggingRules(IList rules)
+        {
+            // We're making an assumption here that _we_ added the last rule.
+            // We don't have a good way to make sure it's _our_ rule without a bunch of duck typing
+            // so just assuming it is ours for now. That _should_ always be the case, seeing as we just added a rule
+
+            // Not great to be locking this, but it emulates what NLog does internally
+            var count = 0;
+            lock (rules)
+            {
+                count = rules.Count;
+                if (count > 0)
+                {
+                    var lastIndex = count - 1;
+                    var rule = rules[lastIndex];
+                    rules.RemoveAt(lastIndex);
+                    rules.Insert(0, rule);
+                }
+            }
+
+            if (count == 0)
+            {
+                Log.Error("Unable to move NLog Direct log submission rule to correct position - LoggingRules was empty");
+            }
         }
 
         // internal for testing
@@ -330,8 +401,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 ruleProxy.LogLevels[i] = true;
             }
 
-            ruleProxy.Final = true;
-            loggingConfigurationProxy.LoggingRules.Add(instance);
+            ruleProxy.Final = false;
+            loggingConfigurationProxy.LoggingRules.Insert(0, instance);
 
             Log.Information("Direct log submission via NLog <4.3 enabled");
             return true;

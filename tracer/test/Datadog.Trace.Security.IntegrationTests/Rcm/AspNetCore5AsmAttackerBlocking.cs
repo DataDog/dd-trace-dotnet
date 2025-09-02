@@ -75,8 +75,8 @@ public class AspNetCore5AsmAttackerBlocking : RcmBase
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
-        var result = SubmitRequest(url, null, null, headers: headersAttackerScanner);
-        result.Result.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        var result = await SubmitRequest(url, null, null, headers: headersAttackerScanner);
+        result.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         var configurationInitial = new[]
         {
@@ -98,7 +98,7 @@ public class AspNetCore5AsmAttackerBlocking : RcmBase
         };
 
         await agent.SetupRcmAndWait(Output, configurationInitial);
-        result = SubmitRequest(url, null, null, headers: headersAttackerScanner);
+        result = await SubmitRequest(url, null, null, headers: headersAttackerScanner);
 
         var exclusions = "[{\"id\": \"exc-000-001\",\"on_match\": \"block_custom\",\"conditions\": [{\"operator\": \"ip_match\",\"parameters\": {\"data\": \"suspicious_ips_data_id\", \"inputs\": [{\"address\": \"http.client_ip\"}]}}]}]";
         var configuration = new[]
@@ -125,14 +125,14 @@ public class AspNetCore5AsmAttackerBlocking : RcmBase
         };
 
         await agent.SetupRcmAndWait(Output, configuration);
-        result = SubmitRequest(url + "?a=3", null, null, headers: headersAttackerScanner);
-        result.Result.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
-        result = SubmitRequest(url + "?a=4", null, null, headers: headersRegularScanner);
-        result.Result.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        result = SubmitRequest(url + "?a=5", null, null, headers: headersAttackerArachni);
-        result.Result.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
-        result = SubmitRequest(url + "?a=6", null, null, headers: headersRegularArachni);
-        result.Result.StatusCode.Should().Be(HttpStatusCode.OK);
+        result = await SubmitRequest(url + "?a=3", null, null, headers: headersAttackerScanner);
+        result.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
+        result = await SubmitRequest(url + "?a=4", null, null, headers: headersRegularScanner);
+        result.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        result = await SubmitRequest(url + "?a=5", null, null, headers: headersAttackerArachni);
+        result.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
+        result = await SubmitRequest(url + "?a=6", null, null, headers: headersRegularArachni);
+        result.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }
 #endif

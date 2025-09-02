@@ -10,6 +10,7 @@
   <ItemGroup>
     <None Remove="applicationHost.config" />
     <None Remove="xunit.runner.json" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\Helpers\TelemetryHelper.cs" Link="Helpers\TelemetryHelper.cs" />
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="VerifyHelper.cs" />
     <Content Include="applicationHost.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -53,7 +54,7 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net9.0' OR '$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR $(TargetFramework.StartsWith('net4'))">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0')) OR $(TargetFramework.StartsWith('net4'))">
     <PackageReference Include="System.DirectoryServices" Version="7.0.1" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="7.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="7.0.0" />
@@ -110,4 +111,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
 </Project>

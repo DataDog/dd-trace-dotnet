@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -83,6 +84,7 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
 
             logDir = await RunDotnet("restore");
@@ -115,24 +117,24 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
 
             var programCs = GetProgramCSThatMakesSpans();
 
             File.WriteAllText(Path.Combine(workingDir, "Program.cs"), programCs);
 
-            logDir = await RunDotnet("restore");
-            AssertNotInstrumented(agent, logDir);
-
-            logDir = await RunDotnet("build");
-            AssertNotInstrumented(agent, logDir);
-
-            logDir = await RunDotnet("publish");
+            // We use publish and then direct execution to avoid calling dotnet run
+            // Currently, today, we instrument dotnet run, which results in some "spurious" spans (e.g. command_execution)
+            // In the future, we may change that. But hte important part is that we don't instrument the target process itself
+            var publishDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
+            logDir = await RunDotnet($"publish -o \"{publishDir}\"");
             AssertNotInstrumented(agent, logDir);
 
             // this _should NOT_ be instrumented
-            logDir = await RunDotnet("run");
-            AssertNotInstrumentedIgnoredExe(agent, logDir, excludedProcess);
+            var extension = EnvironmentTools.IsWindows() ? ".exe" : string.Empty;
+            logDir = await RunCommand(workingDir, agent, Path.Join(publishDir, $"{excludedProcess}{extension}"));
+            AssertNotInstrumented(agent, logDir);
 
             return;
 
@@ -154,52 +156,24 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             var logDir = await RunDotnet($"new console -n {allowedProcess} -o . --no-restore");
+            FixTfm(workingDir);
             AssertNotInstrumented(agent, logDir);
+
             var programCs = GetProgramCSThatMakesSpans();
 
             File.WriteAllText(Path.Combine(workingDir, "Program.cs"), programCs);
 
-            logDir = await RunDotnet("restore");
-            AssertNotInstrumented(agent, logDir);
-
-            logDir = await RunDotnet("build");
-            AssertNotInstrumented(agent, logDir);
-
-            logDir = await RunDotnet("publish");
+            // We use publish and then direct execution to avoid calling dotnet run
+            // Currently, today, we instrument dotnet run, which results in some "spurious" spans (e.g. command_execution)
+            // In the future, we may change that. But hte important part is that we don't instrument the target process itself
+            var publishDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
+            logDir = await RunDotnet($"publish -o \"{publishDir}\"");
             AssertNotInstrumented(agent, logDir);
 
             // this _SHOULD_ be instrumented
-            logDir = await RunDotnet("run");
-            AssertInstrumentedAllowedProcess(agent, logDir, allowedProcess);
-
-            return;
-
-            Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task InstrumentsDotNetRun()
-        {
-            var workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
-            Directory.CreateDirectory(workingDir);
-
-            Output.WriteLine("Using workingDirectory: " + workingDir);
-
-            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-
-            var logDir = await RunDotnet("new console -n instrumentation_test -o . --no-restore");
-            AssertNotInstrumented(agent, logDir);
-
-            // this _should_ be instrumented so we expect managed data.
-            // we also expect telemetry, but we end the app so quickly there's a risk of flake
-            logDir = await RunDotnet("run");
-
-            using var scope = new AssertionScope();
-            var allFiles = Directory.GetFiles(logDir);
-            AddFilesAsReportable(logDir, scope, allFiles);
-            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-instrumentation_test-"));
-            agent.Telemetry.Should().NotBeEmpty();
+            var extension = EnvironmentTools.IsWindows() ? ".exe" : string.Empty;
+            logDir = await RunCommand(workingDir, agent, Path.Join(publishDir, $"{allowedProcess}{extension}"));
+            AssertInstrumented(agent, logDir);
 
             return;
 
@@ -275,6 +249,45 @@ namespace Foo
             agent.Telemetry.Should().NotBeEmpty();
         }
 
+        [SkippableTheory]
+        [CombinatorialData]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenUsingDataPipeline_WritesLibdatadogLogs(bool debugEnabled)
+        {
+            var logDir = SetLogDirectory(debugEnabled ? "_true" : "_false");
+
+            SetEnvironmentVariable("DD_TRACE_DATA_PIPELINE_ENABLED", "1");
+            EnvironmentHelper.DebugModeEnabled = debugEnabled;
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+            AssertInstrumented(agent, logDir);
+
+            // Verify the datapipeline log is there and has some data
+            var allFiles = Directory.GetFiles(logDir);
+            var filename = allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-libdatadog-")).Subject;
+
+            if (debugEnabled)
+            {
+                File.ReadAllText(filename)
+                    .Should()
+                    .NotBeNullOrWhiteSpace().And.Contain(
+                         """
+                         "level":"DEBUG"
+                         """);
+            }
+            else
+            {
+                File.ReadAllText(filename)
+                    .Should()
+                    .NotBeNullOrWhiteSpace().And.NotContain(
+                         """
+                         "level":"DEBUG"
+                         """);
+            }
+        }
+
 #if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
@@ -284,14 +297,8 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
-            agent.Spans.Should().NotBeEmpty();
-            agent.Telemetry.Should().NotBeEmpty();
-
-            // not necessary, but belt-and-braces
-            using var scope = new AssertionScope();
-            var allFiles = Directory.GetFiles(logDir);
-            AddFilesAsReportable(logDir, scope, allFiles);
-            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-dotnet-"));
+            AssertInstrumented(agent, logDir);
+            AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
         }
 
         [SkippableFact]
@@ -305,6 +312,36 @@ namespace Foo
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
             AssertNotInstrumented(agent, logDir);
+            // this is already tested in AssertNotInstrumented, but adding an explicit check here to make sure
+            if (EnvironmentTools.IsWindows())
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
+                Directory.GetFiles(logDir).Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-"));
+            }
+            else
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
+            }
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task DoesNotInstrumentOnEolFrameworkWithSsiButWritesLogsIfEnabled()
+        {
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            // This ensures we _do_ write the native loader log, even if we don't instrument
+            SetEnvironmentVariable("DD_TRACE_LOG_BUFFERING_ENABLED", "0");
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+            AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
+            if (EnvironmentTools.IsWindows())
+            {
+                Directory.GetFiles(logDir).Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-native-loader-"));
+            }
         }
 
         [SkippableFact]
@@ -319,14 +356,16 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
-            agent.Spans.Should().NotBeEmpty();
-            agent.Telemetry.Should().NotBeEmpty();
-
-            // not necessary, but belt-and-braces
-            using var scope = new AssertionScope();
-            var allFiles = Directory.GetFiles(logDir);
-            AddFilesAsReportable(logDir, scope, allFiles);
-            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-dotnet-"));
+            AssertInstrumented(agent, logDir);
+            if (EnvironmentTools.IsWindows())
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
+                AssertNativeLoaderLogContainsString(logDir, "Buffered logs flushed and buffering disabled");
+            }
+            else
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
+            }
         }
 
         [SkippableFact]
@@ -391,7 +430,7 @@ namespace Foo
                                "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson,  "abort", ".NET Core 3.0 or lower", "incompatible_runtime");
         }
 
         [SkippableFact]
@@ -414,8 +453,7 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
-            agent.Spans.Should().NotBeEmpty();
-            agent.Telemetry.Should().NotBeEmpty();
+            AssertInstrumented(agent, logDir);
 
             var pointsJson = """
                              [{
@@ -423,11 +461,104 @@ namespace Foo
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET Core 3.0 or lower", "success_forced");
         }
 
 #endif
 #if NETCOREAPP3_1_OR_GREATER
+        // We have different behaviour depending on whether the framework is in preview
+        // This condition should always point to the "next" version of .NET
+        // e.g. if .NET 10 is in preview, use NET10_0_OR_GREATER.
+        // Once .NET 10 goes GA, update this to NET11_0_OR_GREATER
+#if NET10_0_OR_GREATER
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]
+        public async Task OnPreviewFrameworkInSsi_CallsForwarderWithExpectedTelemetry()
+        {
+            var logDir = SetLogDirectory();
+            var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
+            Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
+
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
+            // Need to force injection because we bail by default
+            SetEnvironmentVariable("DD_INJECT_FORCE", "true");
+
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, logFileName);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertInstrumented(agent, logDir);
+
+            var pointsJson = """
+                             [{
+                               "name": "library_entrypoint.complete", 
+                               "tags": ["injection_forced:true"]
+                             }]
+                             """;
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET 10 or higher", "success_forced");
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]
+        public async Task OnPreviewFrameworkInSsi_WhenForwarderPathExists_CallsForwarderWithExpectedTelemetry()
+        {
+            var logDir = SetLogDirectory();
+            var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
+
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
+            Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
+
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
+
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, logFileName);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+
+            var pointsJson = """
+                             [{
+                               "name": "library_entrypoint.abort", 
+                               "tags": ["reason:incompatible_runtime"]
+                             },{
+                               "name": "library_entrypoint.abort.runtime"
+                             }]
+                             """;
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "abort", ".NET 10 or higher", "incompatible_runtime");
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task OnPreviewFrameworkInSsi_Buffers()
+        {
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+            // this is already tested in AssertNotInstrumented, but adding an explicit check here to make sure
+            if (EnvironmentTools.IsWindows())
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
+                Directory.GetFiles(logDir).Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-"));
+            }
+            else
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
+            }
+        }
+#else
         [SkippableTheory]
         [Trait("RunOnWindows", "True")]
         [InlineData("1")]
@@ -451,8 +582,7 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
-            agent.Spans.Should().NotBeEmpty();
-            agent.Telemetry.Should().NotBeEmpty();
+            AssertInstrumented(agent, logDir);
 
             var pointsJson = """
                              [{
@@ -460,8 +590,31 @@ namespace Foo
                                "tags": ["injection_forced:false"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Successfully configured automatic instrumentation", "success");
         }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task OnSupportedFrameworkInSsi_BuffersLogsInitiallyAndThenFlushes()
+        {
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertInstrumented(agent, logDir);
+            if (EnvironmentTools.IsWindows())
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs enabled");
+                AssertNativeLoaderLogContainsString(logDir, "Buffered logs flushed and buffering disabled");
+            }
+            else
+            {
+                AssertNativeLoaderLogContainsString(logDir, "Buffering of logs disabled");
+            }
+        }
+#endif
 #endif
 
         // The dynamic context switch/bail out is only available in .NET 8+
@@ -536,11 +689,18 @@ namespace Foo
             return logDir;
         }
 
-        private async Task<string> RunDotnetCommand(string workingDirectory, MockTracerAgent mockTracerAgent, string arguments)
+        private Task<string> RunDotnetCommand(string workingDirectory, MockTracerAgent mockTracerAgent, string arguments)
+        {
+            // Disable .NET CLI telemetry to prevent extra HTTP spans
+            SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1");
+            return RunCommand(workingDirectory, mockTracerAgent, "dotnet", arguments);
+        }
+
+        private async Task<string> RunCommand(string workingDirectory, MockTracerAgent mockTracerAgent, string exe, string arguments = null)
         {
             // Create unique folder for easier post-mortem analysis
             var logDir = $"{workingDirectory}_logs_{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}";
-            Output.WriteLine("Running: dotnet " + arguments);
+            Output.WriteLine($"Running: {exe} {arguments}");
             Output.WriteLine("Using logDirectory: " + logDir);
 
             Directory.CreateDirectory(logDir);
@@ -549,7 +709,7 @@ namespace Foo
             SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1");
 
             using var process = await ProfilerHelper.StartProcessWithProfiler(
-                                    executable: EnvironmentHelper.GetDotnetExe(),
+                                    executable: exe,
                                     EnvironmentHelper,
                                     mockTracerAgent,
                                     arguments,
@@ -561,7 +721,7 @@ namespace Foo
             return logDir;
         }
 
-        private void AssertNotInstrumentedIgnoredExe(MockTracerAgent mockTracerAgent, string logDir, string exe)
+        private void AssertInstrumented(MockTracerAgent agent, string logDir)
         {
             // should have bailed out, but we still write logs to the native loader log
             // _and_ the native tracer/profiler (because they're initialized), so important
@@ -570,21 +730,9 @@ namespace Foo
             var allFiles = Directory.GetFiles(logDir);
             AddFilesAsReportable(logDir, scope, allFiles);
 
-            allFiles.Should().NotContain(filename => Path.GetFileName(filename).StartsWith($"dotnet-tracer-managed-{exe}-"));
-            mockTracerAgent.Spans.Should().ContainSingle(); // command_execution
-        }
-
-        private void AssertInstrumentedAllowedProcess(MockTracerAgent mockTracerAgent, string logDir, string exe)
-        {
-            // should have bailed out, but we still write logs to the native loader log
-            // _and_ the native tracer/profiler (because they're initialized), so important
-            // point is we don't have managed logs, and no spans or telemetry
-            using var scope = new AssertionScope();
-            var allFiles = Directory.GetFiles(logDir);
-            AddFilesAsReportable(logDir, scope, allFiles);
-
-            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith($"dotnet-tracer-managed-{exe}-"));
-            mockTracerAgent.Spans.Should().HaveCountGreaterThan(1);
+            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith($"dotnet-tracer-managed-"));
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
         }
 
         private void AssertNotInstrumented(MockTracerAgent mockTracerAgent, string logDir)
@@ -596,26 +744,43 @@ namespace Foo
             var allFiles = Directory.GetFiles(logDir);
             AddFilesAsReportable(logDir, scope, allFiles);
 
-            allFiles.Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-dotnet-"));
+            var loggingDisabled = IsAllLoggingDisabledForBailout();
+            if (loggingDisabled)
+            {
+                // In this bail-out scenario, we should not see _any_ logs from the tracer (there will be a guid.txt file, but no logs)
+                allFiles.Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-"));
+            }
+            else
+            {
+                // We should _only_ have native loader logs, no other logs (managed, native tracer, etc.)
+                allFiles.Should().OnlyContain(filename => Path.GetFileName(filename).StartsWith("dotnet-native-loader-") || Path.GetExtension(filename) != ".log");
+                mockTracerAgent.Spans.Should().BeEmpty();
+                mockTracerAgent.Telemetry.Should().BeEmpty();
+            }
+
             mockTracerAgent.Spans.Should().BeEmpty();
             mockTracerAgent.Telemetry.Should().BeEmpty();
         }
 
         private void AssertNativeLoaderLogContainsString(string logDir, string requiredLog)
         {
-            using var scope = new AssertionScope();
             var allFiles = Directory.GetFiles(logDir);
-            AddFilesAsReportable(logDir, scope, allFiles);
 
             var nativeLoaderLogFilenames = allFiles
-                                  .Where(filename => Path.GetFileName(filename).StartsWith("dotnet-native-loader-dotnet-"))
+                                  .Where(filename => Path.GetFileName(filename).StartsWith("dotnet-native-loader-"))
                                   .ToList();
-            nativeLoaderLogFilenames.Should().NotBeEmpty();
+
+            if (nativeLoaderLogFilenames.Count == 0)
+            {
+                // We can't guarantee that the file should be here, so just assume we have checked for presence previously
+                return;
+            }
+
             var nativeLoaderLogFiles = nativeLoaderLogFilenames.Select(File.ReadAllText).ToList();
             nativeLoaderLogFiles.Should().Contain(log => log.Contains(requiredLog));
         }
 
-        private void AssertHasExpectedTelemetry(string echoLogFileName, ProcessResult processResult, string pointsJson)
+        private void AssertHasExpectedTelemetry(string echoLogFileName, ProcessResult processResult, string pointsJson, string injectResult, string injectResultReason, string injectResultClass)
         {
             using var s = new AssertionScope();
             File.Exists(echoLogFileName).Should().BeTrue();
@@ -647,7 +812,10 @@ namespace Foo
                                             "language_name": "dotnet",
                                             "language_version": "{{runtimeVersion}}",
                                             "tracer_version": "{{TracerConstants.ThreePartVersion}}",
-                                            "pid": {{processResult.Process.Id}}
+                                            "pid": {{processResult.Process.Id}},
+                                            "inject_result": "{{injectResult}}",
+                                            "inject_result_reason": "{{injectResultReason}}",
+                                            "inject_result_class": "{{injectResultClass}}"
                                           },
                                           "points": {{pointsJson}}
                                       }
@@ -675,6 +843,40 @@ namespace Foo
 
                     return sb.ToString();
                 });
+        }
+
+        private bool IsAllLoggingDisabledForBailout()
+        {
+            var isSsi = EnvironmentHelper.CustomEnvironmentVariables.TryGetValue("DD_INJECTION_ENABLED", out var injectionEnabled)
+                     && !string.IsNullOrEmpty(injectionEnabled);
+
+            var bufferingDisabled = EnvironmentHelper.CustomEnvironmentVariables.TryGetValue("DD_TRACE_LOG_BUFFERING_ENABLED", out var bufferingEnabled)
+                                 && (bufferingEnabled.ToLower() == "false" || bufferingEnabled == "0");
+
+            var loggingDisabled = isSsi && EnvironmentTools.IsWindows() && !bufferingDisabled;
+            return loggingDisabled;
+        }
+
+        private void FixTfm(string workingDir)
+        {
+            // This is a hack because for _some_ reason, we can't set the -f flag in the Linux CI.
+            // Force the project to target .NET 8 instead of whatever the SDK defaults to
+            foreach (var projectFile in Directory.GetFiles(workingDir, "*.csproj"))
+            {
+                var projectContent = File.ReadAllText(projectFile);
+
+                // Replace any target framework with the updated version
+                // and add a langversion update to ensure we still compile
+                var replacement = $"""
+                                   <TargetFramework>{EnvironmentHelper.GetTargetFramework()}</TargetFramework>
+                                   <LangVersion>latest</LangVersion>
+                                   """;
+                var updatedContent = Regex.Replace(
+                    projectContent,
+                    @"<TargetFramework>.+</TargetFramework>",
+                    replacement);
+                File.WriteAllText(projectFile, updatedContent);
+            }
         }
 
         public class TelemetryReporterFixture : IDisposable

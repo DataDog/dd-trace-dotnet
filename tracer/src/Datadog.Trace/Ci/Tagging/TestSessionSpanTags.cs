@@ -60,6 +60,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
     [Tag(CommonTags.CIJobName)]
     public string? CIJobName { get; set; }
 
+    [Tag(CommonTags.CIJobId)]
+    public string? CIJobId { get; set; }
+
     [Tag(CommonTags.StageName)]
     public string? StageName { get; set; }
 
@@ -120,14 +123,41 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
     [Metric(CommonTags.LogicalCpuCount)]
     public double? LogicalCpuCount { get; }
 
-    [Tag(CommonTags.GitHeadCommit)]
-    public string? GitHeadCommit { get; set; }
+    [Tag(CommonTags.GitPrBaseHeadCommit)]
+    public string? GitPrBaseHeadCommit { get; set; }
 
     [Tag(CommonTags.GitPrBaseCommit)]
     public string? GitPrBaseCommit { get; set; }
 
     [Tag(CommonTags.GitPrBaseBranch)]
     public string? GitPrBaseBranch { get; set; }
+
+    [Tag(CommonTags.PrNumber)]
+    public string? PrNumber { get; set; }
+
+    [Tag(CommonTags.GitHeadCommit)]
+    public string? GitHeadCommit { get; set; }
+
+    [Tag(CommonTags.GitHeadCommitAuthorName)]
+    public string? GitHeadCommitAuthorName { get; set; }
+
+    [Tag(CommonTags.GitHeadCommitAuthorEmail)]
+    public string? GitHeadCommitAuthorEmail { get; set; }
+
+    [Tag(CommonTags.GitHeadCommitAuthorDate)]
+    public string? GitHeadCommitAuthorDate { get; set; }
+
+    [Tag(CommonTags.GitHeadCommitCommitterName)]
+    public string? GitHeadCommitCommitterName { get; set; }
+
+    [Tag(CommonTags.GitHeadCommitCommitterEmail)]
+    public string? GitHeadCommitCommitterEmail { get; set; }
+
+    [Tag(CommonTags.GitHeadCommitCommitterDate)]
+    public string? GitHeadCommitCommitterDate { get; set; }
+
+    [Tag(CommonTags.GitHeadCommitMessage)]
+    public string? GitHeadCommitMessage { get; set; }
 
     public void SetCIEnvironmentValues(CIEnvironmentValues environmentValues)
     {
@@ -138,6 +168,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
             CIPipelineName = environmentValues.PipelineName;
             CIPipelineNumber = environmentValues.PipelineNumber;
             CIPipelineUrl = environmentValues.PipelineUrl;
+            CIJobId = environmentValues.JobId;
             CIJobName = environmentValues.JobName;
             CIJobUrl = environmentValues.JobUrl;
             StageName = environmentValues.StageName;
@@ -154,9 +185,18 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
             GitCommitCommitterEmail = environmentValues.CommitterEmail;
             GitCommitMessage = environmentValues.Message;
             BuildSourceRoot = environmentValues.SourceRoot;
-            GitHeadCommit = environmentValues.HeadCommit;
+            GitPrBaseHeadCommit = environmentValues.PrBaseHeadCommit;
             GitPrBaseCommit = environmentValues.PrBaseCommit;
             GitPrBaseBranch = environmentValues.PrBaseBranch;
+            PrNumber = environmentValues.PrNumber;
+            GitHeadCommit = environmentValues.HeadCommit;
+            GitHeadCommitAuthorDate = environmentValues.HeadAuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture);
+            GitHeadCommitAuthorName = environmentValues.HeadAuthorName;
+            GitHeadCommitAuthorEmail = environmentValues.HeadAuthorEmail;
+            GitHeadCommitCommitterDate = environmentValues.HeadCommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture);
+            GitHeadCommitCommitterName = environmentValues.HeadCommitterName;
+            GitHeadCommitCommitterEmail = environmentValues.HeadCommitterEmail;
+            GitHeadCommitMessage = environmentValues.HeadMessage;
 
             if (environmentValues.VariablesToBypass is { } variablesToBypass)
             {

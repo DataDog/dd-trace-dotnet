@@ -11,11 +11,14 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Iast;
 using Datadog.Trace.LibDatadog;
+using Datadog.Trace.LibDatadog.DataPipeline;
+using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -57,8 +60,8 @@ namespace Datadog.Trace
                 agentWriter: null,
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
-                statsd: null,
-                runtimeMetrics: null,
+                statsd: null, // For now, let's continue to always create a new StatsD instance
+                runtimeMetrics: previous?.RuntimeMetrics,
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
@@ -107,6 +110,17 @@ namespace Datadog.Trace
             ISpanEventsManager spanEventsManager)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
+            var result = GlobalConfigurationSource.CreationResult;
+            if (result.Result is not Result.Success)
+            {
+                Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
+            }
+
+            var libdatadogAvailaibility = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
+            if (libdatadogAvailaibility.Exception is not null)
+            {
+                Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
+            }
 
             var defaultServiceName = settings.ServiceName ??
                 GetApplicationName(settings) ??
@@ -123,9 +137,13 @@ namespace Datadog.Trace
             agentWriter ??= GetAgentWriter(settings, settings.TracerMetricsEnabled ? statsd : null, rates => sampler.SetDefaultSampleRates(rates), discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
 
-            if (runtimeMetricsEnabled)
+            if (runtimeMetricsEnabled && runtimeMetrics is { })
             {
-                runtimeMetrics ??= new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
+                runtimeMetrics.UpdateStatsd(statsd);
+            }
+            else if (runtimeMetricsEnabled)
+            {
+                runtimeMetrics = new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
             }
             else
             {
@@ -156,7 +174,7 @@ namespace Datadog.Trace
             telemetry.RecordProfilerSettings(profiler);
             telemetry.ProductChanged(TelemetryProductType.Profiler, enabled: profiler.Status.IsProfilerReady, error: null);
 
-            dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
+            dataStreamsManager ??= DataStreamsManager.Create(settings, profiler.Settings, discoveryService, defaultServiceName);
 
             if (ShouldEnableRemoteConfiguration(settings))
             {
@@ -275,12 +293,12 @@ namespace Datadog.Trace
                 (Security.Instance.Settings.AppsecEnabled || Iast.Iast.Instance.Settings.Enabled))
             {
                 // Custom sampler for ASM and IAST standalone billing mode
-                var samplerStandalone = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
+                var samplerStandalone = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
                 samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
-                return samplerStandalone;
+                return samplerStandalone.Build();
             }
 
-            var sampler = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: settings.MaxTracesSubmittedPerSecond, intervalMilliseconds: null));
+            var sampler = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: settings.MaxTracesSubmittedPerSecond, intervalMilliseconds: null));
 
             // sampling rules (remote value overrides local value)
             var samplingRulesJson = settings.CustomSamplingRules;
@@ -336,7 +354,7 @@ namespace Datadog.Trace
             // This rule is always present, even if the agent has not yet provided any sampling rates.
             sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
 
-            return sampler;
+            return sampler.Build();
         }
 
         protected virtual ISpanSampler GetSpanSampler(TracerSettings settings)
@@ -352,19 +370,35 @@ namespace Datadog.Trace
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = GetApi(settings, statsd, updateSampleRates, apiRequestFactory, settings.Exporter.PartialFlushEnabled);
+            var api = GetApi(settings, statsd, updateSampleRates, apiRequestFactory);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled);
+            return new AgentWriter(api, statsAggregator, statsd, settings);
         }
 
-        private IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory, bool partialFlushEnabled)
+        // Internal for testing
+        internal static IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory)
         {
+            // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             if (settings.DataPipelineEnabled)
             {
                 try
                 {
+                    // If file logging is enabled, then enable logging in libdatadog
+                    // We assume that we can't go from pipeline enabled -> disabled, so we should never need to call logger.Disable()
+                    // Note that this _could_ fail if there's an issue in libdatadog, but we continue to _Try_ to initialize the exporter anyway
+                    // If this was previously initialized, it will be re-initialized with the new settings, which is fine
+                    if (Log.FileLoggingConfiguration is { } fileConfig)
+                    {
+                        var logger = LibDatadog.Logging.Logger.Instance;
+                        logger.Enable(fileConfig, DomainMetadata.Instance);
+
+                        // hacky to use the global setting, but about the only option we have atm
+                        logger.SetLogLevel(GlobalSettings.Instance.DebugEnabledInternal);
+                    }
+
+                    // TODO: we should refactor this so that we're not re-building the telemetry settings, and instead using the existing ones
                     var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
                     TelemetryClientConfiguration? telemetryClientConfiguration = null;
 
@@ -385,6 +419,7 @@ namespace Datadog.Trace
                     // when APM is disabled but ASM is enabled.
                     var clientComputedStats = !settings.StatsComputationEnabled && !settings.ApmTracingEnabled;
 
+                    var frameworkDescription = FrameworkDescription.Instance;
                     using var configuration = new TraceExporterConfiguration
                     {
                         Url = GetUrl(settings),
@@ -394,14 +429,15 @@ namespace Datadog.Trace
                         Service = settings.ServiceName,
                         Hostname = HostMetadata.Instance.Hostname,
                         Language = ".NET",
-                        LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-                        LanguageInterpreter = FrameworkDescription.Instance.Name,
+                        LanguageVersion = frameworkDescription.ProductVersion,
+                        LanguageInterpreter = frameworkDescription.Name,
                         ComputeStats = settings.StatsComputationEnabled,
                         TelemetryClientConfiguration = telemetryClientConfiguration,
-                        ClientComputedStats = clientComputedStats
+                        ClientComputedStats = clientComputedStats,
+                        ConnectionTimeoutMs = 15_000
                     };
 
-                    return new TraceExporter(configuration);
+                    return new TraceExporter(configuration, updateSampleRates);
                 }
                 catch (Exception ex)
                 {
@@ -409,10 +445,10 @@ namespace Datadog.Trace
                 }
             }
 
-            return new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled);
+            return new Api(apiRequestFactory, statsd, updateSampleRates, settings.Exporter.PartialFlushEnabled);
         }
 
-        private string GetUrl(TracerSettings settings)
+        private static string GetUrl(TracerSettings settings)
         {
             switch (settings.Exporter.TracesTransport)
             {
@@ -511,9 +547,10 @@ namespace Datadog.Trace
         {
             try
             {
-                if (settings.IsRunningInAzureAppService)
+                if ((settings.IsRunningInAzureAppService || settings.IsRunningInAzureFunctions) &&
+                    settings.AzureAppServiceMetadata?.SiteName is { } siteName)
                 {
-                    return settings.AzureAppServiceMetadata.SiteName;
+                    return siteName;
                 }
 
                 if (settings.LambdaMetadata is { IsRunningInLambda: true, ServiceName: var serviceName })
@@ -523,7 +560,7 @@ namespace Datadog.Trace
 
                 try
                 {
-                    if (TryLoadAspNetSiteName(out var siteName))
+                    if (TryLoadAspNetSiteName(out siteName))
                     {
                         return siteName;
                     }
@@ -547,15 +584,21 @@ namespace Datadog.Trace
         private static bool TryLoadAspNetSiteName(out string siteName)
         {
 #if NETFRAMEWORK
-            // System.Web.dll is only available on .NET Framework
-            if (System.Web.Hosting.HostingEnvironment.IsHosted)
+            try
             {
-                // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
-                // note that ApplicationVirtualPath includes a leading slash.
-                siteName = (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
-                return true;
+                // System.Web.dll is only available on .NET Framework
+                if (System.Web.Hosting.HostingEnvironment.IsHosted)
+                {
+                    // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
+                    // note that ApplicationVirtualPath includes a leading slash.
+                    siteName = (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
+                    return true;
+                }
             }
-
+            catch (TypeLoadException ex)
+            {
+                Log.Warning(ex, "Unable to determine ASP.NET site name: HostingEnvironment type could not be loaded. This is expected when running ASP.NET Core on the .NET Framework CLR, which is not supported.");
+            }
 #endif
             siteName = default;
             return false;

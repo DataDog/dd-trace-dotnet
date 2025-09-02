@@ -41,12 +41,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
 
-            using var agent = EnvironmentHelper.GetMockAgent();
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
 
             // We remove the evp_proxy endpoint to force the APM protocol compatibility
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
             using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
-            var spans = agent.WaitForSpans(ExpectedSpanCount)
+            var spans = (await agent.WaitForSpansAsync(ExpectedSpanCount))
                          .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                          .ToList();
             var spansCopy = JsonConvert.DeserializeObject<List<MockSpan>>(JsonConvert.SerializeObject(spans));

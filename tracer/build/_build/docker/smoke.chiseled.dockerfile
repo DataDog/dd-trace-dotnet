@@ -36,7 +36,7 @@ WORKDIR /app
 COPY --from=builder /src/publish /app/.
 
 ###########################################################
-FROM publish as installer-base
+FROM publish AS installer-base
 
 # Add and extract the installer files to the expected location
 # from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
@@ -44,7 +44,7 @@ ADD ./test/test-applications/regression/AspNetCoreSmokeTest/artifacts/datadog-do
 
 ###########################################################
 # The final image, with "manual" configuration
-FROM installer-base as installer-final
+FROM installer-base AS installer-final
 
 # Set the required env vars
 ENV CORECLR_ENABLE_PROFILING=1
@@ -74,8 +74,8 @@ ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
 # Because there _is_ no shell in the chiseled containers
 # Also, we can't use env vars/args in the entrypoint, hence the need for separate targets
 FROM installer-base as dd-dotnet-final-linux-x64
-ENTRYPOINT ["/opt/datadog/linux-x64/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["/opt/datadog/linux-x64/dd-dotnet", "run", "--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
 
 ###########################################################
 FROM installer-base as dd-dotnet-final-linux-arm64
-ENTRYPOINT ["/opt/datadog/linux-arm64/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["/opt/datadog/linux-arm64/dd-dotnet", "run", "--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]

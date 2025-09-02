@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -141,6 +142,12 @@ namespace Datadog.Trace.TestHelpers
             var executable = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? $"{runtimeArgs}{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
+            // on windows in uds , not supported
+            if (!EnvironmentHelper.CanUseStatsD(agent.TransportType))
+            {
+                SetEnvironmentVariable(ConfigurationKeys.RuntimeMetricsEnabled, "0");
+            }
+
             var process = await ProfilerHelper.StartProcessWithProfiler(
                 executable,
                 EnvironmentHelper,
@@ -207,7 +214,7 @@ namespace Datadog.Trace.TestHelpers
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public async Task<(Process Process, string ConfigFile)> StartIISExpress(MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath)
+        public async Task<(ProcessHelper Process, string ConfigFile)> StartIISExpress(MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath)
         {
             var iisExpress = EnvironmentHelper.GetIisExpressPath();
 
@@ -279,30 +286,18 @@ namespace Datadog.Trace.TestHelpers
 
             var semaphore = new SemaphoreSlim(0, 1);
 
-            _ = Task.Factory.StartNew(
-                () =>
+            var processHelper = new ProcessHelper(
+                process,
+                line =>
                 {
-                    while (process.StandardOutput.ReadLine() is { } line)
-                    {
-                        Output.WriteLine($"[webserver][stdout] {line}");
+                    Output.WriteLine($"[webserver][stdout] {line}");
 
-                        if (line.Contains("IIS Express is running"))
-                        {
-                            semaphore.Release();
-                        }
+                    if (line.Contains("IIS Express is running"))
+                    {
+                        semaphore.Release();
                     }
                 },
-                TaskCreationOptions.LongRunning);
-
-            _ = Task.Factory.StartNew(
-                () =>
-                {
-                    while (process.StandardError.ReadLine() is { } line)
-                    {
-                        Output.WriteLine($"[webserver][stderr] {line}");
-                    }
-                },
-                TaskCreationOptions.LongRunning);
+                line => Output.WriteLine($"[webserver][stderr] {line}"));
 
             await semaphore.WaitAsync(TimeSpan.FromSeconds(10));
 
@@ -329,7 +324,7 @@ namespace Datadog.Trace.TestHelpers
                 await Task.Delay(1500);
             }
 
-            return (process, newConfig);
+            return (processHelper, newConfig);
         }
 
         public void EnableIast(bool enable = true)
@@ -411,7 +406,7 @@ namespace Datadog.Trace.TestHelpers
 
             foreach (var e in missing)
             {
-                Assert.True(false, $"no span found for `{e}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key}").ToArray())}`");
+                Assert.Fail($"no span found for `{e}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key}").ToArray())}`");
             }
         }
 
@@ -434,6 +429,28 @@ namespace Datadog.Trace.TestHelpers
         protected void SetServiceVersion(string serviceVersion)
         {
             SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, serviceVersion);
+        }
+
+        /// <summary>
+        /// Add a workaround for the fact that .NET Core 3.1 and .NET 5 don't
+        /// support the version of alpine we're currently using, and so we need to
+        /// force the correct runtime id for .NET to use
+        /// </summary>
+        protected void UseNativeLibraryAlpineWorkaround()
+        {
+#if NETCOREAPP3_1 || NET5_0
+            if (EnvironmentHelper.IsAlpine())
+            {
+                var rid = RuntimeInformation.ProcessArchitecture switch
+                {
+                    Architecture.Arm64 => "linux-musl-arm64",
+                    Architecture.X64 => "linux-musl-x64",
+                    _ => throw new Exception("Unknown architecture " + RuntimeInformation.ProcessArchitecture)
+                };
+                SetEnvironmentVariable("DOTNET_RUNTIME_ID", rid);
+            }
+#endif
+
         }
 
         protected void SetSecurity(bool security)
@@ -519,10 +536,10 @@ namespace Datadog.Trace.TestHelpers
                 agent.SpanFilters.Add(IsServerSpan);
             }
 
-            return agent.WaitForSpans(
-                count: expectedSpanCount,
-                minDateTime: testStart,
-                returnAllOperations: true);
+            return await agent.WaitForSpansAsync(
+                       count: expectedSpanCount,
+                       minDateTime: testStart,
+                       returnAllOperations: true);
         }
 
         protected async Task AssertWebServerSpan(
@@ -556,10 +573,10 @@ namespace Datadog.Trace.TestHelpers
 
                 agent.SpanFilters.Add(IsServerSpan);
 
-                spans = agent.WaitForSpans(
-                    count: 2,
-                    minDateTime: testStart,
-                    returnAllOperations: true);
+                spans = await agent.WaitForSpansAsync(
+                            count: 2,
+                            minDateTime: testStart,
+                            returnAllOperations: true);
 
                 Assert.True(spans.Count == 2, $"expected two span, saw {spans.Count}");
             }
@@ -629,11 +646,11 @@ namespace Datadog.Trace.TestHelpers
                 Output.WriteLine($"[http] {response.StatusCode} {content}");
                 Assert.Equal(expectedHttpStatusCode, response.StatusCode);
 
-                spans = agent.WaitForSpans(
-                    count: 1,
-                    minDateTime: testStart,
-                    operationName: "aspnet.request",
-                    returnAllOperations: true);
+                spans = await agent.WaitForSpansAsync(
+                            count: 1,
+                            minDateTime: testStart,
+                            operationName: "aspnet.request",
+                            returnAllOperations: true);
 
                 Assert.True(spans.Count == 1, $"expected two span, saw {spans.Count}");
             }
@@ -652,13 +669,6 @@ namespace Datadog.Trace.TestHelpers
             // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
-        }
-
-        protected async Task ReportRetry(ITestOutputHelper outputHelper, int attemptsRemaining, Exception ex = null)
-        {
-            outputHelper.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
-
-            await ErrorHelpers.SendMetric(outputHelper, "dd_trace_dotnet.ci.tests.retries", EnvironmentHelper);
         }
 
         private bool IsServerSpan(MockSpan span) =>

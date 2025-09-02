@@ -1,6 +1,7 @@
 using System;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Samples.DatabaseHelper;
@@ -11,6 +12,44 @@ namespace Samples.SqlServer
     internal static class Program
     {
         private static async Task<int> Main()
+        {
+            try
+            {
+                return await AsyncMain();
+            }
+            catch (SqlException ex) when (IsConnectionError(ex) || IsSocketError(ex))
+            {
+                Console.WriteLine("Transport-level SQL error, skipping test");
+                Console.WriteLine(ex.ToString());
+                return 13; // Skip code
+            }
+
+            // Some well-known values, and some values from
+            // https://learn.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlerror.number?view=net-9.0-pp
+            static bool IsConnectionError(SqlException ex)
+                => ex.Number == 53 || // SQL Server not found
+                   ex.Number == 10054 || // Connection reset by peer
+                   ex.Number == 10060 || // Timeout expired
+                   ex.Number == -2 || // Connection timeout
+                   ex.Number == 258; // Connection timeout
+
+            static bool IsSocketError(Exception ex)
+            {
+                while(ex != null)
+                {
+                    if (ex is SocketException { SocketErrorCode: SocketError.ConnectionReset })
+                    {
+                        return true;
+                    }
+
+                    ex = ex.InnerException;
+                }
+
+				return false;
+            }
+        }
+
+        private static async Task<int> AsyncMain()
         {
             var commandFactory = new DbCommandFactory($"[System-Data-SqlClient-Test-{Guid.NewGuid():N}]");
             var commandExecutor = new SqlCommandExecutor();

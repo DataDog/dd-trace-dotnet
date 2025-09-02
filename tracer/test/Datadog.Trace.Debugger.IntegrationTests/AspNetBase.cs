@@ -78,10 +78,10 @@ namespace Datadog.Trace.Debugger.IntegrationTests
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
             await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent);
 
-            return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
+            return await WaitForSpansAsync(agent, expectedSpans, phase, minDateTime, url);
         }
 
-        protected IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
+        protected async Task<IImmutableList<MockSpan>> WaitForSpansAsync(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
         {
             agent.SpanFilters.Clear();
 
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Debugger.IntegrationTests
                 agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
             }
 
-            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
+            var spans = await agent.WaitForSpansAsync(expectedSpans, minDateTime: minDateTime);
             if (spans.Count != expectedSpans)
             {
                 Output?.WriteLine($"spans.Count: {spans.Count} != expectedSpans: {expectedSpans}, this is phase: {phase}");

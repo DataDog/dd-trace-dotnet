@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
     {
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
 
-        public const string OperationName = "azure-functions.invoke";
+        public const string OperationName = "azure_functions.invoke";
         public const string SpanType = SpanTypes.Serverless;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 

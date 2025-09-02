@@ -20,6 +20,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Processors;
@@ -51,6 +52,7 @@ namespace Datadog.Trace.Configuration
         // These values can all be overwritten by dynamic config
         private readonly bool _traceEnabled;
         private readonly bool _apmTracingEnabled;
+        private readonly bool _logsInjectionEnabled;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _isDataStreamsMonitoringInDefaultState;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
@@ -95,6 +97,19 @@ namespace Datadog.Trace.Configuration
         /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
         /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
+            : this(source, telemetry, errorLog, LibDatadogAvailabilityHelper.IsLibDatadogAvailable)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TracerSettings"/> class.
+        /// The "main" constructor for <see cref="TracerSettings"/> that should be used internally in the library.
+        /// </summary>
+        /// <param name="source">The configuration source. If <c>null</c> is provided, uses <see cref="NullConfigurationSource"/> </param>
+        /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
+        /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
+        /// <param name="isLibDatadogAvailable">Used to check whether the libdatadog library is available. Useful for integration tests</param>
+        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog, LibDatadogAvailableResult isLibDatadogAvailable)
         {
             var commaSeparator = new[] { ',' };
             source ??= NullConfigurationSource.Instance;
@@ -121,35 +136,10 @@ namespace Datadog.Trace.Configuration
 
             LambdaMetadata = LambdaMetadata.Create();
 
-            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
-            IsRunningMiniAgentInAzureFunctions = ImmutableAzureAppServiceSettings.GetIsFunctionsAppUsingMiniAgent(source, telemetry);
-
-            if (IsRunningInAzureAppService)
+            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
-
-            // With SSI, beyond ContinuousProfiler.ConfigurationKeys.ProfilingEnabled (true or auto vs false),
-            // the profiler could be enabled via ContinuousProfiler.ConfigurationKeys.SsiDeployed:
-            //  - if it contains "profiler", the profiler is enabled after 30 seconds + at least 1 span
-            //  - if not, the profiler needed to be loaded by the CLR but no profiling will be done, only telemetry metrics will be sent
-            // So, for the Tracer, the profiler should be seen as enabled if ContinuousProfiler.ConfigurationKeys.SsiDeployed has a value
-            // (even without "profiler") so that spans will be sent to the profiler.
-            ProfilingEnabledInternal = config
-                         .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
-                         .GetAs(
-                            converter: x => x switch
-                            {
-                                "auto" => true,
-                                _ when x.ToBoolean() is { } boolean => boolean,
-                                _ => ParsingResult<bool>.Failure(),
-                            },
-                            getDefaultValue: () =>
-                            {
-                                var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
-                                return (profilingSsiDeployed != null);
-                            },
-                            validator: null);
 
             var otelTags = config
                           .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
@@ -313,6 +303,10 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.ApmTracingEnabled)
                                       .AsBool(defaultValue: true);
 
+            _logsInjectionEnabled = config
+                                         .WithKeys(ConfigurationKeys.LogsInjectionEnabled)
+                                         .AsBool(defaultValue: true);
+
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
                 telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
@@ -387,7 +381,7 @@ namespace Datadog.Trace.Configuration
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
-                                        () => new DefaultResult<SchemaVersion>(SchemaVersion.V0, "V0"),
+                                        defaultValue: new DefaultResult<SchemaVersion>(SchemaVersion.V0, "V0"),
                                         converter: x => x switch
                                         {
                                             "v1" or "V1" => SchemaVersion.V1,
@@ -427,10 +421,7 @@ namespace Datadog.Trace.Configuration
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(
-                        "{ConfigurationKey} is enabled, but {StatsComputationEnabled} is enabled. Disabling {TraceDataPipelineEnabled}.",
-                        ConfigurationKeys.TraceDataPipelineEnabled,
-                        ConfigurationKeys.StatsComputationEnabled,
-                        ConfigurationKeys.TraceDataPipelineEnabled);
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
 
@@ -440,9 +431,36 @@ namespace Datadog.Trace.Configuration
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(
-                        "{ConfigurationKey} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling {TraceDataPipelineEnabled}.",
-                        ConfigurationKeys.TraceDataPipelineEnabled,
-                        ConfigurationKeys.TraceDataPipelineEnabled);
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                if (!isLibDatadogAvailable.IsAvailable)
+                {
+                    DataPipelineEnabled = false;
+                    if (isLibDatadogAvailable.Exception is not null)
+                    {
+                        Log.Warning(
+                            isLibDatadogAvailable.Exception,
+                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
+                    }
+                    else
+                    {
+                        Log.Warning(
+                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
+                    }
+
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                // SSI already utilizes libdatadog. To prevent unexpected behavior,
+                // we proactively disable the data pipeline when SSI is enabled. Theoretically, this should not cause any issues,
+                // but as a precaution, we are taking a conservative approach during the initial rollout phase.
+                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")))
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
             }
@@ -454,7 +472,7 @@ namespace Datadog.Trace.Configuration
 
             CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat)
                                               .GetAs(
-                                                   getDefaultValue: () => new DefaultResult<string>(SamplingRulesFormat.Glob, "glob"),
+                                                   defaultValue: new DefaultResult<string>(SamplingRulesFormat.Glob, "glob"),
                                                    converter: value =>
                                                    {
                                                        // We intentionally report invalid values as "valid" in the converter,
@@ -513,10 +531,10 @@ namespace Datadog.Trace.Configuration
                              .WithKeys(ConfigurationKeys.BufferSize)
                              .AsInt32(defaultValue: 1024 * 1024 * 10); // 10MB
 
-            // If Lambda/GCP we don't want to have a flush interval. The serverless integration
+            // If Lambda/GCP we don't want to have a flush interval. Some serverless integrations
             // manually calls flush and waits for the result before ending execution.
-            // This can artificially increase the execution time of functions
-            var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningMiniAgentInAzureFunctions ? 0 : 100;
+            // This can artificially increase the execution time of functions.
+            var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningInAzureFunctions ? 0 : 100;
             TraceBatchInterval = config
                                 .WithKeys(ConfigurationKeys.SerializationBatchInterval)
                                 .AsInt32(defaultTraceBatchInterval);
@@ -606,7 +624,7 @@ namespace Datadog.Trace.Configuration
             PropagationBehaviorExtract = config
                                          .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
                                          .GetAs(
-                                             () => new DefaultResult<ExtractBehavior>(ExtractBehavior.Continue, "continue"),
+                                             defaultValue: new(ExtractBehavior.Continue, "continue"),
                                              converter: x => x.ToLowerInvariant() switch
                                              {
                                                  "continue" => ExtractBehavior.Continue,
@@ -623,6 +641,12 @@ namespace Datadog.Trace.Configuration
             BaggageMaximumBytes = config
                                  .WithKeys(ConfigurationKeys.BaggageMaximumBytes)
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageBytes);
+
+            BaggageTagKeys = new HashSet<string>(
+                            config
+                            .WithKeys(ConfigurationKeys.BaggageTagKeys)
+                            .AsString(defaultValue: "user.id,session.id,account.id")
+                            ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? []);
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
 
@@ -649,16 +673,23 @@ namespace Datadog.Trace.Configuration
                              .WithKeys(ConfigurationKeys.IpHeaderEnabled)
                              .AsBool(false);
 
+            // DSM is now enabled by default in non-serverless environments
             _isDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
-                                            .AsBool(false);
+                                            .AsBool(
+                                                  !EnvironmentHelpers.IsAwsLambda() &&
+                                                  !EnvironmentHelpers.IsAzureAppServices() &&
+                                                  !EnvironmentHelpers.IsAzureFunctions() &&
+                                                  !EnvironmentHelpers.IsGoogleCloudFunctions());
+
             _isDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                                     .AsBool() == null;
 
+            // no legacy headers if we are in "enbaled by default" state
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
-                                               .AsBool(true);
+                                               .AsBool(!_isDataStreamsMonitoringInDefaultState);
 
             IsRareSamplerEnabled = config
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
@@ -666,18 +697,18 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationEnabled = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningMiniAgentInAzureFunctions));
-            if (!ApmTracingEnabled && StatsComputationEnabled)
+                                     .AsBool(false); // default is false, but user config can be overridden below
+
+            if (StatsComputationEnabled && !ApmTracingEnabled)
             {
-                telemetry.Record(ConfigurationKeys.StatsComputationEnabled, false, ConfigurationOrigins.Calculated);
+                // if APM is not enabled, disable stats computation (override user config)
+                telemetry.Record(ConfigurationKeys.StatsComputationEnabled, value: false, ConfigurationOrigins.Calculated);
                 StatsComputationEnabled = false;
             }
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
-                                   .AsString(
-                                        IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
-                                        LambdaMetadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : string.Empty);
+                                   .AsString(GetDefaultHttpClientExclusions());
 
             if (isRunningInCiVisibility)
             {
@@ -696,7 +727,7 @@ namespace Datadog.Trace.Configuration
             DbmPropagationMode = config
                                 .WithKeys(ConfigurationKeys.DbmPropagationMode)
                                 .GetAs(
-                                     () => new DefaultResult<DbmPropagationLevel>(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
+                                     defaultValue: new(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
@@ -742,6 +773,13 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
+            OpenTelemetryMetricsEnabled = config
+                                    .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled)
+                                    .AsBool(defaultValue: false);
+
+            var enabledMeters = config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames).AsString();
+            OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters) ? TrimSplitString(enabledMeters, commaSeparator) : [];
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -764,7 +802,7 @@ namespace Datadog.Trace.Configuration
                 "dotnet_msi" => "env_var",
                 "windows_fleet_installer" => "ssi", // windows SSI on IIS
                 _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")) => "ssi", // "normal" ssi
-                _ => "unknown" // everything else
+                _ => "manual" // everything else
             };
 
             telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
@@ -775,6 +813,10 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigTelemetryData.CloudHosting, "Azure", recordValue: true, ConfigurationOrigins.Default);
                 telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
+
+            GraphQLErrorExtensions = TrimSplitString(
+                config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
+                commaSeparator);
 
             static void RecordDisabledIntegrationsTelemetry(IntegrationSettingsCollection integrations, IConfigurationTelemetry telemetry)
             {
@@ -855,17 +897,20 @@ namespace Datadog.Trace.Configuration
         internal bool ApmTracingEnabled => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
 
         /// <summary>
-        /// Gets a value indicating whether profiling is enabled.
-        /// Default is <c>false</c>.
-        /// </summary>
-        /// <seealso cref="ContinuousProfiler.ConfigurationKeys.ProfilingEnabled"/>
-        internal bool ProfilingEnabledInternal { get; }
-
-        /// <summary>
         /// Gets the names of disabled integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
         public HashSet<string> DisabledIntegrationNames { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether OpenTelemetry Metrics are enabled.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled"/>
+        internal bool OpenTelemetryMetricsEnabled { get; }
+
+        /// Gets the names of enabled Meters.
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
+        internal string[] OpenTelemetryMeterNames { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.
@@ -891,11 +936,10 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether correlation identifiers are
         /// automatically injected into the logging context.
-        /// Default is <c>false</c>, unless <see cref="ConfigurationKeys.DirectLogSubmission.EnabledIntegrations"/>
-        /// enables Direct Log Submission.
+        /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? LogSubmissionSettings.LogsInjectionEnabled;
+        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? _logsInjectionEnabled;
 
         /// <summary>
         /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
@@ -1107,6 +1151,13 @@ namespace Datadog.Trace.Configuration
         internal int BaggageMaximumBytes { get; }
 
         /// <summary>
+        /// Gets the configuration for which baggage keys are converted into span tags.
+        /// Default value is "user.id,session.id,account.id".
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.BaggageTagKeys"/>
+        internal HashSet<string> BaggageTagKeys { get; }
+
+        /// <summary>
         /// Gets a value indicating whether runtime metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
@@ -1152,7 +1203,8 @@ namespace Datadog.Trace.Configuration
         internal int TraceBufferSize { get; }
 
         /// <summary>
-        /// Gets a value indicating the batch interval for the serialization queue, in milliseconds
+        /// Gets a value indicating the batch interval for the serialization queue, in milliseconds.
+        /// Set to 0 to disable.
         /// </summary>
         internal int TraceBatchInterval { get; }
 
@@ -1194,6 +1246,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsDataStreamsMonitoringInDefaultState => DynamicSettings.DataStreamsMonitoringEnabled == null && _isDataStreamsMonitoringInDefaultState;
 
         /// <summary>
+        /// Gets a value indicating whether data streams schema extraction is enabled or not.
+        /// </summary>
+        internal bool IsDataStreamsSchemaExtractionEnabled => IsDataStreamsMonitoringEnabled && !IsDataStreamsMonitoringInDefaultState;
+
+        /// <summary>
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
         /// </summary>
         internal bool IsDataStreamsLegacyHeadersEnabled { get; }
@@ -1204,15 +1261,14 @@ namespace Datadog.Trace.Configuration
         internal bool IsRareSamplerEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the tracer is running in AAS
+        /// Gets a value indicating whether the tracer is running in AzureAppServices (AAS).
         /// </summary>
-        internal bool IsRunningInAzureAppService { get; }
+        internal bool IsRunningInAzureAppService => AzureAppServiceMetadata is not null;
 
         /// <summary>
-        /// Gets a value indicating whether the tracer is running in an Azure Function on a
-        /// consumption plan
+        /// Gets a value indicating whether the tracer is running in Azure Functions.
         /// </summary>
-        internal bool IsRunningMiniAgentInAzureFunctions { get; }
+        internal bool IsRunningInAzureFunctions => AzureAppServiceMetadata?.IsFunctionsApp ?? false;
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions
@@ -1306,16 +1362,23 @@ namespace Datadog.Trace.Configuration
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
+        /// Gets which GraphQL error extensions to capture.
+        /// A comma-separated list of extension keys to capture. Empty or not present means no extensions are captured.        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GraphQLErrorExtensions"/>
+        internal string[] GraphQLErrorExtensions { get; }
+
+        /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
-        /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios.
-        /// It may also be explicitly disabled
+        /// RCM requires the "full" Go agent (not just the trace agent, and not the Rust agents),
+        /// so is not available in some scenarios. It may also be explicitly disabled.
         /// </summary>
+        // NOTE: when we clean this up, see also EnvironmentHelpers.IsServerlessEnvironment()
         internal bool IsRemoteConfigurationAvailable =>
             RemoteConfigurationEnabled &&
-            !(IsRunningInAzureAppService
-           || IsRunningMiniAgentInAzureFunctions
-           || IsRunningInGCPFunctions
-           || LambdaMetadata.IsRunningInLambda);
+            !IsRunningInAzureAppService &&
+            !IsRunningInAzureFunctions &&
+            !IsRunningInGCPFunctions &&
+            !LambdaMetadata.IsRunningInLambda;
 
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
@@ -1334,7 +1397,7 @@ namespace Datadog.Trace.Configuration
         {
             var configurationDictionary = config
                    .WithKeys(key)
-                   .AsDictionary(allowOptionalMappings: true, () => new Dictionary<string, string>());
+                   .AsDictionary(allowOptionalMappings: true, defaultValue: null, "[]");
 
             if (configurationDictionary == null)
             {
@@ -1409,7 +1472,11 @@ namespace Datadog.Trace.Configuration
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    list.Add(value.Trim());
+                    var trimmedValue = value.Trim();
+                    if (!list.Contains(trimmedValue))
+                    {
+                        list.Add(trimmedValue);
+                    }
                 }
             }
 
@@ -1517,6 +1584,21 @@ namespace Datadog.Trace.Configuration
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }
 
+        internal string GetDefaultHttpClientExclusions()
+        {
+            if (IsRunningInAzureAppService)
+            {
+                return ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions;
+            }
+
+            if (LambdaMetadata.IsRunningInLambda)
+            {
+                return LambdaMetadata.DefaultHttpClientExclusions;
+            }
+
+            return string.Empty;
+        }
+
         private static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)
         {
             inputValue = inputValue.Trim(); // we know inputValue isn't null (and have tests for it)
@@ -1540,7 +1622,10 @@ namespace Datadog.Trace.Configuration
         }
 
         internal static TracerSettings Create(Dictionary<string, object?> settings)
-            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new());
+            => Create(settings, LibDatadogAvailabilityHelper.IsLibDatadogAvailable);
+
+        internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable)
+            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new(), isLibDatadogAvailable);
 
         internal void CollectTelemetry(IConfigurationTelemetry destination)
         {

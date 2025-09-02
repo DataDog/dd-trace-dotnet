@@ -35,14 +35,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             EnvironmentHelper.EnableTransport(transport);
             SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
+            var canUseStatsD = EnvironmentHelper.CanUseStatsD(transport);
+            if (!canUseStatsD)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.RuntimeMetricsEnabled, "0");
+            }
 
-            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var agent = EnvironmentHelper.GetMockAgent(useStatsD: canUseStatsD))
             {
                 using (var sample = await RunSampleAndWaitForExit(agent, arguments: $" -t {TracesToTrigger} -s {SpansPerTrace} -f {FillerTagLength}"))
                 {
                     // Extra long time out because big payloads
                     var timeoutInMilliseconds = 60_000;
-                    var spans = agent.WaitForSpans(ExpectedSpans, timeoutInMilliseconds: timeoutInMilliseconds);
+                    var spans = await agent.WaitForSpansAsync(ExpectedSpans, timeoutInMilliseconds: timeoutInMilliseconds);
                     AssertLargePayloadExpectations(spans);
                 }
             }

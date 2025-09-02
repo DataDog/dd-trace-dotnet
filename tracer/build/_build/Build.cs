@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.20.0";
+    readonly string Version = "3.26.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -266,12 +266,17 @@ partial class Build : NukeBuild
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
 
-    Target BuildAndRunManagedUnitTests => _ => _
-        .Description("Builds the managed unit tests and runs them")
+    Target BuildManagedUnitTests => _ => _
+        .Description("Builds the managed unit tests")
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(BuildRunnerTool)
-        .DependsOn(CompileManagedUnitTests)
+        .DependsOn(CompileManagedUnitTests);
+
+    Target BuildAndRunManagedUnitTests => _ => _
+        .Description("Builds the managed unit tests and runs them")
+        .After(Clean, BuildTracerHome, BuildProfilerHome)
+        .DependsOn(BuildManagedUnitTests)
         .DependsOn(RunManagedUnitTests);
 
     Target RunNativeUnitTests => _ => _
@@ -406,6 +411,20 @@ partial class Build : NukeBuild
                 .SetNoWarnDotNetCore3()
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "bundle")
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+        });
+
+    Target BuildAzureFunctionsNuget => _ => _
+        .Unlisted()
+        .After(CreateBundleHome, ExtractDebugInfoLinux)
+        .Executes(() =>
+        {
+            DotNetPack(x => x
+                .SetProject(Solution.GetProject(Projects.DatadogAzureFunctions))
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "azure-functions"));
         });
 
     Target BuildBenchmarkNuget => _ => _

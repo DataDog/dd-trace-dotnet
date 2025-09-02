@@ -187,6 +187,9 @@
     <ClCompile Include="ChronoHelperTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="CpuSampleProviderTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

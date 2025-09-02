@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
@@ -16,6 +17,7 @@ using Datadog.Trace.Vendors.Datadog.Sketches;
 using FluentAssertions;
 using MessagePack;
 using Xunit;
+using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 
@@ -28,7 +30,7 @@ public class DataStreamsMessagePackFormatterTests
         var bucketDuration = 10_000_000_000;
         var edgeTags = new[] { "edge-1" };
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.Environment, "my-env" } });
-        var formatter = new DataStreamsMessagePackFormatter(settings, service);
+        var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled), service);
 
         var timeNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
@@ -111,7 +113,7 @@ public class DataStreamsMessagePackFormatterTests
             Service = service,
             Lang = "dotnet",
             TracerVersion = TracerConstants.AssemblyVersion,
-            ProductMask = 1,
+            ProductMask = 3,
             Stats = new MockDataStreamsBucket[]
             {
                 new()

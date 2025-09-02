@@ -61,6 +61,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.TestFramework", new [] { "Microsoft.VisualStudio.TestPlatform" });
             NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.Common", new [] { "Microsoft.VisualStudio.TestPlatform" });
             NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", new [] { "MSTest.TestAdapter" });
+            NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices", new [] { "MSTest.TestAdapter" });
             NugetPackages.Add("MySqlConnector", new [] { "MySqlConnector" });
             NugetPackages.Add("MySql.Data", new [] { "MySql.Data" });
             NugetPackages.Add("Npgsql", new [] { "Npgsql" });

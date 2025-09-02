@@ -38,6 +38,7 @@ internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider val
         PipelineUrl = ValueProvider.GetValue(Constants.GitlabPipelineUrl);
 
         JobUrl = ValueProvider.GetValue(Constants.GitlabJobUrl);
+        JobId = ValueProvider.GetValue(Constants.GitlabJobId);
         JobName = ValueProvider.GetValue(Constants.GitlabJobName);
         StageName = ValueProvider.GetValue(Constants.GitlabJobStage);
 
@@ -76,7 +77,9 @@ internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider val
             Constants.GitlabJobId);
 
         HeadCommit = ValueProvider.GetValue(Constants.GitlabMergeRequestSourceBranchSha);
-        PrBaseCommit = ValueProvider.GetValue(Constants.GitlabMergeRequestTargetBranchSha);
+        PrBaseHeadCommit = ValueProvider.GetValue(Constants.GitlabMergeRequestTargetBranchSha);
+        PrBaseCommit = ValueProvider.GetValue(Constants.GitlabMergeRequestDiffBaseSha);
         PrBaseBranch = ValueProvider.GetValue(Constants.GitlabMergeRequestTargetBranchName);
+        PrNumber = ValueProvider.GetValue(Constants.GitlabMergeRequestId);
     }
 }

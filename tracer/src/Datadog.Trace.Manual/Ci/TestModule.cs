@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci.Stubs;
 using Datadog.Trace.SourceGenerators;
 
@@ -44,6 +45,7 @@ public static class TestModule
         => InternalCreate(name, framework, frameworkVersion, startDate);
 
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     internal static ITestModule InternalCreate(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
         => NullTestModule.Instance;
 }

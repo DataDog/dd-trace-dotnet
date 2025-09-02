@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -76,12 +77,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName);
             var actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
-            telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.SqlClient);
         }
 
         [SkippableFact]
@@ -98,11 +99,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
+            var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
-            Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-            telemetry.AssertIntegrationDisabled(IntegrationId.SqlClient);
+            spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
+            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.SqlClient);
         }
     }
 }

@@ -13,14 +13,12 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
-using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -34,7 +32,6 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
-using NativeInterop = Datadog.Trace.LibDatadog.NativeInterop;
 
 namespace Datadog.Trace
 {
@@ -221,9 +218,6 @@ namespace Datadog.Trace
         /// </summary>
         internal void Start()
         {
-            // Start the Serverless Mini Agent in GCP Functions & Azure Consumption Plan Functions.
-            ServerlessMiniAgent.StartServerlessMiniAgent(Settings);
-
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
@@ -399,7 +393,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instance.DefaultServiceName);
 
                     writer.WritePropertyName("agent_url");
-                    writer.WriteValue(instanceSettings.Exporter.AgentUri);
+                    writer.WriteValue(instanceSettings.Exporter.TraceAgentUriBase);
 
                     writer.WritePropertyName("agent_transport");
                     writer.WriteValue(instanceSettings.Exporter.TracesTransport.ToString());
@@ -596,6 +590,10 @@ namespace Datadog.Trace
                     }
 
                     writer.WriteEndArray();
+
+                    writer.WritePropertyName("trace_data_pipeline_enabled");
+                    writer.WriteValue(instanceSettings.DataPipelineEnabled);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
@@ -691,22 +689,8 @@ namespace Datadog.Trace
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
 
-            if (FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess && !Util.EnvironmentHelpers.IsServerlessEnvironment())
-            {
-                try
-                {
-                    var result = Utils.StoreTracerMetadata(1, Tracer.RuntimeId, TracerConstants.Language, TracerConstants.ThreePartVersion, Environment.MachineName, tracerSettings.ServiceName, tracerSettings.Environment, tracerSettings.ServiceVersion);
-                    if (result.Tag == ResultTag.Error)
-                    {
-                        Log.Error("Failed to store tracer metadata with message: {Error}", Error.Read(ref result.Error));
-                        NativeInterop.Common.DropError(ref result.Error);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Failed to store tracer metadata due to an unexpected error");
-                }
-            }
+            // Record the service discovery metadata
+            ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings);
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
@@ -754,11 +738,8 @@ namespace Datadog.Trace
                         await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
                     }
 
-                    // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
-#if NETFRAMEWORK
-                    Log.Debug("Disposing Runtime Metrics");
                     instance.RuntimeMetrics?.Dispose();
-#endif
+                    instance.Statsd?.Dispose();
 
                     Log.Debug("Finished waiting for disposals.");
                 }

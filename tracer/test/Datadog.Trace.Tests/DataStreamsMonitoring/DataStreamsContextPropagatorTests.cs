@@ -143,7 +143,7 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
                 var binaryAsBase64 = Encoding.UTF8.GetString(binaryHeaderValueBytes);
                 Convert.FromBase64String(binaryAsBase64);
                 // If no exception then the binary header was incorrectly Base64-encoded
-                Assert.False(true, "Binary header should not be Base64-encoded.");
+                Assert.Fail("Binary header should not be Base64-encoded.");
             }
             catch (FormatException)
             {
