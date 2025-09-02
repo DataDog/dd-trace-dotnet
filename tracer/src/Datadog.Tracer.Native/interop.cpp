@@ -268,7 +268,37 @@ EXTERN_C BOOL STDAPICALLTYPE ShouldHeal(ModuleID moduleId, int methodToken, WCHA
     return trace::profiler->ShouldHeal(moduleId, methodToken, instrumentationId, products);
 }
 
+EXTERN_C u_long STDAPICALLTYPE GetInodeForPath(const WCHAR* path)
+{
+#ifdef _WIN32
+    // We don't need to support this on Windows
+    return -1;
+#else
+    if (!path)
+    {
+        return -1;
+    }
+
+    const std::string str = ToString(path);
+    if (str.empty())
+    {
+        return -1;
+    }
+
+    // We use lstat, because that matches the behaviour of the 'stat' command
+    // i.e. don't follow symlinks
+    struct stat st {};
+    if (lstat(str.c_str(), &st) != 0)
+    {
+        return -errno;
+    }
+
+    return st.st_ino;
+#endif
+}
+
 #ifndef _WIN32
+
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {
     return dlopen(__file, __mode);

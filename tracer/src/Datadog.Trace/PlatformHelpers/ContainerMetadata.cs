@@ -13,6 +13,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -163,7 +164,15 @@ namespace Datadog.Trace.PlatformHelpers
 
             try
             {
-                return NativeInterop.GetInode(path, out result);
+                if (!NativeMethods.TryGetInodeForPath(path, out result))
+                {
+#pragma warning disable DDLOG004 // Must use constant strings - disabled as it's an integer only, and only called once
+                    Log.Error("Error obtaining inode using PInvoke, returned " + result);
+#pragma warning restore DDLOG004
+                    return false;
+                }
+
+                return true;
             }
             catch (Exception ex)
             {
@@ -245,109 +254,6 @@ namespace Datadog.Trace.PlatformHelpers
         private static bool IsHostCgroupNamespaceInternal()
         {
             return File.Exists(ControlGroupsNamespacesFilePath) && TryGetInode(ControlGroupsNamespacesFilePath, out long output) && output == HostCgroupNamespaceInode;
-        }
-
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1310:Field names should not contain underscore", Justification = "Keeping the names matching the spec definitions")]
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1307:Accessible fields should begin with upper-case letter", Justification = "Keeping the names matching the spec definitions")]
-        private static class NativeInterop
-        {
-            /// <summary>
-            /// Get the inode for the provided path. Does so portably on x64 and arm64 Linux only.
-            /// </summary>
-            public static bool GetInode(string path, out long inode)
-            {
-                var arch = RuntimeInformation.ProcessArchitecture;
-                // using AT_FDCWD and AT_SYMLINK_NOFOLLOW for lstat-like behaviour
-                if (arch == Architecture.X64)
-                {
-                    if (Native.FstatatX64(Native.AT_FDCWD, path, out var st, Native.AT_SYMLINK_NOFOLLOW) == 0)
-                    {
-                        inode = (long)st.st_ino;
-                        return true;
-                    }
-                }
-                else if (arch == Architecture.Arm64)
-                {
-                    if (Native.FstatatArm64(Native.AT_FDCWD, path, out var st, Native.AT_SYMLINK_NOFOLLOW) == 0)
-                    {
-                        inode = (long)st.st_ino;
-                        return true;
-                    }
-                }
-
-                inode = 0;
-                return false;
-            }
-
-            // https://www.man7.org/linux/man-pages/man3/timespec.3type.html
-            [StructLayout(LayoutKind.Sequential)]
-            private struct Timespec
-            {
-                public nint tv_sec; // time_t (64-bit on 64-bit Linux)
-                public nint tv_nsec; // long
-            }
-
-            // x86_64 (glibc & musl)
-            [StructLayout(LayoutKind.Sequential, Pack = 8)]
-            private struct StatX64
-            {
-                public nuint st_dev; // dev_t
-                public nuint st_ino; // ino_t
-                public nuint st_nlink; // nlink_t (64-bit on x86_64)
-                public uint st_mode; // mode_t
-                public uint st_uid; // uid_t
-                public uint st_gid; // gid_t
-                public int __pad0; // matches glibc explicit pad
-                public nuint st_rdev; // dev_t
-                public long st_size; // off_t
-                public long st_blksize; // blksize_t (64-bit on x86_64)
-                public long st_blocks; // blkcnt_t
-                public Timespec st_atim;
-                public Timespec st_mtim;
-                public Timespec st_ctim;
-                public long __glibc_reserved0;
-                public long __glibc_reserved1;
-                public long __glibc_reserved2;
-            }
-
-            // aarch64/arm64 (glibc & musl)
-            // NOTE: nlink_t and blksize_t are 32-bit here; there is extra padding.
-            [StructLayout(LayoutKind.Sequential, Pack = 8)]
-            private struct StatArm64
-            {
-                public nuint st_dev; // dev_t (8)
-                public nuint st_ino; // ino_t (8)
-                public uint st_mode; // mode_t (4)
-                public uint st_nlink; // nlink_t (4)  <-- differs from x86_64
-                public uint st_uid; // uid_t (4)
-                public uint st_gid; // gid_t (4)
-                public nuint st_rdev; // dev_t (8)
-                public nuint __pad; // padding; glibc names it __pad1, musl uses unsigned long
-                public long st_size; // off_t (8)
-                public int st_blksize; // blksize_t (4)  <-- differs from x86_64
-                public int __pad2; // padding
-                public long st_blocks; // blkcnt_t (8)
-                public Timespec st_atim;
-                public Timespec st_mtim;
-                public Timespec st_ctim;
-                public int __reserved0; // glibc: int[2], musl: unsigned[2]
-                public int __reserved1;
-            }
-
-            // P/Invoke: use the libc wrappers (not raw syscalls)
-            private static class Native
-            {
-                private const string Lib = "libc";
-                public const int AT_FDCWD = -100;
-                public const int AT_SYMLINK_NOFOLLOW = 0x100;
-
-                // Path-based
-                [DllImport(Lib, EntryPoint = "fstatat", SetLastError = true)]
-                public static extern int FstatatX64(int dirfd, string path, out StatX64 buf, int flags);
-
-                [DllImport(Lib, EntryPoint = "fstatat", SetLastError = true)]
-                public static extern int FstatatArm64(int dirfd, string path, out StatArm64 buf, int flags);
-            }
         }
     }
 }
