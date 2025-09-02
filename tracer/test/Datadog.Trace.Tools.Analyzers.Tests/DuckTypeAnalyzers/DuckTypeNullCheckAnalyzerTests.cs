@@ -146,7 +146,7 @@ public class DuckTypeNullCheckAnalyzerTests
         {
             void TestMethod(IDuckType? duckType)
             {
-                if (duckType.Instance {{operand}} null)
+                if (duckType?.Instance {{operand}} null)
                 {
                 }
             }
@@ -274,7 +274,7 @@ public class DuckTypeNullCheckAnalyzerTests
             internal static TReturn? OnMethodEnd<TReturn>(TReturn? returnValue)
                 where TReturn : IFoo
             {
-                if (returnValue.Instance is not null)
+                if (returnValue?.Instance is not null)
                 {
                     var bar = returnValue.Bar;
                 }
@@ -283,9 +283,6 @@ public class DuckTypeNullCheckAnalyzerTests
             }
         }
         """;
-
-        // NOTE: The source fixedSource currently only replaces the condition, it does not remove the unnecessary nullability in the constraint.
-        // NOTE: Leaving that as an exercise for the reader
 
         await Verifier.VerifyCodeFixAsync(code, expected, fix);
     }
