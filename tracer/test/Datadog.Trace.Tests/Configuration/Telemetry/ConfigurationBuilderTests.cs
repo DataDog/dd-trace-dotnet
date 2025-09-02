@@ -896,6 +896,31 @@ public class ConfigurationBuilderTests
 
             actual.Should().Be(expected);
         }
+
+        [Fact]
+        public void AsInt32Result_WithDefault_ReturnsDefaultAndRecordsTelemetry()
+        {
+            var telemetry = new ConfigurationTelemetry();
+            const int expected = 23;
+            const string key = "unknown";
+            var actual = new ConfigurationBuilder(_source, telemetry)
+                        .WithKeys(key)
+                        .AsInt32Result()
+                        .WithDefault(expected);
+
+            actual.Should().Be(expected);
+            telemetry.GetData()
+                     .Should()
+                     .ContainSingle()
+                     .Which.Should()
+                     .BeEquivalentTo(
+                          new
+                          {
+                              Name = key,
+                              Value = expected,
+                              Origin = "default",
+                          });
+        }
     }
 
     public abstract class DoubleTestsBase
@@ -1120,6 +1145,31 @@ public class ConfigurationBuilderTests
             {
                 actual.Should().BeEquivalentTo(expected, $"using key '{key}'");
             }
+        }
+
+        [Fact]
+        public void AsDictionaryResult_WithDefault_ReturnsDefaultAndRecordsTelemetry()
+        {
+            var telemetry = new ConfigurationTelemetry();
+            const string expected = "[]";
+            const string key = "unknown";
+            var actual = new ConfigurationBuilder(_source, telemetry)
+                        .WithKeys(key)
+                        .AsDictionaryResult()
+                        .WithDefault(new(null, expected));
+
+            actual.Should().BeNull();
+            telemetry.GetData()
+                     .Should()
+                     .ContainSingle()
+                     .Which.Should()
+                     .BeEquivalentTo(
+                          new
+                          {
+                              Name = key,
+                              Value = expected,
+                              Origin = "default",
+                          });
         }
     }
 

@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using LogParsing;
 using Serilog;
 
 public static class MetricHelper
@@ -23,7 +24,7 @@ public static class MetricHelper
 
         const string metricName = "dd_trace_dotnet.ci.smoke_tests.reportable_errors";
 
-        return SendMetric(log, metricName: metricName, errors.Select(kvp => CreatePoint(kvp.Key, kvp.Value)));
+        return SendMetric(log, metricName: metricName, errors.Select(kvp => CreatePoint(kvp.Key, kvp.Value)), isDistribution: false);
 
         static string CreatePoint(string errorReason, int count)
         {
@@ -31,6 +32,9 @@ public static class MetricHelper
                              "ci.stage:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_STAGEDISPLAYNAME"))}}",
                              "ci.job:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_JOBDISPLAYNAME"))}}",
                              "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
+                             "target_framework:{{SanitizeTagValue(Environment.GetEnvironmentVariable("PUBLISHFRAMEWORK"))}}",
+                             "os:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOS"))}}",
+                             "os_version:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOSVERSION"))}}",
                              "error_reason:{{SanitizeTagValue(errorReason)}}"
                          """;
 
@@ -50,7 +54,76 @@ public static class MetricHelper
         }
     }
 
-    private static async Task SendMetric(ILogger log, string metricName, IEnumerable<string> metrics)
+    public static Task SendTracerMetricDistributions(ILogger log, IEnumerable<NativeFunctionMetrics> distributions)
+    {
+        var baseTags = $$"""
+                             "ci.stage:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_STAGEDISPLAYNAME"))}}",
+                             "ci.job:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_JOBDISPLAYNAME"))}}",
+                             "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
+                             "target_framework:{{SanitizeTagValue(Environment.GetEnvironmentVariable("PUBLISHFRAMEWORK"))}}",
+                             "os:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOS"))}}",
+                             "os_version:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOSVERSION"))}}"
+                         """;
+
+        var allSeries = distributions
+                       .GroupBy(d => (d.Name, d.Count.HasValue))
+                       .SelectMany(GetSeries);
+
+        return SendMetric(log, "native tracer distributions", allSeries, isDistribution: true);
+
+        IEnumerable<string> GetSeries(IGrouping<(string Name, bool HasCount), NativeFunctionMetrics> group)
+        {
+            if (NativeFunctionMetrics.IsTotalName(group.Key.Name))
+            {
+                yield return CreateSeries(
+                    "dd_trace_dotnet.ci.smoke_tests.init_duration_ms",
+                    group.Select(x => (x.Timestamp, x.TimeMs)),
+                    baseTags);
+            }
+            else
+            {
+                // other metrics produce multiple series
+                var tags = $$"""
+                             {{baseTags}},
+                                "native:{{SanitizeTagValue(group.Key.Name)}}"
+                             """;
+
+                yield return CreateSeries(
+                    "dd_trace_dotnet.ci.smoke_tests.callback_duration_ms",
+                    group.Select(x => (x.Timestamp, x.TimeMs)),
+                    tags);
+
+                if (group.Key.HasCount)
+                {
+                    yield return CreateSeries(
+                        "dd_trace_dotnet.ci.smoke_tests.callback_count",
+                        group.Select(x => (x.Timestamp, (double)x.Count!.Value)),
+                        tags);
+
+                    yield return CreateSeries(
+                        "dd_trace_dotnet.ci.smoke_tests.callback_mean_duration_ms",
+                        group.Select(x => (x.Timestamp, x.MeanDurationMs)),
+                        tags);
+                }
+            }
+        }
+
+        static string CreateSeries(string metricName, IEnumerable<(DateTimeOffset Timestamp, double Value)> values, string tags)
+        {
+            var points = values.Select(x => $"[{x.Timestamp.ToUnixTimeSeconds()},[{x.Value}]]");
+
+            //lang=json
+            return $$"""
+                     {
+                         "metric": "{{metricName}}",
+                         "points": [{{string.Join(',', points)}}],
+                         "tags": [{{tags}}]
+                     }
+                     """;
+        }
+    }
+
+    private static async Task SendMetric(ILogger log, string metricName, IEnumerable<string> metrics, bool isDistribution)
     {
         var envKey = Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY");
         if (string.IsNullOrEmpty(envKey))
@@ -68,13 +141,17 @@ public static class MetricHelper
             client.DefaultRequestHeaders.Add("DD-API-KEY", envKey);
 
             var content = new StringContent(payload, Encoding.UTF8, "application/json");
-            var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
+            var uri = isDistribution
+                          ? "https://api.datadoghq.com/api/v1/distribution_points"
+                          : "https://api.datadoghq.com/api/v2/series";
+
+            var response = await client.PostAsync(uri, content);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             var result = response.IsSuccessStatusCode
                              ? "Successfully submitted metric"
                              : "Failed to submit metric";
-            log.Warning("{Result} {MetricName}. Response was: Code: {ResponseStatusCode}. Response: {ResponseContent}. Payload sent was: \"{Payload}\"", result, metricName, response.StatusCode, responseContent, payload);
+            log.Warning("{Result} {MetricName} to {Uri}. Response was: Code: {ResponseStatusCode}. Response: {ResponseContent}. Payload sent was: \"{Payload}\"", result, metricName, uri, response.StatusCode, responseContent, payload);
         }
         catch (Exception ex)
         {

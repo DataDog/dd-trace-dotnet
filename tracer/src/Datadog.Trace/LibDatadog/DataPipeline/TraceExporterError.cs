@@ -8,7 +8,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.DataPipeline;
 
 /// <summary>
 /// Represents errors that can occur when exporting traces.
@@ -20,7 +20,7 @@ internal struct TraceExporterError
     /// The error code representing the domain of the error.
     /// Consumers can use this to determine how to handle the error.
     /// </summary>
-    internal ErrorCode Code;
+    internal TraceExporterErrorCode Code;
 
     /// <summary>
     /// Human-readable error message describing the error.

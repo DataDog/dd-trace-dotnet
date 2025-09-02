@@ -12,7 +12,7 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 3.25.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 3.26.0)
 
 if (UNIVERSAL)
    find_package(GlibcCompat REQUIRED)
@@ -221,7 +221,7 @@ elseif(ISLINUX)
         $<$<BOOL:${LIBDL}>:dl>
         coreclr
         spdlog-headers
-        -Wl,--build-id
+        -Wl,--build-id=sha1
         -Wl,-version-script=${dd_profiling_linker_script}
         -Wl,--no-undefined
     )

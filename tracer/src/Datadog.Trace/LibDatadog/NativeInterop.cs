@@ -7,7 +7,9 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration.InteropStructs;
+using Datadog.Trace.LibDatadog.Logging;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
 
 namespace Datadog.Trace.LibDatadog;
@@ -31,7 +33,7 @@ internal class NativeInterop
         internal static extern TraceExporterErrorHandle Send(SafeHandle handle, ByteSlice trace, UIntPtr traceCount, ref IntPtr response);
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_response_get_body")]
-        internal static extern IntPtr GetResponseBody(IntPtr outHandle, ref UIntPtr len);
+        internal static extern IntPtr GetResponseBody(SafeHandle outHandle, ref UIntPtr len);
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_response_free")]
         internal static extern void FreeResponse(IntPtr handle);

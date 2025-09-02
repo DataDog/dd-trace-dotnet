@@ -12,7 +12,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.Logging;
 
 internal sealed class Logger
 {

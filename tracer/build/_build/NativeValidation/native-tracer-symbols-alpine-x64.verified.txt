@@ -20,7 +20,6 @@ fclose
 fdopen
 fflush
 fileno
-floorl
 fopen
 fprintf
 fputc
@@ -33,6 +32,7 @@ ftello
 fwrite
 get_nprocs
 getc
+getentropy
 getenv
 getpid
 gettimeofday
@@ -116,6 +116,7 @@ strerror
 strerror_r
 strftime
 strlen
+strncmp
 strrchr
 strstr
 strtod

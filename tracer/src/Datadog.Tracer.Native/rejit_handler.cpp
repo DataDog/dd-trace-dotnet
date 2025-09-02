@@ -293,7 +293,7 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
             if (enable_rejit_tracking)
             {
                 WriteLock wlock(m_rejit_history_lock);
-                for (auto i = 0; i < modulesVector.size(); i++)
+                for (size_t i = 0; i < modulesVector.size(); i++)
                 {
                     m_rejit_history.push_back({modulesVector[i], modulesMethodDef[i]});
                 }
@@ -325,11 +325,13 @@ void RejitHandler::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitReque
 RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
     m_profilerInfo(pInfo), m_profilerInfo10(nullptr), m_work_offloader(work_offloader)
 {
+    m_rejitters.reserve(5);
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
     m_profilerInfo(pInfo), m_profilerInfo10(pInfo), m_work_offloader(work_offloader)
 {
+    m_rejitters.reserve(5);
 }
 
 void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef,
@@ -532,7 +534,7 @@ bool RejitHandler::HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef) {
     }
 
     ReadLock rlock(m_rejit_history_lock);
-    for (auto i = 0; i < m_rejit_history.size(); i++)
+    for (size_t i = 0; i < m_rejit_history.size(); i++)
     {
         const auto mod_met_pair = m_rejit_history[i];
         if (get<0>(mod_met_pair) == moduleId && get<1>(mod_met_pair) == methodDef)

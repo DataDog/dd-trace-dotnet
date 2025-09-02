@@ -108,7 +108,7 @@ namespace Datadog.Trace.Configuration
                 DatadogLogging.UseDefaultLevel();
             }
 
-            LibDatadog.Logger.Instance.SetLogLevel(debugEnabled: enabled);
+            LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: enabled);
 
             TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }
@@ -122,10 +122,10 @@ namespace Datadog.Trace.Configuration
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_Reload);
             DatadogLogging.Reset();
-            var isLibdatadogAvailable = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
+            var isLibdatadogAvailable = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
             if (isLibdatadogAvailable.IsAvailable)
             {
-                LibDatadog.Logger.Instance.SetLogLevel(debugEnabled: false);
+                LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: false);
             }
 
             GlobalConfigurationSource.Reload(isLibdatadogAvailable.IsAvailable);

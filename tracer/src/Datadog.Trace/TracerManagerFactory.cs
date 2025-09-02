@@ -17,6 +17,7 @@ using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Iast;
 using Datadog.Trace.LibDatadog;
+using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -59,8 +60,8 @@ namespace Datadog.Trace
                 agentWriter: null,
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
-                statsd: null,
-                runtimeMetrics: null,
+                statsd: null, // For now, let's continue to always create a new StatsD instance
+                runtimeMetrics: previous?.RuntimeMetrics,
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
@@ -115,7 +116,7 @@ namespace Datadog.Trace
                 Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
             }
 
-            var libdatadogAvailaibility = LibDatadogAvailaibilityHelper.IsLibDatadogAvailable;
+            var libdatadogAvailaibility = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
             if (libdatadogAvailaibility.Exception is not null)
             {
                 Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
@@ -136,9 +137,13 @@ namespace Datadog.Trace
             agentWriter ??= GetAgentWriter(settings, settings.TracerMetricsEnabled ? statsd : null, rates => sampler.SetDefaultSampleRates(rates), discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
 
-            if (runtimeMetricsEnabled)
+            if (runtimeMetricsEnabled && runtimeMetrics is { })
             {
-                runtimeMetrics ??= new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
+                runtimeMetrics.UpdateStatsd(statsd);
+            }
+            else if (runtimeMetricsEnabled)
+            {
+                runtimeMetrics = new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
             }
             else
             {
@@ -386,7 +391,7 @@ namespace Datadog.Trace
                     // If this was previously initialized, it will be re-initialized with the new settings, which is fine
                     if (Log.FileLoggingConfiguration is { } fileConfig)
                     {
-                        var logger = LibDatadog.Logger.Instance;
+                        var logger = LibDatadog.Logging.Logger.Instance;
                         logger.Enable(fileConfig, DomainMetadata.Instance);
 
                         // hacky to use the global setting, but about the only option we have atm
@@ -579,15 +584,21 @@ namespace Datadog.Trace
         private static bool TryLoadAspNetSiteName(out string siteName)
         {
 #if NETFRAMEWORK
-            // System.Web.dll is only available on .NET Framework
-            if (System.Web.Hosting.HostingEnvironment.IsHosted)
+            try
             {
-                // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
-                // note that ApplicationVirtualPath includes a leading slash.
-                siteName = (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
-                return true;
+                // System.Web.dll is only available on .NET Framework
+                if (System.Web.Hosting.HostingEnvironment.IsHosted)
+                {
+                    // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
+                    // note that ApplicationVirtualPath includes a leading slash.
+                    siteName = (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
+                    return true;
+                }
             }
-
+            catch (TypeLoadException ex)
+            {
+                Log.Warning(ex, "Unable to determine ASP.NET site name: HostingEnvironment type could not be loaded. This is expected when running ASP.NET Core on the .NET Framework CLR, which is not supported.");
+            }
 #endif
             siteName = default;
             return false;

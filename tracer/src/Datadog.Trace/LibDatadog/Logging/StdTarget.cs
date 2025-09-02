@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.Logging;
 
 /// <summary>
 /// Represents the target stream for a standard output/error logger.
