@@ -166,9 +166,7 @@ namespace Datadog.Trace.PlatformHelpers
             {
                 if (!NativeMethods.TryGetInodeForPath(path, out result))
                 {
-#pragma warning disable DDLOG004 // Must use constant strings - disabled as it's an integer only, and only called once
-                    Log.Error("Error obtaining inode using PInvoke, returned " + result);
-#pragma warning restore DDLOG004
+                    LogError(null, "Error obtaining inode using PInvoke, returned " + result);
                     return false;
                 }
 
@@ -176,9 +174,25 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error obtaining inode using PInvoke");
+                LogError(ex, "Error obtaining inode using PInvoke");
                 return false;
             }
+
+            static void LogError(Exception ex, string message)
+            {
+#pragma warning disable DDLOG004 // Must use constant strings - disabled as it's an integer only, and only called twice in the app lifetime
+                if (EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe())
+                {
+                    // if it's attached, then this really is an error
+                    Log.Error(ex, message);
+                }
+                else
+                {
+                    // The profiler isn't there, so this is "normal"
+                    Log.Debug(ex, message);
+                }
+            }
+#pragma warning restore DDLOG004
         }
 
         // Internal for testing
