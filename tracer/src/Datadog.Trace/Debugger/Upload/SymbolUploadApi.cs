@@ -13,6 +13,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Upload
@@ -51,7 +52,7 @@ namespace Datadog.Trace.Debugger.Upload
         {
             ArraySegment<byte> GetEventMetadataAsArraySegment()
             {
-                var eventMetadata = $@"{{""ddsource"": ""dd_debugger"", ""service"": ""{serviceName}"", ""runtimeId"": ""{Tracer.RuntimeId}""}}";
+                var eventMetadata = $@"{{""ddsource"": ""{DebuggerTags.DDSource}"", ""service"": ""{serviceName}"", ""runtimeId"": ""{Tracer.RuntimeId}"", ""debugger.type"": ""{DebuggerTags.DebuggerType.SymDb}""}}";
 
                 var count = Encoding.UTF8.GetByteCount(eventMetadata);
                 var eventAsBytes = new byte[count];
