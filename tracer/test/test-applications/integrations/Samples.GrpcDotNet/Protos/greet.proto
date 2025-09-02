@@ -23,6 +23,9 @@ service Greeter {
 
   // Client streaming
   rpc StreamingBothWays  (stream HelloRequest) returns (stream HelloReply);
+
+  // Method that triggers invalid content type error
+  rpc InvalidContentTypeMethod (HelloRequest) returns (HelloReply);
 }
 
 message HelloRequest {

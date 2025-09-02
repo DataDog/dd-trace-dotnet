@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -70,6 +70,7 @@ public class Worker : BackgroundService
                 SendUnaryRequest(client);
                 SendErrors(client);
                 SendVerySlowRequest(client);
+                SendInvalidContentTypeRequest(client);
             }
         }
         catch (Exception ex)
@@ -221,6 +222,22 @@ public class Worker : BackgroundService
         catch(RpcException ex) when (ex.StatusCode == StatusCode.DeadlineExceeded)
         {
             _logger.LogInformation("Received deadline exceeded response " + ex.Message);
+        }
+    }
+
+    private void SendInvalidContentTypeRequest(Greeter.GreeterClient client)
+    {
+        try
+        {
+            using var scope = CreateScope();
+            _logger.LogInformation("Sending request to InvalidContentTypeMethod to trigger BuildHttpErrorResponse");
+
+            // Call the new method that will throw an RpcException with invalid content type error
+            var reply = client.InvalidContentTypeMethod(new HelloRequest { Name = "GreeterClient" });
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.Internal)
+        {
+            _logger.LogInformation("Incorrect content type exception " + ex.Message);
         }
     }
 
