@@ -65,12 +65,12 @@ public class Worker : BackgroundService
             if (Environment.GetEnvironmentVariable("IAST_GRPC_SOURCE_TEST") == null)
             {
                 await SendErrorsAsync(client);
+                SendInvalidContentTypeRequest(client);
                 await SendVerySlowRequestAsync(client);
 
                 SendUnaryRequest(client);
                 SendErrors(client);
                 SendVerySlowRequest(client);
-                SendInvalidContentTypeRequest(client);
             }
         }
         catch (Exception ex)
@@ -211,7 +211,7 @@ public class Worker : BackgroundService
 
     private async Task SendVerySlowRequestAsync(Greeter.GreeterClient client)
     {
-        using var scope = CreateScope();
+        using var scope = CreateScope("Invalid content type request");
         try
         {
             _logger.LogInformation("Sending very slow request to self");
