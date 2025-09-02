@@ -393,11 +393,9 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ApiController_ExecuteAs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AspNetMvcIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AspNetWebApi2Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AsyncControllerActionInvoker_BeginInvokeAction_Integration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AsyncControllerActionInvoker_EndInvokeAction_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ControllerContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ExceptionHandlerExtensions_HandleAsync_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpConfigurationStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpContextHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpHeadersCollection.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpMethodStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpModule_Integration.cs
@@ -695,5 +693,4 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/DirectSubmissi
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/IJsonLayout4Proxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingConfigurationPre43Proxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingRuleProxy.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingRulesListProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ITargetListProxy.cs

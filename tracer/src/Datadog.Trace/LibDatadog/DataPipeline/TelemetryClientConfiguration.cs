@@ -5,10 +5,9 @@
 
 #nullable enable
 
-using System;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.DataPipeline;
 
 /// <summary>
 /// Represents a configuration for the telemetry client.

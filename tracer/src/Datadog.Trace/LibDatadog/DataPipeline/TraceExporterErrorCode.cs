@@ -1,16 +1,16 @@
-// <copyright file="ErrorCode.cs" company="Datadog">
+// <copyright file="TraceExporterErrorCode.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.DataPipeline;
 
 /// <summary>
 /// Represents error codes that can occur when exporting traces.
 /// </summary>
-internal enum ErrorCode
+internal enum TraceExporterErrorCode
 {
     /// <summary>
     /// Address already in use
@@ -111,4 +111,14 @@ internal enum ErrorCode
     /// Operation timed out
     /// </summary>
     TimedOut = 19,
+
+    /// <summary>
+    /// Internal error
+    /// </summary>
+    Internal = 20,
+
+    /// <summary>
+    /// Panic error
+    /// </summary>
+    Panic = 21,
 }
