@@ -7,8 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -16,7 +14,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using static Datadog.Trace.Agent.Api;
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.DataPipeline;
 
 internal class TraceExporter : SafeHandle, IApi
 {
@@ -45,18 +43,35 @@ internal class TraceExporter : SafeHandle, IApi
     {
         _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 
-        var responsePtr = IntPtr.Zero;
         try
         {
-            Send(traces, numberOfTraces, ref responsePtr);
+            using var response = Send(traces, numberOfTraces);
 
-            try
+            if (response.IsInvalid)
             {
-                ProcessResponse(responsePtr);
+                _log.Warning("Traces sent successfully to the Agent, but the response is invalid");
             }
-            catch (Exception ex)
+            else
             {
-                _log.Error(ex, "An error occurred deserializing the response.");
+                var json = response.ReadAsString();
+
+                if (StringUtil.IsNullOrEmpty(json))
+                {
+                    _log.Warning("Traces sent successfully to the Agent, but the response is empty");
+                }
+                else if (json != _cachedResponse)
+                {
+                    try
+                    {
+                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
+                        _updateSampleRates(apiResponse.RateByService);
+                        _cachedResponse = json;
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Traces sent successfully to the Agent, but an error occurred deserializing the response.");
+                    }
+                }
             }
 
             _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
@@ -66,13 +81,6 @@ internal class TraceExporter : SafeHandle, IApi
         {
             _log.Error(ex, "An error occurred while sending data to the agent.");
             return Task.FromResult(false);
-        }
-        finally
-        {
-            if (responsePtr != IntPtr.Zero)
-            {
-                NativeInterop.Exporter.FreeResponse(responsePtr);
-            }
         }
     }
 
@@ -91,13 +99,12 @@ internal class TraceExporter : SafeHandle, IApi
         catch (Exception ex)
         {
             _log.Error(ex, "An error occurred while releasing the handle for TraceExporter.");
-            return false;
         }
 
         return true;
     }
 
-    private unsafe void Send(ArraySegment<byte> traces, int numberOfTraces, ref IntPtr responsePtr)
+    private unsafe TraceExporterResponse Send(ArraySegment<byte> traces, int numberOfTraces)
     {
         fixed (byte* ptr = traces.Array)
         {
@@ -107,50 +114,23 @@ internal class TraceExporter : SafeHandle, IApi
                 Len = (UIntPtr)traces.Count
             };
 
-            using var error = NativeInterop.Exporter.Send(this, traceSlice, (UIntPtr)numberOfTraces, ref responsePtr);
-            if (!error.IsInvalid)
+            var responsePtr = IntPtr.Zero;
+            try
             {
-                var ex = error.ToException();
-                _log.Error(ex, "An error occurred while sending data to the agent. Error Code: {ErrorCode}, Message: {Message}", ex.ErrorCode, ex.Message);
-                throw ex;
+                using var error = NativeInterop.Exporter.Send(this, traceSlice, (UIntPtr)numberOfTraces, ref responsePtr);
+                if (!error.IsInvalid)
+                {
+                    var ex = error.ToException();
+                    _log.Error(ex, "An error occurred while sending data to the agent. Error Code: {ErrorCode}, Message: {Message}", ex.ErrorCode, ex.Message);
+                    throw ex;
+                }
             }
-        }
-    }
+            catch (Exception ex) when (ex is not TraceExporterException)
+            {
+                _log.Error(ex, "An error occurred while sending data to the agent.");
+            }
 
-    private unsafe void ProcessResponse(IntPtr response)
-    {
-        if (_updateSampleRates is null)
-        {
-            return;
-        }
-
-        if (response == IntPtr.Zero)
-        {
-            // If response is Null bail out immediately.
-            return;
-        }
-
-        var len = UIntPtr.Zero;
-        var body = NativeInterop.Exporter.GetResponseBody(response, ref len);
-        var bodyLen = (ulong)len;
-        if (body == IntPtr.Zero || bodyLen == 0)
-        {
-            _log.Warning("Agent response is null or empty");
-            return;
-        }
-
-        if (bodyLen > int.MaxValue)
-        {
-            _log.Warning("Agent response is too large");
-            return;
-        }
-
-        var json = System.Text.Encoding.UTF8.GetString((byte*)body, (int)bodyLen);
-        if (json != _cachedResponse)
-        {
-            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
-            _updateSampleRates(apiResponse.RateByService);
-            _cachedResponse = json;
+            return new TraceExporterResponse(responsePtr);
         }
     }
 }

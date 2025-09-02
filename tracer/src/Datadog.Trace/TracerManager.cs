@@ -590,6 +590,10 @@ namespace Datadog.Trace
                     }
 
                     writer.WriteEndArray();
+
+                    writer.WritePropertyName("trace_data_pipeline_enabled");
+                    writer.WriteValue(instanceSettings.DataPipelineEnabled);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }

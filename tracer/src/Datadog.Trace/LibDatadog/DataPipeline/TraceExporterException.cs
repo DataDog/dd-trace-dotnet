@@ -7,19 +7,27 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.LibDatadog;
+namespace Datadog.Trace.LibDatadog.DataPipeline;
 
 /// <summary>
 /// Represents an exception thrown by the libdatadog library.
 /// </summary>
 internal class TraceExporterException : Exception
 {
+    private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<TraceExporterException>();
+
     public TraceExporterException(TraceExporterError exporterError)
         : base(Marshal.PtrToStringAnsi(exporterError.Msg))
     {
+        if (!Enum.IsDefined(typeof(TraceExporterErrorCode), exporterError.Code))
+        {
+            Logger.Warning("Invalid TraceExporterErrorCode: {ErrorCode}", exporterError.Code);
+        }
+
         ErrorCode = exporterError.Code;
     }
 
-    public ErrorCode ErrorCode { get; }
+    public TraceExporterErrorCode ErrorCode { get; }
 }

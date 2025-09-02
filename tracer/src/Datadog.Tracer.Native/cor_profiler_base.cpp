@@ -19,73 +19,73 @@ CorProfilerBase::~CorProfilerBase()
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::Initialize(IUnknown* pICorProfilerInfoUnk)
 {
-    Logger::Debug("Initialize");
+    DBG("Initialize");
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::Shutdown()
 {
-    Logger::Debug("Shutdown");
+    DBG("Shutdown");
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AppDomainCreationStarted(AppDomainID appDomainId)
 {
-    Logger::Debug("AppDomainCreationStarted: ", appDomainId);
+    DBG("AppDomainCreationStarted: ", appDomainId);
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
-    Logger::Debug("AppDomainCreationFinished: ", appDomainId, " hrStatus=", hrStatus);
+    DBG("AppDomainCreationFinished: ", appDomainId, " hrStatus=", hrStatus);
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AppDomainShutdownStarted(AppDomainID appDomainId)
 {
-    Logger::Debug("AppDomainShutdownStarted: ", appDomainId);
+    DBG("AppDomainShutdownStarted: ", appDomainId);
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AppDomainShutdownFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
-    Logger::Debug("AppDomainShutdownFinished: ", appDomainId, " ", hrStatus);
+    DBG("AppDomainShutdownFinished: ", appDomainId, " ", hrStatus);
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AssemblyLoadStarted(AssemblyID assemblyId)
 {
-    Logger::Debug("AssemblyLoadStarted: ", assemblyId);
+    DBG("AssemblyLoadStarted: ", assemblyId);
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AssemblyLoadFinished(AssemblyID assemblyId, HRESULT hrStatus)
 {
-    Logger::Debug("AssemblyLoadFinished: ", assemblyId, " ", hrStatus);
+    DBG("AssemblyLoadFinished: ", assemblyId, " ", hrStatus);
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AssemblyUnloadStarted(AssemblyID assemblyId)
 {
-    Logger::Debug("AssemblyUnloadStarted: ", assemblyId);
+    DBG("AssemblyUnloadStarted: ", assemblyId);
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AssemblyUnloadFinished(AssemblyID assemblyId, HRESULT hrStatus)
 {
-    Logger::Debug("AssemblyUnloadFinished: ", assemblyId, " ", hrStatus);
+    DBG("AssemblyUnloadFinished: ", assemblyId, " ", hrStatus);
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::ModuleLoadStarted(ModuleID moduleId)
 {
-    Logger::Debug("ModuleLoadStarted: ", moduleId);
+    DBG("ModuleLoadStarted: ", moduleId);
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    Logger::Debug("ModuleLoadFinished: ", moduleId, " ", hrStatus);
+    DBG("ModuleLoadFinished: ", moduleId, " ", hrStatus);
     return S_OK;
 }
 
@@ -96,7 +96,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::ModuleUnloadStarted(ModuleID moduleId
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    Logger::Debug("ModuleUnloadFinished: ", moduleId, " ", hrStatus);
+    DBG("ModuleUnloadFinished: ", moduleId, " ", hrStatus);
     return S_OK;
 }
 

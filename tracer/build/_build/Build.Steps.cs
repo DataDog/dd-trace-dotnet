@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CodeGenerators;
+using LogParsing;
 using Mono.Cecil;
 using Nuke.Common;
 using Nuke.Common.IO;
@@ -179,16 +180,20 @@ partial class Build
                ? new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests) }
                : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
 
-    TargetFramework[] TestingFrameworks => GetTestingFrameworks(IsArm64);
+    TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
-    TargetFramework[] GetTestingFrameworks(bool isArm64) => (isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
+    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
-        // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
-        (false, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (false, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
-        (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
+        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        // Everything else e.g. MaxOS, linux-x64 etc
+        // Same as Windows just without the .NET FX
+        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -2421,11 +2426,12 @@ partial class Build
            var knownPatterns = new List<Regex>
            {
                new(@".*Unable to resolve method MongoDB\..*", RegexOptions.Compiled),
-               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsIntegration\.OnAsyncMethodEnd.*", RegexOptions.Compiled),
-               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsIntegration\.OnMethodBegin.*", RegexOptions.Compiled),
-               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsIntegration\.OnMethodEnd.*", RegexOptions.Compiled),
-               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodBegin.*", RegexOptions.Compiled),
-               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodEnd.*", RegexOptions.Compiled),
+               // Expected errors in CallTargetNativeTests
+               new(@".*Noop\dArgumentsIntegration\.OnAsyncMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsIntegration\.OnMethodBegin.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsVoidIntegration\.OnMethodBegin.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsVoidIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
                new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
                new(@".*System.InvalidOperationException: Module Samples.Trimming.dll has no HINSTANCE.*", RegexOptions.Compiled),
                // CI Visibility known errors
@@ -2496,6 +2502,12 @@ partial class Build
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 6.0.12 and earlier have known crashing bugs", RegexOptions.Compiled));
 
+           // Make sure we _only_ add this while .NET 10 is in preview (to make sure we don't forget in the final release)
+           if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 10.0.0-"))
+           {
+               knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 10 or higher.*", RegexOptions.Compiled));
+           }
+
            // CI Visibility known errors
            knownPatterns.Add(new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*DD_GIT_REPOSITORY_URL is set with.*", RegexOptions.Compiled));
@@ -2518,343 +2530,22 @@ partial class Build
            await CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning, reportablePatterns);
        });
 
+    Target ExtractMetricsFromLogs => _ => _
+       .Unlisted()
+       .Description("Reads the logs from build_data, extracts the metrics, and submits them to Datadog")
+       .Executes(async () =>
+       {
+           var logDirectory = BuildDataDirectory / "logs";
+           await LogParser.ReportNativeMetrics(logDirectory);
+       });
+
     private async Task CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel, List<(string IgnoreReasonTag, Regex Regex)> reportablePatterns)
     {
         var logDirectory = BuildDataDirectory / "logs";
-        if (!logDirectory.Exists())
+        if (await LogParser.DoLogsContainErrors(logDirectory, knownPatterns, allFilesMustExist, minLogLevel, reportablePatterns))
         {
-            Logger.Information($"Skipping log parsing, directory '{logDirectory}' not found");
-            if (allFilesMustExist)
-            {
-                ExitCode = 1;
-                return;
-            }
+            ExitCode = 1;
         }
-
-        Dictionary<string, int> reportableMetrics = new();
-
-        var managedFiles = logDirectory.GlobFiles("**/dotnet-tracer-managed-*");
-        var managedErrors = managedFiles
-                           .SelectMany(ParseManagedLogFiles)
-                           .Where(IsProblematic)
-                           .ToList<ParsedLogLine>();
-
-        var nativeTracerFiles = logDirectory.GlobFiles("**/dotnet-tracer-native-*");
-        var nativeTracerErrors = nativeTracerFiles
-                                .SelectMany(ParseNativeTracerLogFiles)
-                                .Where(IsProblematic)
-                                .ToList();
-
-        var nativeProfilerFiles = logDirectory.GlobFiles("**/DD-DotNet-Profiler-Native-*");
-        var nativeProfilerErrors = nativeProfilerFiles
-                                  .SelectMany(ParseNativeProfilerLogFiles)
-                                  .Where(IsProblematic)
-                                  .ToList();
-
-        var nativeLoaderFiles = logDirectory.GlobFiles("**/dotnet-native-loader-*");
-        var nativeLoaderErrors = nativeLoaderFiles
-                                  .SelectMany(ParseNativeProfilerLogFiles) // native loader has same format as profiler
-                                  .Where(IsProblematic)
-                                  .ToList();
-
-        var libdatadogFiles = logDirectory.GlobFiles("**/dotnet-tracer-libdatadog-*");
-        var libdatadogErrors = libdatadogFiles
-                              .SelectMany(ParseLibdatadogLogFiles) // native loader has same format as profiler
-                              .Where(IsProblematic)
-                              .ToList();
-
-        var hasRequiredFiles = !allFilesMustExist
-                            || (managedFiles.Count > 0
-                             // && libdatadogFiles.Count > 0 Libdatadog exporter is off by default, so we don't require it to be there
-                             && nativeTracerFiles.Count > 0
-                             && (nativeProfilerFiles.Count > 0 || IsOsx || IsArm64) // profiler doesn't support mac or ARM64
-                             && nativeLoaderFiles.Count > 0);
-        var hasErrors = managedErrors.Count != 0
-                     || libdatadogErrors.Count != 0
-                     || nativeTracerErrors.Count != 0
-                     || nativeProfilerErrors.Count != 0
-                     || nativeLoaderErrors.Count != 0;
-
-        if (reportableMetrics.Count > 0)
-        {
-            Logger.Warning("Found reportable (but ignored) problems in the logs");
-            await MetricHelper.SendReportableErrorMetrics(Logger.Logger, reportableMetrics);
-        }
-
-        if (hasRequiredFiles && !hasErrors)
-        {
-            Logger.Information("No problems found in managed or native logs");
-            return;
-        }
-
-        if (!hasRequiredFiles)
-        {
-            Logger.Error(
-                "Some log files were missing: managed: {ManagedFiles}, native tracer: {NativeTracerFiles}, native profiler: {NativeProfilerFiles}, native loader: {NativeLoaderFiles}, libdatadog {LibdatadogFiles}",
-                managedFiles.Count, nativeTracerFiles.Count, nativeProfilerFiles.Count, nativeLoaderFiles.Count, libdatadogFiles.Count);
-        }
-
-        if (hasErrors)
-        {
-            Logger.Warning("Found the following problems in log files:");
-            var allErrors = managedErrors
-                           .Concat(libdatadogErrors)
-                           .Concat(nativeTracerErrors)
-                           .Concat(nativeProfilerErrors)
-                           .Concat(nativeLoaderErrors)
-                           .GroupBy(x => x.FileName);
-
-            foreach (var erroredFile in allErrors)
-            {
-                var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
-                if (errors.Any())
-                {
-                    Logger.Information("");
-                    Logger.Error($"Found errors in log file '{erroredFile.Key}':");
-                    foreach (var error in errors)
-                    {
-                        Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
-                    }
-                }
-
-                var canaries = erroredFile.Where(ContainsCanary).ToList();
-                if (canaries.Any())
-                {
-                    Logger.Information("");
-                    Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
-                    foreach (var canary in canaries)
-                    {
-                        Logger.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
-                    }
-                }
-            }
-        }
-
-        ExitCode = 1;
-
-        bool IsProblematic(ParsedLogLine logLine)
-        {
-            if (ContainsCanary(logLine))
-            {
-                return true;
-            }
-
-            if (logLine.Level < minLogLevel)
-            {
-                return false;
-            }
-
-            foreach (var pattern in reportablePatterns)
-            {
-                if (pattern.Regex.IsMatch(logLine.Message))
-                {
-                    var previous = reportableMetrics.GetValueOrDefault(pattern.IgnoreReasonTag, 0);
-                    reportableMetrics[pattern.IgnoreReasonTag] = previous + 1;
-                    return false;
-                }
-            }
-
-            foreach (var pattern in knownPatterns)
-            {
-                if (pattern.IsMatch(logLine.Message))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        bool ContainsCanary(ParsedLogLine logLine)
-            => logLine.Message.Contains("SUPER_SECRET_CANARY")
-                || logLine.Message.Contains("MySuperSecretCanary");
-
-        static List<ParsedLogLine> ParseManagedLogFiles(AbsolutePath logFile)
-        {
-            var regex = new Regex(@"^(\d\d\d\d\-\d\d\-\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\+\d\d\:\d\d)\W\[(.*?)\]\W(.*)", RegexOptions.Compiled);
-            var allLines = File.ReadAllLines(logFile);
-            var allLogs = new List<ParsedLogLine>(allLines.Length);
-            ParsedLogLine currentLine = null;
-
-            foreach (var line in allLines)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    continue;
-                }
-
-                var match = regex.Match(line);
-
-                if (match.Success)
-                {
-                    if (currentLine is not null)
-                    {
-                        allLogs.Add(currentLine);
-                        currentLine = null;
-                    }
-
-                    try
-                    {
-                        // start of a new log line
-                        var timestamp = DateTimeOffset.Parse(match.Groups[1].Value);
-                        var level = ParseManagedLogLevel(match.Groups[2].Value);
-                        var message = match.Groups[3].Value;
-                        currentLine = new ParsedLogLine(timestamp, level, message, logFile);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Information($"Error parsing line: '{line}. {ex}");
-                    }
-                }
-                else
-                {
-                    if (currentLine is null)
-                    {
-                        Logger.Warning("Incomplete log line: " + line);
-                    }
-                    else
-                    {
-                        currentLine = currentLine with { Message = $"{currentLine.Message}{Environment.NewLine}{line}" };
-                    }
-                }
-            }
-
-            if (currentLine is not null)
-            {
-                allLogs.Add(currentLine);
-            }
-
-            return allLogs;
-        }
-
-        static List<ParsedLogLine> ParseNativeTracerLogFiles(AbsolutePath logFile)
-        {
-            var regex = new Regex(@"^(\d\d\/\d\d\/\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\w\w)\W\[.*?\]\W\[(.*?)\](.*)", RegexOptions.Compiled);
-            return ParseNativeLogs(regex, "MM/dd/yy hh:mm:ss.fff tt", logFile);
-        }
-
-        static List<ParsedLogLine> ParseNativeProfilerLogFiles(AbsolutePath logFile)
-        {
-            var regex = new Regex(@"^\[(\d\d\d\d-\d\d-\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d)\W\|\W([^ ]+)\W[^\]]+\W(.*)", RegexOptions.Compiled);
-            return ParseNativeLogs(regex, "yyyy-MM-dd H:mm:ss.fff", logFile);
-        }
-
-        static List<ParsedLogLine> ParseNativeLogs(Regex regex, string dateFormat, AbsolutePath logFile)
-        {
-            var allLines = File.ReadAllLines(logFile);
-            var allLogs = new List<ParsedLogLine>(allLines.Length);
-            ParsedLogLine currentLine = null;
-
-            foreach (var line in allLines)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    continue;
-                }
-
-                var match = regex.Match(line);
-                if (match.Success)
-                {
-                    if (currentLine is not null)
-                    {
-                        allLogs.Add(currentLine);
-                        currentLine = null;
-                    }
-
-                    try
-                    {
-                        // native logs are on one line
-                        var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, dateFormat, null);
-                        var level = ParseNativeLogLevel(match.Groups[2].Value);
-                        var message = match.Groups[3].Value;
-                        currentLine = new ParsedLogLine(timestamp, level, message, logFile);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Information($"Error parsing line: '{line}. {ex}");
-                    }
-                }
-                else
-                {
-                    if (currentLine is null)
-                    {
-                        Logger.Warning("Incomplete log line: " + line);
-                    }
-                    else
-                    {
-                        currentLine = currentLine with { Message = $"{currentLine.Message}{Environment.NewLine}{line}" };
-                    }
-                }
-            }
-
-            if (currentLine is not null)
-            {
-                allLogs.Add(currentLine);
-            }
-
-            return allLogs;
-        }
-
-        static List<ParsedLogLine> ParseLibdatadogLogFiles(AbsolutePath logFile)
-        {
-            var logs = new List<ParsedLogLine>();
-            using var reader = new StreamReader(logFile);
-            while (reader.ReadLine() is { } line)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    continue;
-                }
-
-                var log = LibdatadogLogParser.ParseEntry(line);
-                if (log is null)
-                {
-                    continue;
-                }
-
-                logs.Add(new ParsedLogLine(
-                             log.Timestamp,
-                             ParseLibdatadogLogLevel(log.Level),
-                             string.Join(", ", log.Fields.Select(kvp => $"{kvp.Key}:{kvp.Value}")),
-                             logFile));
-
-            }
-
-            return logs;
-        }
-
-        static LogLevel ParseManagedLogLevel(string value)
-            => value switch
-            {
-                "VRB" => LogLevel.Trace,
-                "DBG" => LogLevel.Trace,
-                "INF" => LogLevel.Normal,
-                "WRN" => LogLevel.Warning,
-                "ERR" => LogLevel.Error,
-                _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
-            };
-
-        static LogLevel ParseNativeLogLevel(string value)
-            => value switch
-            {
-                "trace" => LogLevel.Trace,
-                "debug" => LogLevel.Trace,
-                "info" => LogLevel.Normal,
-                "warning" => LogLevel.Warning,
-                "error" => LogLevel.Error,
-                _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
-            };
-
-        static LogLevel ParseLibdatadogLogLevel(string value)
-            => value switch
-            {
-                "TRACE" => LogLevel.Trace,
-                "DEBUG" => LogLevel.Trace,
-                "INFO" => LogLevel.Normal,
-                "WARN" => LogLevel.Warning,
-                "ERROR" => LogLevel.Error,
-                _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown log level")
-            };
     }
 
     private AbsolutePath GetResultsDirectory(Project proj) => BuildDataDirectory / "results" / proj.Name;
@@ -2977,7 +2668,6 @@ partial class Build
         }
     }
 
-    private record ParsedLogLine(DateTimeOffset Timestamp, LogLevel Level, string Message, AbsolutePath FileName);
 
     private void DotnetBuild(
         Project project,

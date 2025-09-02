@@ -140,13 +140,10 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         return S_FALSE;
     }
 
-    if (trace::Logger::IsDebugEnabled())
-    {
-        Logger::Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name,
-                      "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
-                      ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs,
-                      "]");
-    }
+    DBG("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name,
+        "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
+        ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs,
+        "]");
 
     // First we check if the managed profiler has not been loaded yet
     if (!m_corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
@@ -423,7 +420,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         filter = CreateFilterForException(&reWriterWrapper, tracerTokens->GetExceptionTypeRef(),
                                           tracerTokens->GetBubbleUpExceptionTypeRef(),
                                           tracerTokens->GetBubbleUpExceptionFunctionDef(), exceptionValueIndex);
-        Logger::Debug("Creating filter for try / catch for CallTargetBubbleUpException. (begin method)");
+        DBG("Creating filter for try / catch for CallTargetBubbleUpException. (begin method)");
         beginMethodCatchFirstInstr = reWriterWrapper.Pop();
         reWriterWrapper.LoadLocal(exceptionValueIndex);
     }
@@ -606,7 +603,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ILInstr* endMethodCatchFirstInstr = nullptr;
     if (m_corProfiler->call_target_bubble_up_exception_available && bubbleup_exception_typeref != mdTypeRefNil)
     {
-        Logger::Debug("Creating filter for try / catch for CallTargetBubbleUpException (end method).");
+        DBG("Creating filter for try / catch for CallTargetBubbleUpException (end method).");
         filterEnd = CreateFilterForException(&reWriterWrapper, tracerTokens->GetExceptionTypeRef(),
                                              tracerTokens->GetBubbleUpExceptionTypeRef(),
                                              tracerTokens->GetBubbleUpExceptionFunctionDef(), exceptionValueEndIndex);
