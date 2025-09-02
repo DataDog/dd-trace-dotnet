@@ -5161,6 +5161,9 @@ stages:
             mkdir -p artifacts/build_data/snapshots
             mkdir -p artifacts/build_data/logs
           displayName: create test data directories
+        # to remove once done
+        - script: |
+            echo '/dumps/core.%e.%p' | sudo tee /proc/sys/kernel/core_pattern
 
         - script: |
             docker-compose -p $(DockerComposeProjectName) build \
