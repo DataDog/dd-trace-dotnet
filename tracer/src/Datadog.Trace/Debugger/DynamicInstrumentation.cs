@@ -93,11 +93,7 @@ namespace Datadog.Trace.Debugger
 
             Log.Debug("Dynamic Instrumentation initialization started");
 
-            // Start initialization in background
-            _ = Task.Run(InitializeAsync)
-                    .ContinueWith(
-                         t => Log.Error(t?.Exception, "Error in DI initialization"),
-                         TaskContinuationOptions.OnlyOnFaulted);
+            _ = InitializeAsync();
         }
 
         private async Task InitializeAsync()
@@ -130,27 +126,19 @@ namespace Datadog.Trace.Debugger
         {
             _probeStatusPoller.StartPolling();
 
-            Task.Run(() => _diagnosticsUploader.StartFlushingAsync())
-                .ContinueWith(
-                     t =>
-                     {
-                         if (t is { Exception: not null })
-                         {
-                             Log.Error(t.Exception.Flatten(), "Error in diagnostic uploader");
-                         }
-                     },
-                     TaskContinuationOptions.OnlyOnFaulted);
+            _ = _diagnosticsUploader.StartFlushingAsync()
+                                    .ContinueWith(
+                                         t => Log.Error(t?.Exception, "Error in diagnostic uploader"),
+                                         CancellationToken.None,
+                                         TaskContinuationOptions.OnlyOnFaulted,
+                                         TaskScheduler.Default);
 
-            Task.Run(() => _snapshotUploader.StartFlushingAsync())
-                .ContinueWith(
-                     t =>
-                     {
-                         if (t is { Exception: not null })
-                         {
-                             Log.Error(t.Exception.Flatten(), "Error in snapshot uploader");
-                         }
-                     },
-                     TaskContinuationOptions.OnlyOnFaulted);
+            _ = _snapshotUploader.StartFlushingAsync()
+                                 .ContinueWith(
+                                      t => Log.Error(t?.Exception, "Error in snapshot uploader"),
+                                      CancellationToken.None,
+                                      TaskContinuationOptions.OnlyOnFaulted,
+                                      TaskScheduler.Default);
         }
 
         internal void UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
