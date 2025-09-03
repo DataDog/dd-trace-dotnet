@@ -20,7 +20,7 @@ internal struct LibraryConfigResult
     public struct ResultUnion
     {
         [FieldOffset(0)]
-        public LibraryConfigs Ok;
+        public LibraryConfigsWithLogs Ok;
 
         [FieldOffset(0)]
         public Error Error;
