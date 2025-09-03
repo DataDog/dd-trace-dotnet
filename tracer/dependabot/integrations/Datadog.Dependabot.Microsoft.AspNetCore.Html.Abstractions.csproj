@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Microsoft.AspNetCore.Html.Abstractions -->
+    <!--    Assembly: Microsoft.AspNetCore.Html.Abstractions -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Html.Abstractions/2.3.0 -->
+    <PackageReference Include="Microsoft.AspNetCore.Html.Abstractions" Version="2.3.0" />
+  </ItemGroup>
+
+</Project>

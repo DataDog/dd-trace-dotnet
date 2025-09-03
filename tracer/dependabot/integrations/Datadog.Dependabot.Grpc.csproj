@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Grpc.Core -->
+    <!--    Assembly: Grpc.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Grpc/2.46.6 -->
+    <PackageReference Include="Grpc" Version="2.46.6" />
+  </ItemGroup>
+
+</Project>
