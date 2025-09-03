@@ -39,6 +39,7 @@ namespace Datadog.Trace.Debugger
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
         private readonly ISnapshotUploader _snapshotUploader;
+        private readonly ISnapshotUploader _logUploader;
         private readonly IDebuggerUploader _diagnosticsUploader;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
@@ -57,6 +58,7 @@ namespace Datadog.Trace.Debugger
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             ISnapshotUploader snapshotUploader,
+            ISnapshotUploader logUploader,
             IDebuggerUploader diagnosticsUploader,
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
@@ -68,6 +70,7 @@ namespace Datadog.Trace.Debugger
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _snapshotUploader = snapshotUploader;
+            _logUploader = logUploader;
             _diagnosticsUploader = diagnosticsUploader;
             _probeStatusPoller = probeStatusPoller;
             _subscriptionManager = remoteConfigurationManager;
@@ -168,6 +171,7 @@ namespace Datadog.Trace.Debugger
             _probeStatusPoller.StartPolling();
             _ = _diagnosticsUploader.StartFlushingAsync();
             _ = _snapshotUploader.StartFlushingAsync();
+            _ = _logUploader.StartFlushingAsync();
         }
 
         internal void UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
@@ -493,7 +497,24 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
+            if (!probe.IsFullSnapshot)
+            {
+                AddLog(probe, snapshot);
+                return;
+            }
+
             _snapshotUploader.Add(probe.ProbeId, snapshot);
+            SetProbeStatusToEmitting(probe);
+        }
+
+        internal void AddLog(ProbeInfo probe, string log)
+        {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            _logUploader.Add(probe.ProbeId, log);
             SetProbeStatusToEmitting(probe);
         }
 
