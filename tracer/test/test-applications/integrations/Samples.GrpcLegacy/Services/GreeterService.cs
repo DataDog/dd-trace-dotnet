@@ -37,12 +37,6 @@ public class GreeterService : Greeter.GreeterBase
         return Task.FromResult(new HelloReply { Message = "Hello " + request.Name });
     }
 
-    public override Task<HelloReply> InvalidContentTypeMethod(HelloRequest request, ServerCallContext context)
-    {
-        LogMethod();
-        return Task.FromResult(new HelloReply { Message = "Hello " + request.Name });
-    }
-
     public override async Task<HelloReply> VerySlow(HelloRequest request, ServerCallContext context)
     {
         LogMethod();
