@@ -10,7 +10,7 @@ void assertArrayEquals(const T* arr, const T* expected, size_t count)
 {
     for (size_t i = 0; i < count; i++)
     {
-        assert(arr[i] == expected[i]);
+        ASSERT_EQ(expected[i], arr[i]);
     }
 }
 
@@ -23,7 +23,7 @@ TEST(UtilTests, ArrayInsert_Middle)
     Insert(arr, count, 2, 99);
     int expected[] = {1, 2, 99, 3, 4, 5};
 
-    assert(count == 6);
+    ASSERT_EQ(6, count);
     assertArrayEquals(arr, expected, count);
 }
 
@@ -35,7 +35,7 @@ TEST(UtilTests, ArrayInsert_Beginning)
     Insert(arr, count, 0, 5);
     int expected[] = {5, 10, 20, 30};
 
-    assert(count == 4);
+    ASSERT_EQ(4, count);
     assertArrayEquals(arr, expected, count);
 }
 
@@ -47,7 +47,7 @@ TEST(UtilTests, ArrayInsert_End)
     Insert(arr, count, 3, 99);
     int expected[] = {7, 8, 9, 99};
 
-    assert(count == 4);
+    ASSERT_EQ(4, count);
     assertArrayEquals(arr, expected, count);
 }
 
@@ -65,7 +65,7 @@ TEST(UtilTests, ArrayInsert_OutOfRange)
     {
         thrown = true;
     }
-    assert(thrown);
+    ASSERT_TRUE(thrown);
 }
 
 TEST(UtilTests, ArrayInsert_FullArray)
@@ -82,5 +82,5 @@ TEST(UtilTests, ArrayInsert_FullArray)
     {
         thrown = true;
     }
-    assert(thrown);
+    ASSERT_TRUE(thrown);
 }
