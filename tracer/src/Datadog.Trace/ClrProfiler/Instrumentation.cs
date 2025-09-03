@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler
             // TODO: only for profiler today
             //
 
-            // profiler is not available on ARM(64) don't even try to call the p/invoke 
+            // profiler is not available on ARM(64) don't even try to call the p/invoke
             // as the binary won't be there
             var fd = FrameworkDescription.Instance;
             if ((fd.ProcessArchitecture == ProcessArchitecture.Arm64) || (fd.ProcessArchitecture == ProcessArchitecture.Arm))
