@@ -508,8 +508,12 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
                 }
 
-                DebuggerManager.Instance.UpdateConfiguration(tracerSettings)
-                               .ContinueWith(t => Log.Error(t?.Exception, "Error initializing debugger"), TaskContinuationOptions.OnlyOnFaulted);
+                _ = DebuggerManager.Instance.UpdateConfiguration(tracerSettings)
+                                   .ContinueWith(
+                                        t => Log.Error(t?.Exception, "Error initializing debugger"),
+                                        CancellationToken.None,
+                                        TaskContinuationOptions.OnlyOnFaulted,
+                                        TaskScheduler.Default);
             }
         }
 

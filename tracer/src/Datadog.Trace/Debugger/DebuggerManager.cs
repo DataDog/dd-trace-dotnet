@@ -170,7 +170,7 @@ namespace Datadog.Trace.Debugger
                 SetExceptionReplayState(newDebuggerSettings);
             }
 
-            return ScheduleStartDynamicInstrumentation(tracerSettings, newDebuggerSettings);
+            return DebouncedUpdateDynamicInstrumentationAsync(tracerSettings, newDebuggerSettings);
         }
 
         private void OneTimeSetup(TracerSettings tracerSettings)
@@ -207,7 +207,11 @@ namespace Datadog.Trace.Debugger
                 var tracerManager = TracerManager.Instance;
                 SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, ServiceName, tracerSettings, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
                 _ = SymbolsUploader.StartFlushingAsync()
-                                   .ContinueWith(t => Log.Error(t?.Exception, "Failed to initialize symbol uploader"), TaskContinuationOptions.OnlyOnFaulted);
+                                   .ContinueWith(
+                                        t => Log.Error(t?.Exception, "Failed to initialize symbol uploader"),
+                                        CancellationToken.None,
+                                        TaskContinuationOptions.OnlyOnFaulted,
+                                        TaskScheduler.Default);
             }
             catch (Exception ex)
             {
@@ -294,7 +298,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private async Task ScheduleStartDynamicInstrumentation(TracerSettings tracerSettings, DebuggerSettings debuggerSettings)
+        private async Task DebouncedUpdateDynamicInstrumentationAsync(TracerSettings tracerSettings, DebuggerSettings debuggerSettings)
         {
             if (_processExit.Task.IsCompleted)
             {
