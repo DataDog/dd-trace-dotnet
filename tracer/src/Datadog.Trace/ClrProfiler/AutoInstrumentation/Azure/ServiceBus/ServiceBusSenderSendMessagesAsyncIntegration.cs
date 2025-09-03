@@ -42,6 +42,11 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
         where TTarget : IServiceBusSender, IDuckType
     {
         var tracer = Tracer.Instance;
+        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+        {
+            return new CallTargetState(null);
+        }
+
         var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
 
         var entityPath = instance.EntityPath ?? "unknown";
