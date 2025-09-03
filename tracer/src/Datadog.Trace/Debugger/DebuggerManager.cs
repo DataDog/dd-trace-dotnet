@@ -41,7 +41,7 @@ namespace Datadog.Trace.Debugger
         private readonly TaskCompletionSource<bool> _processExit;
         private volatile bool _isDebuggerEndpointAvailable;
         private int _initialized;
-        private CancellationTokenSource? _diDebounceCts;
+        private volatile TaskCompletionSource<bool>? _diDebounceGate;
         private volatile DynamicInstrumentation? _dynamicInstrumentation;
         private int _diState; // 0 = disabled, 1 = initializing, 2 = initialized
 
@@ -311,53 +311,41 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            var requested = debuggerSettings.DynamicInstrumentationEnabled;
-            var current = DynamicInstrumentation != null;
+            var requestedOriginal = debuggerSettings.DynamicInstrumentationEnabled;
+            var currentOriginal = DynamicInstrumentation != null;
             var state = Volatile.Read(ref _diState);
 
-            if (!requested && (current || state == 1))
+            if (!requestedOriginal && (currentOriginal || state == 1))
             {
                 // cancel any pending enable and disable immediately
-                var currentCts = Interlocked.Exchange(ref _diDebounceCts, null);
-                try
-                {
-                    currentCts?.Cancel();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // ignore
-                }
-
-                SafeDisposal.TryDispose(currentCts);
+                var prevGate = Interlocked.Exchange(ref _diDebounceGate, null);
+                prevGate?.TrySetResult(false);
                 DisableDynamicInstrumentation(debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false);
                 return;
             }
 
-            if (ShouldSkipUpdate(requested, current))
+            if (ShouldSkipUpdate(requestedOriginal, currentOriginal))
             {
                 return;
             }
 
             // cancel any pending operation and start new one
-            var cts = new CancellationTokenSource();
-            var prevCts = Interlocked.Exchange(ref _diDebounceCts, cts);
-            Log.Debug("Previous DI update request exists: {Value}", prevCts != null);
-
-            try
-            {
-                prevCts?.Cancel();
-            }
-            catch (ObjectDisposedException)
-            {
-                // ignore
-            }
+            var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var prev = Interlocked.Exchange(ref _diDebounceGate, gate);
+            prev?.TrySetResult(false);
+            Log.Debug("Previous DI update request exists: {Value}", prev != null);
 
             try
             {
                 Log.Debug("Waiting {Timeout}ms before updating Dynamic Instrumentation", _diDebounceDelay.TotalMilliseconds);
-                await Task.Delay(_diDebounceDelay, cts.Token).ConfigureAwait(false);
+                var delayTask = Task.Delay(_diDebounceDelay);
+                var completed = await Task.WhenAny(delayTask, gate.Task, _processExit.Task).ConfigureAwait(false);
+                if (completed != delayTask || _processExit.Task.IsCompleted)
+                {
+                    return; // superseded or shutting down
+                }
 
-                if (_processExit.Task.IsCompleted || cts.IsCancellationRequested)
+                if (_diDebounceGate != gate)
                 {
                     return;
                 }
@@ -369,10 +357,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                await SetDynamicInstrumentationStateAsync(tracerSettings, cts.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
+                await SetDynamicInstrumentationStateAsync(tracerSettings, gate).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -380,9 +365,7 @@ namespace Datadog.Trace.Debugger
             }
             finally
             {
-                Interlocked.CompareExchange(ref _diDebounceCts, null, cts);
-                SafeDisposal.TryDispose(cts);
-                SafeDisposal.TryDispose(prevCts);
+                Interlocked.CompareExchange(ref _diDebounceGate, null, gate);
             }
 
             bool ShouldSkipUpdate(bool requested, bool current)
@@ -398,11 +381,11 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private async Task SetDynamicInstrumentationStateAsync(TracerSettings tracerSettings, CancellationToken cancellationToken)
+        private async Task SetDynamicInstrumentationStateAsync(TracerSettings tracerSettings, TaskCompletionSource<bool> debounceGate)
         {
             try
             {
-                if (_processExit.Task.IsCompleted || cancellationToken.IsCancellationRequested)
+                if (_processExit.Task.IsCompleted || _diDebounceGate != debounceGate)
                 {
                     return;
                 }
@@ -433,16 +416,16 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (cancellationToken.IsCancellationRequested || _processExit.Task.IsCompleted)
+                if (_processExit.Task.IsCompleted || _diDebounceGate != debounceGate)
                 {
                     return;
                 }
 
-                EnableDynamicInstrumentation(discoveryService, tracerManager, tracerSettings, cancellationToken);
+                EnableDynamicInstrumentation(discoveryService, tracerManager, tracerSettings, debounceGate);
             }
             catch (Exception ex)
             {
-                if (cancellationToken.IsCancellationRequested || _processExit.Task.IsCompleted)
+                if (_processExit.Task.IsCompleted)
                 {
                     return;
                 }
@@ -458,7 +441,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void EnableDynamicInstrumentation(IDiscoveryService discoveryService, TracerManager tracerManager, TracerSettings tracerSettings, CancellationToken cancellationToken)
+        private void EnableDynamicInstrumentation(IDiscoveryService discoveryService, TracerManager tracerManager, TracerSettings tracerSettings, TaskCompletionSource<bool> debounceGate)
         {
             if (Interlocked.CompareExchange(ref _diState, 1, 0) != 0)
             {
@@ -477,9 +460,9 @@ namespace Datadog.Trace.Debugger
                     DebuggerSettings,
                     tracerManager.GitMetadataTagsProvider);
 
-                if (cancellationToken.IsCancellationRequested || _processExit.Task.IsCompleted)
+                if (_processExit.Task.IsCompleted || _diDebounceGate != debounceGate)
                 {
-                    Interlocked.Exchange(ref _diState, 0);
+                    Volatile.Write(ref _diState, 0);
                     SafeDisposal.TryDispose(di);
                     return;
                 }
@@ -494,7 +477,7 @@ namespace Datadog.Trace.Debugger
 
                     if (_processExit.Task.IsCompleted ||
                         !enabled ||
-                        cancellationToken.IsCancellationRequested ||
+                        _diDebounceGate != debounceGate ||
                         state != 1 ||
                         initialized)
                     {
