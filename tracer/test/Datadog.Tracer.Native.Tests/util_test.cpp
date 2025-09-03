@@ -56,16 +56,8 @@ TEST(UtilTests, ArrayInsert_OutOfRange)
     int arr[5] = {1, 2, 3};
     size_t count = 3;
 
-    bool thrown = false;
-    try
-    {
-        Insert(arr, count, 5, 99); // invalid position
-    }
-    catch (const std::out_of_range&)
-    {
-        thrown = true;
-    }
-    ASSERT_TRUE(thrown);
+    // invalid position
+    ASSERT_THROW(Insert(arr, count, 5, 99), std::out_of_range);
 }
 
 TEST(UtilTests, ArrayInsert_FullArray)
@@ -73,14 +65,6 @@ TEST(UtilTests, ArrayInsert_FullArray)
     int arr[3] = {1, 2, 3};
     size_t count = 3;
 
-    bool thrown = false;
-    try
-    {
-        Insert(arr, count, 1, 99); // array is already full
-    }
-    catch (const std::out_of_range&)
-    {
-        thrown = true;
-    }
-    ASSERT_TRUE(thrown);
+    // array is already full
+    ASSERT_THROW(Insert(arr, count, 1, 99), std::out_of_range);
 }
