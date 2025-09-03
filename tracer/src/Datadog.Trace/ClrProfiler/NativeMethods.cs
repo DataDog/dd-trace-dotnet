@@ -243,6 +243,23 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static bool TryGetInodeForPath(string path, out long result)
+        {
+            if (IsWindows)
+            {
+                result = -1;
+                return false;
+            }
+
+            result = NonWindows.GetInodeForPath(path);
+            if (result < 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         // The DllImport methods are re-written by cor_profiler to have the correct vales
@@ -330,6 +347,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native", CharSet = CharSet.Unicode)]
             public static extern int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern long GetInodeForPath([MarshalAs(UnmanagedType.LPWStr)]string path);
         }
     }
 }
