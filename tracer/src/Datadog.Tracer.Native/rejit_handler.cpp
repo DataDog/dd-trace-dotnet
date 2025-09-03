@@ -394,6 +394,7 @@ void RejitHandler::RegisterRejitter(Rejitter* rejitter)
     if (m_rejittersCount == 0)
     {
         m_rejitters[m_rejittersCount++] = rejitter;
+        DBG("RejitHandler::RegisterRejitter -> Registered Rejitter. Count : ", m_rejittersCount);
     }
     else
     {
@@ -407,6 +408,7 @@ void RejitHandler::RegisterRejitter(Rejitter* rejitter)
         }
 
         shared::Insert(m_rejitters, m_rejittersCount, x, rejitter);
+        DBG("RejitHandler::RegisterRejitter -> Registered Rejitter at ", x, ". Count : ", m_rejittersCount);
     }
 }
 
