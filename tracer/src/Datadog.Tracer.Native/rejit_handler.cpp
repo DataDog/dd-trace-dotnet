@@ -325,11 +325,13 @@ void RejitHandler::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitReque
 RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
     m_profilerInfo(pInfo), m_profilerInfo10(nullptr), m_work_offloader(work_offloader)
 {
+    m_rejitters.reserve(5);
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
     m_profilerInfo(pInfo), m_profilerInfo10(pInfo), m_work_offloader(work_offloader)
 {
+    m_rejitters.reserve(5);
 }
 
 void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef,

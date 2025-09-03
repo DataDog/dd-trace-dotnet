@@ -179,31 +179,28 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
         trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. Disabling Dataflow. HRESULT : ", Hex(hr));
     }
 
-    _initialized = (_profiler != nullptr);
-    _aspectsLoaded = false;
-}
-Dataflow::~Dataflow()
-{
-    Destroy();
+    _initialized = false;
 }
 
-void Dataflow::Destroy()
+Dataflow::~Dataflow()
 {
-    if (_initialized)
-    {
-        _initialized = false;
-        _aspectsLoaded = false;
-        REL(_profiler);
-        DEL_MAP_VALUES(_modules);
-        DEL_MAP_VALUES(_appDomains);
-        DEL_MAP_VALUES(_moduleAspects);
-    }
+    _initialized = false;
+    REL(_profiler);
+    DEL_MAP_VALUES(_modules);
+    DEL_MAP_VALUES(_appDomains);
+    DEL_MAP_VALUES(_moduleAspects);
 }
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     // Init aspects
     DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " Enabled categories: ", enabledCategories, " Platform: ", platform);
+
+    if (aspectsLength > 10)
+    {
+        _aspectClasses.reserve(aspectsLength / 10);
+        _aspects.reserve(aspectsLength);
+    }
 
     DataflowAspectClass* aspectClass = nullptr;
     for (int x = 0; x < aspectsLength; x++)
@@ -243,7 +240,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
     DEL_MAP_VALUES(moduleAspects);
 
     trace::Logger::Info("Dataflow::LoadAspects -> read ", _aspects.size(), " aspects");
-    _aspectsLoaded = true;
+    _initialized = true;
 }
 
 void Dataflow::LoadSecurityControls()
@@ -369,7 +366,7 @@ void Dataflow::LoadSecurityControls()
 
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
-    if (!_aspectsLoaded)
+    if (!_initialized)
     {
         return S_OK;
     }
@@ -388,7 +385,7 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
-    if (!_aspectsLoaded)
+    if (!_initialized)
     {
         return S_OK;
     }
@@ -399,7 +396,7 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 
 HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
 {
-    if (!_aspectsLoaded)
+    if (!_initialized)
     {
         return S_OK;
     }
@@ -618,7 +615,7 @@ MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
 
 bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
-    if (!_aspectsLoaded)
+    if (!_initialized)
     {
         return true;
     }
@@ -632,7 +629,7 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 }
 bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 {
-    if (!_aspectsLoaded)
+    if (!_initialized)
     {
         return false;
     }
@@ -642,7 +639,7 @@ bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
 {
-    if (!_aspectsLoaded)
+    if (!_initialized)
     {
         return nullptr;
     }
@@ -765,7 +762,6 @@ bool Dataflow::InstrumentInstruction(DataflowContext& context, std::vector<Dataf
 
 void Dataflow::Shutdown()
 {
-    Destroy();
 }
 RejitHandlerModule* Dataflow::GetOrAddModule(ModuleID moduleId)
 {
@@ -784,7 +780,7 @@ void Dataflow::AddNGenInlinerModule(ModuleID moduleId)
 
 HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
 {
-    if (!_aspectsLoaded)
+    if (!_initialized)
     {
         return S_FALSE;
     }
