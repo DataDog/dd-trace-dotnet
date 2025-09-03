@@ -255,7 +255,7 @@ namespace datadog::shared::nativeloader
                                         isRunningInAas) && isRunningInAas;
         if (isRunningInAas)
         {
-            Log::Info("ClrProfiler is operating within Azure App Services context.");
+            Log::Info("Azure App Services detected.");
 
             const auto& app_pool_id_value = GetEnvironmentValue(EnvironmentVariables::AzureAppServicesAppPoolId);
 
@@ -263,7 +263,7 @@ namespace datadog::shared::nativeloader
             {
                 Log::Info(
                     "DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", EnvironmentVariables::AzureAppServicesAppPoolId, " ",
-                    app_pool_id_value, " is recognized as an Azure App Services infrastructure process.");
+                    app_pool_id_value, " is an Azure App Services infrastructure process.");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
 
@@ -273,7 +273,7 @@ namespace datadog::shared::nativeloader
             if (cli_telemetry_profile_value == WStr("AzureKudu"))
             {
                 Log::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", app_pool_id_value,
-                             " is recognized as Kudu, an Azure App Services reserved process.");
+                             " is Kudu, an Azure App Services reserved process.");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
 

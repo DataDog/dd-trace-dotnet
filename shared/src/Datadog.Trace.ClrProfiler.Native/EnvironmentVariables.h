@@ -23,8 +23,8 @@ public:
     // Sets whether the current process must run in CI Visibility mode or not.
     inline static const shared::WSTRING CiVisibilityEnabled = WStr("DD_CIVISIBILITY_ENABLED");
 
-    // Indicates whether the profiler is running in the context
-    // of Azure App Services with the extension installed
+    // Indicates whether the CLR profiler is running from
+    // the Azure App Services site extension
     inline static const shared::WSTRING IsAzureAppServicesExtension = WStr("DD_AZURE_APP_SERVICES");
 
     // The app_pool_id in the context of azure app services
@@ -33,7 +33,8 @@ public:
     // The DOTNET_CLI_TELEMETRY_PROFILE in the context of azure app services
     inline static const shared::WSTRING AzureAppServicesCliTelemetryProfilerValue = WStr("DOTNET_CLI_TELEMETRY_PROFILE");
 
-    // The FUNCTIONS_WORKER_RUNTIME in the context of azure app services
+    // The FUNCTIONS_WORKER_RUNTIME in Azure Functions.
+    // Valid values: "dotnet" (in-process functions) or "dotnet-isolated" (isolated functions).
     // Used as a flag to determine that we are running within a functions app.
     inline static const shared::WSTRING AzureAppServicesFunctionsWorkerRuntime = WStr("FUNCTIONS_WORKER_RUNTIME");
 
