@@ -8,7 +8,6 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -18,16 +17,13 @@ namespace Datadog.Trace.Debugger.Upload
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SnapshotUploadApi>();
 
-        private readonly IApiRequestFactory _apiRequestFactory;
-
         private SnapshotUploadApi(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
-            _apiRequestFactory = apiRequestFactory;
-            discoveryService.SubscribeToChanges(c => Endpoint = c.DiagnosticsEndpoint);
+            discoveryService.SubscribeToChanges(c => Endpoint = c.DebuggerV2Endpoint);
         }
 
         public static SnapshotUploadApi Create(
@@ -47,10 +43,8 @@ namespace Datadog.Trace.Debugger.Upload
                 return false;
             }
 
-            var request = _apiRequestFactory.Create(new Uri(uri));
-
             Log.Debug("SnapshotUploadApi: Sending snapshots to {Uri}", uri);
-            using var response = await request.PostAsync(data, MimeTypes.Json).ConfigureAwait(false);
+            using var response = await PostAsync(uri!, data).ConfigureAwait(false);
 
             if (response.StatusCode is >= 200 and <= 299)
             {
