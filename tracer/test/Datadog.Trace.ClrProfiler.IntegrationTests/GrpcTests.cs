@@ -244,14 +244,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             HttpClientIntegrationType httpClientIntegrationType,
             string metadataSchemaVersion)
         {
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
-
             const int requestCount = 2 // Unary  (sync + async)
                                     + 1 // 1 server streaming
                                     + 1 // 1 client streaming
                                     + 1 // 1 both streaming
                                     + 1 // Deadline exceeded (async)
-                                    + 1 // Invalid content type
                                     + (4 * 2); // 4 Error types (sync + async)
 
             // Get between 3 and 5 spans per request:
