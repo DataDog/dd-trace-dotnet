@@ -250,10 +250,9 @@ namespace datadog::shared::nativeloader
         }
 
         // AAS checks
-        const auto isRunningInAas = TryParseBooleanEnvironmentValue(
-                                        GetEnvironmentValue(EnvironmentVariables::IsAzureAppServicesExtension),
-                                        isRunningInAas) && isRunningInAas;
-        if (isRunningInAas)
+        bool isRunningInAas;
+        if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(EnvironmentVariables::IsAzureAppServicesExtension),
+                                            isRunningInAas) && isRunningInAas)
         {
             Log::Info("Azure App Services detected.");
 
@@ -283,13 +282,11 @@ namespace datadog::shared::nativeloader
             if (!functions_worker_runtime_value.empty())
             {
                 // enabled by default
-                const auto azure_functions_enabled = !TryParseBooleanEnvironmentValue(
-                                                         GetEnvironmentValue(
-                                                             EnvironmentVariables::AzureFunctionsInstrumentationEnabled),
-                                                         azure_functions_enabled)
-                                                     || azure_functions_enabled;
-
-                if (!azure_functions_enabled)
+                bool azure_functions_enabled;
+                if (!TryParseBooleanEnvironmentValue(
+                        GetEnvironmentValue(
+                            EnvironmentVariables::AzureFunctionsInstrumentationEnabled),
+                        azure_functions_enabled) || !azure_functions_enabled)
                 {
                     Log::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler explicitly disabled for Azure Functions.");
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
