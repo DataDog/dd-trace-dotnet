@@ -88,11 +88,10 @@ namespace Datadog.Trace.Debugger
         {
             if (!_settings.DynamicInstrumentationEnabled)
             {
-                Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
                 return;
             }
 
-            Log.Information("Dynamic Instrumentation initialization started");
+            Log.Debug("Dynamic Instrumentation initialization started");
 
             // Start initialization in background
             _ = Task.Run(InitializeAsync)
