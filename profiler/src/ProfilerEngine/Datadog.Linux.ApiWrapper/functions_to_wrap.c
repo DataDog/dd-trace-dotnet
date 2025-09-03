@@ -555,7 +555,7 @@ void* dd_pthread_entry(void* arg)
     free(new_arg);
     // Call into the profiler to do extra cleanup.
     // This is *useful* at shutdown time to avoid crashing.
-    __dd_on_thread_routine_finished();
+    //__dd_on_thread_routine_finished();
     return result;
 }
 
