@@ -89,16 +89,8 @@ namespace environment
     // The DOTNET_CLI_TELEMETRY_PROFILE in the context of azure app services
     const shared::WSTRING azure_app_services_cli_telemetry_profile_value = WStr("DOTNET_CLI_TELEMETRY_PROFILE");
 
-    // The FUNCTIONS_WORKER_RUNTIME in the context of azure app services
-    // Used as a flag to determine that we are running within a functions app.
-    const shared::WSTRING azure_app_services_functions_worker_runtime = WStr("FUNCTIONS_WORKER_RUNTIME");
-
     // Sets whether the Tracer will automatically instrument methods that are decorated with a recognized trace attribute
     const shared::WSTRING trace_annotations_enabled = WStr("DD_TRACE_ANNOTATIONS_ENABLED");
-
-    // Determine whether to instrument within azure functions.
-    // Default is true.
-    const shared::WSTRING azure_functions_enabled = WStr("DD_TRACE_AZURE_FUNCTIONS_ENABLED");
 
     // Enable the profiler to dump the IL original code and modification to the log.
     const shared::WSTRING dump_il_rewrite_enabled = WStr("DD_DUMP_ILREWRITE_ENABLED");
