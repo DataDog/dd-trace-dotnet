@@ -12,6 +12,7 @@ internal record AgentConfiguration
     public AgentConfiguration(
         string? configurationEndpoint,
         string? debuggerEndpoint,
+        string? debuggerV2Endpoint,
         string? symbolDbEndpoint,
         string? agentVersion,
         string? statsEndpoint,
@@ -26,6 +27,7 @@ internal record AgentConfiguration
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
+        DebuggerV2Endpoint = debuggerV2Endpoint;
         DiagnosticsEndpoint = diagnosticsEndpoint;
         SymbolDbEndpoint = symbolDbEndpoint;
         AgentVersion = agentVersion;
@@ -42,6 +44,8 @@ internal record AgentConfiguration
     public string? ConfigurationEndpoint { get; }
 
     public string? DebuggerEndpoint { get; }
+
+    public string? DebuggerV2Endpoint { get; }
 
     public string? DiagnosticsEndpoint { get; }
 
