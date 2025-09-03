@@ -61,6 +61,9 @@ steps:
       # make sure that the container have enough rights to write in this folder
       sudo chmod -R 777 artifacts/build_data/ || true
     displayName: create test data directories
+  # to remove once done
+  - script: |
+      echo "$(PWD)/dumps/core.%e.%p" | sudo tee /proc/sys/kernel/core_pattern
 - ${{ else }}:
   - bash: |
       testAgentTarget="${{ parameters.testAgentTarget }}"
