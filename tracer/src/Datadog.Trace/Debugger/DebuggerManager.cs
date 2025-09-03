@@ -206,19 +206,8 @@ namespace Datadog.Trace.Debugger
 
                 var tracerManager = TracerManager.Instance;
                 SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, ServiceName, tracerSettings, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
-
-                _ = Task.Run(
-                    async () =>
-                    {
-                        try
-                        {
-                            await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Failed to initialize symbol uploader");
-                        }
-                    });
+                _ = SymbolsUploader.StartFlushingAsync()
+                                   .ContinueWith(t => Log.Error(t?.Exception, "Failed to initialize symbol uploader"), TaskContinuationOptions.OnlyOnFaulted);
             }
             catch (Exception ex)
             {

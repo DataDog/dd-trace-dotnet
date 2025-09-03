@@ -51,10 +51,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _evaluateWithRootSpanCases = new();
             _cachedInvalidatedCases = new();
 
-            _exceptionProcessorTask = Task.Factory.StartNew(
-                                               () => StartExceptionProcessingAsync(),
-                                               TaskCreationOptions.LongRunning)
-                                          .Unwrap();
+            _exceptionProcessorTask = Task.Run(StartExceptionProcessingAsync);
+            _ = _exceptionProcessorTask.ContinueWith(
+                t => Log.Error(t?.Exception, "Exception processor crashed"),
+                TaskContinuationOptions.OnlyOnFaulted);
+
             IsEditAndContinueFeatureEnabled = IsEnCFeatureEnabled();
             _isInitialized = true;
         }
@@ -70,26 +71,31 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private async Task StartExceptionProcessingAsync()
         {
-            while (!_processExit.Task.IsCompleted)
+            var exitTask = _processExit.Task;
+
+            while (!exitTask.IsCompleted)
             {
-                var completedTask = await Task.WhenAny(_workAvailable.WaitAsync(), _processExit.Task).ConfigureAwait(false);
-                if (completedTask == _processExit.Task)
+                var completed = await Task.WhenAny(_workAvailable.WaitAsync(), exitTask).ConfigureAwait(false);
+                if (completed == exitTask)
                 {
-                    return;
+                    break;
                 }
 
                 while (_exceptionProcessQueue.TryDequeue(out var exception))
                 {
+                    if (exitTask.IsCompleted)
+                    {
+                        return;
+                    }
+
                     try
                     {
                         ProcessException(exception, 0, ErrorOriginKind.HttpRequestFailure, rootSpan: null);
                     }
-#pragma warning disable DD0001
                     catch (Exception ex)
                     {
                         Log.Error(ex, "An exception was thrown while processing an exception for tracking from background thread. Exception = {Exception}", exception.ToString());
                     }
-#pragma warning restore DD0001
                 }
             }
         }
