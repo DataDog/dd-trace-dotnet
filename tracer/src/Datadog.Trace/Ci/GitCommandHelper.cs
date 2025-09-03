@@ -34,8 +34,11 @@ internal static class GitCommandHelper
     private static readonly char[] LineSeparators = ['\n', '\r'];
     private static readonly char[] WhitespaceSeparators = ['\t', ' '];
 
+    private static readonly HashSet<string> GitSafeDirectories = new(StringComparer.OrdinalIgnoreCase);
+
     public static ProcessHelpers.CommandOutput? RunGitCommand(string? workingDirectory, string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
+        EnsureGitSafeDirectory(workingDirectory);
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         try
         {
@@ -55,7 +58,7 @@ internal static class GitCommandHelper
             if (gitOutput is null)
             {
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
-                Log.Warning("GitCommandHelper: 'git {Arguments}' command is null", arguments);
+                Log.Warning("GitCommandHelper.RunGitCommand: 'git {Arguments}' command is null", arguments);
             }
             else if (gitOutput.ExitCode != 0)
             {
@@ -75,14 +78,14 @@ internal static class GitCommandHelper
                 }
 
                 var txt = StringBuilderCache.GetStringAndRelease(sb);
-                Log.Debug("GitCommandHelper: Git command {Command}", txt);
+                Log.Debug("GitCommandHelper.RunGitCommand: Git command {Command}", txt);
             }
 
             return gitOutput;
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
-            Log.Warning(ex, "GitCommandHelper: 'git {Arguments}' threw Win32Exception - git is likely not available", arguments);
+            Log.Warning(ex, "GitCommandHelper.RunGitCommand: 'git {Arguments}' threw Win32Exception - git is likely not available", arguments);
             TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Missing);
             return null;
         }
@@ -104,7 +107,7 @@ internal static class GitCommandHelper
         }
         catch (Exception ex)
         {
-            Log.Information(ex, "GitCommandHelper: Error calling git diff");
+            Log.Information(ex, "GitCommandHelper.GetGitDiffFilesAndLines: Error calling git diff");
             throw;
         }
 
@@ -133,7 +136,7 @@ internal static class GitCommandHelper
                     }
 
                     currentFile = new FileCoverageInfo(headerMatch.Groups["fileB"].Value);
-                    Log.Debug("GitCommandHelper:  Processing {File} ...", currentFile.Path);
+                    Log.Debug("GitCommandHelper.GetGitDiffFilesAndLines:  Processing {File} ...", currentFile.Path);
                     continue;
                 }
 
@@ -156,7 +159,7 @@ internal static class GitCommandHelper
 
                     var range = new LineRange(startLine, startLine + lineCount);
                     modifiedLines.Add(range);
-                    Log.Debug<int, int>("GitCommandHelper:    {From}..{To} ...", range.Start, range.End);
+                    Log.Debug<int, int>("GitCommandHelper.GetGitDiffFilesAndLines:    {From}..{To} ...", range.Start, range.End);
                 }
             }
 
@@ -215,7 +218,7 @@ internal static class GitCommandHelper
     {
         if (StringUtil.IsNullOrWhiteSpace(workingDirectory))
         {
-            Log.Warning("GitCommandHelper: Cannot detect base branch because working directory is null or empty");
+            Log.Warning("GitCommandHelper.DetectBaseBranch: Cannot detect base branch because working directory is null or empty");
             return null;
         }
 
@@ -226,12 +229,12 @@ internal static class GitCommandHelper
             {
                 var originNameOutput = RunGitCommand(workingDirectory, "config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
                 remoteName = originNameOutput?.Output.Replace(Environment.NewLine, string.Empty).Trim() ?? "origin";
-                Log.Debug("GitCommandHelper: Auto-detected remote name: {RemoteName}", remoteName);
+                Log.Debug("GitCommandHelper.DetectBaseBranch: Auto-detected remote name: {RemoteName}", remoteName);
             }
 
             if (StringUtil.IsNullOrWhiteSpace(remoteName))
             {
-                Log.Warning("GitCommandHelper: Cannot detect remote because remoteName is null or empty");
+                Log.Warning("GitCommandHelper.DetectBaseBranch: Cannot detect remote because remoteName is null or empty");
                 return null;
             }
 
@@ -240,13 +243,13 @@ internal static class GitCommandHelper
             {
                 var gitOutput = RunGitCommand(workingDirectory, "branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
                 targetBranch = gitOutput?.Output.Replace(Environment.NewLine, string.Empty) ?? string.Empty;
-                Log.Debug("GitCommandHelper: Auto-detected source branch: {SourceBranch}", targetBranch);
+                Log.Debug("GitCommandHelper.DetectBaseBranch: Auto-detected source branch: {SourceBranch}", targetBranch);
             }
 
             // Bail out if the target branch is still empty
             if (StringUtil.IsNullOrWhiteSpace(targetBranch))
             {
-                Log.Warning("GitCommandHelper: Cannot detect base branch because target branch is null or empty");
+                Log.Warning("GitCommandHelper.DetectBaseBranch: Cannot detect base branch because target branch is null or empty");
                 return null;
             }
 
@@ -258,7 +261,7 @@ internal static class GitCommandHelper
 
             if (verifyBranchOutput?.ExitCode != 0)
             {
-                Log.Warning("GitCommandHelper: Branch '{Branch}' does not exist", targetBranch);
+                Log.Warning("GitCommandHelper.DetectBaseBranch: Branch '{Branch}' does not exist", targetBranch);
                 return null;
             }
 
@@ -274,7 +277,7 @@ internal static class GitCommandHelper
                 }
 
                 candidateBranches.Add(pullRequestBaseBranch);
-                Log.Debug("GitCommandHelper: Using pull request base branch from CI: {BaseBranch}", pullRequestBaseBranch);
+                Log.Debug("GitCommandHelper.DetectBaseBranch: Using pull request base branch from CI: {BaseBranch}", pullRequestBaseBranch);
             }
             else
             {
@@ -295,7 +298,7 @@ internal static class GitCommandHelper
 
                 if (branchesOutput?.ExitCode != 0 || StringUtil.IsNullOrWhiteSpace(branchesOutput.Output))
                 {
-                    Log.Warning("GitCommandHelper: Failed to get branch list");
+                    Log.Warning("GitCommandHelper.DetectBaseBranch: Failed to get branch list");
                     return null;
                 }
 
@@ -318,15 +321,15 @@ internal static class GitCommandHelper
                             return false;
                         }));
 
-                Log.Debug(
-                    "GitCommandHelper: Found {Count} candidate branches: {Branches}",
+                Log.Debug<int, string>(
+                    "GitCommandHelper.DetectBaseBranch: Found {Count} candidate branches: {Branches}",
                     candidateBranches.Count,
                     string.Join(", ", candidateBranches));
             }
 
             if (candidateBranches.Count == 0)
             {
-                Log.Warning("GitCommandHelper: No candidate branches found");
+                Log.Warning("GitCommandHelper.DetectBaseBranch: No candidate branches found");
                 return null;
             }
 
@@ -373,7 +376,7 @@ internal static class GitCommandHelper
 
             if (metrics.Count == 0)
             {
-                Log.Warning("GitCommandHelper: No metrics could be computed for any candidate branch");
+                Log.Warning("GitCommandHelper.DetectBaseBranch: No metrics could be computed for any candidate branch");
                 return null;
             }
 
@@ -639,7 +642,7 @@ internal static class GitCommandHelper
             if (localOutput?.ExitCode == 0)
             {
                 // Branch exists locally
-                Log.Debug("GitCommandHelper: Branch {Branch} exists locally", branch);
+                Log.Debug("GitCommandHelper.CheckAndFetchBranch: Branch {Branch} exists locally", branch);
                 return;
             }
 
@@ -652,7 +655,7 @@ internal static class GitCommandHelper
             if (remoteOutput?.ExitCode != 0 || string.IsNullOrWhiteSpace(remoteOutput.Output))
             {
                 // Branch doesn't exist in remote
-                Log.Debug("GitCommandHelper: Branch {Branch} doesn't exist in remote {Remote}", branch, remoteName);
+                Log.Debug("GitCommandHelper.CheckAndFetchBranch: Branch {Branch} doesn't exist in remote {Remote}", branch, remoteName);
                 return;
             }
 
@@ -664,12 +667,12 @@ internal static class GitCommandHelper
 
             if (fetchOutput?.ExitCode != 0)
             {
-                Log.Warning("GitCommandHelper: Failed to fetch branch {Branch} from remote {Remote}", branch, remoteName);
+                Log.Warning("GitCommandHelper.CheckAndFetchBranch: Failed to fetch branch {Branch} from remote {Remote}", branch, remoteName);
             }
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "GitCommandHelper: Error checking/fetching branch {Branch}", branch);
+            Log.Warning(ex, "GitCommandHelper.CheckAndFetchBranch: Error checking/fetching branch {Branch}", branch);
         }
     }
 
@@ -677,6 +680,27 @@ internal static class GitCommandHelper
     private static string[] SplitLines(string text, StringSplitOptions options = StringSplitOptions.RemoveEmptyEntries)
     {
         return text.Split(LineSeparators, options);
+    }
+
+    private static void EnsureGitSafeDirectory(string? workingDirectory)
+    {
+        lock (GitSafeDirectories)
+        {
+            if (GitSafeDirectories.Add(workingDirectory ?? string.Empty))
+            {
+                // Ensure we have permissions to read the git directory
+                var safeDirectory = ProcessHelpers.RunCommand(
+                    new ProcessHelpers.Command(
+                        cmd: "git",
+                        arguments: $"config --global --add safe.directory {workingDirectory}",
+                        workingDirectory: workingDirectory,
+                        useWhereIsIfFileNotFound: true));
+                if (safeDirectory?.ExitCode != 0)
+                {
+                    Log.Warning("GitCommandHelper.EnsureGitSafeDirectory: Error setting safe.directory: {WorkingDirectory}", workingDirectory);
+                }
+            }
+        }
     }
 
     private readonly record struct LineRange(int Start, int End);
