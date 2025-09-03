@@ -16,7 +16,7 @@
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared/bin/monitoring-home",
         "DD_TRACE_AGENT_PORT": "8136",
         "DD_SERVICE": "Samples.Quartz",
-        "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED":"true"
+        "DD_TRACE_DEBUG": "false"
       },
       "nativeDebugging": false
     },

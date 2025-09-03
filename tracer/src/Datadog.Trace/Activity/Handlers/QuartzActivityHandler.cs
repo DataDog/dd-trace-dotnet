@@ -62,8 +62,7 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     // Update the span's resource name by appending the job name
                     var originalResourceName = span.ResourceName;
-                    string prefix = GetDisplayNamePrefix(activity.OperationName);
-                    var newResourceName = $"{prefix} {jobNameTag.Value}";
+                    var newResourceName = CreateResourceName(activity.OperationName, jobNameTag.Value);
                     span.ResourceName = newResourceName;
                     Log.Debug("Updated span resource name from '{OriginalResourceName}' to '{NewResourceName}' for job '{JobName}'", originalResourceName, newResourceName, jobNameTag.Value);
                 }

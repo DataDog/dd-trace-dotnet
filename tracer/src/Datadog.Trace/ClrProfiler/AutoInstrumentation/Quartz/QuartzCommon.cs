@@ -13,12 +13,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
 {
     internal static class QuartzCommon
     {
-        internal static string GetDisplayNamePrefix(string operationName)
+        internal static string CreateResourceName(string operationName, string jobName)
         {
             return operationName switch
             {
-                var name when name.Contains("Execute") => "execute",
-                var name when name.Contains("Veto") => "veto",
+                var name when name.Contains("Execute") => "execute " + jobName,
+                var name when name.Contains("Veto") => "veto " + jobName,
                 _ => operationName
             };
         }

@@ -8,7 +8,7 @@ public class VetoableJob : IJob
 #if QUARTZ_4_0
     async ValueTask IJob.Execute(IJobExecutionContext context)
 #else
-    async ValueTask IJob.Execute(IJobExecutionContext context)
+    async Task IJob.Execute(IJobExecutionContext context)
 #endif
     {
         // This job should never execute because it will be vetoed
