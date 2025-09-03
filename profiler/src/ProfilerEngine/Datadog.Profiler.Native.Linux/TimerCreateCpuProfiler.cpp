@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 std::atomic<TimerCreateCpuProfiler*> TimerCreateCpuProfiler::Instance = nullptr;
+std::atomic<std::uint64_t> TimerCreateCpuProfiler::_nbThreadsInSignalHandler = 0;
 
 TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IConfiguration* pConfiguration,
@@ -29,8 +30,7 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
-    _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
-    _nbThreadsInSignalHandler{0}
+    _samplingInterval{pConfiguration->GetCpuProfilingInterval()}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
@@ -129,9 +129,11 @@ bool TimerCreateCpuProfiler::StopImpl()
 
 bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext)
 {
+    _nbThreadsInSignalHandler++;
     auto instance = Instance.load();
     if (instance == nullptr)
     {
+        _nbThreadsInSignalHandler--;
         return false;
     }
 
@@ -210,7 +212,6 @@ private:
 
 bool TimerCreateCpuProfiler::Collect(void* ctx)
 {
-    _nbThreadsInSignalHandler++;
     _totalSampling->Incr();
 
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
