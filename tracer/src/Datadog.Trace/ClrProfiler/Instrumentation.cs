@@ -61,6 +61,51 @@ namespace Datadog.Trace.ClrProfiler
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetNativeTracerVersion() => "None";
 
+        private static void PropagateStableConfiguration()
+        {
+            // TODO: only for profiler today
+            //
+
+            // profiler is not available on ARM(64) don't even try to call the p/invoke 
+            // as the binary won't be there
+            var fd = FrameworkDescription.Instance;
+            if ((fd.ProcessArchitecture == ProcessArchitecture.Arm64) || (fd.ProcessArchitecture == ProcessArchitecture.Arm))
+            {
+                Log.Information("Profiling is not available on ARM.");
+                return;
+            }
+
+            Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
+            var tracerSettings = Tracer.Instance.Settings;
+            var profilerSettings = Profiler.Instance.Settings;
+
+            NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
+            {
+                ProfilingEnabled = (profilerSettings.ProfilerState == ProfilerState.Auto) ? NativeInterop.ProfilingEnabled.Auto :
+                                   (profilerSettings.ProfilerState == ProfilerState.Enabled) ? NativeInterop.ProfilingEnabled.Enabled :
+                                   NativeInterop.ProfilingEnabled.Disabled,
+                TracingEnabled = tracerSettings.TraceEnabled,
+                IastEnabled = Iast.Iast.Instance.Settings.Enabled,
+                RaspEnabled = Security.Instance.Settings.RaspEnabled,
+                DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
+                RuntimeId = RuntimeId.Get(),
+                Environment = tracerSettings.Environment,
+                ServiceName = TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? string.Empty),
+                Version = tracerSettings.ServiceVersion
+            };
+
+            // It is possible that the profiler binary is not "there" such as Azure Function and some CI tests
+            // So, ensure that no exception bubbles up
+            try
+            {
+                NativeInterop.ProfilerSetConfiguration(config);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error when setting profiler configuration.");
+            }
+        }
+
         /// <summary>
         /// Initializes global instrumentation values.
         /// </summary>
@@ -93,37 +138,7 @@ namespace Datadog.Trace.ClrProfiler
                     try
                     {
                         // Set the Stable Configuration to the native parts
-
-                        // TODO: only for profiler here
-                        Log.Debug("Enabling Profiling integration in native library.");
-                        var tracerSettings = Tracer.Instance.Settings;
-                        var profilerSettings = Profiler.Instance.Settings;
-
-                        NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
-                        {
-                            ProfilingEnabled = (profilerSettings.ProfilerState == ProfilerState.Auto) ? NativeInterop.ProfilingEnabled.Auto :
-                                               (profilerSettings.ProfilerState == ProfilerState.Enabled) ? NativeInterop.ProfilingEnabled.Enabled :
-                                               NativeInterop.ProfilingEnabled.Disabled,
-                            TracingEnabled = tracerSettings.TraceEnabled,
-                            IastEnabled = Iast.Iast.Instance.Settings.Enabled,
-                            RaspEnabled = Security.Instance.Settings.RaspEnabled,
-                            DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
-                            RuntimeId = RuntimeId.Get(),
-                            Environment = tracerSettings.Environment,
-                            ServiceName = TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? string.Empty),
-                            Version = tracerSettings.ServiceVersion
-                        };
-
-                        // It is possible that the profiler binary is not "there" such as Azure Function and some CI tests
-                        // So, ensure that no exception bubbles up
-                        try
-                        {
-                            NativeInterop.ProfilerSetConfiguration(config);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Warning(ex, "Error when setting profiler configuration.");
-                        }
+                        PropagateStableConfiguration();
 
                         Log.Debug("Enabling CallTarget integration definitions in native library.");
 
