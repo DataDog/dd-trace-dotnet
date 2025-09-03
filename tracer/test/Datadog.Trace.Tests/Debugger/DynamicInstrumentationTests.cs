@@ -79,7 +79,6 @@ public class DynamicInstrumentationTests
 
         var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         debugger.Initialize();
-        await Task.Delay(1000);
         lineProbeResolver.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
         snapshotUploader.Called.Should().BeFalse();
