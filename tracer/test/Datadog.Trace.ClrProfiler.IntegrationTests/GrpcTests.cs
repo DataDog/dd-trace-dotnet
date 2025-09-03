@@ -424,6 +424,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     throw new SkipException("Hit race condition in GRPC deadline exceeded");
                 }
+
+                throw;
             }
 
             bool IsGrpcClientSpan(MockSpan span)
