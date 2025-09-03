@@ -160,7 +160,7 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 
 Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler,
                    const RuntimeInformation& runtimeInfo) :
-    Rejitter(rejitHandler, RejitterPriority::Low)
+    Rejitter(RejitterPriority::Low)
 {
     m_runtimeType = runtimeInfo.runtime_type;
     m_runtimeVersion = VersionInfo{runtimeInfo.major_version, runtimeInfo.minor_version, runtimeInfo.build_version, 0};
@@ -180,6 +180,7 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
     }
 
     _initialized = false;
+    rejitHandler->RegisterRejitter(this);
 }
 
 Dataflow::~Dataflow()

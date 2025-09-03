@@ -9,9 +9,12 @@
 namespace trace
 {
 // Rejitter
-
+Rejitter::Rejitter(RejitterPriority priority) : 
+    m_priority(priority)
+{
+}
 Rejitter::Rejitter(std::shared_ptr<RejitHandler> handler, RejitterPriority priority) :
-    m_rejitHandler(handler), m_priority(priority)
+    m_priority(priority)
 {
     handler->RegisterRejitter(this);
 }

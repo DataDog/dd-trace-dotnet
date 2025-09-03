@@ -32,6 +32,7 @@ protected:
     RejitterPriority m_priority;
 
 public:
+    Rejitter(RejitterPriority priority);
     Rejitter(std::shared_ptr<RejitHandler> handler, RejitterPriority priority);
     virtual ~Rejitter();
 
