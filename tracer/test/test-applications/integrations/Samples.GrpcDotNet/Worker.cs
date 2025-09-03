@@ -65,11 +65,11 @@ public class Worker : BackgroundService
             if (Environment.GetEnvironmentVariable("IAST_GRPC_SOURCE_TEST") == null)
             {
                 await SendErrorsAsync(client);
-                SendInvalidContentTypeRequest(client);
                 await SendVerySlowRequestAsync(client);
 
                 SendUnaryRequest(client);
                 SendErrors(client);
+                SendInvalidContentTypeRequest(client);
                 SendVerySlowRequest(client);
             }
         }
@@ -211,11 +211,12 @@ public class Worker : BackgroundService
 
     private async Task SendVerySlowRequestAsync(Greeter.GreeterClient client)
     {
-        using var scope = CreateScope("Invalid content type request");
+        using var scope = CreateScope();
         try
         {
             _logger.LogInformation("Sending very slow request to self");
-            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(600));
+            // The delay in the method is 300 miliseconds.
+            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(20));
 
             throw new Exception("Received reply, when should have exceeded deadline");
         }
@@ -247,7 +248,8 @@ public class Worker : BackgroundService
         try
         {
             _logger.LogInformation("Sending very slow request to self");
-            client.VerySlow(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddSeconds(2));
+            // The delay in the method is 300 miliseconds.
+            client.VerySlow(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(20));
 
             throw new Exception("Received reply, when should have exceeded deadline");
         }

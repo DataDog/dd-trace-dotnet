@@ -244,6 +244,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             HttpClientIntegrationType httpClientIntegrationType,
             string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+
             const int requestCount = 2 // Unary  (sync + async)
                                     + 1 // 1 server streaming
                                     + 1 // 1 client streaming
