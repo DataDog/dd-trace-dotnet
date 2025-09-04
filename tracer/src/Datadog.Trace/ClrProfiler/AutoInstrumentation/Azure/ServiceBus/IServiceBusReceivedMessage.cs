@@ -6,8 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
