@@ -146,7 +146,6 @@
       "tracer\\test\\test-applications\\integrations\\Samples.Telemetry\\Samples.Telemetry.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.TraceAnnotations.VersionMismatch.AfterFeature\\Samples.TraceAnnotations.VersionMismatch.AfterFeature.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.TraceAnnotations.VersionMismatch.BeforeFeature\\Samples.TraceAnnotations.VersionMismatch.BeforeFeature.csproj",
-      "tracer\\test\\test-applications\\integrations\\Samples.TraceAnnotations.VersionMismatch.NewerNuGet\\Samples.TraceAnnotations.VersionMismatch.NewerNuGet.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.TraceAnnotations\\Samples.TraceAnnotations.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Trimming\\Samples.Trimming.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.VersionConflict.1x\\Samples.VersionConflict.1x.csproj",
