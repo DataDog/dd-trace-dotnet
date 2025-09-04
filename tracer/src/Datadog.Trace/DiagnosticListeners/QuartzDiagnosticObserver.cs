@@ -42,12 +42,15 @@ namespace Datadog.Trace.DiagnosticListeners
                     // ducktype it
                     // gets an Iactivity (atleast), IActivity5 has the display name
                     // set the displayname to execute span
+
+                    // move this to its own function in quartz commoon
                     var currentActivity = ActivityListener.GetCurrentActivity();
-                    if (currentActivity != null)
+                    if (currentActivity is IActivity5 activity5)
                     {
-                        var displayName = QuartzCommon.CreateResourceName(((IActivity5)currentActivity).DisplayName, currentActivity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty);
-                        currentActivity.AddTag("operation.name", ((IActivity5)currentActivity).DisplayName);
-                        ((IActivity5)currentActivity).DisplayName = displayName;
+                        var displayName = QuartzCommon.CreateResourceName(activity5.DisplayName, activity5.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty);
+                        currentActivity.AddTag("operation.name", activity5.DisplayName);
+                        activity5.DisplayName = displayName;
+                        QuartzCommon.SetSpanKind(activity5);
                     }
 
                     break;
@@ -62,9 +65,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     var closingActivity = ActivityListener.GetCurrentActivity();
                     if (closingActivity != null)
                     {
-                        // can duckcast args to get the exception
-                        closingActivity.AddTag("error", "true");
-                        closingActivity.AddTag("error.message", "placeholder");
+                        AddException(arg, closingActivity);
                     }
 
                     break;
@@ -72,6 +73,19 @@ namespace Datadog.Trace.DiagnosticListeners
                     Log.Debug("default");
                     break;
             }
+        }
+
+        private static void AddException(object exceptionArg, IActivity activity)
+        {
+            if (exceptionArg is not Exception exception)
+            {
+                return;
+            }
+
+            activity.AddTag(Tags.ErrorMsg, exception.Message);
+            activity.AddTag(Tags.ErrorType, exception.GetType().ToString());
+            activity.AddTag(Tags.ErrorStack, exception.ToString());
+            activity.AddTag("otel.status_code", "STATUS_CODE_ERROR");
         }
     }
 }

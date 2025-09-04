@@ -5,6 +5,8 @@
 
 #nullable enable
 using System;
+using Datadog.Trace.Activity;
+using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -21,6 +23,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
                 var name when name.Contains("Veto") => "veto " + jobName,
                 _ => operationName
             };
+        }
+
+        internal static void SetSpanKind(IActivity5 activity)
+        {
+            ActivityKind activityKind = activity.OperationName switch
+            {
+                string name when name.Contains("Execute") => ActivityKind.Internal,
+                string name when name.Contains("Veto") => ActivityKind.Internal,
+                _ => activity.Kind
+            };
+
+            ActivityListener.SetActivityKind(activity, activityKind);
         }
     }
 }

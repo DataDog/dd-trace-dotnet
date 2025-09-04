@@ -16,7 +16,7 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         bool IsAllDataRequested { get; set; }
 
-        ActivityKind Kind { get; }
+        ActivityKind Kind { get; set; }
 
         IEnumerable<KeyValuePair<string, object>> TagObjects { get; }
 
