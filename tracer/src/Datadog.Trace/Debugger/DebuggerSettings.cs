@@ -39,11 +39,10 @@ namespace Datadog.Trace.Debugger
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(false);
-
             _internalDynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool();
 
-            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
+            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true)
+                                       && _internalDynamicInstrumentationEnabled != false;
 
             MaximumDepthOfMembersToCopy = config
                                          .WithKeys(ConfigurationKeys.Debugger.MaxDepthToSerialize)
@@ -139,8 +138,6 @@ namespace Datadog.Trace.Debugger
 
             RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
 
-            CodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(false);
-
             _internalCodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool();
 
             CodeOriginMaxUserFrames = config
@@ -153,13 +150,9 @@ namespace Datadog.Trace.Debugger
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
 
-        internal bool IsDebuggerProductsDisabled => _internalCodeOriginForSpansEnabled == false && _internalDynamicInstrumentationEnabled == false;
+        public bool DynamicInstrumentationEnabled => _internalDynamicInstrumentationEnabled == true || DynamicSettings.DynamicInstrumentationEnabled == true;
 
-        public bool DynamicInstrumentationEnabled
-        {
-            get => DynamicSettings.DynamicInstrumentationEnabled ?? _internalDynamicInstrumentationEnabled == true;
-            init { }
-        }
+        public bool DynamicInstrumentationCanBeEnabled => _internalDynamicInstrumentationEnabled != false && DynamicSettings.DynamicInstrumentationEnabled != false;
 
         public bool SymbolDatabaseUploadEnabled { get; }
 
@@ -191,11 +184,9 @@ namespace Datadog.Trace.Debugger
 
         public HashSet<string> RedactedTypes { get; }
 
-        public bool CodeOriginForSpansEnabled
-        {
-            get => DynamicSettings.CodeOriginEnabled ?? _internalCodeOriginForSpansEnabled == true;
-            init { }
-        }
+        public bool CodeOriginForSpansEnabled => _internalCodeOriginForSpansEnabled == true || DynamicSettings.CodeOriginEnabled == true;
+
+        public bool CodeOriginForSpansCanBeEnabled => _internalCodeOriginForSpansEnabled != false && DynamicSettings.CodeOriginEnabled != false;
 
         public int CodeOriginMaxUserFrames { get; }
 
