@@ -19,7 +19,7 @@ namespace Datadog.Trace.Headers.Ip
         {
             _ipv4LocalCidrs = [];
 
-            foreach (var currentCidrMask in new[] { "127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16" })
+            foreach (var currentCidrMask in new[] { "127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "100.65.0.0/10" })
             {
                 var parts = currentCidrMask.Split('/');
 
