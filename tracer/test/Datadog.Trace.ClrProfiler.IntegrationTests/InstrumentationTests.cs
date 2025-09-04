@@ -222,6 +222,7 @@ namespace Foo
         [Trait("RunOnWindows", "True")]
         public async Task WhenUsingRelativeTracerHome_InstrumentsApp()
         {
+            SetLogDirectory();
             // the working dir when we run the app is the _test_ project, not the app itself, so we need to be relative to that
             // This is a perfect example of why we don't recommend using relative paths for these variables
             var workingDir = Environment.CurrentDirectory;
@@ -240,6 +241,7 @@ namespace Foo
         [Trait("RunOnWindows", "True")]
         public async Task WhenUsingPathWithDotsInInTracerHome_InstrumentsApp()
         {
+            SetLogDirectory();
             var path = Path.Combine(EnvironmentHelper.MonitoringHome, "..", Path.GetFileName(EnvironmentHelper.MonitoringHome)!);
             Output.WriteLine("Using DD_DOTNET_TRACER_HOME " + path);
             SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
@@ -623,6 +625,7 @@ namespace Foo
         [Trait("RunOnWindows", "True")]
         public async Task WhenDynamicCodeIsEnabled_InstrumentsApp()
         {
+            SetLogDirectory();
             var dotnetRuntimeArgs = CreateRuntimeConfigWithDynamicCodeEnabled(true);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
@@ -635,6 +638,7 @@ namespace Foo
         [Trait("RunOnWindows", "True")]
         public async Task WhenDynamicCodeIsDisabled_DoesNotInstrument()
         {
+            SetLogDirectory();
             var dotnetRuntimeArgs = CreateRuntimeConfigWithDynamicCodeEnabled(false);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
