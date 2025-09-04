@@ -51,8 +51,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         [TestAppFact("Samples.Computer01")]
         public void ManualAndProfilingEnvVarTrue(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
-            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "true");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
@@ -95,8 +94,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         [TestAppFact("Samples.Computer01")]
         public void SsiAndProfilingEnvVarTrue(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
-            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "true");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
@@ -110,8 +108,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         [TestAppFact("Samples.Computer01")]
         public void NoMetricsWhenSsiAndProfilingEnvVarTrue(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
-            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "true");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
