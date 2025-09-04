@@ -29,6 +29,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.OutHost)]
         public string OutHost { get; set; }
 
+        [Tag(Tags.DbBatchSize)]
+        public string BatchSize { get; set; }
+
         [Tag(Trace.Tags.DbmTraceInjected)]
         public string DbmTraceInjected { get; set; }
     }

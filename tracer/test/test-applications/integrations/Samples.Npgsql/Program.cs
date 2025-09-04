@@ -19,6 +19,24 @@ namespace Samples.Npgsql
             using (var connection = OpenConnection(typeof(NpgsqlConnection)))
             {
                 await RelationalDatabaseTestHarness.RunAllAsync<NpgsqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+
+#if HAS_BATCH_SUPPORT
+                using (var root = SampleHelpers.CreateScope("RunBatchAsync"))
+                {
+                    // now an extra test running a batch command
+                    // cannot be added to the test harness because ado.net doesn't provide a generic way to build a batch query
+                    // like there is for connection.CreateCommand(), instead we have to build it using framework's specific methods.
+                    Console.WriteLine("BATCH command");
+                    var batch = new NpgsqlBatch((NpgsqlConnection)connection);
+                    batch.BatchCommands.Add(new NpgsqlBatchCommand($"DROP TABLE IF EXISTS my_table"));
+                    batch.BatchCommands.Add(new NpgsqlBatchCommand($"CREATE TABLE my_table (Id int PRIMARY KEY, Name varchar(100))"));
+                    var insertcommand = new NpgsqlBatchCommand($"INSERT INTO my_table (Id, Name) VALUES (@Id, @Name)");
+                    insertcommand.Parameters.Add(new NpgsqlParameter("Id", value: 1));
+                    insertcommand.Parameters.Add(new NpgsqlParameter("Name", "Name1"));
+                    batch.BatchCommands.Add(insertcommand);
+                    await batch.ExecuteNonQueryAsync(cts.Token);
+                }
+#endif
             }
 
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
