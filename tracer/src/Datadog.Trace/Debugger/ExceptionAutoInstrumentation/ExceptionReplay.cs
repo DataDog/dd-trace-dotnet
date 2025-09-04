@@ -6,10 +6,8 @@
 #nullable enable
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
@@ -35,11 +33,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal ExceptionReplaySettings Settings { get; }
 
-        internal bool Enabled
-        {
-            get => Settings.Enabled && !_isDisabled;
-        }
-
         internal static ExceptionReplay Create(ExceptionReplaySettings settings)
         {
             return new ExceptionReplay(settings);
@@ -47,12 +40,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public void Initialize()
         {
-            if (!Enabled)
-            {
-                Log.Debug("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.ExceptionReplayEnabled);
-                return;
-            }
-
             Log.Information("Initializing Exception Debugging");
 
             if (!ThirdPartyModules.IsValid)
@@ -111,7 +98,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal void Report(Span span, Exception exception)
         {
-            if (!Enabled)
+            if (_isDisabled)
             {
                 Log.Debug("Exception replay is disabled.");
                 return;
@@ -122,7 +109,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal void BeginRequest()
         {
-            if (!Enabled)
+            if (_isDisabled)
             {
                 return;
             }
@@ -135,7 +122,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal void EndRequest()
         {
-            if (!Enabled)
+            if (_isDisabled)
             {
                 return;
             }
@@ -145,7 +132,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal void AddSnapshot(string probeId, string snapshot)
         {
-            if (!Enabled)
+            if (_isDisabled)
             {
                 Log.Debug("Exception replay is disabled.");
                 return;
