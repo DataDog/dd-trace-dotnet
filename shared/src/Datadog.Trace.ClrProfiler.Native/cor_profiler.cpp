@@ -488,7 +488,7 @@ namespace datadog::shared::nativeloader
 
                     Log::Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
                     Log::Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
-                    Log::Info("CorProfiler::Initialize: Instrumetation initialized successfully.");
+                    Log::Info("CorProfiler::Initialize: Instrumentation initialized successfully.");
                 }
                 else
                 {
@@ -497,7 +497,7 @@ namespace datadog::shared::nativeloader
             }
             else
             {
-                Log::Warn("CorProfiler::Initialize: Error Initializing the Instrumetation component, unloading the dynamic library.");
+                Log::Warn("CorProfiler::Initialize: Error Initializing the Instrumentation component, unloading the dynamic library.");
                 m_tracerProfiler = nullptr;
             }
         }
