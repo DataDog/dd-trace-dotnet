@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -56,9 +56,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
                 // Inject tracing context into the final message properties
                 var activeScope = Tracer.Instance.ActiveScope;
-                if (activeScope?.Span?.Context != null && properties != null)
+                if (activeScope?.Span?.Context is SpanContext spanContext && properties != null)
                 {
-                    var context = new Datadog.Trace.Propagators.PropagationContext(activeScope.Span.Context as Datadog.Trace.SpanContext, Datadog.Trace.Baggage.Current);
+                    var context = new PropagationContext(spanContext, Baggage.Current);
                     Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, properties, default(ContextPropagation));
                 }
             }
