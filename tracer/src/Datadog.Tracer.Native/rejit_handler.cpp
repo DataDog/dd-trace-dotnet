@@ -427,10 +427,14 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
     FunctionControlWrapper functionControl((ICorProfilerInfo*)m_profilerInfo, moduleId, methodId);
 
     // Call all rejitters sequentially
-    auto c = m_rejittersCount;
-    for (auto x = 0; x < c; x++)
+    Rejitter* prev = nullptr;
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        hr = m_rejitters[x]->RejitMethod(functionControl);
+        const auto current = m_rejitters[x];
+        if (current != prev)
+        {
+            current->RejitMethod(functionControl);
+        }
     }
 
     return functionControl.ApplyChanges(pFunctionControl);
@@ -478,10 +482,11 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
         return false;
     }
 
-    auto c = m_rejittersCount;
-    for (auto x = 0; x < c; x++)
+    Rejitter* prev = nullptr;
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        if (m_rejitters[x]->HasModuleAndMethod(moduleId, methodDef))
+        const auto current = m_rejitters[x];
+        if (current != prev && current->HasModuleAndMethod(moduleId, methodDef))
         {
             return true;
         }
@@ -497,10 +502,15 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
         return;
     }
 
-    auto c = m_rejittersCount;
-    for (auto x = 0; x < c; x++)
+
+    Rejitter* prev = nullptr;
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        m_rejitters[x]->RemoveModule(moduleId);
+        const auto current = m_rejitters[x];
+        if (current != prev)
+        {
+            current->RemoveModule(moduleId);
+        }
     }
 }
 
@@ -511,10 +521,14 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
         return;
     }
 
-    auto c = m_rejittersCount;
-    for (auto x = 0; x < c; x++)
+    Rejitter* prev = nullptr;
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        m_rejitters[x]->AddNGenInlinerModule(moduleId);
+        const auto current = m_rejitters[x];
+        if (current != prev)
+        {
+            current->AddNGenInlinerModule(moduleId);
+        }
     }
 }
 
