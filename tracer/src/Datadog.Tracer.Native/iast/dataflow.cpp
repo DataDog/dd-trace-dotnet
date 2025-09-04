@@ -178,9 +178,6 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
         _profiler = nullptr;
         trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. Disabling Dataflow. HRESULT : ", Hex(hr));
     }
-
-    _initialized = false;
-    rejitHandler->RegisterRejitter(this);
 }
 
 Dataflow::~Dataflow()
@@ -242,6 +239,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
 
     trace::Logger::Info("Dataflow::LoadAspects -> read ", _aspects.size(), " aspects");
     _initialized = true;
+    m_rejitHandler->RegisterRejitter(this);
 }
 
 void Dataflow::LoadSecurityControls()

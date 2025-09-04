@@ -394,7 +394,7 @@ void RejitHandler::RegisterRejitter(Rejitter* rejitter)
     if (m_rejittersCount == 0)
     {
         m_rejitters[m_rejittersCount++] = rejitter;
-        DBG("RejitHandler::RegisterRejitter -> Registered Rejitter. Count : ", m_rejittersCount);
+        Logger::Info("RejitHandler::RegisterRejitter -> Registered Rejitter. Count : ", m_rejittersCount);
     }
     else
     {
@@ -408,7 +408,7 @@ void RejitHandler::RegisterRejitter(Rejitter* rejitter)
         }
 
         shared::Insert(m_rejitters, m_rejittersCount, x, rejitter);
-        DBG("RejitHandler::RegisterRejitter -> Registered Rejitter at ", x, ". Count : ", m_rejittersCount);
+        Logger::Info("RejitHandler::RegisterRejitter -> Registered Rejitter at ", x, ". Count : ", m_rejittersCount);
     }
 }
 
@@ -427,7 +427,8 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
     FunctionControlWrapper functionControl((ICorProfilerInfo*)m_profilerInfo, moduleId, methodId);
 
     // Call all rejitters sequentially
-    for (auto x = 0; x < m_rejittersCount; x++)
+    auto c = m_rejittersCount;
+    for (auto x = 0; x < c; x++)
     {
         hr = m_rejitters[x]->RejitMethod(functionControl);
     }
@@ -477,7 +478,8 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
         return false;
     }
 
-    for (auto x = 0; x < m_rejittersCount; x++)
+    auto c = m_rejittersCount;
+    for (auto x = 0; x < c; x++)
     {
         if (m_rejitters[x]->HasModuleAndMethod(moduleId, methodDef))
         {
@@ -495,7 +497,8 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
         return;
     }
 
-    for (auto x = 0; x < m_rejittersCount; x++)
+    auto c = m_rejittersCount;
+    for (auto x = 0; x < c; x++)
     {
         m_rejitters[x]->RemoveModule(moduleId);
     }
@@ -508,7 +511,8 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
         return;
     }
 
-    for (auto x = 0; x < m_rejittersCount; x++)
+    auto c = m_rejittersCount;
+    for (auto x = 0; x < c; x++)
     {
         m_rejitters[x]->AddNGenInlinerModule(moduleId);
     }
