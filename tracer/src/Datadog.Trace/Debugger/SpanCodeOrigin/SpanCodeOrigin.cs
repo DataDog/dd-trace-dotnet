@@ -8,7 +8,6 @@
 using System;
 using System.Diagnostics;
 using System.Reflection;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Caching;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
@@ -38,12 +37,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         {
             if (span == null)
             {
-                return;
-            }
-
-            if (!Settings.CodeOriginForSpansCanBeEnabled)
-            {
-                Log.Debug("Code Origin for Spans is disabled. To enable it, please set {CodeOriginForSpansEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
+                Log.Debug("Can not add code origin when span is null");
                 return;
             }
 
@@ -69,12 +63,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 type == null ||
                 method == null)
             {
-                return;
-            }
-
-            if (!Settings.CodeOriginForSpansCanBeEnabled)
-            {
-                Log.Debug("Code Origin for Spans is disabled. To enable it, please set {CodeOriginForSpansEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
+                Log.Debug("Can not add code origin when one of the arguments is null");
                 return;
             }
 
