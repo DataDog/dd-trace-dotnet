@@ -191,55 +191,59 @@ Dataflow::~Dataflow()
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
-    // Init aspects
-    DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " Enabled categories: ", enabledCategories, " Platform: ", platform);
-
-    if (aspectsLength > 10)
+    if (!_initialized)
     {
-        _aspects.reserve(aspectsLength); // We know the max number of aspects we are going to have, so reserve the space to avoid vector resizes
-        _aspectClasses.reserve(aspectsLength / 10); // We don't know exactly the number of aspects which are class aspects, but 1/10 is a fine approach
-    }
+        _initialized = true;
 
-    DataflowAspectClass* aspectClass = nullptr;
-    for (int x = 0; x < aspectsLength; x++)
-    {
-        WSTRING line = aspects[x];
-        if (BeginsWith(line, WStr("[AspectClass(")))
+        // Init aspects
+        DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " Enabled categories: ", enabledCategories, " Platform: ", platform);
+
+        if (aspectsLength > 10)
         {
-            aspectClass = new DataflowAspectClass(this, line, enabledCategories);
-            if (!aspectClass->IsValid())
-            {
-                DEL(aspectClass);
-            }
-            else
-            {
-                _aspectClasses.push_back(aspectClass);
-            }
-            continue;
+            _aspects.reserve(aspectsLength); // We know the max number of aspects we are going to have, so reserve the space to avoid vector resizes
+            _aspectClasses.reserve(aspectsLength / 10); // We don't know exactly the number of aspects which are class aspects, but 1/10 is a fine approach
         }
-        if (BeginsWith(line, WStr("  [Aspect")) && aspectClass != nullptr)
+
+        DataflowAspectClass* aspectClass = nullptr;
+        for (int x = 0; x < aspectsLength; x++)
         {
-            auto aspect = new DataflowAspect(aspectClass, line, platform);
-            if (!aspect->IsValid())
+            WSTRING line = aspects[x];
+            if (BeginsWith(line, WStr("[AspectClass(")))
             {
-                DEL(aspect);
+                aspectClass = new DataflowAspectClass(this, line, enabledCategories);
+                if (!aspectClass->IsValid())
+                {
+                    DEL(aspectClass);
+                }
+                else
+                {
+                    _aspectClasses.push_back(aspectClass);
+                }
+                continue;
             }
-            else
+            if (BeginsWith(line, WStr("  [Aspect")) && aspectClass != nullptr)
             {
-                _aspects.push_back(aspect);
+                auto aspect = new DataflowAspect(aspectClass, line, platform);
+                if (!aspect->IsValid())
+                {
+                    DEL(aspect);
+                }
+                else
+                {
+                    _aspects.push_back(aspect);
+                }
             }
         }
+
+        LoadSecurityControls();
+
+        auto moduleAspects = _moduleAspects;
+        _moduleAspects.clear();
+        DEL_MAP_VALUES(moduleAspects);
+
+        trace::Logger::Info("Dataflow::LoadAspects -> read ", _aspects.size(), " aspects");
+        m_rejitHandler->RegisterRejitter(this);
     }
-
-    LoadSecurityControls();
-
-    auto moduleAspects = _moduleAspects;
-    _moduleAspects.clear();
-    DEL_MAP_VALUES(moduleAspects);
-
-    trace::Logger::Info("Dataflow::LoadAspects -> read ", _aspects.size(), " aspects");
-    _initialized = true;
-    m_rejitHandler->RegisterRejitter(this);
 }
 
 void Dataflow::LoadSecurityControls()
