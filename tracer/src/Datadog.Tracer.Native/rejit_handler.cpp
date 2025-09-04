@@ -325,13 +325,11 @@ void RejitHandler::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitReque
 RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
     m_profilerInfo(pInfo), m_profilerInfo10(nullptr), m_work_offloader(work_offloader)
 {
-    m_rejitters.reserve(5);
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
     m_profilerInfo(pInfo), m_profilerInfo10(pInfo), m_work_offloader(work_offloader)
 {
-    m_rejitters.reserve(5);
 }
 
 void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef,
@@ -376,9 +374,9 @@ void RejitHandler::Shutdown()
     WriteLock w_lock(m_shutdown_lock);
     m_shutdown.store(true);
 
-    for (auto rejitter : m_rejitters)
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        rejitter->Shutdown();
+        m_rejitters[x]->Shutdown();
     }
 
     m_profilerInfo = nullptr;
@@ -393,21 +391,24 @@ bool RejitHandler::IsShutdownRequested()
 
 void RejitHandler::RegisterRejitter(Rejitter* rejitter)
 {
-    if (m_rejitters.size() == 0)
+    if (m_rejittersCount == 0)
     {
-        m_rejitters.push_back(rejitter);
+        m_rejitters[m_rejittersCount++] = rejitter;
+        DBG("RejitHandler::RegisterRejitter -> Registered Rejitter. Count : ", m_rejittersCount);
     }
     else
     {
-        auto it = m_rejitters.begin();
-        for (; it < m_rejitters.end(); it++)
+        size_t x = 0;
+        for (; x < m_rejittersCount; x++)
         {
-            if ((*it)->GetPriority() > rejitter->GetPriority())
+            if (m_rejitters[x]->GetPriority() > rejitter->GetPriority())
             {
                 break;
             }
         }
-        m_rejitters.insert(it, rejitter);
+
+        shared::Insert(m_rejitters, m_rejittersCount, x, rejitter);
+        DBG("RejitHandler::RegisterRejitter -> Registered Rejitter at ", x, ". Count : ", m_rejittersCount);
     }
 }
 
@@ -426,9 +427,9 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
     FunctionControlWrapper functionControl((ICorProfilerInfo*)m_profilerInfo, moduleId, methodId);
 
     // Call all rejitters sequentially
-    for (auto rejitter : m_rejitters)
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        hr = rejitter->RejitMethod(functionControl);
+        hr = m_rejitters[x]->RejitMethod(functionControl);
     }
 
     return functionControl.ApplyChanges(pFunctionControl);
@@ -476,9 +477,9 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
         return false;
     }
 
-    for (auto rejitter : m_rejitters)
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        if (rejitter->HasModuleAndMethod(moduleId, methodDef))
+        if (m_rejitters[x]->HasModuleAndMethod(moduleId, methodDef))
         {
             return true;
         }
@@ -494,9 +495,9 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
         return;
     }
 
-    for (auto rejitter : m_rejitters)
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        rejitter->RemoveModule(moduleId);
+        m_rejitters[x]->RemoveModule(moduleId);
     }
 }
 
@@ -507,9 +508,9 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
         return;
     }
 
-    for (auto rejitter : m_rejitters)
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        rejitter->AddNGenInlinerModule(moduleId);
+        m_rejitters[x]->AddNGenInlinerModule(moduleId);
     }
 }
 

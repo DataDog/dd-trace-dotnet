@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: AWSSDK.DynamoDBv2 -->
+    <!--    Assembly: AWSSDK.DynamoDBv2 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.6.1 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.6.1" />
+  </ItemGroup>
+
+</Project>

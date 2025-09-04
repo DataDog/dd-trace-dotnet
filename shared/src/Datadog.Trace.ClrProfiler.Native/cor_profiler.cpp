@@ -121,6 +121,9 @@ namespace datadog::shared::nativeloader
         const auto process_name = ::shared::GetCurrentProcessName();
         Log::Debug("ProcessName: ", process_name);
 
+        const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
+        Log::Info("Process CommandLine: ", process_command_line);
+
         const auto& include_process_names = GetEnvironmentValues(EnvironmentVariables::IncludeProcessNames);
 
         // if there is a process inclusion list, attach clrprofiler only if this
@@ -158,9 +161,6 @@ namespace datadog::shared::nativeloader
             // don't give useful information, add latency, and risk triggering bugs in the runtime,
             // particularly around shutdown, like this one: https://github.com/dotnet/runtime/issues/55441
             // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
-           const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
-            Log::Info("Process CommandLine: ", process_command_line);
-
             if (!process_command_line.empty())
             {
                 const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
@@ -228,6 +228,68 @@ namespace datadog::shared::nativeloader
                             "but an unsupported command was detected");
                         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                     }
+
+                    // Additional Special case CI Visibility checks
+                    bool is_ci_visibility_enabled = false;
+                    if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(EnvironmentVariables::CiVisibilityEnabled), is_ci_visibility_enabled)
+                        && is_ci_visibility_enabled)
+                    {
+                        if (tokenized_command_line[1] != WStr("test") &&
+                            process_command_line.find(WStr("testhost")) == WSTRING::npos &&
+                            process_command_line.find(WStr("exec")) == WSTRING::npos &&
+                            process_command_line.find(WStr("datacollector")) == WSTRING::npos &&
+                            process_command_line.find(WStr("vstest.console.dll")) == WSTRING::npos)
+                        {
+                            Log::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
+                                "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost' or 'datacollector' or 'vstest.console.dll' or 'exec'");
+                            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                        }
+                    }
+                }
+            }
+        }
+
+        // AAS checks
+        bool isRunningInAas;
+        if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(EnvironmentVariables::IsAzureAppServicesExtension),
+                                            isRunningInAas) && isRunningInAas)
+        {
+            Log::Info("Azure App Services detected.");
+
+            const auto& app_pool_id_value = GetEnvironmentValue(EnvironmentVariables::AzureAppServicesAppPoolId);
+
+            if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~')
+            {
+                Log::Info(
+                    "DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", EnvironmentVariables::AzureAppServicesAppPoolId, " ",
+                    app_pool_id_value, " is an Azure App Services infrastructure process.");
+                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+            }
+
+            const auto& cli_telemetry_profile_value =
+                GetEnvironmentValue(EnvironmentVariables::AzureAppServicesCliTelemetryProfilerValue);
+
+            if (cli_telemetry_profile_value == WStr("AzureKudu"))
+            {
+                Log::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", app_pool_id_value,
+                             " is Kudu, an Azure App Services reserved process.");
+                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+            }
+
+            const auto& functions_worker_runtime_value =
+                GetEnvironmentValue(EnvironmentVariables::AzureAppServicesFunctionsWorkerRuntime);
+
+            if (!functions_worker_runtime_value.empty())
+            {
+                // enabled by default
+                bool azure_functions_enabled;
+                if (TryParseBooleanEnvironmentValue(
+                        GetEnvironmentValue(
+                            EnvironmentVariables::AzureFunctionsInstrumentationEnabled),
+                        azure_functions_enabled) && !azure_functions_enabled)
+                {
+                    Log::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler explicitly disabled for Azure Functions.");
+                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                 }
             }
         }

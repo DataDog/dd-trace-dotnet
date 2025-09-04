@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: AWSSDK.StepFunctions -->
+    <!--    Assembly: AWSSDK.StepFunctions -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.0.23 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.0.23" />
+  </ItemGroup>
+
+</Project>
