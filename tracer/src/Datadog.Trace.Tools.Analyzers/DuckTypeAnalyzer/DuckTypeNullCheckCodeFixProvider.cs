@@ -20,6 +20,7 @@ namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
 {
     /// <summary>
     /// Fixes IDuckType null checks to check the .Instance property instead
+    /// Note that this always does a conditional access to be as safe as possible
     /// </summary>
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DuckTypeNullCheckCodeFixProvider))]
     public class DuckTypeNullCheckCodeFixProvider : CodeFixProvider
@@ -74,7 +75,6 @@ namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
             CancellationToken ct)
         {
             var editor = await DocumentEditor.CreateAsync(document, ct).ConfigureAwait(false);
-            var semanticModel = editor.SemanticModel;
             if (binary is not null)
             {
                 // we have something like:  if (duckType == null)  or           if (duckType != null)
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
                     return document;
                 }
 
-                var instance = CreateInstanceAccess(duckExpr, semanticModel);
+                var instance = CreateInstanceAccess(duckExpr);
                 var newBinary = isLeft ? binary.WithLeft(instance) : binary.WithRight(instance);
                 editor.ReplaceNode(binary, newBinary);
             }
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
             {
                 // we have something like:  if (duckType is null)  or           if (duckType is not null)
                 // we want something like:  if (duckType.Instance is null)  or  if (duckType.Instance is not null)
-                var instance = CreateInstanceAccess(isPattern.Expression, semanticModel);
+                var instance = CreateInstanceAccess(isPattern.Expression);
                 editor.ReplaceNode(isPattern, isPattern.WithExpression(instance));
             }
 
@@ -134,49 +134,18 @@ namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
             return false;
         }
 
-        private static ExpressionSyntax CreateInstanceAccess(ExpressionSyntax baseExpression, SemanticModel semanticModel)
+        private static ExpressionSyntax CreateInstanceAccess(ExpressionSyntax baseExpression)
         {
             baseExpression = StripOuterParens(baseExpression);
 
-            // this is a special case if we have a cast to object
-            // I don't think I have seen this in the codebase, but I wrote a test for it and it failed so here we are
-            // (object)duckType  -->  duckType.Instance
-            // we need to remove the cast
+            // (object)duckType --> duckType?.Instance   (remove cast)
             if (baseExpression is CastExpressionSyntax cast && IsObject(cast.Type))
             {
                 return CreateInstanceAccessor(cast.Expression).WithTriviaFrom(baseExpression);
             }
 
-            // if it is IDuckType?, use ?.Instance
-            var useConditional = IsNullable(baseExpression, semanticModel);
-
-            ExpressionSyntax? instanceExpression;
-            if (useConditional)
-            {
-                // duckType?.Instance
-                instanceExpression = SyntaxFactory.ConditionalAccessExpression(ParenthesizeIfNeeded(baseExpression), SyntaxFactory.MemberBindingExpression(SyntaxFactory.IdentifierName("Instance")));
-            }
-            else
-            {
-                // duckType.Instance
-                instanceExpression = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, ParenthesizeIfNeeded(baseExpression), SyntaxFactory.IdentifierName("Instance"));
-            }
-
-            return instanceExpression.WithTriviaFrom(baseExpression);
-        }
-
-        private static bool IsNullable(ExpressionSyntax expression, SemanticModel semanticModel)
-        {
-            var symbol = semanticModel.GetSymbolInfo(expression).Symbol;
-
-            return symbol switch
-            {
-                IParameterSymbol p => p.NullableAnnotation == NullableAnnotation.Annotated,
-                ILocalSymbol l => l.NullableAnnotation == NullableAnnotation.Annotated,
-                IFieldSymbol f => f.NullableAnnotation == NullableAnnotation.Annotated,
-                IPropertySymbol pr => pr.NullableAnnotation == NullableAnnotation.Annotated,
-                _ => false, // For expressions without a direct symbol, just don't add ?.
-            };
+            // default: duckType --> duckType?.Instance
+            return CreateInstanceAccessor(baseExpression).WithTriviaFrom(baseExpression);
         }
 
         private static bool IsObject(TypeSyntax t)
@@ -201,8 +170,8 @@ namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
 
         private static ExpressionSyntax CreateInstanceAccessor(ExpressionSyntax receiver)
         {
-            // duckType --> duckType.Instance
-            return SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, ParenthesizeIfNeeded(receiver), SyntaxFactory.IdentifierName("Instance"));
+            // duckType?.Instance
+            return SyntaxFactory.ConditionalAccessExpression(ParenthesizeIfNeeded(receiver), SyntaxFactory.MemberBindingExpression(SyntaxFactory.IdentifierName("Instance")));
         }
 
         private static ExpressionSyntax StripOuterParens(ExpressionSyntax expr)
