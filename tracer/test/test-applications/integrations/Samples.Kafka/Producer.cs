@@ -132,11 +132,6 @@ namespace Samples.Kafka
                     {
                         producer.Produce(topic, message, deliveryHandler);
                     }
-
-                    if (numMessages % FlushInterval == 0)
-                    {
-                        producer.Flush(FlushTimeout);
-                    }
                 }
                 Flush(producer);
 
