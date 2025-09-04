@@ -215,7 +215,7 @@ public class Worker : BackgroundService
         try
         {
             _logger.LogInformation("Sending very slow request to self");
-            // The delay in the method is 300 miliseconds.
+            // The delay in the method is 200 miliseconds.
             await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(20));
 
             throw new Exception("Received reply, when should have exceeded deadline");
@@ -248,7 +248,7 @@ public class Worker : BackgroundService
         try
         {
             _logger.LogInformation("Sending very slow request to self");
-            // The delay in the method is 300 miliseconds.
+            // The delay in the method is 200 miliseconds.
             client.VerySlow(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(20));
 
             throw new Exception("Received reply, when should have exceeded deadline");
