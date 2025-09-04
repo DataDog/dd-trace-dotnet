@@ -1,8 +1,19 @@
 version: 2
+
+registries:
+  azure-nuget:
+    type: nuget-feed
+    url: https://pkgs.dev.azure.com/datadoghq/dd-trace-dotnet/_packaging/Public_Feed/nuget/v3/index.json
+  public-nuget:
+    type: nuget-feed
+    url: https://api.nuget.org/v3/index.json
+
+
 updates:
   # Mocked projects for vendored dependency notifications
   - package-ecosystem: "nuget"
     directory: "/tracer/dependabot"
+    registries: public-nuget
     exclude-paths:
       - "integrations"
     schedule:
@@ -20,6 +31,7 @@ updates:
   # Mocked projects for integration dependency notifications
   - package-ecosystem: "nuget"
     directory: "/tracer/dependabot/integrations"
+    registries: public-nuget
     schedule:
       interval: "daily"
     labels:
@@ -32,6 +44,7 @@ updates:
   # Because they aren't compatible with the dotnet msbuild approach we're using
   - package-ecosystem: "nuget"
     directory: "/tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated"
+    registries: public-nuget
     schedule:
       interval: "daily"
     labels:
@@ -46,6 +59,7 @@ updates:
   # Src libraries
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace"
+    registries: public-nuget
     schedule:
       interval: "daily"
     labels:
@@ -73,6 +87,7 @@ updates:
 
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace.OpenTracing"
+    registries: public-nuget
     schedule:
       interval: "daily"
     labels:
@@ -94,8 +109,10 @@ updates:
       - dependency-name: "System.Reflection.Emit"
       - dependency-name: "System.Reflection.Emit.Lightweight"
       ### End Datadog.Trace.csproj ignored dependencies
+
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace.BenchmarkDotNet"
+    registries: public-nuget
     schedule:
       interval: "daily"
     labels:
