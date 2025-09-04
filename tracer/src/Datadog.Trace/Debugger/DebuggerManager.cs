@@ -228,7 +228,8 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if (!debuggerSettings.CodeOriginForSpansEnabled)
+                var enabled = debuggerSettings.CodeOriginForSpansCanBeEnabled || debuggerSettings.DynamicSettings.CodeOriginEnabled == true;
+                if (!enabled)
                 {
                     CodeOrigin = null;
                     if (debuggerSettings.DynamicSettings.CodeOriginEnabled == false)
@@ -240,6 +241,12 @@ namespace Datadog.Trace.Debugger
                         Log.Debug("Code Origin for Spans is disabled");
                     }
 
+                    return;
+                }
+
+                if (!debuggerSettings.CodeOriginForSpansCanBeEnabled)
+                {
+                    Log.Debug("Code Origin can't be enabled because the local environment variable is set to false");
                     return;
                 }
 
@@ -266,7 +273,8 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if (!ExceptionReplaySettings.Enabled)
+                var enabled = ExceptionReplaySettings.Enabled || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true;
+                if (!enabled)
                 {
                     SafeDisposal.TryDispose(ExceptionReplay);
                     ExceptionReplay = null;
@@ -279,6 +287,12 @@ namespace Datadog.Trace.Debugger
                         Log.Debug("Exception Replay is disabled");
                     }
 
+                    return;
+                }
+
+                if (!ExceptionReplaySettings.CanBeEnabled)
+                {
+                    Log.Debug("Exception Replay can't be enabled because the local environment variable is set to false");
                     return;
                 }
 
@@ -315,11 +329,11 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            var requestedOriginal = debuggerSettings.DynamicInstrumentationEnabled;
-            var currentOriginal = DynamicInstrumentation != null;
+            var requestedDiState = debuggerSettings.DynamicInstrumentationEnabled || debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true;
+            var currentDiState = DynamicInstrumentation != null;
             var state = Volatile.Read(ref _diState);
 
-            if (!requestedOriginal && (currentOriginal || state == 1))
+            if (!requestedDiState && (currentDiState || state == 1))
             {
                 // cancel any pending enable and disable immediately
                 var prevGate = Interlocked.Exchange(ref _diDebounceGate, null);
@@ -328,7 +342,7 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            if (ShouldSkipUpdate(requestedOriginal, currentOriginal))
+            if (ShouldSkipDiUpdate(requestedDiState, currentDiState, debuggerSettings))
             {
                 return;
             }
@@ -354,13 +368,6 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                var requested2 = DebuggerSettings.DynamicInstrumentationEnabled;
-                var current2 = DynamicInstrumentation != null;
-                if (ShouldSkipUpdate(requested2, current2))
-                {
-                    return;
-                }
-
                 await SetDynamicInstrumentationStateAsync(tracerSettings, gate).ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -371,18 +378,24 @@ namespace Datadog.Trace.Debugger
             {
                 Interlocked.CompareExchange(ref _diDebounceGate, null, gate);
             }
+        }
 
-            bool ShouldSkipUpdate(bool requested, bool current)
+        private bool ShouldSkipDiUpdate(bool requested, bool current, DebuggerSettings debuggerSettings)
+        {
+            if (requested && !debuggerSettings.DynamicInstrumentationCanBeEnabled)
             {
-                // no change required AND no init in progress
-                if ((requested == current) && Volatile.Read(ref _diState) == 0)
-                {
-                    Log.Debug("Skip update Dynamic Instrumentation. Requested is {Requested}, Current is {Current}", requested, current);
-                    return true;
-                }
-
-                return false;
+                Log.Debug("Code Origin can't be enabled because the local environment variable is set to false");
+                return true;
             }
+
+            // no change required AND no init in progress
+            if ((requested == current) && Volatile.Read(ref _diState) == 0)
+            {
+                Log.Debug("Skip update Dynamic Instrumentation. Requested is {Requested}, Current is {Current}", requested, current);
+                return true;
+            }
+
+            return false;
         }
 
         private async Task SetDynamicInstrumentationStateAsync(TracerSettings tracerSettings, TaskCompletionSource<bool> debounceGate)
