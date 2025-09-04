@@ -496,24 +496,29 @@ namespace Datadog.Trace.ClrProfiler
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
             var manager = DebuggerManager.Instance;
-            if (manager.DebuggerSettings.IsDebuggerProductsDisabled && manager.ExceptionReplaySettings.IsExceptionReplayDisabled)
+            var debuggerSettings = manager.DebuggerSettings;
+            bool diDisabled = !debuggerSettings.DynamicInstrumentationCanBeEnabled;
+            bool coDisabled = !debuggerSettings.CodeOriginForSpansCanBeEnabled;
+            bool erDisabled = !manager.ExceptionReplaySettings.CanBeEnabled || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == false;
+
+            if (diDisabled && coDisabled && erDisabled)
             {
-                Log.Debug("Debugger products are explicitly disabled via environment variables.");
+                Log.Debug("Debugger products are explicitly disabled.");
             }
             else
             {
-                if (!manager.DebuggerSettings.DynamicInstrumentationEnabled)
+                if (!debuggerSettings.DynamicInstrumentationEnabled)
                 {
                     // we need this line for tests
                     Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
                 }
 
-                _ = DebuggerManager.Instance.UpdateConfiguration(tracerSettings)
-                                   .ContinueWith(
-                                        t => Log.Error(t?.Exception, "Error initializing debugger"),
-                                        CancellationToken.None,
-                                        TaskContinuationOptions.OnlyOnFaulted,
-                                        TaskScheduler.Default);
+                _ = manager.UpdateConfiguration(tracerSettings)
+                           .ContinueWith(
+                                t => Log.Error(t?.Exception, "Error initializing debugger"),
+                                CancellationToken.None,
+                                TaskContinuationOptions.OnlyOnFaulted,
+                                TaskScheduler.Default);
             }
         }
 

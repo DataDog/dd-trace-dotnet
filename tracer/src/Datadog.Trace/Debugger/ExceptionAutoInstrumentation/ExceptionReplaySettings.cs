@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 
@@ -17,16 +16,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public const int DefaultMaxFramesToCapture = 4;
         public const int DefaultRateLimitSeconds = 60 * 60; // 1 hour
         public const int DefaultMaxExceptionAnalysisLimit = 100;
-        private bool? _internalExceptionReplayEnabled;
 
         public ExceptionReplaySettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            Enabled = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(false);
-
-            _internalExceptionReplayEnabled = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool();
+            var enabledResult = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool();
+            Enabled = enabledResult ?? false;
+            CanBeEnabled = enabledResult != false;
 
             CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled).AsBool(false);
 
@@ -51,7 +49,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public bool Enabled { get; }
 
-        internal bool IsExceptionReplayDisabled => _internalExceptionReplayEnabled == false;
+        public bool CanBeEnabled { get; }
 
         public int MaximumFramesToCapture { get; }
 
