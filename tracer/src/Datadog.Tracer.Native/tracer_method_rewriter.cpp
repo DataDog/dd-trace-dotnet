@@ -149,7 +149,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     if (!m_corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
     {
         Logger::Warn(
-            "*** CallTarget_RewriterCallback() skipping method: Method replacement found but the managed profiler has "
+            "*** CallTarget_RewriterCallback() skipping method: Method replacement found but Datadog.Trace.dll has "
             "not yet been loaded into AppDomain with id=",
             module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
             caller->name, "()");
