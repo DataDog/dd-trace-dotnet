@@ -22,9 +22,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            var enabledResult = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool();
-            Enabled = enabledResult ?? false;
-            CanBeEnabled = enabledResult != false;
+            var erEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBoolResult();
+            Enabled = erEnabledResult.WithDefault(false);
+            CanBeEnabled = erEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
 
             CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled).AsBool(false);
 
