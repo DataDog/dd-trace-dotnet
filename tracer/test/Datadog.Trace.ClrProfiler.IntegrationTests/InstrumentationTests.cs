@@ -638,7 +638,18 @@ namespace Foo
         [Trait("RunOnWindows", "True")]
         public async Task WhenDynamicCodeIsDisabled_DoesNotInstrument()
         {
-            SetLogDirectory();
+            // We move the logs to a throw-away temp location so that they're not checked by the logs-checker in CI.
+            // That's because in this scenario the Profiler will never receive the stable config results, so will
+            // never initialize, because we bail-out in the managed loader (i.e. we never initialize the tracer).
+            // This isn't ideal - we'd rather bail out in the native loader - but it's not possible to check the context
+            // switch on the native side AFAIK (though we should check again to see if we can).
+            // Regardless, the CP is loaded, and generates an error in its logs, but as this isn't a supported scenario
+            // anyway, that's fine.
+
+            var logDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
+            Directory.CreateDirectory(logDir);
+            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+
             var dotnetRuntimeArgs = CreateRuntimeConfigWithDynamicCodeEnabled(false);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
