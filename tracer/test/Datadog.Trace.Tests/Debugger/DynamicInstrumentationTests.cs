@@ -42,7 +42,6 @@ public class DynamicInstrumentationTests
 
         var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         debugger.Initialize();
-        discoveryService.Called.Should().BeTrue();
 
         // Wait for async initialization to complete
         var timeout = TimeSpan.FromSeconds(5);
@@ -53,6 +52,7 @@ public class DynamicInstrumentationTests
             await Task.Delay(50);
         }
 
+        discoveryService.Called.Should().BeTrue();
         debugger.IsInitialized.Should().BeTrue("Dynamic instrumentation should be initialized");
 
         probeStatusPoller.Called.Should().BeTrue();
@@ -79,7 +79,6 @@ public class DynamicInstrumentationTests
 
         var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         debugger.Initialize();
-
         lineProbeResolver.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
         snapshotUploader.Called.Should().BeFalse();
