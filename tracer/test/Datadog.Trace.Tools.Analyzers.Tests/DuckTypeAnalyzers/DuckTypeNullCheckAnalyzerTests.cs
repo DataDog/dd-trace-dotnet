@@ -102,7 +102,7 @@ public class DuckTypeNullCheckAnalyzerTests
         {
             void TestMethod(IDuckType duckType)
             {
-                if (duckType.Instance {{operand}} null)
+                if (duckType?.Instance {{operand}} null)
                 {
                 }
             }
@@ -187,7 +187,7 @@ public class DuckTypeNullCheckAnalyzerTests
         {
             void TestMethod(IDuckType duckType)
             {
-                if (duckType.Instance == null)
+                if (duckType?.Instance == null)
                 {
                 }
             }
@@ -227,7 +227,7 @@ public class DuckTypeNullCheckAnalyzerTests
         {
             void TestMethod(IDuckType duckType)
             {
-                if (duckType.Instance == null)
+                if (duckType?.Instance == null)
                 {
                 }
             }
