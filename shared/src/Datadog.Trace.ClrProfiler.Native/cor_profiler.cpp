@@ -283,10 +283,10 @@ namespace datadog::shared::nativeloader
             {
                 // enabled by default
                 bool azure_functions_enabled;
-                if (!TryParseBooleanEnvironmentValue(
+                if (TryParseBooleanEnvironmentValue(
                         GetEnvironmentValue(
                             EnvironmentVariables::AzureFunctionsInstrumentationEnabled),
-                        azure_functions_enabled) || !azure_functions_enabled)
+                        azure_functions_enabled) && !azure_functions_enabled)
                 {
                     Log::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler explicitly disabled for Azure Functions.");
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
