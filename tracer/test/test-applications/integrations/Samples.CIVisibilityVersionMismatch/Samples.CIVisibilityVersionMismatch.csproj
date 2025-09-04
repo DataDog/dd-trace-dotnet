@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Datadog.Trace" Version="255.1.6-prerelease" />
+    <PackageReference Include="Datadog.Trace" Version="2.60.0" />
   </ItemGroup>
 
   <ItemGroup>
