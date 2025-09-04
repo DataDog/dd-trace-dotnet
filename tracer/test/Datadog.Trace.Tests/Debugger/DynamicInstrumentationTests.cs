@@ -62,7 +62,7 @@ public class DynamicInstrumentationTests
     }
 
     [Fact]
-    public async Task DynamicInstrumentationDisabled_ServicesNotCalled()
+    public void DynamicInstrumentationDisabled_ServicesNotCalled()
     {
         var settings = DebuggerSettings.FromSource(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
