@@ -518,7 +518,6 @@ namespace Datadog.Trace.Debugger
                 }
 
                 tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
-                Log.Debug("Dynamic Instrumentation has been created");
             }
             catch (Exception ex)
             {
