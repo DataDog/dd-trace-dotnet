@@ -237,7 +237,7 @@ namespace Datadog.Trace.Debugger
                     }
                     else
                     {
-                        Log.Debug("Code Origin for Spans is disabled. To enable it, please set {CodeOriginForSpansEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
+                        Log.Debug("Code Origin for Spans is disabled");
                     }
 
                     return;
@@ -276,7 +276,7 @@ namespace Datadog.Trace.Debugger
                     }
                     else
                     {
-                        Log.Debug("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", ConfigurationKeys.Debugger.ExceptionReplayEnabled);
+                        Log.Debug("Exception Replay is disabled");
                     }
 
                     return;
