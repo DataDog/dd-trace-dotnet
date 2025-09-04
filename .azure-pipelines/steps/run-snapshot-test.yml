@@ -183,10 +183,6 @@ steps:
         echo "compose run exited with code $rc (non-zero is expected in a crash test)."
       fi
 
-      echo "--- Last 100 lines of output ---"
-      tail -n 100 "$TMPLOG" || true
-      echo "--------------------------------"
-
       expected="The crash may have been caused by automatic instrumentation"
       if grep -Fq "$expected" "$TMPLOG"; then
         echo "✅ Correctly found evidence of crash detection"
