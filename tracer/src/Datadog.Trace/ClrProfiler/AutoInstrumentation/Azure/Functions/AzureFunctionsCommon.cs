@@ -6,12 +6,16 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
 
@@ -217,7 +221,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         _ when type.Equals("httpTrigger", StringComparison.OrdinalIgnoreCase) => "Http", // Microsoft.Azure.Functions.Worker.Extensions.Http
                         _ when type.Equals("timerTrigger", StringComparison.OrdinalIgnoreCase) => "Timer", // Microsoft.Azure.Functions.Worker.Extensions.Timer
-                        _ when type.Equals("serviceBus", StringComparison.OrdinalIgnoreCase) => "ServiceBus", // Microsoft.Azure.Functions.Worker.Extensions.ServiceBus
+                        _ when type.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase) => "ServiceBus", // Microsoft.Azure.Functions.Worker.Extensions.ServiceBus
                         _ when type.Equals("queue", StringComparison.OrdinalIgnoreCase) => "Queue", // Microsoft.Azure.Functions.Worker.Extensions.Queues
                         _ when type.StartsWith("blob", StringComparison.OrdinalIgnoreCase) => "Blob", // Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs
                         _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub", // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
@@ -232,6 +236,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     if (triggerType == "Http")
                     {
                         extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                    }
+                    else if (triggerType == "ServiceBus" && tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+                    {
+                        extractedContext = ExtractPropagatedContextFromServiceBus(context).MergeBaggageInto(Baggage.Current);
                     }
 
                     break;
@@ -329,6 +337,117 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 Log.Error(ex, "Error extracting propagated HTTP context from Http binding");
                 return default;
             }
+        }
+
+        private static PropagationContext ExtractPropagatedContextFromServiceBus<T>(T context)
+            where T : IFunctionContext
+        {
+            try
+            {
+                if (context.Features == null)
+                {
+                    return default;
+                }
+
+                GrpcBindingsFeatureStruct? bindingsFeature = null;
+                foreach (var kvp in context.Features)
+                {
+                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
+                    {
+                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
+                        break;
+                    }
+                }
+
+                if (bindingsFeature == null)
+                {
+                    return default;
+                }
+
+                var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
+                var spanContexts = new List<SpanContext>();
+
+                // Extract from single message UserProperties
+                if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
+                    TryParseJson<Dictionary<string, object>>(singlePropsObj) is { } singleProps)
+                {
+                    if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
+                    {
+                        spanContexts.Add(singleContext);
+                    }
+                }
+
+                // Extract from batch UserPropertiesArray
+                if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true &&
+                    TryParseJson<Dictionary<string, object>[]>(arrayPropsObj) is { } propsArray)
+                {
+                    foreach (var props in propsArray)
+                    {
+                        if (ExtractSpanContextFromProperties(props) is { } batchContext)
+                        {
+                            spanContexts.Add(batchContext);
+                        }
+                    }
+                }
+
+                if (spanContexts.Count == 0)
+                {
+                    return default;
+                }
+
+                bool areAllTheSame = spanContexts.Count == 1 ||
+                                     (spanContexts.Count > 1 && AreAllContextsIdentical(spanContexts));
+
+                if (!areAllTheSame)
+                {
+                    Log.Warning("Multiple different contexts found in ServiceBus messages. Using first context for parentship.");
+                }
+
+                return new PropagationContext(spanContexts[0], Baggage.Current, null);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error extracting propagated context from ServiceBus binding");
+                return default;
+            }
+        }
+
+        private static SpanContext? ExtractSpanContextFromProperties(Dictionary<string, object> userProperties)
+        {
+            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(userProperties, default(ServiceBus.ContextPropagation));
+            return extractedContext.SpanContext;
+        }
+
+        private static T? TryParseJson<T>(object? jsonObj)
+            where T : class
+        {
+            if (jsonObj is not string jsonString)
+            {
+                return null;
+            }
+
+            try
+            {
+                return JsonConvert.DeserializeObject<T>(jsonString);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Failed to parse JSON: {Json}", jsonString);
+                return null;
+            }
+        }
+
+        private static bool AreAllContextsIdentical(List<SpanContext> contexts)
+        {
+            if (contexts.Count <= 1)
+            {
+                return true;
+            }
+
+            var first = contexts[0];
+            return contexts.All(ctx =>
+                ctx.TraceId128.Equals(first.TraceId128) &&
+                ctx.SpanId == first.SpanId);
         }
     }
 }
