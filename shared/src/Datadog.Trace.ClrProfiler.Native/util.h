@@ -21,7 +21,6 @@ const ::shared::WSTRING cfg_instrumentation_verification_env = WStr("DD_WRITE_IN
 const ::shared::WSTRING cfg_copying_originals_modules_env = WStr("DD_COPY_ORIGINALS_MODULES_TO_DISK");
 const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
 
-// Note that this list should be kept in sync with the values in tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h
 // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
 // FIXME: this should also take into account case insensitivity, but that is not yet supported
 // https://devblogs.microsoft.com/oldnewthing/20241007-00/?p=110345
