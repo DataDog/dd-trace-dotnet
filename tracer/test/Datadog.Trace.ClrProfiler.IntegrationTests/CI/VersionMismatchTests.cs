@@ -39,6 +39,8 @@ public class VersionMismatchTests : TestingFrameworkEvpTest
         // The "do not trace" helper that normally blocks tracing these spans doesn't
         // work in version conflict scenarios.
         SetEnvironmentVariable("DD_TRACE_Process_ENABLED", "0");
+        // TEMP for debugging
+        EnvironmentHelper.DebugModeEnabled = true;
     }
 
     [SkippableFact]
