@@ -53,7 +53,7 @@ run-benchmarks:
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
 
   script:
-    - git clone --branch dd-trace-dotnet/micro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - git clone --branch augusto/dd-trace-dotnet-micro-update https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/launch-instance.sh
   after_script:
     - !reference [.setup, script]
