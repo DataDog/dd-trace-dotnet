@@ -147,9 +147,9 @@ namespace datadog::shared::nativeloader
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
 
-            for (auto&& exclude_assembly : default_exclude_assemblies)
+            for (auto&& exclude_process : default_exclude_processes)
             {
-                if (process_name == exclude_assembly)
+                if (process_name == exclude_process)
                 {
                     Log::Info("CorProfiler::Initialize Datadog SDK disabled: ", process_name," found in default exclude list");
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
