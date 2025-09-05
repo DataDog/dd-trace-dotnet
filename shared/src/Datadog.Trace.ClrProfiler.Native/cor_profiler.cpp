@@ -224,7 +224,7 @@ namespace datadog::shared::nativeloader
 
                     if (is_ignored_command)
                     {
-                        Log::Info("Instrumentation has been disabled because the process is 'dotnet' "
+                        Log::Info("Instrumentation has been disabled because the process name is 'dotnet' "
                             "but an unsupported command was detected");
                         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                     }
@@ -240,8 +240,8 @@ namespace datadog::shared::nativeloader
                             process_command_line.find(WStr("datacollector")) == WSTRING::npos &&
                             process_command_line.find(WStr("vstest.console.dll")) == WSTRING::npos)
                         {
-                            Log::Info("Instrumentation has been disabled because the process is running in CI Visibility "
-                                "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost' or 'datacollector' or 'vstest.console.dll' or 'exec'");
+                            Log::Info("Instrumentation disabled because the process is running in CI Visibility "
+                                "mode and its name is 'dotnet', but the command line doesn't contain 'testhost', 'datacollector', 'vstest.console.dll', or 'exec'");
                             return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                         }
                     }

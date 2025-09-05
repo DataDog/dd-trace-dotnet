@@ -62,8 +62,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         else
         {
             Logger::Error("Instrumentation is initialized multiple times. This may cause unpredictable failures.",
-                " When running aspnetcore in IIS, make sure to disable managed code in the application pool settings.",
-                " https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/advanced?view=aspnetcore-9.0#create-the-iis-site");
+                " When running ASP.NET Core in IIS, make sure to disable managed code in the Application Pool settings.",
+                " https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/advanced#create-the-iis-site");
         }
     }
 
@@ -87,8 +87,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
     else
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Instrumentation disabled: .NET 5.0 runtime or greater is required on this "
-                     "architecture.");
+        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Instrumentation disabled: .NET 5.0 runtime or greater is required on ARM architectures.");
         return E_FAIL;
     }
 #endif
