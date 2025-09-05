@@ -36,6 +36,7 @@ public class QuartzTests : TracingIntegrationTest
 
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     [MemberData(nameof(PackageVersions.Quartz), MemberType = typeof(PackageVersions))]
     public async Task SubmitsTraces(string packageVersion)
     {
@@ -87,8 +88,7 @@ public class QuartzTests : TracingIntegrationTest
     {
         if (string.IsNullOrEmpty(packageVersion))
         {
-            expectedSpanCount = 3;
-            return "V4";
+            return Set(out expectedSpanCount, 0, "NoPackageVersion");
         }
 
         return new Version(packageVersion) switch
