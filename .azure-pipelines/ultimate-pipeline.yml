@@ -2831,6 +2831,9 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
+    - script: |
+        sudo sysctl vm.mmap_rnd_bits=28
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
