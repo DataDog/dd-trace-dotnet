@@ -321,7 +321,7 @@
     <ClInclude Include="crashhandler.h" />
     <ClInclude Include="dynamic_instance.h" />
     <ClInclude Include="dynamic_dispatcher.h" />
-    <ClInclude Include="EnvironmentVariables.h" />
+    <ClInclude Include="environment.h" />
     <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_consts.h" />
     <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_function_control.h" />
     <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_info.h" />

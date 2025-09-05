@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "EnvironmentVariables.h"
+#include "environment.h"
 
 #include <string>
 
@@ -30,14 +30,14 @@ public:
             // until we know that the process is going to be instrumented, otherwise we will create way
             // too many log files. Note that we don't currently distinguish between .NET FX and .NET Core, because
             // we need to make the decision _before_ we have that information.
-            const auto isSingleStepVariable = shared::GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
+            const auto isSingleStepVariable = shared::GetEnvironmentValue(environment::single_step_instrumentation_enabled);
             if (isSingleStepVariable.empty())
             {
                 // not in Windows SSI, so we don't need buffering
                 return false;
             }
 
-            const auto bufferEnvVar = shared::GetEnvironmentValue(EnvironmentVariables::LogBufferingEnabled);
+            const auto bufferEnvVar = shared::GetEnvironmentValue(environment::log_buffering_enabled);
 
             // enable buffering _unless_ the variable is present and set to false
             // if the variable is not set, or it's set to false
@@ -53,8 +53,8 @@ public:
 
         struct logging_environment
         {
-            inline static const shared::WSTRING log_path = EnvironmentVariables::LogPath;
-            inline static const shared::WSTRING log_directory = EnvironmentVariables::LogDirectory;
+            inline static const shared::WSTRING log_path = environment::log_path;
+            inline static const shared::WSTRING log_directory = environment::log_directory;
         };
     };
 
