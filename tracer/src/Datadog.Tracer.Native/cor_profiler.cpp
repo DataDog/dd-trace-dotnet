@@ -57,13 +57,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         if (isRunningInAas)
         {
-            Logger::Info("The Tracer Profiler is initialized multiple times. This is expected and currently unavoidable when running in AAS.");
+            Logger::Info("Instrumentation is initialized multiple times. This is expected and currently unavoidable when running in AAS.");
         }
         else
         {
-            Logger::Error("The Tracer Profiler is initialized multiple times. This may cause unpredictable failures.",
-                " When running aspnetcore in IIS, make sure to disable managed code in the application pool settings.",
-                " https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/advanced?view=aspnetcore-9.0#create-the-iis-site");
+            Logger::Error("Instrumentation is initialized multiple times. This may cause unpredictable failures.",
+                " When running ASP.NET Core in IIS, make sure to disable managed code in the Application Pool settings.",
+                " https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/advanced#create-the-iis-site");
         }
     }
 
@@ -87,8 +87,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
     else
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET 5.0 runtime or greater is required on this "
-                     "architecture.");
+        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Instrumentation disabled: .NET 5.0 runtime or greater is required on ARM architectures.");
         return E_FAIL;
     }
 #endif
@@ -97,7 +96,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     HRESULT hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &this->info_);
     if (FAILED(hr))
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo7 not found.");
+        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach Instrumentation: interface ICorProfilerInfo7 not found.");
         return E_FAIL;
     }
 
@@ -141,7 +140,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     if (info8 == nullptr && runtime_information_.is_core())
     {
         Logger::Warn(
-            "DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET Core 2.0 or greater runtime is required for .NET Core automatic instrumentation.");
+            "DATADOG TRACER DIAGNOSTICS - Instrumentation disabled: .NET Core 2.0 or greater runtime is required for .NET Core automatic instrumentation.");
         return E_FAIL;
     }
 
@@ -226,7 +225,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     hr = this->info_->SetEventMask2(event_mask, high_event_mask);
     if (FAILED(hr))
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: unable to set event mask.");
+        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach Instrumentation: unable to set event mask.");
         return E_FAIL;
     }
 
@@ -252,7 +251,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto currentModuleFileName = shared::GetCurrentModuleFileName();
     if (currentModuleFileName == shared::EmptyWStr)
     {
-        Logger::Error("Profiler filepath: cannot be calculated.");
+        Logger::Error("Current module filepath: cannot be calculated.");
         return E_FAIL;
     }
 
@@ -280,8 +279,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // we're in!
-    Logger::Info("Profiler filepath: ", currentModuleFileName);
-    Logger::Info("Profiler attached.");
+    Logger::Info("Current module filepath: ", currentModuleFileName);
+    Logger::Info("Instrumentation attached.");
     this->info_->AddRef();
     is_attached_.store(true);
     profiler = this;
@@ -393,7 +392,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         else
         {
             Logger::Warn("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version,
-                         " did not match profiler version v", expected_version);
+                         " did not match native dll version v", expected_version);
         }
     }
 
@@ -470,7 +469,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
 
                         if (FAILED(hr))
                         {
-                            Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
+                            Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual native file path "
                                 "failed, trying to restore the previous one.");
                             hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
                                                                  shared::WSTRING(importName).c_str(), importModule);
@@ -497,7 +496,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
         {
             // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
             // These errors must be handled on the caller with a try/catch.
-            Logger::Warn("ModuleLoadFinished: Native Profiler DefineModuleRef failed");
+            Logger::Warn("ModuleLoadFinished: RewritingPInvokeMaps DefineModuleRef failed");
         }
     }
 }
@@ -1330,7 +1329,7 @@ void CorProfiler::DisableTracerCLRProfiler()
     // 2. We instrument code with SetILFunctionBody for the Loader injection.
     // (CORPROF_E_IRREVERSIBLE_INSTRUMENTATION_PRESENT)
     // https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo3-requestprofilerdetach-method
-    Logger::Info("Disabling Tracer CLR Profiler...");
+    Logger::Info("Disabling Instrumentation component");
     Shutdown();
 }
 
@@ -1386,7 +1385,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
         return S_OK;
     }
 
-    Logger::Info("Detaching profiler.");
+    Logger::Info("Detaching Instrumentation component");
     Logger::Flush();
     is_attached_.store(false);
     return S_OK;
@@ -3648,7 +3647,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     shared::WSTRING native_profiler_file = shared::GetCurrentModuleFileName();
-    DBG("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ", native_profiler_file);
+    DBG("GenerateVoidILStartupMethod: Setting the PInvoke Datadog.Tracer.Native library path to ", native_profiler_file);
 
     mdModuleRef profiler_ref;
     hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
