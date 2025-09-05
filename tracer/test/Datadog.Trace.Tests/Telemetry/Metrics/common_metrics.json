@@ -304,7 +304,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "context_header.malformed": {
+    "context_header_style.malformed": {
       "tags": [
         "header_style"
       ],

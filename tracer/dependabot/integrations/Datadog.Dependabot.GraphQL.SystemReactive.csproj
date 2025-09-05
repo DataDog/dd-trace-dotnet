@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: GraphQL.SystemReactive -->
+    <!--    Assembly: GraphQL.SystemReactive -->
+    <!-- Latest package https://www.nuget.org/packages/GraphQL.SystemReactive/4.8.0 -->
+    <PackageReference Include="GraphQL.SystemReactive" Version="4.8.0" />
+  </ItemGroup>
+
+</Project>

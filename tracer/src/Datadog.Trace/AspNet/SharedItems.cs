@@ -17,7 +17,7 @@ namespace Datadog.Trace.AspNet
         private static readonly Func<Stack<Scope>, Scope> Pop = stack => stack.Pop();
         private static readonly Func<Stack<Scope>, Scope> Peek = stack => stack.Peek();
 
-        internal static void PushScope(HttpContext context, string key, Scope item)
+        internal static void PushScope(HttpContext? context, string key, Scope item)
         {
             if (context is null)
             {
@@ -43,11 +43,11 @@ namespace Datadog.Trace.AspNet
             }
         }
 
-        internal static Scope? TryPopScope(HttpContext context, string key) => ExtractScope(context, key, Pop);
+        internal static Scope? TryPopScope(HttpContext? context, string key) => ExtractScope(context, key, Pop);
 
-        internal static Scope? TryPeekScope(HttpContext context, string key) => ExtractScope(context, key, Peek);
+        internal static Scope? TryPeekScope(HttpContext? context, string key) => ExtractScope(context, key, Peek);
 
-        private static Scope? ExtractScope(HttpContext context, string key, Func<Stack<Scope>, Scope> getter)
+        private static Scope? ExtractScope(HttpContext? context, string key, Func<Stack<Scope>, Scope> getter)
         {
             var item = context?.Items[key];
             if (item is Scope storedScope)

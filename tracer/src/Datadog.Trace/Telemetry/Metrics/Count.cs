@@ -109,7 +109,7 @@ internal enum Count
     /// <summary>
     /// The number of times a context propagation header is dropped because it is malformed, tagged by the header style (`header_style:baggage`)
     /// </summary>
-    [TelemetryMetric<MetricTags.ContextHeaderMalformed>("context_header.malformed")] ContextHeaderMalformed,
+    [TelemetryMetric<MetricTags.ContextHeaderMalformed>("context_header_style.malformed")] ContextHeaderMalformed,
 
     /// <summary>
     /// The number of requests sent to the stats endopint in the agent, regardless of success

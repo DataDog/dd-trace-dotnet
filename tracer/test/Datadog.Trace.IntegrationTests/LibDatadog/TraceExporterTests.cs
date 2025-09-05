@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.LibDatadog;
+using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
@@ -46,7 +47,7 @@ public class TraceExporterTests
         var udsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         using var agent = GetAgent();
         var settings = GetSettings();
-        var tracerSettings = TracerSettings.Create(settings, isLibDatadogAvailable: true);
+        var tracerSettings = TracerSettings.Create(settings, isLibDatadogAvailable: new LibDatadogAvailableResult(true));
         tracerSettings.DataPipelineEnabled.Should().BeTrue();
 
         agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse
@@ -132,7 +133,7 @@ public class TraceExporterTests
         sampleRateResponses.Should()
                            .NotBeEmpty()
                            .And.AllSatisfy(rates => rates.Should().BeEquivalentTo(expectedRates));
-        sampleRateResponses.Should().HaveCount(1);
+        sampleRateResponses.Should().ContainSingle();
 
         Dictionary<string, object> GetSettings()
         {

@@ -25,7 +25,6 @@
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations/                                   @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.AfterFeature/      @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.BeforeFeature/     @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.NewerNuGet/        @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/ManualInstrumentationTests.cs                   @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/NetActivitySdkTests.cs                          @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
@@ -106,10 +105,10 @@
 /tracer/test/benchmarks/Benchmarks.Trace/Iast/   @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/CryptographyAlgorithm/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/HashAlgorithm/  @DataDog/asm-dotnet
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/  @DataDog/asm-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/  @DataDog/asm-dotnet @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/StackTraceLeak/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RestSharp/  @DataDog/asm-dotnet
-/tracer/test/test-applications/integrations/Samples.ProcessStart/  @DataDog/asm-dotnet
+/tracer/test/test-applications/integrations/Samples.ProcessStart/  @DataDog/asm-dotnet @DataDog/tracing-dotnet
 
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
@@ -236,3 +235,6 @@ missing-nullability-files.csv             @DataDog/apm-dotnet
 /tracer/src/Datadog.Tracer.Native/Resource.rc @DataDog/apm-dotnet
 /tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h @DataDog/apm-dotnet
 /tracer/tools/PipelineMonitor/PipelineMonitor.csproj @DataDog/apm-dotnet
+
+# Impacts multiple teams, so should trigger all of ASM/Debugger/tracing
+/tracer/src/Datadog.Trace/ClrProfiler/Instrumentation.cs  @DataDog/apm-dotnet @DataDog/ci-app-libraries-dotnet @DataDog/tracing-dotnet @DataDog/asm-dotnet @DataDog/debugger-dotnet

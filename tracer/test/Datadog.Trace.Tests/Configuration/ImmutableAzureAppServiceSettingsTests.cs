@@ -186,48 +186,5 @@ namespace Datadog.Trace.Tests.Configuration
 
             settings.NeedsDogStatsD.Should().Be(expected);
         }
-
-        [Fact]
-        public void GetIsRunningMiniAgentInAzureFunctionsFalseWhenNoFunctionsEnvVars()
-        {
-            var settings = new ImmutableAzureAppServiceSettings(CreateConfigurationSource(), NullConfigurationTelemetry.Instance);
-            settings.IsRunningMiniAgentInAzureFunctions.Should().BeFalse();
-        }
-
-        [Fact]
-        public void GetIsRunningMiniAgentInAzureFunctionsFalseWhenNotConsumptionPlan()
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "value"),
-                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "value"),
-                (ConfigurationKeys.AzureAppService.WebsiteSKU, "basic"));
-
-            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            var usesMiniAgent = Environment.OSVersion.Platform == PlatformID.Unix;
-            settings.IsRunningMiniAgentInAzureFunctions.Should().Be(usesMiniAgent);
-        }
-
-        [Fact]
-        public void GetIsRunningMiniAgentInAzureFunctionsTrueWhenConsumptionPlanWithNoSKU()
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "value"),
-                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "value"));
-
-            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            settings.IsRunningMiniAgentInAzureFunctions.Should().BeTrue();
-        }
-
-        [Fact]
-        public void GetIsRunningMiniAgentInAzureFunctionsTrueWhenConsumptionPlanWithDynamicSKU()
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "value"),
-                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "value"),
-                (ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic"));
-
-            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            settings.IsRunningMiniAgentInAzureFunctions.Should().BeTrue();
-        }
     }
 }

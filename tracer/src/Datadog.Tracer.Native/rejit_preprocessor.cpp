@@ -9,11 +9,13 @@
 namespace trace
 {
 // Rejitter
-
-Rejitter::Rejitter(std::shared_ptr<RejitHandler> handler, RejitterPriority priority) :
+Rejitter::Rejitter(std::shared_ptr<RejitHandler> handler, RejitterPriority priority, bool registerRejitter) :
     m_rejitHandler(handler), m_priority(priority)
 {
-    handler->RegisterRejitter(this);
+    if (registerRejitter)
+    {
+        handler->RegisterRejitter(this);
+    }
 }
 
 Rejitter::~Rejitter()
@@ -36,7 +38,7 @@ RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(CorProfiler* corPro
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::Shutdown()
 {
-    Logger::Debug("RejitPreprocessor::Shutdown");
+    DBG("RejitPreprocessor::Shutdown");
 
     std::lock_guard<std::mutex> moduleGuard(m_modules_lock);
     std::lock_guard<std::mutex> ngenModuleGuard(m_ngenInlinersModules_lock);
@@ -273,8 +275,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
     const bool wildcard_enabled = target_method.method_name == tracemethodintegration_wildcardmethodname;
     const bool iterate_explicit_interface_methods = is_interface && !wildcard_enabled;
 
-    Logger::Debug("  Looking for '", target_method.type.name, ".", target_method.method_name, "(",
-                  (target_method.signature_types.size() - 1), " params)' method implementation.");
+    DBG("  Looking for '", target_method.type.name, ".", target_method.method_name, "(", (target_method.signature_types.size() - 1), " params)' method implementation.");
 
     // Now we enumerate all methods with the same target method name. (All overloads of the method)
     auto enumMethods = Enumerator<mdMethodDef>(
@@ -341,7 +342,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
             Logger::Warn(
                     "    * Skipping [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
                     ", Type=", caller.type.name, ", Method=", caller.name, "]", ": could not parse method signature.");
-            Logger::Debug("    Method signature is: ", functionInfo.method_signature.str());
+            DBG("    Method signature is: ", functionInfo.method_signature.str());
             continue;
         }
 
@@ -376,21 +377,21 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
         }
         if (moduleHandler->GetModuleMetadata() == nullptr)
         {
-            Logger::Debug("Creating ModuleMetadata...");
+            DBG("Creating ModuleMetadata...");
 
             const auto moduleMetadata =
                 new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit, moduleInfo.assembly.name,
                                    moduleInfo.assembly.app_domain_id, pCorAssemblyProperty,
                                    enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
 
-            Logger::Debug("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
-                          " AppDomain ", moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
+            DBG("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
+                " AppDomain ", moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
 
             moduleHandler->SetModuleMetadata(moduleMetadata);
         }
 
-        Logger::Debug("Method enqueued for ReJIT for ", caller.type.name, ".", caller.name,
-                  "(", caller.method_signature.NumberOfArguments(), " params).");
+        DBG("Method enqueued for ReJIT for ", caller.type.name, ".", caller.name, "(", caller.method_signature.NumberOfArguments(), " params).");
+
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
 
@@ -398,8 +399,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
         // enumerators.
         if (explicitMode)
         {
-            Logger::Debug("      Explicit interface implementation found, skipping normal methods search. [",
-                          caller.type.name, ".", caller.name, "]");
+            DBG("      Explicit interface implementation found, skipping normal methods search. [", caller.type.name, ".", caller.name, "]");
             break;
         }
     }
@@ -488,7 +488,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
         return;
     }
 
-    Logger::Debug("RejitHandler::EnqueueRequestRejit");
+    DBG("RejitHandler::EnqueueRequestRejit");
 
     std::function<void()> action = [=, requests = std::move(rejitRequests), localPromise = promise,
                                     callRevertExplicitly = callRevertExplicitly]() mutable {
@@ -526,7 +526,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
         return;
     }
 
-    Logger::Debug("RejitHandler::EnqueueRequestRejitForLoadedModules");
+    DBG("RejitHandler::EnqueueRequestRejitForLoadedModules");
     auto enqueueMeasure = trace::Stats::Instance()->EnqueueRequestRejitForLoadedModulesMeasure();
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
@@ -568,7 +568,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
             continue;
         }
 
-        Logger::Debug("Requesting Rejit for Module: ", moduleInfo.assembly.name);
+        DBG("Requesting Rejit for Module: ", moduleInfo.assembly.name);
 
         ComPtr<IUnknown> metadataInterfaces;
         ComPtr<IMetaDataImport2> metadataImport;
@@ -589,7 +589,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
                 // Abstract methods handling.
                 if (assemblyMetadata == nullptr)
                 {
-                    Logger::Debug("  Loading Assembly Metadata...");
+                    DBG("  Loading Assembly Metadata...");
                     auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                                  metadataInterfaces.GetAddressOf());
                     if (hr != S_OK)
@@ -604,8 +604,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
                     assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
                     assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
                     assemblyMetadata = std::make_unique<AssemblyMetadata>(GetAssemblyImportMetadata(assemblyImport));
-                    Logger::Debug("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(",
-                                  assemblyMetadata->version.str(), ").");
+                    DBG("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(", assemblyMetadata->version.str(), ").");
                 }
 
                 // If the integration is in a different assembly than the target method
@@ -812,7 +811,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
 
                 if (assemblyMetadata == nullptr)
                 {
-                    Logger::Debug("  Loading Assembly Metadata...");
+                    DBG("  Loading Assembly Metadata...");
                     auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                                  metadataInterfaces.GetAddressOf());
                     if (hr != S_OK)
@@ -827,8 +826,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
                     assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
                     assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
                     assemblyMetadata = std::make_unique<AssemblyMetadata>(GetAssemblyImportMetadata(assemblyImport));
-                    Logger::Debug("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(",
-                                  assemblyMetadata->version.str(), ").");
+                    DBG("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(", assemblyMetadata->version.str(), ").");
                 }
 
                 // Check min version
@@ -876,7 +874,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(
         return;
     }
 
-    Logger::Debug("RejitHandler::EnqueuePreprocessRejitRequests");
+    DBG("RejitHandler::EnqueuePreprocessRejitRequests");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
                                     localRejitRequests = rejitRequests, localPromise = promise]() mutable {
@@ -903,8 +901,8 @@ bool RejitPreprocessor<RejitRequestDefinition>::CheckExactSignatureMatch(ComPtr<
     // instrumentation target
     if (numOfArgs != targetMethod.signature_types.size() - 1)
     {
-        Logger::Debug("    * Skipping ", functionInfo.type.name, ".", functionInfo.name,
-                     ": the methoddef doesn't have the right number of arguments (", numOfArgs, " arguments).");
+        DBG("    * Skipping ", functionInfo.type.name, ".", functionInfo.name,
+            ": the methoddef doesn't have the right number of arguments (", numOfArgs, " arguments).");
         return false;
     }
 
@@ -912,12 +910,12 @@ bool RejitPreprocessor<RejitRequestDefinition>::CheckExactSignatureMatch(ComPtr<
     bool argumentsMismatch = false;
     const auto& methodArguments = functionInfo.method_signature.GetMethodArguments();
 
-    Logger::Debug("    * Comparing signature for method: ", functionInfo.type.name, ".", functionInfo.name);
+    DBG("    * Comparing signature for method: ", functionInfo.type.name, ".", functionInfo.name);
     for (unsigned int i = 0; i < numOfArgs; i++)
     {
         const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
         const auto integrationArgumentTypeName = targetMethod.signature_types[i + 1];
-        Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
+        DBG("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
         if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
         {
             argumentsMismatch = true;
@@ -926,8 +924,7 @@ bool RejitPreprocessor<RejitRequestDefinition>::CheckExactSignatureMatch(ComPtr<
     }
     if (argumentsMismatch)
     {
-        Logger::Debug("    * Skipping ", targetMethod.method_name,
-                     ": the methoddef doesn't have the right type of arguments.");
+        DBG("    * Skipping ", targetMethod.method_name, ": the methoddef doesn't have the right type of arguments.");
         return false;
     }
 
