@@ -442,30 +442,30 @@ namespace Datadog.Trace.Configuration
             var defaultUri = $"http://localhost:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}";
             OtlpEndpoint = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
-                .GetAs<Uri>(
+                .GetAs(
                     defaultValue: new DefaultResult<Uri>(result: new Uri(defaultUri), telemetryValue: defaultUri),
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
             OtlpMetricsEndpoint = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint)
-                .GetAs<Uri>(
+                .GetAs(
                     defaultValue: new DefaultResult<Uri>(
                         result: OtlpMetricsProtocol switch
                         {
                             OtlpProtocol.Grpc => OtlpEndpoint,
-                            OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => new Uri(OtlpEndpoint, "/v1/metrics"),
                             _ => new Uri(OtlpEndpoint, "/v1/metrics")
                         },
                         telemetryValue: $"{defaultUri}/v1/metrics"),
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
-            OtlpMetricsHeaders = (IReadOnlyDictionary<string, string>?)config
-                                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders)
-                                .AsDictionary(defaultValue: null, "[]")
-                                ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty) ?? ReadOnlyDictionary.Empty;
+            OtlpMetricsHeaders = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders)
+                            .AsDictionaryResult(separator: '=')
+                            .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
+                            .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 
             OtlpMetricsTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
@@ -475,11 +475,11 @@ namespace Datadog.Trace.Configuration
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference)
                             .GetAs(
                                    defaultValue: new(OtlpTemporality.Delta, "delta"),
-                                   converter: x => x.ToLowerInvariant() switch
+                                   converter: x => x switch
                                    {
-                                       "cumulative" => OtlpTemporality.Cumulative,
-                                       "delta" => OtlpTemporality.Delta,
-                                       "lowmemory" => OtlpTemporality.LowMemory,
+                                       not null when string.Equals(x, "cumulative", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.Cumulative,
+                                       not null when string.Equals(x, "delta", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.Delta,
+                                       not null when string.Equals(x, "lowmemory", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.LowMemory,
                                        _ => ParsingResult<OtlpTemporality>.Failure(),
                                    },
                                    validator: null);

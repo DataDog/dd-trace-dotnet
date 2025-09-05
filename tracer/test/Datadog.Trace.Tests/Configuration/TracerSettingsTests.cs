@@ -497,6 +497,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("", "none", false)]
         [InlineData("", "otlp", false)]
         [InlineData(null, "none", false)]
+        [InlineData(null, "random", false)]
         [InlineData(null, "otlp", false)]
         [InlineData(null, null, false)]
         public void RuntimeMetricsEnabled(string value, string otelValue, bool expected)
@@ -512,6 +513,7 @@ namespace Datadog.Trace.Tests.Configuration
             Count? metric = (value, otelValue) switch
             {
                 (null, "random") => Count.OpenTelemetryConfigInvalid,
+                (null, "otlp") => Count.OpenTelemetryConfigInvalid,
                 (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
                 _ => null,
             };
@@ -1399,13 +1401,20 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("console", "console", false)]
         [InlineData("invalid", "invalid", false)]
         [InlineData("prometheus", "prometheus", false)]
-        public void OtelMetricsExporterStringAndBooleanSettings(string value, string expectedString, bool exporterEnabled)
+        public void OtelMetricsExporterStringAndBooleanSettings(string value, string expected, bool enabled)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricsExporter, value));
-            var settings = new TracerSettings(source);
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new());
 
-            settings.OtelMetricsExporter.Should().Be(expectedString);
-            settings.OtelMetricsExporterEnabled.Should().Be(exporterEnabled);
+            var entries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.MetricsExporter })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            entries[0].StringValue.Should().Be(expected);
+            settings.OtelMetricsExporter.Should().Be(expected);
+            settings.OtelMetricsExporterEnabled.Should().Be(enabled);
         }
 
         [Theory]
@@ -1414,9 +1423,9 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("60000", 60000)]  // OTel spec default
         public void OtelMetricExportIntervalCustomValues(string value, int expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricExportInterval, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs, value));
             var settings = new TracerSettings(source);
-            settings.OtelMetricExportInterval.Should().Be(expected);
+            settings.OtelMetricExportIntervalMs.Should().Be(expected);
         }
 
         [Theory]
@@ -1425,10 +1434,10 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("30000", 30000)]  // OTel spec default
         public void OtelMetricExportTimeoutCustomValues(string value, int expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricExportTimeout, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricExportTimeoutMs, value));
             var settings = new TracerSettings(source);
 
-            settings.OtelMetricExportTimeout.Should().Be(expected);
+            settings.OtelMetricExportTimeoutMs.Should().Be(expected);
         }
 
         [Theory]
@@ -1448,32 +1457,22 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        // Explicit metrics endpoint - always used as-is regardless of protocol
-        [InlineData("http/protobuf", "http://custom:4318/proxy", null, "http://localhost:4318", "http://custom:4318/proxy")]
-        [InlineData("grpc", "http://custom:4317/custom", null, "http://localhost:4317", "http://custom:4317/custom")]
-        
-        // Fallback behavior - depends on protocol
-        [InlineData("http/protobuf", null, "http://base:8080", "http://base:8080", "http://base:8080/v1/metrics")]  // HTTP adds /v1/metrics
-        [InlineData("grpc", null, "http://base:4317", "http://base:4317", "http://base:4317")]  // gRPC preserves as-is
-        [InlineData("http/json", null, "http://base:8080", "http://base:8080", "http://base:8080/v1/metrics")]  // HTTP adds /v1/metrics
-        
-        // Edge case: custom paths preserved (no double-append)
-        [InlineData("http/protobuf", null, "http://base:8080/proxy", "http://base:8080/proxy", "http://base:8080/proxy")]
-        [InlineData("http/protobuf", null, "http://base:8080/v1/metrics", "http://base:8080/v1/metrics", "http://base:8080/v1/metrics")]
-        
-        // Defaults when nothing set
-        [InlineData("http/protobuf", null, null, "http://localhost:4318", "http://localhost:4318/v1/metrics")]
-        [InlineData("grpc", null, null, "http://localhost:4317", "http://localhost:4317")]
-        public void OtlpMetricsEndpoint(string protocol, string metricsEndpoint, string generalEndpoint, string expectedBase, string expectedMetrics)
+        [InlineData("grpc", null, "http://localhost:4317/", null, "http://localhost:4317/")]
+        [InlineData("grpc", "http://base:4333", "http://base:4333/", null, "http://base:4333/")]
+        [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/metrics")]
+        [InlineData("http/protobuf", "http://base:4333", "http://base:4333/", null, "http://base:4333/v1/metrics")]
+        [InlineData("http/json", "http://base:4333", "http://base:4333/", "http://metrics:4333", "http://metrics:4333/")]
+        [InlineData("http/json", null, "http://localhost:4318/", "http://localhost:4318/proxy/metrics", "http://localhost:4318/proxy/metrics")]
+        public void OtlpMetricsEndpoint(string protocol, string baseInput, string baseOutput, string metricsInput, string metricsOutput)
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, protocol),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, generalEndpoint),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, metricsEndpoint));
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, baseInput),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, metricsInput));
             var settings = new TracerSettings(source);
 
-            settings.OtlpMetricsEndpoint.ToString().Should().Be(expectedBase);
-            settings.OtlpMetricsEndpointMetrics.ToString().Should().Be(expectedMetrics);
+            settings.OtlpEndpoint.ToString().Should().Be(baseOutput);
+            settings.OtlpMetricsEndpoint.ToString().Should().Be(metricsOutput);
         }
 
         [Theory]
@@ -1499,7 +1498,6 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, primaryValue),
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, fallbackValue));
-
             var settings = new TracerSettings(source);
 
             settings.OtlpMetricsHeaders.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split('=').First(), v => v.Split('=').Last()));
