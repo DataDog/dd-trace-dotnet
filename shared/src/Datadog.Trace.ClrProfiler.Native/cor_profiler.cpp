@@ -3,7 +3,7 @@
 #include "dynamic_dispatcher.h"
 #include "util.h"
 #include "../../../shared/src/native-src/pal.h"
-#include "EnvironmentVariables.h"
+#include "environment.h"
 #include "single_step_guard_rails.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
@@ -124,14 +124,14 @@ namespace datadog::shared::nativeloader
         const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
         Log::Info("Process CommandLine: ", process_command_line);
 
-        const auto& include_process_names = GetEnvironmentValues(EnvironmentVariables::IncludeProcessNames);
+        const auto& include_process_names = GetEnvironmentValues(environment::include_process_names);
 
         // if there is a process inclusion list, attach clrprofiler only if this
         // process's name is on the list
         if (!include_process_names.empty() && !Contains(include_process_names, process_name))
         {
             Log::Info("CorProfiler::Initialize Datadog SDK disabled: ", process_name, " not found in ",
-                         EnvironmentVariables::IncludeProcessNames, ".");
+                         environment::include_process_names, ".");
             return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
         }
 
@@ -139,17 +139,17 @@ namespace datadog::shared::nativeloader
         if (include_process_names.empty())
         {
             // attach clrprofiler only if this process's name is NOT on the blocklists
-            const auto& exclude_process_names = GetEnvironmentValues(EnvironmentVariables::ExcludeProcessNames);
+            const auto& exclude_process_names = GetEnvironmentValues(environment::exclude_process_names);
             if (!exclude_process_names.empty() && Contains(exclude_process_names, process_name))
             {
                 Log::Info("CorProfiler::Initialize Datadog SDK disabled: ", process_name, " found in ",
-                             EnvironmentVariables::ExcludeProcessNames, ".");
+                             environment::exclude_process_names, ".");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
 
-            for (auto&& exclude_assembly : default_exclude_assemblies)
+            for (auto&& exclude_process : default_exclude_processes)
             {
-                if (process_name == exclude_assembly)
+                if (process_name == exclude_process)
                 {
                     Log::Info("CorProfiler::Initialize Datadog SDK disabled: ", process_name," found in default exclude list");
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
@@ -231,7 +231,7 @@ namespace datadog::shared::nativeloader
 
                     // Additional Special case CI Visibility checks
                     bool is_ci_visibility_enabled = false;
-                    if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(EnvironmentVariables::CiVisibilityEnabled), is_ci_visibility_enabled)
+                    if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(environment::ci_visibility_enabled), is_ci_visibility_enabled)
                         && is_ci_visibility_enabled)
                     {
                         if (tokenized_command_line[1] != WStr("test") &&
@@ -251,23 +251,23 @@ namespace datadog::shared::nativeloader
 
         // AAS checks
         bool isRunningInAas;
-        if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(EnvironmentVariables::IsAzureAppServicesExtension),
+        if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(environment::is_azure_app_services_extension),
                                             isRunningInAas) && isRunningInAas)
         {
             Log::Info("Azure App Services detected.");
 
-            const auto& app_pool_id_value = GetEnvironmentValue(EnvironmentVariables::AzureAppServicesAppPoolId);
+            const auto& app_pool_id_value = GetEnvironmentValue(environment::azure_app_services_app_pool_id);
 
             if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~')
             {
                 Log::Info(
-                    "DATADOG TRACER DIAGNOSTICS - Datadog SDK disabled: ", EnvironmentVariables::AzureAppServicesAppPoolId, " ",
+                    "DATADOG TRACER DIAGNOSTICS - Datadog SDK disabled: ", environment::azure_app_services_app_pool_id, " ",
                     app_pool_id_value, " is an Azure App Services infrastructure process.");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
 
             const auto& cli_telemetry_profile_value =
-                GetEnvironmentValue(EnvironmentVariables::AzureAppServicesCliTelemetryProfilerValue);
+                GetEnvironmentValue(environment::azure_app_services_cli_telemetry_profiler_value);
 
             if (cli_telemetry_profile_value == WStr("AzureKudu"))
             {
@@ -277,7 +277,7 @@ namespace datadog::shared::nativeloader
             }
 
             const auto& functions_worker_runtime_value =
-                GetEnvironmentValue(EnvironmentVariables::AzureAppServicesFunctionsWorkerRuntime);
+                GetEnvironmentValue(environment::azure_app_services_functions_worker_runtime);
 
             if (!functions_worker_runtime_value.empty())
             {
@@ -285,7 +285,7 @@ namespace datadog::shared::nativeloader
                 bool azure_functions_enabled;
                 if (TryParseBooleanEnvironmentValue(
                         GetEnvironmentValue(
-                            EnvironmentVariables::AzureFunctionsInstrumentationEnabled),
+                            environment::azure_functions_instrumentation_enabled),
                         azure_functions_enabled) && !azure_functions_enabled)
                 {
                     Log::Info("DATADOG TRACER DIAGNOSTICS - Datadog SDK explicitly disabled for Azure Functions.");

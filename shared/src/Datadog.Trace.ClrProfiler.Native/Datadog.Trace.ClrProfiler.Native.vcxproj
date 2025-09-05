@@ -316,12 +316,13 @@
     <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\version.h" />
+    <ClInclude Include="constants.h" />
     <ClInclude Include="cor_profiler_class_factory.h" />
     <ClInclude Include="cor_profiler.h" />
     <ClInclude Include="crashhandler.h" />
     <ClInclude Include="dynamic_instance.h" />
     <ClInclude Include="dynamic_dispatcher.h" />
-    <ClInclude Include="EnvironmentVariables.h" />
+    <ClInclude Include="environment.h" />
     <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_consts.h" />
     <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_function_control.h" />
     <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_info.h" />
