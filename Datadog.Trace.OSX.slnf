@@ -87,7 +87,6 @@
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.SQS\\Samples.AWS.SQS.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AzureServiceBus\\Samples.AzureServiceBus.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.CIVisibilityIpc\\Samples.CIVisibilityIpc.csproj",
-      "tracer\\test\\test-applications\\integrations\\Samples.CIVisibilityVersionMismatch\\Samples.CIVisibilityVersionMismatch.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Console\\Samples.Console.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.CosmosDb\\Samples.CosmosDb.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Couchbase3\\Samples.Couchbase3.csproj",
