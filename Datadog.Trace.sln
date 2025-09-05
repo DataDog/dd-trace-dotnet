@@ -444,8 +444,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations.Ve
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations.VersionMismatch.AfterFeature", "tracer\test\test-applications\integrations\Samples.TraceAnnotations.VersionMismatch.AfterFeature\Samples.TraceAnnotations.VersionMismatch.AfterFeature.csproj", "{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations.VersionMismatch.NewerNuGet", "tracer\test\test-applications\integrations\Samples.TraceAnnotations.VersionMismatch.NewerNuGet\Samples.TraceAnnotations.VersionMismatch.NewerNuGet.csproj", "{2CC63AEB-0098-4D3B-9606-F07692C03E90}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GrpcDotNet", "tracer\test\test-applications\integrations\Samples.GrpcDotNet\Samples.GrpcDotNet.csproj", "{DEACDE01-95FE-4777-B70A-F20A96AABEA7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GrpcLegacy", "tracer\test\test-applications\integrations\Samples.GrpcLegacy\Samples.GrpcLegacy.csproj", "{754F73E1-F7A4-47C7-A3F7-DC59ADA5105A}"
@@ -1175,10 +1173,6 @@ Global
 		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2CC63AEB-0098-4D3B-9606-F07692C03E90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2CC63AEB-0098-4D3B-9606-F07692C03E90}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2CC63AEB-0098-4D3B-9606-F07692C03E90}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2CC63AEB-0098-4D3B-9606-F07692C03E90}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DEACDE01-95FE-4777-B70A-F20A96AABEA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DEACDE01-95FE-4777-B70A-F20A96AABEA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DEACDE01-95FE-4777-B70A-F20A96AABEA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1649,7 +1643,6 @@ Global
 		{C861221D-9C3B-441F-BBD5-343F49B9DD10} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
 		{0DF4363A-0DF4-4882-A39F-3C9F404B8DE5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
-		{2CC63AEB-0098-4D3B-9606-F07692C03E90} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{DEACDE01-95FE-4777-B70A-F20A96AABEA7} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{754F73E1-F7A4-47C7-A3F7-DC59ADA5105A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
