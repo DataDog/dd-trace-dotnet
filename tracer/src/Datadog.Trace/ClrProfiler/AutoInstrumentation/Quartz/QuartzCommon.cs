@@ -5,36 +5,61 @@
 
 #nullable enable
 using System;
+using System.Linq;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
 {
-    internal static class QuartzCommon
+    internal class QuartzCommon
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzCommon>();
+
         internal static string CreateResourceName(string operationName, string jobName)
         {
             return operationName switch
             {
-                var name when name.Contains("Execute") => "execute " + jobName,
-                var name when name.Contains("Veto") => "veto " + jobName,
+                _ when operationName.Contains("Execute") => "execute " + jobName,
+                _ when operationName.Contains("Veto") => "veto " + jobName,
                 _ => operationName
             };
         }
 
-        internal static void SetSpanKind(IActivity5 activity)
+        internal static ActivityKind GetActivityKind(IActivity5 activity)
         {
-            ActivityKind activityKind = activity.OperationName switch
+            return activity.OperationName switch
             {
                 string name when name.Contains("Execute") => ActivityKind.Internal,
                 string name when name.Contains("Veto") => ActivityKind.Internal,
                 _ => activity.Kind
             };
+        }
 
-            ActivityListener.SetActivityKind(activity, activityKind);
+        internal static void SetActivityKind(IActivity5 activity)
+        {
+            ActivityListener.SetActivityKind(activity, GetActivityKind(activity));
+        }
+
+        internal static void EnhanceActivityMetadata(IActivity5 activity)
+        {
+            var displayName = CreateResourceName(activity.DisplayName, activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty);
+            activity.AddTag("operation.name", activity.DisplayName);
+            activity.DisplayName = displayName;
+        }
+
+        internal static void AddException(object exceptionArg, IActivity activity)
+        {
+            if (exceptionArg is not Exception exception)
+            {
+                Log.Debug("Arg: {Arg}, was not of type exception. Unable to populate error tags", exceptionArg);
+                return;
+            }
+
+            activity.AddTag(Tags.ErrorMsg, exception.Message);
+            activity.AddTag(Tags.ErrorType, exception.GetType().ToString());
+            activity.AddTag(Tags.ErrorStack, exception.ToString());
+            activity.AddTag("otel.status_code", "STATUS_CODE_ERROR");
         }
     }
 }

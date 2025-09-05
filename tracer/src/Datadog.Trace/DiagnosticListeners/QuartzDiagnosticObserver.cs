@@ -36,56 +36,32 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 case "Quartz.Job.Execute.Start":
                 case "Quartz.Job.Veto.Start":
-                    Log.Debug("{EventName}",  eventName);
-
-                    // get current acitvity
-                    // ducktype it
-                    // gets an Iactivity (atleast), IActivity5 has the display name
-                    // set the displayname to execute span
-
-                    // move this to its own function in quartz commoon
                     var currentActivity = ActivityListener.GetCurrentActivity();
                     if (currentActivity is IActivity5 activity5)
                     {
-                        var displayName = QuartzCommon.CreateResourceName(activity5.DisplayName, activity5.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty);
-                        currentActivity.AddTag("operation.name", activity5.DisplayName);
-                        activity5.DisplayName = displayName;
-                        QuartzCommon.SetSpanKind(activity5);
+                        QuartzCommon.EnhanceActivityMetadata(activity5);
+                        QuartzCommon.SetActivityKind(activity5);
+                    }
+                    else
+                    {
+                        Log.Debug("The activity was not Activity5 (< .NET 5.0. We were unable enhance the span metadata.");
                     }
 
                     break;
                 case "Quartz.Job.Execute.Stop":
                 case "Quartz.Job.Veto.Stop":
-                    Log.Debug("{EventName}",  eventName);
                     break;
                 case "Quartz.Job.Execute.Exception":
                 case "Quartz.Job.Veto.Exception":
-                    Log.Debug("{EventName}",  eventName);
                     // setting an exception manually
                     var closingActivity = ActivityListener.GetCurrentActivity();
-                    if (closingActivity != null)
+                    if (closingActivity is not null)
                     {
-                        AddException(arg, closingActivity);
+                        QuartzCommon.AddException(arg, closingActivity);
                     }
 
                     break;
-                default:
-                    Log.Debug("default");
-                    break;
             }
-        }
-
-        private static void AddException(object exceptionArg, IActivity activity)
-        {
-            if (exceptionArg is not Exception exception)
-            {
-                return;
-            }
-
-            activity.AddTag(Tags.ErrorMsg, exception.Message);
-            activity.AddTag(Tags.ErrorType, exception.GetType().ToString());
-            activity.AddTag(Tags.ErrorStack, exception.ToString());
-            activity.AddTag("otel.status_code", "STATUS_CODE_ERROR");
         }
     }
 }
