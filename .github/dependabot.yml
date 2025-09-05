@@ -22,8 +22,6 @@ updates:
     labels:
       - "dependencies"
       - "area:dependabot"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
     ignore:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
       - dependency-name: "*" # Ignore patches for all integrations
@@ -38,8 +36,6 @@ updates:
     labels:
       - "dependencies"
       - "area:dependabot"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
 
   # Azure functions explicit testing - we can't include these with our "normal" process checks
   # Because they aren't compatible with the dotnet msbuild approach we're using
@@ -51,8 +47,6 @@ updates:
     labels:
       - "dependencies"
       - "area:dependabot"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
     ignore:
       - dependency-name: "*" # Ignore patches for all integrations
         update-types: ["version-update:semver-patch"]
@@ -66,8 +60,6 @@ updates:
     labels:
       - "dependencies"
       - "area:tracer"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
     ignore:
       ### Start Datadog.Trace.csproj ignored dependencies
       # DiagnosticSource is kept at the lowest supported version for widest compatibility
@@ -94,8 +86,6 @@ updates:
     labels:
       - "dependencies"
       - "area:opentracing"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
     ignore:
       ### Start Datadog.Trace.csproj ignored dependencies
       # DiagnosticSource is kept at the lowest supported version for widest compatibility
@@ -119,8 +109,6 @@ updates:
     labels:
       - "dependencies"
       - "area:benchmarks"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
     ignore:
       ### Start Datadog.Trace.csproj ignored dependencies
       # DiagnosticSource is kept at the lowest supported version for widest compatibility
