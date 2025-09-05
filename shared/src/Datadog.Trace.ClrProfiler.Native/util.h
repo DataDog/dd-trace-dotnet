@@ -15,11 +15,8 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include "../../../shared/src/native-src/string.h"
 #include "./log.h"
 
-const std::string conf_filename = "loader.conf";
-const ::shared::WSTRING cfg_filepath_env = WStr("DD_NATIVELOADER_CONFIGFILE");
-const ::shared::WSTRING cfg_instrumentation_verification_env = WStr("DD_WRITE_INSTRUMENTATION_TO_DISK");
-const ::shared::WSTRING cfg_copying_originals_modules_env = WStr("DD_COPY_ORIGINALS_MODULES_TO_DISK");
-const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
+inline static const std::string conf_filename = "loader.conf";
+inline static const ::shared::WSTRING datadog_logs_folder_path = WStr(R"(Datadog .NET Tracer\logs)");
 
 // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
 // FIXME: this should also take into account case insensitivity, but that is not yet supported
@@ -62,8 +59,6 @@ const shared::WSTRING default_exclude_processes[]{
     WStr("WindowsAzureGuestAgent.exe") // https://github.com/Azure/WindowsVMAgent
 };
 
-inline static const ::shared::WSTRING datadog_logs_folder_path = WStr(R"(Datadog .NET Tracer\logs)");
-
 static fs::path GetCurrentModuleFolderPath()
 {
 #ifdef _WIN32
@@ -84,7 +79,7 @@ static fs::path GetCurrentModuleFolderPath()
 
 static ::shared::WSTRING GetDatadogLogsDirectoryPath()
 {
-    ::shared::WSTRING directory = shared::GetEnvironmentValue(cfg_log_directory_env);
+    ::shared::WSTRING directory = shared::GetEnvironmentValue(EnvironmentVariables::LogDirectory);
 
     if (directory.length() > 0)
     {
@@ -109,7 +104,7 @@ static ::shared::WSTRING GetDatadogLogsDirectoryPath()
 // Gets the configuration file path
 static fs::path GetConfigurationFilePath()
 {
-    fs::path env_configfile = shared::GetEnvironmentValue(cfg_filepath_env);
+    fs::path env_configfile = shared::GetEnvironmentValue(EnvironmentVariables::ConfigFilepath);
 
     if (!env_configfile.empty())
     {
@@ -120,7 +115,7 @@ static fs::path GetConfigurationFilePath()
         {
             return env_configfile;
         }
-        Log::Warn("File set in '", cfg_filepath_env, "' doesn't exist. Using the default path");
+        Log::Warn("File set in '", EnvironmentVariables::ConfigFilepath, "' doesn't exist. Using the default path");
     }
 
     return GetCurrentModuleFolderPath() / conf_filename;

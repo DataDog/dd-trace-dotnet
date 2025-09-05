@@ -41,4 +41,9 @@ public:
     // Determine whether to instrument within azure functions.
     // Default is true.
     inline static const shared::WSTRING AzureFunctionsInstrumentationEnabled = WStr("DD_TRACE_AZURE_FUNCTIONS_ENABLED");
+
+    inline static const ::shared::WSTRING ConfigFilepath = WStr("DD_NATIVELOADER_CONFIGFILE");
+
+    inline static const ::shared::WSTRING WriteInstrumentationToDisk = WStr("DD_WRITE_INSTRUMENTATION_TO_DISK");
+    inline static const ::shared::WSTRING CopyOriginalModulesToDisk = WStr("DD_COPY_ORIGINALS_MODULES_TO_DISK");
 };
