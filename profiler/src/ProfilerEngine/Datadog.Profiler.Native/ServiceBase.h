@@ -14,6 +14,7 @@ public:
 
     bool Start() final override;
     bool Stop() final override;
+    bool IsStarted() final override;
 
 protected:
     virtual bool StartImpl() = 0;

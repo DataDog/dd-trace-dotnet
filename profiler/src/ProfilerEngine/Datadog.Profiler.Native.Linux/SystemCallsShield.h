@@ -22,6 +22,7 @@ public:
 
     bool Start() override;
     bool Stop() override;
+    bool IsStarted() override;
 
     const char* GetName() override;
 
@@ -34,4 +35,5 @@ private:
     int SetSharedMemoryOnThreadInfo(volatile int* state);
 
     bool _isEnabled;
+    bool _isStarted;
 };

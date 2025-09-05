@@ -20,7 +20,8 @@ extern "C" int (*volatile dd_set_shared_memory)(volatile int*) __attribute__((we
 extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
 
 SystemCallsShield::SystemCallsShield(IConfiguration* configuration) :
-    _isEnabled{ShouldEnable(configuration)}
+    _isEnabled{ShouldEnable(configuration)},
+    _isStarted{false}
 {
 }
 
@@ -34,6 +35,12 @@ bool SystemCallsShield::ShouldEnable(IConfiguration* configuration)
 
 bool SystemCallsShield::Start()
 {
+    if (_isStarted)
+    {
+        return true;
+    }
+    _isStarted = true;
+
     if (_isEnabled)
     {
         Instance = this;
@@ -45,6 +52,11 @@ bool SystemCallsShield::Start()
 
 bool SystemCallsShield::Stop()
 {
+    if (!_isStarted)
+    {
+        return false;
+    }
+
     if (_isEnabled)
     {
         dd_set_shared_memory = nullptr;
@@ -52,6 +64,11 @@ bool SystemCallsShield::Stop()
     }
 
     return true;
+}
+
+bool SystemCallsShield::IsStarted()
+{
+    return (_isStarted);
 }
 
 const char* SystemCallsShield::GetName()
