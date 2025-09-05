@@ -131,6 +131,24 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
+        /// Check if the current environment is the Azure Functions host process
+        /// by checking that "FUNCTIONS_WORKER_RUNTIME" is set to "dotnet-isolated" and that we see
+        /// on the command that either a "--functions-workerid" or "--workerId" was passed.
+        /// Note that his is a subset of IsAzureFunctions().
+        /// This method reads environment variables directly and bypasses the configuration system.
+        /// </summary>
+        public static bool IsRunningInAzureFunctionsHost()
+        {
+            var cmd = Environment.CommandLine ?? string.Empty;
+            var hasWorkerId = cmd.IndexOf("--functions-workerid", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                              cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            return IsAzureFunctions()
+                   && string.Equals(GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal)
+                   && !hasWorkerId;
+        }
+
+        /// <summary>
         /// Check if the current environment is AWS Lambda
         /// by checking for the presence of "AWS_LAMBDA_FUNCTION_NAME".
         /// This method reads environment variables directly and bypasses the configuration system.
