@@ -46,33 +46,33 @@ public class VetoTriggerListener : ITriggerListener
         return ValueTask.CompletedTask;
     }
 #else
-    public ValueTask TriggerFired(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
+    public Task TriggerFired(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
     {
         Console.WriteLine($"Trigger fired for job: {context.JobDetail.Key}");
-        return ValueTask.CompletedTask;
+        return Task.CompletedTask;
     }
 
-    public ValueTask<bool> VetoJobExecution(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
+    public Task<bool> VetoJobExecution(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
     {
         // Veto if this is our target job
         if (context.JobDetail.Key.Equals(_targetJob))
         {
             Console.WriteLine($"VETOING job execution for: {context.JobDetail.Key}");
             _tcs.TrySetResult(true); // Signal completion
-            return ValueTask.FromResult(true); // Return true to veto
+            return Task.FromResult(true); // Return true to veto
         }
 
-        return ValueTask.FromResult(false); // Don't veto other jobs
+        return Task.FromResult(false); // Don't veto other jobs
     }
 
-    public ValueTask TriggerMisfired(ITrigger trigger, CancellationToken cancellationToken = default)
+    public Task TriggerMisfired(ITrigger trigger, CancellationToken cancellationToken = default)
     {
-        return ValueTask.CompletedTask;
+        return Task.CompletedTask;
     }
 
-    public ValueTask TriggerComplete(ITrigger trigger, IJobExecutionContext context, SchedulerInstruction triggerInstructionCode, CancellationToken cancellationToken = default)
+    public Task TriggerComplete(ITrigger trigger, IJobExecutionContext context, SchedulerInstruction triggerInstructionCode, CancellationToken cancellationToken = default)
     {
-        return ValueTask.CompletedTask;
+        return Task.CompletedTask;
     }
 #endif
 }

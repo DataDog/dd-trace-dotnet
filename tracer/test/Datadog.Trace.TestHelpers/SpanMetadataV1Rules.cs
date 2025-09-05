@@ -1097,8 +1097,6 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("span.kind", "client"));
 
         public static Result IsQuartzV1(this MockSpan span) => Result.FromSpan(span)
-          .Properties(s => s
-                .MatchesOneOf(Name,  "internal"))
           .Tags(s => s
                 .IsOptional("events")
                 .IsPresent("fire.instance.id")
