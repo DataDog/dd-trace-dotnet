@@ -316,6 +316,7 @@
     <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\version.h" />
+    <ClInclude Include="constants.h" />
     <ClInclude Include="cor_profiler_class_factory.h" />
     <ClInclude Include="cor_profiler.h" />
     <ClInclude Include="crashhandler.h" />
