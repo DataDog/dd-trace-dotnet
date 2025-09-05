@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Serilog;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -46,9 +45,7 @@ public class QuartzTests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
-            var filename = nameof(QuartzTests) + GetSuffix(packageVersion);
-            Log.Information(filename);
-            const int expectedSpanCount = 2;
+            var filename = nameof(QuartzTests) + GetSuffix(packageVersion, out var expectedSpanCount);
             var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
             using var s = new AssertionScope();
@@ -86,20 +83,27 @@ public class QuartzTests : TracingIntegrationTest
         }
     }
 
-    private static string GetSuffix(string packageVersion)
+    private static string GetSuffix(string packageVersion, out int expectedSpanCount)
     {
         if (string.IsNullOrEmpty(packageVersion))
         {
+            expectedSpanCount = 3;
             return "V4";
         }
 
         return new Version(packageVersion) switch
         {
-            { } v when v >= new Version("4.0.0") => "V4",
+            { } v when v >= new Version("4.0.0") => Set(out expectedSpanCount, 3, "V4"),
 #if NETCOREAPP3_1
-            { } v when v >= new Version("3.15.0") => "V315plusNETCOREAPP31",
+            { } v when v >= new Version("3.15.0") => Set(out expectedSpanCount, 2, "V315plusNETCOREAPP31"),
 #endif
-            _ => "V3",
+            _ => Set(out expectedSpanCount, 2, "V3")
         };
+    }
+
+    private static string Set(out int expectedSpanCount, int count, string suffix)
+    {
+        expectedSpanCount = count;
+        return suffix;
     }
 }
