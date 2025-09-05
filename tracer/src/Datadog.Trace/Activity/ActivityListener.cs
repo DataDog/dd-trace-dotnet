@@ -27,6 +27,7 @@ namespace Datadog.Trace.Activity
 
         private static object? _activityListenerInstance;
         private static Func<object>? _getCurrentActivity;
+        private static Action<object, ActivityKind>? _setKindProperty;
 
         private static int _initialized = 0;
         private static int _stopped = 0;
@@ -67,6 +68,18 @@ namespace Datadog.Trace.Activity
                    activity.DuckAs<IActivity5>() ??
                    activity.DuckAs<IW3CActivity>() ??
                    activity.DuckAs<IActivity>();
+        }
+
+        public static void SetActivityKind(IActivity5 activity, ActivityKind activityKind)
+        {
+            try
+            {
+                _setKindProperty?.Invoke(activity, activityKind);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error calling Activity.SetKindProperty");
+            }
         }
 
         public static void Initialize() => Initialize(CancellationToken.None);
@@ -128,6 +141,11 @@ namespace Datadog.Trace.Activity
                 {
                     // if Version >= 5 loaded (Uses ActivityListener implementation)
                     CreateActivityListenerInstance(activityType);
+                    var activityKindType = Type.GetType("System.Diagnostics.ActivityKind, System.Diagnostics.DiagnosticSource", throwOnError: false);
+                    if (activityKindType is not null)
+                    {
+                        CreateActivityKindSetter(activityType, activityKindType);
+                    }
                 }
                 else
                 {
@@ -285,6 +303,11 @@ namespace Datadog.Trace.Activity
             onNextMethodIl.Emit(OpCodes.Ret);
 
             return typeBuilder.CreateTypeInfo()?.AsType();
+        }
+
+        private static void CreateActivityKindSetter(Type activityType, Type activityKindType)
+        {
+            _setKindProperty = (Action<object, ActivityKind>)activityType.GetProperty("Kind")!.SetMethod!.CreateDelegate(typeof(Action<>).MakeGenericType(activityType, activityKindType));
         }
     }
 }
