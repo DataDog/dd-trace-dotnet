@@ -2,9 +2,10 @@
 version: 2
 
 registries:
-  azure-nuget:
-    type: nuget-feed
-    url: https://pkgs.dev.azure.com/datadoghq/dd-trace-dotnet/_packaging/Public_Feed/nuget/v3/index.json
+# Dependabot doesn't need to use this, so try to stop it doing so
+#  azure-nuget:
+#    type: nuget-feed
+#    url: https://pkgs.dev.azure.com/datadoghq/dd-trace-dotnet/_packaging/Public_Feed/nuget/v3/index.json
   public-nuget:
     type: nuget-feed
     url: https://api.nuget.org/v3/index.json
