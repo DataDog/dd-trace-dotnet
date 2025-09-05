@@ -398,20 +398,18 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 
-            OtelMetricsExporter = config
-                        .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter)
-                        .AsString(defaultValue: "otlp");
+            var otelMetricsExporter = config
+                                            .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter);
 
-            OtelMetricsExporterEnabled = string.Equals(OtelMetricsExporter, "otlp", StringComparison.OrdinalIgnoreCase);
+            OtelMetricsExporterEnabled = string.Equals(otelMetricsExporter.AsString(defaultValue: "otlp"), "otlp", StringComparison.OrdinalIgnoreCase);
 
-            var otelRuntimeMetricsEnabled = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter)
-                            .AsBoolResult(value => value switch
-                            {
-                                not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
-                                    => ParsingResult<bool>.Success(result: false),
-                                _ => ParsingResult<bool>.Failure()
-                            });
+            var otelRuntimeMetricsEnabled = otelMetricsExporter
+                                           .AsBoolResult(value => value switch
+                                            {
+                                                not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                                    => ParsingResult<bool>.Success(result: false),
+                                                _ => ParsingResult<bool>.Failure()
+                                            });
 
             _runtimeMetricsEnabled = config
                             .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
@@ -439,7 +437,7 @@ namespace Datadog.Trace.Configuration
                                       },
                                       validator: null);
 
-            var defaultUri = $"http://localhost:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}";
+            var defaultUri = $"http://localhost:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
             OtlpEndpoint = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
                 .GetAs(
@@ -456,7 +454,7 @@ namespace Datadog.Trace.Configuration
                             OtlpProtocol.Grpc => OtlpEndpoint,
                             _ => new Uri(OtlpEndpoint, "/v1/metrics")
                         },
-                        telemetryValue: $"{defaultUri}/v1/metrics"),
+                        telemetryValue: $"{OtlpEndpoint}{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? "v1/metrics" : string.Empty)}"),
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
@@ -988,16 +986,10 @@ namespace Datadog.Trace.Configuration
         internal string[] OpenTelemetryMeterNames { get; }
 
         /// <summary>
-        /// Gets the OpenTelemetry metrics exporter to use.
-        /// Valid values are 'otlp' and 'none'. Default is 'otlp'.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.MetricsExporter"/>
-        internal string OtelMetricsExporter { get; }
-
-        /// <summary>
         /// Gets a value indicating whether the OpenTelemetry metrics exporter is enabled.
-        /// This is derived from <see cref="OtelMetricsExporter"/> where 'otlp' enables the exporter
-        /// and 'none' disables it. Default is enabled (true).
+        /// This is derived from <see cref="ConfigurationKeys.OpenTelemetry.MetricsExporter"/> config where 'otlp' enables the exporter
+        /// and 'none' disables it and runtime metrics if related DD env var is not set.
+        /// Default is enabled (true).
         /// </summary>
         internal bool OtelMetricsExporterEnabled { get; }
 

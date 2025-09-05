@@ -512,8 +512,8 @@ namespace Datadog.Trace.Tests.Configuration
             settings.RuntimeMetricsEnabled.Should().Be(expected);
             Count? metric = (value, otelValue) switch
             {
-                (null, "random") => Count.OpenTelemetryConfigInvalid,
                 (null, "otlp") => Count.OpenTelemetryConfigInvalid,
+                (null, "random") => Count.OpenTelemetryConfigInvalid,
                 (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
                 _ => null,
             };
@@ -1401,7 +1401,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("console", "console", false)]
         [InlineData("invalid", "invalid", false)]
         [InlineData("prometheus", "prometheus", false)]
-        public void OtelMetricsExporterStringAndBooleanSettings(string value, string expected, bool enabled)
+        public void OtelMetricsExporterEnabled(string value, string expected, bool enabled)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricsExporter, value));
             var telemetry = new ConfigurationTelemetry();
@@ -1413,7 +1413,6 @@ namespace Datadog.Trace.Tests.Configuration
                                    .ToList();
 
             entries[0].StringValue.Should().Be(expected);
-            settings.OtelMetricsExporter.Should().Be(expected);
             settings.OtelMetricsExporterEnabled.Should().Be(enabled);
         }
 
@@ -1458,10 +1457,10 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData("grpc", null, "http://localhost:4317/", null, "http://localhost:4317/")]
-        [InlineData("grpc", "http://base:4333", "http://base:4333/", null, "http://base:4333/")]
+        [InlineData("grpc", "http://base:4333/", "http://base:4333/", null, "http://base:4333/")]
         [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/metrics")]
-        [InlineData("http/protobuf", "http://base:4333", "http://base:4333/", null, "http://base:4333/v1/metrics")]
-        [InlineData("http/json", "http://base:4333", "http://base:4333/", "http://metrics:4333", "http://metrics:4333/")]
+        [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/", null, "http://base:4333/v1/metrics")]
+        [InlineData("http/json", "http://base:4333/", "http://base:4333/", "http://metrics:4333/", "http://metrics:4333/")]
         [InlineData("http/json", null, "http://localhost:4318/", "http://localhost:4318/proxy/metrics", "http://localhost:4318/proxy/metrics")]
         public void OtlpMetricsEndpoint(string protocol, string baseInput, string baseOutput, string metricsInput, string metricsOutput)
         {
@@ -1469,8 +1468,21 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, protocol),
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, baseInput),
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, metricsInput));
-            var settings = new TracerSettings(source);
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new());
 
+            var baseEndpointEntries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            var metricsEndpointEntries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            baseEndpointEntries[0].StringValue.Should().Be(baseOutput);
+            metricsEndpointEntries[0].StringValue.Should().Be(metricsOutput);
             settings.OtlpEndpoint.ToString().Should().Be(baseOutput);
             settings.OtlpMetricsEndpoint.ToString().Should().Be(metricsOutput);
         }

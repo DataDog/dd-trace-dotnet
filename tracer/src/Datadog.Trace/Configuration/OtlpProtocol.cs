@@ -13,14 +13,14 @@ namespace Datadog.Trace.Configuration;
 internal enum OtlpProtocol
 {
     /// <summary>
-    /// HTTP with Protocol Buffers encoding
-    /// </summary>
-    HttpProtobuf = 0,
-
-    /// <summary>
     /// gRPC with Protocol Buffers encoding
     /// </summary>
-    Grpc = 1,
+    Grpc = 0,
+
+    /// <summary>
+    /// HTTP with Protocol Buffers encoding
+    /// </summary>
+    HttpProtobuf = 1,
 
     /// <summary>
     /// HTTP with JSON encoding
