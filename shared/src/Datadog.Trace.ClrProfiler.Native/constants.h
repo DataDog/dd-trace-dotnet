@@ -16,6 +16,7 @@ const shared::WSTRING default_exclude_processes[]{
     WStr("aspnet_state.exe"),
     WStr("CollectGuestLogs.exe"), // https://github.com/Azure/WindowsVMAgent
     WStr("csc.exe"),
+    WStr("createdump"),
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
     WStr("devenv.exe"),
