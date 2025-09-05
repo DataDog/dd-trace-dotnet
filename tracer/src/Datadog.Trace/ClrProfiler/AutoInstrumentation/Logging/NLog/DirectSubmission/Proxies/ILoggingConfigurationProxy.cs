@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
@@ -17,6 +18,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         /// Gets a collection of named targets specified in the configuration.
         /// </summary>
         public IEnumerable ConfiguredNamedTargets { get; }
+
+        /// <summary>
+        /// Gets a collection of configured logging rules. The underlying list should be locked before use
+        /// </summary>
+        public IList LoggingRules { get; }
 
         /// <summary>
         /// Registers the specified target object under a given name.

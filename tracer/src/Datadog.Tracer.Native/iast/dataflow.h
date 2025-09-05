@@ -65,8 +65,7 @@ namespace iast
 
         void LoadSecurityControls();
     protected:
-        bool _initialized = true;
-        bool _loaded = false;
+        bool _initialized = false;
         bool _setILOnJit = false;
 
         std::vector<DataflowAspectClass*> _aspectClasses;
@@ -80,7 +79,6 @@ namespace iast
         static bool InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects);
 
     public:
-        void Destroy();
         HRESULT AppDomainShutdown(AppDomainID appDomainId);
         HRESULT ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo = nullptr);
         HRESULT ModuleUnloaded(ModuleID moduleId);
@@ -105,12 +103,8 @@ namespace iast
 
         AppDomainInfo* GetAppDomain(AppDomainID id);
         ModuleInfo* GetModuleInfo(ModuleID moduleId);
-        ModuleInfo* GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos = false);
-
-        mdMethodDef GetFunctionInfo(FunctionID functionId, ModuleInfo** ppModuleInfo);
-
+        ModuleInfo* GetAspectsModule(AppDomainID id);
         MethodInfo* GetMethodInfo(ModuleID moduleId, mdMethodDef methodId);
-        MethodInfo* GetMethodInfo(FunctionID functionId);
 
         bool IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId);
         bool JITCompilationStarted(ModuleID moduleId, mdToken methodId);

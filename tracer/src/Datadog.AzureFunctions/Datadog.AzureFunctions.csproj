@@ -58,6 +58,9 @@
       <PackageCopyToOutput>false</PackageCopyToOutput>
     </None>
 
+    <None Include="Datadog.AzureFunctions.props" Pack="true" PackagePath="buildTransitive\Datadog.AzureFunctions.props" />
+    <None Include="Datadog.AzureFunctions.targets" Pack="true" PackagePath="buildTransitive\Datadog.AzureFunctions.targets" />
+
     <!-- win-x64 and win-x86 exclusions -->
     <None Remove="$(SourcePath)/win-*/Datadog.Profiler.Native.dll" />
     <None Remove="$(SourcePath)/win-*/datadog_profiling_ffi.dll" />

@@ -766,38 +766,12 @@ HRESULT ModuleInfo::CommitILRewriter(ILRewriter** rewriter)
     return hr;
 }
 
-
-ModuleInfo* ModuleInfo::GetModuleInfoByName(WSTRING moduleName)
+mdToken ModuleInfo::DefineAspectMemberRef(const WSTRING& typeName, const WSTRING& methodName, const WSTRING& methodParams)
 {
-    auto res = _dataflow->GetModuleInfo(moduleName, _appDomain.Id);
-    if (res)
-    {
-        return res;
-    }
-    if (moduleName == managed_profiler_name)
-    {
-        // In .NetFramework, "Datadog.trace" might be in the shared assembly repository
-        res = _dataflow->GetModuleInfo(moduleName, _appDomain.Id, true);
-
-        if (res) 
-        {
-            return res;
-        }            
-    }
-    
-    trace::Logger::Info("Module ", moduleName, " NOT FOUND for AppDomain ", _appDomain.Name, " using fallback...");
-    return res;
-}
-
-mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& typeName, const WSTRING& methodName, const WSTRING& methodParams)
-{
-    HRESULT hr = E_INVALIDARG;
+    HRESULT hr = S_OK;
     mdMemberRef methodRef = 0;
-    AssemblyImportInfo assemblyImport{0};
-    ModuleInfo* moduleInfo = nullptr;
     std::stringstream memberKeyBuilder;
-    memberKeyBuilder << shared::ToString(moduleName) << "::" << shared::ToString(typeName) << "."
-                     << shared::ToString(methodName) << shared::ToString(methodParams);
+    memberKeyBuilder << shared::ToString(typeName) << "." << shared::ToString(methodName) << shared::ToString(methodParams);
     WSTRING memberKey = ToWSTRING(memberKeyBuilder.str());
 
     auto memberValue = _mMemberImports.find(memberKey);
@@ -805,74 +779,60 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
     {
         return memberValue->second;
     }
-
-    auto value = _mAssemblyImports.find(moduleName);
-    if (value != _mAssemblyImports.end())
+    if (_aspectsAssemblyRef == 0)
     {
-        assemblyImport = value->second;
-        moduleInfo = _dataflow->GetModuleInfo(assemblyImport.moduleId);
-        if (!moduleInfo)
-        {
-            trace::Logger::Info("DefineMemberRef : FAILED GetModuleInfo ", Hex((ULONG)assemblyImport.moduleId));
-        }
-    }
-    if (FAILED(hr))
-    {
-        moduleInfo = GetModuleInfoByName(moduleName);
-        if (!moduleInfo)
-        {
-            trace::Logger::Info("Module ", moduleName, " NOT FOUND");
-            return 0;
-        }
-        mdAssemblyRef assemblyRef;
         hr = _assemblyEmit->DefineAssemblyRef((void*) Constants::DDAssemblyPublicKeyToken,
-                                             sizeof(Constants::DDAssemblyPublicKeyToken), moduleName.c_str(),
+                                              sizeof(Constants::DDAssemblyPublicKeyToken),
+                                              Constants::AspectsAssemblyName.c_str(),
                                              GetDatadogAssemblyMetadata(),
                                              nullptr, // hash blob
                                              0,    // cb of hash blob
                                              0,    // flags
-                                             &assemblyRef);
-        if (FAILED(hr) || !moduleInfo)
+                                             &_aspectsAssemblyRef);
+        if (FAILED(hr))
         {
-            trace::Logger::Info("DefineMemberRef : DefineAssemblyRef FAILED ", Hex(hr));
+            trace::Logger::Warn("ModuleInfo::DefineMemberRef -> DefineAssemblyRef for Aspects Assembly FAILED ", Hex(hr));
+            return 0;
         }
-
-        assemblyImport.moduleId = moduleInfo->_id;
-        assemblyImport.assemblyRef = assemblyRef;
-        _mAssemblyImports[moduleName] = assemblyImport;
     }
 
-    auto methodInfo = moduleInfo->GetMethod(typeName, methodName, methodParams);
-    if (methodInfo == nullptr)
+    auto aspectsModuleInfo = _dataflow->GetAspectsModule(_appDomain.Id);
+    if (aspectsModuleInfo == nullptr)
     {
-        DBG("DefineMemberRef : Could not find Method ", shared::ToString(typeName), ".", shared::ToString(methodName), shared::ToString(methodParams));
+        trace::Logger::Warn("ModuleInfo::DefineMemberRef -> Aspects Module ", Constants::AspectsAssemblyName, " NOT FOUND");
+        return 0;
+    }
+
+    auto aspectMethodInfo = aspectsModuleInfo->GetMethod(typeName, methodName, methodParams);
+    if (aspectMethodInfo == nullptr)
+    {
+        trace::Logger::Warn("ModuleInfo::DefineMemberRef -> Could not find Aspect Method ", shared::ToString(typeName), ".", shared::ToString(methodName), shared::ToString(methodParams));
         return 0;
     }
 
     mdTypeRef typeRef;
-    if (SUCCEEDED(hr))
+    hr = _metadataEmit->DefineTypeRefByName(_aspectsAssemblyRef, typeName.c_str(), &typeRef);
+    if (FAILED(hr))
     {
-        hr = _metadataEmit->DefineTypeRefByName(assemblyImport.assemblyRef, typeName.c_str(), &typeRef);
-    }
-    if (SUCCEEDED(hr))
-    {
-        hr = _metadataEmit->DefineImportMember(moduleInfo->_assemblyImport, nullptr, 0, moduleInfo->_metadataImport,
-                                               methodInfo->_id, _assemblyEmit, typeRef, &methodRef);
-    }
+        trace::Logger::Warn("ModuleInfo::DefineMemberRef -> DefineTypeRefByName failed with code ", hr , " for typeName:" , typeName);
+        return 0;
 
-    if (SUCCEEDED(hr))
-    {
-        _mMemberImports[memberKey] = methodRef;
-        auto memberRefInfo = GetMemberRefInfo(methodRef);
-        DBG("DefineMemberRef : ", Hex(methodRef), " for ", memberKey, " MethodName: ", memberRefInfo->GetFullName(), " Module: ", GetModuleFullName());
-        return methodRef;
     }
-    else
+    hr = _metadataEmit->DefineImportMember(aspectsModuleInfo->_assemblyImport, nullptr, 0,
+                                            aspectsModuleInfo->_metadataImport, aspectMethodInfo->_id, _assemblyEmit,
+                                            typeRef, &methodRef);
+    if (FAILED(hr))
     {
-        trace::Logger::Warn("DefineImportMember failed with code ", hr , " typeName:" , typeName ,
+        trace::Logger::Warn("ModuleInfo::DefineMemberRef -> DefineImportMember failed with code ", hr , " typeName:" , typeName ,
                             " methodName: " , methodName);
         return 0;
     }
+
+
+    _mMemberImports[memberKey] = methodRef;
+    auto memberRefInfo = GetMemberRefInfo(methodRef);
+    DBG("ModuleInfo::DefineMemberRef -> DefineMemberRef : ", Hex(methodRef), " for ", memberKey, " MethodName: ", memberRefInfo->GetFullName(), " Module: ", GetModuleFullName());
+    return methodRef;
 }
 
 mdMethodSpec ModuleInfo::DefineMethodSpec(mdMemberRef targetMethod, SignatureInfo* sig)

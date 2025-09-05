@@ -38,11 +38,6 @@ bool IsTraceAnnotationEnabled()
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::trace_annotations_enabled), true);
 }
 
-bool IsAzureFunctionsEnabled()
-{
-    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::azure_functions_enabled), true);
-}
-
 bool IsVersionCompatibilityEnabled()
 {
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::internal_version_compatibility), true);

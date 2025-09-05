@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: MongoDB.Driver.Core -->
+    <!--    Assembly: MongoDB.Driver.Core -->
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.30.0 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.30.0" />
+  </ItemGroup>
+
+</Project>

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
@@ -27,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             : base("Microsoft.Data.Sqlite", output)
         {
             SetServiceVersion("1.0.0");
+            UseNativeLibraryAlpineWorkaround();
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlite(metadataSchemaVersion);

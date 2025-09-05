@@ -56,11 +56,18 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 9.0.203
+  dotnetCoreSdkLatestVersion: 10.0.100-preview.7.25380.108
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 9.0.203
+  dotnetCoreSdkLatestVersionShort: 10.0.100-preview.7
   nativeBuildDotnetSdkVersion: 7.0.306
+  # These are the Managed DevOps pool names we use
+  linuxTasksPool: azure-managed-linux-tasks
+  linuxX64SmokePool: azure-managed-linux-smoke
+  linuxX64Pool: azure-managed-linux-x64-1
+  linuxArm64Pool: azure-managed-linux-arm64-2
+  windowsX64Pool: azure-managed-windows-x64-1
+
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -120,7 +127,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.25.0
+  ToolVersion: 3.26.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -166,7 +173,7 @@ stages:
   - job: fetch
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-linux-tasks
+      name: $(linuxTasksPool)
 
     steps:
     - checkout: none
@@ -208,7 +215,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -234,7 +241,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -279,7 +286,7 @@ stages:
 
   - job: build
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -334,7 +341,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -397,7 +404,7 @@ stages:
       timeoutInMinutes: 60 #default value
       dependsOn: []
       pool:
-        name: azure-managed-linux-x64-1
+        name: $(linuxX64Pool)
       
       steps:
         - template: steps/clone-repo.yml
@@ -460,7 +467,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -511,7 +518,7 @@ stages:
           artifactSuffix: linux-musl-x64
           useNativeSdkVersion: ""
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -573,7 +580,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -665,7 +672,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
     workspace:
       clean: all
     steps:
@@ -708,7 +715,7 @@ stages:
     dependsOn: []
 
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
     workspace:
       clean: all
     steps:
@@ -758,7 +765,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
     workspace:
       clean: all
     steps:
@@ -800,7 +807,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
     workspace:
       clean: all
     steps:
@@ -848,7 +855,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1001,7 +1008,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-managed-windows-x64-2
+    name: $(windowsX64Pool)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1064,7 +1071,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1105,7 +1112,7 @@ stages:
           artifactSuffix: linux-musl-x64
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1152,7 +1159,7 @@ stages:
           artifactSuffix: linux-musl-arm64
 
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1202,7 +1209,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
       - template: steps/clone-repo.yml
@@ -1238,7 +1245,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1253,7 +1260,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
     workspace:
       clean: all
     steps:
@@ -1291,7 +1298,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-managed-windows-x64-2
+    name: $(windowsX64Pool)
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1405,7 +1412,7 @@ stages:
       matrix:
         $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_x64_matrix'] ]
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1462,7 +1469,7 @@ stages:
         matrix:
           $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_arm64_matrix'] ]
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
       workspace:
         clean: all
       steps:
@@ -1516,7 +1523,7 @@ stages:
     - job: standalone
       timeoutInMinutes: 60 #default value
       pool:
-        name: azure-managed-windows-x64-2
+        name: $(windowsX64Pool)
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1562,8 +1569,10 @@ stages:
             framework: net8.0
           net9.0:
             framework: net9.0
+          net10.0:
+            framework: net10.0
       pool:
-        name: azure-managed-windows-x64-2
+        name: $(windowsX64Pool)
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1635,7 +1644,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -1723,7 +1732,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_debugger_matrix'] ]
@@ -1788,7 +1797,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1852,7 +1861,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1929,7 +1938,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1980,7 +1989,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     timeoutInMinutes: 60 #default value
 
     steps:
@@ -2013,7 +2022,7 @@ stages:
   - job: Linux
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2055,7 +2064,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     variables:
       relativeMsiOutputDirectory: /artifacts/msi/$(targetPlatform)/en-us
 
@@ -2135,7 +2144,7 @@ stages:
   - job: fleet_installer_tests
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     variables:
       framework: net48
 
@@ -2197,7 +2206,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2273,7 +2282,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2389,7 +2398,7 @@ stages:
           publishTargetFramework: "net9.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9"
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2568,7 +2577,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2658,7 +2667,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2730,7 +2739,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2821,7 +2830,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2865,7 +2874,7 @@ stages:
     condition: false
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2902,7 +2911,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
 
@@ -2963,13 +2972,17 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
+    - script: |
+        sudo sysctl vm.mmap_rnd_bits=28
+        sudo sysctl kernel.randomize_va_space=1
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3007,7 +3020,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -3077,7 +3090,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -3190,7 +3203,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -3271,11 +3284,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
-
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent_no_pull
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -3287,6 +3296,28 @@ stages:
 
     - script: tracer\build.cmd SetupExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
+
+    - powershell: |
+        dotnet build -c Release $(System.DefaultWorkingDirectory)\tracer\tools\MockAgent
+        $serviceName = "MockAgent"
+        $exePath = "$(System.DefaultWorkingDirectory)\tracer\tools\MockAgent\bin\release\net9.0\MockAgent.exe"
+
+        # Check if service already exists
+        if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+            Write-Host "Service $serviceName already exists. Stopping and removing..."
+            Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
+            sc.exe delete $serviceName | Out-Null
+        }
+
+        # Install the service
+        sc.exe create $serviceName binPath= "`"$exePath`"" start= auto DisplayName= "Datadog Mock Agent"
+
+        # Start the service
+        Start-Service -Name $serviceName
+
+        # Verify
+        Get-Service -Name $serviceName
+      displayName: Start Mock Agent
 
     - script: tracer\build.cmd RunExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest $(explorationTestUseCase) $(explorationTestName)
@@ -3327,7 +3358,7 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3423,7 +3454,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -3637,7 +3668,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -3721,22 +3752,22 @@ stages:
         x64:
           baseImage: debian
           artifactSuffix: linux-x64
-          poolName: azure-managed-linux-x64-1
+          poolName: $(linuxX64Pool)
           targetArch: x64
         alpine_x64:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolName: azure-managed-linux-x64-1
+          poolName: $(linuxX64Pool)
           targetArch: x64
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
-          poolname: azure-managed-linux-arm64-2
+          poolname: $(linuxArm64Pool)
           targetArch: arm64
         alpine_arm64:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
-          poolname: azure-managed-linux-arm64-2
+          poolname: $(linuxArm64Pool)
           targetArch: arm64
 
     pool:
@@ -4840,7 +4871,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -4922,7 +4953,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-smoke
+        name: $(linuxX64SmokePool)
       
       steps:
         - template: steps/clone-repo.yml
@@ -5001,7 +5032,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -5090,7 +5121,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-smoke
+        name: $(linuxX64SmokePool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -5163,7 +5194,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -5227,7 +5258,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -5299,7 +5330,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      name: azure-managed-linux-smoke
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -5371,7 +5402,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -5454,7 +5485,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -5533,7 +5564,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -5623,7 +5654,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
 
     steps:
     - template: steps/download-artifact.yml
@@ -6356,7 +6387,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml

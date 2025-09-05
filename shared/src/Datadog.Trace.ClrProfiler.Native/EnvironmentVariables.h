@@ -19,4 +19,26 @@ public:
     inline static const shared::WSTRING SingleStepInstrumentationEnabled = WStr("DD_INJECTION_ENABLED");
     inline static const shared::WSTRING ForceEolInstrumentation = WStr("DD_INJECT_FORCE");
     inline static const shared::WSTRING SingleStepInstrumentationTelemetryForwarderPath = WStr("DD_TELEMETRY_FORWARDER_PATH");
+
+    // Sets whether the current process must run in CI Visibility mode or not.
+    inline static const shared::WSTRING CiVisibilityEnabled = WStr("DD_CIVISIBILITY_ENABLED");
+
+    // Indicates whether the CLR profiler is running from
+    // the Azure App Services site extension
+    inline static const shared::WSTRING IsAzureAppServicesExtension = WStr("DD_AZURE_APP_SERVICES");
+
+    // The app_pool_id in the context of azure app services
+    inline static const shared::WSTRING AzureAppServicesAppPoolId = WStr("APP_POOL_ID");
+
+    // The DOTNET_CLI_TELEMETRY_PROFILE in the context of azure app services
+    inline static const shared::WSTRING AzureAppServicesCliTelemetryProfilerValue = WStr("DOTNET_CLI_TELEMETRY_PROFILE");
+
+    // The FUNCTIONS_WORKER_RUNTIME in Azure Functions.
+    // Valid values: "dotnet" (in-process functions) or "dotnet-isolated" (isolated functions).
+    // Used as a flag to determine that we are running within a functions app.
+    inline static const shared::WSTRING AzureAppServicesFunctionsWorkerRuntime = WStr("FUNCTIONS_WORKER_RUNTIME");
+
+    // Determine whether to instrument within azure functions.
+    // Default is true.
+    inline static const shared::WSTRING AzureFunctionsInstrumentationEnabled = WStr("DD_TRACE_AZURE_FUNCTIONS_ENABLED");
 };

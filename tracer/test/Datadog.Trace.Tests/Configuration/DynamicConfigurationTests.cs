@@ -91,6 +91,24 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void DoesNotReplaceRuntimeMetricsWriter()
+        {
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.RuntimeMetricsEnabled, "true" },
+                { ConfigurationKeys.GlobalTags, "key1:value1" },
+            });
+            TracerManager.ReplaceGlobalManager(tracerSettings, TracerManagerFactory.Instance);
+
+            var previousRuntimeMetrics = TracerManager.Instance.RuntimeMetrics;
+
+            var configBuilder = CreateConfig(("tracing_tags", new[] { "key2:value2" }));
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder);
+
+            TracerManager.Instance.RuntimeMetrics.Should().Be(previousRuntimeMetrics);
+        }
+
+        [Fact]
         public void EnableTracing()
         {
             var tracerSettings = new TracerSettings();

@@ -185,15 +185,15 @@ partial class Build
     TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
-        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
         // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
-        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
         // Everything else e.g. MaxOS, linux-x64 etc
         // Same as Windows just without the .NET FX
-        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -680,18 +680,27 @@ partial class Build
 
                 var testBinFolder = testDir / "bin" / BuildConfiguration;
 
-                var (ext, source) = Platform switch
+                var (ext, source, libdatadog) = Platform switch
                 {
-                    PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}" / "datadog_profiling_ffi.dll"),
-                    PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch / "libdatadog_profiling.so"),
-                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx" / $"libdatadog_profiling.dylib"),
+                    PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}", "datadog_profiling_ffi.dll"),
+                    PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch, "libdatadog_profiling.so"),
+                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx", "libdatadog_profiling.dylib"),
                     _ => throw new NotSupportedException($"Unsupported platform: {Platform}")
+                };
+
+                var libs = new[]
+                {
+                    (libdatadog, $"LibDatadog.{ext}"),
+                    ($"Datadog.Tracer.Native.{ext}", $"Datadog.Tracer.Native.{ext}"),
                 };
 
                 foreach (var framework in frameworks)
                 {
-                    var dest = testBinFolder / framework / $"LibDatadog.{ext}";
-                    CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    foreach (var lib in libs)
+                    {
+                        var dest = testBinFolder / framework / lib.Item2;
+                        CopyFile(source / lib.Item1, dest, FileExistsPolicy.Overwrite);
+                    }
                 }
             }
         });
@@ -2426,11 +2435,12 @@ partial class Build
            var knownPatterns = new List<Regex>
            {
                new(@".*Unable to resolve method MongoDB\..*", RegexOptions.Compiled),
-               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsIntegration\.OnAsyncMethodEnd.*", RegexOptions.Compiled),
-               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsIntegration\.OnMethodBegin.*", RegexOptions.Compiled),
-               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsIntegration\.OnMethodEnd.*", RegexOptions.Compiled),
-               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodBegin.*", RegexOptions.Compiled),
-               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodEnd.*", RegexOptions.Compiled),
+               // Expected errors in CallTargetNativeTests
+               new(@".*Noop\dArgumentsIntegration\.OnAsyncMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsIntegration\.OnMethodBegin.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsVoidIntegration\.OnMethodBegin.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Noop\dArgumentsVoidIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
                new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
                new(@".*System.InvalidOperationException: Module Samples.Trimming.dll has no HINSTANCE.*", RegexOptions.Compiled),
                // CI Visibility known errors
@@ -2500,6 +2510,12 @@ partial class Build
            // We intentionally set the variables for smoke tests which means we get this warning on <= .NET Core 3.0 or <.NET 6.0.12
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 6.0.12 and earlier have known crashing bugs", RegexOptions.Compiled));
+
+           // Make sure we _only_ add this while .NET 10 is in preview (to make sure we don't forget in the final release)
+           if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 10.0.0-"))
+           {
+               knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 10 or higher.*", RegexOptions.Compiled));
+           }
 
            // CI Visibility known errors
            knownPatterns.Add(new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled));

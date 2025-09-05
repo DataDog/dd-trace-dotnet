@@ -75,34 +75,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto [process_command_line , tokenized_command_line ] = GetCurrentProcessCommandLine();
-    Logger::Info("Process CommandLine: ", process_command_line);
-
-    // CI visibility checks
-    if (!process_command_line.empty())
-    {
-        bool is_ci_visibility_enabled = false;
-        if (shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(environment::ci_visibility_enabled),
-                                                    is_ci_visibility_enabled) &&
-            is_ci_visibility_enabled)
-        {
-            const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
-            const auto token_count = tokenized_command_line.size();
-            if (isDotNetProcess &&
-                token_count > 1 &&
-                tokenized_command_line[1] != WStr("test") &&
-                process_command_line.find(WStr("testhost")) == WSTRING::npos &&
-                process_command_line.find(WStr("exec")) == WSTRING::npos &&
-                process_command_line.find(WStr("datacollector")) == WSTRING::npos &&
-                process_command_line.find(WStr("vstest.console.dll")) == WSTRING::npos)
-            {
-                Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
-                    "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost' or 'datacollector' or 'vstest.console.dll' or 'exec'");
-                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-            }
-        }
-    }
-
 #if !defined(_WIN32) && (defined(ARM64) || defined(ARM))
     //
     // In ARM64 and ARM, complete ReJIT support is only available from .NET 5.0 (on .NET Core)
@@ -129,39 +101,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    const auto& include_process_names = shared::GetEnvironmentValues(environment::include_process_names);
-
-    // if there is a process inclusion list, attach clrprofiler only if this
-    // process's name is on the list
-    if (!include_process_names.empty() && !shared::Contains(include_process_names, process_name))
-    {
-        Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name, " not found in ",
-                     environment::include_process_names, ".");
-        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-    }
-
-    // if we were on the explicit include list, don't check the block list
-    if (include_process_names.empty())
-    {
-        // attach clrprofiler only if this process's name is NOT on the blocklists
-        const auto& exclude_process_names = shared::GetEnvironmentValues(environment::exclude_process_names);
-        if (!exclude_process_names.empty() && shared::Contains(exclude_process_names, process_name))
-        {
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name, " found in ",
-                         environment::exclude_process_names, ".");
-            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-        }
-
-        for (auto&& exclude_assembly : default_exclude_assemblies)
-        {
-            if (process_name == exclude_assembly)
-            {
-                Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name," found in default exclude list");
-                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-            }
-        }
-    }
-
     Logger::Info("Environment variables:");
     for (auto&& env_var : env_vars_to_display)
     {
@@ -169,40 +108,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         if (IsDebugEnabled() || !env_var_value.empty())
         {
             Logger::Info("  ", env_var, "=", env_var_value);
-        }
-    }
-
-    if (isRunningInAas)
-    {
-        Logger::Info("Profiler is operating within Azure App Services context.");
-
-        const auto& app_pool_id_value = shared::GetEnvironmentValue(environment::azure_app_services_app_pool_id);
-
-        if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~')
-        {
-            Logger::Info(
-                "DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", environment::azure_app_services_app_pool_id, " ",
-                app_pool_id_value, " is recognized as an Azure App Services infrastructure process.");
-            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-        }
-
-        const auto& cli_telemetry_profile_value =
-            shared::GetEnvironmentValue(environment::azure_app_services_cli_telemetry_profile_value);
-
-        if (cli_telemetry_profile_value == WStr("AzureKudu"))
-        {
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", app_pool_id_value,
-                         " is recognized as Kudu, an Azure App Services reserved process.");
-            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-        }
-
-        const auto& functions_worker_runtime_value =
-            shared::GetEnvironmentValue(environment::azure_app_services_functions_worker_runtime);
-
-        if (!functions_worker_runtime_value.empty() && !IsAzureFunctionsEnabled())
-        {
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler explicitly disabled for Azure Functions.");
-            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
         }
     }
 
@@ -352,11 +257,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // CallSite stuff
-    if (IsCallSiteManagedActivationEnabled())
-    {
-        _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
-    }
-    else
+    if (!IsCallSiteManagedActivationEnabled())
     {
         Logger::Info("Callsite managed activation is disabled.");
         bool isRaspEnabled = IsRaspEnabled();
@@ -460,7 +361,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         {
             Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " matched profiler version v",
                          expected_version);
-            managed_profiler_loaded_app_domains.insert({assembly_info.app_domain_id, assembly_metadata.version});
+            managed_profiler_loaded_app_domains.insert({assembly_info.app_domain_id, assembly_info.manifest_module_id});
 
             // Load defaults values if the version are the same as expected
             if (assembly_metadata.version == expected_assembly_reference.version)
@@ -481,7 +382,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
                 if (assembly_info.app_domain_id == corlib_app_domain_id)
                 {
                     Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was loaded domain-neutral");
-                    managed_profiler_loaded_domain_neutral = true;
+                    managed_profiler_domain_neutral_module_id = assembly_info.manifest_module_id;
                 }
                 else
                 {
@@ -2177,10 +2078,17 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
 
-    if (_dataflow != nullptr)
+    auto dataflow = _dataflow;
+    if (dataflow == nullptr && IsCallSiteManagedActivationEnabled())
+    {
+        dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+    }
+
+    if (dataflow != nullptr)
     {
         Logger::Info("Registering Callsite Aspects.");
-        _dataflow->LoadAspects(aspects, aspectsLength, enabledCategories, platform);
+        dataflow->LoadAspects(aspects, aspectsLength, enabledCategories, platform);
+        _dataflow = dataflow;
         return aspectsLength;
     }
     else
@@ -2503,9 +2411,26 @@ bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleI
 
 bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id)
 {
-    return managed_profiler_loaded_domain_neutral ||
+    return managed_profiler_domain_neutral_module_id > 0 ||
            managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();
 }
+
+ModuleID CorProfiler::GetProfilerAssemblyModuleId(AppDomainID appDomainId)
+{
+    if (managed_profiler_domain_neutral_module_id > 0)
+    {
+        return managed_profiler_domain_neutral_module_id;
+    }
+
+    auto it = managed_profiler_loaded_app_domains.find(appDomainId);
+    if (it != managed_profiler_loaded_app_domains.end())
+    {
+        return it->second;
+    }
+
+    return 0;
+}
+
 
 HRESULT CorProfiler::EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id)
 {

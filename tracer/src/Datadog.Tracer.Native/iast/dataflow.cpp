@@ -6,6 +6,7 @@
 #include "dataflow_aspects.h"
 #include "dataflow_il_rewriter.h"
 #include "aspect_filter_factory.h"
+#include "../cor_profiler.h"
 #include "../function_control_wrapper.h"
 #include <fstream>
 #include <chrono>
@@ -159,7 +160,7 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 
 Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler,
                    const RuntimeInformation& runtimeInfo) :
-    Rejitter(rejitHandler, RejitterPriority::Low)
+    Rejitter(rejitHandler, RejitterPriority::Low, false)
 {
     m_runtimeType = runtimeInfo.runtime_type;
     m_runtimeVersion = VersionInfo{runtimeInfo.major_version, runtimeInfo.minor_version, runtimeInfo.build_version, 0};
@@ -178,69 +179,71 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
         trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. Disabling Dataflow. HRESULT : ", Hex(hr));
     }
 }
+
 Dataflow::~Dataflow()
 {
-    Destroy();
-}
-
-void Dataflow::Destroy()
-{
-    if (_initialized)
-    {
-        _initialized = false;
-        REL(_profiler);
-        DEL_MAP_VALUES(_modules);
-        DEL_MAP_VALUES(_appDomains);
-        DEL_MAP_VALUES(_moduleAspects);
-    }
+    _initialized = false;
+    REL(_profiler);
+    DEL_MAP_VALUES(_modules);
+    DEL_MAP_VALUES(_appDomains);
+    DEL_MAP_VALUES(_moduleAspects);
 }
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
-    // Init aspects
-    DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " ", enabledCategories, " ", platform);
-
-    DataflowAspectClass* aspectClass = nullptr;
-    for (int x = 0; x < aspectsLength; x++)
+    if (!_initialized)
     {
-        WSTRING line = aspects[x];
-        if (BeginsWith(line, WStr("[AspectClass(")))
+        _initialized = true;
+
+        // Init aspects
+        DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " Enabled categories: ", enabledCategories, " Platform: ", platform);
+
+        if (aspectsLength > 10)
         {
-            aspectClass = new DataflowAspectClass(this, line, enabledCategories);
-            if (!aspectClass->IsValid())
-            {
-                DBG("Dataflow::LoadAspects -> Detected invalid aspect class ", line);
-                DEL(aspectClass);
-            }
-            else
-            {
-                _aspectClasses.push_back(aspectClass);
-            }
-            continue;
+            _aspects.reserve(aspectsLength); // We know the max number of aspects we are going to have, so reserve the space to avoid vector resizes
+            _aspectClasses.reserve(aspectsLength / 10); // We don't know exactly the number of aspects which are class aspects, but 1/10 is a fine approach
         }
-        if (BeginsWith(line, WStr("  [Aspect")) && aspectClass != nullptr)
+
+        DataflowAspectClass* aspectClass = nullptr;
+        for (int x = 0; x < aspectsLength; x++)
         {
-            auto aspect = new DataflowAspect(aspectClass, line, platform);
-            if (!aspect->IsValid())
+            WSTRING line = aspects[x];
+            if (BeginsWith(line, WStr("[AspectClass(")))
             {
-                DBG("Dataflow::LoadAspects -> Detected invalid aspect ", line);
-                DEL(aspect);
+                aspectClass = new DataflowAspectClass(this, line, enabledCategories);
+                if (!aspectClass->IsValid())
+                {
+                    DEL(aspectClass);
+                }
+                else
+                {
+                    _aspectClasses.push_back(aspectClass);
+                }
+                continue;
             }
-            else
+            if (BeginsWith(line, WStr("  [Aspect")) && aspectClass != nullptr)
             {
-                _aspects.push_back(aspect);
+                auto aspect = new DataflowAspect(aspectClass, line, platform);
+                if (!aspect->IsValid())
+                {
+                    DEL(aspect);
+                }
+                else
+                {
+                    _aspects.push_back(aspect);
+                }
             }
         }
+
+        LoadSecurityControls();
+
+        auto moduleAspects = _moduleAspects;
+        _moduleAspects.clear();
+        DEL_MAP_VALUES(moduleAspects);
+
+        trace::Logger::Info("Dataflow::LoadAspects -> read ", _aspects.size(), " aspects");
+        m_rejitHandler->RegisterRejitter(this);
     }
-
-    LoadSecurityControls();
-
-    auto moduleAspects = _moduleAspects;
-    _moduleAspects.clear();
-    DEL_MAP_VALUES(moduleAspects);
-
-    trace::Logger::Info("Dataflow::LoadAspects -> read ", _aspects.size(), " aspects");
-    _loaded = true;
 }
 
 void Dataflow::LoadSecurityControls()
@@ -366,11 +369,16 @@ void Dataflow::LoadSecurityControls()
 
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
+    if (!_initialized)
+    {
+        return S_OK;
+    }
+
     CSGUARD(_cs);
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
     {
-        DBG("AppDomainShutdown: AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
+        DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
         DEL(it->second);
         _appDomains.erase(appDomainId);
         return S_OK;
@@ -380,59 +388,22 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
-    LPCBYTE pbBaseLoadAddr;
-    WCHAR wszPath[300];
-    ULONG cchNameIn = 300;
-    ULONG cchNameOut;
-    AssemblyID assemblyId;
-    AppDomainID appDomainId;
-    ModuleID modIDDummy;
-    WCHAR wszName[1024];
-
-    DWORD dwModuleFlags;
-    HRESULT hr = _profiler->GetModuleInfo2(moduleId, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId,
-                                           &dwModuleFlags);
-    if (FAILED(hr))
-    {
-        trace::Logger::Error("GetModuleInfo2 failed for ModuleId ", moduleId);
-        return hr;
-    }
-    if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
+    if (!_initialized)
     {
         return S_OK;
-    } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their
-      // IL
-
-    hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
-    if (FAILED(hr))
-    {
-        trace::Logger::Error("GetAssemblyInfo failed for ModuleId ", moduleId, " AssemblyId ", assemblyId);
-        return hr;
     }
 
-    AppDomainInfo* appDomain = GetAppDomain(appDomainId);
-    if (appDomain == nullptr)
-    {
-        trace::Logger::Error("GetAppDomain failed for AppDomainId ", appDomainId);
-        return E_FAIL;
-    }
-
-    WSTRING moduleName = WSTRING(wszName);
-    WSTRING modulePath = WSTRING(wszPath);
-    ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, moduleId, modulePath, assemblyId, moduleName);
-    DBG("Dataflow::ModuleLoaded -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
-
-    CSGUARD(_cs);
-    _modules[moduleId] = moduleInfo;
-    if (pModuleInfo)
-    {
-        *pModuleInfo = moduleInfo;
-    }
+    GetModuleInfo(moduleId);
     return S_OK;
 }
 
 HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
 {
+    if (!_initialized)
+    {
+        return S_OK;
+    }
+
     CSGUARD(_cs);
     {
         auto it = _moduleAspects.find(moduleId);
@@ -447,12 +418,12 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         auto it = _modules.find(moduleId);
         if (it != _modules.end())
         {
-            DBG("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " [ ", it->second->_appDomain.Name, " ] ", it->second->_name);
+            DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " [ ", it->second->_appDomain.Name, " ] ", it->second->_name);
             DEL(it->second);
         }
         else
         {
-            DBG("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " (Not found)");
+            DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " (Not found)");
         }
         _modules.erase(moduleId);
     }
@@ -540,25 +511,29 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 {
     CSGUARD(_cs);
     auto found = _appDomains.find(id);
-    if (found == _appDomains.end())
-    {
-        HRESULT hr = S_OK;
-        WCHAR wszAppDomainName[256];
-        ULONG cchAppDomainName;
-        ProcessID pProcID;
-        BOOL fShared = FALSE;
-
-        hr = _profiler->GetAppDomainInfo(id, 256, &cchAppDomainName, wszAppDomainName, &pProcID);
-        AppDomainInfo* info = new AppDomainInfo(id, wszAppDomainName, IsAppDomainExcluded(wszAppDomainName));
-        _appDomains[id] = info;
-
-        found = _appDomains.find(id);
-    }
     if (found != _appDomains.end())
     {
         return found->second;
     }
-    return nullptr;
+
+    HRESULT hr = S_OK;
+    WCHAR wszAppDomainName[256];
+    ULONG cchAppDomainName;
+    ProcessID pProcID;
+    BOOL fShared = FALSE;
+
+    hr = _profiler->GetAppDomainInfo(id, 256, &cchAppDomainName, wszAppDomainName, &pProcID);
+    if (FAILED(hr))
+    {
+        trace::Logger::Error("Dataflow::GetAppDomain -> GetAppDomainInfo failed for AppDomainId ", id);
+        _appDomains[id] = nullptr; // Cache the failure
+        return nullptr;
+    }
+
+    AppDomainInfo* info = new AppDomainInfo(id, wszAppDomainName, IsAppDomainExcluded(wszAppDomainName));
+    _appDomains[id] = info;
+
+    return info;
 }
 ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 {
@@ -568,41 +543,67 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     {
         return found->second;
     }
-    return nullptr;
+
+    // Retrieve module information if not found
+    LPCBYTE pbBaseLoadAddr;
+    WCHAR wszPath[300];
+    ULONG cchNameIn = 300;
+    ULONG cchNameOut;
+    AssemblyID assemblyId;
+    AppDomainID appDomainId;
+    ModuleID modIDDummy;
+    WCHAR wszName[1024];
+
+    DWORD dwModuleFlags;
+    HRESULT hr = _profiler->GetModuleInfo2(id, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId, &dwModuleFlags);
+    if (FAILED(hr))
+    {
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id);
+        _modules[id] = nullptr; 
+        return nullptr;
+    }
+    if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
+    {
+        _modules[id] = nullptr;
+        return nullptr;
+    } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their IL
+
+    hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
+    if (FAILED(hr))
+    {
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ", assemblyId);
+        _modules[id] = nullptr;
+        return nullptr;
+    }
+
+    AppDomainInfo* appDomain = GetAppDomain(appDomainId);
+    if (appDomain == nullptr)
+    {
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetAppDomain failed for AppDomainId ", appDomainId);
+        _modules[id] = nullptr;
+        return nullptr;
+    }
+
+    WSTRING moduleName = WSTRING(wszName);
+    WSTRING modulePath = WSTRING(wszPath);
+    ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, id, modulePath, assemblyId, moduleName);
+    DBG("Dataflow::GetModuleInfo -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
+
+    _modules[id] = moduleInfo;
+    return moduleInfo;
 }
-ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos)
+
+ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 {
     CSGUARD(_cs);
-    for (auto iterator = _modules.begin(); iterator != _modules.end(); iterator++)
-    {
-        if (iterator->second->_name == moduleName)
-        {
-            auto ppModuleInfo = iterator->second;
+    ModuleID moduleId = trace::profiler->GetProfilerAssemblyModuleId(id);
 
-            if ((ppModuleInfo->_appDomain.Id == appDomainId) ||
-                (lookInSharedRepos && ppModuleInfo->_appDomain.IsSharedAssemblyRepository))
-            {
-                return ppModuleInfo;
-            }
-        }
+    if (moduleId > 0)
+    {
+        return GetModuleInfo(moduleId);
     }
 
     return nullptr;
-}
-mdMethodDef Dataflow::GetFunctionInfo(FunctionID functionId, ModuleInfo** ppModuleInfo)
-{
-    HRESULT hr = S_OK;
-    ModuleID moduleId;
-    *ppModuleInfo = nullptr;
-    mdMethodDef methodDef = 0;
-    if (SUCCEEDED(_profiler->GetFunctionInfo(functionId, nullptr, &moduleId, &methodDef)))
-    {
-        if (ppModuleInfo)
-        {
-            *ppModuleInfo = GetModuleInfo(moduleId);
-        }
-    }
-    return methodDef;
 }
 
 MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
@@ -614,20 +615,14 @@ MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
     }
     return nullptr;
 }
-MethodInfo* Dataflow::GetMethodInfo(FunctionID functionId)
-{
-    HRESULT hr = S_OK;
-    ModuleInfo* pModuleInfo;
-    mdMethodDef methodDef = GetFunctionInfo(functionId, &pModuleInfo);
-    if (pModuleInfo)
-    {
-        return pModuleInfo->GetMethodInfo(methodDef);
-    }
-    return nullptr;
-}
 
 bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
+    if (!_initialized)
+    {
+        return true;
+    }
+
     auto method = JITProcessMethod(calleeModuleId, calleeMethodId);
     if (method)
     {
@@ -637,7 +632,7 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 }
 bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 {
-    if (!_loaded)
+    if (!_initialized)
     {
         return false;
     }
@@ -647,12 +642,12 @@ bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
 {
-    MethodInfo* method = nullptr;
-    if (!_loaded)
+    if (!_initialized)
     {
-        return method;
+        return nullptr;
     }
 
+    MethodInfo* method = nullptr;
     auto module = GetModuleInfo(moduleId);
     if (module && !module->IsExcluded())
     {
@@ -735,7 +730,7 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
             {
                 std::vector<ModuleID> modulesVector = {module->_id};
                 std::vector<mdMethodDef> methodsVector = {method->GetMemberId()}; // methodId
-                DBG("RewriteMethod: REJIT requested for ", method->GetKey());
+                DBG("Dataflow::RewriteMethod -> REJIT requested for ", method->GetKey());
                 m_rejitHandler->RequestRejit(modulesVector, methodsVector);
             }
         }
@@ -770,7 +765,6 @@ bool Dataflow::InstrumentInstruction(DataflowContext& context, std::vector<Dataf
 
 void Dataflow::Shutdown()
 {
-    Destroy();
 }
 RejitHandlerModule* Dataflow::GetOrAddModule(ModuleID moduleId)
 {
@@ -789,6 +783,11 @@ void Dataflow::AddNGenInlinerModule(ModuleID moduleId)
 
 HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
 {
+    if (!_initialized)
+    {
+        return S_FALSE;
+    }
+
     auto method = JITProcessMethod(functionControl.GetModuleId(), functionControl.GetMethodId(), &functionControl);
     if (method && method->IsWritten())
     {
