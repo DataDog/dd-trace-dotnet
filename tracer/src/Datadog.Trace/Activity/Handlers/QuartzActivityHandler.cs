@@ -36,19 +36,6 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: new OpenTelemetryTags(), out var activityMapping);
-
-            // Update the span.kind tag if available
-            if (activityMapping.Scope?.Span is Span span)
-            {
-                UpdateSpanKind(span, activity);
-            }
-        }
-
-        private static string DetermineSpanKind<T>(T activity)
-            where T : IActivity
-        {
-            // Default to internal for Quartz operations until we learn there are other span kinds
-            return "internal";
         }
 
         private static void UpdateSpanResourceName<T>(Span span, T activity)
@@ -68,24 +55,12 @@ namespace Datadog.Trace.Activity.Handlers
                 }
                 else
                 {
-                    Log.Debug("No job.name tag found in activity tags");
+                    Log.Debug("No job.name tag found in Activity.Tags");
                 }
             }
             else
             {
-                Log.Debug("Activity tags or resource name are null");
-            }
-        }
-
-        private static void UpdateSpanKind<T>(Span span, T activity)
-            where T : IActivity
-        {
-            // Add span.kind tag if not present
-            if (activity.Tags != null && !activity.Tags.Any(tag => tag.Key == "span.kind"))
-            {
-                // Determine appropriate span kind based on activity operation name or source
-                string spanKind = DetermineSpanKind(activity);
-                span.SetTag("span.kind", spanKind);
+                Log.Debug("Activity.Tags or Activity.OperationName are null");
             }
         }
 
@@ -103,17 +78,14 @@ namespace Datadog.Trace.Activity.Handlers
                 key = activity.Id;
             }
 
-            if (key != null && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope?.Span is Span span)
+            if (key != null && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope.Span is Span span)
             {
                 Log.Debug("ActivityStopped: Processing span for activity '{ActivityId}'", activity.Id);
 
-                // Apply OTLP processing manually (this is what ActivityHandlerCommon.ActivityStopped would do)
+                // Finish the span manually
                 OtlpHelpers.UpdateSpanFromActivity(activity, span);
-
-                // Now update the resource name after OTLP processing
                 UpdateSpanResourceName(span, activity);
 
-                // Finish the span manually
                 span.Finish(activity.StartTimeUtc.Add(activity.Duration));
                 activityMapping.Scope.Close();
             }

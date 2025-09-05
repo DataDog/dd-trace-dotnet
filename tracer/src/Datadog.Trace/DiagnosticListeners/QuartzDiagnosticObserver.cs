@@ -44,7 +44,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                     else
                     {
-                        Log.Debug("The activity was not Activity5 (< .NET 5.0. We were unable enhance the span metadata.");
+                        Log.Debug("The activity was not Activity5 (Less than .NET 5.0). Unable enhance the span metadata.");
                     }
 
                     break;
