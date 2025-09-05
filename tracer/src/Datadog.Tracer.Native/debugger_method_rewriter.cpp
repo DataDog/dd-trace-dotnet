@@ -2159,7 +2159,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     // First we check if the managed profiler has not been loaded yet
     if (!m_corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
     {
-        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() skipping method: The managed profiler has "
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() skipping method: Datadog.Trace.dll has "
                      "not yet been loaded into AppDomain with id=",
                      module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
                      caller->name, "()");
