@@ -24,7 +24,7 @@ namespace Samples.Kafka
             var producerConfig = new ProducerConfig
             {
                 BootstrapServers = config.BootstrapServers,
-                MessageTimeoutMs = 3000 // earlier versions would return right away when producing to invalid topics - later versions would block for 30 seconds
+                MessageTimeoutMs = 5_000 // earlier versions would return right away when producing to invalid topics - later versions would block for 30 seconds
             };
             
             using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
@@ -110,7 +110,7 @@ namespace Samples.Kafka
             var producerConfig = new ProducerConfig
             {
                 BootstrapServers = config.BootstrapServers,
-                MessageTimeoutMs = 3000 // earlier versions would return right away when producing to invalid topics - later versions would block for 30 seconds
+                MessageTimeoutMs = 5_000 // earlier versions would return right away when producing to invalid topics - later versions would block for 30 seconds
             };
 
             using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
@@ -131,11 +131,6 @@ namespace Samples.Kafka
                     else
                     {
                         producer.Produce(topic, message, deliveryHandler);
-                    }
-
-                    if (numMessages % FlushInterval == 0)
-                    {
-                        producer.Flush(FlushTimeout);
                     }
                 }
                 Flush(producer);
