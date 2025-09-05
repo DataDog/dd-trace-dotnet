@@ -79,7 +79,7 @@ static fs::path GetCurrentModuleFolderPath()
 
 static ::shared::WSTRING GetDatadogLogsDirectoryPath()
 {
-    ::shared::WSTRING directory = shared::GetEnvironmentValue(EnvironmentVariables::LogDirectory);
+    ::shared::WSTRING directory = shared::GetEnvironmentValue(environment::log_directory);
 
     if (directory.length() > 0)
     {
@@ -104,7 +104,7 @@ static ::shared::WSTRING GetDatadogLogsDirectoryPath()
 // Gets the configuration file path
 static fs::path GetConfigurationFilePath()
 {
-    fs::path env_configfile = shared::GetEnvironmentValue(EnvironmentVariables::ConfigFilepath);
+    fs::path env_configfile = shared::GetEnvironmentValue(environment::config_filepath);
 
     if (!env_configfile.empty())
     {
@@ -115,7 +115,7 @@ static fs::path GetConfigurationFilePath()
         {
             return env_configfile;
         }
-        Log::Warn("File set in '", EnvironmentVariables::ConfigFilepath, "' doesn't exist. Using the default path");
+        Log::Warn("File set in '", environment::config_filepath, "' doesn't exist. Using the default path");
     }
 
     return GetCurrentModuleFolderPath() / conf_filename;
