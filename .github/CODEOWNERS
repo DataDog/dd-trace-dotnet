@@ -25,7 +25,6 @@
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations/                                   @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.AfterFeature/      @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.BeforeFeature/     @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.NewerNuGet/        @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/ManualInstrumentationTests.cs                   @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/NetActivitySdkTests.cs                          @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
