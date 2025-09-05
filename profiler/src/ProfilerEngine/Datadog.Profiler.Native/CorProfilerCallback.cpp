@@ -7,6 +7,7 @@
 #include "corprof.h"
 // end
 
+/* TO REMOVE before merging. Added to force ASAN/UBSAN/TSAN jobs */
 #include "CorProfilerCallback.h"
 
 #include <inttypes.h>
