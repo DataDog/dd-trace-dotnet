@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Microsoft.VisualStudio.TestPlatform.TestFramework -->
+    <!--    Assembly: Microsoft.VisualStudio.TestPlatform.TestFramework -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.VisualStudio.TestPlatform/14.0.0.1 -->
+    <PackageReference Include="Microsoft.VisualStudio.TestPlatform" Version="14.0.0.1" />
+  </ItemGroup>
+
+</Project>

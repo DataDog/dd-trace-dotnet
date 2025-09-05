@@ -112,7 +112,9 @@ private:
     bool enable_by_ref_instrumentation = false;
     bool enable_calltarget_state_by_ref = false;
 
-    std::vector<Rejitter*> m_rejitters;
+    #define MAX_REJITTERS 4 // Increase this number when a new rejitter is added
+    Rejitter* m_rejitters[MAX_REJITTERS];
+    size_t m_rejittersCount = 0;
 
     Lock m_rejit_history_lock;
     std::vector<std::tuple<ModuleID, mdMethodDef>> m_rejit_history;

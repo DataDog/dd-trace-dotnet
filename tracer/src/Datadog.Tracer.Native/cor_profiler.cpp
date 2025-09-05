@@ -57,13 +57,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         if (isRunningInAas)
         {
-            Logger::Info("The Tracer Profiler is initialized multiple times. This is expected and currently unavoidable when running in AAS.");
+            Logger::Info("Instrumentation is initialized multiple times. This is expected and currently unavoidable when running in AAS.");
         }
         else
         {
-            Logger::Error("The Tracer Profiler is initialized multiple times. This may cause unpredictable failures.",
-                " When running aspnetcore in IIS, make sure to disable managed code in the application pool settings.",
-                " https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/advanced?view=aspnetcore-9.0#create-the-iis-site");
+            Logger::Error("Instrumentation is initialized multiple times. This may cause unpredictable failures.",
+                " When running ASP.NET Core in IIS, make sure to disable managed code in the Application Pool settings.",
+                " https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/advanced#create-the-iis-site");
         }
     }
 
@@ -74,34 +74,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
-
-    const auto [process_command_line , tokenized_command_line ] = GetCurrentProcessCommandLine();
-    Logger::Info("Process CommandLine: ", process_command_line);
-
-    // CI visibility checks
-    if (!process_command_line.empty())
-    {
-        bool is_ci_visibility_enabled = false;
-        if (shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(environment::ci_visibility_enabled),
-                                                    is_ci_visibility_enabled) &&
-            is_ci_visibility_enabled)
-        {
-            const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
-            const auto token_count = tokenized_command_line.size();
-            if (isDotNetProcess &&
-                token_count > 1 &&
-                tokenized_command_line[1] != WStr("test") &&
-                process_command_line.find(WStr("testhost")) == WSTRING::npos &&
-                process_command_line.find(WStr("exec")) == WSTRING::npos &&
-                process_command_line.find(WStr("datacollector")) == WSTRING::npos &&
-                process_command_line.find(WStr("vstest.console.dll")) == WSTRING::npos)
-            {
-                Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
-                    "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost' or 'datacollector' or 'vstest.console.dll' or 'exec'");
-                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-            }
-        }
-    }
 
 #if !defined(_WIN32) && (defined(ARM64) || defined(ARM))
     //
@@ -115,8 +87,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
     else
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET 5.0 runtime or greater is required on this "
-                     "architecture.");
+        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Instrumentation disabled: .NET 5.0 runtime or greater is required on ARM architectures.");
         return E_FAIL;
     }
 #endif
@@ -125,41 +96,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     HRESULT hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &this->info_);
     if (FAILED(hr))
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo7 not found.");
+        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach Instrumentation: interface ICorProfilerInfo7 not found.");
         return E_FAIL;
-    }
-
-    const auto& include_process_names = shared::GetEnvironmentValues(environment::include_process_names);
-
-    // if there is a process inclusion list, attach clrprofiler only if this
-    // process's name is on the list
-    if (!include_process_names.empty() && !shared::Contains(include_process_names, process_name))
-    {
-        Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name, " not found in ",
-                     environment::include_process_names, ".");
-        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-    }
-
-    // if we were on the explicit include list, don't check the block list
-    if (include_process_names.empty())
-    {
-        // attach clrprofiler only if this process's name is NOT on the blocklists
-        const auto& exclude_process_names = shared::GetEnvironmentValues(environment::exclude_process_names);
-        if (!exclude_process_names.empty() && shared::Contains(exclude_process_names, process_name))
-        {
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name, " found in ",
-                         environment::exclude_process_names, ".");
-            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-        }
-
-        for (auto&& exclude_assembly : default_exclude_assemblies)
-        {
-            if (process_name == exclude_assembly)
-            {
-                Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name," found in default exclude list");
-                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-            }
-        }
     }
 
     Logger::Info("Environment variables:");
@@ -169,40 +107,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         if (IsDebugEnabled() || !env_var_value.empty())
         {
             Logger::Info("  ", env_var, "=", env_var_value);
-        }
-    }
-
-    if (isRunningInAas)
-    {
-        Logger::Info("Profiler is operating within Azure App Services context.");
-
-        const auto& app_pool_id_value = shared::GetEnvironmentValue(environment::azure_app_services_app_pool_id);
-
-        if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~')
-        {
-            Logger::Info(
-                "DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", environment::azure_app_services_app_pool_id, " ",
-                app_pool_id_value, " is recognized as an Azure App Services infrastructure process.");
-            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-        }
-
-        const auto& cli_telemetry_profile_value =
-            shared::GetEnvironmentValue(environment::azure_app_services_cli_telemetry_profile_value);
-
-        if (cli_telemetry_profile_value == WStr("AzureKudu"))
-        {
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", app_pool_id_value,
-                         " is recognized as Kudu, an Azure App Services reserved process.");
-            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-        }
-
-        const auto& functions_worker_runtime_value =
-            shared::GetEnvironmentValue(environment::azure_app_services_functions_worker_runtime);
-
-        if (!functions_worker_runtime_value.empty() && !IsAzureFunctionsEnabled())
-        {
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler explicitly disabled for Azure Functions.");
-            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
         }
     }
 
@@ -236,7 +140,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     if (info8 == nullptr && runtime_information_.is_core())
     {
         Logger::Warn(
-            "DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET Core 2.0 or greater runtime is required for .NET Core automatic instrumentation.");
+            "DATADOG TRACER DIAGNOSTICS - Instrumentation disabled: .NET Core 2.0 or greater runtime is required for .NET Core automatic instrumentation.");
         return E_FAIL;
     }
 
@@ -321,7 +225,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     hr = this->info_->SetEventMask2(event_mask, high_event_mask);
     if (FAILED(hr))
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: unable to set event mask.");
+        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach Instrumentation: unable to set event mask.");
         return E_FAIL;
     }
 
@@ -347,7 +251,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto currentModuleFileName = shared::GetCurrentModuleFileName();
     if (currentModuleFileName == shared::EmptyWStr)
     {
-        Logger::Error("Profiler filepath: cannot be calculated.");
+        Logger::Error("Current module filepath: cannot be calculated.");
         return E_FAIL;
     }
 
@@ -375,8 +279,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // we're in!
-    Logger::Info("Profiler filepath: ", currentModuleFileName);
-    Logger::Info("Profiler attached.");
+    Logger::Info("Current module filepath: ", currentModuleFileName);
+    Logger::Info("Instrumentation attached.");
     this->info_->AddRef();
     is_attached_.store(true);
     profiler = this;
@@ -488,7 +392,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         else
         {
             Logger::Warn("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version,
-                         " did not match profiler version v", expected_version);
+                         " did not match native dll version v", expected_version);
         }
     }
 
@@ -565,7 +469,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
 
                         if (FAILED(hr))
                         {
-                            Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
+                            Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual native file path "
                                 "failed, trying to restore the previous one.");
                             hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
                                                                  shared::WSTRING(importName).c_str(), importModule);
@@ -592,7 +496,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
         {
             // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
             // These errors must be handled on the caller with a try/catch.
-            Logger::Warn("ModuleLoadFinished: Native Profiler DefineModuleRef failed");
+            Logger::Warn("ModuleLoadFinished: RewritingPInvokeMaps DefineModuleRef failed");
         }
     }
 }
@@ -1425,7 +1329,7 @@ void CorProfiler::DisableTracerCLRProfiler()
     // 2. We instrument code with SetILFunctionBody for the Loader injection.
     // (CORPROF_E_IRREVERSIBLE_INSTRUMENTATION_PRESENT)
     // https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo3-requestprofilerdetach-method
-    Logger::Info("Disabling Tracer CLR Profiler...");
+    Logger::Info("Disabling Instrumentation component");
     Shutdown();
 }
 
@@ -1481,7 +1385,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
         return S_OK;
     }
 
-    Logger::Info("Detaching profiler.");
+    Logger::Info("Detaching Instrumentation component");
     Logger::Flush();
     is_attached_.store(false);
     return S_OK;
@@ -3743,7 +3647,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     shared::WSTRING native_profiler_file = shared::GetCurrentModuleFileName();
-    DBG("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ", native_profiler_file);
+    DBG("GenerateVoidILStartupMethod: Setting the PInvoke Datadog.Tracer.Native library path to ", native_profiler_file);
 
     mdModuleRef profiler_ref;
     hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);

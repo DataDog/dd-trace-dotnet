@@ -680,18 +680,27 @@ partial class Build
 
                 var testBinFolder = testDir / "bin" / BuildConfiguration;
 
-                var (ext, source) = Platform switch
+                var (ext, source, libdatadog) = Platform switch
                 {
-                    PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}" / "datadog_profiling_ffi.dll"),
-                    PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch / "libdatadog_profiling.so"),
-                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx" / $"libdatadog_profiling.dylib"),
+                    PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}", "datadog_profiling_ffi.dll"),
+                    PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch, "libdatadog_profiling.so"),
+                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx", "libdatadog_profiling.dylib"),
                     _ => throw new NotSupportedException($"Unsupported platform: {Platform}")
+                };
+
+                var libs = new[]
+                {
+                    (libdatadog, $"LibDatadog.{ext}"),
+                    ($"Datadog.Tracer.Native.{ext}", $"Datadog.Tracer.Native.{ext}"),
                 };
 
                 foreach (var framework in frameworks)
                 {
-                    var dest = testBinFolder / framework / $"LibDatadog.{ext}";
-                    CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    foreach (var lib in libs)
+                    {
+                        var dest = testBinFolder / framework / lib.Item2;
+                        CopyFile(source / lib.Item1, dest, FileExistsPolicy.Overwrite);
+                    }
                 }
             }
         });

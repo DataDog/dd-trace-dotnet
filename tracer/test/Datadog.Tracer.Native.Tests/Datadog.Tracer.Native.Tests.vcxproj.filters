@@ -8,6 +8,7 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="version_struct_test.cpp" />
     <ClCompile Include="string_test.cpp" />
+    <ClCompile Include="util_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
