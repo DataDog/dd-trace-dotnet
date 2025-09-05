@@ -118,10 +118,8 @@ partial class Build
                 }
 
                 const string unlinkedLinesExplicitor = "[...]";
-                var crossVersionTestsNamePattern = new [] {"VersionMismatchNewerNugetTests"};
                 var diffCounts = new Dictionary<string, int>();
                 StringBuilder diffsInFile = new();
-                var considerUpdatingPublicFeed = false;
                 var lastLine = string.Empty;
                 foreach (var line in changes)
                 {
@@ -155,11 +153,6 @@ partial class Build
                         diffsInFile.AppendLine(unlinkedLinesExplicitor);
                         lastLine = string.Empty;
                     }
-
-                    if (!considerUpdatingPublicFeed && crossVersionTestsNamePattern.Any(p => line.Contains(p)))
-                    {
-                        considerUpdatingPublicFeed = true;
-                    }
                 }
 
                 RecordChange(diffsInFile, diffCounts);
@@ -168,11 +161,6 @@ partial class Build
                 markdown.AppendLine("## Snapshots difference summary").AppendLine();
                 markdown.AppendLine("The following differences have been observed in committed snapshots. It is meant to help the reviewer.");
                 markdown.AppendLine("The diff is simplistic, so please check some files anyway while we improve it.").AppendLine();
-
-                if (considerUpdatingPublicFeed)
-                {
-                    markdown.AppendLine("**Note** that this PR updates a version mismatch test. You may need to upgrade your code in the Azure public feed");
-                }
 
                 foreach (var diff in diffCounts)
                 {
