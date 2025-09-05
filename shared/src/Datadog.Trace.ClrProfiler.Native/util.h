@@ -24,7 +24,7 @@ const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
 // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
 // FIXME: this should also take into account case insensitivity, but that is not yet supported
 // https://devblogs.microsoft.com/oldnewthing/20241007-00/?p=110345
-const shared::WSTRING default_exclude_assemblies[]{
+const shared::WSTRING default_exclude_processes[]{
     WStr("aspnet_compiler.exe"),
     WStr("aspnet_state.exe"),
     WStr("CollectGuestLogs.exe"), // https://github.com/Azure/WindowsVMAgent
