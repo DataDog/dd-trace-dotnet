@@ -202,7 +202,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
                 PropagationContext extractedContext = default;
-#pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
+#pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
                 {
@@ -223,16 +223,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub", // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
                         _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos", // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid", // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
-                        _ => "Automatic", // Automatic is the catch all for any triggers we don't explicitly handle
+
+                        // TODO: should we use the value of `type`?
+                        _ => "Automatic", // Automatic is the catch-all for any triggers we don't explicitly handle
                     };
 
                     // need to extract the headers from the context.
                     // We currently only support httpTrigger, but other triggers may also propagate context,
                     // e.g. Cosmos + ServiceBus, so we should handle those too
-                    if (triggerType == "Http")
-                    {
-                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
-                    }
+                    // if (triggerType == "Http")
+                    // {
+                    //     extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                    // }
 
                     break;
                 }
@@ -250,12 +252,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // This is the root scope
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+
+                    if (context.TraceContext is { TraceParent: { } traceParent, TraceState: { } traceState })
+                    {
+                        W3CTraceContextPropagator.Instance.TryExtract(traceParent, traceState, out extractedContext);
+                    }
+
                     scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
                 }
                 else
                 {
                     // shouldn't be hit, but better safe than sorry
-                    scope = tracer.StartActiveInternal(OperationName);
+                    scope = tracer.StartActiveInternal(OperationName, tags: tags);
                     var rootSpan = scope.Root.Span;
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,

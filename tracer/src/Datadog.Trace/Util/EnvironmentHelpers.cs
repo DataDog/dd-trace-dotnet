@@ -110,13 +110,41 @@ namespace Datadog.Trace.Util
         /// <summary>
         /// Check if the current environment is Azure Functions
         /// by checking for the presence of "WEBSITE_SITE_NAME", "FUNCTIONS_WORKER_RUNTIME", and "FUNCTIONS_EXTENSION_VERSION".
-        /// Note that his is a subset of IsAzureAppServices().
+        /// Note that this is a subset of IsAzureAppServices().
         /// This method reads environment variables directly and bypasses the configuration system.
         /// </summary>
         public static bool IsAzureFunctions()
         {
             return IsAzureAppServices() &&
                    EnvironmentVariableExists(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime) &&
+                   EnvironmentVariableExists(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
+        }
+
+        /// <summary>
+        /// Check if the current environment is an isolated Azure Function.
+        /// by checking for the presence of "WEBSITE_SITE_NAME" and "FUNCTIONS_EXTENSION_VERSION",
+        /// and the value of "FUNCTIONS_WORKER_RUNTIME" is "dotnet-isolated".
+        /// Note that this is a subset of IsAzureFunctions(), which is a subset of IsAzureAppServices().
+        /// This method reads environment variables directly and bypasses the configuration system.
+        /// </summary>
+        public static bool IsAzureFunctionsIsolated()
+        {
+            return IsAzureAppServices() &&
+                   GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime) == "dotnet-isolated" &&
+                   EnvironmentVariableExists(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
+        }
+
+        /// <summary>
+        /// Check if the current environment is an in-process Azure Function.
+        /// by checking for the presence of "WEBSITE_SITE_NAME" and "FUNCTIONS_EXTENSION_VERSION",
+        /// and the value of "FUNCTIONS_WORKER_RUNTIME" is "dotnet".
+        /// Note that this is a subset of IsAzureFunctions(), which is a subset of IsAzureAppServices().
+        /// This method reads environment variables directly and bypasses the configuration system.
+        /// </summary>
+        public static bool IsAzureFunctionsInProcess()
+        {
+            return IsAzureAppServices() &&
+                   GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime) == "dotnet" &&
                    EnvironmentVariableExists(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
         }
 
