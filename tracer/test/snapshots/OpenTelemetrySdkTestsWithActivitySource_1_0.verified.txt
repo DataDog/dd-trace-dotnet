@@ -17,6 +17,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
@@ -45,6 +46,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -67,6 +69,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -89,6 +92,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -112,6 +116,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -135,6 +140,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -158,6 +164,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: producer,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -181,6 +188,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: consumer,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -204,6 +212,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -226,6 +235,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -248,6 +258,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -270,6 +281,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -293,6 +305,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -315,6 +328,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -337,6 +351,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -359,6 +374,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -380,6 +396,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -402,6 +419,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -423,6 +441,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -444,6 +463,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -465,6 +485,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: consumer,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -486,6 +507,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: producer,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -509,6 +531,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
@@ -547,6 +570,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
@@ -582,6 +606,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -603,6 +628,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -624,6 +650,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -645,6 +672,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -669,6 +697,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -698,6 +727,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -720,6 +750,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -742,6 +773,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -764,6 +796,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -785,6 +818,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     }
   },
@@ -806,6 +840,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
@@ -841,6 +876,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
@@ -906,6 +942,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      version: 1.0.x,
       _dd.base_service: CustomServiceName
     },
     Metrics: {
