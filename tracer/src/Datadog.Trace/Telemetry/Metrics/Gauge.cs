@@ -1,4 +1,4 @@
-﻿// <copyright file="Gauge.cs" company="Datadog">
+// <copyright file="Gauge.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 #nullable enable
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.SourceGenerators;
+using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
 
 namespace Datadog.Trace.Telemetry.Metrics;
 
@@ -27,4 +28,9 @@ internal enum Gauge
     /// The number of logs currently enqueued to the direct log submission sink
     /// </summary>
     [TelemetryMetric("direct_log_queue.length", isCommon: false)] DirectLogQueue,
+
+    /// <summary>
+    /// Gauge to track enabled services, a service must emit this gauge with a value of 1 on every heartbeat (or a fixed interval).
+    /// </summary>
+    [TelemetryMetric<MetricTags.AppSecEnabledOrigin>("enabled", isCommon: true, NS.ASM)] AsmEnabled,
 }
