@@ -14,14 +14,14 @@ bool IsExceptionReplayEnabled()
     CheckIfTrue(GetEnvironmentValue(environment::exception_replay_enabled));
 }
 
-bool IsDynamicInstrumentationStableConfigDisabled()
+bool IsDynamicInstrumentationManagedActivationDisabled()
 {
-    CheckIfFalse(GetEnvironmentValue(environment::dynamic_instrumentation_stable_config_enabled));
+    CheckIfFalse(GetEnvironmentValue(environment::dynamic_instrumentation_managed_activation_enabled));
 }
 
-bool IsExceptionReplayStableConfigDisabled()
+bool IsExceptionReplayManagedActivationDisabled()
 {
-    CheckIfFalse(GetEnvironmentValue(environment::exception_replay_stable_config_enabled));
+    CheckIfFalse(GetEnvironmentValue(environment::exception_replay_managed_activation_enabled));
 }
 
 bool IsDebuggerInstrumentAllEnabled()

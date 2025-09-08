@@ -22,11 +22,11 @@ namespace environment
     // Determines if the Exception Replay product is enabled.
     const WSTRING exception_replay_enabled = WStr("DD_EXCEPTION_REPLAY_ENABLED");
 
-    // Determines if Dynamic Instrumentation should be controlled by Stable Configuration
-    const WSTRING dynamic_instrumentation_stable_config_enabled = WStr("DD_DYNAMIC_INSTRUMENTATION_MANAGED_ACTIVATION_ENABLED");
+    // Determines if Dynamic Instrumentation should be controlled by managed activation
+    const WSTRING dynamic_instrumentation_managed_activation_enabled = WStr("DD_DYNAMIC_INSTRUMENTATION_MANAGED_ACTIVATION_ENABLED");
 
-    // Determines if Exception Replay should be controlled by Stable Configuration
-    const WSTRING exception_replay_stable_config_enabled = WStr("DD_EXCEPTION_REPLAY_MANAGED_ACTIVATION_ENABLED");
+    // Determines if Exception Replay should be controlled by managed activation
+    const WSTRING exception_replay_managed_activation_enabled = WStr("DD_EXCEPTION_REPLAY_MANAGED_ACTIVATION_ENABLED");
 
 } // namespace environment
 } // namespace debugger
