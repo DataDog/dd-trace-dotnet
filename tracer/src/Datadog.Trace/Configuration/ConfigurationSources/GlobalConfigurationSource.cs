@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Threading;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
@@ -20,12 +21,17 @@ namespace Datadog.Trace.Configuration;
 /// </summary>
 internal class GlobalConfigurationSource
 {
+    private static IConfigurationSource? _dynamicConfigConfigurationSource = null;
+    private static ManualInstrumentationConfigurationSource? _manualConfigurationSource = null;
+    private static GlobalConfigurationSourceResult _creationResult = CreateDefaultConfigurationSource();
+    private static CompositeConfigurationSource _instance = _creationResult.ConfigurationSource;
+
     /// <summary>
     /// Gets the configuration source instance.
     /// </summary>
-    internal static IConfigurationSource Instance => CreationResult.ConfigurationSource;
+    internal static IConfigurationSource Instance => _instance;
 
-    internal static GlobalConfigurationSourceResult CreationResult { get; private set; } = CreateDefaultConfigurationSource();
+    internal static GlobalConfigurationSourceResult CreationResult => _creationResult;
 
     /// <summary>
     /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
@@ -126,11 +132,53 @@ internal class GlobalConfigurationSource
     /// <param name="isLibdatadogAvailable">whether libdatadog is available</param>
     internal static void Reload(bool isLibdatadogAvailable)
     {
-        CreationResult = CreateDefaultConfigurationSource(isLibdatadogAvailable: isLibdatadogAvailable);
+        _creationResult = CreateDefaultConfigurationSource(isLibdatadogAvailable: isLibdatadogAvailable);
     }
 
     private static string GetCurrentDirectory()
     {
         return AppDomain.CurrentDomain.BaseDirectory ?? Directory.GetCurrentDirectory();
+    }
+
+    public static IConfigurationSource UpdateDynamicConfigConfigurationSource(IConfigurationSource dynamic)
+    {
+        var global = _creationResult.ConfigurationSource;
+        Interlocked.Exchange(ref _dynamicConfigConfigurationSource, dynamic);
+        var manual = _manualConfigurationSource;
+        var combined = CreateMutableConfigurationSource(dynamic, manual, global);
+        Interlocked.Exchange(ref _instance, combined);
+        return combined;
+    }
+
+    public static void UpdateManualConfigurationSource(ManualInstrumentationConfigurationSource manual)
+    {
+        var global = _creationResult.ConfigurationSource;
+        Interlocked.Exchange(ref _manualConfigurationSource, manual);
+        var dynamic = _dynamicConfigConfigurationSource;
+        var combined = CreateMutableConfigurationSource(dynamic, manual, global);
+        Interlocked.Exchange(ref _instance, combined);
+        return combined;
+    }
+
+    // Internal for testing only
+    internal static CompositeConfigurationSource CreateMutableConfigurationSource(
+        DynamicConfigConfigurationSource? dynamicConfigConfigurationSource,
+        ManualInstrumentationConfigurationSource? manualInstrumentationConfigurationSource,
+        CompositeConfigurationSource globalConfiguration)
+    {
+        // create a config source with the following priority
+        // - dynamic config (highest prio)
+        // - manual code config
+        // - remaining config (see CreateDefaultConfigurationSource)
+        if (dynamicConfigConfigurationSource is null)
+        {
+            return manualInstrumentationConfigurationSource is null
+                       ? globalConfiguration
+                       : new CompositeConfigurationSource([manualInstrumentationConfigurationSource, globalConfiguration]);
+        }
+
+        return manualInstrumentationConfigurationSource is null
+                   ? new CompositeConfigurationSource([dynamicConfigConfigurationSource, globalConfiguration])
+                   : new CompositeConfigurationSource([dynamicConfigConfigurationSource, manualInstrumentationConfigurationSource, globalConfiguration]);
     }
 }
