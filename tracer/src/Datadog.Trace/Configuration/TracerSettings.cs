@@ -404,10 +404,11 @@ namespace Datadog.Trace.Configuration
                                                value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
                                                             ? ParsingResult<bool>.Success(result: false)
                                                             : ParsingResult<bool>.Failure());
+
             _runtimeMetricsEnabled = config
                                    .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
                                    .AsBoolResult()
-                                   .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
+                                   .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: EnvironmentHelpers.ShouldActivateRuntimeMetrics(isRunningInCiVisibility));
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
