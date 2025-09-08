@@ -24,7 +24,7 @@ internal class GlobalConfigurationSource
     private static IConfigurationSource? _dynamicConfigConfigurationSource = null;
     private static ManualInstrumentationConfigurationSource? _manualConfigurationSource = null;
     private static GlobalConfigurationSourceResult _creationResult = CreateDefaultConfigurationSource();
-    private static CompositeConfigurationSource _instance = _creationResult.ConfigurationSource;
+    private static IConfigurationSource _instance = _creationResult.ConfigurationSource;
 
     /// <summary>
     /// Gets the configuration source instance.
@@ -150,9 +150,11 @@ internal class GlobalConfigurationSource
         return combined;
     }
 
-    public static void UpdateManualConfigurationSource(ManualInstrumentationConfigurationSource manual)
+    public static IConfigurationSource UpdateManualConfigurationSource(ManualInstrumentationConfigurationSource manual, bool useDefaultSources)
     {
-        var global = _creationResult.ConfigurationSource;
+        IConfigurationSource global = useDefaultSources
+                                          ? _creationResult.ConfigurationSource
+                                          : NullConfigurationSource.Instance;
         Interlocked.Exchange(ref _manualConfigurationSource, manual);
         var dynamic = _dynamicConfigConfigurationSource;
         var combined = CreateMutableConfigurationSource(dynamic, manual, global);
@@ -161,10 +163,10 @@ internal class GlobalConfigurationSource
     }
 
     // Internal for testing only
-    internal static CompositeConfigurationSource CreateMutableConfigurationSource(
-        DynamicConfigConfigurationSource? dynamicConfigConfigurationSource,
+    internal static IConfigurationSource CreateMutableConfigurationSource(
+        IConfigurationSource? dynamicConfigConfigurationSource,
         ManualInstrumentationConfigurationSource? manualInstrumentationConfigurationSource,
-        CompositeConfigurationSource globalConfiguration)
+        IConfigurationSource globalConfiguration)
     {
         // create a config source with the following priority
         // - dynamic config (highest prio)
