@@ -27,7 +27,7 @@ namespace Datadog.Trace.Activity
 
         private static object? _activityListenerInstance;
         private static Func<object>? _getCurrentActivity;
-        private static Action<object, ActivityKind>? _setKindProperty;
+        private static Action<object, object>? _setKindProperty;
 
         private static int _initialized = 0;
         private static int _stopped = 0;
@@ -307,7 +307,7 @@ namespace Datadog.Trace.Activity
 
         private static void CreateActivityKindSetter(Type activityType, Type activityKindType)
         {
-            _setKindProperty = (Action<object, ActivityKind>)activityType.GetProperty("Kind")!.SetMethod!.CreateDelegate(typeof(Action<,>).MakeGenericType(activityType, activityKindType));
+            _setKindProperty = (Action<object, object>)activityType.GetProperty("Kind")!.SetMethod!.CreateDelegate(typeof(Action<,>).MakeGenericType(activityType, activityKindType));
         }
     }
 }
