@@ -82,3 +82,10 @@ csharp_new_line_before_members_in_anonymous_types = true
 # Rider
 csharp_keep_existing_initializer_arrangement=true
 csharp_keep_existing_arrangement=true
+
+# Error when static analyzers aren't respected
+dotnet_diagnostic.RS0030.severity = error
+
+# Disables static analyzer errors for a specific folder
+[/tracer/src/Datadog.Trace/Vendors/**.*]
+dotnet_diagnostic.RS0030.severity = none
