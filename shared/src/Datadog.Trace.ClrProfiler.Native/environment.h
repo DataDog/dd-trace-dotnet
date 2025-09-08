@@ -23,8 +23,7 @@ public:
     // Sets whether the current process must run in CI Visibility mode or not.
     inline static const shared::WSTRING ci_visibility_enabled = WStr("DD_CIVISIBILITY_ENABLED");
 
-    // Indicates whether the CLR profiler is running from
-    // the Azure App Services site extension
+    // Indicates whether the Datadog SDK is running from the Azure App Services site extension
     inline static const shared::WSTRING is_azure_app_services_extension = WStr("DD_AZURE_APP_SERVICES");
 
     // The app_pool_id in the context of azure app services
@@ -38,8 +37,7 @@ public:
     // Used as a flag to determine that we are running within a functions app.
     inline static const shared::WSTRING azure_app_services_functions_worker_runtime = WStr("FUNCTIONS_WORKER_RUNTIME");
 
-    // Determine whether to instrument within azure functions.
-    // Default is true.
+    // Enables instrumentation of Azure Functions. Default value is true.
     inline static const shared::WSTRING azure_functions_instrumentation_enabled = WStr("DD_TRACE_AZURE_FUNCTIONS_ENABLED");
 
     inline static const ::shared::WSTRING config_filepath = WStr("DD_NATIVELOADER_CONFIGFILE");
