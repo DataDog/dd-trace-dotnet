@@ -307,21 +307,7 @@ namespace Datadog.Trace.Activity
 
         private static void CreateActivityKindSetter(Type activityType, Type activityKindType)
         {
-            try
-            {
-                _setKindProperty = (Action<object, ActivityKind>)activityType.GetProperty("Kind")!.SetMethod!.CreateDelegate(typeof(Action<>).MakeGenericType(activityType, activityKindType));
-            }
-            catch (ArgumentException ex)
-            {
-                // Happens on net5/Alpine.
-                // Swallow and leave _setKindProperty == null to gracefully no-op.
-                _setKindProperty = null;
-                Log.Debug(ex, "Could not create setter for ActivityKind");
-            }
-            catch
-            {
-                _setKindProperty = null;
-            }
+            _setKindProperty = (Action<object, ActivityKind>)activityType.GetProperty("Kind")!.SetMethod!.CreateDelegate(typeof(Action<,>).MakeGenericType(activityType, activityKindType));
         }
     }
 }

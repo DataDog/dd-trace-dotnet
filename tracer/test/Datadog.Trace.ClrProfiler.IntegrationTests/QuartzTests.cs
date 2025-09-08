@@ -88,7 +88,7 @@ public class QuartzTests : TracingIntegrationTest
     {
         if (string.IsNullOrEmpty(packageVersion))
         {
-            return Set(out expectedSpanCount, 0, "NoPackageVersion");
+            return Set(out expectedSpanCount, 0, packageVersion);
         }
 
         return new Version(packageVersion) switch
