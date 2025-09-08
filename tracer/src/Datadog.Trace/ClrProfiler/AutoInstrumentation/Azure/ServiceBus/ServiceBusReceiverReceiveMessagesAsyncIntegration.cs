@@ -111,22 +111,17 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             }
 
             // Check if all contexts are the same
-            var firstContext = extractedContexts[0];
-            var comparer = new SpanContextComparer();
-            var allSame = extractedContexts.All(ctx => comparer.Equals(ctx, firstContext));
+            var uniqueContexts = new HashSet<SpanContext>(extractedContexts, new SpanContextComparer());
 
-            if (allSame)
+            if (uniqueContexts.Count == 1)
             {
                 // All messages have the same context, use it as parent
-                return new ContextExtractionResult(firstContext, null);
+                return new ContextExtractionResult(uniqueContexts.First(), null);
             }
             else
             {
                 // Heterogeneous contexts, create span links to all of them
-                var spanLinks = extractedContexts
-                    .Distinct(new SpanContextComparer())
-                    .Select(ctx => new SpanLink(ctx))
-                    .ToList();
+                var spanLinks = uniqueContexts.Select(ctx => new SpanLink(ctx)).ToList();
                 return new ContextExtractionResult(null, spanLinks);
             }
         }

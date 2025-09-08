@@ -369,7 +369,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 // Extract from single message UserProperties
                 if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
-                    TryParseJson<Dictionary<string, object>>(singlePropsObj) is { } singleProps)
+                    TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps) && singleProps != null)
                 {
                     if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
                     {
@@ -379,7 +379,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 // Extract from batch UserPropertiesArray
                 if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true &&
-                    TryParseJson<Dictionary<string, object>[]>(arrayPropsObj) is { } propsArray)
+                    TryParseJson<Dictionary<string, object>[]>(arrayPropsObj, out var propsArray) && propsArray != null)
                 {
                     foreach (var props in propsArray)
                     {
@@ -418,22 +418,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return extractedContext.SpanContext;
         }
 
-        private static T? TryParseJson<T>(object? jsonObj)
+        private static bool TryParseJson<T>(object? jsonObj, out T? result)
             where T : class
         {
+            result = null;
             if (jsonObj is not string jsonString)
             {
-                return null;
+                return false;
             }
 
             try
             {
-                return JsonConvert.DeserializeObject<T>(jsonString);
+                result = JsonConvert.DeserializeObject<T>(jsonString);
+                return result != null;
             }
             catch (Exception ex)
             {
                 Log.Debug(ex, "Failed to parse JSON: {Json}", jsonString);
-                return null;
+                return false;
             }
         }
 

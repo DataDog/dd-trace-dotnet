@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(4, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
 
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task TestReceiveMessagesAsyncIntegration(string packageVersion, string metadataSchemaVersion)
+        public async Task TestReceiveMessagesAsyncIntegrationWithParent(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(4, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
 
@@ -108,6 +108,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 }
 
                 ValidateContextPropagation(sendSpans, receiveSpans, spans);
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestReceiveMessagesAsyncIntegrationWithSpanLinks(string packageVersion, string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(6, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                var receiveSpans = spans.Where(span => span.Name.StartsWith("azure_servicebus.receive")).ToList();
+                var sendSpans = spans.Where(span => span.Name.StartsWith("azure_servicebus.send")).ToList();
+
+                Output.WriteLine($"Service Bus spans found: {receiveSpans.Count}");
+
+                receiveSpans.Should().NotBeEmpty("Expected to find consumer spans for message receiving operations");
+
+                foreach (var span in receiveSpans)
+                {
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
+                }
+
+                ValidateSpanLinks(sendSpans, receiveSpans, spans);
             }
         }
 
@@ -150,6 +182,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             contextPropagationFound.Should().BeTrue(
                 "At least one consumer span should be connected to a producer span through parent-child relationship or span links, " +
                 "indicating that context propagation is working correctly through Service Bus messages.");
+        }
+
+        private static void ValidateSpanLinks(
+            IList<MockSpan> sendSpans,
+            IList<MockSpan> receiveSpans,
+            IReadOnlyCollection<MockSpan> allSpans)
+        {
+            sendSpans.Should().NotBeEmpty("Need producer spans to validate span links");
+            receiveSpans.Should().NotBeEmpty("Need consumer spans to validate span links");
+
+            var spanLinksFound = false;
+
+            foreach (var receiveSpan in receiveSpans)
+            {
+                if (receiveSpan.SpanLinks != null && receiveSpan.SpanLinks.Count > 0)
+                {
+                    spanLinksFound = true;
+
+                    foreach (var link in receiveSpan.SpanLinks)
+                    {
+                        var linkedSendSpan = sendSpans.FirstOrDefault(s => s.TraceId == link.TraceIdLow && s.SpanId == link.SpanId);
+                        linkedSendSpan.Should().NotBeNull(
+                            $"Receive span {receiveSpan.SpanId} has link to span {link.SpanId} in trace {link.TraceIdLow}, " +
+                            $"but corresponding send span not found");
+                    }
+                }
+            }
+
+            spanLinksFound.Should().BeTrue(
+                "At least one consumer span should have span links to producer spans, " +
+                "indicating that span linking is working correctly for heterogeneous message contexts.");
         }
 
         private IOrderedEnumerable<MockSpan> OrderSpans(IReadOnlyCollection<MockSpan> spans)

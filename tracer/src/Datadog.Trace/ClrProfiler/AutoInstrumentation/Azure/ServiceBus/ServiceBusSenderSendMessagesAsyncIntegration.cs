@@ -79,25 +79,7 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
     {
-        Scope? scope = state.Scope;
-
-        if (scope is null)
-        {
-            return returnValue;
-        }
-
-        try
-        {
-            if (exception != null)
-            {
-                scope.Span.SetException(exception);
-            }
-        }
-        finally
-        {
-            scope.Dispose();
-        }
-
+        state.Scope?.DisposeWithException(exception);
         return returnValue;
     }
 }
