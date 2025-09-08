@@ -132,8 +132,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
     public class GrpcHttpsTests : GrpcTestsBase
     {
-        private const string ServiceName = "Samples.GrpcDotNet";
-
         public GrpcHttpsTests(ITestOutputHelper output)
             : base("GrpcDotNet", output, usesAspNetCore: true)
         {
@@ -426,6 +424,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     throw new SkipException("Hit race condition in GRPC deadline exceeded");
                 }
+
+                throw;
             }
 
             bool IsGrpcClientSpan(MockSpan span)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -69,6 +69,7 @@ public class Worker : BackgroundService
 
                 SendUnaryRequest(client);
                 SendErrors(client);
+                SendInvalidContentTypeRequest(client);
                 SendVerySlowRequest(client);
             }
         }
@@ -214,7 +215,8 @@ public class Worker : BackgroundService
         try
         {
             _logger.LogInformation("Sending very slow request to self");
-            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(600));
+            // The delay in the method is 200 miliseconds.
+            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(20));
 
             throw new Exception("Received reply, when should have exceeded deadline");
         }
@@ -224,13 +226,30 @@ public class Worker : BackgroundService
         }
     }
 
+    private void SendInvalidContentTypeRequest(Greeter.GreeterClient client)
+    {
+        try
+        {
+            using var scope = CreateScope();
+            _logger.LogInformation("Sending request to InvalidContentTypeMethod to trigger BuildHttpErrorResponse");
+
+            // Call the new method that will throw an RpcException with invalid content type error
+            var reply = client.InvalidContentTypeMethod(new HelloRequest { Name = "GreeterClient" });
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.Internal)
+        {
+            _logger.LogInformation("Incorrect content type exception " + ex.Message);
+        }
+    }
+
     private void SendVerySlowRequest(Greeter.GreeterClient client)
     {
         using var scope = CreateScope();
         try
         {
             _logger.LogInformation("Sending very slow request to self");
-            client.VerySlow(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddSeconds(2));
+            // The delay in the method is 200 miliseconds.
+            client.VerySlow(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(20));
 
             throw new Exception("Received reply, when should have exceeded deadline");
         }
