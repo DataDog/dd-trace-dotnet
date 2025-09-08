@@ -109,6 +109,7 @@
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/StackTraceLeak/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RestSharp/  @DataDog/asm-dotnet
 /tracer/test/test-applications/integrations/Samples.ProcessStart/  @DataDog/asm-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.GrpcDotNet/  @DataDog/asm-dotnet @DataDog/tracing-dotnet
 
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
