@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
+using Datadog.Trace;
 
 namespace Samples.AzureServiceBus.APM
 {
@@ -19,6 +20,7 @@ namespace Samples.AzureServiceBus.APM
 
             try
             {
+                var tracer = Tracer.Instance;
                 var client = new ServiceBusClient(ConnectionString);
                 Console.WriteLine("ServiceBus client created successfully");
 
@@ -50,17 +52,20 @@ namespace Samples.AzureServiceBus.APM
                     Console.WriteLine("No message received within timeout");
                 }
 
-                Console.WriteLine("\n=== Multiple Messages ===");
-                var multipleMessages = new[]
-                {
-                    new ServiceBusMessage("Message 1") { MessageId = Guid.NewGuid().ToString() },
-                    new ServiceBusMessage("Message 2") { MessageId = Guid.NewGuid().ToString() },
-                    new ServiceBusMessage("Message 3") { MessageId = Guid.NewGuid().ToString() }
-                };
+                Console.WriteLine("\n=== Multiple Messages with Separate Scopes ===");
                 
-                Console.WriteLine("Sending 3 messages...");
-                await sender.SendMessagesAsync(multipleMessages);
-                Console.WriteLine("Multiple messages sent successfully");
+                // Call SendMessagesAsync three times, each with a separate scope
+                for (int i = 1; i <= 3; i++)
+                {
+                    using (var scope = tracer.StartActive($"send-batch-{i}"))
+                    {
+                        var batchMessage = new ServiceBusMessage($"Batch {i} Message");
+
+                        Console.WriteLine($"Sending batch {i} message with ID: {batchMessage.MessageId}");
+                        await sender.SendMessagesAsync(new[] { batchMessage });
+                        Console.WriteLine($"Batch {i} message sent successfully");
+                    }
+                }
 
                 // Receive multiple messages
                 Console.WriteLine("Attempting to receive messages...");

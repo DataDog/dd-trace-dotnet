@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
@@ -18,10 +17,10 @@ internal readonly struct ContextPropagation : ICarrierGetter<IDictionary<string,
     {
         if (carrier.TryGetValue(key, out var value) && value is string stringValue)
         {
-            return new[] { stringValue };
+            return [stringValue];
         }
 
-        return Enumerable.Empty<string>();
+        return [];
     }
 
     public void Set(IDictionary<string, object> carrier, string key, string value)
