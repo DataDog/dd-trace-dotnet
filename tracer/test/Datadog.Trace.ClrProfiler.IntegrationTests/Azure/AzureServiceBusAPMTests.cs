@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(4, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
 
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task TestReceiveMessagesAsyncIntegrationWithParent(string packageVersion, string metadataSchemaVersion)
+        public async Task TestReceiveMessagesAsyncIntegration(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
@@ -90,39 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
-
-                using var s = new AssertionScope();
-
-                var receiveSpans = spans.Where(span => span.Name.StartsWith("azure_servicebus.receive")).ToList();
-                var sendSpans = spans.Where(span => span.Name.StartsWith("azure_servicebus.send")).ToList();
-
-                Output.WriteLine($"Service Bus spans found: {receiveSpans.Count}");
-
-                receiveSpans.Should().NotBeEmpty("Expected to find consumer spans for message receiving operations");
-
-                foreach (var span in receiveSpans)
-                {
-                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
-                }
-
-                ValidateContextPropagation(sendSpans, receiveSpans, spans);
-            }
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task TestReceiveMessagesAsyncIntegrationWithSpanLinks(string packageVersion, string metadataSchemaVersion)
-        {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-            {
-                var spans = await agent.WaitForSpansAsync(6, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(4, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
 
@@ -143,45 +111,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             }
         }
 
-        private static void ValidateContextPropagation(
-            IList<MockSpan> sendSpans,
-            IList<MockSpan> receiveSpans,
-            IReadOnlyCollection<MockSpan> allSpans)
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestReceiveMessagesAsyncIntegrationMultiple(string packageVersion, string metadataSchemaVersion)
         {
-            sendSpans.Should().NotBeEmpty("Need producer spans to validate context propagation");
-            receiveSpans.Should().NotBeEmpty("Need consumer spans to validate context propagation");
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
 
-            var sendTraceIds = sendSpans.Select(s => s.TraceId).Distinct().ToList();
-            var receiveTraceIds = receiveSpans.Select(s => s.TraceId).Distinct().ToList();
-
-            var sharedTraceIds = sendTraceIds.Intersect(receiveTraceIds).ToList();
-            sharedTraceIds.Should().NotBeEmpty(
-                "Consumer spans should share trace IDs with producer spans, indicating successful context propagation. " +
-                $"Send trace IDs: [{string.Join(", ", sendTraceIds)}], " +
-                $"Receive trace IDs: [{string.Join(", ", receiveTraceIds)}]");
-
-            var contextPropagationFound = false;
-
-            foreach (var receiveSpan in receiveSpans)
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var parentSendSpan = sendSpans.FirstOrDefault(s => s.SpanId == receiveSpan.ParentId && s.TraceId == receiveSpan.TraceId);
-                if (parentSendSpan != null)
+                var spans = await agent.WaitForSpansAsync(4, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                var receiveSpans = spans.Where(span => span.Name.StartsWith("azure_servicebus.receive")).ToList();
+                var sendSpans = spans.Where(span => span.Name.StartsWith("azure_servicebus.send")).ToList();
+
+                Output.WriteLine($"Service Bus spans found: {receiveSpans.Count}");
+
+                receiveSpans.Should().NotBeEmpty("Expected to find consumer spans for message receiving operations");
+
+                foreach (var span in receiveSpans)
                 {
-                    contextPropagationFound = true;
-                    break;
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
                 }
 
-                var sameTraceProducers = sendSpans.Where(s => s.TraceId == receiveSpan.TraceId).ToList();
-                if (sameTraceProducers.Any())
-                {
-                    contextPropagationFound = true;
-                    break;
-                }
+                ValidateSpanLinks(sendSpans, receiveSpans, spans);
             }
-
-            contextPropagationFound.Should().BeTrue(
-                "At least one consumer span should be connected to a producer span through parent-child relationship or span links, " +
-                "indicating that context propagation is working correctly through Service Bus messages.");
         }
 
         private static void ValidateSpanLinks(

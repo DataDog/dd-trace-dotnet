@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
-using Datadog.Trace;
 
 namespace Samples.AzureServiceBus.APM
 {
@@ -20,7 +19,6 @@ namespace Samples.AzureServiceBus.APM
 
             try
             {
-                var tracer = Tracer.Instance;
                 var client = new ServiceBusClient(ConnectionString);
                 Console.WriteLine("ServiceBus client created successfully");
 
@@ -52,22 +50,19 @@ namespace Samples.AzureServiceBus.APM
                     Console.WriteLine("No message received within timeout");
                 }
 
-                Console.WriteLine("\n=== Multiple Messages with Separate Scopes ===");
+                Console.WriteLine("\n=== Multiple Messages ===");
                 
-                // Call SendMessagesAsync three times, each with a separate scope
-                for (int i = 1; i <= 3; i++)
+                var batchMessages = new ServiceBusMessage[3];
+                for (int i = 0; i < batchMessages.Length; i++)
                 {
-                    using (var scope = tracer.StartActive($"send-batch-{i}"))
-                    {
-                        var batchMessage = new ServiceBusMessage($"Batch {i} Message");
-
-                        Console.WriteLine($"Sending batch {i} message with ID: {batchMessage.MessageId}");
-                        await sender.SendMessagesAsync(new[] { batchMessage });
-                        Console.WriteLine($"Batch {i} message sent successfully");
-                    }
+                    batchMessages[i] = new ServiceBusMessage($"Batch {i} Message");
+                    Console.WriteLine($"Created batch {i} message with ID: {batchMessages[i].MessageId}");
                 }
+                
+                Console.WriteLine("Sending multiple messages...");
+                await sender.SendMessagesAsync(batchMessages);
+                Console.WriteLine("Multiple messages sent successfully");
 
-                // Receive multiple messages
                 Console.WriteLine("Attempting to receive messages...");
                 var receivedMessages = await receiver.ReceiveMessagesAsync(maxMessages: 3, maxWaitTime: TimeSpan.FromSeconds(10));
                 
