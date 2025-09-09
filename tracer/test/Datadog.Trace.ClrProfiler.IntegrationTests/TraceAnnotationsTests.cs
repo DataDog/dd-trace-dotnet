@@ -52,14 +52,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 #endif
 
-    public class TraceAnnotationsVersionMismatchNewerNuGetTests : TraceAnnotationsTests
-    {
-        public TraceAnnotationsVersionMismatchNewerNuGetTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.NewerNuGet", enableTelemetry: false, output)
-        {
-        }
-    }
-
     [UsesVerify]
     public abstract class TraceAnnotationsTests : TestHelper
     {

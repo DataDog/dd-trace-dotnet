@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: GraphQL -->
+    <!--    Assembly: GraphQL -->
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/8.5.0 -->
+    <PackageReference Include="GraphQL" Version="8.5.0" />
+  </ItemGroup>
+
+</Project>

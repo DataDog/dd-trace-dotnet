@@ -17,6 +17,11 @@ namespace Datadog.Trace.Tests.Headers.Ip
         [InlineData("192.168.1.1", 80, "192.168.1.1, 172.16.32.41, 172.16.32.43")]
         [InlineData("83.204.236.243", 80, "127.0.0.1, 83.204.236.243")]
         [InlineData("83.204.236.243", 80, "169.254.0.3, 83.204.236.243")]
+        [InlineData("83.204.236.243", 80, "100.65.0.2, 83.204.236.243")]
+        [InlineData("83.204.236.243", 80, "100.65.30.20, 83.204.236.243")]
+        [InlineData("83.204.236.243", 80, "100.126.30.20, 83.204.236.243")]
+        [InlineData("100.128.0.15", 80, "100.128.0.15, 83.204.236.243")]
+        [InlineData("100.200.0.50", 443, "100.200.0.50:443, 83.204.236.243")]
         public void Ipv4PublicDetectedLocalIgnored(string expectedIp, int expectedPort, string headerValue)
         {
             var ip = IpExtractor.RealIpFromValue(headerValue, https: false, RequestIpExtractor.DefaultHeaderComponentParser);

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: AWSSDK.SQS -->
+    <!--    Assembly: AWSSDK.SQS -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.1.2 -->
+    <PackageReference Include="AWSSDK.SQS" Version="4.0.1.2" />
+  </ItemGroup>
+
+</Project>

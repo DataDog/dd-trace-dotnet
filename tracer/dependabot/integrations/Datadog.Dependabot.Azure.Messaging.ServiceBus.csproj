@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Azure.Messaging.ServiceBus -->
+    <!--    Assembly: Azure.Messaging.ServiceBus -->
+    <!-- Latest package https://www.nuget.org/packages/Azure.Messaging.ServiceBus/7.20.1 -->
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.17.5" />
+  </ItemGroup>
+
+</Project>

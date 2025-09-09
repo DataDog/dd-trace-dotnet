@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: HotChocolate.Execution -->
+    <!--    Assembly: HotChocolate.Execution -->
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.1.10 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.10" />
+  </ItemGroup>
+
+</Project>

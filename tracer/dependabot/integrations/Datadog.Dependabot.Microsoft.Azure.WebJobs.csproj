@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Microsoft.Azure.WebJobs.Host -->
+    <!--    Assembly: Microsoft.Azure.WebJobs.Host -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.41 -->
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.41" />
+  </ItemGroup>
+
+</Project>

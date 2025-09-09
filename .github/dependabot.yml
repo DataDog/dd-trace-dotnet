@@ -1,31 +1,53 @@
+# yaml-language-server: $schema=https://json.schemastore.org/dependabot-2.0.json
 version: 2
+
+registries:
+# Dependabot doesn't need to use this, so try to stop it doing so
+  azure-nuget:
+    type: nuget-feed
+    url: https://pkgs.dev.azure.com/datadoghq/dd-trace-dotnet/_packaging/Public_Feed/nuget/v3/index.json
+  public-nuget:
+    type: nuget-feed
+    url: https://api.nuget.org/v3/index.json
+
+
 updates:
-  # Mocked projects for dependency notifications
+  # Mocked projects for vendored dependency notifications
   - package-ecosystem: "nuget"
     directory: "/tracer/dependabot"
+    registries: "*"
+    exclude-paths:
+      - "integrations"
     schedule:
-      interval: "daily"
+      interval: "weekly" # these don't change often
     labels:
       - "dependencies"
       - "area:dependabot"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
     ignore:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
       - dependency-name: "*" # Ignore patches for all integrations
         update-types: ["version-update:semver-patch"]
 
-  # Azure functions explicit testing - we can't include these with our "normal" process checks
-  # Because they aren't compatible with the dotnet msbuild approach we're using
+  # Mocked projects for integration dependency notifications
   - package-ecosystem: "nuget"
-    directory: "/tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated"
+    directory: "/tracer/dependabot/integrations"
+    registries: "*"
     schedule:
       interval: "daily"
     labels:
       - "dependencies"
       - "area:dependabot"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
+
+  # Azure functions explicit testing - we can't include these with our "normal" process checks
+  # Because they aren't compatible with the dotnet msbuild approach we're using
+  - package-ecosystem: "nuget"
+    directory: "/tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated"
+    registries: "*"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+      - "area:dependabot"
     ignore:
       - dependency-name: "*" # Ignore patches for all integrations
         update-types: ["version-update:semver-patch"]
@@ -33,13 +55,12 @@ updates:
   # Src libraries
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace"
+    registries: "*"
     schedule:
       interval: "daily"
     labels:
       - "dependencies"
       - "area:tracer"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
     ignore:
       ### Start Datadog.Trace.csproj ignored dependencies
       # DiagnosticSource is kept at the lowest supported version for widest compatibility
@@ -60,13 +81,12 @@ updates:
 
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace.OpenTracing"
+    registries: "*"
     schedule:
       interval: "daily"
     labels:
       - "dependencies"
       - "area:opentracing"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
     ignore:
       ### Start Datadog.Trace.csproj ignored dependencies
       # DiagnosticSource is kept at the lowest supported version for widest compatibility
@@ -81,15 +101,15 @@ updates:
       - dependency-name: "System.Reflection.Emit"
       - dependency-name: "System.Reflection.Emit.Lightweight"
       ### End Datadog.Trace.csproj ignored dependencies
+
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace.BenchmarkDotNet"
+    registries: "*"
     schedule:
       interval: "daily"
     labels:
       - "dependencies"
       - "area:benchmarks"
-    reviewers:
-      - "DataDog/apm-idm-dotnet"
     ignore:
       ### Start Datadog.Trace.csproj ignored dependencies
       # DiagnosticSource is kept at the lowest supported version for widest compatibility

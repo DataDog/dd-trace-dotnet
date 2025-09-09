@@ -100,6 +100,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="string_test.cpp" />
+    <ClCompile Include="util_test.cpp" />
     <ClCompile Include="version_struct_test.cpp" />
   </ItemGroup>
   <ItemGroup>

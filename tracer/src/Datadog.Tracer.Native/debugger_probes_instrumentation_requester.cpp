@@ -983,7 +983,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
 
         if (FAILED(hr) || managed_profiler_assemblyRef == mdAssemblyRefNil)
         {
-            Logger::Warn("Failed to resolve assembly ref of the tracer assembly. [ModuleId=", moduleInfo.id,
+            Logger::Warn("Failed to resolve assembly ref of Datadog.Trace.dll assembly. [ModuleId=", moduleInfo.id,
                          ", Assembly=", moduleInfo.assembly.name, ", Type=", typeInfo.name,
                          ", IsValueType=", typeInfo.valueType, "]");
             return;

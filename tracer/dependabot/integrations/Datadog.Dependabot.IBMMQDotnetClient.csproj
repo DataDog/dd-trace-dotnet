@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: amqmdnetstd -->
+    <!--    Assembly: amqmdnetstd -->
+    <!-- Latest package https://www.nuget.org/packages/IBMMQDotnetClient/9.4.3 -->
+    <PackageReference Include="IBMMQDotnetClient" Version="9.4.3" />
+  </ItemGroup>
+
+</Project>
