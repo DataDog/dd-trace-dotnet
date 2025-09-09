@@ -102,9 +102,52 @@ partial class Build
                     logOutput: false,
                     logInvocation: false);
             signProcess.WaitForExit();
+
+            var output = signProcess.Output.Select(o => o.Text);
+            foreach (var line in output)
+            {
+                Logger.Information("[dd-wcs] {Line}", line);
+
+                // dd-wcs will return 0 even if there are errors
+                if (line.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception($"Error found when signing {binaryPath}: {line}");
+                }
+            }
+
             if (signProcess.ExitCode == 0)
             {
-                PowerShellTasks.PowerShell($"Get-AuthenticodeSignature {binaryPath}");
+                var sigResult = PowerShellTasks.PowerShell(
+                    $"Get-AuthenticodeSignature '{binaryPath}' | Format-List",
+                    logOutput: false,
+                    logInvocation: false);
+
+                var lines = sigResult
+                    .Select(o => o.Text?.Trim())
+                    .Where(l => !string.IsNullOrEmpty(l))
+                    .ToList();
+
+                foreach (var line in lines)
+                {
+                    Logger.Information("[sigcheck] {Line}", line);
+                }
+
+                var statusLine = lines
+                    .FirstOrDefault(l => l.StartsWith("Status", StringComparison.OrdinalIgnoreCase));
+
+                if (statusLine != null)
+                {
+                    var status = statusLine.Split(':').Last().Trim();
+
+                    if (!status.Equals("Valid", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new Exception($"Signature verification failed for {binaryPath}: {status}");
+                    }
+                }
+                else
+                {
+                    throw new Exception($"Signature verification failed for {binaryPath}: no status line found");
+                }
             }
             else
             {
