@@ -488,9 +488,11 @@ namespace Datadog.Trace.Tests.Configuration
         [Theory]
         [InlineData("true", "none", true)]
         [InlineData("true", "otlp", true)]
+        [InlineData("true", "random", true)]
         [InlineData("true", null, true)]
         [InlineData("false", "none", false)]
         [InlineData("false", "otlp", false)]
+        [InlineData("false", "random", false)]
         [InlineData("false", null, false)]
         [InlineData("A", "none", false)]
         [InlineData("A", "otlp", false)]
@@ -512,7 +514,7 @@ namespace Datadog.Trace.Tests.Configuration
             settings.RuntimeMetricsEnabled.Should().Be(expected);
             Count? metric = (value, otelValue) switch
             {
-                (null, "otlp") => Count.OpenTelemetryConfigInvalid,
+                (null, "otlp") => null,
                 (null, "random") => Count.OpenTelemetryConfigInvalid,
                 (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
                 _ => null,

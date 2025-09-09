@@ -399,22 +399,34 @@ namespace Datadog.Trace.Configuration
             StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 
             var otelMetricsExporter = config
-                                            .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter);
+               .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter);
 
             OtelMetricsExporterEnabled = string.Equals(otelMetricsExporter.AsString(defaultValue: "otlp"), "otlp", StringComparison.OrdinalIgnoreCase);
 
-            var otelRuntimeMetricsEnabled = otelMetricsExporter
-                                           .AsBoolResult(value => value switch
-                                            {
-                                                not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
-                                                    => ParsingResult<bool>.Success(result: false),
-                                                _ => ParsingResult<bool>.Failure()
-                                            });
+            var otelExporterResult = otelMetricsExporter
+               .AsBoolResult(
+                    null,
+                    value => value switch
+                    {
+                        not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: false),
+                        not null when string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: true),
+                        _ => ParsingResult<bool>.Failure()
+                    });
 
-            _runtimeMetricsEnabled = config
-                            .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
-                            .AsBoolResult()
-                            .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
+            var runtimeMetricsEnabledResult = config
+                                             .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
+                                             .AsBoolResult();
+
+            if (runtimeMetricsEnabledResult.ConfigurationResult.IsPresent && otelExporterResult.ConfigurationResult.IsPresent)
+            {
+                ErrorLog.LogDuplicateConfiguration(ConfigurationKeys.RuntimeMetricsEnabled, ConfigurationKeys.OpenTelemetry.MetricsExporter);
+            }
+            else if (otelExporterResult.ConfigurationResult is { IsPresent: true, IsValid: false })
+            {
+                ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.MetricsExporter);
+            }
+
+            _runtimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
 
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
