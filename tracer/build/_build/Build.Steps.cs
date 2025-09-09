@@ -275,15 +275,7 @@ partial class Build
                 NuGetTasks.NuGetRestore(s => s
                     .SetTargetPath(Solution)
                     .SetVerbosity(NuGetVerbosity.Normal)
-                    .SetProcessCustomLogger((type, text) =>
-                    {
-                        if (type == OutputType.Std && IsServerBuild && (!text.StartsWith("Restored", StringComparison.OrdinalIgnoreCase) && !text.Contains("Warning", StringComparison.OrdinalIgnoreCase)))
-                        {
-                            return;
-                        }
-
-                        Serilog.Log.Information(text);
-                    })
+                    .SetProcessLogOutput(!IsServerBuild)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
             }
