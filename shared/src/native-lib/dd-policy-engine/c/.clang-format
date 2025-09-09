@@ -1,6 +1,0 @@
-BasedOnStyle: Chromium
-
-AlignAfterOpenBracket: BlockIndent
-AlignEscapedNewlines: Right
-ColumnLimit: 120
-PointerAlignment: Right
