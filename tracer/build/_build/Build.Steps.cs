@@ -275,7 +275,7 @@ partial class Build
                 NuGetTasks.NuGetRestore(s => s
                     .SetTargetPath(Solution)
                     .SetVerbosity(NuGetVerbosity.Normal)   // keep warnings/errors
-                    .SetProcessLogOutput(false)          // Drop stdout, keep stderr, no [DBG] messages
+                    .SetProcessLogOutput(!IsServerBuild)          // Drop stdout, keep stderr, no [DBG] messages
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
             }
