@@ -12,6 +12,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 {
@@ -31,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class EventDataBatchTryAddIntegration
     {
+        private const string OperationName = "azure-eventhubs.batch.add";
         private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventDataBatchTryAddIntegration));
 
@@ -44,35 +46,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 return CallTargetState.GetDefault();
             }
 
-            try
+            var tags = new EventHubProducerTags
             {
-                var activeScope = Tracer.Instance.ActiveScope;
-                if (activeScope != null && eventData?.Properties != null)
-                {
-                    // Inject trace context into the event before it's added to the batch
-                    AzureMessagingCommon.InjectContext(eventData.Properties, activeScope as Scope);
-                    Log.Debug(
-                        LogPrefix + "Injected trace context into EventData before adding to batch. MessageId: {0}",
-                        eventData.MessageId ?? "(null)");
-                }
-                else
-                {
-                    if (activeScope == null)
-                    {
-                        Log.Debug(LogPrefix + "No active scope to inject into EventData");
-                    }
-                    else if (eventData?.Properties == null)
-                    {
-                        Log.Debug(LogPrefix + "EventData.Properties is null, cannot inject trace context");
-                    }
-                }
-            }
-            catch (Exception ex)
+                Operation = "batch.add"
+            };
+
+            var scope = Tracer.Instance.StartActiveInternal(OperationName, tags: tags);
+            var span = scope.Span;
+
+            span.Type = SpanTypes.Queue;
+            span.ResourceName = "batch.add";
+
+            if (eventData?.Instance != null)
             {
-                Log.Error(ex, LogPrefix + "Error injecting trace context into EventData");
+                if (!string.IsNullOrEmpty(eventData.MessageId))
+                {
+                    span.SetTag("messaging.message_id", eventData.MessageId);
+                }
+
+                if (eventData.Properties != null)
+                {
+                    AzureMessagingCommon.InjectContext(eventData.Properties, scope);
+                }
             }
 
-            return CallTargetState.GetDefault();
+            return new CallTargetState(scope);
         }
 
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(
