@@ -166,7 +166,7 @@ internal static class DatadogLoggingFactory
 
     // Internal for testing
     internal static string GetLogDirectory(IConfigurationTelemetry telemetry)
-        => GetLogDirectory(GlobalConfigurationSource.CreateDefaultConfigurationSource(), telemetry);
+        => GetLogDirectory(GlobalConfigurationSource.Instance, telemetry);
 
     private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
@@ -252,7 +252,7 @@ internal static class DatadogLoggingFactory
         var maxLogFileSize = new ConfigurationBuilder(source, telemetry)
                             .WithKeys(ConfigurationKeys.MaxLogFileSize)
                             .GetAs(
-                                 () => DefaultMaxLogFileSize,
+                                 defaultValue: new(DefaultMaxLogFileSize, DefaultMaxLogFileSize.ToString(CultureInfo.InvariantCulture)),
                                  converter: x => long.TryParse(x, out var maxLogSize)
                                                      ? maxLogSize
                                                      : ParsingResult<long>.Failure(),

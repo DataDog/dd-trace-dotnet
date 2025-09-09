@@ -43,7 +43,7 @@ namespace datadog::shared::nativeloader
 
         if (FAILED(m_initializationResult))
         {
-            Log::Error("Error loading all cor profiler class factories.");
+            Log::Error("Error loading all CorProfiler class factories.");
             return m_initializationResult;
         }
 
@@ -51,7 +51,7 @@ namespace datadog::shared::nativeloader
 
         if (FAILED(m_initializationResult))
         {
-            Log::Error("Error loading all cor profiler instances.");
+            Log::Error("Error loading all CorProfiler instances.");
             return m_initializationResult;
         }
 
@@ -181,7 +181,7 @@ namespace datadog::shared::nativeloader
                 }
                 else
                 {
-                    Log::Warn("DynamicDispatcherImpl::LoadConfiguration: COR Profiler Type is invalid: ", type);
+                    Log::Warn("DynamicDispatcherImpl::LoadConfiguration: CorProfiler Type is invalid: ", type);
                 }
             }
         }
@@ -200,11 +200,11 @@ namespace datadog::shared::nativeloader
             {
                 if (result == CORPROF_E_PROFILER_CANCEL_ACTIVATION)
                 {
-                    Log::Info("The continuous profiler is disabled");
+                    Log::Info("The Continuous Profiler is disabled");
                 }
                 else
                 {
-                    Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory in: ",
+                    Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load Continuous Profiler class factory in: ",
                         m_continuousProfilerInstance->GetFilePath(), ", error code: ", result);
                 }
 
@@ -229,11 +229,11 @@ namespace datadog::shared::nativeloader
             {
                 if (result == CORPROF_E_PROFILER_CANCEL_ACTIVATION)
                 {
-                    Log::Info("The tracer is disabled");
+                    Log::Info("Instrumentation is disabled");
                 }
                 else
                 {
-                    Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load tracer class factory in: ",
+                    Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load Instrumentation class factory in: ",
                         m_tracerInstance->GetFilePath(), ", error code: ", result);
                 }
 
@@ -287,7 +287,7 @@ namespace datadog::shared::nativeloader
 
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the continuous profiler instance in: ",
+                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the Continuous Profiler instance in: ",
                      m_continuousProfilerInstance->GetFilePath(), ", error code: ", result);
 
                 // If we cannot load the class factory we release the instance.
@@ -309,7 +309,7 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_tracerInstance->LoadInstance();
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the tracer instance in: ",
+                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the Instrumentation instance in: ",
                     m_tracerInstance->GetFilePath(), ", error code: ", result);
 
                 // If we cannot load the class factory we release the instance.
@@ -360,7 +360,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_continuousProfilerInstance->DllCanUnloadNow();
             if (FAILED(hr))
             {
-                Log::Warn("DynamicDispatcherImpl::DllCanUnloadNow: Error calling the continuous profiler DllCanUnloadNow in: ",
+                Log::Warn("DynamicDispatcherImpl::DllCanUnloadNow: Error calling the Continuous Profiler DllCanUnloadNow in: ",
                      m_continuousProfilerInstance->GetFilePath());
                 result = hr;
             }
@@ -376,7 +376,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerInstance->DllCanUnloadNow();
             if (FAILED(hr))
             {
-                Log::Warn("DynamicDispatcherImpl::DllCanUnloadNow: Error calling the tracer DllCanUnloadNow in: ", m_tracerInstance->GetFilePath());
+                Log::Warn("DynamicDispatcherImpl::DllCanUnloadNow: Error calling the Instrumentation DllCanUnloadNow in: ", m_tracerInstance->GetFilePath());
                 result = hr;
             }
             else if (hr != S_OK)

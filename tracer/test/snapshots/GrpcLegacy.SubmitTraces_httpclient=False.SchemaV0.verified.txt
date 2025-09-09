@@ -1291,39 +1291,5 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
-  },
-  {
-    TraceId: Id_53,
-    SpanId: Id_56,
-    Name: grpc.request,
-    Resource: /greet.tester.Greeter/VerySlow,
-    Service: Samples.GrpcLegacy,
-    Type: grpc,
-    ParentId: Id_55,
-    Error: 1,
-    Tags: {
-      clientmeta: other-client-value,
-      component: Grpc,
-      env: integration_tests,
-      error.msg: Deadline Exceeded,
-      grpc.method.kind: unary,
-      grpc.method.name: VerySlow,
-      grpc.method.package: greet.tester,
-      grpc.method.path: /greet.tester.Greeter/VerySlow,
-      grpc.method.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      grpc.status.code: 4,
-      language: dotnet,
-      runtime-id: Guid_2,
-      servermeta: other-server-value,
-      span.kind: server
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
   }
 ]

@@ -976,19 +976,13 @@ namespace Datadog.Trace.TestHelpers
                 h => h.Value.ToList(),
                 StringComparer.OrdinalIgnoreCase);
 
-            object deserializedData = null;
+            MetricsData metricsData = null;
 
             if (request.PathAndQuery.StartsWith("/v1/metrics") && contentType.Contains("protobuf"))
             {
                 try
                 {
-                    var metricsData = MetricsData.Parser.ParseFrom(body);
-                    var resource = metricsData.ResourceMetrics;
-
-                    if (resource is not null)
-                    {
-                        deserializedData = resource;
-                    }
+                    metricsData = MetricsData.Parser.ParseFrom(body);
                 }
                 catch (Exception ex)
                 {
@@ -996,14 +990,14 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
 
-            if (deserializedData is not null)
+            if (metricsData is not null)
             {
                 OtlpRequests.Enqueue(new MockOtlpRequest(
                                          request.PathAndQuery,
                                          headersDict,
                                          body,
                                          contentType,
-                                         deserializedData));
+                                         metricsData));
             }
         }
 
@@ -1471,7 +1465,9 @@ namespace Datadog.Trace.TestHelpers
                     {
                         _log("Starting PipeServer " + _pipeName);
                         using var mutex = new ManualResetEventSlim();
+#pragma warning disable CA2025 // Ensure tasks using 'IDisposable' instances complete before the instances are disposed
                         var startPipe = StartNamedPipeServer(mutex);
+#pragma warning restore CA2025
                         _tasks.Add(startPipe);
                         mutex.Wait(5_000);
                     }
@@ -1508,7 +1504,9 @@ namespace Datadog.Trace.TestHelpers
                         // start a new Named pipe server to handle additional connections
                         // Yes, this is madness, but apparently the way it's supposed to be done
                         using var m = new ManualResetEventSlim();
+#pragma warning disable CA2025 // Ensure tasks using 'IDisposable' instances complete before the instances are disposed
                         _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
+#pragma warning restore CA2025
                         // Wait for the next instance to start listening before we handle this one
                         m.Wait(5_000);
 
@@ -1533,7 +1531,9 @@ namespace Datadog.Trace.TestHelpers
                         // unexpected exception, so start another listener
                         _log("Unexpected exception " + instance + " " + ex.ToString());
                         using var m = new ManualResetEventSlim();
+#pragma warning disable CA2025 // Ensure tasks using 'IDisposable' instances complete before the instances are disposed
                         _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
+#pragma warning restore CA2025
                         m.Wait(5_000);
                     }
                 }
@@ -1704,13 +1704,13 @@ namespace Datadog.Trace.TestHelpers
 
         public class MockOtlpRequest
         {
-            public MockOtlpRequest(string pathAndQuery, Dictionary<string, List<string>> headers, byte[] body, string contentType, object deserializedData)
+            public MockOtlpRequest(string pathAndQuery, Dictionary<string, List<string>> headers, byte[] body, string contentType, MetricsData metricsData)
             {
                 PathAndQuery = pathAndQuery;
                 Headers = headers;
                 Body = body;
                 ContentType = contentType;
-                DeserializedData = deserializedData;
+                MetricsData = metricsData;
             }
 
             public string PathAndQuery { get; }
@@ -1724,7 +1724,7 @@ namespace Datadog.Trace.TestHelpers
             /// <summary>
             /// Gets the deserialized protobuf data (if available)
             /// </summary>
-            public object DeserializedData { get; }
+            public MetricsData MetricsData { get; }
         }
     }
 }

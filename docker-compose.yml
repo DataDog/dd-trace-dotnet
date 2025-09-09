@@ -332,8 +332,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -383,8 +383,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -479,8 +479,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -531,8 +531,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -588,8 +588,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
@@ -662,8 +662,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -760,8 +760,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.203}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.203}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-preview.7.25380.108}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -824,7 +824,7 @@ services:
     - SNAPSHOT_CI=1
     # network.client.ip and http.client_ip differs between docker compose v1 and v2 - once we're migrated to v2 completely we can remove it from here
     # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,meta._dd.appsec.fp.http.endpoint,meta._dd.appsec.fp.http.header,meta._dd.appsec.fp.http.network
 
   smoke-tests:
     build:
@@ -1184,3 +1184,7 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Strong!Passw0rd
+
+  # keep syncronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\AerospikeFixture.cs
+  aerospike:
+    image: aerospike/aerospike-server:6.2.0.6

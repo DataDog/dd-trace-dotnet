@@ -35,8 +35,8 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 [UsesVerify]
 public class ProbesTests : TestHelper
 {
-    private const string AddedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument added probes definitions completed.";
-    private const string RemovedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to de-instrument probes definitions completed.";
+    private const string AddedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to instrument added probes definitions completed.";
+    private const string RemovedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.";
 
     private static readonly Type[] _unoptimizedNotSupportedTypes = new[]
     {
@@ -311,7 +311,7 @@ public class ProbesTests : TestHelper
 
             await sample.RunCodeSample();
 
-            await logEntryWatcher.WaitForLogEntry($"LiveDebugger.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
+            await logEntryWatcher.WaitForLogEntry($"Dynamic Instrumentation.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
 
             Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
 
@@ -835,7 +835,7 @@ public class ProbesTests : TestHelper
     {
         SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");

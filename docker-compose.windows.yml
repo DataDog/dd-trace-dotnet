@@ -35,7 +35,7 @@ services:
     environment:
     - SNAPSHOT_CI=1
       # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,meta._dd.appsec.fp.http.endpoint,meta._dd.appsec.fp.http.header,meta._dd.appsec.fp.http.network
 
   test-agent.iis.windows:
     build:
@@ -50,9 +50,10 @@ services:
     environment:
     - SNAPSHOT_CI=1
       # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
-      # The iis agent also ignores the _dd.appsec.waf.version because whether it appears in the 
-      # aspnet_core.request span is flaky
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,meta._dd.appsec.waf.version
+      # The iis agent also ignores the ReportWafInitInfoOnce metrics and tags because whether they appear in the
+      # aspnet_core.request span is flaky. Unfortunately, that _also_ makes sampling tags flaky
+      # _dd.tracer_kr, _sampling_priority_v1
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,meta._dd.appsec.fp.http.endpoint,meta._dd.appsec.fp.http.header,meta._dd.appsec.fp.http.network,meta._dd.appsec.waf.version,metrics._dd.appsec.event_rules.loaded,metrics._dd.appsec.event_rules.error_count,metrics._dd.tracer_kr,metrics._sampling_priority_v1
 
   # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
   # and only after switching to run Windows containers

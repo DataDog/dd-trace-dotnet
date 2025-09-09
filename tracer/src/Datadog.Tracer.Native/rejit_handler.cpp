@@ -87,8 +87,7 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             std::vector<mdMethodDef> methods;
             while (methodEnum->Next(1, &method, nullptr) == S_OK)
             {
-                Logger::Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId,
-                              ",MethodDef=", method.methodId, "]");
+                DBG("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId, ",MethodDef=", method.methodId, "]");
                 modules.push_back(method.moduleId);
                 methods.push_back(method.methodId);
                 total++;
@@ -294,7 +293,7 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
             if (enable_rejit_tracking)
             {
                 WriteLock wlock(m_rejit_history_lock);
-                for (auto i = 0; i < modulesVector.size(); i++)
+                for (size_t i = 0; i < modulesVector.size(); i++)
                 {
                     m_rejit_history.push_back({modulesVector[i], modulesMethodDef[i]});
                 }
@@ -346,7 +345,7 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
         return;
     }
 
-    Logger::Debug("RejitHandler::EnqueueForRejit");
+    DBG("RejitHandler::EnqueueForRejit");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), methods = std::move(modulesMethodDef),
                                     localPromise = promise, callRevertExplicitly = callRevertExplicitly]() mutable {
@@ -366,7 +365,7 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
 
 void RejitHandler::Shutdown()
 {
-    Logger::Debug("RejitHandler::Shutdown");
+    DBG("RejitHandler::Shutdown");
 
     // Wait for exiting the thread
     m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
@@ -375,9 +374,9 @@ void RejitHandler::Shutdown()
     WriteLock w_lock(m_shutdown_lock);
     m_shutdown.store(true);
 
-    for (auto rejitter : m_rejitters)
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        rejitter->Shutdown();
+        m_rejitters[x]->Shutdown();
     }
 
     m_profilerInfo = nullptr;
@@ -392,21 +391,24 @@ bool RejitHandler::IsShutdownRequested()
 
 void RejitHandler::RegisterRejitter(Rejitter* rejitter)
 {
-    if (m_rejitters.size() == 0)
+    if (m_rejittersCount == 0)
     {
-        m_rejitters.push_back(rejitter);
+        m_rejitters[m_rejittersCount++] = rejitter;
+        Logger::Info("RejitHandler::RegisterRejitter -> Registered Rejitter. Count : ", m_rejittersCount);
     }
     else
     {
-        auto it = m_rejitters.begin();
-        for (; it < m_rejitters.end(); it++)
+        size_t x = 0;
+        for (; x < m_rejittersCount; x++)
         {
-            if ((*it)->GetPriority() > rejitter->GetPriority())
+            if (m_rejitters[x]->GetPriority() > rejitter->GetPriority())
             {
                 break;
             }
         }
-        m_rejitters.insert(it, rejitter);
+
+        shared::Insert(m_rejitters, m_rejittersCount, x, rejitter);
+        Logger::Info("RejitHandler::RegisterRejitter -> Registered Rejitter at ", x, ". Count : ", m_rejittersCount);
     }
 }
 
@@ -425,9 +427,14 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
     FunctionControlWrapper functionControl((ICorProfilerInfo*)m_profilerInfo, moduleId, methodId);
 
     // Call all rejitters sequentially
-    for (auto rejitter : m_rejitters)
+    Rejitter* prev = nullptr;
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        hr = rejitter->RejitMethod(functionControl);
+        const auto current = m_rejitters[x];
+        if (current != prev)
+        {
+            current->RejitMethod(functionControl);
+        }
     }
 
     return functionControl.ApplyChanges(pFunctionControl);
@@ -475,9 +482,11 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
         return false;
     }
 
-    for (auto rejitter : m_rejitters)
+    Rejitter* prev = nullptr;
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        if (rejitter->HasModuleAndMethod(moduleId, methodDef))
+        const auto current = m_rejitters[x];
+        if (current != prev && current->HasModuleAndMethod(moduleId, methodDef))
         {
             return true;
         }
@@ -493,9 +502,15 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
         return;
     }
 
-    for (auto rejitter : m_rejitters)
+
+    Rejitter* prev = nullptr;
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        rejitter->RemoveModule(moduleId);
+        const auto current = m_rejitters[x];
+        if (current != prev)
+        {
+            current->RemoveModule(moduleId);
+        }
     }
 }
 
@@ -506,9 +521,14 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
         return;
     }
 
-    for (auto rejitter : m_rejitters)
+    Rejitter* prev = nullptr;
+    for (auto x = 0; x < m_rejittersCount; x++)
     {
-        rejitter->AddNGenInlinerModule(moduleId);
+        const auto current = m_rejitters[x];
+        if (current != prev)
+        {
+            current->AddNGenInlinerModule(moduleId);
+        }
     }
 }
 
@@ -533,7 +553,7 @@ bool RejitHandler::HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef) {
     }
 
     ReadLock rlock(m_rejit_history_lock);
-    for (auto i = 0; i < m_rejit_history.size(); i++)
+    for (size_t i = 0; i < m_rejit_history.size(); i++)
     {
         const auto mod_met_pair = m_rejit_history[i];
         if (get<0>(mod_met_pair) == moduleId && get<1>(mod_met_pair) == methodDef)

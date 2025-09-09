@@ -26,7 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
         // NOTE: we don't need to validate ALL runtimes but just one
         //
 
-        [TestAppFact("Samples.Computer01", new[] { "net9.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckEnvVarsInLogWithDefaultProfilers(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
@@ -123,7 +123,7 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
             threadLifetimeIsLogged.Should().BeTrue();
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net9.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckEnvVarsInLogWithDisabledProfilers(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);

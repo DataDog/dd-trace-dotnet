@@ -603,7 +603,7 @@ public class FuncInstrumentationTests
             return 42;
         };
         func = func.Instrument(callbacks);
-        var result = await func("Arg01").ConfigureAwait(false);
+        var result = await func("Arg01");
         result.Should().Be(43);
         callbacks.Count.Value.Should().Be(4);
 
@@ -634,7 +634,7 @@ public class FuncInstrumentationTests
                                                      await Task.Delay(100).ConfigureAwait(false);
                                                      return ((int)returnValue) + 1;
                                                  }));
-        result = await func2("Arg01").ConfigureAwait(false);
+        result = await func2("Arg01");
         using var scope = new AssertionScope();
         result.Should().Be(43);
         value.Should().Be(4);
@@ -668,7 +668,7 @@ public class FuncInstrumentationTests
                                                      Interlocked.Increment(ref value);
                                                      throw new InvalidOperationException("Expected");
                                                  }));
-        var result = await func("Arg01").ConfigureAwait(false);
+        var result = await func("Arg01");
         using var scope = new AssertionScope();
         value.Should().Be(4);
         result.Should().Be(42);
@@ -693,7 +693,7 @@ public class FuncInstrumentationTests
             async () =>
             {
                 result = new StrongBox<int>(await func("Arg01").ConfigureAwait(false));
-            }).ConfigureAwait(false);
+            });
 
         callbacks.Count.Value.Should().Be(4);
 
@@ -730,7 +730,7 @@ public class FuncInstrumentationTests
             async () =>
             {
                 result = new StrongBox<int>(await func2("Arg01").ConfigureAwait(false));
-            }).ConfigureAwait(false);
+            });
 
         value.Should().Be(4);
     }
@@ -753,7 +753,7 @@ public class FuncInstrumentationTests
             async () =>
             {
                 result = new StrongBox<int>(await func("Arg01").ConfigureAwait(false));
-            }).ConfigureAwait(false);
+            });
 
         callbacks.Count.Value.Should().Be(4);
 
@@ -789,7 +789,7 @@ public class FuncInstrumentationTests
             async () =>
             {
                 result = new StrongBox<int>(await func2("Arg01").ConfigureAwait(false));
-            }).ConfigureAwait(false);
+            });
 
         value.Should().Be(4);
     }

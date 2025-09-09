@@ -377,13 +377,13 @@ namespace iast
     HRESULT MethodInfo::SetMethodIL(ULONG nSize, LPCBYTE pMethodIL, ICorProfilerFunctionControl* pFunctionControl)
     {
         bool isRejit = pFunctionControl != nullptr;
-        trace::Logger::Debug("Setting temp IL ", isRejit ? "ReJit" : "  Jit", " for method ", GetKey());
+        DBG("Setting temp IL ", isRejit ? "ReJit" : "  Jit", " for method ", GetKey());
         _isWritten = false;
         FreeBuffer();
 
         if (pMethodIL == _pOriginalMehodIL || pMethodIL == _pMethodIL)
         {
-            trace::Logger::Debug("Same function body detected. Skipping SetMethodIL ", GetKey());
+            DBG("Same function body detected. Skipping SetMethodIL ", GetKey());
             return S_FALSE;
         }
 
@@ -393,7 +393,7 @@ namespace iast
 
         if (!_rewriter)
         {
-            trace::Logger::Debug("MethodInfo::SetMethodIL -> No rewritter present. Creating one to verify new IL...");
+            DBG("MethodInfo::SetMethodIL -> No rewritter present. Creating one to verify new IL...");
                 
             _rewriter = new ILRewriter(this);
             if (FAILED(_rewriter->Import(pMethodIL)))
@@ -405,7 +405,7 @@ namespace iast
         }
         else
         {
-            trace::Logger::Debug("MethodInfo::SetMethodIL -> Rewritter present. Verify new IL...");
+            DBG("MethodInfo::SetMethodIL -> Rewritter present. Verify new IL...");
         }
 
         if (_rewriter)
@@ -438,12 +438,12 @@ namespace iast
 
             if (pFunctionControl)
             {
-                trace::Logger::Debug("MethodInfo::SetMethodIL -> ReJIT : Setting IL for ", GetFullName());
+                DBG("MethodInfo::SetMethodIL -> ReJIT : Setting IL for ", GetFullName());
                 ApplyFinalInstrumentation(pFunctionControl);
             }
             else
             {
-                trace::Logger::Debug("MethodInfo::SetMethodIL ->   JIT : Setting IL for ", GetFullName());
+                DBG("MethodInfo::SetMethodIL ->   JIT : Setting IL for ", GetFullName());
             }
         }
         else
@@ -462,12 +462,11 @@ namespace iast
             if (HasChanges())
             {
                 hr = pFunctionControl->SetILFunctionBody(_nMethodIL, _pMethodIL);
-                trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation ReJIT from ", _nOriginalMehodIL, " to ",
-                                     _nMethodIL, " on ", GetKey(), " hr=", Hex(hr));
+                DBG("MethodInfo::ApplyFinalInstrumentation ReJIT from ", _nOriginalMehodIL, " to ", _nMethodIL, " on ", GetKey(), " hr=", Hex(hr));
             }
             else
             {
-                trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation ReJIT SKIPPED (method did not change)");
+                DBG("MethodInfo::ApplyFinalInstrumentation ReJIT SKIPPED (method did not change)");
             }
         }
         else
@@ -476,7 +475,7 @@ namespace iast
             {
                 if (_pOriginalMehodIL)
                 {
-                    trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation WARNING, Reinstrumentation detected. Restore DISABLED ", GetKey());
+                    DBG("MethodInfo::ApplyFinalInstrumentation WARNING, Reinstrumentation detected. Restore DISABLED ", GetKey());
                 }
                 return hr;
             }
@@ -505,7 +504,7 @@ namespace iast
             }
             _isWritten = true;
 
-            trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation   JIT from ", _nOriginalMehodIL, " to ", _nMethodIL, " on ", GetKey());
+            DBG("MethodInfo::ApplyFinalInstrumentation   JIT from ", _nOriginalMehodIL, " to ", _nMethodIL, " on ", GetKey());
         }
 
         FreeBuffer(); //To save memory

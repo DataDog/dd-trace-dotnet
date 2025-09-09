@@ -39,7 +39,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleInjected => "context_header_style.injected",
             Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleExtracted => "context_header_style.extracted",
             Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderTruncated => "context_header.truncated",
-            Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderMalformed => "context_header.malformed",
+            Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderMalformed => "context_header_style.malformed",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiRequests => "stats_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiResponses => "stats_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiErrors => "stats_api.errors",

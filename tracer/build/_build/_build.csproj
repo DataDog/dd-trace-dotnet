@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <TargetFramework Condition="$(USE_NATIVE_SDK_VERSION) == 'true'">net7.0</TargetFramework>
     <TargetFramework Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(TargetFramework)-windows10.0.19041</TargetFramework>
     <DefineConstants Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(DefineConstants);NUKE_NOTIFY</DefineConstants>
@@ -14,10 +14,10 @@
     <NukeExcludeDirectoryBuild>True</NukeExcludeDirectoryBuild>
     <NukeTasksEnabled>False</NukeTasksEnabled>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
-    <!-- We need to run with both the .NET 7 and .NET 9 SDKs, because .NET 7 is the -->
+    <!-- We need to run with both the .NET 7 and .NET 10 SDKs, because .NET 7 is the -->
     <!-- latest version we can use in CentOs 7 -->
     <LangVersion>11</LangVersion>
-    <!-- Required, otherwise we can run with .NET 8 -->
+    <!-- Required, otherwise we can't run with .NET 8 -->
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
 
@@ -46,7 +46,7 @@
     <PackageReference Include="Sep" Version="0.7.0" />
     <PackageReference Include="ByteSize" Version="2.1.0" />
     <!-- Enable binary serialization for .NET 9 -->
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="9.0.0" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="10.0.0-preview.7.25380.108" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
   </ItemGroup>
 
   <!-- On it's own, since windows only and just used for notifications -->
@@ -74,6 +74,10 @@
       <!-- We have to force this name because somehow on macOS, it's named without the first 'Honeypot.' -->
       <LogicalName>Honeypot.Datadog.Dependabot.Honeypot.template</LogicalName>
     </EmbeddedResource>
+    <None Remove="NativeValidation\alpine3_14_Libgcc10_3_1.txt" />
+    <EmbeddedResource Include="NativeValidation\alpine3_14_Libgcc10_3_1.txt" />
+    <None Remove="NativeValidation\alpine3_14_Musl1_2_2.txt" />
+    <EmbeddedResource Include="NativeValidation\alpine3_14_Musl1_2_2.txt" />
   </ItemGroup>
 
 </Project>

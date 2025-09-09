@@ -309,8 +309,8 @@ public class TelemetryControllerTests
 
         var endpoints = payload.Endpoints;
 
-        endpoints.Should().Contain(x => x.Method == "GET" && x.Path == "/api/test" && x.Type == "REST" && x.OperationName == "http.request");
-        endpoints.Should().Contain(x => x.Method == "POST" && x.Path == "/api/test" && x.Type == "REST" && x.OperationName == "http.request");
+        endpoints.Should().Contain(x => x.Method == "GET" && x.Path == "/api/test" && x.Type == "REST" && x.OperationName == "http.request" && x.ResourceName == "GET /api/test");
+        endpoints.Should().Contain(x => x.Method == "POST" && x.Path == "/api/test" && x.Type == "REST" && x.OperationName == "http.request" && x.ResourceName == "POST /api/test");
 
         await controller.DisposeAsync();
     }

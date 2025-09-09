@@ -38,7 +38,7 @@ namespace datadog::shared::nativeloader
         {                                                                                                              \
             std::ostringstream hexValue;                                                                               \
             hexValue << std::hex << hr;                                                                                \
-            Log::Warn("CorProfiler::", STR(EXPR), ": [Tracer] Error in ", STR(EXPR), " call: ", hexValue.str());            \
+            Log::Warn("CorProfiler::", STR(EXPR), ": [Instrumentation] Error in ", STR(EXPR), " call: ", hexValue.str());            \
             gHR = hr;                                                                                                  \
         }                                                                                                              \
     }                                                                                                                  \
@@ -125,13 +125,16 @@ namespace datadog::shared::nativeloader
         const auto process_name = ::shared::GetCurrentProcessName();
         Log::Debug("ProcessName: ", process_name);
 
+        const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
+        Log::Info("Process CommandLine: ", process_command_line);
+
         const auto& include_process_names = GetEnvironmentValues(EnvironmentVariables::IncludeProcessNames);
 
         // if there is a process inclusion list, attach clrprofiler only if this
         // process's name is on the list
         if (!include_process_names.empty() && !Contains(include_process_names, process_name))
         {
-            Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name, " not found in ",
+            Log::Info("CorProfiler::Initialize Datadog SDK disabled: ", process_name, " not found in ",
                          EnvironmentVariables::IncludeProcessNames, ".");
             return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
         }
@@ -143,7 +146,7 @@ namespace datadog::shared::nativeloader
             const auto& exclude_process_names = GetEnvironmentValues(EnvironmentVariables::ExcludeProcessNames);
             if (!exclude_process_names.empty() && Contains(exclude_process_names, process_name))
             {
-                Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name, " found in ",
+                Log::Info("CorProfiler::Initialize Datadog SDK disabled: ", process_name, " found in ",
                              EnvironmentVariables::ExcludeProcessNames, ".");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
@@ -152,7 +155,7 @@ namespace datadog::shared::nativeloader
             {
                 if (process_name == exclude_assembly)
                 {
-                    Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name," found in default exclude list");
+                    Log::Info("CorProfiler::Initialize Datadog SDK disabled: ", process_name," found in default exclude list");
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                 }
             }
@@ -162,9 +165,6 @@ namespace datadog::shared::nativeloader
             // don't give useful information, add latency, and risk triggering bugs in the runtime,
             // particularly around shutdown, like this one: https://github.com/dotnet/runtime/issues/55441
             // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
-           const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
-            Log::Info("Process CommandLine: ", process_command_line);
-
             if (!process_command_line.empty())
             {
                 const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
@@ -228,10 +228,72 @@ namespace datadog::shared::nativeloader
 
                     if (is_ignored_command)
                     {
-                        Log::Info("The Tracer Profiler has been disabled because the process is 'dotnet' "
+                        Log::Info("Instrumentation has been disabled because the process name is 'dotnet' "
                             "but an unsupported command was detected");
                         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                     }
+
+                    // Additional Special case CI Visibility checks
+                    bool is_ci_visibility_enabled = false;
+                    if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(EnvironmentVariables::CiVisibilityEnabled), is_ci_visibility_enabled)
+                        && is_ci_visibility_enabled)
+                    {
+                        if (tokenized_command_line[1] != WStr("test") &&
+                            process_command_line.find(WStr("testhost")) == WSTRING::npos &&
+                            process_command_line.find(WStr("exec")) == WSTRING::npos &&
+                            process_command_line.find(WStr("datacollector")) == WSTRING::npos &&
+                            process_command_line.find(WStr("vstest.console.dll")) == WSTRING::npos)
+                        {
+                            Log::Info("Instrumentation disabled because the process is running in CI Visibility "
+                                "mode and its name is 'dotnet', but the command line doesn't contain 'testhost', 'datacollector', 'vstest.console.dll', or 'exec'");
+                            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                        }
+                    }
+                }
+            }
+        }
+
+        // AAS checks
+        bool isRunningInAas;
+        if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(EnvironmentVariables::IsAzureAppServicesExtension),
+                                            isRunningInAas) && isRunningInAas)
+        {
+            Log::Info("Azure App Services detected.");
+
+            const auto& app_pool_id_value = GetEnvironmentValue(EnvironmentVariables::AzureAppServicesAppPoolId);
+
+            if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~')
+            {
+                Log::Info(
+                    "DATADOG TRACER DIAGNOSTICS - Datadog SDK disabled: ", EnvironmentVariables::AzureAppServicesAppPoolId, " ",
+                    app_pool_id_value, " is an Azure App Services infrastructure process.");
+                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+            }
+
+            const auto& cli_telemetry_profile_value =
+                GetEnvironmentValue(EnvironmentVariables::AzureAppServicesCliTelemetryProfilerValue);
+
+            if (cli_telemetry_profile_value == WStr("AzureKudu"))
+            {
+                Log::Info("DATADOG TRACER DIAGNOSTICS - Datadog SDK disabled: ", app_pool_id_value,
+                             " is Kudu, an Azure App Services reserved process.");
+                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+            }
+
+            const auto& functions_worker_runtime_value =
+                GetEnvironmentValue(EnvironmentVariables::AzureAppServicesFunctionsWorkerRuntime);
+
+            if (!functions_worker_runtime_value.empty())
+            {
+                // enabled by default
+                bool azure_functions_enabled;
+                if (TryParseBooleanEnvironmentValue(
+                        GetEnvironmentValue(
+                            EnvironmentVariables::AzureFunctionsInstrumentationEnabled),
+                        azure_functions_enabled) && !azure_functions_enabled)
+                {
+                    Log::Info("DATADOG TRACER DIAGNOSTICS - Datadog SDK explicitly disabled for Azure Functions.");
+                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                 }
             }
         }
@@ -245,7 +307,7 @@ namespace datadog::shared::nativeloader
         HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &info4);
         if (FAILED(hr))
         {
-            Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
+            Log::Warn("CorProfiler::Initialize: Failed to attach Datadog SDK, interface ICorProfilerInfo4 not found.");
             // we're not recording the exact version here, we just know that at this point it's not enough
             single_step_guard_rails.RecordBootstrapError(SingleStepGuardRails::NetFrameworkRuntime, inferredVersion, "incompatible_runtime");
             return E_FAIL;
@@ -476,7 +538,7 @@ namespace datadog::shared::nativeloader
 
                     Log::Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
                     Log::Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
-                    Log::Info("CorProfiler::Initialize: Tracer Profiler initialized successfully.");
+                    Log::Info("CorProfiler::Initialize: Instrumentation initialized successfully.");
                 }
                 else
                 {
@@ -485,7 +547,7 @@ namespace datadog::shared::nativeloader
             }
             else
             {
-                Log::Warn("CorProfiler::Initialize: Error Initializing the Tracer Profiler, unloading the dynamic library.");
+                Log::Warn("CorProfiler::Initialize: Error Initializing the Instrumentation component, unloading the dynamic library.");
                 m_tracerProfiler = nullptr;
             }
         }
@@ -1151,80 +1213,80 @@ namespace datadog::shared::nativeloader
         {
             Log::Info(
                 "No ICorProfilerInfoXxx available. Null pointer was passed to CorProfilerCallback for initialization."
-                " No compatible Profiling API is available.");
+                " No compatible ICorProfiler API is available.");
             return "";
         }
 
         IUnknown* tstVerProfilerInfo;
         if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo12 available. Profiling API compatibility: .NET Core 5.0 or later.");
+            Log::Info("ICorProfilerInfo12 available. ICorProfiler API compatibility: .NET Core 5.0 or later.");
             tstVerProfilerInfo->Release();
             return "5.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 3.1 or later.");
+            Log::Info("ICorProfilerInfo11 available. ICorProfiler API compatibility: .NET Core 3.1 or later.");
             tstVerProfilerInfo->Release();
             return "3.1.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.0 or later.");
+            Log::Info("ICorProfilerInfo10 available. ICorProfiler API compatibility: .NET Core 3.0 or later.");
             tstVerProfilerInfo->Release();
             return "3.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
+            Log::Info("ICorProfilerInfo9 available. ICorProfiler API compatibility: .NET Core 2.2 or later.");
             tstVerProfilerInfo->Release();
             return "2.1.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo8 available. Profiling API compatibility: .NET Fx 4.7.2 or later.");
+            Log::Info("ICorProfilerInfo8 available. ICorProfiler API compatibility: .NET Fx 4.7.2 or later.");
             tstVerProfilerInfo->Release();
             return "4.7.2";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo7 available. Profiling API compatibility: .NET Fx 4.6.1 or later.");
+            Log::Info("ICorProfilerInfo7 available. ICorProfiler API compatibility: .NET Fx 4.6.1 or later.");
             tstVerProfilerInfo->Release();
             return "4.6.1";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo6 available. Profiling API compatibility: .NET Fx 4.6 or later.");
+            Log::Info("ICorProfilerInfo6 available. ICorProfiler API compatibility: .NET Fx 4.6 or later.");
             tstVerProfilerInfo->Release();
             return "4.6.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo5 available. Profiling API compatibility: .NET Fx 4.5.2 or later.");
+            Log::Info("ICorProfilerInfo5 available. ICorProfiler API compatibility: .NET Fx 4.5.2 or later.");
             tstVerProfilerInfo->Release();
             return "4.5.2";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo4 available. Profiling API compatibility: .NET Fx 4.5 or later.");
+            Log::Info("ICorProfilerInfo4 available. ICorProfiler API compatibility: .NET Fx 4.5 or later.");
             tstVerProfilerInfo->Release();
             return "4.5.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo3 available. Profiling API compatibility: .NET Fx 4.0 or later.");
+            Log::Info("ICorProfilerInfo3 available. ICorProfiler API compatibility: .NET Fx 4.0 or later.");
             tstVerProfilerInfo->Release();
             return "4.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo2), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo2 available. Profiling API compatibility: .NET Fx 2.0 or later.");
+            Log::Info("ICorProfilerInfo2 available. ICorProfiler API compatibility: .NET Fx 2.0 or later.");
             tstVerProfilerInfo->Release();
             return "2.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo available. Profiling API compatibility: .NET Fx 2 or later.");
+            Log::Info("ICorProfilerInfo available. ICorProfiler API compatibility: .NET Fx 2 or later.");
             tstVerProfilerInfo->Release();
             return "2.0.0";
         }
@@ -1233,7 +1295,7 @@ namespace datadog::shared::nativeloader
             Log::Info("No ICorProfilerInfoXxx available. A valid IUnknown pointer was passed to CorProfilerCallback"
                  " for initialization, but QueryInterface(..) did not succeed for any of the known "
                  "ICorProfilerInfoXxx ifaces."
-                 " No compatible Profiling API is available.");
+                 " No compatible ICorProfiler API is available.");
             return "";
         }
     }
@@ -1254,12 +1316,12 @@ namespace datadog::shared::nativeloader
         {
             std::ostringstream hex;
             hex << std::hex << hrGRI;
-            Log::Info("Initializing the Profiler: Exact runtime version could not be obtained (0x", hex.str(), ")");
+            Log::Info("Initializing the Datadog SDK: Exact runtime version could not be obtained (0x", hex.str(), ")");
             return {};
         }
         else
         {
-            Log::Info("Initializing the Profiler: Reported runtime version : { clrInstanceId: ", clrInstanceId,
+            Log::Info("Initializing the Datadog SDK: Reported runtime version : { clrInstanceId: ", clrInstanceId,
                  ", runtimeType:",
                  ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR"
                   : (runtimeType == COR_PRF_CORE_CLR)
@@ -1275,7 +1337,7 @@ namespace datadog::shared::nativeloader
     {
         if (m_this == nullptr)
         {
-            Log::Warn("The native loader library is not properly initialized. We cannot get the current AppDomain Id.");
+            Log::Warn("The Datadog SDK is not properly initialized. We cannot get the current AppDomain Id.");
             return (AppDomainID)0;
         }
 
@@ -1306,7 +1368,7 @@ namespace datadog::shared::nativeloader
     {
         if (m_this == nullptr)
         {
-            Log::Warn("The native loader library is not properly initialized. We cannot get the runtime id for the AppDomain ID #", appDomain);
+            Log::Warn("The Datadog SDK is not properly initialized. We cannot get the runtime id for the AppDomain ID #", appDomain);
             return nullptr;
         }
 

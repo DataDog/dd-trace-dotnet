@@ -234,9 +234,58 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 metricRequests.Should().NotBeEmpty("Expected OTLP metric requests were not received.");
 
-                var snapshotPayload = metricRequests
-                    .Select(r => r.DeserializedData)
-                    .ToList();
+                // Group the scope metrics by the resource metrics and schema URL (should only be one unique combination)
+                var resourceMetricByResource = metricRequests
+                                        .SelectMany(r => r.MetricsData.ResourceMetrics)
+                                        .GroupBy(r => new Tuple<global::OpenTelemetry.Proto.Resource.V1.Resource, string>(r.Resource, r.SchemaUrl))
+                                        .Should()
+                                        .ContainSingle()
+                                        .Subject;
+
+                // Group the individual metrics by scope metric and schema URL (should only be one unique combination since we're only using one ActivitySource)
+                // This may result in multiple entries for metrics that are repeated multiple times before the test exits
+                var scopeMetricsByResource = resourceMetricByResource
+                                        .SelectMany(r => r.ScopeMetrics)
+                                        .GroupBy(r => new Tuple<global::OpenTelemetry.Proto.Common.V1.InstrumentationScope, string>(r.Scope, r.SchemaUrl))
+                                        .OrderBy(group => group.Key.Item1.Name);
+
+                var scopeMetrics = new List<object>();
+                foreach (var scopeMetricByResource in scopeMetricsByResource)
+                {
+                    var metrics = scopeMetricByResource
+                                    .SelectMany(r => r.Metrics)
+                                    .GroupBy(r => r.Name)
+                                    .OrderBy(group => group.Key)
+                                    .Select(group => group.First())
+                                    .ToList();
+
+                    scopeMetrics.Add(new
+                    {
+                        Scope = scopeMetricByResource.Key.Item1,
+                        Metrics = metrics,
+                        SchemaUrl = scopeMetricByResource.Key.Item2
+                    });
+                }
+
+                // Filter out the telemetry resource name, if any
+                foreach (var attribute in resourceMetricByResource.Key.Item1.Attributes)
+                {
+                    if (attribute.Key.Equals("telemetry.sdk.version"))
+                    {
+                        attribute.Value.StringValue = "sdk-version";
+                    }
+                }
+
+                // Although there's only one resource, let's still emit snapshot data in the expected array format
+                var resourceMetrics = new object[]
+                {
+                    new
+                    {
+                        Resource = resourceMetricByResource.Key.Item1,
+                        ScopeMetrics = scopeMetrics,
+                        SchemaUrl = resourceMetricByResource.Key.Item2,
+                    }
+                };
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_timeUnixNanoRegexMetrics, @"TimeUnixNano"": <DateTimeOffset.Now>");
@@ -244,7 +293,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var suffix = GetSuffix(packageVersion);
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpMetrics{suffix}{snapshotName}";
 
-                await Verifier.Verify(snapshotPayload, settings)
+                await Verifier.Verify(resourceMetrics, settings)
                               .UseFileName(fileName)
                               .DisableRequireUniquePrefix();
             }

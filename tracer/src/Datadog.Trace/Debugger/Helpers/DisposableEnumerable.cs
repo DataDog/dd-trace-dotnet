@@ -13,20 +13,21 @@ namespace Datadog.Trace.Debugger.Helpers
     {
         private readonly List<T> _items;
 
-        public DisposableEnumerable(List<T> items) => _items = items;
+        public DisposableEnumerable(List<T> items)
+        {
+            _items = items;
+        }
 
         public void Dispose()
         {
+            if (_items == null)
+            {
+                return;
+            }
+
             foreach (var item in _items)
             {
-                try
-                {
-                    item.Dispose();
-                }
-                catch
-                {
-                    // ignored
-                }
+                SafeDisposal.TryDispose(item);
             }
         }
     }

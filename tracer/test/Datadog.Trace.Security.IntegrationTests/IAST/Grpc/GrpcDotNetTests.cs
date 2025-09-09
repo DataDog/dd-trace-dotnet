@@ -25,7 +25,7 @@ public class GrpcDotNetTests : TestHelper
         : base("GrpcDotNet", output)
     {
         SetServiceVersion("1.0.0");
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Iast.TelemetryVerbosity, "Off");

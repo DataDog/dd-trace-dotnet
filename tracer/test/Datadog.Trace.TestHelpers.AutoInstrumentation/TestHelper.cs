@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -405,7 +406,7 @@ namespace Datadog.Trace.TestHelpers
 
             foreach (var e in missing)
             {
-                Assert.True(false, $"no span found for `{e}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key}").ToArray())}`");
+                Assert.Fail($"no span found for `{e}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key}").ToArray())}`");
             }
         }
 
@@ -428,6 +429,28 @@ namespace Datadog.Trace.TestHelpers
         protected void SetServiceVersion(string serviceVersion)
         {
             SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, serviceVersion);
+        }
+
+        /// <summary>
+        /// Add a workaround for the fact that .NET Core 3.1 and .NET 5 don't
+        /// support the version of alpine we're currently using, and so we need to
+        /// force the correct runtime id for .NET to use
+        /// </summary>
+        protected void UseNativeLibraryAlpineWorkaround()
+        {
+#if NETCOREAPP3_1 || NET5_0
+            if (EnvironmentHelper.IsAlpine())
+            {
+                var rid = RuntimeInformation.ProcessArchitecture switch
+                {
+                    Architecture.Arm64 => "linux-musl-arm64",
+                    Architecture.X64 => "linux-musl-x64",
+                    _ => throw new Exception("Unknown architecture " + RuntimeInformation.ProcessArchitecture)
+                };
+                SetEnvironmentVariable("DOTNET_RUNTIME_ID", rid);
+            }
+#endif
+
         }
 
         protected void SetSecurity(bool security)
