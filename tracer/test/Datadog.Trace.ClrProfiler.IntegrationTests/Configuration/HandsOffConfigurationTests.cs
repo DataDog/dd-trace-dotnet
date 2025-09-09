@@ -151,8 +151,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private async Task SetupAndCheck(string logFolder, string? localKey, string? localValue, string? fleetKey, string? fleetValue, string logKey, string expectedValue)
         {
-            // SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-
             var logDir = Path.Combine(LogDirectory, logFolder);
             Directory.CreateDirectory(logDir);
             SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
