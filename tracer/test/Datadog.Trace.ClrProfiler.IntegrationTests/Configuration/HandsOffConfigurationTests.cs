@@ -45,13 +45,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "true");
             await SetupAndCheck(
-                nameof(FleetShouldWinOverEnvVar),
-                null,
-                null,
-                ConfigurationKeys.DebugEnabled,
-                "false",
-                "debug",
-                "false");
+                logFolder: nameof(FleetShouldWinOverEnvVar),
+                localKey: null,
+                localValue: null,
+                fleetKey: ConfigurationKeys.DebugEnabled,
+                fleetValue: "false",
+                logKey: "debug",
+                expectedValue: "false");
         }
 
         [SkippableFact]
@@ -59,13 +59,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "true");
             await SetupAndCheck(
-                nameof(EnVarShouldWinOverLocal),
-                ConfigurationKeys.DebugEnabled,
-                "false",
-                null,
-                null,
-                "debug",
-                "true");
+                logFolder: nameof(EnVarShouldWinOverLocal),
+                localKey: ConfigurationKeys.DebugEnabled,
+                localValue: "false",
+                fleetKey: null,
+                fleetValue: null,
+                logKey: "debug",
+                expectedValue: "true");
         }
 
         [SkippableFact]
@@ -73,13 +73,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "false");
             await SetupAndCheck(
-                nameof(FleetShouldWinOverLocalAndEnvVar),
-                ConfigurationKeys.DebugEnabled,
-                "false",
-                ConfigurationKeys.DebugEnabled,
-                "true",
-                "debug",
-                "true");
+                logFolder: nameof(FleetShouldWinOverLocalAndEnvVar),
+                localKey: ConfigurationKeys.DebugEnabled,
+                localValue: "false",
+                fleetKey: ConfigurationKeys.DebugEnabled,
+                fleetValue: "true",
+                logKey: "debug",
+                expectedValue: "true");
         }
 
         private static (string LocalPath, string FleetPath) CreateHandsOffConfigFiles((string Key, string Value)[] localValues, (string Key, string Value)[] fleetValues)
