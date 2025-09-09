@@ -12,7 +12,6 @@
   <ItemGroup>
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="$(ApiVersion)" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
-    <PackageReference Include="Datadog.Trace" Version="2.53.2" />
   </ItemGroup>
 
 </Project>

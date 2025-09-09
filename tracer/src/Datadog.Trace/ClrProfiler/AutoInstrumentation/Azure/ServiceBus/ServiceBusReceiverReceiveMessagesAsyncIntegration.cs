@@ -63,8 +63,8 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             return returnValue;
         }
 
-        var extractionResult = ExtractContextsFromMessages(tracer, messagesList);
-        var scope = CreateAndConfigureSpan(tracer, extractionResult.ParentContext, extractionResult.SpanLinks, instance, messagesList);
+        var spanLinks = ExtractSpanLinksFromMessages(tracer, messagesList);
+        var scope = CreateAndConfigureSpan(tracer, spanLinks, instance, messagesList);
 
         // Re-inject the new span context into all messages so Azure Functions will use it as parent
         if (scope != null && messagesList != null && messageCount > 0)
@@ -80,11 +80,11 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         return returnValue;
     }
 
-    private static ContextExtractionResult ExtractContextsFromMessages(Tracer tracer, System.Collections.IList? messagesList)
+    private static IEnumerable<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, System.Collections.IList? messagesList)
     {
         if (messagesList == null || messagesList.Count == 0)
         {
-            return new ContextExtractionResult(null, null);
+            return null;
         }
 
         var extractedContexts = new List<SpanContext>();
@@ -107,35 +107,22 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
             if (extractedContexts.Count == 0)
             {
-                return new ContextExtractionResult(null, null);
+                return null;
             }
 
-            // Check if all contexts are the same
             var uniqueContexts = new HashSet<SpanContext>(extractedContexts, new SpanContextComparer());
-
-            if (uniqueContexts.Count == 1)
-            {
-                // All messages have the same context, use it as parent
-                return new ContextExtractionResult(uniqueContexts.First(), null);
-            }
-            else
-            {
-                // Heterogeneous contexts, create span links to all of them
-                var spanLinks = uniqueContexts.Select(ctx => new SpanLink(ctx)).ToList();
-                return new ContextExtractionResult(null, spanLinks);
-            }
+            return uniqueContexts.Select(ctx => new SpanLink(ctx)).ToList();
         }
         catch (Exception ex)
         {
             Log.Error(ex, "ServiceBusReceiver: Error extracting contexts from ServiceBus messages");
         }
 
-        return new ContextExtractionResult(null, null);
+        return null;
     }
 
     private static Scope? CreateAndConfigureSpan<TTarget>(
         Tracer tracer,
-        SpanContext? parentContext,
         IEnumerable<SpanLink>? spanLinks,
         TTarget receiverInstance,
         System.Collections.IList? messagesList)
@@ -152,7 +139,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
         var scope = tracer.StartActiveInternal(
             OperationName,
-            parent: parentContext,
             links: spanLinks,
             tags: tags,
             serviceName: serviceName);
@@ -200,18 +186,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         catch (Exception ex)
         {
             Log.Error(ex, "ServiceBusReceiver: Error re-injecting context into ServiceBus messages");
-        }
-    }
-
-    private readonly struct ContextExtractionResult
-    {
-        public readonly SpanContext? ParentContext;
-        public readonly IEnumerable<SpanLink>? SpanLinks;
-
-        public ContextExtractionResult(SpanContext? parentContext, IEnumerable<SpanLink>? spanLinks)
-        {
-            ParentContext = parentContext;
-            SpanLinks = spanLinks;
         }
     }
 
