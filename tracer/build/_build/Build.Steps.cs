@@ -274,7 +274,8 @@ partial class Build
             {
                 NuGetTasks.NuGetRestore(s => s
                     .SetTargetPath(Solution)
-                    .SetVerbosity(NuGetVerbosity.Normal)
+                    .SetVerbosity(NuGetVerbosity.Normal)   // keep warnings/errors
+                    .SetProcessLogOutput(false)          // Drop stdout, keep stderr, no [DBG] messages
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
             }
@@ -282,7 +283,7 @@ partial class Build
             {
                 DotNetRestore(s => s
                     .SetProjectFile(Solution)
-                    .SetVerbosity(DotNetVerbosity.Normal)
+                    .SetVerbosity(DotNetVerbosity.Minimal)
                     .SetProperty("configuration", BuildConfiguration.ToString())
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory)));
