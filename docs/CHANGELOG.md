@@ -28,6 +28,66 @@
 
 
 
+
+## [Release 3.26.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.26.0)
+
+## Summary
+
+Various bug fixes and optimizations.
+
+## Changes
+
+### Tracer
+* Update build and testing to use .NET 10 preview 7 (#7170)
+* chore: add logging for data pipeline status in TracerSettings (#7436)
+* Use P/Invoke to call  `lstat` instead of shelling out to `stat` to retrieve the inode (#7453)
+* [Native] Convert Rejitters vector to a fixed array (#7460)
+* [Phase 1] chore(configuration): enable DataPipelineEnabled on AAS + Windows (#7464)
+
+### ASM
+* [AAP] Add Forwarded header as IP source (#7438)
+* [AAP] Add "100.65.0.0/10" as a private IP range (#7461)
+* [IAST] Fix GRPC IAST tests (#7485)
+* [IAST] Delay dataflow creation (#7440, #7451, #7465)
+
+### Continuous Profiler
+* [Profiler] Make sure we generate a build-id using SHA-1 (#7449)
+* [Profiler] Try fixing TSAN job (#7452)
+
+### Serverless
+* [Azure Functions] Restore files moved by in-process Azure Functions SDK (#7419)
+
+### Fixes
+* Support `final="true"` in NLog Logging rules for direct log submission (#7445)
+* Extract the Managed DevOps pools names to variables (#7447)
+* Update language used in native log messages (#7467)
+* Remove `Samples.TraceAnnotations.VersionMismatch.NewerNuget` (#7469)
+* Remove `Samples.CIVisibilityVersionMismatch` (#7471)
+* Add parameter names to MongoDb `IBsonSerializerProxy.Serialize()` method (#7443)
+* Fix GRPC instrumentation for BuildHttpErrorResponse. Enable integration tests. (#7457)
+
+### Build / Test
+* Use mock agent in exploration tests (#7431)
+* [Test Package Versions Bump] Updating package versions (#7435)
+* Use the global.json file to specify the .NET SDK version in GitHub Actions (#7442)
+* Update Managed DevOps pools images (#7446)
+* Remove smoke test image that won't work (#7450)
+* [Test Package Versions Bump] Updating package versions (#7455)
+* Bump the gh-actions-packages group across 2 directories with 2 updates (#7456)
+* [Test Package Versions Bump] Updating package versions (#7458)
+* Split dependabot files into separate projects (#7459)
+* Bump actions/setup-dotnet from 4.3.1 to 5.0.0 in the gh-actions-packages group across 1 directory (#7463)
+* Try to fix dependabot (#7466)
+* Improve logging for `InstrumentationTests` and update dynamic code scenario (#7472)
+* Fix typo in dependabot yaml (#7477)
+* Fix dependabot again (#7478)
+
+### Miscellaneous
+* Consolidate bailout checks into native loader (#7462)
+* [Native] Safer rejitter iterations (#7473)
+
+[Changes since 3.25.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.25.0...v3.26.0)
+
 ## [Release 3.25.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.25.0)
 
 ## Summary
