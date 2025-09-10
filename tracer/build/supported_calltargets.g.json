@@ -3509,6 +3509,131 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Messaging.EventHubs.Consumer.EventHubConsumerClient",
+    "TargetMethodName": "ReadEventsAsync",
+    "TargetReturnType": "System.Collections.Generic.IAsyncEnumerable`1[Azure.Messaging.EventHubs.Consumer.PartitionEvent]",
+    "TargetParameterTypes": [
+      "System.Boolean",
+      "Azure.Messaging.EventHubs.Consumer.ReadEventOptions",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventHubConsumerClientReadEventsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Messaging.EventHubs.EventProcessorClient",
+    "TargetMethodName": "OnProcessingEventAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "Azure.Messaging.EventHubs.Processor.ProcessEventArgs",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventProcessorClientProcessEventAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Messaging.EventHubs.Producer.EventDataBatch",
+    "TargetMethodName": "TryAdd",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [
+      "Azure.Messaging.EventHubs.EventData"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventDataBatchTryAddIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Messaging.EventHubs.Producer.EventHubProducerClient",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "Azure.Messaging.EventHubs.Producer.EventDataBatch",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventHubProducerClientSendBatchAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Microsoft.Azure.WebJobs.Extensions.EventHubs",
+    "TargetTypeName": "Microsoft.Azure.WebJobs.EventHubs.Listeners.EventHubListener+PartitionProcessor",
+    "TargetMethodName": "ProcessEventsAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "Microsoft.Azure.WebJobs.EventHubs.Processor.EventProcessorHostPartition",
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventHubs.EventData]"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 6,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.PartitionProcessorProcessEventsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "AzureFunctions",
     "AssemblyName": "Microsoft.Azure.Functions.Worker.Core",
     "TargetTypeName": "Microsoft.Azure.Functions.Worker.Pipeline.FunctionExecutionMiddleware",
