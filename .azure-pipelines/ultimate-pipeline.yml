@@ -56,10 +56,10 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 10.0.100-preview.7.25380.108
+  dotnetCoreSdkLatestVersion: 10.0.100-rc.1.25451.107
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 10.0.100-preview.7
+  dotnetCoreSdkLatestVersionShort: 10.0.100-rc.1
   nativeBuildDotnetSdkVersion: 7.0.306
   # These are the Managed DevOps pool names we use
   linuxTasksPool: azure-managed-linux-tasks
