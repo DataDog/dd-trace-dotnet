@@ -172,6 +172,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 tags.NetworkDestinationPort = networkDestinationPort;
             }
 
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
+
             return new CallTargetState(scope);
         }
     }

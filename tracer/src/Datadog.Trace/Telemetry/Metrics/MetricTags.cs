@@ -253,6 +253,7 @@ internal static class MetricTags
         [Description("integration_name:hardcodedsecret")]HardcodedSecret,
         [Description("integration_name:awskinesis")]AwsKinesis,
         [Description("integration_name:azureservicebus")]AzureServiceBus,
+        [Description("integration_name:azureeventhubs")]AzureEventHubs,
         [Description("integration_name:systemrandom")] SystemRandom,
         [Description("integration_name:awsdynamodb")]AwsDynamoDb,
         [Description("integration_name:ibmmq")]IbmMq,
