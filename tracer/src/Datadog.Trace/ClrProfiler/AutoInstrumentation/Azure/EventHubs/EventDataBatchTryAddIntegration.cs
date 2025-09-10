@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             Exception? exception,
             in CallTargetState state)
         {
-            // Nothing to do on method end
+            state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }
