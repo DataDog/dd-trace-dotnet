@@ -5,7 +5,7 @@
 
 #nullable enable
 
-using System.Collections.Generic;
+using System.Collections;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
@@ -26,8 +26,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         long SizeInBytes { get; }
 
         /// <summary>
-        /// Gets the list of diagnostic identifiers of events added to this batch
+        /// Gets the list of diagnostic identifiers of events added to this batch.
+        /// Returns IEnumerable to handle ValueTuple collection from Azure SDK.
         /// </summary>
-        IReadOnlyList<ITraceContextTuple> GetTraceContext();
+        IEnumerable GetTraceContext();
     }
 }

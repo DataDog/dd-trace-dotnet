@@ -7,6 +7,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -89,94 +90,102 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                         {
                             Log.Debug(LogPrefix + "No diagnostic identifiers available from batch.GetTraceContext() - returned null");
                         }
-                        else if (diagnosticIdentifiers.Count == 0)
-                        {
-                            Log.Debug(LogPrefix + "Batch diagnostic identifiers collection is empty - no TryAdd operations were traced");
-                        }
                         else
                         {
-                            Log.Debug(LogPrefix + "Retrieved {0} diagnostic identifiers from batch, creating span links", (object)diagnosticIdentifiers.Count);
+                            // Convert to list to get count and avoid multiple enumeration
+                            var identifiersList = diagnosticIdentifiers.Cast<object>().ToList();
 
-                            var successfulLinks = 0;
-                            var index = 0;
-
-                            foreach (var traceContext in diagnosticIdentifiers)
+                            if (identifiersList.Count == 0)
                             {
-                                index++;
-
-                                if (traceContext?.Instance == null)
-                                {
-                                    Log.Debug(LogPrefix + "Diagnostic identifier {0}: Instance is null, skipping", (object)index);
-                                    continue;
-                                }
-
-                                var traceParent = traceContext.Item1;
-                                var traceState = traceContext.Item2;
-
-                                Log.Debug(
-                                    LogPrefix + "Diagnostic identifier {0}: TraceParent='{1}', TraceState='{2}'",
-                                    (object)index,
-                                    traceParent ?? "null",
-                                    traceState ?? "null");
-
-                                if (string.IsNullOrEmpty(traceParent))
-                                {
-                                    Log.Debug(LogPrefix + "Diagnostic identifier {0}: TraceParent is null or empty, cannot create span link", (object)index);
-                                    continue;
-                                }
-
-                                if (!W3CTraceContextPropagator.TryParseTraceParent(traceParent!, out var parsedTraceParent))
-                                {
-                                    Log.Warning(
-                                        LogPrefix + "Diagnostic identifier {0}: Failed to parse W3C traceparent '{1}' - invalid format",
-                                        (object)index,
-                                        traceParent);
-                                    continue;
-                                }
-
-                                Log.Debug(
-                                    LogPrefix + "Diagnostic identifier {0}: Parsed traceparent - TraceId={1}, SpanId={2}, Sampled={3}",
-                                    (object)index,
-                                    parsedTraceParent.RawTraceId,
-                                    parsedTraceParent.RawParentId,
-                                    parsedTraceParent.Sampled);
-
-                                // Create SpanContext from parsed W3C traceparent
-                                var linkedSpanContext = new SpanContext(
-                                    traceId: parsedTraceParent.TraceId,
-                                    spanId: parsedTraceParent.ParentId,
-                                    samplingPriority: null,
-                                    serviceName: null,
-                                    origin: null,
-                                    rawTraceId: parsedTraceParent.RawTraceId,
-                                    rawSpanId: parsedTraceParent.RawParentId,
-                                    isRemote: true);
-
-                                // Add span link with operation type attribute
-                                var spanLink = new SpanLink(linkedSpanContext, attributes: [new("eventhubs.operation", "batch.add")]);
-                                span.AddLink(spanLink);
-
-                                successfulLinks++;
-
-                                Log.Debug(
-                                    LogPrefix + "Diagnostic identifier {0}: Successfully created span link to TraceId={1}, SpanId={2}",
-                                    (object)index,
-                                    parsedTraceParent.RawTraceId,
-                                    parsedTraceParent.RawParentId);
-                            }
-
-                            if (successfulLinks > 0)
-                            {
-                                Log.Debug(
-                                    LogPrefix + "Span linking complete: Successfully created {0} span links out of {1} diagnostic identifiers",
-                                    (object)successfulLinks,
-                                    (object)diagnosticIdentifiers.Count);
+                                Log.Debug(LogPrefix + "Batch diagnostic identifiers collection is empty - no TryAdd operations were traced");
                             }
                             else
                             {
-                                Log.Warning(
-                                    LogPrefix + "Span linking failed: No valid span links created from {0} diagnostic identifiers",
-                                    (object)diagnosticIdentifiers.Count);
+                                Log.Debug(LogPrefix + "Retrieved {0} diagnostic identifiers from batch, creating span links", (object)identifiersList.Count);
+
+                                var successfulLinks = 0;
+                                var index = 0;
+
+                                foreach (var tupleItem in identifiersList)
+                                {
+                                    index++;
+
+                                    if (tupleItem == null)
+                                    {
+                                        Log.Debug(LogPrefix + "Diagnostic identifier {0}: Item is null, skipping", (object)index);
+                                        continue;
+                                    }
+
+                                    // Extract Item1 (TraceParent) and Item2 (TraceState) from ValueTuple using reflection
+                                    var tupleType = tupleItem.GetType();
+                                    var traceParent = tupleType.GetProperty("Item1")?.GetValue(tupleItem) as string;
+                                    var traceState = tupleType.GetProperty("Item2")?.GetValue(tupleItem) as string;
+
+                                    Log.Debug(
+                                        LogPrefix + "Diagnostic identifier {0}: TraceParent='{1}', TraceState='{2}'",
+                                        (object)index,
+                                        traceParent ?? "null",
+                                        traceState ?? "null");
+
+                                    if (string.IsNullOrEmpty(traceParent))
+                                    {
+                                        Log.Debug(LogPrefix + "Diagnostic identifier {0}: TraceParent is null or empty, cannot create span link", (object)index);
+                                        continue;
+                                    }
+
+                                    if (!W3CTraceContextPropagator.TryParseTraceParent(traceParent!, out var parsedTraceParent))
+                                    {
+                                        Log.Warning(
+                                            LogPrefix + "Diagnostic identifier {0}: Failed to parse W3C traceparent '{1}' - invalid format",
+                                            (object)index,
+                                            traceParent);
+                                        continue;
+                                    }
+
+                                    Log.Debug(
+                                        LogPrefix + "Diagnostic identifier {0}: Parsed traceparent - TraceId={1}, SpanId={2}, Sampled={3}",
+                                        (object)index,
+                                        parsedTraceParent.RawTraceId,
+                                        parsedTraceParent.RawParentId,
+                                        parsedTraceParent.Sampled);
+
+                                    // Create SpanContext from parsed W3C traceparent
+                                    var linkedSpanContext = new SpanContext(
+                                        traceId: parsedTraceParent.TraceId,
+                                        spanId: parsedTraceParent.ParentId,
+                                        samplingPriority: null,
+                                        serviceName: null,
+                                        origin: null,
+                                        rawTraceId: parsedTraceParent.RawTraceId,
+                                        rawSpanId: parsedTraceParent.RawParentId,
+                                        isRemote: true);
+
+                                    // Add span link with operation type attribute
+                                    var spanLink = new SpanLink(linkedSpanContext, attributes: [new("eventhubs.operation", "batch.add")]);
+                                    span.AddLink(spanLink);
+
+                                    successfulLinks++;
+
+                                    Log.Debug(
+                                        LogPrefix + "Diagnostic identifier {0}: Successfully created span link to TraceId={1}, SpanId={2}",
+                                        (object)index,
+                                        parsedTraceParent.RawTraceId,
+                                        parsedTraceParent.RawParentId);
+                                }
+
+                                if (successfulLinks > 0)
+                                {
+                                    Log.Debug(
+                                        LogPrefix + "Span linking complete: Successfully created {0} span links out of {1} diagnostic identifiers",
+                                        (object)successfulLinks,
+                                        (object)identifiersList.Count);
+                                }
+                                else
+                                {
+                                    Log.Warning(
+                                        LogPrefix + "Span linking failed: No valid span links created from {0} diagnostic identifiers",
+                                        (object)identifiersList.Count);
+                                }
                             }
                         }
                     }
