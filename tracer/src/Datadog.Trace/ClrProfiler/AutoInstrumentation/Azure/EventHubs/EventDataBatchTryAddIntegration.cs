@@ -7,6 +7,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -67,6 +68,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 if (eventData.Properties != null)
                 {
                     AzureMessagingCommon.InjectContext(eventData.Properties, scope);
+
+                    // Debug: Log what we injected
+                    if (eventData.Properties.TryGetValue("traceparent", out var traceparentValue))
+                    {
+                        Log.Debug(LogPrefix + "TryAdd: Successfully injected traceparent: {0}", traceparentValue ?? "null");
+                    }
+                    else
+                    {
+                        Log.Debug(LogPrefix + "TryAdd: No traceparent found in properties after injection");
+                    }
                 }
             }
 
@@ -78,7 +89,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             TReturn returnValue,
             Exception? exception,
             in CallTargetState state)
+            where TTarget : IEventDataBatch, IDuckType
         {
+            // Debug: Check if diagnostic identifiers were stored after TryAdd
+            if (instance?.Instance != null)
+            {
+                try
+                {
+                    var diagnosticIdentifiers = instance.GetTraceContext();
+                    if (diagnosticIdentifiers != null)
+                    {
+                        var identifiersList = diagnosticIdentifiers.Cast<object>().ToList();
+                        Log.Debug(
+                            LogPrefix + "TryAdd completed: Batch now has {0} diagnostic identifiers",
+                            (object)identifiersList.Count);
+                    }
+                    else
+                    {
+                        Log.Debug(LogPrefix + "TryAdd completed: GetTraceContext() returned null");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(LogPrefix + "TryAdd completed: Error checking diagnostic identifiers: {0}", ex.Message);
+                }
+            }
+
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }

@@ -92,8 +92,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                         }
                         else
                         {
+                            Log.Debug(
+                                LogPrefix + "GetTraceContext() returned non-null collection of type: {0}",
+                                diagnosticIdentifiers.GetType().FullName ?? "null");
+
                             // Convert to list to get count and avoid multiple enumeration
                             var identifiersList = diagnosticIdentifiers.Cast<object>().ToList();
+
+                            Log.Debug(
+                                LogPrefix + "After Cast<object>().ToList(), collection has {0} items",
+                                (object)identifiersList.Count);
 
                             if (identifiersList.Count == 0)
                             {
