@@ -67,6 +67,7 @@ namespace Datadog.Trace.Configuration
         Ssrf,
         AwsKinesis,
         AzureServiceBus,
+        AzureEventHubs,
         SystemRandom,
         AwsDynamoDb,
         HardcodedSecret,
