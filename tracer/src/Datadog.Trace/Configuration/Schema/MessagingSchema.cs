@@ -131,5 +131,15 @@ namespace Datadog.Trace.Configuration.Schema
             tags.SpanKind = spanKind;
             return tags;
         }
+
+        public AzureEventHubsTags CreateAzureEventHubsTags(string spanKind)
+        {
+            var tags = _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AzureEventHubsTags(spanKind),
+                _ => new AzureEventHubsV1Tags(spanKind),
+            };
+            return tags;
+        }
     }
 }
