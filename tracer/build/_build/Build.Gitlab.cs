@@ -88,7 +88,7 @@ partial class Build
 
     void SignFiles(IReadOnlyCollection<AbsolutePath> filesToSign)
     {
-        var validSignature = "59063C826DAA5B628B5CE8A2B32015019F164BF0";
+        const string validSignature = "59063C826DAA5B628B5CE8A2B32015019F164BF0";
 
         Logger.Information("Signing {Count} binaries...", filesToSign.Count);
         filesToSign.ForEach(file => SignBinary(file));
