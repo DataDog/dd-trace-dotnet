@@ -8,7 +8,6 @@
 #nullable enable
 
 using System;
-using System.Diagnostics.Metrics;
 using System.Threading;
 using Datadog.Trace.Logging;
 
@@ -19,8 +18,8 @@ namespace Datadog.Trace.OTelMetrics
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MeterListener));
 
         private static System.Diagnostics.Metrics.MeterListener? _meterListenerInstance;
-        private static int _initialized = 0;
-        private static int _stopped = 0;
+        private static int _initialized;
+        private static int _stopped;
 
         public static bool IsRunning
         {
@@ -43,8 +42,9 @@ namespace Datadog.Trace.OTelMetrics
             var meterListener = new System.Diagnostics.Metrics.MeterListener();
             meterListener.InstrumentPublished = MeterListenerHandler.OnInstrumentPublished;
 
-            // For now, only handle long counters to start simple
+            // Handle basic synchronous instruments (as per RFC)
             meterListener.SetMeasurementEventCallback<long>(MeterListenerHandler.OnMeasurementRecordedLong);
+            meterListener.SetMeasurementEventCallback<double>(MeterListenerHandler.OnMeasurementRecordedDouble);
 
             meterListener.Start();
             _meterListenerInstance = meterListener;

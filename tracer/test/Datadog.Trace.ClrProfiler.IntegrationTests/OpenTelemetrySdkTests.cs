@@ -307,6 +307,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 
             using var agent = EnvironmentHelper.GetMockAgent();
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: "1.12.0"))
@@ -314,8 +315,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Validate that our MeterListener captured metrics by checking console output
                 var standardOutput = processResult.StandardOutput;
 
-                // Check that we captured the complete counter metric in one line
-                standardOutput.Should().Contain("[METRICS_CAPTURE] OpenTelemetryMetricsMeter.example.counter|Counter|11|http.method=GET,rid=1234567890", "Missing example.counter metric.");
+                // Check that we captured all the expected metrics from CreateSystemDiagnosticsMetrics()
+
+                // Synchronous Counter (always available in .NET 6+)
+                standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.counter|Counter|11|http.method=GET,rid=1234567890", "Missing example.counter metric.");
+                // Synchronous Histogram (always available in .NET 6+)
+                standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.histogram|Histogram|count=1,sum=33|http.method=GET,rid=1234567890", "Missing example.histogram metric.");
+                // .NET 7+ specific metrics
+                standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.upDownCounter|Counter|55|http.method=GET,rid=1234567890", "Missing upDownCounter metric.");
+                // .NET 9+ specific metrics
+                standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.gauge|Gauge|77|http.method=GET,rid=1234567890", "Missing gauge metric.");
+                // // Asynchronous metrics
+                // standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.async.gauge", "Missing async gauge metric.");
+                // standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.async.counter", "Missing async counter metric.");
+                // standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.async.upDownCounter", "Missing async upDownCounter metric.");
             }
         }
 #endif
