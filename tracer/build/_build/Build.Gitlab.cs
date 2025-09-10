@@ -88,6 +88,8 @@ partial class Build
 
     void SignFiles(IReadOnlyCollection<AbsolutePath> filesToSign)
     {
+        var validSignature = "59063C826DAA5B628B5CE8A2B32015019F164BF0";
+
         Logger.Information("Signing {Count} binaries...", filesToSign.Count);
         filesToSign.ForEach(file => SignBinary(file));
         Logger.Information("Binary signing complete");
@@ -117,36 +119,28 @@ partial class Build
 
             if (signProcess.ExitCode == 0)
             {
-                var sigResult = PowerShellTasks.PowerShell(
-                    $"Get-AuthenticodeSignature '{binaryPath}' | Format-List",
+                var status = PowerShellTasks.PowerShell(
+                    $"(Get-AuthenticodeSignature '{binaryPath}').Status",
                     logOutput: false,
                     logInvocation: false);
 
-                var lines = sigResult
-                    .Select(o => o.Text?.Trim())
-                    .Where(l => !string.IsNullOrEmpty(l))
-                    .ToList();
+                var lines = status.Select(o => o.Text?.Trim()).Where(l => !string.IsNullOrEmpty(l)).ToList();
 
-                foreach (var line in lines)
+                if (lines.Count == 0 || !lines[0].Equals("Valid", StringComparison.OrdinalIgnoreCase))
                 {
-                    Logger.Information("[Get-AuthenticodeSignature] {Line}", line);
+                    throw new Exception($"Signature verification failed for {binaryPath}. Status: {(lines.Count > 0 ? lines[0] : "Empty")}");
                 }
 
-                var statusLine = lines
-                    .FirstOrDefault(l => l.StartsWith("Status", StringComparison.OrdinalIgnoreCase));
+                var print = PowerShellTasks.PowerShell(
+                    $"(Get-AuthenticodeSignature '{binaryPath}').SignerCertificate.Thumbprint",
+                    logOutput: false,
+                    logInvocation: false);
 
-                if (statusLine != null)
-                {
-                    var status = statusLine.Split(':').Last().Trim();
+                lines = print.Select(o => o.Text?.Trim()).Where(l => !string.IsNullOrEmpty(l)).ToList();
 
-                    if (!status.Equals("Valid", StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new Exception($"Signature verification failed for {binaryPath}: {status}");
-                    }
-                }
-                else
+                if (lines.Count == 0 || !lines[0].Equals(validSignature))
                 {
-                    throw new Exception($"Signature verification failed for {binaryPath}: no status line found");
+                    throw new Exception($"Signature verification failed for {binaryPath}. Signature: {(lines.Count > 0 ? lines[0] : "Empty")}");
                 }
             }
             else
