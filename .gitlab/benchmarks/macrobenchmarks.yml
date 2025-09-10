@@ -446,7 +446,8 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
+  # TODO: Revert to dd-trace-dotnet-macro after testing
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:augusto-bp-infra-bootstrap
   interruptible: true
   timeout: 2h
   retry:
@@ -493,7 +494,6 @@ profiler_cpu_timer_create-arm64:
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./ephemeral-infra/run-windows-benchmarks.sh
   after_script:
-    - source "./platform/ephemeral-infra/setup-credentials.sh"
     - |
       bp-infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \
         --region "${AWS_REGION}" \
