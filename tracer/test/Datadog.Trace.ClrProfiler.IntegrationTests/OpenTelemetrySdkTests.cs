@@ -298,6 +298,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix();
             }
         }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task MeterListenerCapturesMetrics()
+        {
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
+
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: "1.12.0"))
+            {
+                // Validate that our MeterListener captured metrics by checking console output
+                var standardOutput = processResult.StandardOutput;
+
+                // Check that we captured the complete counter metric in one line
+                standardOutput.Should().Contain("[METRICS_CAPTURE] OpenTelemetryMetricsMeter.example.counter|Counter|11|http.method=GET,rid=1234567890", "Missing example.counter metric.");
+            }
+        }
 #endif
 
         private static string GetSuffix(string packageVersion)
