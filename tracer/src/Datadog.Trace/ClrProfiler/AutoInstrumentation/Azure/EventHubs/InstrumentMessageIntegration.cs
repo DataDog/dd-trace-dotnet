@@ -11,22 +11,21 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Propagators;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 {
     /// <summary>
-    /// Azure.Messaging.ServiceBus.Core.TransportSender.SendAsync calltarget instrumentation
+    /// Azure.Core.Shared.MessagingClientDiagnostics.InstrumentMessage calltarget instrumentation for EventHubs
     /// </summary>
     [InstrumentMethod(
-        AssemblyName = "Azure.Messaging.ServiceBus",
+        AssemblyName = "Azure.Messaging.EventHubs",
         TypeName = "Azure.Core.Shared.MessagingClientDiagnostics",
         MethodName = "InstrumentMessage",
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { "System.Collections.Generic.IDictionary`2[System.String,System.Object]", ClrNames.String, "System.String&", "System.String&" },
-        MinimumVersion = "7.14.0",
-        MaximumVersion = "7.*.*",
-        IntegrationName = nameof(IntegrationId.AzureServiceBus))]
+        MinimumVersion = "5.0.0",
+        MaximumVersion = "5.*.*",
+        IntegrationName = nameof(IntegrationId.AzureEventHubs))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class InstrumentMessageIntegration
@@ -43,19 +42,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IDictionary<string, object> properties, string activityName, ref string traceparent, ref string tracestate)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs, false))
             {
-                if (Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
-                {
-                    // Adding DSM to the send operation of IReadOnlyCollection<ServiceBusMessage>|ServiceBusMessageBatch - Step Two:
-                    // In between the OnMethodBegin and OnMethodEnd, a new Activity will be created to represent
-                    // the Azure Service Bus message. To access the active message that is being instrumented,
-                    // save the active message properties object to an AsyncLocal field. This will limit
-                    // our lookup to one AsyncLocal field and one static field
-                    AzureServiceBusCommon.ActiveMessageProperties.Value = properties;
-                }
-
-                // Inject tracing context into the final message properties
                 var activeScope = Tracer.Instance.ActiveScope;
                 if (activeScope?.Span?.Context is SpanContext spanContext && properties != null)
                 {
@@ -76,7 +64,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
-            AzureServiceBusCommon.ActiveMessageProperties.Value = null;
             return CallTargetReturn.GetDefault();
         }
     }

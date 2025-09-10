@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 75;
+    public const int Length = 76;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -85,6 +85,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Ssrf => nameof(Datadog.Trace.Configuration.IntegrationId.Ssrf),
             Datadog.Trace.Configuration.IntegrationId.AwsKinesis => nameof(Datadog.Trace.Configuration.IntegrationId.AwsKinesis),
             Datadog.Trace.Configuration.IntegrationId.AzureServiceBus => nameof(Datadog.Trace.Configuration.IntegrationId.AzureServiceBus),
+            Datadog.Trace.Configuration.IntegrationId.AzureEventHubs => nameof(Datadog.Trace.Configuration.IntegrationId.AzureEventHubs),
             Datadog.Trace.Configuration.IntegrationId.SystemRandom => nameof(Datadog.Trace.Configuration.IntegrationId.SystemRandom),
             Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb => nameof(Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb),
             Datadog.Trace.Configuration.IntegrationId.HardcodedSecret => nameof(Datadog.Trace.Configuration.IntegrationId.HardcodedSecret),
@@ -173,6 +174,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Ssrf,
             Datadog.Trace.Configuration.IntegrationId.AwsKinesis,
             Datadog.Trace.Configuration.IntegrationId.AzureServiceBus,
+            Datadog.Trace.Configuration.IntegrationId.AzureEventHubs,
             Datadog.Trace.Configuration.IntegrationId.SystemRandom,
             Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb,
             Datadog.Trace.Configuration.IntegrationId.HardcodedSecret,
@@ -261,6 +263,7 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.Ssrf),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsKinesis),
             nameof(Datadog.Trace.Configuration.IntegrationId.AzureServiceBus),
+            nameof(Datadog.Trace.Configuration.IntegrationId.AzureEventHubs),
             nameof(Datadog.Trace.Configuration.IntegrationId.SystemRandom),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb),
             nameof(Datadog.Trace.Configuration.IntegrationId.HardcodedSecret),
