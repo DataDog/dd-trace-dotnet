@@ -27,7 +27,7 @@ namespace Datadog.Trace.Activity
 
         private static object? _activityListenerInstance;
         private static Func<object>? _getCurrentActivity;
-        private static Action<object, int>? _setKindProperty;
+        private static Action<object, ActivityKind>? _setKindProperty;
 
         private static int _initialized = 0;
         private static int _stopped = 0;
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Activity
         {
             try
             {
-                _setKindProperty?.Invoke(activity, (int)activityKind);
+                _setKindProperty?.Invoke(activity, activityKind);
             }
             catch (Exception ex)
             {
@@ -307,7 +307,39 @@ namespace Datadog.Trace.Activity
 
         private static void CreateActivityKindSetter(Type activityType, Type activityKindType)
         {
-            _setKindProperty = (Action<object, int>)activityType.GetProperty("Kind")!.SetMethod!.CreateDelegate(typeof(Action<,>).MakeGenericType(activityType, activityKindType));
+            // Create dynamic method
+            // Input:
+            // [0] object (which we want to cast to System.Diagnostics.Activity type)
+            // [1] int (which we want to cast to System.Diagnostics.ActivityKind type)
+            // Steps:
+            // - Load the first argument (object)
+            // - Cast this value to System.Diagnostics.Activity type
+            // - Load the second argument (int)
+            // - Cast this value to System.Diagnostics.ActivityKind type
+            // - Call the Setter method for System.Diagnostics.ActivityKind.Set(System.Diagnostics.Activity, System.Diagnostics.ActivityKind)
+            // - Ret
+
+            // Fields: on an object
+            // Properties: Kinda like fields, they give you a _method_ under the hood for set/get
+            // activityType.GetProperty("Kind")!.SetMethod => actual (private) method that sets the value for the Kind property
+
+            var activityTypeAssembly = activityType.Assembly.GetType("System.Diagnostics.Activity")!;
+            var activityKindTypeAssembly = activityKindType.Assembly.GetType("System.Diagnostics.ActivityKind")!;
+            var dynMethod = new DynamicMethod(
+                "ActivityKindSetter",
+                null,
+                [activityTypeAssembly, activityKindTypeAssembly],
+                typeof(DuckType).Module,
+                skipVisibility: true);
+
+            var il = dynMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);                  // Load first argument (as object).
+            il.Emit(OpCodes.Castclass, activityTypeAssembly); // Cast to IReadOnlyBasicProperties
+            il.Emit(OpCodes.Ldarg_1);                  // Load first argument (as object).
+            il.Emit(OpCodes.Castclass, activityKindTypeAssembly); // Cast to IReadOnlyBasicProperties
+            il.Emit(OpCodes.Call, activityTypeAssembly.GetProperty("Kind")!.SetMethod!);
+            il.Emit(OpCodes.Ret);
+            _setKindProperty = (Action<object, ActivityKind>)dynMethod.CreateDelegate(typeof(Action<object, ActivityKind>));
         }
     }
 }
