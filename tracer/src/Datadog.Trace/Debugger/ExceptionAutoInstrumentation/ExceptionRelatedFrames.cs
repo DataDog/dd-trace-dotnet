@@ -46,7 +46,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 // For reference, see the following test: ExceptionCaughtAndRethrownAsInnerTest.
 
                 var firstFrame = Frames?.FirstOrDefault();
-                var lastFrameOfInner = InnerFrame.Frames?.Reverse().FirstOrDefault();
+                // We hit the `public static void Reverse<T>(this Span<T> span)` function here on .NET 3.1+
+                // This causes this to fail to compile.
+                // Just specifying .AsEnumerable for now to minimize changes
+                var lastFrameOfInner = InnerFrame.Frames?.AsEnumerable().Reverse().FirstOrDefault();
 
                 var skipDuplicatedMethod = 0;
                 if (lastFrameOfInner?.Method == firstFrame?.Method)

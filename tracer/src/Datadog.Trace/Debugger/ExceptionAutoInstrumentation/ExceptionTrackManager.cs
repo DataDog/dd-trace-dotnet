@@ -689,8 +689,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         /// <returns>All the frames of the exception.</returns>
         public IEnumerable<ParticipatingFrame> GetParticipatingFrames(StackTrace stackTrace, bool isTopFrame, ParticipatingFrameState defaultState)
         {
+            // We hit the `public static void Reverse<T>(this Span<T> span)` function here on .NET 3.1+
+            // This causes this to fail to compile.
+            // Just specifying .AsEnumerable for now to minimize changes
             var frames = isTopFrame
                              ? stackTrace.GetFrames()?.
+                                          AsEnumerable().
                                           Reverse().
                                           SkipWhile(frame =>
                                           {
