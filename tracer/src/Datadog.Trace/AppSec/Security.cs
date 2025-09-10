@@ -348,9 +348,9 @@ namespace Datadog.Trace.AppSec
             {
                 information.TryGetValue("status_code", out var actionStatusCode);
 
-                if (actionStatusCode is int statusCodeInt)
+                if (actionStatusCode is ulong statusCodeInt)
                 {
-                    return statusCodeInt;
+                    return (int)statusCodeInt;
                 }
                 else if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
                 {
