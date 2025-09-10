@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
@@ -23,5 +24,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         /// Gets the size of the batch in bytes
         /// </summary>
         long SizeInBytes { get; }
+
+        /// <summary>
+        /// Gets the list of diagnostic identifiers of events added to this batch
+        /// </summary>
+        IReadOnlyList<ITraceContextTuple> GetTraceContext();
     }
 }
