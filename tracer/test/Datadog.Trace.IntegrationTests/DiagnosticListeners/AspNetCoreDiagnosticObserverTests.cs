@@ -387,8 +387,10 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             bool expandRouteParameters = false)
             where T : class
         {
+#pragma warning disable ASPDEPR004 // WebHostBuilder is deprecated but we need it for net core 2.1 FIXME
             var builder = new WebHostBuilder()
                .UseStartup<T>();
+#pragma warning restore ASPDEPR004
 
             var testServer = new TestServer(builder);
             var client = testServer.CreateClient();
