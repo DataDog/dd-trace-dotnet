@@ -446,8 +446,7 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
-  # TODO: Revert to dd-trace-dotnet-macro after testing
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:augusto-bp-infra-bootstrap
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-macrobenchmarks
   interruptible: true
   timeout: 2h
   retry:
