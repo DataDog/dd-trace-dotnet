@@ -159,7 +159,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;X86;BIT86;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILD_WITH_WORKLOAD_SELECTION;WIN32;X86;BIT86;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -188,7 +188,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <PreprocessorDefinitions>WIN32;X86;BIT86;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILD_WITH_WORKLOAD_SELECTION;WIN32;X86;BIT86;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -216,7 +216,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>BIT64;AMD64;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILD_WITH_WORKLOAD_SELECTION;BIT64;AMD64;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SHARED-LIB-PATH)\dd-policy-engine\include;$(SHARED-LIB-INCLUDES);$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
@@ -247,7 +247,7 @@
       <AdditionalIncludeDirectories>$(SHARED-LIB-PATH)\dd-policy-engine\include;$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>BIT64;AMD64;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILD_WITH_WORKLOAD_SELECTION;BIT64;AMD64;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
