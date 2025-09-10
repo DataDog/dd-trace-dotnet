@@ -124,11 +124,11 @@ partial class Build
                     logOutput: false,
                     logInvocation: false);
 
-                var lines = status.Select(o => o.Text?.Trim()).Where(l => !string.IsNullOrEmpty(l)).ToList();
+                var statusValue = status.Select(o => o.Text).FirstOrDefault(l => !string.IsNullOrEmpty(l))?.Trim();
 
-                if (lines.Count == 0 || !lines[0].Equals("Valid", StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(statusValue, "Valid", StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new Exception($"Signature verification failed for {binaryPath}. Status: {(lines.Count > 0 ? lines[0] : "Empty")}");
+                    throw new Exception($"Signature verification failed for {binaryPath}. Status: {statusValue ?? "Empty"}");
                 }
 
                 var print = PowerShellTasks.PowerShell(
@@ -136,11 +136,11 @@ partial class Build
                     logOutput: false,
                     logInvocation: false);
 
-                lines = print.Select(o => o.Text?.Trim()).Where(l => !string.IsNullOrEmpty(l)).ToList();
+                var printValue = status.Select(o => o.Text).FirstOrDefault(l => !string.IsNullOrEmpty(l))?.Trim();
 
-                if (lines.Count == 0 || !lines[0].Equals(validSignature))
+                if (!string.Equals(printValue, validSignature, StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new Exception($"Signature verification failed for {binaryPath}. Signature: {(lines.Count > 0 ? lines[0] : "Empty")}");
+                    throw new Exception($"Signature verification failed for {binaryPath}. Signature: {printValue ?? "Empty"}");
                 }
             }
             else
