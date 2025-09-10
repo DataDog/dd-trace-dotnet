@@ -2793,7 +2793,9 @@ partial class Build
             var path = Path.GetDirectoryName(file);
 
             if (!Directory.Exists(path) && !string.IsNullOrEmpty(path))
-                Directory.CreateDirectory(path);
+                {
+                    Directory.CreateDirectory(path);
+                }
 
             using var entryStream = zipFile.GetInputStream(entry);
             using var outputStream = File.Open(file, FileMode.Create);
