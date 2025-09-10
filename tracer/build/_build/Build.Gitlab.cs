@@ -129,7 +129,7 @@ partial class Build
 
                 foreach (var line in lines)
                 {
-                    Logger.Information("[sigcheck] {Line}", line);
+                    Logger.Information("[Get-AuthenticodeSignature] {Line}", line);
                 }
 
                 var statusLine = lines
