@@ -328,18 +328,18 @@ namespace Datadog.Trace.Activity
             var dynMethod = new DynamicMethod(
                 "ActivityKindSetter",
                 null,
-                [activityTypeAssembly, activityKindTypeAssembly],
+                [typeof(object), typeof(int)],
                 typeof(DuckType).Module,
                 skipVisibility: true);
 
             var il = dynMethod.GetILGenerator();
-            il.Emit(OpCodes.Ldarg_0);                  // Load first argument (as object).
-            il.Emit(OpCodes.Castclass, activityTypeAssembly); // Cast to IReadOnlyBasicProperties
-            il.Emit(OpCodes.Ldarg_1);                  // Load first argument (as object).
-            il.Emit(OpCodes.Castclass, activityKindTypeAssembly); // Cast to IReadOnlyBasicProperties
-            il.Emit(OpCodes.Call, activityTypeAssembly.GetProperty("Kind")!.SetMethod!);
-            il.Emit(OpCodes.Ret);
-            _setKindProperty = (Action<object, ActivityKind>)dynMethod.CreateDelegate(typeof(Action<object, ActivityKind>));
+            il.Emit(OpCodes.Ldarg_0);                  // Load the first argument (object)
+            il.Emit(OpCodes.Castclass, activityTypeAssembly); // Cast this value to System.Diagnostics.Activity type
+            il.Emit(OpCodes.Ldarg_1);                  // Load the second argument (int)
+            il.Emit(OpCodes.Castclass, activityKindTypeAssembly); // Cast this value to System.Diagnostics.ActivityKind type
+            il.Emit(OpCodes.Call, activityTypeAssembly.GetProperty("Kind")!.SetMethod!); // Call the setter method for System.Diagnostics.ActivityKind.Set(System.Diagnostics.Activity, System.Diagnostics.ActivityKind)
+            il.Emit(OpCodes.Ret); // return
+            _setKindProperty = dynMethod.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), activityKindTypeAssembly)) as Action<object, ActivityKind>; // Create the delegate
         }
     }
 }
