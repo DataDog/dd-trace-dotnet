@@ -43,49 +43,41 @@ internal class TraceExporter : SafeHandle, IApi
     {
         _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 
-        try
+        using var response = Send(traces, numberOfTraces);
+        if (response == null)
         {
-            using var response = Send(traces, numberOfTraces);
-            if (response == null)
-            {
-                return Task.FromResult(false);
-            }
-
-            if (response.IsInvalid)
-            {
-                _log.Warning("Traces sent successfully to the Agent, but the response is invalid");
-            }
-            else
-            {
-                var json = response.ReadAsString();
-
-                if (StringUtil.IsNullOrEmpty(json))
-                {
-                    _log.Warning("Traces sent successfully to the Agent, but the response is empty");
-                }
-                else if (json != _cachedResponse)
-                {
-                    try
-                    {
-                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
-                        _updateSampleRates(apiResponse.RateByService);
-                        _cachedResponse = json;
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error(ex, "Traces sent successfully to the Agent, but an error occurred deserializing the response.");
-                    }
-                }
-            }
-
-            _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
-            return Task.FromResult(true);
-        }
-        catch (Exception ex)
-        {
-            _log.Error(ex, "An error occurred while sending data to the agent.");
             return Task.FromResult(false);
         }
+
+        if (response.IsInvalid)
+        {
+            _log.Warning("Traces sent successfully to the Agent, but the response is invalid");
+        }
+        else
+        {
+            var json = response.ReadAsString();
+
+            if (StringUtil.IsNullOrEmpty(json))
+            {
+                _log.Warning("Traces sent successfully to the Agent, but the response is empty");
+            }
+            else if (json != _cachedResponse)
+            {
+                try
+                {
+                    var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
+                    _updateSampleRates(apiResponse.RateByService);
+                    _cachedResponse = json;
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Traces sent successfully to the Agent, but an error occurred deserializing the response.");
+                }
+            }
+        }
+
+        _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
+        return Task.FromResult(true);
     }
 
     public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
