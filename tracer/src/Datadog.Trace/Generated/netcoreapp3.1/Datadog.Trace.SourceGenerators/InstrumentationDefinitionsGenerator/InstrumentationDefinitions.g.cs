@@ -182,8 +182,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsStepFunctions,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.InstrumentMessageIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventHubConsumerClientReadEventsAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventProcessorClientProcessEventAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventProcessorProcessEventBatchAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventDataBatchTryAddIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventHubProducerClientSendBatchAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.PartitionProcessorProcessEventsAsyncIntegration"
