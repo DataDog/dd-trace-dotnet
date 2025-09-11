@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -66,10 +67,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             }
 
             var messageCount = eventsList.Count;
-            Log.Debug(LogPrefix + "Processing {0} EventHub messages for reparenting", (object)messageCount);
+            Log.Debug(LogPrefix + "Processing {0} EventHub messages with span links", (object)messageCount);
 
-            var extractionResult = ExtractContextsFromMessages(tracer, eventsList);
-            var scope = CreateAndConfigureSpan(tracer, extractionResult.ParentContext, extractionResult.SpanLinks, messageCount);
+            var spanLinks = ExtractSpanLinksFromMessages(tracer, eventsList);
+            var scope = CreateAndConfigureSpan(tracer, spanLinks, messageCount);
 
             // Re-inject the new span context into all messages so Azure Functions will use it as parent
             if (scope != null && eventsList.Count > 0)
@@ -108,10 +109,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             return returnValue;
         }
 
-        private static ContextExtractionResult ExtractContextsFromMessages(Tracer tracer, List<object> messagesList)
+        private static List<SpanContext> ExtractSpanLinksFromMessages(Tracer tracer, List<object> messagesList)
         {
             var spanLinks = new List<SpanContext>();
-            SpanContext? parentContext = null;
 
             try
             {
@@ -125,24 +125,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                             if (extractedContext != null)
                             {
                                 spanLinks.Add(extractedContext);
-                                parentContext ??= extractedContext; // Use first extracted context as parent
-                                Log.Debug(LogPrefix + "Extracted context from EventData");
+                                Log.Debug(LogPrefix + "Extracted context from EventData for span link");
                             }
                         }
                     }
                 }
 
-                Log.Debug(LogPrefix + "Successfully extracted {0} context(s) from EventHub messages", (object)spanLinks.Count);
+                Log.Debug(LogPrefix + "Successfully extracted {0} context(s) for span links from EventHub messages", (object)spanLinks.Count);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, LogPrefix + "Error extracting contexts from EventHub messages");
+                Log.Error(ex, LogPrefix + "Error extracting contexts for span links from EventHub messages");
             }
 
-            return new ContextExtractionResult(parentContext, spanLinks);
+            return spanLinks;
         }
 
-        private static Scope? CreateAndConfigureSpan(Tracer tracer, SpanContext? parentContext, List<SpanContext> spanLinks, int messageCount)
+        private static Scope? CreateAndConfigureSpan(Tracer tracer, List<SpanContext> spanLinks, int messageCount)
         {
             try
             {
@@ -151,7 +150,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                     Operation = "receive"
                 };
 
-                var scope = tracer.StartActiveInternal(OperationName, parent: parentContext, tags: tags);
+                // Convert SpanContext list to SpanLink list for the tracer
+                var links = spanLinks?.Select(ctx => new SpanLink(ctx));
+
+                var scope = tracer.StartActiveInternal(OperationName, tags: tags, links: links);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Queue;
@@ -159,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 span.SetMetric("eventhubs.message_count", messageCount);
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);
-                Log.Debug(LogPrefix + "Created receive span with {0} message(s) and {1} link(s)", (object)messageCount, (object)spanLinks.Count);
+                Log.Debug(LogPrefix + "Created receive span with {0} message(s) and {1} link(s)", (object)messageCount, (object)(spanLinks?.Count ?? 0));
 
                 return scope;
             }
@@ -175,7 +177,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             try
             {
                 // Re-inject the new span context into all messages for downstream processing
-
                 foreach (var message in messagesList)
                 {
                     if (message?.TryDuckCast<IEventData>(out var eventData) == true)
@@ -192,18 +193,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             catch (Exception ex)
             {
                 Log.Error(ex, LogPrefix + "Error re-injecting context into EventHub messages");
-            }
-        }
-
-        private readonly struct ContextExtractionResult
-        {
-            public readonly SpanContext? ParentContext;
-            public readonly List<SpanContext> SpanLinks;
-
-            public ContextExtractionResult(SpanContext? parentContext, List<SpanContext> spanLinks)
-            {
-                ParentContext = parentContext;
-                SpanLinks = spanLinks;
             }
         }
     }
