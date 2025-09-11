@@ -47,7 +47,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             TEventBatch eventBatch,
             bool dispatchEmptyBatches,
             CancellationToken cancellationToken)
-            where TTarget : IDuckType
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs, false))
             {
