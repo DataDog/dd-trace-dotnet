@@ -142,6 +142,10 @@ partial class Build
                 {
                     throw new Exception($"Signature verification failed for {binaryPath}. Signature: {printValue ?? "Empty"}");
                 }
+                else
+                {
+                    Logger.Information($"Signing verfication of {binaryPath} succedeed. Signature: {printValue}", binaryPath);
+                }
             }
             else
             {
