@@ -166,11 +166,19 @@ partial class Build
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
             EnsureExistingDirectory(buildDirectory);
 
-            var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = finalArchs };
+            var envVariables = new Dictionary<string, string>
+            {
+                ["HOME"] = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ["PATH"] = Environment.GetEnvironmentVariable("PATH"),
+                ["CMAKE_OSX_ARCHITECTURES"] = finalArchs,
+                ["CMAKE_MAKE_PROGRAM"] = "make",
+                ["CMAKE_CXX_COMPILER"] = "clang++",
+                ["CMAKE_C_COMPILER"] = "clang",
+            };
 
             // Build native
             CMake.Value(
-                arguments: $"-DCMAKE_MAKE_PROGRAM=make -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DUNIVERSAL=OFF",
+                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DUNIVERSAL=OFF",
                 environmentVariables: envVariables);
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
