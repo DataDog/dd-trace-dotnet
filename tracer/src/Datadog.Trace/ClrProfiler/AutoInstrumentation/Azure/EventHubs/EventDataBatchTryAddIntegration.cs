@@ -40,7 +40,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             TEventData eventData)
             where TEventData : IEventData, IDuckType
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs) ||
+                !Tracer.Instance.Settings.AzureEventHubsBatchLinksEnabled)
             {
                 return CallTargetState.GetDefault();
             }
