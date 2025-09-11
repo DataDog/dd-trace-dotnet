@@ -88,6 +88,8 @@ partial class Build
 
     void SignFiles(IReadOnlyCollection<AbsolutePath> filesToSign)
     {
+        const string validSignature = "59063C826DAA5B628B5CE8A2B32015019F164BF0";
+
         Logger.Information("Signing {Count} binaries...", filesToSign.Count);
         filesToSign.ForEach(file => SignBinary(file));
         Logger.Information("Binary signing complete");
@@ -102,9 +104,48 @@ partial class Build
                     logOutput: false,
                     logInvocation: false);
             signProcess.WaitForExit();
+
+            var output = signProcess.Output.Select(o => o.Text);
+            foreach (var line in output)
+            {
+                Logger.Information("[dd-wcs] {Line}", line);
+
+                // dd-wcs will return 0 even if there are errors
+                if (line.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception($"Error found when signing {binaryPath}: {line}");
+                }
+            }
+
             if (signProcess.ExitCode == 0)
             {
-                PowerShellTasks.PowerShell($"Get-AuthenticodeSignature {binaryPath}");
+                var status = PowerShellTasks.PowerShell(
+                    $"(Get-AuthenticodeSignature '{binaryPath}').Status",
+                    logOutput: false,
+                    logInvocation: false);
+
+                var statusValue = status.Select(o => o.Text).FirstOrDefault(l => !string.IsNullOrEmpty(l))?.Trim();
+
+                if (!string.Equals(statusValue, "Valid", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception($"Signature verification failed for {binaryPath}. Status: {statusValue ?? "Empty"}");
+                }
+
+                var print = PowerShellTasks.PowerShell(
+                    $"(Get-AuthenticodeSignature '{binaryPath}').SignerCertificate.Thumbprint",
+                    logOutput: false,
+                    logInvocation: false);
+
+                var printValue = print.Select(o => o.Text).FirstOrDefault(l => !string.IsNullOrEmpty(l))?.Trim();
+
+                if (!string.Equals(printValue, validSignature, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception($"Signature verification failed for {binaryPath}. Signature: {printValue ?? "Empty"}");
+                }
+                else
+                {
+                    Logger.Information($"Signing verfication of {binaryPath} succedeed. Signature: {printValue}", binaryPath);
+                }
             }
             else
             {
