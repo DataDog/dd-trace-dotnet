@@ -948,9 +948,9 @@ stages:
     - template: steps/install-latest-dotnet-sdk.yml
 
     - script: |
-        where make
-        where clang
-        where clang++
+        whereis make
+        whereis clang
+        whereis clang++
         ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome
       displayName: Build native-tracer
       retryCountOnTaskFailure: 1
