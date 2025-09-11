@@ -67,7 +67,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.27.0";
+    const string LibDdwafVersion = "1.28.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0", "1.23.0" };
 
@@ -358,8 +358,12 @@ partial class Build
 
             var envVariables = new Dictionary<string, string>
             {
+                ["HOME"] = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ["PATH"] = Environment.GetEnvironmentVariable("PATH"),
                 ["CMAKE_OSX_ARCHITECTURES"] = finalArchs,
-                ["PATH"] = Environment.GetEnvironmentVariable("PATH")
+                ["CMAKE_MAKE_PROGRAM"] = "make",
+                ["CMAKE_CXX_COMPILER"] = "clang++",
+                ["CMAKE_C_COMPILER"] = "clang",
             };
 
             // Build native
