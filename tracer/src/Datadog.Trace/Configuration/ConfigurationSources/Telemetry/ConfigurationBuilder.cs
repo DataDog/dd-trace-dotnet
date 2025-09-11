@@ -494,6 +494,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         private ConfigurationResult<T> GetResult<T>(Func<IConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, bool recordValue)
         {
             var result = selector(Source, Key, Telemetry, validator, recordValue);
+            // todo call helper to find fallbacks
             if (result.ShouldFallBack && FallbackKey1 is not null)
             {
                 result = selector(Source, FallbackKey1, Telemetry, validator, recordValue);

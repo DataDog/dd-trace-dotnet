@@ -1,0 +1,49 @@
+{
+  "supportedConfigurations": {
+    "DD_AGENT_HOST": {
+      "version": [ "A" ]
+    },
+    "DD_API_SECURITY_ENABLED": {
+      "version": [ "A" ]
+    },
+    "DD_SERVICE": {
+      "version": [ "A" ]
+    },
+    "DD_TAGS": {
+      "version": [ "A" ]
+    },
+    "DD_TRACE_AGENT_PORT": {
+      "version": [ "A" ]
+    }
+  },
+  "aliases": {
+    "DD_AGENT_HOST": [
+      "DD_TRACE_AGENT_HOSTNAME",
+      "DATADOG_TRACE_AGENT_HOSTNAME"
+    ],
+    "DD_API_SECURITY_ENABLED": [
+      "DD_EXPERIMENTAL_API_SECURITY_ENABLED"
+    ],
+    "DD_SERVICE": [
+      "DD_SERVICE_NAME"
+    ],
+    "DD_TAGS": [
+      "DD_TRACE_GLOBAL_TAGS"
+    ],
+    "DD_TRACE_AGENT_PORT": [
+      "DATADOG_TRACE_AGENT_PORT"
+    ],
+    "DD_TRACE_CONFIG_FILE": [
+      "DD_DOTNET_TRACER_CONFIG_FILE"
+    ]
+  },
+  "deprecations": {
+    "DD_EXCEPTION_DEBUGGING_ENABLED": "DD_EXCEPTION_REPLAY_ENABLED",
+    "DD_HTTP_CLIENT_ERROR_STATUSES": "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES",
+    "DD_HTTP_SERVER_ERROR_STATUSES": "DD_TRACE_HTTP_SERVER_ERROR_STATUSES",
+    "DD_INTERNAL_RCM_POLL_INTERVAL": "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS",
+    "DD_MAX_TRACES_PER_SECOND": "DD_TRACE_RATE_LIMIT",
+    "DD_TRACE_ANALYTICS_ENABLED": "Deprecated - App Analytics is deprecated",
+    "DD_TRACE_LOG_PATH": "DD_TRACE_LOG_DIRECTORY"
+  }
+}

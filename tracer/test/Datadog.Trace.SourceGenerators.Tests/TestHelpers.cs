@@ -13,6 +13,7 @@ using Datadog.Trace.SourceGenerators.Helpers;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Datadog.Trace.SourceGenerators.Tests
 {
@@ -22,6 +23,13 @@ namespace Datadog.Trace.SourceGenerators.Tests
             where T : IIncrementalGenerator, new()
         {
             var (diagnostics, trees) = GetGeneratedTrees<T, TrackingNames>(source);
+            return (diagnostics, trees.LastOrDefault() ?? string.Empty);
+        }
+
+        public static (ImmutableArray<Diagnostic> Diagnostics, string Output) GetGeneratedOutput<T>(params AdditionalText[] files)
+            where T : IIncrementalGenerator, new()
+        {
+            var (diagnostics, trees) = GetGeneratedTrees<T, TrackingNames>([], true, additionalFiles: files);
             return (diagnostics, trees.LastOrDefault() ?? string.Empty);
         }
 
@@ -37,7 +45,7 @@ namespace Datadog.Trace.SourceGenerators.Tests
             where TGenerator : IIncrementalGenerator, new()
             => GetGeneratedTrees<TGenerator, TTrackingNames>(sources, assertOutput: true);
 
-        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator, TTrackingNames>(string[] sources, bool assertOutput)
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator, TTrackingNames>(string[] sources, bool assertOutput, AdditionalText[] additionalFiles = null)
             where TGenerator : IIncrementalGenerator, new()
         {
             // get all the const string fields
@@ -48,10 +56,10 @@ namespace Datadog.Trace.SourceGenerators.Tests
                                .Where(x => !string.IsNullOrEmpty(x))
                                .ToArray();
 
-            return GetGeneratedTrees<TGenerator>(sources, trackingNames, assertOutput);
+            return GetGeneratedTrees<TGenerator>(sources, trackingNames, additionalFiles, assertOutput: assertOutput);
         }
 
-        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<T>(string[] source, string[] stages, bool assertOutput = true)
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<T>(string[] source, string[] stages, AdditionalText[] additionalFiles = null, bool assertOutput = true)
             where T : IIncrementalGenerator, new()
         {
             IEnumerable<SyntaxTree> syntaxTrees = source.Select(static x => CSharpSyntaxTree.ParseText(x));
@@ -66,12 +74,12 @@ namespace Datadog.Trace.SourceGenerators.Tests
                 references,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-            GeneratorDriverRunResult runResult = RunGeneratorAndAssertOutput<T>(compilation, stages, assertOutput);
+            GeneratorDriverRunResult runResult = RunGeneratorAndAssertOutput<T>(compilation, stages, additionalFiles, assertOutput);
 
             return (runResult.Diagnostics, runResult.GeneratedTrees.Select(x => x.ToString()).ToArray());
         }
 
-        private static GeneratorDriverRunResult RunGeneratorAndAssertOutput<T>(CSharpCompilation compilation, string[] trackingNames, bool assertOutput = true)
+        private static GeneratorDriverRunResult RunGeneratorAndAssertOutput<T>(CSharpCompilation compilation, string[] trackingNames, AdditionalText[] additionalFiles, bool assertOutput = true)
             where T : IIncrementalGenerator, new()
         {
             ISourceGenerator generator = new T().AsSourceGenerator();
@@ -80,7 +88,7 @@ namespace Datadog.Trace.SourceGenerators.Tests
                 disabledOutputs: IncrementalGeneratorOutputKind.None,
                 trackIncrementalGeneratorSteps: true);
 
-            GeneratorDriver driver = CSharpGeneratorDriver.Create([generator], driverOptions: opts);
+            GeneratorDriver driver = CSharpGeneratorDriver.Create([generator], driverOptions: opts, additionalTexts: additionalFiles);
 
             var clone = compilation.Clone();
             // Run twice, once with a clone of the compilation
@@ -200,9 +208,9 @@ namespace Datadog.Trace.SourceGenerators.Tests
                     }
 
                     node.Should()
-                       .NotBeOfType<Compilation>(because)
-                       .And.NotBeOfType<ISymbol>(because)
-                       .And.NotBeOfType<SyntaxNode>(because);
+                        .NotBeOfType<Compilation>(because)
+                        .And.NotBeOfType<ISymbol>(because)
+                        .And.NotBeOfType<SyntaxNode>(because);
 
                     Type type = node.GetType();
                     if (type.IsPrimitive || type.IsEnum || type == typeof(string))
@@ -227,6 +235,13 @@ namespace Datadog.Trace.SourceGenerators.Tests
                     }
                 }
             }
+        }
+
+        internal class TestAdditionalText(string path, string text) : AdditionalText
+        {
+            public override string Path { get; } = path;
+
+            public override SourceText GetText(System.Threading.CancellationToken cancellationToken = default) => SourceText.From(text);
         }
     }
 }
