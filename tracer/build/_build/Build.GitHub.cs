@@ -1182,7 +1182,7 @@ partial class Build
 
         Console.WriteLine($"{artifact.Name} downloaded. Extracting to {outputDirectory}...");
 
-        UncompressZip(zipPath, outputDirectory);
+        UncompressZipQuiet(zipPath, outputDirectory);
 
         Console.WriteLine($"Artifact download complete");
     }
