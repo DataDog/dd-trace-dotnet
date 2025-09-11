@@ -46,6 +46,10 @@ internal class TraceExporter : SafeHandle, IApi
         try
         {
             using var response = Send(traces, numberOfTraces);
+            if (response == null)
+            {
+                return Task.FromResult(false);
+            }
 
             if (response.IsInvalid)
             {
@@ -77,7 +81,7 @@ internal class TraceExporter : SafeHandle, IApi
             _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
             return Task.FromResult(true);
         }
-        catch (Exception ex) when (ex is not TraceExporterException)
+        catch (Exception ex)
         {
             _log.Error(ex, "An error occurred while sending data to the agent.");
             return Task.FromResult(false);
@@ -104,7 +108,7 @@ internal class TraceExporter : SafeHandle, IApi
         return true;
     }
 
-    private unsafe TraceExporterResponse Send(ArraySegment<byte> traces, int numberOfTraces)
+    private unsafe TraceExporterResponse? Send(ArraySegment<byte> traces, int numberOfTraces)
     {
         fixed (byte* ptr = traces.Array)
         {
@@ -114,23 +118,24 @@ internal class TraceExporter : SafeHandle, IApi
                 Len = (UIntPtr)traces.Count
             };
 
-            var responsePtr = IntPtr.Zero;
             try
             {
+                var responsePtr = IntPtr.Zero;
                 using var error = NativeInterop.Exporter.Send(this, traceSlice, (UIntPtr)numberOfTraces, ref responsePtr);
                 if (!error.IsInvalid)
                 {
-                    var ex = error.ToException();
-                    _log.Error(ex, "An error occurred while sending data to the agent. Error Code: {ErrorCode}, Message: {Message}", ex.ErrorCode, ex.Message);
-                    throw ex;
+                    var err = error.ToError();
+                    var message = Marshal.PtrToStringAnsi(err.Msg);
+                    _log.Error("An error occurred while sending data to the agent. Error Code: {ErrorCode}, Message: {Message}", err.Code, message);
                 }
+
+                return new TraceExporterResponse(responsePtr);
             }
-            catch (Exception ex) when (ex is not TraceExporterException)
+            catch (Exception ex)
             {
                 _log.Error(ex, "An error occurred while sending data to the agent.");
+                return null;
             }
-
-            return new TraceExporterResponse(responsePtr);
         }
     }
 }
