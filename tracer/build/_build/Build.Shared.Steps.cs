@@ -166,7 +166,15 @@ partial class Build
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
             EnsureExistingDirectory(buildDirectory);
 
-            var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = finalArchs };
+            var envVariables = new Dictionary<string, string>
+            {
+                ["HOME"] = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ["PATH"] = Environment.GetEnvironmentVariable("PATH"),
+                ["CMAKE_OSX_ARCHITECTURES"] = finalArchs,
+                ["CMAKE_MAKE_PROGRAM"] = "make",
+                ["CMAKE_CXX_COMPILER"] = "clang++",
+                ["CMAKE_C_COMPILER"] = "clang",
+            };
 
             // Build native
             CMake.Value(
