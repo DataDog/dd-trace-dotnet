@@ -27,7 +27,7 @@ namespace Datadog.Trace.Activity
 
         private static object? _activityListenerInstance;
         private static Func<object>? _getCurrentActivity;
-        private static Action<object, ActivityKind>? _setKindProperty;
+        private static Action<object, int>? _setKindProperty;
 
         private static int _initialized = 0;
         private static int _stopped = 0;
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Activity
         {
             try
             {
-                _setKindProperty?.Invoke(activity, activityKind);
+                _setKindProperty?.Invoke(activity, (int)activityKind);
             }
             catch (Exception ex)
             {
@@ -323,8 +323,9 @@ namespace Datadog.Trace.Activity
             // Properties: Kinda like fields, they give you a _method_ under the hood for set/get
             // activityType.GetProperty("Kind")!.SetMethod => actual (private) method that sets the value for the Kind property
 
-            var activityTypeAssembly = activityType.Assembly.GetType("System.Diagnostics.Activity")!;
-            var activityKindTypeAssembly = activityKindType.Assembly.GetType("System.Diagnostics.ActivityKind")!;
+            // Get the actual runtime types from the System.Diagnostics.DiagnosticSource assembly
+            var runtimeActivityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false) ?? activityType;
+            var runtimeActivityKindType = Type.GetType("System.Diagnostics.ActivityKind, System.Diagnostics.DiagnosticSource", throwOnError: false) ?? activityKindType;
             var dynMethod = new DynamicMethod(
                 "ActivityKindSetter",
                 null,
@@ -334,12 +335,12 @@ namespace Datadog.Trace.Activity
 
             var il = dynMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);                  // Load the first argument (object)
-            il.Emit(OpCodes.Castclass, activityTypeAssembly); // Cast this value to System.Diagnostics.Activity type
+            il.Emit(OpCodes.Castclass, runtimeActivityType); // Cast this value to runtime System.Diagnostics.Activity type
             il.Emit(OpCodes.Ldarg_1);                  // Load the second argument (int)
-            il.Emit(OpCodes.Castclass, activityKindTypeAssembly); // Cast this value to System.Diagnostics.ActivityKind type
-            il.Emit(OpCodes.Call, activityTypeAssembly.GetProperty("Kind")!.SetMethod!); // Call the setter method for System.Diagnostics.ActivityKind.Set(System.Diagnostics.Activity, System.Diagnostics.ActivityKind)
+            il.Emit(OpCodes.Castclass, runtimeActivityKindType); // Cast this value to System.Diagnostics.ActivityKind type
+            il.Emit(OpCodes.Call, runtimeActivityType.GetProperty("Kind")!.SetMethod!); // Call the setter method
             il.Emit(OpCodes.Ret); // return
-            _setKindProperty = dynMethod.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), activityKindTypeAssembly)) as Action<object, ActivityKind>; // Create the delegate
+            _setKindProperty = (Action<object, int>)dynMethod.CreateDelegate(typeof(Action<object, int>)); // Create the delegate
         }
     }
 }
