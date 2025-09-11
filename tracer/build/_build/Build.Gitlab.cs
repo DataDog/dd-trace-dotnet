@@ -136,7 +136,7 @@ partial class Build
                     logOutput: false,
                     logInvocation: false);
 
-                var printValue = status.Select(o => o.Text).FirstOrDefault(l => !string.IsNullOrEmpty(l))?.Trim();
+                var printValue = print.Select(o => o.Text).FirstOrDefault(l => !string.IsNullOrEmpty(l))?.Trim();
 
                 if (!string.Equals(printValue, validSignature, StringComparison.OrdinalIgnoreCase))
                 {
