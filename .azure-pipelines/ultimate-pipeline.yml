@@ -947,7 +947,11 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome
+    - script: |
+        where make
+        where clang
+        where clang++
+        ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome
       displayName: Build native-tracer
       retryCountOnTaskFailure: 1
 

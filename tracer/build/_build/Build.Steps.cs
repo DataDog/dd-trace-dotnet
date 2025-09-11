@@ -364,7 +364,7 @@ partial class Build
 
             // Build native
             CMake.Value(
-                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
                 environmentVariables: envVariables);
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}",
