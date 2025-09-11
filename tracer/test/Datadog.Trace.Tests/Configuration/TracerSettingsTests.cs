@@ -184,7 +184,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("400-403, 500-501-234, s342, 500-503", "400,401,402,403,500,501,502,503")]
         public void ParseHttpCodes(string original, string expected)
         {
-            bool[] errorStatusCodesArray = TracerSettings.ParseHttpCodesToArray(original);
+            bool[] errorStatusCodesArray = MutableSettings.ParseHttpCodesToArray(original);
             string[] expectedKeysArray = expected.Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var value in expectedKeysArray)
@@ -1172,7 +1172,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("1my-tag", false, false, null)]
         public void InitializeHeaderTag(string tagName, bool headerTagsNormalizationFixEnabled, bool expectedValid, string expectedTagName)
         {
-            TracerSettings.InitializeHeaderTag(tagName, headerTagsNormalizationFixEnabled, out var finalTagName)
+            MutableSettings.InitializeHeaderTag(tagName, headerTagsNormalizationFixEnabled, out var finalTagName)
                           .Should()
                           .Be(expectedValid);
 
