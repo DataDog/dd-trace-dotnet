@@ -83,11 +83,10 @@ partial class Build
                     DeleteFile(p);
                 }
 
-                foreach (var d in Directory.GetDirectories(output))
+                var policyDir = Path.Combine(output, "dd-policy-engine");
+                if (Directory.Exists(policyDir))
                 {
-                    if (Path.GetFileName(d) == "dd-policy-engine") {
-                        DeleteDirectory(d);
-                    }
+                    DeleteDirectory(policyDir);
                 }
 
                 CompressionTasks.UncompressZip(tempFile, output);

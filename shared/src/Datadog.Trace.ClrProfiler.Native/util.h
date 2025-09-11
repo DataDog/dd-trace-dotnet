@@ -151,6 +151,12 @@ inline bool IsRunningOnIIS()
     return process_name == WStr("w3wp.exe") || process_name == WStr("iisexpress.exe");
 }
 
+inline bool IsSingleStepInstrumentation()
+{
+    const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
+    return !isSingleStepVariable.empty()
+}
+
 inline std::string GetCurrentOsArch(bool isRunningOnAlpine)
 {
 #if AMD64
