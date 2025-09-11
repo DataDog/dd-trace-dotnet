@@ -337,7 +337,7 @@ namespace Datadog.Trace.Activity
             il.Emit(OpCodes.Ldarg_0);                  // Load the first argument (object)
             il.Emit(OpCodes.Castclass, runtimeActivityType); // Cast this value to runtime System.Diagnostics.Activity type
             il.Emit(OpCodes.Ldarg_1);                  // Load the second argument (int)
-            il.Emit(OpCodes.Castclass, runtimeActivityKindType); // Cast this value to System.Diagnostics.ActivityKind type
+            // For value types (enums), we don't use Castclass - int can be directly used as enum value
             il.Emit(OpCodes.Call, runtimeActivityType.GetProperty("Kind")!.SetMethod!); // Call the setter method
             il.Emit(OpCodes.Ret); // return
             _setKindProperty = (Action<object, int>)dynMethod.CreateDelegate(typeof(Action<object, int>)); // Create the delegate
