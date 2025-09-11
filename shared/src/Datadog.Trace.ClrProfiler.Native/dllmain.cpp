@@ -45,12 +45,12 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
         constexpr const bool IsLogDebugEnabledDefault = false;
         bool isLogDebugEnabled;
 
-        shared::WSTRING isLogDebugEnabledStr = shared::GetEnvironmentValue(EnvironmentVariables::DebugLogEnabled);
+        shared::WSTRING isLogDebugEnabledStr = shared::GetEnvironmentValue(environment::debug_log_enabled);
 
         // no environment variable set
         if (isLogDebugEnabledStr.empty())
         {
-            Log::Info("No \"", EnvironmentVariables::DebugLogEnabled, "\" environment variable has been found.",
+            Log::Info("No \"", environment::debug_log_enabled, "\" environment variable has been found.",
                 " Enable debug log = ", IsLogDebugEnabledDefault, " (default).");
 
             isLogDebugEnabled = IsLogDebugEnabledDefault;
@@ -61,7 +61,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
             {
                 // invalid value for environment variable
                 Log::Info("Non boolean value \"", isLogDebugEnabledStr, "\" for \"",
-                    EnvironmentVariables::DebugLogEnabled, "\" environment variable.",
+                    environment::debug_log_enabled, "\" environment variable.",
                     " Enable debug log = ", IsLogDebugEnabledDefault, " (default).");
 
                 isLogDebugEnabled = IsLogDebugEnabledDefault;
@@ -69,7 +69,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
             else
             {
                 // take environment variable into account
-                Log::Info("Enable debug log = ", isLogDebugEnabled, " from (", EnvironmentVariables::DebugLogEnabled, " environment variable)");
+                Log::Info("Enable debug log = ", isLogDebugEnabled, " from (", environment::debug_log_enabled, " environment variable)");
             }
         }
 

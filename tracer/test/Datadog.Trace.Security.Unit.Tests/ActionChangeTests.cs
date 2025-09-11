@@ -34,7 +34,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
         var args = CreateArgs(paramValue);
         var result = context.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");
-        result.BlockInfo["status_code"].Should().Be("403");
+        result.BlockInfo["status_code"].Should().Be(403);
         var jsonString = JsonConvert.SerializeObject(result.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
         resultData.Rule.Id.Should().Be(rule);
@@ -47,13 +47,13 @@ public class ActionChangeTests : WafLibraryRequiredTest
         if (actionType == BlockingAction.BlockRequestType)
         {
             result.BlockInfo.Should().NotBeNull();
-            result.BlockInfo["status_code"].Should().Be(newStatus.ToString());
+            result.BlockInfo["status_code"].Should().Be(newStatus);
         }
 
         if (actionType == BlockingAction.RedirectRequestType)
         {
             result.RedirectInfo.Should().NotBeNull();
-            result.RedirectInfo["status_code"].Should().Be(newStatus.ToString());
+            result.RedirectInfo["status_code"].Should().Be(newStatus);
         }
     }
 
@@ -70,7 +70,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
         using var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");
-        result.BlockInfo["status_code"].Should().Be("500");
+        result.BlockInfo["status_code"].Should().Be(500);
     }
 
     private Dictionary<string, object> CreateArgs(string requestParam) => new() { { AddressesConstants.RequestUriRaw, "http://localhost:54587/" }, { AddressesConstants.RequestBody, new[] { "param", requestParam } }, { AddressesConstants.RequestMethod, "GET" } };
