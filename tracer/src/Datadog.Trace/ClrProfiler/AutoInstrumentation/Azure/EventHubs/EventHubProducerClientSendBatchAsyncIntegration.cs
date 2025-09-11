@@ -7,6 +7,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -63,7 +64,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                     Operation = "send"
                 };
 
-                scope = Tracer.Instance.StartActiveInternal(OperationName, tags: tags);
+                var spanContexts = EventHubsCommon.RetrieveAndClearSpanContexts(eventBatch?.Instance);
+                var spanLinks = spanContexts?.Select(ctx => new SpanLink(ctx));
+                scope = Tracer.Instance.StartActiveInternal(OperationName, tags: tags, links: spanLinks);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Queue;

@@ -7,7 +7,6 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -63,11 +62,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 {
                     span.SetTag("messaging.message_id", eventData.MessageId);
                 }
-
-                if (eventData.Properties != null)
-                {
-                    AzureMessagingCommon.InjectContext(eventData.Properties, scope);
-                }
             }
 
             return new CallTargetState(scope);
@@ -79,6 +73,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             Exception? exception,
             in CallTargetState state)
         {
+            if (exception == null && returnValue is bool success && success && state.Scope?.Span?.Context != null && instance != null)
+            {
+                EventHubsCommon.StoreSpanContext(instance, state.Scope.Span.Context);
+            }
+
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }
