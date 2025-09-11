@@ -86,11 +86,6 @@ public class QuartzTests : TracingIntegrationTest
 
     private static string GetSuffix(string packageVersion, out int expectedSpanCount)
     {
-        if (string.IsNullOrEmpty(packageVersion))
-        {
-            return Set(out expectedSpanCount, 0, packageVersion);
-        }
-
         return new Version(packageVersion) switch
         {
             { } v when v >= new Version("4.0.0") => Set(out expectedSpanCount, 3, "V4"),
