@@ -72,9 +72,14 @@ namespace Datadog.Trace.Activity
 
         public static void SetActivityKind(IActivity5 activity, ActivityKind activityKind)
         {
+            if (activity.Instance is null)
+            {
+                return;
+            }
+
             try
             {
-                _setKindProperty?.Invoke(activity, (int)activityKind);
+                _setKindProperty?.Invoke(activity.Instance, (int)activityKind);
             }
             catch (Exception ex)
             {
