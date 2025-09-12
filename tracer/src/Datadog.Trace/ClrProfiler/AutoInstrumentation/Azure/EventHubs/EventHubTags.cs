@@ -43,29 +43,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         [Tag("messaging.operation")]
         public string? Operation { get; set; }
     }
-
-    internal partial class EventHubProcessorTags : InstrumentationTags
-    {
-        [Tag(Trace.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Consumer;
-
-        [Tag("eventhub.name")]
-        public string? EventHubName { get; set; }
-
-        [Tag("eventhub.namespace")]
-        public string? Namespace { get; set; }
-
-        [Tag("eventhub.consumer_group")]
-        public string? ConsumerGroup { get; set; }
-
-        [Tag("eventhub.partition_id")]
-        public string? PartitionId { get; set; }
-
-        [Tag("messaging.operation")]
-        public string? Operation { get; set; }
-
-        [Tag("messaging.message_id")]
-        public string? MessageId { get; set; }
-    }
 }
 #pragma warning restore SA1402 // File must contain single type

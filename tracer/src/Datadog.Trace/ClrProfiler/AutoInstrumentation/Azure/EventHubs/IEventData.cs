@@ -21,29 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         IDictionary<string, object> Properties { get; }
 
         /// <summary>
-        /// Gets the event body as BinaryData
-        /// </summary>
-        IBinaryData EventBody { get; }
-
-        /// <summary>
         /// Gets the message ID
         /// </summary>
         string? MessageId { get; }
-
-        /// <summary>
-        /// Gets the partition key
-        /// </summary>
-        string? PartitionKey { get; }
-    }
-
-    /// <summary>
-    /// Duck type for Azure.Core.BinaryData
-    /// </summary>
-    internal interface IBinaryData : IDuckType
-    {
-        /// <summary>
-        /// Converts the BinaryData to a byte array
-        /// </summary>
-        byte[] ToArray();
     }
 }
