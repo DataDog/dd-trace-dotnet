@@ -9,11 +9,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Processors;
@@ -27,268 +29,13 @@ namespace Datadog.Trace.Configuration;
 /// code or via remote configuration. Note that the specific instance is immutable, but there may be a
 /// new version in the lifetime of the application
 /// </summary>
-public class MutableSettings
+internal abstract class MutableSettings
 {
     // we cached the static instance here, because is being used in the hotpath
     // by IsIntegrationEnabled method (called from all integrations)
     private readonly DomainMetadata _domainMetadata = DomainMetadata.Instance;
-
-    internal MutableSettings(
-        IConfigurationSource source,
-        IConfigurationTelemetry telemetry,
-        OverrideErrorLog errorLog,
-        TracerSettings tracerSettings)
-    {
-        Telemetry = telemetry;
-        ErrorLog = errorLog;
-        var config = new ConfigurationBuilder(source, Telemetry);
-
-        LogsInjectionEnabled = config
-                              .WithKeys(ConfigurationKeys.LogsInjectionEnabled)
-                              .AsBool(defaultValue: true);
-
-        var otelTags = config
-                      .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
-                      .AsDictionaryResult(separator: '=');
-
-        Dictionary<string, string>? globalTags;
-        if (tracerSettings.ExperimentalFeaturesEnabled.Contains("DD_TAGS"))
-        {
-            // New behavior: If ExperimentalFeaturesEnabled configures DD_TAGS, we want to change DD_TAGS parsing to do the following:
-            // 1. If a comma is in the value, split on comma as before. Otherwise, split on space
-            // 2. Key-value pairs with empty values are allowed, instead of discarded
-            // 3. Key-value pairs without values (i.e. no `:` separator) are allowed and treated as key-value pairs with empty values, instead of discarded
-            Func<string, IDictionary<string, string>> updatedTagsParser = (data) =>
-            {
-                var dictionary = new ConcurrentDictionary<string, string>();
-                if (string.IsNullOrWhiteSpace(data))
-                {
-                    // return empty collection
-                    return dictionary;
-                }
-
-                char[] separatorChars = data.Contains(',') ? [','] : [' '];
-                var entries = data.Split(separatorChars, StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var entry in entries)
-                {
-                    // we need Trim() before looking forthe separator so we can skip entries with no key
-                    // (that is, entries with a leading separator, like "<empty or whitespace>:value")
-                    var trimmedEntry = entry.Trim();
-                    if (trimmedEntry.Length == 0 || trimmedEntry[0] == ':')
-                    {
-                        continue;
-                    }
-
-                    var separatorIndex = trimmedEntry.IndexOf(':');
-                    if (separatorIndex < 0)
-                    {
-                        // entries with no separator are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
-                        // it's a key with no value.
-                        var key = trimmedEntry;
-                        dictionary[key] = string.Empty;
-                    }
-                    else if (separatorIndex > 0)
-                    {
-                        // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
-                        // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
-                        var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
-                        var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
-                        dictionary[key] = value;
-                    }
-                }
-
-                return dictionary;
-            };
-
-            globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                        .AsDictionaryResult(parser: updatedTagsParser)
-                        .OverrideWith(
-                             RemapOtelTags(in otelTags),
-                             ErrorLog,
-                             () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
-
-                         // Filter out tags with empty keys, and trim whitespace
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
-        }
-        else
-        {
-            globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                        .AsDictionaryResult()
-                        .OverrideWith(
-                             RemapOtelTags(in otelTags),
-                             ErrorLog,
-                             () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
-
-                         // Filter out tags with empty keys or empty values, and trim whitespace
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
-        }
-
-        Environment = config
-                     .WithKeys(ConfigurationKeys.Environment)
-                     .AsString();
-
-        // DD_ENV has precedence over DD_TAGS
-        Environment = GetExplicitSettingOrTag(Environment, globalTags, Tags.Env, ConfigurationKeys.Environment);
-
-        var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
-        var serviceName = config
-                         .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
-                         .AsStringResult()
-                         .OverrideWith(in otelServiceName, ErrorLog);
-
-        // DD_SERVICE has precedence over DD_TAGS
-        serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service, ConfigurationKeys.ServiceName);
-
-        if (tracerSettings.IsRunningInCiVisibility)
-        {
-            // Set the service name if not set
-            var isUserProvidedTestServiceTag = true;
-            var ciVisServiceName = serviceName;
-            if (string.IsNullOrEmpty(serviceName))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                ciVisServiceName = TestOptimization.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-                isUserProvidedTestServiceTag = false;
-            }
-
-            globalTags[Ci.Tags.CommonTags.UserProvidedTestServiceTag] = isUserProvidedTestServiceTag ? "true" : "false";
-
-            // Normalize the service name
-            ciVisServiceName = NormalizerTraceProcessor.NormalizeService(ciVisServiceName);
-            if (ciVisServiceName != serviceName)
-            {
-                serviceName = ciVisServiceName;
-                telemetry.Record(ConfigurationKeys.ServiceName, serviceName, recordValue: true, ConfigurationOrigins.Calculated);
-            }
-        }
-
-        ServiceName = serviceName;
-
-        ServiceVersion = config
-                        .WithKeys(ConfigurationKeys.ServiceVersion)
-                        .AsString();
-
-        // DD_VERSION has precedence over DD_TAGS
-        ServiceVersion = GetExplicitSettingOrTag(ServiceVersion, globalTags, Tags.Version, ConfigurationKeys.ServiceVersion);
-
-        GitCommitSha = config
-                      .WithKeys(ConfigurationKeys.GitCommitSha)
-                      .AsString();
-
-        // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
-        GitCommitSha = GetExplicitSettingOrTag(GitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitCommitSha);
-
-        GitRepositoryUrl = config
-                          .WithKeys(ConfigurationKeys.GitRepositoryUrl)
-                          .AsString();
-
-        // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-        GitRepositoryUrl = GetExplicitSettingOrTag(GitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl);
-
-        var otelTraceEnabled = config
-                              .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
-                              .AsBoolResult(
-                                   value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
-                                                ? ParsingResult<bool>.Success(result: false)
-                                                : ParsingResult<bool>.Failure());
-        TraceEnabled = config
-                      .WithKeys(ConfigurationKeys.TraceEnabled)
-                      .AsBoolResult()
-                      .OverrideWith(in otelTraceEnabled, ErrorLog, defaultValue: true);
-
-        if (tracerSettings.AzureAppServiceMetadata?.IsUnsafeToTrace == true)
-        {
-            telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
-            TraceEnabled = false;
-        }
-
-        var disabledIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
-                                             .AsString()
-                                            ?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? [];
-
-        // If Activity support is enabled, we shouldn't enable the OTel listener
-        DisabledIntegrationNames = tracerSettings.IsActivityListenerEnabled
-                                       ? new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase)
-                                       : new HashSet<string>([..disabledIntegrationNames, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
-
-        Integrations = new IntegrationSettingsCollection(source, DisabledIntegrationNames);
-        RecordDisabledIntegrationsTelemetry(Integrations, Telemetry);
-
-#pragma warning disable 618 // App analytics is deprecated, but still used
-        AnalyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
-                                 .AsBool(defaultValue: false);
-#pragma warning restore 618
-
-#pragma warning disable 618 // this parameter has been replaced but may still be used
-        MaxTracesSubmittedPerSecond = config
-                                     .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
-#pragma warning restore 618
-                                     .AsInt32(defaultValue: 100);
-
-        // mutate dictionary to remove without "env", "version", "git.commit.sha" or "git.repository.url" tags
-        // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
-        // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
-        globalTags.Remove(Tags.Service);
-        globalTags.Remove(Tags.Env);
-        globalTags.Remove(Tags.Version);
-        globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
-        globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
-        GlobalTags = new(globalTags);
-
-        var headerTagsNormalizationFixEnabled = config
-                                               .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
-                                               .AsBool(defaultValue: true);
-
-        // Filter out tags with empty keys or empty values, and trim whitespaces
-        HeaderTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
-
-        // Filter out tags with empty keys or empty values, and trim whitespaces
-        GrpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
-
-        CustomSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
-
-        GlobalSamplingRate = BuildSampleRate(ErrorLog, in config);
-
-        // We need to record a default value for configuration reporting
-        // However, we need to keep GlobalSamplingRateInternal null because it changes the behavior of the tracer in subtle ways
-        // (= we don't run the sampler at all if it's null, so it changes the tagging of the spans, and it's enforced by system tests)
-        if (GlobalSamplingRate is null)
-        {
-            Telemetry.Record(ConfigurationKeys.GlobalSamplingRate, 1.0, ConfigurationOrigins.Default);
-        }
-
-        StartupDiagnosticLogEnabled = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
-
-        KafkaCreateConsumerScopeEnabled = config
-                                         .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
-                                         .AsBool(defaultValue: true);
-        ServiceNameMappings = TracerSettings.InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
-
-        TracerMetricsEnabled = config
-                              .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
-                              .AsBool(defaultValue: false);
-
-        var httpServerErrorStatusCodes = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                        .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
-#pragma warning restore 618
-                                        .AsString(defaultValue: "500-599");
-
-        HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
-
-        var httpClientErrorStatusCodes = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                        .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
-#pragma warning restore 618
-                                        .AsString(defaultValue: "400-499");
-
-        HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
-    }
+    protected const bool TraceEnabledDefault = true;
+    protected const bool LogsInjectionEnabledDefault = true;
 
     // Settings that can be set via remote config
 
@@ -297,19 +44,24 @@ public class MutableSettings
     /// Default is <c>true</c>.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
-    public bool TraceEnabled { get; }
+    public abstract bool TraceEnabled { get; }
 
     /// <summary>
     /// Gets a value indicating custom sampling rules.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
-    public string? CustomSamplingRules { get; }
+    public abstract string? CustomSamplingRules { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the custom sampling rules came via remote config
+    /// </summary>
+    public abstract bool CustomSamplingRulesIsRemote { get; }
 
     /// <summary>
     /// Gets a value indicating a global rate for sampling.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
-    public double? GlobalSamplingRate { get; }
+    public abstract double? GlobalSamplingRate { get; }
 
     /// <summary>
     /// Gets a value indicating whether correlation identifiers are
@@ -317,18 +69,18 @@ public class MutableSettings
     /// Default is <c>true</c>.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
-    public bool LogsInjectionEnabled { get; }
+    public abstract bool LogsInjectionEnabled { get; }
 
     /// <summary>
     /// Gets the global tags, which are applied to all <see cref="Span"/>s.
     /// </summary>
-    public ReadOnlyDictionary<string, string> GlobalTags { get; }
+    public abstract ReadOnlyDictionary<string, string> GlobalTags { get; }
 
     /// <summary>
     /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
     /// of incoming and outgoing HTTP requests.
     /// </summary>
-    public ReadOnlyDictionary<string, string> HeaderTags { get; }
+    public abstract ReadOnlyDictionary<string, string> HeaderTags { get; }
 
     // Additional settings that can be set in code
 
@@ -342,48 +94,48 @@ public class MutableSettings
     /// <summary>
     /// Gets a value indicating whether the diagnostic log at startup is enabled
     /// </summary>
-    public bool StartupDiagnosticLogEnabled { get; }
+    public abstract bool StartupDiagnosticLogEnabled { get; }
 
     /// <summary>
     /// Gets the default environment name applied to all spans.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.Environment"/>
-    public string? Environment { get; }
+    public abstract string? Environment { get; }
 
     /// <summary>
     /// Gets the service name applied to top-level spans and used to build derived service names.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.ServiceName"/>
-    public string? ServiceName { get; }
+    public abstract string? ServiceName { get; }
 
     /// <summary>
     /// Gets the version tag applied to all spans.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
-    public string? ServiceVersion { get; }
+    public abstract string? ServiceVersion { get; }
 
     /// <summary>
     /// Gets the names of disabled integrations.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
-    public HashSet<string> DisabledIntegrationNames { get; }
+    public abstract HashSet<string> DisabledIntegrationNames { get; }
 
     /// <summary>
     /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
     /// of incoming and outgoing GRPC requests.
     /// </summary>
-    public ReadOnlyDictionary<string, string> GrpcTags { get; }
+    public abstract ReadOnlyDictionary<string, string> GrpcTags { get; }
 
     /// <summary>
     /// Gets a value indicating whether internal metrics
     /// are enabled and sent to DogStatsd.
     /// </summary>
-    public bool TracerMetricsEnabled { get; }
+    public abstract bool TracerMetricsEnabled { get; }
 
     /// <summary>
     /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.
     /// </summary>
-    public IntegrationSettingsCollection Integrations { get; }
+    public abstract IntegrationSettingsCollection Integrations { get; }
 
     /// <summary>
     /// Gets a value indicating whether default Analytics are enabled.
@@ -393,38 +145,38 @@ public class MutableSettings
     /// </summary>
     /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
     [Obsolete(DeprecationMessages.AppAnalytics)]
-    public bool AnalyticsEnabled { get; }
+    public abstract bool AnalyticsEnabled { get; }
 
     /// <summary>
     /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
     /// Default is <c>100</c>.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.TraceRateLimit"/>
-    public int MaxTracesSubmittedPerSecond { get; }
+    public abstract int MaxTracesSubmittedPerSecond { get; }
 
     /// <summary>
     /// Gets a value indicating whether a span context should be created on exiting a successful Kafka
     /// Consumer.Consume() call, and closed on entering Consumer.Consume().
     /// </summary>
     /// <seealso cref="ConfigurationKeys.KafkaCreateConsumerScopeEnabled"/>
-    public bool KafkaCreateConsumerScopeEnabled { get; }
+    public abstract bool KafkaCreateConsumerScopeEnabled { get; }
 
     /// <summary>
     /// Gets the HTTP status code that should be marked as errors for server integrations.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
-    internal bool[] HttpServerErrorStatusCodes { get; }
+    internal abstract bool[] HttpServerErrorStatusCodes { get; }
 
     /// <summary>
     /// Gets the HTTP status code that should be marked as errors for client integrations.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
-    internal bool[] HttpClientErrorStatusCodes { get; }
+    internal abstract bool[] HttpClientErrorStatusCodes { get; }
 
     /// <summary>
     /// Gets configuration values for changing service names based on configuration
     /// </summary>
-    internal ReadOnlyDictionary<string, string> ServiceNameMappings { get; }
+    internal abstract ReadOnlyDictionary<string, string> ServiceNameMappings { get; }
 
     // These ones can't be _directly_ changed, but are dependent on things that _can_
     // so they are _implicitly_ dynamic
@@ -433,26 +185,31 @@ public class MutableSettings
     /// Gets the application's git repository url.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
-    internal string? GitRepositoryUrl { get; }
+    internal abstract string? GitRepositoryUrl { get; }
 
     /// <summary>
     /// Gets the application's git commit hash.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
-    internal string? GitCommitSha { get; }
+    internal abstract string? GitCommitSha { get; }
 
     // Infra
-    internal OverrideErrorLog ErrorLog { get; }
+    internal abstract OverrideErrorLog ErrorLog { get; }
 
-    internal IConfigurationTelemetry Telemetry { get; }
+    internal abstract IConfigurationTelemetry Telemetry { get; }
 
     internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
-    {
-        var configurationDictionary = config
-                                     .WithKeys(key)
-                                     .AsDictionary(allowOptionalMappings: true, defaultValue: null, "[]");
+        => InitializeHeaderTags(
+            config.WithKeys(ConfigurationKeys.HeaderTags).AsDictionaryResult(allowOptionalMappings: true),
+            headerTagsNormalizationFixEnabled);
 
-        if (configurationDictionary == null)
+    protected static ReadOnlyDictionary<string, string>? InitializeHeaderTags(
+        ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> configurationResult,
+        bool headerTagsNormalizationFixEnabled)
+    {
+        var configurationDictionary = configurationResult.WithDefault(new DefaultResult<IDictionary<string, string>>(null!, "[]"));
+
+        if (configurationDictionary == null!)
         {
             return null;
         }
@@ -468,47 +225,13 @@ public class MutableSettings
                 continue;
             }
 
-            if (InitializeHeaderTag(tagName: kvp.Value, headerTagsNormalizationFixEnabled, out var finalTagName))
+            if (InitialMutableSettings.InitializeHeaderTag(tagName: kvp.Value, headerTagsNormalizationFixEnabled, out var finalTagName))
             {
                 headerTags.Add(headerName, finalTagName);
             }
         }
 
         return new(headerTags);
-    }
-
-    internal static bool InitializeHeaderTag(
-        string? tagName,
-        bool headerTagsNormalizationFixEnabled,
-        [NotNullWhen(true)] out string? finalTagName)
-    {
-        tagName = tagName?.Trim();
-
-        if (string.IsNullOrEmpty(tagName))
-        {
-            // The user did not provide a tag name. Normalization will happen later, when adding the tag prefix.
-            finalTagName = string.Empty;
-            return true;
-        }
-
-        if (!SpanTagHelper.IsValidTagName(tagName!, out tagName))
-        {
-            // invalid tag name
-            finalTagName = null;
-            return false;
-        }
-
-        if (headerTagsNormalizationFixEnabled)
-        {
-            // Default code path: if the user provided a tag name, don't try to normalize it.
-            finalTagName = tagName;
-            return true;
-        }
-
-        // user opted via feature flag into the previous behavior,
-        // where tag names were normalized even when specified
-        // (but _not_ spaces, due to a bug in the normalization code)
-        return SpanTagHelper.TryNormalizeTagName(tagName, normalizeSpaces: false, out finalTagName);
     }
 
     internal static bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)
@@ -599,155 +322,1009 @@ public class MutableSettings
         return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
     }
 
-    private static ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> RemapOtelTags(
-        in ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> original)
+    protected static void RemoveDisallowedGlobalTags(Dictionary<string, string> globalTags)
     {
-        if (original.ConfigurationResult is { IsValid: true, Result: { } values })
-        {
-            // Update well-known service information resources
-            if (values.TryGetValue("deployment.environment", out var envValue))
-            {
-                values.Remove("deployment.environment");
-                values[Tags.Env] = envValue;
-            }
-
-            if (values.TryGetValue("service.name", out var serviceValue))
-            {
-                values.Remove("service.name");
-                values[Tags.Service] = serviceValue;
-            }
-
-            if (values.TryGetValue("service.version", out var versionValue))
-            {
-                values.Remove("service.version");
-                values[Tags.Version] = versionValue;
-            }
-        }
-
-        return original;
+        globalTags.Remove(Tags.Service);
+        globalTags.Remove(Tags.Env);
+        globalTags.Remove(Tags.Version);
+        globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
+        globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
     }
 
-    private static void RecordDisabledIntegrationsTelemetry(IntegrationSettingsCollection integrations, IConfigurationTelemetry telemetry)
+    internal class UpdatedMutableSettings : MutableSettings
     {
-        // Record the final disabled settings values in the telemetry, we can't quite get this information
-        // through the IntegrationTelemetryCollector currently so record it here instead
-        StringBuilder? sb = null;
-
-        foreach (var setting in integrations.Settings)
+        internal UpdatedMutableSettings(
+            IConfigurationSource dynamicSource,
+            ManualInstrumentationConfigurationSourceBase manualSource,
+            MutableSettings initialSettings, // Might be the "real" initial mutable settings or the "null" version
+            TracerSettings tracerSettings,
+            IConfigurationTelemetry telemetry,
+            OverrideErrorLog errorLog)
         {
-            if (setting.Enabled == false)
+            Telemetry = telemetry;
+            ErrorLog = errorLog;
+            var dynamicConfig = new ConfigurationBuilder(dynamicSource, telemetry);
+            var manualConfig = new ConfigurationBuilder(manualSource, telemetry);
+
+            // Dynamic code overwrites manual, which means for telemetry to be correct we have to read the code sources first
+            // and _then_ the dynamic sources. If all of those are empty/have errors then we need to record the previous/default
+            // result from either the initial settings or the simple defaults.
+
+            // Telemetry needs to be recorded in "reverse" order to ensure precedence is correct
+            // - Code
+            // - Remote config
+            // - Fallback (If neither of the above)
+
+            var manualTraceEnabled = manualConfig.WithKeys(ConfigurationKeys.TraceEnabled).AsBoolResult();
+            var remoteTraceEnabled = dynamicConfig.WithKeys(ConfigurationKeys.TraceEnabled).AsBoolResult();
+            TraceEnabled = GetResult(manualTraceEnabled, remoteTraceEnabled, telemetry, initialSettings.TraceEnabled);
+
+            // Note: Calling GetAsClass<string>() here instead of GetAsString() as we need to get the
+            // "serialized JToken", which in JsonConfigurationSource is different, as it allows for non-string tokens
+            // Also note that this value is incompatible with values set locally.
+            var manualCustomSamplingRules = manualConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).AsStringResult();
+            var remoteCustomSamplingRules = dynamicConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).GetAsClassResult<string>(validator: null, converter: s => s);
+            CustomSamplingRules = GetResult(manualCustomSamplingRules, remoteCustomSamplingRules, telemetry, initialSettings.CustomSamplingRules);
+            CustomSamplingRulesIsRemote = remoteCustomSamplingRules.ConfigurationResult.IsValid;
+
+            var manualSampleRate = manualConfig.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
+            var dynamicSampleRate = dynamicConfig.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
+            GlobalSamplingRate = GetResult(manualSampleRate, dynamicSampleRate, telemetry, initialSettings.GlobalSamplingRate);
+
+            var manualLogsInjectionEnabled = manualConfig.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBoolResult();
+            var dynamicLogsInjectionEnabled = dynamicConfig.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBoolResult();
+            LogsInjectionEnabled = GetResult(manualLogsInjectionEnabled, dynamicLogsInjectionEnabled, telemetry, initialSettings.LogsInjectionEnabled);
+
+            var manualHeaderTags = manualConfig.WithKeys(ConfigurationKeys.HeaderTags).AsDictionaryResult();
+            var dynamicHeaderTags = dynamicConfig.WithKeys(ConfigurationKeys.HeaderTags).AsDictionaryResult();
+            HeaderTags = GetHeaderTagsResult(manualHeaderTags, dynamicHeaderTags, headerTagsNormalizationFixEnabled: true, telemetry, initialSettings.HeaderTags);
+
+            // No point checking the fallback keys, they're not used
+            var manualGlobalTags = manualConfig.WithKeys(ConfigurationKeys.GlobalTags).AsDictionaryResult();
+            var dynamicGlobalTags = dynamicConfig.WithKeys(ConfigurationKeys.GlobalTags).AsDictionaryResult();
+            // TODO: should we be checking for experimental tags format here?
+            // Also, note that this _prevents_ customers from setting service etc via the tags collection
+            // They have to set it via the specific properties instead
+            GlobalTags = GetDictionaryResult(manualGlobalTags, dynamicGlobalTags, telemetry, initialSettings.HeaderTags);
+
+            // The remaining properties are only exposed via manual config, so that's all we need to check
+            // NOTE: If dynamic config _does_ support these in the future, need to update to use the above pattern instead.
+            StartupDiagnosticLogEnabled = GetResult(
+                manualConfig.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBoolResult(),
+                telemetry,
+                initialSettings.StartupDiagnosticLogEnabled);
+
+            Environment = GetResult(
+                manualConfig.WithKeys(ConfigurationKeys.Environment).AsStringResult(),
+                telemetry,
+                initialSettings.Environment);
+
+            ServiceName = GetResult(
+                manualConfig.WithKeys(ConfigurationKeys.ServiceName).AsStringResult(),
+                telemetry,
+                initialSettings.ServiceName);
+
+            ServiceVersion = GetResult(
+                manualConfig.WithKeys(ConfigurationKeys.ServiceVersion).AsStringResult(),
+                telemetry,
+                initialSettings.ServiceVersion);
+
+            var disabledIntegrationNameResult = manualConfig.WithKeys(ConfigurationKeys.DisabledIntegrations)
+                                                            .AsStringResult();
+            HashSet<string> disabledIntegrationNames;
+            if (disabledIntegrationNameResult.ConfigurationResult is { IsValid: true, Result: var stringResult })
             {
-                sb ??= StringBuilderCache.Acquire();
-                sb.Append(setting.IntegrationName);
-                sb.Append(';');
+                // If Activity support is enabled, we shouldn't enable the OTel listener
+                var disabledIntegrationNamesArray = stringResult.Split([';'], StringSplitOptions.RemoveEmptyEntries);
+                disabledIntegrationNames = tracerSettings.IsActivityListenerEnabled
+                                               ? new HashSet<string>(disabledIntegrationNamesArray, StringComparer.OrdinalIgnoreCase)
+                                               : new HashSet<string>([..disabledIntegrationNamesArray, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
+            }
+            else
+            {
+                disabledIntegrationNames = initialSettings.DisabledIntegrationNames;
+                if (disabledIntegrationNameResult.ConfigurationResult.IsPresent)
+                {
+                    telemetry.Record(disabledIntegrationNameResult.Key, string.Join(";", disabledIntegrationNameResult), recordValue: true, ConfigurationOrigins.Calculated);
+                }
+            }
+
+            DisabledIntegrationNames = disabledIntegrationNames;
+            Integrations = new IntegrationSettingsCollection(manualSource, disabledIntegrationNames, initialSettings.Integrations);
+
+            var grpcTags = manualConfig.WithKeys(ConfigurationKeys.GrpcTags).AsDictionaryResult();
+            GrpcTags = GetHeaderTagsResult(
+                grpcTags,
+                grpcTags, // easy hacky way to save creating a new overload
+                headerTagsNormalizationFixEnabled: true,
+                telemetry,
+                initialSettings.GrpcTags);
+
+            TracerMetricsEnabled = GetResult(
+                manualConfig.WithKeys(ConfigurationKeys.TracerMetricsEnabled).AsBoolResult(),
+                telemetry,
+                initialSettings.TracerMetricsEnabled);
+
+#pragma warning disable 618 // App analytics is deprecated, but still used
+            AnalyticsEnabled = GetResult(
+                manualConfig.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled).AsBoolResult(),
+                telemetry,
+                initialSettings.AnalyticsEnabled);
+#pragma warning restore 618
+
+#pragma warning disable 618 // this parameter has been replaced but may still be used
+            MaxTracesSubmittedPerSecond = GetResult(
+                manualConfig.WithKeys(ConfigurationKeys.MaxTracesSubmittedPerSecond).AsInt32Result(),
+                telemetry,
+                initialSettings.MaxTracesSubmittedPerSecond);
+#pragma warning restore 618
+
+            KafkaCreateConsumerScopeEnabled = GetResult(
+                manualConfig.WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled).AsBoolResult(),
+                telemetry,
+                initialSettings.KafkaCreateConsumerScopeEnabled);
+
+            HttpServerErrorStatusCodes = GetStatusCodesResult(
+                manualConfig.WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes).AsStringResult(),
+                telemetry,
+                initialSettings.HttpServerErrorStatusCodes);
+
+            HttpClientErrorStatusCodes = GetStatusCodesResult(
+                manualConfig.WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes).AsStringResult(),
+                telemetry,
+                initialSettings.HttpClientErrorStatusCodes);
+
+            var serviceNamesResult = manualConfig.WithKeys(ConfigurationKeys.ServiceNameMappings).AsDictionaryResult();
+            ServiceNameMappings = GetDictionaryResult(
+                serviceNamesResult,
+                serviceNamesResult,
+                telemetry,
+                initialSettings.ServiceNameMappings);
+
+            // These can't actually be changed in code right now, so just set them to the same values
+            GitRepositoryUrl = initialSettings.GitRepositoryUrl;
+            GitCommitSha = initialSettings.GitCommitSha;
+        }
+
+        /// <inheritdoc />
+        public override bool TraceEnabled { get; }
+
+        /// <inheritdoc />
+        public override string? CustomSamplingRules { get; }
+
+        /// <inheritdoc />
+        public override bool CustomSamplingRulesIsRemote { get; }
+
+        /// <inheritdoc />
+        public override double? GlobalSamplingRate { get; }
+
+        /// <inheritdoc />
+        public override bool LogsInjectionEnabled { get; }
+
+        /// <inheritdoc />
+        public override ReadOnlyDictionary<string, string> GlobalTags { get; }
+
+        /// <inheritdoc />
+        public override ReadOnlyDictionary<string, string> HeaderTags { get; }
+
+        /// <inheritdoc />
+        public override bool StartupDiagnosticLogEnabled { get; }
+
+        /// <inheritdoc />
+        public override string? Environment { get; }
+
+        /// <inheritdoc />
+        public override string? ServiceName { get; }
+
+        /// <inheritdoc />
+        public override string? ServiceVersion { get; }
+
+        /// <inheritdoc />
+        public override HashSet<string> DisabledIntegrationNames { get; }
+
+        /// <inheritdoc />
+        public override ReadOnlyDictionary<string, string> GrpcTags { get; }
+
+        /// <inheritdoc />
+        public override bool TracerMetricsEnabled { get; }
+
+        /// <inheritdoc />
+        public override IntegrationSettingsCollection Integrations { get; }
+
+        /// <inheritdoc />
+        [Obsolete(DeprecationMessages.AppAnalytics)]
+        public override bool AnalyticsEnabled { get; }
+
+        /// <inheritdoc />
+        public override int MaxTracesSubmittedPerSecond { get; }
+
+        /// <inheritdoc />
+        public override bool KafkaCreateConsumerScopeEnabled { get; }
+
+        /// <inheritdoc />
+        internal override bool[] HttpServerErrorStatusCodes { get; }
+
+        /// <inheritdoc />
+        internal override bool[] HttpClientErrorStatusCodes { get; }
+
+        /// <inheritdoc />
+        internal override ReadOnlyDictionary<string, string> ServiceNameMappings { get; }
+
+        /// <inheritdoc />
+        internal override string? GitRepositoryUrl { get; }
+
+        /// <inheritdoc />
+        internal override string? GitCommitSha { get; }
+
+        /// <inheritdoc />
+        internal override OverrideErrorLog ErrorLog { get; }
+
+        /// <inheritdoc />
+        internal override IConfigurationTelemetry Telemetry { get; }
+
+        private static double? GetResult(
+            ConfigurationBuilder.StructConfigurationResultWithKey<double> manualResult,
+            ConfigurationBuilder.StructConfigurationResultWithKey<double> remoteResult,
+            IConfigurationTelemetry telemetry,
+            double? fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            if (remoteResult.ConfigurationResult is { IsValid: true, Result: var r2 })
+            {
+                return r2;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent || remoteResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        private static bool GetResult(
+            ConfigurationBuilder.StructConfigurationResultWithKey<bool> manualResult,
+            ConfigurationBuilder.StructConfigurationResultWithKey<bool> remoteResult,
+            IConfigurationTelemetry telemetry,
+            bool fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            if (remoteResult.ConfigurationResult is { IsValid: true, Result: var r2 })
+            {
+                return r2;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent || remoteResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        private static bool GetResult(
+            ConfigurationBuilder.StructConfigurationResultWithKey<bool> manualResult,
+            IConfigurationTelemetry telemetry,
+            bool fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        private static int GetResult(
+            ConfigurationBuilder.StructConfigurationResultWithKey<int> manualResult,
+            IConfigurationTelemetry telemetry,
+            int fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        private static string? GetResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<string> manualResult,
+            IConfigurationTelemetry telemetry,
+            string? fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        private static string? GetResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<string> manualResult,
+            ConfigurationBuilder.ClassConfigurationResultWithKey<string> remoteResult,
+            IConfigurationTelemetry telemetry,
+            string? fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            if (remoteResult.ConfigurationResult is { IsValid: true, Result: var r2 })
+            {
+                return r2;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent || remoteResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        private static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> manualResult,
+            ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> remoteResult,
+            bool headerTagsNormalizationFixEnabled,
+            IConfigurationTelemetry telemetry,
+            ReadOnlyDictionary<string, string> fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true })
+            {
+                // Non-null return if result is valid, but play it safe
+                return InitializeHeaderTags(manualResult, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+            }
+
+            if (remoteResult.ConfigurationResult is { IsValid: true, Result: var r2 })
+            {
+                // Non-null return if r1 is non-null
+                return InitializeHeaderTags(remoteResult, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent || remoteResult.ConfigurationResult.IsPresent)
+            {
+                // this is obviously super annoying
+                var stringifiedFallback = string.Join(",", fallback.Select(x => $"{x.Key}:{x.Value}"));
+                telemetry.Record(manualResult.Key, stringifiedFallback, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        private static ReadOnlyDictionary<string, string> GetDictionaryResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> manualResult,
+            ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> remoteResult,
+            IConfigurationTelemetry telemetry,
+            ReadOnlyDictionary<string, string> fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return FixupDictionary(r1);
+            }
+
+            if (remoteResult.ConfigurationResult is { IsValid: true, Result: var r2 })
+            {
+                return FixupDictionary(r2);
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent || remoteResult.ConfigurationResult.IsPresent)
+            {
+                // this is obviously super annoying
+                var stringifiedFallback = string.Join(",", fallback.Select(x => $"{x.Key}:{x.Value}"));
+                telemetry.Record(manualResult.Key, stringifiedFallback, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+
+            static ReadOnlyDictionary<string, string> FixupDictionary(IDictionary<string, string>? r1)
+            {
+                if (r1 is null)
+                {
+                    return ReadOnlyDictionary.Empty;
+                }
+
+                // Filter out tags with empty keys or empty values, and trim whitespace
+                return new(
+                    r1
+                       .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                       .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim()));
             }
         }
 
-        var value = sb is null ? null : StringBuilderCache.GetStringAndRelease(sb);
-        telemetry.Record(ConfigurationKeys.DisabledIntegrations, value, recordValue: true, ConfigurationOrigins.Calculated);
+        private static bool[] GetStatusCodesResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<string> manualResult,
+            IConfigurationTelemetry telemetry,
+            bool[] fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var codes })
+            {
+                return ParseHttpCodesToArray(codes);
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent)
+            {
+                // this is obviously super annoying
+                var stringifiedFallback = string.Join(",", fallback.Select(i => i.ToString(CultureInfo.InvariantCulture)));
+                telemetry.Record(manualResult.Key, stringifiedFallback, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
     }
 
-    private static double? BuildSampleRate(OverrideErrorLog log, in ConfigurationBuilder config)
+    /// <summary>
+    /// The initial settings for settings that can change throughput the lifetime of the application.
+    /// </summary>
+    internal class InitialMutableSettings : MutableSettings
     {
-        // The "overriding" is complex, so we can't use the usual `OverrideWith()` approach
-        var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
-        var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
-        var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
-
-        double? ddResult = ddSampleRate.ConfigurationResult.IsValid ? ddSampleRate.ConfigurationResult.Result : null;
-
-        // more complex, so can't use built-in `Merge()` support
-        if (ddSampleRate.ConfigurationResult.IsPresent)
+        internal InitialMutableSettings(
+            IConfigurationSource source,
+            IConfigurationTelemetry telemetry,
+            OverrideErrorLog errorLog,
+            TracerSettings tracerSettings)
         {
-            if (otelSampleType.ConfigurationResult.IsPresent)
+            Telemetry = telemetry;
+            ErrorLog = errorLog;
+            var config = new ConfigurationBuilder(source, telemetry);
+
+            LogsInjectionEnabled = config
+                                  .WithKeys(ConfigurationKeys.LogsInjectionEnabled)
+                                  .AsBool(defaultValue: true);
+
+            var otelTags = config
+                          .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
+                          .AsDictionaryResult(separator: '=');
+
+            Dictionary<string, string>? globalTags;
+            if (tracerSettings.ExperimentalFeaturesEnabled.Contains("DD_TAGS"))
             {
-                log.LogDuplicateConfiguration(ddSampleRate.Key, otelSampleType.Key);
+                // New behavior: If ExperimentalFeaturesEnabled configures DD_TAGS, we want to change DD_TAGS parsing to do the following:
+                // 1. If a comma is in the value, split on comma as before. Otherwise, split on space
+                // 2. Key-value pairs with empty values are allowed, instead of discarded
+                // 3. Key-value pairs without values (i.e. no `:` separator) are allowed and treated as key-value pairs with empty values, instead of discarded
+                Func<string, IDictionary<string, string>> updatedTagsParser = (data) =>
+                {
+                    var dictionary = new ConcurrentDictionary<string, string>();
+                    if (string.IsNullOrWhiteSpace(data))
+                    {
+                        // return empty collection
+                        return dictionary;
+                    }
+
+                    char[] separatorChars = data.Contains(',') ? [','] : [' '];
+                    var entries = data.Split(separatorChars, StringSplitOptions.RemoveEmptyEntries);
+
+                    foreach (var entry in entries)
+                    {
+                        // we need Trim() before looking forthe separator so we can skip entries with no key
+                        // (that is, entries with a leading separator, like "<empty or whitespace>:value")
+                        var trimmedEntry = entry.Trim();
+                        if (trimmedEntry.Length == 0 || trimmedEntry[0] == ':')
+                        {
+                            continue;
+                        }
+
+                        var separatorIndex = trimmedEntry.IndexOf(':');
+                        if (separatorIndex < 0)
+                        {
+                            // entries with no separator are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
+                            // it's a key with no value.
+                            var key = trimmedEntry;
+                            dictionary[key] = string.Empty;
+                        }
+                        else if (separatorIndex > 0)
+                        {
+                            // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
+                            // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
+                            var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
+                            var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
+                            dictionary[key] = value;
+                        }
+                    }
+
+                    return dictionary;
+                };
+
+                globalTags = config
+                            .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                            .AsDictionaryResult(parser: updatedTagsParser)
+                            .OverrideWith(
+                                 RemapOtelTags(in otelTags),
+                                 ErrorLog,
+                                 () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+
+                             // Filter out tags with empty keys, and trim whitespace
+                            .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
+            }
+            else
+            {
+                globalTags = config
+                            .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                            .AsDictionaryResult()
+                            .OverrideWith(
+                                 RemapOtelTags(in otelTags),
+                                 ErrorLog,
+                                 () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+
+                             // Filter out tags with empty keys or empty values, and trim whitespace
+                            .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
             }
 
-            if (otelSampleRate.ConfigurationResult.IsPresent)
+            Environment = config
+                         .WithKeys(ConfigurationKeys.Environment)
+                         .AsString();
+
+            // DD_ENV has precedence over DD_TAGS
+            Environment = GetExplicitSettingOrTag(Environment, globalTags, Tags.Env, ConfigurationKeys.Environment);
+
+            var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
+            var serviceName = config
+                             .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                             .AsStringResult()
+                             .OverrideWith(in otelServiceName, ErrorLog);
+
+            // DD_SERVICE has precedence over DD_TAGS
+            serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service, ConfigurationKeys.ServiceName);
+
+            if (tracerSettings.IsRunningInCiVisibility)
             {
-                log.LogDuplicateConfiguration(ddSampleRate.Key, otelSampleRate.Key);
+                // Set the service name if not set
+                var isUserProvidedTestServiceTag = true;
+                var ciVisServiceName = serviceName;
+                if (string.IsNullOrEmpty(serviceName))
+                {
+                    // Extract repository name from the git url and use it as a default service name.
+                    ciVisServiceName = TestOptimization.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                    isUserProvidedTestServiceTag = false;
+                }
+
+                globalTags[Ci.Tags.CommonTags.UserProvidedTestServiceTag] = isUserProvidedTestServiceTag ? "true" : "false";
+
+                // Normalize the service name
+                ciVisServiceName = NormalizerTraceProcessor.NormalizeService(ciVisServiceName);
+                if (ciVisServiceName != serviceName)
+                {
+                    serviceName = ciVisServiceName;
+                    telemetry.Record(ConfigurationKeys.ServiceName, serviceName, recordValue: true, ConfigurationOrigins.Calculated);
+                }
             }
+
+            ServiceName = serviceName;
+
+            ServiceVersion = config
+                            .WithKeys(ConfigurationKeys.ServiceVersion)
+                            .AsString();
+
+            // DD_VERSION has precedence over DD_TAGS
+            ServiceVersion = GetExplicitSettingOrTag(ServiceVersion, globalTags, Tags.Version, ConfigurationKeys.ServiceVersion);
+
+            GitCommitSha = config
+                          .WithKeys(ConfigurationKeys.GitCommitSha)
+                          .AsString();
+
+            // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
+            GitCommitSha = GetExplicitSettingOrTag(GitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitCommitSha);
+
+            GitRepositoryUrl = config
+                              .WithKeys(ConfigurationKeys.GitRepositoryUrl)
+                              .AsString();
+
+            // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
+            GitRepositoryUrl = GetExplicitSettingOrTag(GitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl);
+
+            var otelTraceEnabled = config
+                                  .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
+                                  .AsBoolResult(value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                                             ? ParsingResult<bool>.Success(result: false)
+                                                             : ParsingResult<bool>.Failure());
+            TraceEnabled = config
+                          .WithKeys(ConfigurationKeys.TraceEnabled)
+                          .AsBoolResult()
+                          .OverrideWith(in otelTraceEnabled, ErrorLog, defaultValue: true);
+
+            if (tracerSettings.AzureAppServiceMetadata?.IsUnsafeToTrace == true)
+            {
+                telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
+                TraceEnabled = false;
+            }
+
+            var disabledIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
+                                                 .AsString()
+                                                ?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? [];
+
+            // If Activity support is enabled, we shouldn't enable the OTel listener
+            DisabledIntegrationNames = tracerSettings.IsActivityListenerEnabled
+                                           ? new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase)
+                                           : new HashSet<string>([..disabledIntegrationNames, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
+
+            Integrations = new IntegrationSettingsCollection(source, DisabledIntegrationNames);
+            RecordDisabledIntegrationsTelemetry(Integrations, Telemetry);
+
+#pragma warning disable 618 // App analytics is deprecated, but still used
+            AnalyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
+                                     .AsBool(defaultValue: false);
+#pragma warning restore 618
+
+#pragma warning disable 618 // this parameter has been replaced but may still be used
+            MaxTracesSubmittedPerSecond = config
+                                         .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
+#pragma warning restore 618
+                                         .AsInt32(defaultValue: 100);
+
+            // mutate dictionary to remove without "env", "version", "git.commit.sha" or "git.repository.url" tags
+            // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
+            // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
+            RemoveDisallowedGlobalTags(globalTags);
+            GlobalTags = new(globalTags);
+
+            var headerTagsNormalizationFixEnabled = config
+                                                   .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
+                                                   .AsBool(defaultValue: true);
+
+            // Filter out tags with empty keys or empty values, and trim whitespaces
+            HeaderTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+
+            // Filter out tags with empty keys or empty values, and trim whitespaces
+            GrpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
+
+            CustomSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
+
+            var globalSamplingRate = BuildSampleRate(errorLog, in config);
+            GlobalSamplingRate = globalSamplingRate;
+
+            // We need to record a default value for configuration reporting
+            // However, we need to keep GlobalSamplingRateInternal null because it changes the behavior of the tracer in subtle ways
+            // (= we don't run the sampler at all if it's null, so it changes the tagging of the spans, and it's enforced by system tests)
+            if (globalSamplingRate is null)
+            {
+                telemetry.Record(ConfigurationKeys.GlobalSamplingRate, 1.0, ConfigurationOrigins.Default);
+            }
+
+            StartupDiagnosticLogEnabled = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
+
+            KafkaCreateConsumerScopeEnabled = config
+                                             .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
+                                             .AsBool(defaultValue: true);
+            ServiceNameMappings = TracerSettings.InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
+
+            TracerMetricsEnabled = config
+                                  .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
+                                  .AsBool(defaultValue: false);
+
+            var httpServerErrorStatusCodes = config
+#pragma warning disable 618 // This config key has been replaced but may still be used
+                                            .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
+#pragma warning restore 618
+                                            .AsString(defaultValue: "500-599");
+
+            HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
+
+            var httpClientErrorStatusCodes = config
+#pragma warning disable 618 // This config key has been replaced but may still be used
+                                            .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
+#pragma warning restore 618
+                                            .AsString(defaultValue: "400-499");
+
+            HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
         }
-        else if (otelSampleType.ConfigurationResult is { IsValid: true, Result: { } samplerName })
+
+        /// <inheritdoc />
+        public override bool TraceEnabled { get; }
+
+        /// <inheritdoc />
+        public override string? CustomSamplingRules { get; }
+
+        /// <inheritdoc />
+        public override bool CustomSamplingRulesIsRemote => false;
+
+        /// <inheritdoc />
+        public override double? GlobalSamplingRate { get; }
+
+        /// <inheritdoc />
+        public override bool LogsInjectionEnabled { get; }
+
+        /// <inheritdoc />
+        public override ReadOnlyDictionary<string, string> GlobalTags { get; }
+
+        /// <inheritdoc />
+        public override ReadOnlyDictionary<string, string> HeaderTags { get; }
+
+        /// <inheritdoc />
+        public override bool StartupDiagnosticLogEnabled { get; }
+
+        /// <inheritdoc />
+        public override string? Environment { get; }
+
+        /// <inheritdoc />
+        public override string? ServiceName { get; }
+
+        /// <inheritdoc />
+        public override string? ServiceVersion { get; }
+
+        /// <inheritdoc />
+        public override HashSet<string> DisabledIntegrationNames { get; }
+
+        /// <inheritdoc />
+        public override ReadOnlyDictionary<string, string> GrpcTags { get; }
+
+        /// <inheritdoc />
+        public override bool TracerMetricsEnabled { get; }
+
+        /// <inheritdoc />
+        public override IntegrationSettingsCollection Integrations { get; }
+
+        /// <inheritdoc />
+        [Obsolete(DeprecationMessages.AppAnalytics)]
+        public override bool AnalyticsEnabled { get; }
+
+        /// <inheritdoc />
+        public override int MaxTracesSubmittedPerSecond { get; }
+
+        /// <inheritdoc />
+        public override bool KafkaCreateConsumerScopeEnabled { get; }
+
+        /// <inheritdoc />
+        internal override bool[] HttpServerErrorStatusCodes { get; }
+
+        /// <inheritdoc />
+        internal override bool[] HttpClientErrorStatusCodes { get; }
+
+        /// <inheritdoc />
+        internal override ReadOnlyDictionary<string, string> ServiceNameMappings { get; }
+
+        /// <inheritdoc />
+        internal override string? GitRepositoryUrl { get; }
+
+        /// <inheritdoc />
+        internal override string? GitCommitSha { get; }
+
+        /// <inheritdoc />
+        internal override OverrideErrorLog ErrorLog { get; }
+
+        /// <inheritdoc />
+        internal override IConfigurationTelemetry Telemetry { get; }
+
+        /// <summary>
+        /// Creates an instance of <see cref="MutableSettings.InitialMutableSettings"/> built
+        /// by excluding all the default sources. Effectively gives all the settings their default
+        /// values.
+        /// </summary>
+        public static InitialMutableSettings CreateWithoutDefaultSources(TracerSettings tracerSettings)
+            => new InitialMutableSettings(
+                NullConfigurationSource.Instance,
+                new ConfigurationTelemetry(),
+                new OverrideErrorLog(),
+                tracerSettings);
+
+        internal static bool InitializeHeaderTag(
+            string? tagName,
+            bool headerTagsNormalizationFixEnabled,
+            [NotNullWhen(true)] out string? finalTagName)
         {
-            const string parentbasedAlwaysOn = "parentbased_always_on";
-            const string parentbasedAlwaysOff = "parentbased_always_off";
-            const string parentbasedTraceidratio = "parentbased_traceidratio";
+            tagName = tagName?.Trim();
 
-            string? supportedSamplerName = samplerName switch
+            if (string.IsNullOrEmpty(tagName))
             {
-                parentbasedAlwaysOn => parentbasedAlwaysOn,
-                "always_on" => parentbasedAlwaysOn,
-                parentbasedAlwaysOff => parentbasedAlwaysOff,
-                "always_off" => parentbasedAlwaysOff,
-                parentbasedTraceidratio => parentbasedTraceidratio,
-                "traceidratio" => parentbasedTraceidratio,
-                _ => null,
-            };
+                // The user did not provide a tag name. Normalization will happen later, when adding the tag prefix.
+                finalTagName = string.Empty;
+                return true;
+            }
 
-            if (supportedSamplerName is null)
+            if (!SpanTagHelper.IsValidTagName(tagName!, out tagName))
             {
-                log.EnqueueAction(
-                    (log, _) =>
+                // invalid tag name
+                finalTagName = null;
+                return false;
+            }
+
+            if (headerTagsNormalizationFixEnabled)
+            {
+                // Default code path: if the user provided a tag name, don't try to normalize it.
+                finalTagName = tagName;
+                return true;
+            }
+
+            // user opted via feature flag into the previous behavior,
+            // where tag names were normalized even when specified
+            // (but _not_ spaces, due to a bug in the normalization code)
+            return SpanTagHelper.TryNormalizeTagName(tagName, normalizeSpaces: false, out finalTagName);
+        }
+
+        private static ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> RemapOtelTags(
+            in ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> original)
+        {
+            if (original.ConfigurationResult is { IsValid: true, Result: { } values })
+            {
+                // Update well-known service information resources
+                if (values.TryGetValue("deployment.environment", out var envValue))
+                {
+                    values.Remove("deployment.environment");
+                    values[Tags.Env] = envValue;
+                }
+
+                if (values.TryGetValue("service.name", out var serviceValue))
+                {
+                    values.Remove("service.name");
+                    values[Tags.Service] = serviceValue;
+                }
+
+                if (values.TryGetValue("service.version", out var versionValue))
+                {
+                    values.Remove("service.version");
+                    values[Tags.Version] = versionValue;
+                }
+            }
+
+            return original;
+        }
+
+        private static void RecordDisabledIntegrationsTelemetry(IntegrationSettingsCollection integrations, IConfigurationTelemetry telemetry)
+        {
+            // Record the final disabled settings values in the telemetry, we can't quite get this information
+            // through the IntegrationTelemetryCollector currently so record it here instead
+            StringBuilder? sb = null;
+
+            foreach (var setting in integrations.Settings)
+            {
+                if (setting.Enabled == false)
+                {
+                    sb ??= StringBuilderCache.Acquire();
+                    sb.Append(setting.IntegrationName);
+                    sb.Append(';');
+                }
+            }
+
+            var value = sb is null ? null : StringBuilderCache.GetStringAndRelease(sb);
+            telemetry.Record(ConfigurationKeys.DisabledIntegrations, value, recordValue: true, ConfigurationOrigins.Calculated);
+        }
+
+        private static double? BuildSampleRate(OverrideErrorLog log, in ConfigurationBuilder config)
+        {
+            // The "overriding" is complex, so we can't use the usual `OverrideWith()` approach
+            var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
+            var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
+            var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
+
+            double? ddResult = ddSampleRate.ConfigurationResult.IsValid ? ddSampleRate.ConfigurationResult.Result : null;
+
+            // more complex, so can't use built-in `Merge()` support
+            if (ddSampleRate.ConfigurationResult.IsPresent)
+            {
+                if (otelSampleType.ConfigurationResult.IsPresent)
+                {
+                    log.LogDuplicateConfiguration(ddSampleRate.Key, otelSampleType.Key);
+                }
+
+                if (otelSampleRate.ConfigurationResult.IsPresent)
+                {
+                    log.LogDuplicateConfiguration(ddSampleRate.Key, otelSampleRate.Key);
+                }
+            }
+            else if (otelSampleType.ConfigurationResult is { IsValid: true, Result: { } samplerName })
+            {
+                const string parentbasedAlwaysOn = "parentbased_always_on";
+                const string parentbasedAlwaysOff = "parentbased_always_off";
+                const string parentbasedTraceidratio = "parentbased_traceidratio";
+
+                string? supportedSamplerName = samplerName switch
+                {
+                    parentbasedAlwaysOn => parentbasedAlwaysOn,
+                    "always_on" => parentbasedAlwaysOn,
+                    parentbasedAlwaysOff => parentbasedAlwaysOff,
+                    "always_off" => parentbasedAlwaysOff,
+                    parentbasedTraceidratio => parentbasedTraceidratio,
+                    "traceidratio" => parentbasedTraceidratio,
+                    _ => null,
+                };
+
+                if (supportedSamplerName is null)
+                {
+                    log.EnqueueAction((log, _) =>
                     {
                         log.Warning(
                             "OpenTelemetry configuration {OpenTelemetryConfiguration}={OpenTelemetryValue} is not supported. Using default configuration.",
                             otelSampleType.Key,
                             samplerName);
                     });
-                return ddResult;
+                    return ddResult;
+                }
+
+                if (!string.Equals(samplerName, supportedSamplerName, StringComparison.OrdinalIgnoreCase))
+                {
+                    log.LogUnsupportedConfiguration(otelSampleType.Key, samplerName, supportedSamplerName);
+                }
+
+                var openTelemetrySampleRateResult = supportedSamplerName switch
+                {
+                    parentbasedAlwaysOn => ConfigurationResult<double>.Valid(1.0),
+                    parentbasedAlwaysOff => ConfigurationResult<double>.Valid(0.0),
+                    parentbasedTraceidratio => otelSampleRate.ConfigurationResult,
+                    _ => ConfigurationResult<double>.ParseFailure(),
+                };
+
+                if (openTelemetrySampleRateResult is { Result: { } sampleRateResult, IsValid: true })
+                {
+                    return sampleRateResult;
+                }
+
+                log.LogInvalidConfiguration(otelSampleRate.Key);
             }
 
-            if (!string.Equals(samplerName, supportedSamplerName, StringComparison.OrdinalIgnoreCase))
-            {
-                log.LogUnsupportedConfiguration(otelSampleType.Key, samplerName, supportedSamplerName);
-            }
-
-            var openTelemetrySampleRateResult = supportedSamplerName switch
-            {
-                parentbasedAlwaysOn => ConfigurationResult<double>.Valid(1.0),
-                parentbasedAlwaysOff => ConfigurationResult<double>.Valid(0.0),
-                parentbasedTraceidratio => otelSampleRate.ConfigurationResult,
-                _ => ConfigurationResult<double>.ParseFailure(),
-            };
-
-            if (openTelemetrySampleRateResult is { Result: { } sampleRateResult, IsValid: true })
-            {
-                return sampleRateResult;
-            }
-
-            log.LogInvalidConfiguration(otelSampleRate.Key);
+            return ddResult;
         }
 
-        return ddResult;
-    }
-
-    private string? GetExplicitSettingOrTag(
-        string? explicitSetting,
-        Dictionary<string, string> globalTags,
-        string tag,
-        string telemetryKey)
-    {
-        string? result = null;
-        if (!string.IsNullOrWhiteSpace(explicitSetting))
+        private string? GetExplicitSettingOrTag(
+            string? explicitSetting,
+            Dictionary<string, string> globalTags,
+            string tag,
+            string telemetryKey)
         {
-            result = explicitSetting!.Trim();
-            if (result != explicitSetting)
+            string? result = null;
+            if (!string.IsNullOrWhiteSpace(explicitSetting))
             {
-                Telemetry.Record(telemetryKey, result, recordValue: true, ConfigurationOrigins.Calculated);
+                result = explicitSetting!.Trim();
+                if (result != explicitSetting)
+                {
+                    Telemetry.Record(telemetryKey, result, recordValue: true, ConfigurationOrigins.Calculated);
+                }
             }
-        }
-        else
-        {
-            var version = globalTags.GetValueOrDefault(tag);
-            if (!string.IsNullOrWhiteSpace(version))
+            else
             {
-                result = version.Trim();
-                Telemetry.Record(telemetryKey, result, recordValue: true, ConfigurationOrigins.Calculated);
+                var version = globalTags.GetValueOrDefault(tag);
+                if (!string.IsNullOrWhiteSpace(version))
+                {
+                    result = version.Trim();
+                    Telemetry.Record(telemetryKey, result, recordValue: true, ConfigurationOrigins.Calculated);
+                }
             }
-        }
 
-        return result;
+            return result;
+        }
     }
 }

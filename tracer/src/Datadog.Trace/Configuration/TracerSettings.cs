@@ -657,7 +657,7 @@ namespace Datadog.Trace.Configuration
                 config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
                 commaSeparator);
 
-            MutableSettings = new MutableSettings(source, telemetry, errorLog, this);
+            MutableSettings = new MutableSettings.InitialMutableSettings(source, telemetry, errorLog, this);
         }
 
         internal bool IsRunningInCiVisibility { get; }
@@ -668,7 +668,7 @@ namespace Datadog.Trace.Configuration
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
 
-        internal MutableSettings MutableSettings { get; }
+        internal MutableSettings MutableSettings { get; init; }
 
         /// <inheritdoc cref="MutableSettings.Environment"/>
         public string? Environment => MutableSettings.Environment;
