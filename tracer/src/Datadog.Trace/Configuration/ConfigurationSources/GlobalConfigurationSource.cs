@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
@@ -21,8 +22,9 @@ namespace Datadog.Trace.Configuration;
 /// </summary>
 internal class GlobalConfigurationSource
 {
-    private static IConfigurationSource? _dynamicConfigConfigurationSource = null;
-    private static ManualInstrumentationConfigurationSource? _manualConfigurationSource = null;
+    private static IConfigurationSource _dynamicConfigConfigurationSource = NullConfigurationSource.Instance;
+    private static ManualInstrumentationConfigurationSourceBase _manualConfigurationSource = new ManualInstrumentationConfigurationSource(new Dictionary<string, object?>(), useDefaultSources: true);
+
     private static GlobalConfigurationSourceResult _creationResult = CreateDefaultConfigurationSource();
     private static IConfigurationSource _instance = _creationResult.ConfigurationSource;
 
@@ -30,6 +32,10 @@ internal class GlobalConfigurationSource
     /// Gets the configuration source instance.
     /// </summary>
     internal static IConfigurationSource Instance => _instance;
+
+    internal static IConfigurationSource DynamicConfigConfigurationSource => _dynamicConfigConfigurationSource;
+
+    internal static ManualInstrumentationConfigurationSourceBase ManualConfigurationSource => _manualConfigurationSource;
 
     internal static GlobalConfigurationSourceResult CreationResult => _creationResult;
 
@@ -140,47 +146,13 @@ internal class GlobalConfigurationSource
         return AppDomain.CurrentDomain.BaseDirectory ?? Directory.GetCurrentDirectory();
     }
 
-    public static IConfigurationSource UpdateDynamicConfigConfigurationSource(IConfigurationSource dynamic)
+    public static void UpdateDynamicConfigConfigurationSource(IConfigurationSource dynamic)
     {
-        var global = _creationResult.ConfigurationSource;
         Interlocked.Exchange(ref _dynamicConfigConfigurationSource, dynamic);
-        var manual = _manualConfigurationSource;
-        var combined = CreateMutableConfigurationSource(dynamic, manual, global);
-        Interlocked.Exchange(ref _instance, combined);
-        return combined;
     }
 
-    public static IConfigurationSource UpdateManualConfigurationSource(ManualInstrumentationConfigurationSource manual, bool useDefaultSources)
+    public static void UpdateManualConfigurationSource(ManualInstrumentationConfigurationSourceBase manual)
     {
-        IConfigurationSource global = useDefaultSources
-                                          ? _creationResult.ConfigurationSource
-                                          : NullConfigurationSource.Instance;
         Interlocked.Exchange(ref _manualConfigurationSource, manual);
-        var dynamic = _dynamicConfigConfigurationSource;
-        var combined = CreateMutableConfigurationSource(dynamic, manual, global);
-        Interlocked.Exchange(ref _instance, combined);
-        return combined;
-    }
-
-    // Internal for testing only
-    internal static IConfigurationSource CreateMutableConfigurationSource(
-        IConfigurationSource? dynamicConfigConfigurationSource,
-        ManualInstrumentationConfigurationSource? manualInstrumentationConfigurationSource,
-        IConfigurationSource globalConfiguration)
-    {
-        // create a config source with the following priority
-        // - dynamic config (highest prio)
-        // - manual code config
-        // - remaining config (see CreateDefaultConfigurationSource)
-        if (dynamicConfigConfigurationSource is null)
-        {
-            return manualInstrumentationConfigurationSource is null
-                       ? globalConfiguration
-                       : new CompositeConfigurationSource([manualInstrumentationConfigurationSource, globalConfiguration]);
-        }
-
-        return manualInstrumentationConfigurationSource is null
-                   ? new CompositeConfigurationSource([dynamicConfigConfigurationSource, globalConfiguration])
-                   : new CompositeConfigurationSource([dynamicConfigConfigurationSource, manualInstrumentationConfigurationSource, globalConfiguration]);
     }
 }
