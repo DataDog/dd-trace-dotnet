@@ -23,15 +23,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     /// <summary>
     /// System.Threading.Tasks.Task Microsoft.Azure.WebJobs.EventHubs.Listeners.EventHubListener/PartitionProcessor::ProcessEventsAsync(Microsoft.Azure.WebJobs.EventHubs.Processor.EventProcessorHostPartition,System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventHubs.EventData]) calltarget instrumentation
     /// </summary>
-    [InstrumentMethod(
-        AssemblyName = "Microsoft.Azure.WebJobs.Extensions.EventHubs",
-        TypeName = "Microsoft.Azure.WebJobs.EventHubs.Listeners.EventHubListener+PartitionProcessor",
-        MethodName = "ProcessEventsAsync",
-        ReturnTypeName = ClrNames.Task,
-        ParameterTypeNames = ["Microsoft.Azure.WebJobs.EventHubs.Processor.EventProcessorHostPartition", "System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventHubs.EventData]"],
-        MinimumVersion = "6.0.0",
-        MaximumVersion = "6.*.*",
-        IntegrationName = nameof(IntegrationId.AzureEventHubs))]
+    // [InstrumentMethod(
+    //     AssemblyName = "Microsoft.Azure.WebJobs.Extensions.EventHubs",
+    //     TypeName = "Microsoft.Azure.WebJobs.EventHubs.Listeners.EventHubListener+PartitionProcessor",
+    //     MethodName = "ProcessEventsAsync",
+    //     ReturnTypeName = ClrNames.Task,
+    //     ParameterTypeNames = ["Microsoft.Azure.WebJobs.EventHubs.Processor.EventProcessorHostPartition", "System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventHubs.EventData]"],
+    //     MinimumVersion = "6.0.0",
+    //     MaximumVersion = "6.*.*",
+    //     IntegrationName = nameof(IntegrationId.AzureEventHubs))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class PartitionProcessorProcessEventsAsyncIntegration
