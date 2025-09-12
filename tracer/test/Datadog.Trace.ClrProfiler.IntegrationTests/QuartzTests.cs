@@ -37,8 +37,8 @@ public class QuartzTests : TracingIntegrationTest
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    [MemberData(nameof(PackageVersions.Quartz), MemberType = typeof(PackageVersions))]
-    public async Task SubmitsTraces(string packageVersion)
+    [MemberData(nameof(PackageVersions.Quartz), MemberType = typeof(PackageVersions))] // set to default ApiVersion
+    public async Task SubmitsTraces(string packageVersion = "3.15.0")
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
