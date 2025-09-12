@@ -48,6 +48,8 @@ internal sealed class SkipLocalsInitAttribute : Attribute
 {
 }
 
+#endif
+
 #if !NET7_0_OR_GREATER
 /// <summary>
 /// Specifies that a type has required members or that a member is required.
@@ -75,5 +77,4 @@ internal sealed class CompilerFeatureRequiredAttribute : Attribute
 
     public bool IsOptional { get; init; }
 }
-#endif
 #endif
