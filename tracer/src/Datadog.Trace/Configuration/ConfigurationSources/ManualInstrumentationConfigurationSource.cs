@@ -21,8 +21,8 @@ namespace Datadog.Trace.Configuration.ConfigurationSources;
 /// </summary>
 internal class ManualInstrumentationConfigurationSource : ManualInstrumentationConfigurationSourceBase
 {
-    public ManualInstrumentationConfigurationSource(IReadOnlyDictionary<string, object?> dictionary)
-        : base(dictionary)
+    public ManualInstrumentationConfigurationSource(IReadOnlyDictionary<string, object?> dictionary, bool useDefaultSources)
+        : base(dictionary, useDefaultSources)
     {
     }
 
