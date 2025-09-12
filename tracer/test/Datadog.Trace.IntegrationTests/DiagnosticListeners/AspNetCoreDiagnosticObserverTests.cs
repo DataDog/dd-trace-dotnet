@@ -392,7 +392,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                .UseStartup<T>();
 #pragma warning restore ASPDEPR004
 
+#pragma warning disable ASPDEPR008 // Type or member is obsolete
             var testServer = new TestServer(builder);
+#pragma warning restore ASPDEPR008 // Type or member is obsolete
             var client = testServer.CreateClient();
 
             await AssertDiagnosticObserverSubmitsSpans(
