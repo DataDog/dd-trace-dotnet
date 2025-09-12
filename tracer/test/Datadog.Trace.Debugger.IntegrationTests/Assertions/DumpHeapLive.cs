@@ -24,7 +24,7 @@ internal static class DumpHeapLive
     {
         using var cts = new CancellationTokenSource(timeout);
 
-        // Run the task in a backgroun thread, and wait for it to complete or timeout.
+        // Run the task in a background thread, and wait for it to complete or timeout.
         return await Task.Run(() => GetLiveObjectsByTypes(process, output, cts.Token), cts.Token);
     }
 
@@ -56,7 +56,7 @@ internal static class DumpHeapLive
         }
 
         output?.WriteLine($"Found {rootCount} roots in the heap");
-        var evalsComplete = 0;
+        // var evalsComplete = 0;
         while (eval.Count > 0)
         {
             if (ct.IsCancellationRequested)
@@ -64,10 +64,11 @@ internal static class DumpHeapLive
                 throw new OperationCanceledException();
             }
 
-            if (evalsComplete % 100 == 0)
+            // too noisy. uncomment if you want to see the progress
+            /*if (evalsComplete % 100 == 0)
             {
                 output?.WriteLine($"Evaluated {evalsComplete} objects so far, {eval.Count} remaining.");
-            }
+            }*/
 
             var obj = eval.Pop();
             if (considered.Contains(obj))

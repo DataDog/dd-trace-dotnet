@@ -27,6 +27,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal SpanCodeOrigin(DebuggerSettings settings)
         {
+            Log.Information("Initializing Code Origin for Spans");
             Settings = settings;
             _tags = new CodeOriginTags(Settings.CodeOriginMaxUserFrames);
         }

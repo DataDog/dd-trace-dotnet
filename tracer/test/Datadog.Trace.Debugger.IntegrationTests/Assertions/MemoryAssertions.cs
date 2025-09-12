@@ -73,6 +73,14 @@ internal class MemoryAssertions
         }
     }
 
+    public void ObjectsExist<T>()
+    {
+        if (!_liveObjectsByTypes.TryGetValue(typeof(T).FullName, out var result) && result.Live > 0)
+        {
+            throw new MemoryAssertionException($"Expected {typeof(T).Name} objects in memory, but not found.", GetDumpDetails());
+        }
+    }
+
     private string GetDumpDetails()
     {
         return string.Empty;

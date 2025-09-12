@@ -59,6 +59,7 @@ namespace Datadog.Trace.Debugger
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
         {
+            Log.Information("Initializing Dynamic Instrumentation");
             _settings = settings;
             _processExit = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _discoveryService = discoveryService;
@@ -90,8 +91,6 @@ namespace Datadog.Trace.Debugger
             {
                 return;
             }
-
-            Log.Debug("Dynamic Instrumentation initialization started");
 
             _ = InitializeAsync();
         }

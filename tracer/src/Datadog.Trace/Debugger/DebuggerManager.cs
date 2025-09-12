@@ -111,7 +111,6 @@ namespace Datadog.Trace.Debugger
                 var completedTask = await Task.WhenAny(debuggerEndpointTcs.Task, timeoutTask, processExitTask).ConfigureAwait(false);
                 if (completedTask == timeoutTask)
                 {
-                    Log.Warning("Debugger endpoint is not available after waiting {Timeout} seconds.", EndpointTimeout.TotalSeconds);
                     return false;
                 }
 
@@ -228,13 +227,13 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                var enabled = debuggerSettings.CodeOriginForSpansCanBeEnabled || debuggerSettings.DynamicSettings.CodeOriginEnabled == true;
-                if (!enabled)
+                var disabled = !debuggerSettings.CodeOriginForSpansCanBeEnabled || debuggerSettings.DynamicSettings.CodeOriginEnabled == false;
+                if (disabled)
                 {
                     CodeOrigin = null;
                     if (debuggerSettings.DynamicSettings.CodeOriginEnabled == false)
                     {
-                        Log.Debug("Code Origin for Spans is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                        Log.Information("Code Origin for Spans is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
                     }
                     else
                     {
@@ -244,19 +243,16 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if (!debuggerSettings.CodeOriginForSpansCanBeEnabled)
-                {
-                    Log.Debug("Code Origin can't be enabled because the local environment variable is set to false");
-                    return;
-                }
-
                 if (CodeOrigin != null)
                 {
                     Log.Debug("Code Origin for Spans is already initialized");
                     return;
                 }
 
-                CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(debuggerSettings);
+                if (debuggerSettings.CodeOriginForSpansEnabled || debuggerSettings.DynamicSettings.CodeOriginEnabled == true)
+                {
+                    CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(debuggerSettings);
+                }
             }
             catch (Exception ex)
             {
@@ -273,14 +269,14 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                var enabled = ExceptionReplaySettings.Enabled || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true;
-                if (!enabled)
+                var disabled = !ExceptionReplaySettings.CanBeEnabled || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == false;
+                if (disabled)
                 {
                     SafeDisposal.TryDispose(ExceptionReplay);
                     ExceptionReplay = null;
                     if (debuggerSettings.DynamicSettings.ExceptionReplayEnabled == false)
                     {
-                        Log.Debug("Exception Replay is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                        Log.Information("Exception Replay is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
                     }
                     else
                     {
@@ -290,21 +286,18 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if (!ExceptionReplaySettings.CanBeEnabled)
-                {
-                    Log.Debug("Exception Replay can't be enabled because the local environment variable is set to false");
-                    return;
-                }
-
                 if (ExceptionReplay != null)
                 {
                     Log.Debug("Exception Replay is already initialized");
                     return;
                 }
 
-                var exceptionReplay = ExceptionReplay.Create(ExceptionReplaySettings);
-                exceptionReplay.Initialize();
-                ExceptionReplay = exceptionReplay;
+                if (ExceptionReplaySettings.Enabled || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true)
+                {
+                    var exceptionReplay = ExceptionReplay.Create(ExceptionReplaySettings);
+                    exceptionReplay.Initialize();
+                    ExceptionReplay = exceptionReplay;
+                }
             }
             catch (Exception ex)
             {
@@ -407,9 +400,9 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                var requestedState = DebuggerSettings.DynamicInstrumentationEnabled;
+                var disabled = !DebuggerSettings.DynamicInstrumentationCanBeEnabled || DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false;
 
-                if (!requestedState)
+                if (disabled)
                 {
                     DisableDynamicInstrumentation(DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false);
                     return;
@@ -421,24 +414,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                var tracerManager = TracerManager.Instance;
-                var discoveryService = tracerManager.DiscoveryService;
-                if (!_isDebuggerEndpointAvailable)
-                {
-                    var isDiscoverySuccessful = await WaitForDebuggerEndpointAsync(discoveryService, _processExit.Task).ConfigureAwait(false);
-                    if (!isDiscoverySuccessful)
-                    {
-                        Log.Information("Debugger endpoint is not available");
-                        return;
-                    }
-                }
-
-                if (_processExit.Task.IsCompleted || _diDebounceGate != debounceGate)
-                {
-                    return;
-                }
-
-                EnableDynamicInstrumentation(discoveryService, tracerManager, tracerSettings, debounceGate);
+                await EnableDynamicInstrumentation(tracerSettings, debounceGate).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -458,7 +434,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void EnableDynamicInstrumentation(IDiscoveryService discoveryService, TracerManager tracerManager, TracerSettings tracerSettings, TaskCompletionSource<bool> debounceGate)
+        private async Task EnableDynamicInstrumentation(TracerSettings tracerSettings, TaskCompletionSource<bool> debounceGate)
         {
             if (Interlocked.CompareExchange(ref _diState, 1, 0) != 0)
             {
@@ -469,6 +445,8 @@ namespace Datadog.Trace.Debugger
 
             try
             {
+                var tracerManager = TracerManager.Instance;
+                var discoveryService = tracerManager.DiscoveryService;
                 di = DebuggerFactory.CreateDynamicInstrumentation(
                     discoveryService,
                     RcmSubscriptionManager.Instance,
@@ -476,6 +454,18 @@ namespace Datadog.Trace.Debugger
                     ServiceName,
                     DebuggerSettings,
                     tracerManager.GitMetadataTagsProvider);
+
+                if (!_isDebuggerEndpointAvailable)
+                {
+                    var isDiscoverySuccessful = await WaitForDebuggerEndpointAsync(discoveryService, _processExit.Task).ConfigureAwait(false);
+                    if (!isDiscoverySuccessful)
+                    {
+                        Log.Information("Debugger endpoint is not available");
+                        Volatile.Write(ref _diState, 0);
+                        SafeDisposal.TryDispose(di);
+                        return;
+                    }
+                }
 
                 if (_processExit.Task.IsCompleted || _diDebounceGate != debounceGate)
                 {
@@ -488,12 +478,10 @@ namespace Datadog.Trace.Debugger
 
                 lock (_syncLock)
                 {
-                    var enabled = DebuggerSettings.DynamicInstrumentationEnabled;
                     var initialized = _dynamicInstrumentation is { IsDisposed: false };
                     var state = _diState;
 
                     if (_processExit.Task.IsCompleted ||
-                        !enabled ||
                         _diDebounceGate != debounceGate ||
                         state != 1 ||
                         initialized)
@@ -551,7 +539,7 @@ namespace Datadog.Trace.Debugger
 
             if (dynamicallyDisabled)
             {
-                Log.Debug("Dynamic Instrumentation is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                Log.Information("Dynamic Instrumentation is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
             }
             else
             {

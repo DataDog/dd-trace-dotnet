@@ -40,7 +40,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public void Initialize()
         {
-            Log.Information("Initializing Exception Debugging");
+            Log.Information("Initializing Exception Replay");
 
             if (!ThirdPartyModules.IsValid)
             {
@@ -51,7 +51,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             InitSnapshotsSink();
             _exceptionTrackManager = ExceptionTrackManager.Create(Settings);
-            return;
         }
 
         private void InitSnapshotsSink()
