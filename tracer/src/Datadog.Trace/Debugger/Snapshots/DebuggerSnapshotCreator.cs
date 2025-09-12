@@ -66,7 +66,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             MethodScopeMembers = methodScopeMembers;
         }
 
-        internal virtual string DebuggerProduct => DebuggerTags.DebuggerProduct.DI;
+        internal virtual string DebuggerType => DebuggerTags.DebuggerType.DynamicInstrumentationSnapshot;
 
         internal string SnapshotId
         {
@@ -883,10 +883,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WriteValue(spanId);
 
             JsonWriter.WritePropertyName("debugger.type");
-            JsonWriter.WriteValue(DebuggerTags.DebuggerType.Snapshot);
-
-            JsonWriter.WritePropertyName("debugger.product");
-            JsonWriter.WriteValue(DebuggerProduct);
+            JsonWriter.WriteValue(DebuggerType);
 
             return this;
         }

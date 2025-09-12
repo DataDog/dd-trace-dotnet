@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Upload;
 
 internal abstract class DebuggerUploadApiBase : IBatchUploadApi
 {
-    protected const string Debuggerv1Endpoint = "debugger/v1/input";
+    private const string DebuggerV1Endpoint = "debugger/v1/input";
 
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly IGitMetadataTagsProvider? _gitMetadataTagsProvider;
@@ -60,7 +60,7 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
     protected Task<IApiResponse> PostAsync(string uri, ArraySegment<byte> data)
     {
         var request = _apiRequestFactory.Create(new Uri(uri));
-        var isDebuggerV1 = uri.Contains(Debuggerv1Endpoint);
+        var isDebuggerV1 = uri.Contains(DebuggerV1Endpoint);
 
         return isDebuggerV1
                    ? request.PostAsync(data, MimeTypes.Json)

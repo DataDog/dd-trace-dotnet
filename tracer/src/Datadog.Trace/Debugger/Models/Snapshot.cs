@@ -56,19 +56,10 @@ namespace Datadog.Trace.Debugger.Models
         /// </summary>
         internal static class DebuggerType
         {
-            internal const string Snapshot = "snapshot";
+            internal const string DynamicInstrumentationSnapshot = "di_snapshot";
+            internal const string ExceptionReplaySnapshot = "er_snapshot";
             internal const string Diagnostic = "diagnostic";
             internal const string SymDb = "symdb";
-        }
-
-        /// <summary>
-        /// Tags for debugger.product
-        /// </summary>
-        internal static class DebuggerProduct
-        {
-            internal const string DI = "di";
-            internal const string ER = "er";
-            internal const string LD = "ld";
         }
     }
 }

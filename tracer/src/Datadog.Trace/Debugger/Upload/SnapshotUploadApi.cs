@@ -23,7 +23,10 @@ namespace Datadog.Trace.Debugger.Upload
             IGitMetadataTagsProvider gitMetadataTagsProvider)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
-            discoveryService.SubscribeToChanges(c => Endpoint = c.DebuggerV2Endpoint);
+            discoveryService.SubscribeToChanges(c =>
+            {
+                Endpoint = c.DebuggerV2Endpoint ?? c.DiagnosticsEndpoint ?? c.DebuggerEndpoint;
+            });
         }
 
         public static SnapshotUploadApi Create(
