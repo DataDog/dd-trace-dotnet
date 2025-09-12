@@ -440,7 +440,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
                     // If the app is using resource-based sampling rules, then we need to set a resource straight
                     // away, so force that by using null.
-                    var resourceName = tracer.TracerManager.PerTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
+                    var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
                     var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName);
                     if (shouldSecure)
                     {
