@@ -41,12 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int maximumEventCount, TimeSpan? maximumWaitTime, CancellationToken cancellationToken)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
-            {
-                return CallTargetState.GetDefault();
-            }
-
-            Log.Debug(LogPrefix + "AmqpConsumer.ReceiveAsync called with maximumEventCount={0}", (object)maximumEventCount);
             return CallTargetState.GetDefault();
         }
 
@@ -81,8 +75,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         {
             var tracer = Tracer.Instance;
             var messageCount = eventsList.Count;
+            var linksEnabled = tracer.Settings.AzureEventHubsBatchLinksEnabled;
 
-            Log.Debug(LogPrefix + "Processing {0} EventHub messages with span links", (object)messageCount);
+            Log.Debug(LogPrefix + "Processing {0} EventHub messages{1}", (object)messageCount, linksEnabled ? " with span links" : " without span links");
 
             // Convert to list for duck typing and multiple enumeration
             var events = new List<object>();
@@ -94,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 }
             }
 
-            var spanLinks = ExtractSpanLinksFromMessages(tracer, events);
+            var spanLinks = linksEnabled ? ExtractSpanLinksFromMessages(tracer, events) : null;
             var scope = CreateAndConfigureSpan(tracer, spanLinks, messageCount);
 
             // Re-inject the new span context into all messages so downstream processing will use it as parent
