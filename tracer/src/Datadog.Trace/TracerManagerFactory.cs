@@ -408,7 +408,7 @@ namespace Datadog.Trace
                     {
                         telemetryClientConfiguration = new TelemetryClientConfiguration
                         {
-                            Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
+                            Interval = (ulong)telemetrySettings.HeartbeatInterval.TotalMilliseconds,
                             RuntimeId = new CharSlice(Tracer.RuntimeId),
                             DebugEnabled = telemetrySettings.DebugEnabled
                         };
