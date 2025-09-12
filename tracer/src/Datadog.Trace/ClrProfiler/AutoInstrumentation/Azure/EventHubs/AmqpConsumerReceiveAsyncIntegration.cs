@@ -134,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             return spanLinks;
         }
 
-        private static Scope? CreateAndConfigureSpan(Tracer tracer, List<SpanContext> spanLinks, int messageCount)
+        private static Scope? CreateAndConfigureSpan(Tracer tracer, List<SpanContext>? spanLinks, int messageCount)
         {
             try
             {
