@@ -1,0 +1,301 @@
+// <copyright file="DebuggerManagerDynamicTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.IntegrationTests.Assertions;
+using Datadog.Trace.Debugger.IntegrationTests.Helpers;
+using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.TestHelpers;
+using Samples.Probes.TestRuns.SmokeTests;
+using VerifyXunit;
+using Xunit;
+using Xunit.Abstractions;
+
+#nullable enable
+namespace Datadog.Trace.Debugger.IntegrationTests;
+
+#if !NETCOREAPP2_1
+[CollectionDefinition(nameof(DebuggerManagerDynamicTests), DisableParallelization = true)]
+[Collection(nameof(DebuggerManagerDynamicTests))]
+[UsesVerify]
+public class DebuggerManagerDynamicTests : TestHelper
+{
+    private const string LogFileNamePrefix = "dotnet-tracer-managed-";
+
+    // Log messages to verify dynamic state changes
+    private const string DynamicInstrumentationEnabledLogEntry = "Initializing Dynamic Instrumentation";
+    private const string ExceptionReplayEnabledLogEntry = "Initializing Exception Replay";
+    private const string CodeOriginForSpansEnabledLogEntry = "Initializing Code Origin for Spans";
+    private const string ApplyingDynamicDebuggerConfigLogEntry = "Applying new dynamic debugger configuration";
+    private const string DisabledByRemoteConfiguration = "is disabled by remote enablement.";
+    private const string TracerInitialized = "The profiler has been initialized";
+    private const string DebuggerConfigurationInitialized = "DATADOG DEBUGGER CONFIGURATION";
+
+    public DebuggerManagerDynamicTests(ITestOutputHelper output)
+        : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
+    {
+        SetServiceVersion("1.0.0");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task DebuggerManager_DynamicInstrumentation_StartDisabled_EnabledViaRemoteConfig()
+    {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+
+        // Set it true so we won't go through path of no debugger products at all
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
+
+        await RunDynamicConfigurationTest(
+            false,
+            initialMemoryAssertions: memoryAssertions =>
+            {
+                // Initially, no DI objects should exist
+                memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
+                memoryAssertions.NoObjectsExist<LineProbeResolver>();
+            },
+            remoteConfig: new { DD_DYNAMIC_INSTRUMENTATION_ENABLED = true },
+            DynamicInstrumentationEnabledLogEntry);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task DebuggerManager_ExceptionReplay_StartDisabled_EnabledViaRemoteConfig()
+    {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
+
+        await RunDynamicConfigurationTest(
+            false,
+            initialMemoryAssertions: memoryAssertions =>
+            {
+                // Initially, no Exception Replay objects should exist
+                memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
+            },
+            remoteConfig: new { DD_EXCEPTION_REPLAY_ENABLED = true },
+            ExceptionReplayEnabledLogEntry);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task DebuggerManager_CodeOrigin_StartDisabled_EnabledViaRemoteConfig()
+    {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
+
+        await this.RunDynamicConfigurationTest(
+            false,
+            initialMemoryAssertions: memoryAssertions =>
+            {
+                // Initially, no Code Origin object should exist
+                memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
+            },
+            remoteConfig: new { DD_CODE_ORIGIN_FOR_SPANS_ENABLED = true },
+            CodeOriginForSpansEnabledLogEntry);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task DebuggerManager_MultipleProducts_StartDisabled_EnabledViaRemoteConfig()
+    {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
+
+        await RunDynamicConfigurationTest(
+            false,
+            initialMemoryAssertions: memoryAssertions =>
+            {
+                // Initially, no debugger objects should exist
+                memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
+                memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
+                memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
+                memoryAssertions.NoObjectsExist<SnapshotSink>();
+                memoryAssertions.NoObjectsExist<LineProbeResolver>();
+            },
+            remoteConfig: new
+            {
+                DD_DYNAMIC_INSTRUMENTATION_ENABLED = true,
+                DD_EXCEPTION_REPLAY_ENABLED = true,
+                DD_CODE_ORIGIN_FOR_SPANS_ENABLED = true
+            },
+            ExceptionReplayEnabledLogEntry,
+            finalMemoryAssertions: memoryAssertions =>
+            {
+                // After remote config, all objects should be created
+                memoryAssertions.ObjectsExist<DynamicInstrumentation>();
+                memoryAssertions.ObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
+                memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
+                memoryAssertions.ObjectsExist<SnapshotSink>();
+                memoryAssertions.ObjectsExist<LineProbeResolver>();
+            });
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task DebuggerManager_DynamicInstrumentation_StartEnabled_DisabledViaRemoteConfig()
+    {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+        // Start with DI enabled via environment variable
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
+
+        await RunDynamicConfigurationTest(
+            true,
+            initialMemoryAssertions: memoryAssertions =>
+            {
+                // Initially, DI objects should exist
+                memoryAssertions.ObjectsExist<DynamicInstrumentation>();
+                memoryAssertions.ObjectsExist<SnapshotSink>();
+                memoryAssertions.ObjectsExist<LineProbeResolver>();
+            },
+            remoteConfig: new { DD_DYNAMIC_INSTRUMENTATION_ENABLED = false },
+            $"Dynamic Instrumentation {DisabledByRemoteConfiguration}");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task DebuggerManager_ExceptionReplay_StartEnabled_DisabledViaRemoteConfig()
+    {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+        // Start with Exception Replay enabled via environment variable
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
+
+        await this.RunDynamicConfigurationTest(
+            true,
+            initialMemoryAssertions: memoryAssertions =>
+            {
+                // Initially, Exception Replay objects should exist
+                memoryAssertions.ObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
+            },
+            remoteConfig: new { DD_EXCEPTION_REPLAY_ENABLED = false },
+            $"Exception Replay {DisabledByRemoteConfiguration}");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task DebuggerManager_CodeOrigin_StartEnabled_DisabledViaRemoteConfig()
+    {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
+
+        await this.RunDynamicConfigurationTest(
+            true,
+            initialMemoryAssertions: memoryAssertions =>
+            {
+                // Initially, Code Origin object should exist
+                memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
+            },
+            remoteConfig: new { DD_CODE_ORIGIN_FOR_SPANS_ENABLED = false },
+            $"Code Origin for Spans {DisabledByRemoteConfiguration}");
+    }
+
+    private async Task RunDynamicConfigurationTest(
+        bool startEnabled,
+        System.Action<MemoryAssertions> initialMemoryAssertions,
+        object remoteConfig,
+        string logToWaitAfterRc,
+        System.Action<MemoryAssertions>? finalMemoryAssertions = null,
+        [CallerMemberName] string? testName = null)
+    {
+        var logPath = Path.Combine(LogDirectory, $"{testName}");
+        Directory.CreateDirectory(logPath);
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logPath);
+
+        var testType = DebuggerTestHelper.SpecificTestDescription(typeof(AsyncVoid));
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath, Output);
+        using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
+
+        // Wait for initial setup and verify initial state (products should be enabled)
+        if (startEnabled)
+        {
+            await logEntryWatcher.WaitForLogEntry(DebuggerConfigurationInitialized);
+        }
+        else
+        {
+            await logEntryWatcher.WaitForLogEntry(TracerInitialized);
+        }
+
+        try
+        {
+            var initialMemorySnapshot = await MemoryAssertions.CaptureSnapshotToAssertOn(sample, Output);
+            initialMemoryAssertions(initialMemorySnapshot);
+
+            // Apply remote configuration
+            var fileId = Guid.NewGuid().ToString();
+            var configurations = new[] { ((object)new { lib_config = remoteConfig }, "APM_TRACING", fileId) };
+
+            Output.WriteLine($"Sending remote config: {System.Text.Json.JsonSerializer.Serialize(remoteConfig)}");
+            await agent.SetupRcmAndWait(Output, configurations);
+
+            // Wait for the configuration to be applied and log entry to appear
+            await logEntryWatcher.WaitForLogEntry(ApplyingDynamicDebuggerConfigLogEntry);
+
+            // Verify final state
+            if (finalMemoryAssertions != null)
+            {
+                var finalMemorySnapshot = await MemoryAssertions.CaptureSnapshotToAssertOn(sample, Output);
+                finalMemoryAssertions(finalMemorySnapshot);
+            }
+
+            await logEntryWatcher.WaitForLogEntry(logToWaitAfterRc);
+        }
+        finally
+        {
+            if (!sample.HasExited)
+            {
+                sample.Kill();
+            }
+        }
+    }
+}
+#endif
