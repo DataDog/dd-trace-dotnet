@@ -30,15 +30,25 @@ public class QuartzTests : TracingIntegrationTest
         SetServiceVersion("1.0.0");
     }
 
-    public static IEnumerable<object[]> GetData() => PackageVersions.Quartz;
+    public static IEnumerable<object[]> GetData()
+    {
+        var data = PackageVersions.Quartz;
+        if (data == null || !data.Any())
+        {
+            // Fallback if PackageVersions.Quartz returns null or empty
+            return new[] { new object[] { string.Empty } };
+        }
+
+        return data;
+    }
 
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsQuartz(metadataSchemaVersion);
 
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    [MemberData(nameof(PackageVersions.Quartz), MemberType = typeof(PackageVersions))] // set to default ApiVersion
-    public async Task SubmitsTraces(string packageVersion = "3.15.0")
+    [MemberData(nameof(GetData))] // set to default ApiVersion
+    public async Task SubmitsTraces(string packageVersion)
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
@@ -86,6 +96,12 @@ public class QuartzTests : TracingIntegrationTest
 
     private static string GetSuffix(string packageVersion, out int expectedSpanCount)
     {
+        // Handle empty or null package version (when DEFAULT_SAMPLES is defined)
+        if (string.IsNullOrEmpty(packageVersion))
+        {
+            return Set(out expectedSpanCount, 2, "V3");
+        }
+
         return new Version(packageVersion) switch
         {
             { } v when v >= new Version("4.0.0") => Set(out expectedSpanCount, 3, "V4"),
