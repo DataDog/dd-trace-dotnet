@@ -43,7 +43,11 @@ public class ConfigureIntegration
         var isFromDefaults = values.TryGetValue(TracerSettingKeyConstants.IsFromDefaultSourcesKey, out var value) && value is true;
 
         // Build the configuration sources, including our manual instrumentation values
-        var manualConfigSource = new ManualInstrumentationConfigurationSource(values);
+        ManualInstrumentationConfigurationSourceBase manualConfigSource =
+            useLegacySettings
+                ? new ManualInstrumentationLegacyConfigurationSource(values, isFromDefaults)
+                : new ManualInstrumentationConfigurationSource(values, isFromDefaults);
+
         IConfigurationSource source = isFromDefaults
                                           ? new CompositeConfigurationSource([manualConfigSource, GlobalConfigurationSource.Instance])
                                           : manualConfigSource;
