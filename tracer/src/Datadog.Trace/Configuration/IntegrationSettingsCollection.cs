@@ -22,9 +22,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         /// <param name="disabledIntegrationNames">Integrations already disabled by name</param>
-        internal IntegrationSettingsCollection(IConfigurationSource source, HashSet<string> disabledIntegrationNames)
+        /// <param name="fallback">Fallback values to use. Only used in manual instrumentation</param>
+        internal IntegrationSettingsCollection(IConfigurationSource source, HashSet<string> disabledIntegrationNames, IntegrationSettingsCollection? fallback = null)
         {
-            Settings = GetIntegrationSettings(source, disabledIntegrationNames);
+            Settings = GetIntegrationSettings(source, disabledIntegrationNames, fallback);
         }
 
         internal IntegrationSettings[] Settings { get; }
@@ -55,7 +56,7 @@ namespace Datadog.Trace.Configuration
         internal IntegrationSettings this[IntegrationId integration]
             => Settings[(int)integration];
 
-        private static IntegrationSettings[] GetIntegrationSettings(IConfigurationSource source, HashSet<string> disabledIntegrationNames)
+        private static IntegrationSettings[] GetIntegrationSettings(IConfigurationSource source, HashSet<string> disabledIntegrationNames, IntegrationSettingsCollection? fallbackValues)
         {
             var integrations = new IntegrationSettings[IntegrationRegistry.Names.Length];
 
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Configuration
                 if (name != null)
                 {
                     var explicitlyDisabled = disabledIntegrationNames.Contains(name);
-                    integrations[i] = new IntegrationSettings(name, source, explicitlyDisabled);
+                    integrations[i] = new IntegrationSettings(name, source, explicitlyDisabled, fallbackValues?[name]);
                 }
             }
 
