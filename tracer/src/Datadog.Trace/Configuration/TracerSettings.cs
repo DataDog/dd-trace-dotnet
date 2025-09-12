@@ -51,15 +51,10 @@ namespace Datadog.Trace.Configuration
         private readonly DomainMetadata _domainMetadata = DomainMetadata.Instance;
         // These values can all be overwritten by dynamic config
         private readonly bool _traceEnabled;
-        private readonly bool _apmTracingEnabled;
         private readonly bool _logsInjectionEnabled;
-        private readonly bool _isDataStreamsMonitoringEnabled;
-        private readonly bool _isDataStreamsMonitoringInDefaultState;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
-        private readonly ReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly ReadOnlyDictionary<string, string> _globalTags;
         private readonly double? _globalSamplingRate;
-        private readonly bool _runtimeMetricsEnabled;
         private readonly string? _customSamplingRules;
 
         /// <summary>
@@ -299,7 +294,7 @@ namespace Datadog.Trace.Configuration
                                   .AsBoolResult()
                                   .OverrideWith(in otelTraceEnabled, ErrorLog, defaultValue: true);
 
-            _apmTracingEnabled = config
+            ApmTracingEnabled = config
                                       .WithKeys(ConfigurationKeys.ApmTracingEnabled)
                                       .AsBool(defaultValue: true);
 
@@ -390,7 +385,7 @@ namespace Datadog.Trace.Configuration
                                         },
                                         validator: null);
 
-            _serviceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
+            ServiceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
 
             TracerMetricsEnabled = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
@@ -426,7 +421,7 @@ namespace Datadog.Trace.Configuration
                 ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.MetricsExporter);
             }
 
-            _runtimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
+            RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
 
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
@@ -759,7 +754,7 @@ namespace Datadog.Trace.Configuration
                              .AsBool(false);
 
             // DSM is now enabled by default in non-serverless environments
-            _isDataStreamsMonitoringEnabled = config
+            IsDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(
                                                   !EnvironmentHelpers.IsAwsLambda() &&
@@ -767,14 +762,14 @@ namespace Datadog.Trace.Configuration
                                                   !EnvironmentHelpers.IsAzureFunctions() &&
                                                   !EnvironmentHelpers.IsGoogleCloudFunctions());
 
-            _isDataStreamsMonitoringInDefaultState = config
+            IsDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                                     .AsBool() == null;
 
             // no legacy headers if we are in "enbaled by default" state
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
-                                               .AsBool(!_isDataStreamsMonitoringInDefaultState);
+                                               .AsBool(!IsDataStreamsMonitoringInDefaultState);
 
             IsRareSamplerEnabled = config
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
@@ -979,7 +974,7 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
-        internal bool ApmTracingEnabled => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
+        internal bool ApmTracingEnabled { get; }
 
         /// <summary>
         /// Gets the names of disabled integrations.
@@ -1310,7 +1305,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether runtime metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
-        internal bool RuntimeMetricsEnabled => DynamicSettings.RuntimeMetricsEnabled ?? _runtimeMetricsEnabled;
+        internal bool RuntimeMetricsEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether libdatadog data pipeline
@@ -1339,7 +1334,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal IReadOnlyDictionary<string, string> ServiceNameMappings => DynamicSettings.ServiceNameMappings ?? _serviceNameMappings;
+        internal IReadOnlyDictionary<string, string> ServiceNameMappings { get; }
 
         /// <summary>
         /// Gets configuration values for changing peer service names based on configuration
@@ -1387,12 +1382,12 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
-        internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
+        internal bool IsDataStreamsMonitoringEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
         /// </summary>
-        internal bool IsDataStreamsMonitoringInDefaultState => DynamicSettings.DataStreamsMonitoringEnabled == null && _isDataStreamsMonitoringInDefaultState;
+        internal bool IsDataStreamsMonitoringInDefaultState { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams schema extraction is enabled or not.
