@@ -12,11 +12,11 @@ namespace Datadog.Trace.Activity.DuckTypes
 {
     internal interface IActivity5 : IW3CActivity
     {
-        string DisplayName { get; }
+        string DisplayName { get; set; }
 
         bool IsAllDataRequested { get; set; }
 
-        ActivityKind Kind { get; }
+        ActivityKind Kind { get; set; }
 
         IEnumerable<KeyValuePair<string, object>> TagObjects { get; }
 

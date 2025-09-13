@@ -27,6 +27,7 @@ namespace Datadog.Trace.Activity
 
         private static object? _activityListenerInstance;
         private static Func<object>? _getCurrentActivity;
+        private static Action<object, int>? _setKindProperty;
 
         private static int _initialized = 0;
         private static int _stopped = 0;
@@ -67,6 +68,23 @@ namespace Datadog.Trace.Activity
                    activity.DuckAs<IActivity5>() ??
                    activity.DuckAs<IW3CActivity>() ??
                    activity.DuckAs<IActivity>();
+        }
+
+        public static void SetActivityKind(IActivity5 activity, ActivityKind activityKind)
+        {
+            if (activity.Instance is null)
+            {
+                return;
+            }
+
+            try
+            {
+                _setKindProperty?.Invoke(activity.Instance, (int)activityKind);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error calling Activity.SetKindProperty");
+            }
         }
 
         public static void Initialize() => Initialize(CancellationToken.None);
@@ -128,6 +146,11 @@ namespace Datadog.Trace.Activity
                 {
                     // if Version >= 5 loaded (Uses ActivityListener implementation)
                     CreateActivityListenerInstance(activityType);
+                    var activityKindType = Type.GetType("System.Diagnostics.ActivityKind, System.Diagnostics.DiagnosticSource", throwOnError: false);
+                    if (activityKindType is not null)
+                    {
+                        CreateActivityKindSetter(activityType, activityKindType);
+                    }
                 }
                 else
                 {
@@ -285,6 +308,44 @@ namespace Datadog.Trace.Activity
             onNextMethodIl.Emit(OpCodes.Ret);
 
             return typeBuilder.CreateTypeInfo()?.AsType();
+        }
+
+        private static void CreateActivityKindSetter(Type activityType, Type activityKindType)
+        {
+            // Create dynamic method
+            // Input:
+            // [0] object (which we want to cast to System.Diagnostics.Activity type)
+            // [1] int (which we want to cast to System.Diagnostics.ActivityKind type)
+            // Steps:
+            // - Load the first argument (object)
+            // - Cast this value to System.Diagnostics.Activity type
+            // - Load the second argument (int)
+            // - Cast this value to System.Diagnostics.ActivityKind type
+            // - Call the Setter method for System.Diagnostics.ActivityKind.Set(System.Diagnostics.Activity, System.Diagnostics.ActivityKind)
+            // - Ret
+
+            // Fields: on an object
+            // Properties: Kinda like fields, they give you a _method_ under the hood for set/get
+            // activityType.GetProperty("Kind")!.SetMethod => actual (private) method that sets the value for the Kind property
+
+            // Get the actual runtime types from the System.Diagnostics.DiagnosticSource assembly
+            var runtimeActivityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false) ?? activityType;
+            var runtimeActivityKindType = Type.GetType("System.Diagnostics.ActivityKind, System.Diagnostics.DiagnosticSource", throwOnError: false) ?? activityKindType;
+            var dynMethod = new DynamicMethod(
+                "ActivityKindSetter",
+                null,
+                [typeof(object), typeof(int)],
+                typeof(DuckType).Module,
+                skipVisibility: true);
+
+            var il = dynMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);                  // Load the first argument (object)
+            il.Emit(OpCodes.Castclass, runtimeActivityType); // Cast this value to runtime System.Diagnostics.Activity type
+            il.Emit(OpCodes.Ldarg_1);                  // Load the second argument (int)
+            // For value types (enums), we don't use Castclass - int can be directly used as enum value
+            il.Emit(OpCodes.Call, runtimeActivityType.GetProperty("Kind")!.SetMethod!); // Call the setter method
+            il.Emit(OpCodes.Ret); // return
+            _setKindProperty = (Action<object, int>)dynMethod.CreateDelegate(typeof(Action<object, int>)); // Create the delegate
         }
     }
 }
