@@ -42,7 +42,7 @@ services:
     - POSTGRES_USER=postgres
     - POSTGRES_DB=postgres
     ports:
-    - "5432"
+      - "127.0.0.1:5432:5432"
 
   rabbitmq_arm64:
     image: rabbitmq:3-management
