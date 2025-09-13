@@ -355,6 +355,7 @@ shared/src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
 shared/src/Datadog.Trace.ClrProfiler.Native/cmake-build-debug/
 !shared/src/Datadog.Trace.ClrProfiler.Native/lib/**
 cmake-build-debug/*
+shared/src/native-lib/dd-policy-engine/
 
 #profiler build files
 profiler/_build/
