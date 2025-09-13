@@ -43,4 +43,23 @@ namespace Datadog.Trace.Debugger.Models
     {
         public SnapshotProbe Snapshot { get; set; }
     }
+
+    internal static class DebuggerTags
+    {
+        /// <summary>
+        /// ddsource
+        /// </summary>
+        internal const string DDSource = "dd_debugger";
+
+        /// <summary>
+        /// Tags for debugger.type
+        /// </summary>
+        internal static class DebuggerType
+        {
+            internal const string DynamicInstrumentationSnapshot = "di_snapshot";
+            internal const string ExceptionReplaySnapshot = "er_snapshot";
+            internal const string Diagnostic = "diagnostic";
+            internal const string SymDb = "symdb";
+        }
+    }
 }
