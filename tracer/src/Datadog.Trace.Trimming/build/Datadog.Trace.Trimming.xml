@@ -372,10 +372,12 @@
       <type fullname="System.Net.Http.Headers.HttpResponseHeaders" />
       <type fullname="System.Net.Http.Headers.MediaTypeHeaderValue" />
       <type fullname="System.Net.Http.Headers.NameValueHeaderValue" />
+      <type fullname="System.Net.Http.Headers.RetryConditionHeaderValue" />
       <type fullname="System.Net.Http.HttpClient" />
       <type fullname="System.Net.Http.HttpClientHandler" />
       <type fullname="System.Net.Http.HttpContent" />
       <type fullname="System.Net.Http.HttpMessageHandler" />
+      <type fullname="System.Net.Http.HttpMessageInvoker" />
       <type fullname="System.Net.Http.HttpMethod" />
       <type fullname="System.Net.Http.HttpRequestMessage" />
       <type fullname="System.Net.Http.HttpResponseMessage" />
@@ -741,6 +743,7 @@
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder`1" />
+      <type fullname="System.Runtime.CompilerServices.AsyncVoidMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />

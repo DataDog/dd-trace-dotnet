@@ -84,6 +84,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> GetData() => PackageVersions.OpenTelemetry;
 
+#if NET6_0_OR_GREATER
+        public static IEnumerable<object[]> GetMetricsTestData()
+        {
+            foreach (var packageVersion in PackageVersions.OpenTelemetry)
+            {
+                yield return [packageVersion[0], "true", "false"];  // DD enabled, OTel disabled
+                yield return [packageVersion[0], "false", "true"]; // DD disabled, OTel enabled
+            }
+        }
+#endif
+
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsOpenTelemetry(metadataSchemaVersion, Resources, ExcludeTags);
 
         [SkippableTheory]
@@ -202,8 +213,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
-        public async Task SubmitsOtlpMetrics(string packageVersion)
+        [MemberData(nameof(GetMetricsTestData))]
+        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled)
         {
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.12.0");
             var runtimeMajor = Environment.Version.Major;
@@ -218,9 +229,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var initialAgentPort = TcpPortProvider.GetOpenPort();
 
+            SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
-            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
+            SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
