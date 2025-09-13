@@ -302,34 +302,109 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task MeterListenerCapturesMetrics()
+        public void MeterListenerCapturesAllMetrics()
         {
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
-            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
-            SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 
-            using var agent = EnvironmentHelper.GetMockAgent();
-            using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: "1.12.0"))
+            OTelMetrics.MetricReader.Initialize();
+
+            // Create a test meter
+            using var meter = new System.Diagnostics.Metrics.Meter("TestMeter");
+
+            var testTags = new KeyValuePair<string, object>[]
             {
-                // Validate that our MeterListener captured metrics by checking console output
-                var standardOutput = processResult.StandardOutput;
+                new("http.method", "GET"),
+                new("rid", "1234567890")
+            };
 
-                // Check that we captured all the expected metrics from CreateSystemDiagnosticsMetrics()
+            var counter = meter.CreateCounter<long>("test.counter");
+            meter.CreateObservableCounter<long>("test.async.counter", () => 22L);
+            meter.CreateObservableGauge<double>("test.async.gauge", () => 88L);
+            var histogram = meter.CreateHistogram<double>("test.histogram");
 
-                // Synchronous Counter (always available in .NET 6+)
-                standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.counter|Counter|11|http.method=GET,rid=1234567890", "Missing example.counter metric.");
-                // Synchronous Histogram (always available in .NET 6+)
-                standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.histogram|Histogram|count=1,sum=33|http.method=GET,rid=1234567890", "Missing example.histogram metric.");
-                // .NET 7+ specific metrics
-                standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.upDownCounter|Counter|55|http.method=GET,rid=1234567890", "Missing upDownCounter metric.");
-                // .NET 9+ specific metrics
-                standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.gauge|Gauge|77|http.method=GET,rid=1234567890", "Missing gauge metric.");
-                // // Asynchronous metrics
-                // standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.async.gauge", "Missing async gauge metric.");
-                // standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.async.counter", "Missing async counter metric.");
-                // standardOutput.Should().Contain("OpenTelemetryMetricsMeter.example.async.upDownCounter", "Missing async upDownCounter metric.");
+            counter.Add(11L, testTags);
+            histogram.Record(33L, testTags);
+
+            var expectedMetricsCount = 4;
+
+#if NET7_0_OR_GREATER
+            var upDownCounter = meter.CreateUpDownCounter<long>("test.upDownCounter");
+            meter.CreateObservableUpDownCounter<long>("test.async.upDownCounter", () => 66L);
+
+            upDownCounter.Add(55L, testTags);
+            expectedMetricsCount += 2;
+#elif NET9_0_OR_GREATER
+            var gauge = meter.CreateGauge<double>("test.gauge");
+            gauge.Record(77L, testTags);
+            expectedMetricsCount += 1;
+#endif
+
+            // Trigger async collection and get metrics for testing
+            OTelMetrics.MetricReader.CollectObservableInstruments();
+            var capturedMetrics = OTelMetrics.MetricReaderHandler.GetCapturedMetricsForTesting();
+
+            capturedMetrics.Count.Should().Be(expectedMetricsCount, $"Should capture exactly {expectedMetricsCount} metrics based on .NET version");
+
+            var counterMetric = capturedMetrics["TestMeter.test.counter"];
+            counterMetric.InstrumentType.Should().Be("Counter");
+            counterMetric.AggregationTemporality.Should().Be("Delta");
+            counterMetric.IsIntegerValue.Should().Be(true);
+            counterMetric.RunningSum.Should().Be(11.0);
+            counterMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
+            counterMetric.Tags.Should().ContainKey("rid").WhoseValue.Should().Be("1234567890");
+
+            var asyncCounterMetric = capturedMetrics["TestMeter.test.async.counter"];
+            asyncCounterMetric.InstrumentType.Should().Be("Counter");
+            asyncCounterMetric.AggregationTemporality.Should().Be("Delta");
+            asyncCounterMetric.IsIntegerValue.Should().Be(true);
+            asyncCounterMetric.RunningSum.Should().Be(22.0);
+            asyncCounterMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
+
+            var asyncGaugeMetric = capturedMetrics["TestMeter.test.async.gauge"];
+            asyncGaugeMetric.InstrumentType.Should().Be("Gauge");
+            asyncGaugeMetric.AggregationTemporality.Should().Be("Delta");
+            asyncGaugeMetric.IsIntegerValue.Should().Be(false);
+            asyncGaugeMetric.RunningSum.Should().Be(88.0);
+            asyncGaugeMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
+
+            var histogramMetric = capturedMetrics["TestMeter.test.histogram"];
+            histogramMetric.InstrumentType.Should().Be("Histogram");
+            histogramMetric.AggregationTemporality.Should().Be("Delta");
+            histogramMetric.IsIntegerValue.Should().Be(false);
+            histogramMetric.RunningCount.Should().Be(1L);
+            histogramMetric.RunningSum.Should().Be(33.0);
+            histogramMetric.RunningMin.Should().Be(33.0);
+            histogramMetric.RunningMax.Should().Be(33.0);
+            histogramMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
+            histogramMetric.Tags.Should().ContainKey("rid").WhoseValue.Should().Be("1234567890");
+            var bucketCounts = histogramMetric.RunningBucketCounts;
+            bucketCounts[4].Should().Be(1L, "Value 33.0 should fall in bucket 4 (25 < 33.0 <= 50)");
+
+#if NET7_0_OR_GREATER
+            if (capturedMetrics.ContainsKey("TestMeter.test.upDownCounter"))
+            {
+                var upDownMetric = capturedMetrics["TestMeter.test.upDownCounter"];
+                upDownMetric.InstrumentType.Should().Be("UpDownCounter");
+                upDownMetric.RunningSum.Should().Be(55.0);
+                upDownMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
             }
+
+            if (capturedMetrics.ContainsKey("TestMeter.test.async.upDownCounter"))
+            {
+                var asyncUpDownMetric = capturedMetrics["TestMeter.test.async.upDownCounter"];
+                asyncUpDownMetric.InstrumentType.Should().Be("UpDownCounter");
+                asyncUpDownMetric.RunningSum.Should().Be(66.0);
+                asyncUpDownMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
+            }
+#elif NET9_0_OR_GREATER
+            if (capturedMetrics.ContainsKey("TestMeter.test.gauge"))
+            {
+                var gaugeMetric = capturedMetrics["TestMeter.test.gauge"];
+                gaugeMetric.InstrumentType.Should().Be("Gauge");
+                gaugeMetric.RunningSum.Should().Be(77.0);
+                gaugeMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
+            }
+#endif
         }
 #endif
 

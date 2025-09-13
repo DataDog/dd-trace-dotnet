@@ -1,4 +1,4 @@
-// <copyright file="MeterListener.cs" company="Datadog">
+// <copyright file="MetricReader.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,22 +13,17 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.OTelMetrics
 {
-    internal static class MeterListener
+    internal static class MetricReader
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MeterListener));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReader));
 
         private static System.Diagnostics.Metrics.MeterListener? _meterListenerInstance;
         private static int _initialized;
         private static int _stopped;
 
-        public static bool IsRunning
-        {
-            get
-            {
-                return Interlocked.CompareExchange(ref _initialized, 1, 1) == 1 &&
-                       Interlocked.CompareExchange(ref _stopped, 0, 0) == 0;
-            }
-        }
+        public static bool IsRunning =>
+            Interlocked.CompareExchange(ref _initialized, 1, 1) == 1 &&
+            Interlocked.CompareExchange(ref _stopped, 0, 0) == 0;
 
         public static void Initialize()
         {
@@ -37,14 +32,11 @@ namespace Datadog.Trace.OTelMetrics
                 return;
             }
 
-            Log.Debug("Initializing MeterListener for OTLP metrics collection.");
-
             var meterListener = new System.Diagnostics.Metrics.MeterListener();
-            meterListener.InstrumentPublished = MeterListenerHandler.OnInstrumentPublished;
+            meterListener.InstrumentPublished = MetricReaderHandler.OnInstrumentPublished;
 
-            // Handle basic synchronous instruments (as per RFC)
-            meterListener.SetMeasurementEventCallback<long>(MeterListenerHandler.OnMeasurementRecordedLong);
-            meterListener.SetMeasurementEventCallback<double>(MeterListenerHandler.OnMeasurementRecordedDouble);
+            meterListener.SetMeasurementEventCallback<long>(MetricReaderHandler.OnMeasurementRecordedLong);
+            meterListener.SetMeasurementEventCallback<double>(MetricReaderHandler.OnMeasurementRecordedDouble);
 
             meterListener.Start();
             _meterListenerInstance = meterListener;
@@ -62,6 +54,22 @@ namespace Datadog.Trace.OTelMetrics
                 Log.Debug("MeterListener stopped.");
             }
         }
+
+        internal static void CollectObservableInstruments()
+        {
+            if (_meterListenerInstance != null)
+            {
+                try
+                {
+                    _meterListenerInstance.RecordObservableInstruments();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Error collecting observable instruments.");
+                }
+            }
+        }
     }
 }
 #endif
+
