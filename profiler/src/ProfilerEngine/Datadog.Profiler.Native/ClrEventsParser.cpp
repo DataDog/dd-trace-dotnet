@@ -81,6 +81,10 @@ void ClrEventsParser::ParseEvent(
     {
         ParseWaitHandleEvent(timestamp, id, version, cbEventData, eventData);
     }
+    else if (KEYWORD_ALLOCATION_SAMPLING == (keywords & KEYWORD_ALLOCATION_SAMPLING))
+    {
+        ParseAllocationSampledEvent(timestamp, id, version, cbEventData, eventData);
+    }
 }
 
 
@@ -100,6 +104,116 @@ void ClrEventsParser::ParseEvent(
 #if defined(__clang__) || defined(DD_SANITIZERS)
 __attribute__((no_sanitize("alignment")))
 #endif
+
+
+bool ClrEventsParser::ParseAllocationEvent(ULONG cbEventData, LPCBYTE pEventData, AllocationTickV4Payload& payload)
+{
+    // template tid = "GCAllocationTick_V4" >
+    //     <data name = "AllocationAmount" inType = "win:UInt32" />
+    //     <data name = "AllocationKind" inType = "win:UInt32" />
+    //     <data name = "ClrInstanceID" inType = "win:UInt16" />
+    //     <data name = "AllocationAmount64" inType = "win:UInt64"/>
+    //     <data name = "TypeID" inType = "win:Pointer" />
+    //     <data name = "TypeName" inType = "win:UnicodeString" />
+    //     <data name = "HeapIndex" inType = "win:UInt32" />
+    //     <data name = "Address" inType = "win:Pointer" />
+    //     <data name = "ObjectSize" inType = "win:UInt64" />
+    //
+    // additional field for AllocationSampled event payload
+    //     <data name="SampledByteOffset" inType="win:UInt64" />
+
+    // DumpBuffer(pEventData, cbEventData);
+
+    ULONG offset = 0;
+    if (!EventsParserHelper::Read(payload.AllocationAmount, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.AllocationKind, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.ClrInstanceId, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.AllocationAmount64, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.TypeId, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    payload.TypeName = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
+    if (payload.TypeName == nullptr)
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.HeapIndex, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.Address, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.ObjectSize, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool ClrEventsParser::ParseAllocationSampledEvent(ULONG cbEventData, LPCBYTE pEventData, AllocationSampledPayload& payload)
+{
+    // <template tid = "AllocationSampled">
+    //    <data name = "AllocationKind" inType = "win:UInt32" / >
+    //    <data name = "ClrInstanceID" inType = "win:UInt16" / >
+    //    <data name = "TypeID" inType = "win:Pointer" / >
+    //    <data name = "TypeName" inType = "win:UnicodeString" / >
+    //    <data name = "Address" inType = "win:Pointer" / >
+    //    <data name = "ObjectSize" inType = "win:UInt64" / >
+    //    <data name = "SampledByteOffset" inType = "win:UInt64" / >
+    //
+
+    // DumpBuffer(pEventData, cbEventData);
+
+    ULONG offset = 0;
+    if (!EventsParserHelper::Read(payload.AllocationKind, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.ClrInstanceId, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.TypeId, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    payload.TypeName = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
+    if (payload.TypeName == nullptr)
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.Address, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.ObjectSize, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+    if (!EventsParserHelper::Read(payload.SampledByteOffset, pEventData, cbEventData, offset))
+    {
+        return false;
+    }
+
+    return true;
+}
+
 void
 ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
 {
@@ -111,57 +225,12 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             return;
         }
 
-        // template tid = "GCAllocationTick_V4" >
-        //     <data name = "AllocationAmount" inType = "win:UInt32" />
-        //     <data name = "AllocationKind" inType = "win:UInt32" />
-        //     <data name = "ClrInstanceID" inType = "win:UInt16" />
-        //     <data name = "AllocationAmount64" inType = "win:UInt64"/>
-        //     <data name = "TypeID" inType = "win:Pointer" />
-        //     <data name = "TypeName" inType = "win:UnicodeString" />
-        //     <data name = "HeapIndex" inType = "win:UInt32" />
-        //     <data name = "Address" inType = "win:Pointer" />
-        //     <data name = "ObjectSize" inType = "win:UInt64" />
-        // DumpBuffer(pEventData, cbEventData);
-
         AllocationTickV4Payload payload{0};
-        ULONG offset = 0;
-        if (!EventsParserHelper::Read(payload.AllocationAmount, pEventData, cbEventData, offset))
+        if (!ParseAllocationEvent(cbEventData, pEventData, payload))
         {
             return;
         }
-        if (!EventsParserHelper::Read(payload.AllocationKind, pEventData, cbEventData, offset))
-        {
-            return;
-        }
-        if (!EventsParserHelper::Read(payload.ClrInstanceId, pEventData, cbEventData, offset))
-        {
-            return;
-        }
-        if (!EventsParserHelper::Read(payload.AllocationAmount64, pEventData, cbEventData, offset))
-        {
-            return;
-        }
-        if (!EventsParserHelper::Read(payload.TypeId, pEventData, cbEventData, offset))
-        {
-            return;
-        }
-        payload.TypeName = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
-        if (payload.TypeName == nullptr)
-        {
-            return;
-        }
-        if (!EventsParserHelper::Read(payload.HeapIndex, pEventData, cbEventData, offset))
-        {
-            return;
-        }
-        if (!EventsParserHelper::Read(payload.Address, pEventData, cbEventData, offset))
-        {
-            return;
-        }
-        if (!EventsParserHelper::Read(payload.ObjectSize, pEventData, cbEventData, offset))
-        {
-            return;
-        }
+
         _pAllocationListener->OnAllocation(
             payload.AllocationKind,
             payload.TypeId,
@@ -267,6 +336,37 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
 
         LogGcEvent("OnGCGlobalHeapHistory");
         OnGCGlobalHeapHistory(timestamp, payload);
+    }
+}
+
+void ClrEventsParser::ParseAllocationSampledEvent(
+    std::chrono::nanoseconds timestamp,
+    DWORD id,
+    DWORD version,
+    ULONG cbEventData,
+    LPCBYTE pEventData)
+{
+    if (_pAllocationListener == nullptr)
+    {
+        return;
+    }
+
+    // look for AllocationSampled event in .NET 10+
+    if (id == EVENT_ALLOCATION_SAMPLED)
+    {
+        AllocationSampledPayload payload{0};
+        if (!ParseAllocationSampledEvent(cbEventData, pEventData, payload))
+        {
+            return;
+        }
+
+        _pAllocationListener->OnAllocationSampled(
+            payload.AllocationKind,
+            payload.TypeId,
+            payload.TypeName,
+            payload.Address,
+            payload.ObjectSize,
+            payload.SampledByteOffset);
     }
 }
 
