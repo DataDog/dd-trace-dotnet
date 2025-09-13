@@ -53,6 +53,23 @@ namespace Datadog.Trace.OTelMetrics
 
         internal long[] RunningBucketCounts => _runningBucketCounts;
 
+        // Snapshot properties for export (thread-safe access)
+        public DateTimeOffset StartTime { get; private set; } = DateTimeOffset.UtcNow;
+
+        public DateTimeOffset EndTime { get; private set; } = DateTimeOffset.UtcNow;
+
+        public long SnapshotCount { get; private set; }
+
+        public double SnapshotSum { get; private set; }
+
+        public double SnapshotGaugeValue { get; private set; }
+
+        public double SnapshotMin { get; private set; }
+
+        public double SnapshotMax { get; private set; }
+
+        public long[] SnapshotBucketCounts { get; private set; } = [];
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateCounter(double value)
         {
@@ -102,6 +119,48 @@ namespace Datadog.Trace.OTelMetrics
             }
 
             return DefaultHistogramBounds.Length; // Overflow bucket
+        }
+
+        /// <summary>
+        /// Takes a snapshot of the current metric state for export.
+        /// For delta temporality, this resets the running values after taking the snapshot.
+        /// For cumulative temporality, this preserves the running values.
+        /// </summary>
+        /// <param name="outputDelta">True if this is a delta export (reset after snapshot), false for cumulative</param>
+        public void TakeSnapshot(bool outputDelta)
+        {
+            lock (_histogramLock)
+            {
+                // Update timestamps
+                EndTime = DateTimeOffset.UtcNow;
+
+                // Take snapshots of current values
+                SnapshotCount = _runningCountValue;
+                SnapshotSum = _runningDoubleValue;
+                SnapshotGaugeValue = _runningDoubleValue; // For gauges, use the same value
+                SnapshotMin = _runningMin;
+                SnapshotMax = _runningMax;
+
+                // Copy bucket counts for histograms
+                if (_runningBucketCounts.Length > 0)
+                {
+                    SnapshotBucketCounts = new long[_runningBucketCounts.Length];
+                    Array.Copy(_runningBucketCounts, SnapshotBucketCounts, _runningBucketCounts.Length);
+                }
+
+                // For delta temporality, reset the running values after taking snapshot
+                if (outputDelta)
+                {
+                    _runningCountValue = 0;
+                    _runningDoubleValue = 0.0;
+                    _runningMin = double.PositiveInfinity;
+                    _runningMax = double.NegativeInfinity;
+                    if (_runningBucketCounts.Length > 0)
+                    {
+                        Array.Clear(_runningBucketCounts, 0, _runningBucketCounts.Length);
+                    }
+                }
+            }
         }
     }
 }

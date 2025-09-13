@@ -326,18 +326,17 @@ namespace Datadog.Trace.ClrProfiler
             {
                 if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
                 {
+                    // Check if the apporach I have for all works or should follow this setting as OTEL does.
                     if (Tracer.Instance.Settings.OpenTelemetryMeterNames.Length > 0)
                     {
-                        Log.Debug("Initializing OTel Metrics Exporter.");
-                        OTelMetrics.OtlpMetricsExporter.Initialize();
-                        Log.Debug("Initializing OTel Metrics Reader.");
+                        Log.Debug("Initializing OTel Metrics collection.");
                         OTelMetrics.MetricReader.Initialize();
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error initializing OTel Metrics Reader");
+                Log.Error(ex, "Error initializing OTel Metrics collection.");
             }
 #else
             if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)

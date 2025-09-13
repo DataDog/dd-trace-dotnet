@@ -218,6 +218,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var initialAgentPort = TcpPortProvider.GetOpenPort();
 
+            SetEnvironmentVariable("DD_SERVICE", string.Empty);
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
@@ -407,6 +408,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
         }
 #endif
+
+        // TODO Test Telemetry Metrics
 
         private static string GetSuffix(string packageVersion)
         {

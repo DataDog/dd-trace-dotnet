@@ -135,6 +135,26 @@ internal enum Count
     /// The number of times an OpenTelemetry configuration has a mapping to a Datadog configuration but it cannot be mapped correctly.
     /// </summary>
     [TelemetryMetric<MetricTags.DatadogConfiguration, MetricTags.OpenTelemetryConfiguration>("otel.env.invalid", isCommon: true, NS.Tracer)] OpenTelemetryConfigInvalid,
+
+    /// <summary>
+    /// The number of OTLP metrics export attempts, tagged by protocol (grpc, http/protobuf, http/json)
+    /// </summary>
+    [TelemetryMetric<MetricTags.Protocol>("metrics_export_attempts")] MetricsExportAttempts,
+
+    /// <summary>
+    /// The number of successful OTLP metrics exports, tagged by protocol (grpc, http/protobuf, http/json)
+    /// </summary>
+    [TelemetryMetric<MetricTags.Protocol>("metrics_export_successes")] MetricsExportSuccesses,
+
+    /// <summary>
+    /// The number of partial success OTLP metrics exports, tagged by protocol (grpc, http/protobuf, http/json)
+    /// </summary>
+    [TelemetryMetric<MetricTags.Protocol>("metrics_export_partial_successes")] MetricsExportPartialSuccesses,
+
+    /// <summary>
+    /// The number of failed OTLP metrics exports, tagged by protocol (grpc, http/protobuf, http/json)
+    /// </summary>
+    [TelemetryMetric<MetricTags.Protocol>("metrics_export_failures")] MetricsExportFailures,
 #endregion
 #region Telemetry Namespace
 
