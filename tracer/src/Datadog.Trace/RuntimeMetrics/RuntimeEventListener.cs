@@ -37,11 +37,11 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private static readonly IReadOnlyDictionary<string, string> MetricsMapping;
 
-        private readonly IDogStatsd _statsd;
-
         private readonly Timing _contentionTime = new Timing();
 
         private readonly string _delayInSeconds;
+
+        private IDogStatsd _statsd;
 
         private long _contentionCount;
 
@@ -79,6 +79,11 @@ namespace Datadog.Trace.RuntimeMetrics
             _statsd.Gauge(MetricsNames.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
 
             Log.Debug("Sent the following metrics to the DD agent: {Metrics}", ThreadStatsMetrics);
+        }
+
+        public void UpdateStatsd(IDogStatsd statsd)
+        {
+            Interlocked.Exchange(ref _statsd, statsd);
         }
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
