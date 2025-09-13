@@ -202,8 +202,8 @@ public class SettingsInstrumentationTests
         var changedValues = manual.ToDictionary();
 
         IConfigurationSource configSource = useLegacySettings
-                               ? new ManualInstrumentationLegacyConfigurationSource(changedValues)
-                               : new ManualInstrumentationConfigurationSource(changedValues);
+                               ? new ManualInstrumentationLegacyConfigurationSource(changedValues, useDefaultSources: false)
+                               : new ManualInstrumentationConfigurationSource(changedValues, useDefaultSources: false);
         var automatic = new TracerSettings(configSource);
 
         AssertEquivalent(manual, automatic);
