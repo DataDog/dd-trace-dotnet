@@ -97,6 +97,32 @@ internal static class AsyncUtil
     }
 
     /// <summary>
+    /// Executes an async Task method which has a void return value synchronously, WITHOUT using
+    /// a <see cref="CancellationTokenSource"/> which can cause exceptions, which may be problematic
+    /// during shutdown.
+    /// USAGE: AsyncUtil.RunSync(ex => AsyncMethod(ex), new Exception(), millisecondsTimeout);
+    /// </summary>
+    /// <param name="task">Task method to execute</param>
+    /// <param name="state">State that is passed to the running function</param>
+    /// <param name="millisecondsTimeout">Timeout in milliseconds</param>
+    public static void RunSyncNoCts<T>(Func<T, Task> task, T state, int millisecondsTimeout)
+    {
+        _taskFactory
+           .StartNew(TaskWithTimeoutAsync)
+           .Unwrap()
+           .GetAwaiter()
+           .GetResult();
+
+        Task TaskWithTimeoutAsync()
+        {
+            var runTask = task(state);
+            return runTask.IsCompleted
+                       ? runTask
+                       : runTask.WaitAsyncNoCts(TimeSpan.FromMilliseconds(millisecondsTimeout));
+        }
+    }
+
+    /// <summary>
     /// Executes an async Task[T] method which has a T return type synchronously
     /// USAGE: T result = AsyncUtil.RunSync(() => AsyncMethod[T]());
     /// </summary>
@@ -191,4 +217,20 @@ internal static class AsyncUtil
         throw new TimeoutException();
     }
 #endif
+
+    /// <summary>Gets a <see cref="Task{TResult}"/> that will complete when this
+    /// <see cref="Task{TResult}"/> completes or when the specified timeout expires.</summary>
+    /// <param name="runTask">The task to atttempt to run within the time limit</param>
+    /// <param name="timeout">The timeout after which the <see cref="Task"/>
+    /// should exit if it hasn't otherwise completed.</param>
+    /// <returns>The <see cref="Task{TResult}"/> representing the asynchronous wait.
+    /// It may or may not be the same instance as the current instance.</returns>
+    public static async Task WaitAsyncNoCts(this Task runTask, TimeSpan timeout)
+    {
+        var completedTask = await Task.WhenAny(runTask, Task.Delay(timeout)).ConfigureAwait(false);
+        if (completedTask == runTask)
+        {
+           await runTask.ConfigureAwait(false);
+        }
+    }
 }
