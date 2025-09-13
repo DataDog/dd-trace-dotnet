@@ -59,10 +59,11 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 ENV ASPNETCORE_URLS=http://localhost:5000
 
 # Capture dumps
-ENV COMPlus_DbgEnableMiniDump=1
+ENV COMPlus_DbgEnableMiniDump=0
 ENV COMPlus_DbgMiniDumpType=4
 ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
-ENV DOTNET_EnableCrashReport=1
+ENV DOTNET_EnableCrashReport=0
+ENV DD_CRASHTRACKING_ENABLED=0
 
 # Copy the app across
 COPY --from=builder /src/publish /app/.
