@@ -9,10 +9,10 @@
 class ClrLifetime : public IClrLifetime
 {
 private:
-    std::atomic<bool>* _pIsRunning;
+    std::atomic<bool>* _pIsInitialized;
 
 public:
-    explicit ClrLifetime(std::atomic<bool>* pIsRunning);
+    explicit ClrLifetime(std::atomic<bool>* pIsInitialized);
 
-    bool IsRunning() const override;
+    bool IsInitialized() const override;
 };

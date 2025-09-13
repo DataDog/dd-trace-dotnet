@@ -128,6 +128,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         public void SsiAndProfilingEnvVarFalse(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
@@ -143,11 +144,10 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         public void CheckSsiAndProfilingEnvVarSetToFalse(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
-            ForceInjectionIfRequired(runner, framework);
-            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
@@ -169,6 +169,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         public void SsiAndProfilingNotSsiEnabled_ShortLivedAndNoSpan(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
@@ -186,6 +187,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         public void SsiAndProfilingNotSsiEnabled_NoSpan(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
@@ -203,7 +205,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         [TestAppFact("Samples.BuggyBits")]
         public void SsiAndProfilingNotSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableTracer: true, enableProfiler: false);
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
@@ -220,7 +223,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         [TestAppFact("Samples.BuggyBits")]
         public void SsiAndProfilingNotSsiEnabled_AllTriggered(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableTracer: true, enableProfiler: false);
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
@@ -240,8 +244,10 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
             // deployed and enabled with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
             ForceInjectionIfRequired(runner, framework);
+
             // short lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
 
@@ -257,7 +263,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
             // deployed and enabled with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
             ForceInjectionIfRequired(runner, framework);
 
             // simulate long lived
@@ -272,11 +279,13 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         [TestAppFact("Samples.BuggyBits")]
         public void SsiAndProfilingSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableTracer: true, enableProfiler: false);
 
             // deployed and enabled with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
             ForceInjectionIfRequired(runner, framework);
+
             // short lived with span
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
 
@@ -289,11 +298,13 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         [TestAppFact("Samples.BuggyBits")]
         public void SsiAndProfilingSsiEnabled_AllTriggered(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableTracer: true, enableProfiler: false);
 
             // deployed and enabled with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
             ForceInjectionIfRequired(runner, framework);
+
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
 
@@ -306,11 +317,13 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         [TestAppFact("Samples.BuggyBits")]
         public void SsiAndProfilingSsiEnabled_Delayed(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableTracer: true, enableProfiler: false);
 
             // deployed and enabled with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
             ForceInjectionIfRequired(runner, framework);
+
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, TimeSpan.FromSeconds(6).TotalMilliseconds.ToString());
 

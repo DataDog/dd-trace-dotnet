@@ -7,5 +7,5 @@ class IClrLifetime
 public:
     virtual ~IClrLifetime() = default;
 
-    virtual bool IsRunning() const = 0;
+    virtual bool IsInitialized() const = 0;
 };

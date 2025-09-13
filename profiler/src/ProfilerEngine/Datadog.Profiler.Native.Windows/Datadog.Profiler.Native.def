@@ -11,3 +11,4 @@
   SetGitMetadataForApplication PRIVATE
   FlushProfile PRIVATE
   CreateCrashReport PRIVATE
+  SetConfiguration PRIVATE
