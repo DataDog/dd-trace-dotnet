@@ -9,9 +9,12 @@ namespace LogsInjection.ILogger
     {
         public static void Main(string[] args)
         {
+#pragma warning disable ASPDEPR008 // Type or member is obsolete
             CreateHostBuilder(args).Build().Run();
+#pragma warning restore ASPDEPR008 // Type or member is obsolete
         }
 
+#pragma warning disable ASPDEPR008 // Type or member is obsolete
         public static IWebHostBuilder CreateHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                    .UseContentRoot(AppContext.BaseDirectory)
@@ -23,6 +26,6 @@ namespace LogsInjection.ILogger
                         logging.EnableEnrichment();
                     })
                    .UseStartup<Startup>();
-
+#pragma warning restore ASPDEPR008 // Type or member is obsolete
     }
 }

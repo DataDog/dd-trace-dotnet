@@ -19,6 +19,8 @@ public static class Program
 {
     public static int Main(string[] args)
     {
+#pragma warning disable ASPDEPR008 // Type or member is obsolete
+#pragma warning disable ASPDEPR004 // Type or member is obsolete
         var host = WebHost
            .CreateDefaultBuilder(args)
            .ConfigureServices(ConfigureServices)
@@ -32,7 +34,8 @@ public static class Program
                     opts => opts.Protocols = HttpProtocols.Http2);
             })
            .Build();
-
+#pragma warning restore ASPDEPR008 // Type or member is obsolete
+#pragma warning restore ASPDEPR004 // Type or member is obsolete
 
         var lifetime = host.Services.GetRequiredService<IApplicationLifetime>();
 
