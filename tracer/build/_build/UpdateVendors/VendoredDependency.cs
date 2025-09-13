@@ -62,7 +62,15 @@ namespace UpdateVendors
                 version: "6.0.0",
                 downloadUrl: "https://github.com/DataDog/dogstatsd-csharp-client/archive/6.0.0.zip",
                 pathToSrc: new[] { "dogstatsd-csharp-client-6.0.0", "src", "StatsdClient" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"),
+                // Exclude the stuff we need to avoid the sync-over-async that's everywhere
+                relativePathsToExclude: new[]
+                {
+                    "Worker/AsynchronousWorker.cs",
+                    "Bufferize/StatsBufferize.cs",
+                    "DogStatsdService.cs",
+                    "StatsdData.cs",
+                });
 
             Add(
                 libraryName: "MessagePack",
