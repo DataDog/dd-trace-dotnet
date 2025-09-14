@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: System.Data.SQLite -->
     <!--    Assembly: System.Data.SQLite -->
-    <!-- Latest package https://www.nuget.org/packages/System.Data.SQLite/2.0.1 -->
-    <PackageReference Include="System.Data.SQLite" Version="2.0.1" />
+    <!-- Latest package https://www.nuget.org/packages/System.Data.SQLite/2.0.2 -->
+    <PackageReference Include="System.Data.SQLite" Version="2.0.2" />
   </ItemGroup>
 
 </Project>
