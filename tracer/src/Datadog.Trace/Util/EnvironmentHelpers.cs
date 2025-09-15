@@ -143,9 +143,9 @@ namespace Datadog.Trace.Util
             var hasWorkerId = cmd.IndexOf("--functions-workerid", StringComparison.OrdinalIgnoreCase) >= 0 ||
                               cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) >= 0;
 
-            return IsAzureFunctions()
-                   && string.Equals(GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal)
-                   && !hasWorkerId;
+            return !hasWorkerId
+                   && IsAzureFunctions()
+                   && string.Equals(GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal);
         }
 
         /// <summary>

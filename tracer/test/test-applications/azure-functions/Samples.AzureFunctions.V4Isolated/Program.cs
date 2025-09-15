@@ -7,6 +7,7 @@ var host = new HostBuilder()
         {
             logging.AddConsole();
             logging.SetMinimumLevel(LogLevel.Trace);
+            logging.AddFilter("*", LogLevel.Trace);
         })
         
     .Build();
