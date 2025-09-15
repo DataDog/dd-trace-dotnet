@@ -67,7 +67,7 @@ namespace Datadog.Trace.Configuration
             var tracerSettings = Tracer.Instance.Settings;
             var manualSource = GlobalConfigurationSource.ManualConfigurationSource;
             var mutableSettings = manualSource.UseDefaultSources
-                                      ? tracerSettings.MutableSettings
+                                      ? tracerSettings.InitialMutableSettings
                                       : MutableSettings.CreateWithoutDefaultSources(tracerSettings);
 
             OnConfigurationChanged(
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Configuration
                 mutableSettings,
                 tracerSettings,
                 // TODO: In the future this will 'live' elsewhere
-                tracerSettings.MutableSettings,
+                currentSettings: tracerSettings.MutableSettings,
                 TelemetryFactory.Config,
                 new OverrideErrorLog()); // TODO: We'll later report these
         }

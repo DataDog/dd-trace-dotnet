@@ -55,7 +55,7 @@ public class ConfigureIntegration
         var tracerSettings = Datadog.Trace.Tracer.Instance.Settings;
         var dynamicConfig = GlobalConfigurationSource.DynamicConfigurationSource;
         var initialSettings = isFromDefaults
-                                  ? tracerSettings.MutableSettings
+                                  ? tracerSettings.InitialMutableSettings
                                   : MutableSettings.CreateWithoutDefaultSources(tracerSettings);
 
         // TODO: these will eventually live elsewhere
