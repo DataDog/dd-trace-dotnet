@@ -780,7 +780,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the transport settings that dictate how the tracer connects to the agent.
         /// </summary>
-        public ExporterSettings Exporter { get; }
+        public ExporterSettings Exporter { get; init; }
 
         /// <inheritdoc cref="MutableSettings.AnalyticsEnabled"/>
         [Obsolete(DeprecationMessages.AppAnalytics)]
