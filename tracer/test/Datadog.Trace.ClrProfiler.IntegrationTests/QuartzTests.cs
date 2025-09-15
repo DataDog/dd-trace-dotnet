@@ -30,24 +30,12 @@ public class QuartzTests : TracingIntegrationTest
         SetServiceVersion("1.0.0");
     }
 
-    public static IEnumerable<object[]> GetData()
-    {
-        var data = PackageVersions.Quartz;
-        if (data == null || !data.Any())
-        {
-            // Fallback if PackageVersions.Quartz returns null or empty
-            return new[] { new object[] { string.Empty } };
-        }
-
-        return data;
-    }
-
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsQuartz(metadataSchemaVersion);
 
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    [MemberData(nameof(GetData))] // set to default ApiVersion
+    [MemberData(nameof(PackageVersions.Quartz), MemberType = typeof(PackageVersions))]
     public async Task SubmitsTraces(string packageVersion)
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
@@ -96,7 +84,11 @@ public class QuartzTests : TracingIntegrationTest
 
     private static string GetSuffix(string packageVersion, out int expectedSpanCount)
     {
-        // Handle empty or null package version (when DEFAULT_SAMPLES is defined)
+#if NETFRAMEWORK
+        // Quartz instrumentation is not supported on .NET Framework
+        // DiagnosticObserver infrastructure is excluded with #if !NETFRAMEWORK
+        return Set(out expectedSpanCount, 0, "NETFRAMEWORK");
+#else
         if (string.IsNullOrEmpty(packageVersion))
         {
             return Set(out expectedSpanCount, 2, "V3");
@@ -110,6 +102,7 @@ public class QuartzTests : TracingIntegrationTest
 #endif
             _ => Set(out expectedSpanCount, 2, "V3")
         };
+#endif
     }
 
     private static string Set(out int expectedSpanCount, int count, string suffix)
