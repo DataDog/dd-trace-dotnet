@@ -208,8 +208,8 @@ public class SettingsInstrumentationTests
 
         AssertEquivalent(manual, automatic);
         automatic.ServiceNameMappings.Should().Equal(mappings);
-        automatic.HttpClientErrorStatusCodes.Should().Equal(TracerSettings.ParseHttpCodesToArray(string.Join(",", clientErrors)));
-        automatic.HttpServerErrorStatusCodes.Should().Equal(TracerSettings.ParseHttpCodesToArray(string.Join(",", serverErrors)));
+        automatic.HttpClientErrorStatusCodes.Should().Equal(MutableSettings.ParseHttpCodesToArray(string.Join(",", clientErrors)));
+        automatic.HttpServerErrorStatusCodes.Should().Equal(MutableSettings.ParseHttpCodesToArray(string.Join(",", serverErrors)));
 
         automatic.Integrations[IntegrationId.OpenTelemetry].Enabled.Should().BeFalse();
         automatic.Integrations[IntegrationId.Kafka].Enabled.Should().BeFalse();
