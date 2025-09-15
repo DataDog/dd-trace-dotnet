@@ -1,0 +1,6 @@
+@DatadogSymbolsServer_HostAddress = http://localhost:5246
+
+GET {{DatadogSymbolsServer_HostAddress}}/
+Accept: application/json
+
+###
