@@ -30,7 +30,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal static string FrameIndex { get; } = Guid.NewGuid().ToString();
 
-        internal override string DebuggerType => DebuggerTags.DebuggerType.ExceptionReplaySnapshot;
+        internal override string DebuggerProduct => DebuggerTags.DebuggerProduct.ER;
 
         internal override DebuggerSnapshotCreator EndSnapshot()
         {

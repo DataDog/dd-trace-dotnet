@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Upload;
 
 internal abstract class DebuggerUploadApiBase : IBatchUploadApi
 {
-    private const string DebuggerV1Endpoint = "debugger/v1/input";
+    protected const string DebuggerV1Endpoint = "debugger/v1/input";
 
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly IGitMetadataTagsProvider? _gitMetadataTagsProvider;
