@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var originalSource = new NameValueConfigurationSource(new NameValueCollection
             {
-                { "DD_TRACE_Kafka_ENABLED", "false" },
+                { "DD_TRACE_Kafka_ENABLED", "true" },
                 { "DD_TRACE_Kafka_ANALYTICS_ENABLED", "true" },
                 { "DD_TRACE_Kafka_ANALYTICS_SAMPLE_RATE", "0.2" },
             });
