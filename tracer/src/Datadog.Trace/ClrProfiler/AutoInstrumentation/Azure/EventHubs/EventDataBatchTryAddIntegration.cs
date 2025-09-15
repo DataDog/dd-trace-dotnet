@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class EventDataBatchTryAddIntegration
     {
-        private const string OperationName = "azure-eventhubs.batch.add";
+        private const string OperationName = "azure_eventhubs.create";
         private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventDataBatchTryAddIntegration));
 
@@ -46,10 +46,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 return CallTargetState.GetDefault();
             }
 
-            var tags = new EventHubProducerTags
-            {
-                Operation = "batch.add"
-            };
+            var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Producer);
+            tags.MessagingOperation = "create";
 
             var scope = Tracer.Instance.StartActiveInternal(OperationName, tags: tags);
             var span = scope.Span;

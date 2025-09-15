@@ -34,8 +34,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class EventHubProducerClientSendBatchAsyncIntegration
     {
-        private const string OperationName = "azure-eventhubs.send";
+        private const string OperationName = "azure_eventhubs.send";
         private const string MessagingType = "eventhubs";
+        private const int DefaultEventHubsPort = 5671;
         private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubProducerClientSendBatchAsyncIntegration));
 
@@ -57,12 +58,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             {
                 Log.Debug(LogPrefix + "Starting batch send operation for EventHub: {EventHub}", instance.EventHubName);
 
-                var tags = new EventHubProducerTags
-                {
-                    EventHubName = instance.EventHubName,
-                    Namespace = instance.FullyQualifiedNamespace,
-                    Operation = "send"
-                };
+                var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Producer);
+                tags.MessagingDestinationName = instance.EventHubName;
+                tags.MessagingOperation = "send";
 
                 var spanContexts = EventHubsCommon.RetrieveAndClearSpanContexts(eventBatch?.Instance);
                 var spanLinks = spanContexts?.Select(ctx => new SpanLink(ctx));
@@ -71,6 +69,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = $"send {instance.EventHubName}";
+
+                // Set network destination tags
+                var endpoint = instance.Connection?.ServiceEndpoint;
+                if (endpoint != null)
+                {
+                    tags.NetworkDestinationName = endpoint.Host;
+                    // https://learn.microsoft.com/en-us/dotnet/api/system.uri.port?view=net-8.0#remarks
+                    var port = endpoint.Port == -1 ? DefaultEventHubsPort : endpoint.Port;
+                    tags.NetworkDestinationPort = port.ToString();
+                }
 
                 // Log batch information
                 if (eventBatch != null && eventBatch.Instance != null)

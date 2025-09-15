@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
@@ -23,5 +24,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         /// Gets the fully qualified namespace
         /// </summary>
         string FullyQualifiedNamespace { get; }
+
+        /// <summary>
+        /// Gets the connection for the Event Hub (private property access)
+        /// </summary>
+        IEventHubConnection Connection { get; }
+    }
+
+    internal interface IEventHubConnection
+    {
+        /// <summary>
+        /// Gets the service endpoint for the Event Hub (internal property access)
+        /// </summary>
+        Uri? ServiceEndpoint { get; }
     }
 }
