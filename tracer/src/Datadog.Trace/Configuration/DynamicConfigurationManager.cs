@@ -67,7 +67,7 @@ namespace Datadog.Trace.Configuration
         {
             var oldSettings = Tracer.Instance.Settings;
 
-            var headerTags = TracerSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled: true);
+            var headerTags = MutableSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled: true);
             // var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, ConfigurationKeys.ServiceNameMappings);
 
             var globalTags = settings.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
