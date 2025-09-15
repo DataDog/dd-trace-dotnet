@@ -50,6 +50,9 @@ public class QuartzTests : TracingIntegrationTest
     [MemberData(nameof(GetData))]
     public async Task SubmitsTraces(string packageVersion)
     {
+#if NETFRAMEWORK
+        Skip.If(true, "Quartz instrumentation is not supported on .NET Framework - DiagnosticObserver infrastructure is excluded with #if !NETFRAMEWORK");
+#endif
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
         using (var telemetry = this.ConfigureTelemetry())
@@ -96,10 +99,6 @@ public class QuartzTests : TracingIntegrationTest
 
     private static string GetSuffix(string packageVersion, out int expectedSpanCount)
     {
-#if NETFRAMEWORK
-        // Quartz instrumentation is not supported on .NET Framework
-        return Set(out expectedSpanCount, 0, "NETFRAMEWORK");
-#else
         if (string.IsNullOrEmpty(packageVersion))
         {
             return Set(out expectedSpanCount, 2, "V3");
@@ -113,7 +112,6 @@ public class QuartzTests : TracingIntegrationTest
 #endif
             _ => Set(out expectedSpanCount, 2, "V3")
         };
-#endif
     }
 
     private static string Set(out int expectedSpanCount, int count, string suffix)
