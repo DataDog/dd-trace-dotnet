@@ -135,8 +135,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetProcessArgumentConfigurator(arguments => arguments
                                                             .Add("-consoleLoggerParameters:ErrorsOnly")
-                                                            .Add("-property:NuGetAudit=false")
-                                                            .Add("-property:LangVersion=13.0"))
+                                                            .Add("-property:NuGetAudit=false"))
                 .When(Framework != null, settings => settings.SetFramework(Framework))
         );
     }
