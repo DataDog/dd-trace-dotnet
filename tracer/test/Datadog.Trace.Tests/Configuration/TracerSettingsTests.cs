@@ -1517,6 +1517,28 @@ namespace Datadog.Trace.Tests.Configuration
             settings.OtlpMetricsHeaders.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split('=').First(), v => v.Split('=').Last()));
         }
 
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void PartialFlushEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource(("DD_TRACE_PARTIAL_FLUSH_ENABLED", value));
+            var settings = new TracerSettings(source);
+            settings.PartialFlushEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("", 500)]
+        [InlineData("200", 200)]
+        [InlineData("1", 1)]
+        [InlineData("0", 500)]
+        [InlineData("-200", 500)]
+        public void PartialFlushMinSpans(string value, int expected)
+        {
+            var source = CreateConfigurationSource(("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", value));
+            var settings = new TracerSettings(source);
+            settings.PartialFlushMinSpans.Should().Be(expected);
+        }
+
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)
         {
             if (newErrorKeyValue is not null || deprecatedErrorKeyValue is not null)
