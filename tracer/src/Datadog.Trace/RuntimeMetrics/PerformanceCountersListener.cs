@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -23,9 +24,10 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<PerformanceCountersListener>();
 
-        private readonly IDogStatsd _statsd;
         private readonly string _processName;
         private readonly int _processId;
+
+        private IDogStatsd _statsd;
 
         private string _instanceName;
         private PerformanceCounterCategory _memoryCategory;
@@ -112,6 +114,11 @@ namespace Datadog.Trace.RuntimeMetrics
             _previousGen2Count = gen2;
 
             Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GarbageCollectionMetrics);
+        }
+
+        public void UpdateStatsd(IDogStatsd statsd)
+        {
+            Interlocked.Exchange(ref _statsd, statsd);
         }
 
         protected virtual void InitializePerformanceCounters()

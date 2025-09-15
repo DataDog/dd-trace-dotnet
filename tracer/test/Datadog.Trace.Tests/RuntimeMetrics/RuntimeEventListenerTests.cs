@@ -115,6 +115,51 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
                 counter.Dispose();
             }
         }
+
+        [Fact]
+        public void UpdateStatsdOnReinitialization()
+        {
+            // Arrange - Create ASP.NET Core EventSource and counters (similar to PushEventCounters test)
+            var eventSource = new EventSource("Microsoft.AspNetCore.Hosting");
+            var mutex = new ManualResetEventSlim();
+
+            Func<double> callback = () =>
+            {
+                mutex.Set();
+                return 0.0;
+            };
+
+            var counters = new List<DiagnosticCounter>
+            {
+                new PollingCounter("current-requests", eventSource, () => 1.0),
+                new PollingCounter("total-requests", eventSource, () => 4.0),
+                new PollingCounter("total-connections", eventSource, () => 32.0),
+                // This counter sets the mutex, so it needs to be created last
+                new PollingCounter("Dummy", eventSource, callback)
+            };
+
+            var originalStatsd = new Mock<IDogStatsd>();
+            var newStatsd = new Mock<IDogStatsd>();
+
+            using var listener = new RuntimeEventListener(originalStatsd.Object, TimeSpan.FromSeconds(1));
+            using var writer = new RuntimeMetricsWriter(originalStatsd.Object, TimeSpan.FromSeconds(1), false);
+
+            mutex.Wait();
+
+            writer.UpdateStatsd(newStatsd.Object);
+
+            mutex.Reset();
+            mutex.Wait();
+
+            newStatsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreCurrentRequests, 1.0, 1, null), Times.AtLeastOnce);
+            newStatsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreTotalRequests, 4.0, 1, null), Times.AtLeastOnce);
+            newStatsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreTotalConnections, 32.0, 1, null), Times.AtLeastOnce);
+
+            foreach (var counter in counters)
+            {
+                counter.Dispose();
+            }
+        }
     }
 }
 #endif
