@@ -69,7 +69,22 @@ public class ConfigureIntegration
             TelemetryFactory.Config,
             new OverrideErrorLog()); // TODO: We'll later report these
 
-        if (currentSettings.Equals(newMutableSettings))
+        var isSameMutableSettings = currentSettings.Equals(newMutableSettings);
+
+        // The only exporter setting we currently _allow_ to change is the AgentUri, but if that does change,
+        // it can mean that _everything_ about the exporter settings changes. To minimize the work to do, and
+        // to simplify comparisons, we try to read the agent url from the manual setting. If it's missing, not
+        // set, or unchanged, there's no need to update the exporter settings. In the future, ExporterSettings
+        // will live separate from TracerSettings entirely.
+        var exporterTelemetry = new ConfigurationTelemetry();
+        var newRawExporterSettings = ExporterSettings.Raw.CreateUpdatedFromManualConfig(
+            tracerSettings.Exporter.RawSettings,
+            manualConfig,
+            exporterTelemetry,
+            isFromDefaults);
+        var isSameExporterSettings = tracerSettings.Exporter.RawSettings.Equals(newRawExporterSettings);
+
+        if (isSameMutableSettings && isSameExporterSettings)
         {
             Log.Debug("No changes detected in the new configuration in code");
             return;
@@ -78,7 +93,18 @@ public class ConfigureIntegration
         Log.Information("Applying new configuration in code");
         GlobalConfigurationSource.UpdateManualConfigurationSource(manualConfig);
 
-        var newSettings = tracerSettings with { MutableSettings = newMutableSettings };
+        TracerSettings newSettings;
+        if (isSameExporterSettings)
+        {
+            newSettings = tracerSettings with { MutableSettings = newMutableSettings };
+        }
+        else
+        {
+            var exporterSettings = new ExporterSettings(newRawExporterSettings, exporterTelemetry);
+            newSettings = isSameMutableSettings
+                              ? tracerSettings with { Exporter = exporterSettings }
+                              : tracerSettings with { MutableSettings = newMutableSettings, Exporter = exporterSettings };
+        }
 
         // Update the global instance
         Trace.Tracer.ConfigureInternal(newSettings);
