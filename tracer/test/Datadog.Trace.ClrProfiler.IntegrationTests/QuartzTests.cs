@@ -30,12 +30,24 @@ public class QuartzTests : TracingIntegrationTest
         SetServiceVersion("1.0.0");
     }
 
+    public static IEnumerable<object[]> GetData()
+    {
+        var data = PackageVersions.Quartz;
+        if (data == null || !data.Any())
+        {
+            // Fallback if PackageVersions.Quartz returns null or empty
+            return new[] { new object[] { string.Empty } };
+        }
+
+        return data;
+    }
+
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsQuartz(metadataSchemaVersion);
 
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    [MemberData(nameof(PackageVersions.Quartz), MemberType = typeof(PackageVersions))]
+    [MemberData(nameof(GetData))]
     public async Task SubmitsTraces(string packageVersion)
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
@@ -86,7 +98,6 @@ public class QuartzTests : TracingIntegrationTest
     {
 #if NETFRAMEWORK
         // Quartz instrumentation is not supported on .NET Framework
-        // DiagnosticObserver infrastructure is excluded with #if !NETFRAMEWORK
         return Set(out expectedSpanCount, 0, "NETFRAMEWORK");
 #else
         if (string.IsNullOrEmpty(packageVersion))
