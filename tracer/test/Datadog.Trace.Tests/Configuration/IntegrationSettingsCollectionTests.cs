@@ -121,7 +121,6 @@ namespace Datadog.Trace.Tests.Configuration
             kafka.Enabled.Should().BeTrue();
             kafka.AnalyticsEnabled.Should().BeTrue();
             kafka.AnalyticsSampleRate.Should().Be(0.2);
-
         }
     }
 }
