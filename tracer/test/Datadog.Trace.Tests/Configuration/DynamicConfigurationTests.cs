@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
@@ -12,7 +11,6 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Moq;
 using Newtonsoft.Json;
 using Xunit;
 
@@ -205,7 +203,7 @@ namespace Datadog.Trace.Tests.Configuration
                       });
         }
 
-        private static ConfigurationBuilder CreateConfig(params (string Key, object Value)[] settings)
+        private static DynamicConfigConfigurationSource CreateConfig(params (string Key, object Value)[] settings)
         {
             using var stringWriter = new StringWriter();
             using var jsonWriter = new JsonTextWriter(stringWriter);
@@ -223,8 +221,7 @@ namespace Datadog.Trace.Tests.Configuration
             jsonWriter.Close();
             var json = stringWriter.ToString();
 
-            var configurationSource = new DynamicConfigConfigurationSource(json, ConfigurationOrigins.RemoteConfig);
-            return new ConfigurationBuilder(configurationSource, Mock.Of<IConfigurationTelemetry>());
+            return new DynamicConfigConfigurationSource(json, ConfigurationOrigins.RemoteConfig);
         }
     }
 }
