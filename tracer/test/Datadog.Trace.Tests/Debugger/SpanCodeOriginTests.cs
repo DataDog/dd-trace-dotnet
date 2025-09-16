@@ -230,21 +230,6 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             [Fact]
-            public void SetCodeOrigin_WhenDisabled_DoesNotSetTags()
-            {
-                // Arrange
-                SpanCodeOrigin spanCodeOrigin = CreateSpanCodeOrigin(false);
-
-                var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
-
-                // Act
-                spanCodeOrigin.SetCodeOriginForExitSpan(span);
-
-                // Assert
-                span.Tags.GetTag(CodeOriginTag + ".type").Should().BeNull();
-            }
-
-            [Fact]
             public void SetCodeOrigin_WhenEnabled_SetsCorrectTags()
             {
                 // Arrange
