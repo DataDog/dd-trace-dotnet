@@ -49,12 +49,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 
             var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Producer);
             tags.MessagingOperation = "create";
+            tags.MessagingDestinationName = instance.EventHubName;
 
             var scope = Tracer.Instance.StartActiveInternal(OperationName, tags: tags);
             var span = scope.Span;
 
             span.Type = SpanTypes.Queue;
             span.ResourceName = instance.EventHubName;
+
+            if (!string.IsNullOrEmpty(instance.FullyQualifiedNamespace))
+            {
+                tags.NetworkDestinationName = instance.FullyQualifiedNamespace;
+            }
 
             if (eventData?.Instance != null)
             {

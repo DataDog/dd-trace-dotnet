@@ -106,6 +106,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Server.Kestrel.Core", new string[] { "Microsoft.AspNetCore.Server.Kestrel.Core" });
             NugetPackages.Add("Microsoft.AspNetCore.Diagnostics", new[] { "Microsoft.AspNetCore.Diagnostics" });
             NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
+            NugetPackages.Add("Azure.Messaging.EventHubs", new string[] { "Azure.Messaging.EventHubs" });
             NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
             NugetPackages.Add("Yarp.ReverseProxy", new [] { "Yarp.ReverseProxy" });
             NugetPackages.Add("Microsoft.AspNetCore.Html.Abstractions", new [] { "Microsoft.AspNetCore.Html.Abstractions" });

@@ -876,6 +876,17 @@
     ]
   },
   {
+    "IntegrationName": "AzureEventHubs",
+    "SampleProjectName": "Samples.AzureEventHubs",
+    "NugetPackageSearchName": "Azure.Messaging.EventHubs",
+    "MinVersion": "5.11.0",
+    "MaxVersionExclusive": "5.13.0",
+    "SpecificVersions": [
+      "5.11.*",
+      "5.*.*"
+    ]
+  },
+  {
     "IntegrationName": "Selenium",
     "SampleProjectName": "Samples.Selenium",
     "NugetPackageSearchName": "Selenium.WebDriver",

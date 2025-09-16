@@ -28,5 +28,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         /// Gets the name of the Event Hub that the batch is associated with
         /// </summary>
         string EventHubName { get; }
+
+        /// <summary>
+        /// Gets the fully qualified Event Hubs namespace that the batch is associated with
+        /// </summary>
+        [Duck(Name = "FullyQualifiedNamespace")]
+        string FullyQualifiedNamespace { get; }
     }
 }
