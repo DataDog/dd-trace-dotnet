@@ -428,7 +428,7 @@ namespace Datadog.Trace
                         Version = settings.ServiceVersion,
                         Service = settings.ServiceName,
                         Hostname = HostMetadata.Instance.Hostname,
-                        Language = "dotnet",
+                        Language = TracerConstants.Language,
                         LanguageVersion = frameworkDescription.ProductVersion,
                         LanguageInterpreter = frameworkDescription.Name,
                         ComputeStats = settings.StatsComputationEnabled,
