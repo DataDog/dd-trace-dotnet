@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CodeGenerators;
+using ICSharpCode.SharpZipLib.Zip;
 using LogParsing;
 using Mono.Cecil;
 using Nuke.Common;
@@ -275,6 +276,7 @@ partial class Build
                 NuGetTasks.NuGetRestore(s => s
                     .SetTargetPath(Solution)
                     .SetVerbosity(NuGetVerbosity.Normal)
+                    .SetProcessLogOutput(!IsServerBuild)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
             }
@@ -282,7 +284,7 @@ partial class Build
             {
                 DotNetRestore(s => s
                     .SetProjectFile(Solution)
-                    .SetVerbosity(DotNetVerbosity.Normal)
+                    .SetVerbosity(DotNetVerbosity.Minimal)
                     .SetProperty("configuration", BuildConfiguration.ToString())
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory)));
@@ -545,7 +547,7 @@ partial class Build
         uncompressFolderTarget ??= LibDdwafDirectory(libddwafVersion);
         Console.WriteLine($"{libDdwafZip} downloaded. Extracting to {uncompressFolderTarget}...");
 
-        UncompressZip(libDdwafZip, uncompressFolderTarget);
+        UncompressZipQuiet(libDdwafZip, uncompressFolderTarget);
     }
 
     Target CopyLibDdwaf => _ => _
@@ -2776,9 +2778,34 @@ partial class Build
         EnsureExistingParentDirectory(destinationFolder);
         var parentFolder = destinationFolder.Parent;
 
-        CompressionTasks.UncompressZip(vcpkgZip, parentFolder);
+        UncompressZipQuiet(vcpkgZip, parentFolder);
 
         RenameDirectory(parentFolder / $"vcpkg-{vcpkgVersion}", destinationFolder.Name);
+    }
+
+    // Quiet version of CompressionTasks:UncompressZip, which displays a log line for every created directory when uncompressing
+    private static void UncompressZipQuiet(string archiveFile, string directory)
+    {
+        Logger.Information("Uncompressing {File} to {Directory} ...", Path.GetFileName(archiveFile), directory);
+
+        using var fileStream = File.OpenRead(archiveFile);
+        using var zipFile = new ZipFile(fileStream);
+
+        var entries = zipFile.Cast<ZipEntry>().Where(x => !x.IsDirectory);
+        foreach (var entry in entries)
+        {
+            var file = PathConstruction.Combine(directory, entry.Name);
+            var path = Path.GetDirectoryName(file);
+
+            if (!Directory.Exists(path) && !string.IsNullOrEmpty(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+
+            using var entryStream = zipFile.GetInputStream(entry);
+            using var outputStream = File.Open(file, FileMode.Create);
+            entryStream.CopyTo(outputStream);
+        }
     }
 
     public static class LibdatadogLogParser
