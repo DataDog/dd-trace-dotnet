@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
@@ -30,14 +31,12 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DynamicConfigurationManager>();
 
         private readonly IRcmSubscriptionManager _subscriptionManager;
-        private readonly ConfigurationTelemetry _configurationTelemetry;
         private readonly Dictionary<string, RemoteConfiguration> _activeConfigurations = new();
         private ISubscription? _subscription;
 
         public DynamicConfigurationManager(IRcmSubscriptionManager subscriptionManager)
         {
             _subscriptionManager = subscriptionManager;
-            _configurationTelemetry = new ConfigurationTelemetry();
         }
 
         public void Start()
@@ -68,50 +67,68 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        internal static void OnlyForTests_ApplyConfiguration(ConfigurationBuilder settings)
+        internal static void OnlyForTests_ApplyConfiguration(IConfigurationSource dynamicConfig)
         {
-            OnConfigurationChanged(settings);
+            OnConfigurationChanged(dynamicConfig);
         }
 
-        private static void OnConfigurationChanged(ConfigurationBuilder settings)
+        private static void OnConfigurationChanged(IConfigurationSource dynamicConfig)
         {
-            var oldSettings = Tracer.Instance.Settings;
+            var tracerSettings = Tracer.Instance.Settings;
+            var manualSource = GlobalConfigurationSource.ManualConfigurationSource;
+            var mutableSettings = manualSource.UseDefaultSources
+                                      ? tracerSettings.MutableSettings
+                                      : MutableSettings.CreateWithoutDefaultSources(tracerSettings);
 
-            var headerTags = MutableSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled: true);
-            // var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, ConfigurationKeys.ServiceNameMappings);
+            OnConfigurationChanged(
+                dynamicConfig,
+                manualSource,
+                mutableSettings,
+                tracerSettings,
+                // TODO: In the future this will 'live' elsewhere
+                tracerSettings.MutableSettings,
+                TelemetryFactory.Config,
+                new OverrideErrorLog()); // TODO: We'll later report these
+        }
 
-            var globalTags = settings.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
+        private static void OnConfigurationChanged(
+            IConfigurationSource dynamicConfig,
+            ManualInstrumentationConfigurationSourceBase manualConfig,
+            MutableSettings initialSettings,
+            TracerSettings tracerSettings,
+            MutableSettings currentSettings,
+            IConfigurationTelemetry telemetry,
+            OverrideErrorLog errorLog)
+        {
+            var newMutableSettings = MutableSettings.CreateUpdatedMutableSettings(
+                dynamicConfig,
+                manualConfig,
+                initialSettings,
+                tracerSettings,
+                telemetry,
+                errorLog);
 
-            var dynamicSettings = new ImmutableDynamicSettings
+            if (currentSettings.Equals(newMutableSettings))
             {
-                TraceEnabled = settings.WithKeys(ConfigurationKeys.TraceEnabled).AsBool(),
-                // RuntimeMetricsEnabled = settings.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(),
-                // DataStreamsMonitoringEnabled = settings.WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled).AsBool(),
-                // Note: Calling GetAsClass<string>() here instead of GetAsString() as we need to get the
-                // "serialized JToken", which in JsonConfigurationSource is different, as it allows for non-string tokens
-                SamplingRules = settings.WithKeys(ConfigurationKeys.CustomSamplingRules).GetAsClass<string>(validator: null, converter: s => s),
-                GlobalSamplingRate = settings.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(),
-                // SpanSamplingRules = settings.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString(),
-                LogsInjectionEnabled = settings.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(),
-                HeaderTags = headerTags,
-                // ServiceNameMappings = serviceNameMappings == null ? null : new ReadOnlyDictionary<string, string>(serviceNameMappings)
-                GlobalTags = globalTags == null ? null : new ReadOnlyDictionary<string, string>(globalTags)
-            };
+                Log.Debug("No changes detected in the new dynamic configuration");
+                return;
+            }
 
             // Needs to be done before returning, to feed the value to the telemetry
             // var debugLogsEnabled = settings.WithKeys(ConfigurationKeys.DebugEnabled).AsBool();
 
             TracerSettings newSettings;
-            if (dynamicSettings.Equals(oldSettings.DynamicSettings))
+            if (currentSettings.Equals(newMutableSettings))
             {
                 Log.Debug("No changes detected in the new dynamic configuration");
-                newSettings = oldSettings;
+                newSettings = tracerSettings;
             }
             else
             {
                 Log.Information("Applying new dynamic configuration");
+                GlobalConfigurationSource.UpdateDynamicConfigConfigurationSource(dynamicConfig);
 
-                newSettings = oldSettings with { DynamicSettings = dynamicSettings };
+                newSettings = tracerSettings with { MutableSettings = newMutableSettings };
 
                 /*
                 if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
@@ -126,6 +143,11 @@ namespace Datadog.Trace.Configuration
                 Tracer.Configure(newSettings);
             }
 
+            // TODO: This should be refactored as it likely doesn't record the config in the correct order
+            // We could either take a similar MutableSettings approach, or alternatively, ensure that
+            // DebuggerManager.Instance.UpdateConfiguration explicitly records the configuration values itself
+            // instead of writing them to TelemetryFactory.Config
+            var settings = new ConfigurationBuilder(dynamicConfig, TelemetryFactory.Config);
             var dynamicDebuggerSettings = new ImmutableDynamicDebuggerSettings
             {
                 DynamicInstrumentationEnabled = settings.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(),
@@ -238,12 +260,8 @@ namespace Datadog.Trace.Configuration
                 environment);
 
             var configurationSource = new DynamicConfigConfigurationSource(mergedConfigJToken, ConfigurationOrigins.RemoteConfig);
-            var configurationBuilder = new ConfigurationBuilder(configurationSource, _configurationTelemetry);
 
-            OnConfigurationChanged(configurationBuilder);
-
-            _configurationTelemetry.CopyTo(TelemetryFactory.Config);
-            _configurationTelemetry.Clear();
+            OnConfigurationChanged(configurationSource);
         }
     }
 }
