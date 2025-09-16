@@ -21,7 +21,7 @@ IF DEFINED LOG_ARTIFACT_DIR (
 )
 
 REM Helper macro to copy logs if LOG_ARTIFACT_DIR is set
-set COPY_LOGS=IF DEFINED LOG_ARTIFACT_DIR xcopy /E /I /Y "%ProgramData%\Datadog .NET Tracer\logs" "%LOG_ARTIFACT_DIR%"
+set COPY_LOGS=IF DEFINED LOG_ARTIFACT_DIR (mkdir "%LOG_ARTIFACT_DIR%\%%1" & xcopy /E /I /Y "%ProgramData%\Datadog .NET Tracer\logs" "%LOG_ARTIFACT_DIR%\%%1")
 
 set FAILED=0
 
@@ -34,7 +34,7 @@ echo *********************
 echo .NET Framework 4.8
 echo *********************
 dotnet timeit Samples.FakeDbCommand.windows.net48.json
-%COPY_LOGS%
+call :CopyLogs net48
 IF ERRORLEVEL 1 (
     echo ❌ .NET Framework 4.8 benchmark FAILED
     set FAILED=1
@@ -44,7 +44,7 @@ echo *********************
 echo .NET Core 3.1
 echo *********************
 dotnet timeit Samples.FakeDbCommand.windows.netcoreapp31.json
-%COPY_LOGS%
+call :CopyLogs netcoreapp3.1
 IF ERRORLEVEL 1 (
     echo ❌ .NET Core 3.1 benchmark FAILED
     set FAILED=1
@@ -54,7 +54,7 @@ echo *********************
 echo .NET Core 6.0
 echo *********************
 dotnet timeit Samples.FakeDbCommand.windows.net60.json
-%COPY_LOGS%
+call :CopyLogs net6.0
 IF ERRORLEVEL 1 (
     echo ❌ .NET Core 6.0 benchmark FAILED
     set FAILED=1
@@ -64,7 +64,7 @@ echo *********************
 echo .NET Core 8.0
 echo *********************
 dotnet timeit Samples.FakeDbCommand.windows.net80.json
-%COPY_LOGS%
+call :CopyLogs net8.0
 IF ERRORLEVEL 1 (
     echo ❌ .NET Core 8.0 benchmark FAILED
     set FAILED=1
