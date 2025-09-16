@@ -9,7 +9,13 @@
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
 
+#if defined(BUILD_WITH_WORKLOAD_SELECTION)
+  #include "dd/policies/wls.h"
+#endif
+
 using namespace shared;
+
+namespace wls = datadog::wls;
 
 namespace datadog::shared::nativeloader
 {
@@ -116,6 +122,7 @@ namespace datadog::shared::nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
     {
         Log::Debug("CorProfiler::Initialize");
+
         const auto inferredVersion = InspectRuntimeCompatibility(pICorProfilerInfoUnk);
 
         const auto process_name = ::shared::GetCurrentProcessName();
@@ -316,7 +323,59 @@ namespace datadog::shared::nativeloader
             return E_FAIL;
         }
 
-        // Guard rails have all passed, so we enable (and flush) logs if necessary
+        // Workload Selection
+        #if defined(BUILD_WITH_WORKLOAD_SELECTION)
+        enum class InjectionStatus : uint8_t {
+          ALLOW,
+          DENY,
+          UNKNOWN
+        } injection_status = InjectionStatus::UNKNOWN;
+
+        auto proc = ToString(process_name);
+        std::string_view p(proc.data(), proc.size());
+
+        wls::init();
+        wls::set_params(wls::StringEvaluator::PROCESS_EXE, p);
+        wls::set_params(wls::StringEvaluator::RUNTIME_LANGUAGE, "dotnet");
+        wls::set_params(wls::NumericEvaluator::RUNTIME_VERSION_MAJOR, (unsigned long)runtimeInformation.major_version);
+        wls::set_params(wls::NumericEvaluator::RUNTIME_VERSION_MINOR, (unsigned long)runtimeInformation.minor_version);
+        wls::set_params(wls::NumericEvaluator::RUNTIME_VERSION_PATCH, (unsigned long)runtimeInformation.build_version);
+
+        // TODO: Remove once the policy engine will be able to log the context.
+        Log::Info("CorProfiler::Initialize: Workload Selection Context: \"process.name:", p, " runtime:dotnet\"");
+
+        wls::register_action(wls::Action::INJECT_DENY, [&injection_status](wls::Result eval_result, const std::vector<const char*>&, const char* desc) -> std::optional<wls::Error> {
+            injection_status = InjectionStatus::DENY;
+            return std::nullopt;
+          });
+
+        wls::register_action(wls::Action::INJECT_ALLOW, [&injection_status](wls::Result eval_result, const std::vector<const char*>&, const char* desc) -> std::optional<wls::Error> {
+            if (injection_status == InjectionStatus::ALLOW) return std::nullopt;
+            if (eval_result == wls::Result::TTRUE)
+            {
+                injection_status = InjectionStatus::ALLOW;
+            }
+            else
+            {
+                injection_status = InjectionStatus::DENY;
+            }
+            
+            return std::nullopt;
+        });
+
+        if (const auto wls_file = fs::path{GetDatadogProgramDataFolderPath()} / "protected" / "workload_selection.fb"; fs::exists(wls_file))
+        {
+          auto maybe_error = wls::evaluate_buffer_from_file(wls_file);
+          if (maybe_error || injection_status != InjectionStatus::ALLOW) {
+            Log::Info("CorProfiler::Initialize: Instrumentation denied due to workload selection.");
+            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+          }
+        } else {
+          Log::Warn("CorProfiler::Initialize: Missing workload selection file.");
+        }
+        #endif
+
+        // Guard rails and workload selection have all passed, so we enable (and flush) logs if necessary
         Log::EnableAutoFlush();
 
         if (m_dispatcher == nullptr)
