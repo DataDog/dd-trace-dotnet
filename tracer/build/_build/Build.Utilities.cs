@@ -444,7 +444,7 @@ partial class Build
                             Logger.Information("Removing project '{Name}'", x.Name);
                             sln.RemoveProject(x);
                         });
-                    
+
                     sln.Save();
 
                     bool IsTestApplication(Project x)
@@ -493,6 +493,90 @@ partial class Build
                     }
                 });
 
+       Target UpdateAzureFunctionsPackageFromBuild => _ => _
+        .Description("Downloads Datadog.AzureFunctions package from Azure DevOps, " +
+                     "updates the bundle contents with a local build of Datadog.Trace.dll, " +
+                     "and rebuilds the package")
+        .Requires(() => BuildId)
+        .Requires(() => AzureDevopsToken)
+        .Triggers(BuildAzureFunctionsNuget)
+        .Executes(async () =>
+        {
+            if (!int.TryParse(BuildId, out var buildNumber))
+            {
+                throw new InvalidParametersException("BuildId should be an int");
+            }
+
+            const string artifactName = "azurefunctions-nuget-package";
+
+            var tempRoot = TemporaryDirectory / "azurefunctions-local-build";
+            var downloadDirectory = tempRoot / "download";
+            var packageExtractionDirectory = tempRoot / "package";
+            var publishDirectory = tempRoot / "publish";
+
+            EnsureCleanDirectory(tempRoot);
+            EnsureExistingDirectory(downloadDirectory);
+            EnsureExistingDirectory(packageExtractionDirectory);
+            EnsureExistingDirectory(publishDirectory);
+
+            using var connection = new VssConnection(
+                new Uri(AzureDevopsOrganisation),
+                new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+            using var client = connection.GetClient<BuildHttpClient>();
+
+            var artifact = await client.GetArtifactAsync(
+                project: AzureDevopsProjectId,
+                buildId: buildNumber,
+                artifactName: artifactName);
+
+            await DownloadAzureArtifact(downloadDirectory, artifact, AzureDevopsToken);
+
+            var artifactDirectory = downloadDirectory / artifact.Name;
+
+            var packageFile = artifactDirectory.GlobFiles("Datadog.AzureFunctions*.nupkg").FirstOrDefault();
+
+            if (packageFile is null)
+            {
+                throw new Exception($"Datadog.AzureFunctions package was not found in artifact '{artifact.Name}'.");
+            }
+
+            EnsureCleanDirectory(packageExtractionDirectory);
+            CompressionTasks.UncompressZip(packageFile, packageExtractionDirectory);
+
+            var contentDirectory = packageExtractionDirectory / "contentFiles" / "any" / "any" / "datadog";
+
+            if (!contentDirectory.Exists())
+            {
+                throw new Exception($"Could not locate datadog content folder in extracted package at '{packageExtractionDirectory}'.");
+            }
+
+            EnsureCleanDirectory(BundleHomeDirectory);
+            CopyDirectoryRecursively(contentDirectory, BundleHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+
+            var frameworks = new[] { TargetFramework.NET6_0, TargetFramework.NET461 };
+
+            DotNetPublish(settings => settings
+                .SetProject(Solution.GetProject(Projects.DatadogTrace))
+                .SetConfiguration(BuildConfiguration)
+                .CombineWith(frameworks, (publishSettings, framework) => publishSettings
+                    .SetFramework(framework)
+                    .SetOutput(publishDirectory / framework)));
+
+            foreach (var framework in frameworks)
+            {
+                var publishOutput = publishDirectory / framework / "Datadog.Trace.dll";
+
+                if (!File.Exists(publishOutput))
+                {
+                    throw new Exception($"Datadog.Trace.dll for target framework '{framework}' was not found in publish output.");
+                }
+
+                var destinationDirectory = BundleHomeDirectory / framework;
+                EnsureExistingDirectory(destinationDirectory);
+                CopyFile(publishOutput, destinationDirectory / "Datadog.Trace.dll", FileExistsPolicy.Overwrite);
+            }
+        });
 
     private void ReplaceReceivedFilesInSnapshots()
     {
