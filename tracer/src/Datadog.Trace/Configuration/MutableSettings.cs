@@ -33,261 +33,60 @@ public class MutableSettings
     // by IsIntegrationEnabled method (called from all integrations)
     private readonly DomainMetadata _domainMetadata = DomainMetadata.Instance;
 
-    internal MutableSettings(
-        IConfigurationSource source,
-        IConfigurationTelemetry telemetry,
+    private MutableSettings(
+        bool traceEnabled,
+        string? customSamplingRules,
+        bool customSamplingRulesIsRemote,
+        double? globalSamplingRate,
+        bool logsInjectionEnabled,
+        ReadOnlyDictionary<string, string> globalTags,
+        ReadOnlyDictionary<string, string> headerTags,
+        bool startupDiagnosticLogEnabled,
+        string? environment,
+        string? serviceName,
+        string? serviceVersion,
+        HashSet<string> disabledIntegrationNames,
+        ReadOnlyDictionary<string, string> grpcTags,
+        bool tracerMetricsEnabled,
+        IntegrationSettingsCollection integrations,
+        bool analyticsEnabled,
+        int maxTracesSubmittedPerSecond,
+        bool kafkaCreateConsumerScopeEnabled,
+        bool[] httpServerErrorStatusCodes,
+        bool[] httpClientErrorStatusCodes,
+        ReadOnlyDictionary<string, string> serviceNameMappings,
+        string? gitRepositoryUrl,
+        string? gitCommitSha,
         OverrideErrorLog errorLog,
-        TracerSettings tracerSettings)
+        IConfigurationTelemetry telemetry)
     {
-        Telemetry = telemetry;
-        ErrorLog = errorLog;
-        var config = new ConfigurationBuilder(source, Telemetry);
-
-        LogsInjectionEnabled = config
-                              .WithKeys(ConfigurationKeys.LogsInjectionEnabled)
-                              .AsBool(defaultValue: true);
-
-        var otelTags = config
-                      .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
-                      .AsDictionaryResult(separator: '=');
-
-        Dictionary<string, string>? globalTags;
-        if (tracerSettings.ExperimentalFeaturesEnabled.Contains("DD_TAGS"))
-        {
-            // New behavior: If ExperimentalFeaturesEnabled configures DD_TAGS, we want to change DD_TAGS parsing to do the following:
-            // 1. If a comma is in the value, split on comma as before. Otherwise, split on space
-            // 2. Key-value pairs with empty values are allowed, instead of discarded
-            // 3. Key-value pairs without values (i.e. no `:` separator) are allowed and treated as key-value pairs with empty values, instead of discarded
-            Func<string, IDictionary<string, string>> updatedTagsParser = (data) =>
-            {
-                var dictionary = new ConcurrentDictionary<string, string>();
-                if (string.IsNullOrWhiteSpace(data))
-                {
-                    // return empty collection
-                    return dictionary;
-                }
-
-                char[] separatorChars = data.Contains(',') ? [','] : [' '];
-                var entries = data.Split(separatorChars, StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var entry in entries)
-                {
-                    // we need Trim() before looking forthe separator so we can skip entries with no key
-                    // (that is, entries with a leading separator, like "<empty or whitespace>:value")
-                    var trimmedEntry = entry.Trim();
-                    if (trimmedEntry.Length == 0 || trimmedEntry[0] == ':')
-                    {
-                        continue;
-                    }
-
-                    var separatorIndex = trimmedEntry.IndexOf(':');
-                    if (separatorIndex < 0)
-                    {
-                        // entries with no separator are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
-                        // it's a key with no value.
-                        var key = trimmedEntry;
-                        dictionary[key] = string.Empty;
-                    }
-                    else if (separatorIndex > 0)
-                    {
-                        // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
-                        // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
-                        var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
-                        var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
-                        dictionary[key] = value;
-                    }
-                }
-
-                return dictionary;
-            };
-
-            globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                        .AsDictionaryResult(parser: updatedTagsParser)
-                        .OverrideWith(
-                             RemapOtelTags(in otelTags),
-                             ErrorLog,
-                             () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
-
-                         // Filter out tags with empty keys, and trim whitespace
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
-        }
-        else
-        {
-            globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                        .AsDictionaryResult()
-                        .OverrideWith(
-                             RemapOtelTags(in otelTags),
-                             ErrorLog,
-                             () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
-
-                         // Filter out tags with empty keys or empty values, and trim whitespace
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
-        }
-
-        Environment = config
-                     .WithKeys(ConfigurationKeys.Environment)
-                     .AsString();
-
-        // DD_ENV has precedence over DD_TAGS
-        Environment = GetExplicitSettingOrTag(Environment, globalTags, Tags.Env, ConfigurationKeys.Environment);
-
-        var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
-        var serviceName = config
-                         .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
-                         .AsStringResult()
-                         .OverrideWith(in otelServiceName, ErrorLog);
-
-        // DD_SERVICE has precedence over DD_TAGS
-        serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service, ConfigurationKeys.ServiceName);
-
-        if (tracerSettings.IsRunningInCiVisibility)
-        {
-            // Set the service name if not set
-            var isUserProvidedTestServiceTag = true;
-            var ciVisServiceName = serviceName;
-            if (string.IsNullOrEmpty(serviceName))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                ciVisServiceName = TestOptimization.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-                isUserProvidedTestServiceTag = false;
-            }
-
-            globalTags[Ci.Tags.CommonTags.UserProvidedTestServiceTag] = isUserProvidedTestServiceTag ? "true" : "false";
-
-            // Normalize the service name
-            ciVisServiceName = NormalizerTraceProcessor.NormalizeService(ciVisServiceName);
-            if (ciVisServiceName != serviceName)
-            {
-                serviceName = ciVisServiceName;
-                telemetry.Record(ConfigurationKeys.ServiceName, serviceName, recordValue: true, ConfigurationOrigins.Calculated);
-            }
-        }
-
+        TraceEnabled = traceEnabled;
+        CustomSamplingRules = customSamplingRules;
+        CustomSamplingRulesIsRemote = customSamplingRulesIsRemote;
+        GlobalSamplingRate = globalSamplingRate;
+        LogsInjectionEnabled = logsInjectionEnabled;
+        GlobalTags = globalTags;
+        HeaderTags = headerTags;
+        StartupDiagnosticLogEnabled = startupDiagnosticLogEnabled;
+        Environment = environment;
         ServiceName = serviceName;
-
-        ServiceVersion = config
-                        .WithKeys(ConfigurationKeys.ServiceVersion)
-                        .AsString();
-
-        // DD_VERSION has precedence over DD_TAGS
-        ServiceVersion = GetExplicitSettingOrTag(ServiceVersion, globalTags, Tags.Version, ConfigurationKeys.ServiceVersion);
-
-        GitCommitSha = config
-                      .WithKeys(ConfigurationKeys.GitCommitSha)
-                      .AsString();
-
-        // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
-        GitCommitSha = GetExplicitSettingOrTag(GitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitCommitSha);
-
-        GitRepositoryUrl = config
-                          .WithKeys(ConfigurationKeys.GitRepositoryUrl)
-                          .AsString();
-
-        // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-        GitRepositoryUrl = GetExplicitSettingOrTag(GitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl);
-
-        var otelTraceEnabled = config
-                              .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
-                              .AsBoolResult(
-                                   value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
-                                                ? ParsingResult<bool>.Success(result: false)
-                                                : ParsingResult<bool>.Failure());
-        TraceEnabled = config
-                      .WithKeys(ConfigurationKeys.TraceEnabled)
-                      .AsBoolResult()
-                      .OverrideWith(in otelTraceEnabled, ErrorLog, defaultValue: true);
-
-        if (tracerSettings.AzureAppServiceMetadata?.IsUnsafeToTrace == true)
-        {
-            telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
-            TraceEnabled = false;
-        }
-
-        var disabledIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
-                                             .AsString()
-                                            ?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? [];
-
-        // If Activity support is enabled, we shouldn't enable the OTel listener
-        DisabledIntegrationNames = tracerSettings.IsActivityListenerEnabled
-                                       ? new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase)
-                                       : new HashSet<string>([..disabledIntegrationNames, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
-
-        Integrations = new IntegrationSettingsCollection(source, DisabledIntegrationNames);
-        RecordDisabledIntegrationsTelemetry(Integrations, Telemetry);
-
-#pragma warning disable 618 // App analytics is deprecated, but still used
-        AnalyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
-                                 .AsBool(defaultValue: false);
-#pragma warning restore 618
-
-#pragma warning disable 618 // this parameter has been replaced but may still be used
-        MaxTracesSubmittedPerSecond = config
-                                     .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
-#pragma warning restore 618
-                                     .AsInt32(defaultValue: 100);
-
-        // mutate dictionary to remove without "env", "version", "git.commit.sha" or "git.repository.url" tags
-        // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
-        // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
-        globalTags.Remove(Tags.Service);
-        globalTags.Remove(Tags.Env);
-        globalTags.Remove(Tags.Version);
-        globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
-        globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
-        GlobalTags = new(globalTags);
-
-        var headerTagsNormalizationFixEnabled = config
-                                               .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
-                                               .AsBool(defaultValue: true);
-
-        // Filter out tags with empty keys or empty values, and trim whitespaces
-        HeaderTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
-
-        // Filter out tags with empty keys or empty values, and trim whitespaces
-        GrpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
-
-        CustomSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
-
-        GlobalSamplingRate = BuildSampleRate(ErrorLog, in config);
-
-        // We need to record a default value for configuration reporting
-        // However, we need to keep GlobalSamplingRateInternal null because it changes the behavior of the tracer in subtle ways
-        // (= we don't run the sampler at all if it's null, so it changes the tagging of the spans, and it's enforced by system tests)
-        if (GlobalSamplingRate is null)
-        {
-            Telemetry.Record(ConfigurationKeys.GlobalSamplingRate, 1.0, ConfigurationOrigins.Default);
-        }
-
-        StartupDiagnosticLogEnabled = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
-
-        KafkaCreateConsumerScopeEnabled = config
-                                         .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
-                                         .AsBool(defaultValue: true);
-        ServiceNameMappings = TracerSettings.InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
-
-        TracerMetricsEnabled = config
-                              .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
-                              .AsBool(defaultValue: false);
-
-        var httpServerErrorStatusCodes = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                        .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
-#pragma warning restore 618
-                                        .AsString(defaultValue: "500-599");
-
-        HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
-
-        var httpClientErrorStatusCodes = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                        .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
-#pragma warning restore 618
-                                        .AsString(defaultValue: "400-499");
-
-        HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
+        ServiceVersion = serviceVersion;
+        DisabledIntegrationNames = disabledIntegrationNames;
+        GrpcTags = grpcTags;
+        TracerMetricsEnabled = tracerMetricsEnabled;
+        Integrations = integrations;
+#pragma warning disable CS0618 // Type or member is obsolete
+        AnalyticsEnabled = analyticsEnabled;
+#pragma warning restore CS0618 // Type or member is obsolete
+        MaxTracesSubmittedPerSecond = maxTracesSubmittedPerSecond;
+        KafkaCreateConsumerScopeEnabled = kafkaCreateConsumerScopeEnabled;
+        HttpServerErrorStatusCodes = httpServerErrorStatusCodes;
+        HttpClientErrorStatusCodes = httpClientErrorStatusCodes;
+        ServiceNameMappings = serviceNameMappings;
+        GitRepositoryUrl = gitRepositoryUrl;
+        GitCommitSha = gitCommitSha;
+        ErrorLog = errorLog;
+        Telemetry = telemetry;
     }
 
     // Settings that can be set via remote config
@@ -304,6 +103,11 @@ public class MutableSettings
     /// </summary>
     /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
     public string? CustomSamplingRules { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the sampling rules came from a remote source
+    /// </summary>
+    public bool CustomSamplingRulesIsRemote { get; }
 
     /// <summary>
     /// Gets a value indicating a global rate for sampling.
@@ -413,18 +217,18 @@ public class MutableSettings
     /// Gets the HTTP status code that should be marked as errors for server integrations.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
-    internal bool[] HttpServerErrorStatusCodes { get; }
+    public bool[] HttpServerErrorStatusCodes { get; }
 
     /// <summary>
     /// Gets the HTTP status code that should be marked as errors for client integrations.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
-    internal bool[] HttpClientErrorStatusCodes { get; }
+    public bool[] HttpClientErrorStatusCodes { get; }
 
     /// <summary>
     /// Gets configuration values for changing service names based on configuration
     /// </summary>
-    internal ReadOnlyDictionary<string, string> ServiceNameMappings { get; }
+    public ReadOnlyDictionary<string, string> ServiceNameMappings { get; }
 
     // These ones can't be _directly_ changed, but are dependent on things that _can_
     // so they are _implicitly_ dynamic
@@ -433,13 +237,13 @@ public class MutableSettings
     /// Gets the application's git repository url.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
-    internal string? GitRepositoryUrl { get; }
+    public string? GitRepositoryUrl { get; }
 
     /// <summary>
     /// Gets the application's git commit hash.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
-    internal string? GitCommitSha { get; }
+    public string? GitCommitSha { get; }
 
     // Infra
     internal OverrideErrorLog ErrorLog { get; }
@@ -599,6 +403,291 @@ public class MutableSettings
         return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
     }
 
+    /// <summary>
+    /// Create an instance of <see cref="MutableSettings"/>
+    /// </summary>
+    /// <param name="source">The global, static, <see cref="IConfigurationSource"/></param>
+    /// <param name="telemetry">The <see cref="IConfigurationTelemetry"/> for recording telemetry updates</param>
+    /// <param name="errorLog">The <see cref="OverrideErrorLog"/> for recording errors in configuration</param>
+    /// <param name="tracerSettings">The global <see cref="TracerSettings"/> object</param>
+    public static MutableSettings Create(
+        IConfigurationSource source,
+        IConfigurationTelemetry telemetry,
+        OverrideErrorLog errorLog,
+        TracerSettings tracerSettings)
+    {
+        var config = new ConfigurationBuilder(source, telemetry);
+
+        var logsInjectionEnabled = config
+                                  .WithKeys(ConfigurationKeys.LogsInjectionEnabled)
+                                  .AsBool(defaultValue: true);
+
+        var otelTags = config
+                      .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
+                      .AsDictionaryResult(separator: '=');
+
+        Dictionary<string, string>? globalTags;
+        if (tracerSettings.ExperimentalFeaturesEnabled.Contains("DD_TAGS"))
+        {
+            // New behavior: If ExperimentalFeaturesEnabled configures DD_TAGS, we want to change DD_TAGS parsing to do the following:
+            // 1. If a comma is in the value, split on comma as before. Otherwise, split on space
+            // 2. Key-value pairs with empty values are allowed, instead of discarded
+            // 3. Key-value pairs without values (i.e. no `:` separator) are allowed and treated as key-value pairs with empty values, instead of discarded
+            Func<string, IDictionary<string, string>> updatedTagsParser = (data) =>
+            {
+                var dictionary = new ConcurrentDictionary<string, string>();
+                if (string.IsNullOrWhiteSpace(data))
+                {
+                    // return empty collection
+                    return dictionary;
+                }
+
+                char[] separatorChars = data.Contains(',') ? [','] : [' '];
+                var entries = data.Split(separatorChars, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var entry in entries)
+                {
+                    // we need Trim() before looking forthe separator so we can skip entries with no key
+                    // (that is, entries with a leading separator, like "<empty or whitespace>:value")
+                    var trimmedEntry = entry.Trim();
+                    if (trimmedEntry.Length == 0 || trimmedEntry[0] == ':')
+                    {
+                        continue;
+                    }
+
+                    var separatorIndex = trimmedEntry.IndexOf(':');
+                    if (separatorIndex < 0)
+                    {
+                        // entries with no separator are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
+                        // it's a key with no value.
+                        var key = trimmedEntry;
+                        dictionary[key] = string.Empty;
+                    }
+                    else if (separatorIndex > 0)
+                    {
+                        // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
+                        // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
+                        var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
+                        var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
+                        dictionary[key] = value;
+                    }
+                }
+
+                return dictionary;
+            };
+
+            globalTags = config
+                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .AsDictionaryResult(parser: updatedTagsParser)
+                        .OverrideWith(
+                             RemapOtelTags(in otelTags),
+                             errorLog,
+                             () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+
+                         // Filter out tags with empty keys, and trim whitespace
+                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
+        }
+        else
+        {
+            globalTags = config
+                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .AsDictionaryResult()
+                        .OverrideWith(
+                             RemapOtelTags(in otelTags),
+                             errorLog,
+                             () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+
+                         // Filter out tags with empty keys or empty values, and trim whitespace
+                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+        }
+
+        var environment = config
+                         .WithKeys(ConfigurationKeys.Environment)
+                         .AsString();
+
+        // DD_ENV has precedence over DD_TAGS
+        environment = GetExplicitSettingOrTag(environment, globalTags, Tags.Env, ConfigurationKeys.Environment, telemetry);
+
+        var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
+        var serviceName = config
+                         .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                         .AsStringResult()
+                         .OverrideWith(in otelServiceName, errorLog);
+
+        // DD_SERVICE has precedence over DD_TAGS
+        serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service, ConfigurationKeys.ServiceName, telemetry);
+
+        if (tracerSettings.IsRunningInCiVisibility)
+        {
+            // Set the service name if not set
+            var isUserProvidedTestServiceTag = true;
+            var ciVisServiceName = serviceName;
+            if (string.IsNullOrEmpty(serviceName))
+            {
+                // Extract repository name from the git url and use it as a default service name.
+                ciVisServiceName = TestOptimization.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                isUserProvidedTestServiceTag = false;
+            }
+
+            globalTags[Ci.Tags.CommonTags.UserProvidedTestServiceTag] = isUserProvidedTestServiceTag ? "true" : "false";
+
+            // Normalize the service name
+            ciVisServiceName = NormalizerTraceProcessor.NormalizeService(ciVisServiceName);
+            if (ciVisServiceName != serviceName)
+            {
+                serviceName = ciVisServiceName;
+                telemetry.Record(ConfigurationKeys.ServiceName, serviceName, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+        }
+
+        var serviceVersion = config
+                            .WithKeys(ConfigurationKeys.ServiceVersion)
+                            .AsString();
+
+        // DD_VERSION has precedence over DD_TAGS
+        serviceVersion = GetExplicitSettingOrTag(serviceVersion, globalTags, Tags.Version, ConfigurationKeys.ServiceVersion, telemetry);
+
+        var gitCommitSha = config
+                          .WithKeys(ConfigurationKeys.GitCommitSha)
+                          .AsString();
+
+        // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
+        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitCommitSha, telemetry);
+
+        var gitRepositoryUrl = config
+                              .WithKeys(ConfigurationKeys.GitRepositoryUrl)
+                              .AsString();
+
+        // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
+        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl, telemetry);
+
+        var otelTraceEnabled = config
+                              .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
+                              .AsBoolResult(value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                                         ? ParsingResult<bool>.Success(result: false)
+                                                         : ParsingResult<bool>.Failure());
+        var traceEnabled = config
+                          .WithKeys(ConfigurationKeys.TraceEnabled)
+                          .AsBoolResult()
+                          .OverrideWith(in otelTraceEnabled, errorLog, defaultValue: true);
+
+        if (tracerSettings.AzureAppServiceMetadata?.IsUnsafeToTrace == true)
+        {
+            telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
+            traceEnabled = false;
+        }
+
+        var disabledIntegrationNamesArray = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
+                                                  .AsString()
+                                                 ?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? [];
+
+        // If Activity support is enabled, we shouldn't enable the OTel listener
+        var disabledIntegrationNames = tracerSettings.IsActivityListenerEnabled
+                                           ? new HashSet<string>(disabledIntegrationNamesArray, StringComparer.OrdinalIgnoreCase)
+                                           : new HashSet<string>([..disabledIntegrationNamesArray, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
+
+        var integrations = new IntegrationSettingsCollection(source, disabledIntegrationNames);
+        RecordDisabledIntegrationsTelemetry(integrations, telemetry);
+
+#pragma warning disable 618 // App analytics is deprecated, but still used
+        var analyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
+                                     .AsBool(defaultValue: false);
+#pragma warning restore 618
+
+#pragma warning disable 618 // this parameter has been replaced but may still be used
+        var maxTracesSubmittedPerSecond = config
+                                         .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
+#pragma warning restore 618
+                                         .AsInt32(defaultValue: 100);
+
+        // mutate dictionary to remove without "env", "version", "git.commit.sha" or "git.repository.url" tags
+        // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
+        // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
+        globalTags.Remove(Tags.Service);
+        globalTags.Remove(Tags.Env);
+        globalTags.Remove(Tags.Version);
+        globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
+        globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
+
+        var headerTagsNormalizationFixEnabled = config
+                                               .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
+                                               .AsBool(defaultValue: true);
+
+        // Filter out tags with empty keys or empty values, and trim whitespaces
+        var headerTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+
+        // Filter out tags with empty keys or empty values, and trim whitespaces
+        var grpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
+
+        var customSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
+
+        var globalSamplingRate = BuildSampleRate(errorLog, in config);
+
+        // We need to record a default value for configuration reporting
+        // However, we need to keep GlobalSamplingRateInternal null because it changes the behavior of the tracer in subtle ways
+        // (= we don't run the sampler at all if it's null, so it changes the tagging of the spans, and it's enforced by system tests)
+        if (globalSamplingRate is null)
+        {
+            telemetry.Record(ConfigurationKeys.GlobalSamplingRate, 1.0, ConfigurationOrigins.Default);
+        }
+
+        var startupDiagnosticLogEnabled = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
+
+        var kafkaCreateConsumerScopeEnabled = config
+                                             .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
+                                             .AsBool(defaultValue: true);
+        var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
+
+        var tracerMetricsEnabled = config
+                                  .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
+                                  .AsBool(defaultValue: false);
+
+        var httpServerErrorStatusCodesString = config
+#pragma warning disable 618 // This config key has been replaced but may still be used
+                                              .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
+#pragma warning restore 618
+                                              .AsString(defaultValue: "500-599");
+
+        var httpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodesString);
+
+        var httpClientErrorStatusCodesString = config
+#pragma warning disable 618 // This config key has been replaced but may still be used
+                                              .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
+#pragma warning restore 618
+                                              .AsString(defaultValue: "400-499");
+
+        var httpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodesString);
+
+        return new MutableSettings(
+            traceEnabled: traceEnabled,
+            customSamplingRules: customSamplingRules,
+            customSamplingRulesIsRemote: false, // Can't be remote as these are static sources
+            globalSamplingRate: globalSamplingRate,
+            logsInjectionEnabled: logsInjectionEnabled,
+            globalTags: new(globalTags),
+            headerTags: headerTags,
+            startupDiagnosticLogEnabled: startupDiagnosticLogEnabled,
+            environment: environment,
+            serviceName: serviceName,
+            serviceVersion: serviceVersion,
+            disabledIntegrationNames: disabledIntegrationNames,
+            grpcTags: grpcTags,
+            tracerMetricsEnabled: tracerMetricsEnabled,
+            integrations: integrations,
+            analyticsEnabled: analyticsEnabled,
+            maxTracesSubmittedPerSecond: maxTracesSubmittedPerSecond,
+            kafkaCreateConsumerScopeEnabled: kafkaCreateConsumerScopeEnabled,
+            httpServerErrorStatusCodes: httpServerErrorStatusCodes,
+            httpClientErrorStatusCodes: httpClientErrorStatusCodes,
+            serviceNameMappings: serviceNameMappings,
+            gitRepositoryUrl: gitRepositoryUrl,
+            gitCommitSha: gitCommitSha,
+            errorLog: errorLog,
+            telemetry: telemetry);
+    }
+
     private static ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> RemapOtelTags(
         in ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> original)
     {
@@ -688,14 +777,13 @@ public class MutableSettings
 
             if (supportedSamplerName is null)
             {
-                log.EnqueueAction(
-                    (log, _) =>
-                    {
-                        log.Warning(
-                            "OpenTelemetry configuration {OpenTelemetryConfiguration}={OpenTelemetryValue} is not supported. Using default configuration.",
-                            otelSampleType.Key,
-                            samplerName);
-                    });
+                log.EnqueueAction((log, _) =>
+                {
+                    log.Warning(
+                        "OpenTelemetry configuration {OpenTelemetryConfiguration}={OpenTelemetryValue} is not supported. Using default configuration.",
+                        otelSampleType.Key,
+                        samplerName);
+                });
                 return ddResult;
             }
 
@@ -723,11 +811,12 @@ public class MutableSettings
         return ddResult;
     }
 
-    private string? GetExplicitSettingOrTag(
+    private static string? GetExplicitSettingOrTag(
         string? explicitSetting,
         Dictionary<string, string> globalTags,
         string tag,
-        string telemetryKey)
+        string telemetryKey,
+        IConfigurationTelemetry telemetry)
     {
         string? result = null;
         if (!string.IsNullOrWhiteSpace(explicitSetting))
@@ -735,7 +824,7 @@ public class MutableSettings
             result = explicitSetting!.Trim();
             if (result != explicitSetting)
             {
-                Telemetry.Record(telemetryKey, result, recordValue: true, ConfigurationOrigins.Calculated);
+                telemetry.Record(telemetryKey, result, recordValue: true, ConfigurationOrigins.Calculated);
             }
         }
         else
@@ -744,7 +833,7 @@ public class MutableSettings
             if (!string.IsNullOrWhiteSpace(version))
             {
                 result = version.Trim();
-                Telemetry.Record(telemetryKey, result, recordValue: true, ConfigurationOrigins.Calculated);
+                telemetry.Record(telemetryKey, result, recordValue: true, ConfigurationOrigins.Calculated);
             }
         }
 
