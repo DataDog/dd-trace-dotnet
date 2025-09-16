@@ -87,7 +87,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             return null;
         }
 
-        var extractedContexts = new List<SpanContext>();
+        var extractedContexts = new HashSet<SpanContext>(new SpanContextComparer());
 
         try
         {
@@ -105,13 +105,14 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
                 }
             }
 
-            if (extractedContexts.Count == 0)
+            var spanLinks = new List<SpanLink>(extractedContexts.Count);
+
+            foreach (var ctx in extractedContexts)
             {
-                return null;
+                spanLinks.Add(new SpanLink(ctx));
             }
 
-            var uniqueContexts = new HashSet<SpanContext>(extractedContexts, new SpanContextComparer());
-            return uniqueContexts.Select(ctx => new SpanLink(ctx)).ToList();
+            return spanLinks;
         }
         catch (Exception ex)
         {

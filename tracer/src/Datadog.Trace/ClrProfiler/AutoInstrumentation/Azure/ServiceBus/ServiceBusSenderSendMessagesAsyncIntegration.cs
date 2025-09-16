@@ -34,7 +34,7 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
 {
     private const string OperationName = "azure_servicebus.send";
     private const string MessagingType = "servicebus";
-    private const int DefaultServiceBusPort = 5671;
+    private const string DefaultServiceBusPort = "5671";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusSenderSendMessagesAsyncIntegration));
 
@@ -70,8 +70,9 @@ public class ServiceBusSenderSendMessagesAsyncIntegration
         {
             tags.NetworkDestinationName = endpoint.Host;
             // https://learn.microsoft.com/en-us/dotnet/api/system.uri.port?view=net-8.0#remarks
-            var port = endpoint.Port == -1 ? DefaultServiceBusPort : endpoint.Port;
-            tags.NetworkDestinationPort = port.ToString();
+            tags.NetworkDestinationPort = endpoint.Port is -1 or 5671 ?
+                                DefaultServiceBusPort :
+                                endpoint.Port.ToString();
         }
 
         return new CallTargetState(scope);

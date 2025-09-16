@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -418,7 +419,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return extractedContext.SpanContext;
         }
 
-        private static bool TryParseJson<T>(object? jsonObj, out T? result)
+        private static bool TryParseJson<T>(object? jsonObj, [NotNullWhen(true)] out T? result)
             where T : class
         {
             result = null;

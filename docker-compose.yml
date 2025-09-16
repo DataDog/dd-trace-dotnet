@@ -209,15 +209,21 @@ services:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
 
+  sqledge:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+    - ACCEPT_EULA=Y
+    - MSSQL_SA_PASSWORD=Strong!Passw0rd
+
   azureservicebus-emulator:
     image: mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2
     hostname: azureservicebus-emulator
     container_name: azureservicebus-emulator
     depends_on:
-      - sqlserver
+      - sqledge
     environment:
       - ACCEPT_EULA=Y
-      - SQL_SERVER=sqlserver:1433
+      - SQL_SERVER=sqledge:1433
       - MSSQL_SA_PASSWORD=Strong!Passw0rd
     volumes:
       - ./docker/servicebus-emulator-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json:ro
