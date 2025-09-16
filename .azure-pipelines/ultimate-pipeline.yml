@@ -4384,6 +4384,12 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+    - publish: c:\ProgramData\Datadog .NET Tracer\logs
+      displayName: Uploading logs
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
     - publish: "$(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks"
       displayName: Publish results
       artifact: execution_time_benchmarks_windows_x64_$(sampleName)_$(System.JobAttempt)
