@@ -228,9 +228,10 @@ partial class Build
            }
 
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-           var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
+           var dependabotFolder = TracerDirectory / "dependabot" / "integrations";
            var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
-           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotProj);
+           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotFolder);
+           Logger.Information("Found {CurrentDependenciesCount} existing dependencies", currentDependencies.Count);
            var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
                                          {
                                              (_, { } exclude) => currentDependencies.Where(x => ExcludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
@@ -254,16 +255,10 @@ partial class Build
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
            var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations, testedVersions);
 
-           await DependabotFileManager.UpdateIntegrations(dependabotProj, distinctIntegrations);
+           await DependabotFileManager.UpdateIntegrations(dependabotFolder, distinctIntegrations);
 
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
-           
-           Logger.Information("Verifying that updated dependabot file is valid...");
-
-           var tempProjectFile = TempDirectory / "dependabot_test" / "Project.csproj";
-           CopyFile(dependabotProj, tempProjectFile, FileExistsPolicy.Overwrite);
-           DotNetRestore(x => x.SetProjectFile(tempProjectFile));
        });
     
     Target GenerateSpanDocumentation => _ => _
@@ -512,11 +507,6 @@ partial class Build
             {
                 Logger.Warning($"Skipping file '{source}' as filename did not end with 'received'");
                 continue;
-            }
-
-            if (fileName.Contains("VersionMismatchNewerNugetTests"))
-            {
-                Logger.Warning("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
             }
 
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);

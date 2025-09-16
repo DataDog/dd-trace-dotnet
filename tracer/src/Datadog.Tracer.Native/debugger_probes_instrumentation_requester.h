@@ -40,7 +40,7 @@ private:
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
     std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> m_fault_tolerant_method_duplicator = nullptr;
-    bool is_debugger_or_exception_debugging_enabled = false;
+    bool is_debugger_or_exception_replay_hot_standby = false;
     std::unordered_map<std::pair<std::string, mdToken>, std::vector<int>, pair_hash> explorationLineProbes;
     std::once_flag explorationLinesInitFlag;
 

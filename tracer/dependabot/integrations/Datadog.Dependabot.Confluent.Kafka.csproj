@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Confluent.Kafka -->
+    <!--    Assembly: Confluent.Kafka -->
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.11.1 -->
+    <PackageReference Include="Confluent.Kafka" Version="2.11.1" />
+  </ItemGroup>
+
+</Project>

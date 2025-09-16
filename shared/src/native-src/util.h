@@ -124,6 +124,28 @@ namespace shared
         return std::find(items.begin(), items.end(), value) != items.end();
     }
 
+    template <typename T, size_t N>
+    void Insert(T (&arr)[N], size_t& count, size_t pos, const T& value)
+    {
+        if (count >= N)
+        {
+            throw std::out_of_range("Array is full, cannot insert.");
+        }
+        if (pos > count)
+        {
+            throw std::out_of_range("Insert position is out of range.");
+        }
+
+        // Shift elements to the right
+        for (size_t i = count; i > pos; --i)
+        {
+            arr[i] = arr[i - 1];
+        }
+
+        arr[pos] = value;
+        ++count;
+    }
+
     // Singleton definition
     class UnCopyable
     {

@@ -32,7 +32,7 @@ protected:
     RejitterPriority m_priority;
 
 public:
-    Rejitter(std::shared_ptr<RejitHandler> handler, RejitterPriority priority);
+    Rejitter(std::shared_ptr<RejitHandler> handler, RejitterPriority priority, bool registerRejitter = true);
     virtual ~Rejitter();
 
     inline RejitterPriority GetPriority(){ return m_priority; }
