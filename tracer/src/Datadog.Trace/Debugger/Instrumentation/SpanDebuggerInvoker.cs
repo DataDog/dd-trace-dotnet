@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
@@ -88,6 +89,21 @@ namespace Datadog.Trace.Debugger.Instrumentation
         }
 
         /// <summary>
+        /// Alternative implementation that was introduced to avoid injection of <see cref="AsyncDebuggerState"/>
+        /// into user code at bootstrap to avoid `TypeLoadException` if Datadog.Trace fails to be loaded into the app.
+        /// </summary>
+        /// <param name="probeId">The id of the probe</param>
+        /// <param name="resourceName">The resource name</param>
+        /// <param name="operationName">The operation name</param>
+        /// <param name="state">State that is used to know if we are dealing with re-entry to the MoveNext of the async method</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void BeginSpan(string probeId, string resourceName, string operationName, ref object state)
+        {
+            ref var asyncState = ref AsyncHelper.GetStateRef(ref state);
+            BeginSpan(probeId, resourceName, operationName, ref asyncState);
+        }
+
+        /// <summary>
         /// [Async] Begin Method Invoker
         /// </summary>
         /// <param name="probeId">The id of the probe</param>
@@ -108,6 +124,19 @@ namespace Datadog.Trace.Debugger.Instrumentation
         }
 
         /// <summary>
+        /// Alternative implementation that was introduced to avoid injection of <see cref="AsyncDebuggerState"/>
+        /// into user code at bootstrap to avoid `TypeLoadException` if Datadog.Trace fails to be loaded into the app.
+        /// </summary>
+        /// <param name="exception">Exception value</param>
+        /// <param name="state">Debugger state</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void EndSpan(Exception exception, ref object state)
+        {
+            ref var asyncState = ref AsyncHelper.GetStateRef(ref state);
+            EndSpan(exception, ref asyncState);
+        }
+
+        /// <summary>
         /// [Async] End Method with Void return value invoker
         /// </summary>
         /// <param name="exception">Exception value</param>
@@ -121,6 +150,19 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.SpanState.Value.Scope.DisposeWithException(exception);
+        }
+
+        /// <summary>
+        /// Alternative implementation that was introduced to avoid injection of <see cref="AsyncDebuggerState"/>
+        /// into user code at bootstrap to avoid `TypeLoadException` if Datadog.Trace fails to be loaded into the app.
+        /// </summary>
+        /// <param name="exception">Exception instance</param>
+        /// <param name="state">Debugger state</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void LogException(Exception exception, ref object state)
+        {
+            ref var asyncState = ref AsyncHelper.GetStateRef(ref state);
+            LogException(exception, ref asyncState);
         }
 
         /// <summary>

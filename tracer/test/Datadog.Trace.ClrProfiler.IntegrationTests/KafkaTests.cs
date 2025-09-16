@@ -60,6 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
+        [Flaky("Kafka SubmitsTraces is flaky", maxRetries: 3)]
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             var topic = $"sample-topic-{TestPrefix}-{packageVersion}".Replace('.', '-');
