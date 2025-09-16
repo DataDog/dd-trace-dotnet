@@ -624,7 +624,7 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
+                            // TODO FIXME for .NET 10 RC.2: new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
                             new (publishFramework: TargetFramework.NET9_0, "trixie-9.0", "debian", "trixie"),
                             new (publishFramework: TargetFramework.NET8_0, "trixie-8.0", "debian", "trixie"),
                         },
@@ -865,7 +865,7 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
+                            // TODO FIXME for .NET 10 RC.2: new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
                             new (publishFramework: TargetFramework.NET9_0, "trixie-9.0", "debian", "trixie"),
                             new (publishFramework: TargetFramework.NET8_0, "trixie-8.0", "debian", "trixie"),
                         },
@@ -1110,17 +1110,18 @@ partial class Build : NukeBuild
                     );
 
                     // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
-                    AddToNuGetSmokeTestsMatrix(
-                        matrix,
-                        "debian",
-                        new SmokeTestImage[]
-                        {
-                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
-                        },
-                        relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
-                        relativeApiWrapperPath: "datadog/linux-arm64/Datadog.Linux.ApiWrapper.x64.so",
-                        dockerName: "andrewlock/dotnet-debian"
-                    );
+                    // TODO FIXME for .NET 10 RC.2: 
+                    //AddToNuGetSmokeTestsMatrix(
+                    //    matrix,
+                    //    "debian",
+                    //    new SmokeTestImage[]
+                    //    {
+                    //        new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
+                    //    },
+                    //    relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
+                    //    relativeApiWrapperPath: "datadog/linux-arm64/Datadog.Linux.ApiWrapper.x64.so",
+                    //    dockerName: "andrewlock/dotnet-debian"
+                    //);
 
                     AddToNuGetSmokeTestsMatrix(
                         matrix,
@@ -1200,16 +1201,17 @@ partial class Build : NukeBuild
                     );
 
                     // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
-                    AddToDotNetToolSmokeTestsMatrix(
-                        matrix,
-                        "debian",
-                        new SmokeTestImage[]
-                        {
-                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
-                        },
-                        platformSuffix: "linux-x64",
-                        dockerName: "andrewlock/dotnet-debian"
-                    );
+                    // TODO FIXME for .NET 10 RC.2: 
+                    //AddToDotNetToolSmokeTestsMatrix(
+                    //    matrix,
+                    //    "debian",
+                    //    new SmokeTestImage[]
+                    //    {
+                    //        new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
+                    //    },
+                    //    platformSuffix: "linux-x64",
+                    //    dockerName: "andrewlock/dotnet-debian"
+                    //);
 
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
@@ -1308,16 +1310,17 @@ partial class Build : NukeBuild
                     );
 
                     // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
-                    AddToDotNetToolSmokeTestsMatrix(
-                        matrix,
-                        "debian",
-                        new SmokeTestImage[]
-                        {
-                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
-                        },
-                        platformSuffix: "linux-arm64",
-                        dockerName: "andrewlock/dotnet-debian"
-                    );
+                    // TODO FIXME for .NET 10 RC.2: 
+                    //AddToDotNetToolSmokeTestsMatrix(
+                    //    matrix,
+                    //    "debian",
+                    //    new SmokeTestImage[]
+                    //    {
+                    //        new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
+                    //    },
+                    //    platformSuffix: "linux-arm64",
+                    //    dockerName: "andrewlock/dotnet-debian"
+                    //);
 
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
@@ -1410,19 +1413,20 @@ partial class Build : NukeBuild
                     );
 
                     // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
-                    AddToLinuxTrimmingSmokeTestsMatrix(
-                        matrix,
-                        "debian",
-                        new SmokeTestImage[]
-                        {
-                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
-                        },
-                        installer: "datadog-dotnet-apm*_amd64.deb",
-                        installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
-                        linuxArtifacts: "linux-packages-linux-x64",
-                        runtimeId: "linux-x64",
-                        dockerName: "andrewlock/dotnet-debian"
-                    );
+                    // TODO FIXME for .NET 10 RC.2: 
+                    //AddToLinuxTrimmingSmokeTestsMatrix(
+                    //    matrix,
+                    //    "debian",
+                    //    new SmokeTestImage[]
+                    //    {
+                    //        new (publishFramework: TargetFramework.NET10_0, "trixie-10.0-preview", "debian", "trixie"),
+                    //    },
+                    //    installer: "datadog-dotnet-apm*_amd64.deb",
+                    //    installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
+                    //    linuxArtifacts: "linux-packages-linux-x64",
+                    //    runtimeId: "linux-x64",
+                    //    dockerName: "andrewlock/dotnet-debian"
+                    //);
                     // Alpine tests with the musl-specific package
                     AddToLinuxTrimmingSmokeTestsMatrix(
                         matrix,
