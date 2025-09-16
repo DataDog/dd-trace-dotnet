@@ -647,7 +647,7 @@ namespace Datadog.Trace.Configuration
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
 
-        internal MutableSettings MutableSettings { get; }
+        internal MutableSettings MutableSettings { get; init; }
 
         /// <inheritdoc cref="MutableSettings.Environment"/>
         public string? Environment => MutableSettings.Environment;
