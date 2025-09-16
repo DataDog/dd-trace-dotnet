@@ -11,11 +11,10 @@
 
 #if defined(BUILD_WITH_WORKLOAD_SELECTION)
   #include "dd/policies/wls.h"
+  namespace plcs = datadog::plcs;
 #endif
 
 using namespace shared;
-
-namespace wls = datadog::wls;
 
 namespace datadog::shared::nativeloader
 {
@@ -332,27 +331,16 @@ namespace datadog::shared::nativeloader
             UNKNOWN
           } injection_status = InjectionStatus::UNKNOWN;
 
-          auto proc = ToString(process_name);
-          std::string_view p(proc.data(), proc.size());
-
-          wls::init();
-          wls::set_params(wls::StringEvaluator::PROCESS_EXE, p);
-          wls::set_params(wls::StringEvaluator::RUNTIME_LANGUAGE, "dotnet");
-          wls::set_params(wls::NumericEvaluator::RUNTIME_VERSION_MAJOR, (unsigned long)runtimeInformation.major_version);
-          wls::set_params(wls::NumericEvaluator::RUNTIME_VERSION_MINOR, (unsigned long)runtimeInformation.minor_version);
-          wls::set_params(wls::NumericEvaluator::RUNTIME_VERSION_PATCH, (unsigned long)runtimeInformation.build_version);
+          plcs::init();
+          plcs::set_params(plcs::StringEvaluator::PROCESS_EXE, ToString(process_name));
+          plcs::set_params(plcs::StringEvaluator::RUNTIME_LANGUAGE, "dotnet");
 
           // TODO: Remove once the policy engine will be able to log the context.
           Log::Info("CorProfiler::Initialize: Workload Selection Context: \"process.name:", p, " runtime:dotnet\"");
 
-          wls::register_action(wls::Action::INJECT_DENY, [&injection_status](wls::Result eval_result, const std::vector<const char*>&, const char* desc) -> std::optional<wls::Error> {
-              injection_status = InjectionStatus::DENY;
-              return std::nullopt;
-            });
-
-          wls::register_action(wls::Action::INJECT_ALLOW, [&injection_status](wls::Result eval_result, const std::vector<const char*>&, const char* desc) -> std::optional<wls::Error> {
+          plcs::register_action(plcs::Action::INJECT_ALLOW, [&injection_status](plcs::Result eval_result, const std::vector<const char*>&, const char* desc) -> std::optional<plcs::Error> {
               if (injection_status == InjectionStatus::ALLOW) return std::nullopt;
-              if (eval_result == wls::Result::TTRUE)
+              if (eval_result == plcs::Result::TTRUE)
               {
                   injection_status = InjectionStatus::ALLOW;
               }
@@ -360,14 +348,19 @@ namespace datadog::shared::nativeloader
               {
                   injection_status = InjectionStatus::DENY;
               }
-              
+
               return std::nullopt;
           });
 
           if (const auto wls_file = fs::path{GetDatadogProgramDataFolderPath()} / "protected" / "workload_selection.fb"; fs::exists(wls_file))
           {
-            auto maybe_error = wls::evaluate_buffer_from_file(wls_file);
-            if (maybe_error || injection_status != InjectionStatus::ALLOW) {
+            auto maybe_error = plcs::evaluate_buffer_from_file(wls_file);
+            if (maybe_error) {
+              Log::Error("CorProfiler::Initialize: An error occured while evaluating workload selection (reason: ", *maybe_error, ")");
+              return E_FAIL;
+            }
+
+            if (injection_status != InjectionStatus::ALLOW) {
               Log::Info("CorProfiler::Initialize: Instrumentation denied due to workload selection.");
               return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }

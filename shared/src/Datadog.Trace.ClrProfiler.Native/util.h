@@ -3,7 +3,7 @@
 #ifdef _WIN32
 #include <windows.h>
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
-#define HINST_THISCOMPONENT ((HINSTANCE) &__ImageBase)
+#define HINST_THISCOMPONENT ((HINSTANCE) & __ImageBase)
 #else
 #define _GNU_SOURCE
 #include <dlfcn.h>
@@ -21,8 +21,9 @@ const ::shared::WSTRING cfg_instrumentation_verification_env = WStr("DD_WRITE_IN
 const ::shared::WSTRING cfg_copying_originals_modules_env = WStr("DD_COPY_ORIGINALS_MODULES_TO_DISK");
 const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
 
-// Note that this list should be kept in sync with the values in tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h
-// Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
+// Note that this list should be kept in sync with the values in
+// tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h Note that you should also consider adding to the SSI
+// tracer/build/artifacts/requirements.json file
 // FIXME: this should also take into account case insensitivity, but that is not yet supported
 // https://devblogs.microsoft.com/oldnewthing/20241007-00/?p=110345
 const shared::WSTRING default_exclude_assemblies[]{
@@ -75,7 +76,7 @@ static fs::path GetCurrentModuleFolderPath()
     }
 #else
     Dl_info info;
-    if (dladdr((void*)GetCurrentModuleFolderPath, &info))
+    if (dladdr((void*) GetCurrentModuleFolderPath, &info))
     {
         return fs::path(info.dli_fname).remove_filename();
     }
@@ -153,8 +154,8 @@ inline bool IsRunningOnIIS()
 
 inline bool IsSingleStepInstrumentation()
 {
-    const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
-    return !isSingleStepVariable.empty()
+    const auto isSingleStepVariable = ::shared::GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
+    return !isSingleStepVariable.empty();
 }
 
 inline std::string GetCurrentOsArch(bool isRunningOnAlpine)
