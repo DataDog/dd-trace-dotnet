@@ -4376,6 +4376,7 @@ stages:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
         DD_CIVISIBILITY_LOGS_ENABLED: 0
         DD_CIVISIBILITY_ITR_ENABLED: 0
+        LOG_ARTIFACT_DIR: $(System.DefaultWorkingDirectory)/artifacts/build_data/logs
 
     - powershell: |
         mkdir -p $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
@@ -4384,7 +4385,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - publish: c:\ProgramData\Datadog .NET Tracer\logs
+    - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/logs
       displayName: Uploading logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
