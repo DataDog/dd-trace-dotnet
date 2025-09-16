@@ -11,6 +11,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
@@ -30,6 +32,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ConfigureIntegration
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigureIntegration>();
+
     internal static CallTargetState OnMethodBegin<TTarget>(Dictionary<string, object?> values)
     {
         ConfigureSettingsWithManualOverrides(values, useLegacySettings: false);
@@ -43,18 +47,40 @@ public class ConfigureIntegration
         var isFromDefaults = values.TryGetValue(TracerSettingKeyConstants.IsFromDefaultSourcesKey, out var value) && value is true;
 
         // Build the configuration sources, including our manual instrumentation values
-        ManualInstrumentationConfigurationSourceBase manualConfigSource =
+        ManualInstrumentationConfigurationSourceBase manualConfig =
             useLegacySettings
                 ? new ManualInstrumentationLegacyConfigurationSource(values, isFromDefaults)
                 : new ManualInstrumentationConfigurationSource(values, isFromDefaults);
 
-        IConfigurationSource source = isFromDefaults
-                                          ? new CompositeConfigurationSource([manualConfigSource, GlobalConfigurationSource.Instance])
-                                          : manualConfigSource;
+        var tracerSettings = Datadog.Trace.Tracer.Instance.Settings;
+        var dynamicConfig = GlobalConfigurationSource.DynamicConfigurationSource;
+        var initialSettings = isFromDefaults
+                                  ? tracerSettings.MutableSettings
+                                  : MutableSettings.CreateWithoutDefaultSources(tracerSettings);
 
-        var settings = new TracerSettings(source, new ConfigurationTelemetry(), new OverrideErrorLog());
+        // TODO: these will eventually live elsewhere
+        var currentSettings = tracerSettings.MutableSettings;
+
+        var newMutableSettings = MutableSettings.CreateUpdatedMutableSettings(
+            dynamicConfig,
+            manualConfig,
+            initialSettings,
+            tracerSettings,
+            TelemetryFactory.Config,
+            new OverrideErrorLog()); // TODO: We'll later report these
+
+        if (currentSettings.Equals(newMutableSettings))
+        {
+            Log.Debug("No changes detected in the new configuration in code");
+            return;
+        }
+
+        Log.Information("Applying new configuration in code");
+        GlobalConfigurationSource.UpdateManualConfigurationSource(manualConfig);
+
+        var newSettings = tracerSettings with { MutableSettings = newMutableSettings };
 
         // Update the global instance
-        Trace.Tracer.ConfigureInternal(settings);
+        Trace.Tracer.ConfigureInternal(newSettings);
     }
 }
