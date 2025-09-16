@@ -136,8 +136,8 @@ namespace Datadog.Trace.Debugger
             RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
 
             var coEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBoolResult();
-            CodeOriginForSpansEnabled = coEnabledResult.WithDefault(false);
             CodeOriginForSpansCanBeEnabled = coEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
+            CodeOriginForSpansEnabled = CodeOriginForSpansCanBeEnabled && (coEnabledResult.WithDefault(false) || DynamicInstrumentationEnabled);
 
             CodeOriginMaxUserFrames = config
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
