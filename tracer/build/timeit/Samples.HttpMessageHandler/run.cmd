@@ -81,3 +81,13 @@ echo =====================
 echo ✅ All benchmarks completed successfully.
 echo =====================
 exit /b 0
+
+REM =====================
+REM Subroutine to copy logs into framework-specific folder
+REM =====================
+:CopyLogs
+IF DEFINED LOG_ARTIFACT_DIR (
+    mkdir "%LOG_ARTIFACT_DIR%\%~1"
+    xcopy /E /I /Y "%ProgramData%\Datadog .NET Tracer\logs" "%LOG_ARTIFACT_DIR%\%~1" >nul
+)
+exit /b 0

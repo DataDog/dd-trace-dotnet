@@ -20,7 +20,7 @@ IF DEFINED LOG_ARTIFACT_DIR (
     echo LOG_ARTIFACT_DIR not set. Skipping log copy setup.
 )
 
-REM Helper macro to copy logs if LOG_ARTIFACT_DIR is set
+REM Helper macro to copy logs to a given subfolder if LOG_ARTIFACT_DIR is set
 set COPY_LOGS=IF DEFINED LOG_ARTIFACT_DIR (mkdir "%LOG_ARTIFACT_DIR%\%%1" & xcopy /E /I /Y "%ProgramData%\Datadog .NET Tracer\logs" "%LOG_ARTIFACT_DIR%\%%1")
 
 set FAILED=0
@@ -80,4 +80,14 @@ IF "!FAILED!"=="1" (
 echo =====================
 echo ✅ All benchmarks completed successfully.
 echo =====================
+exit /b 0
+
+REM =====================
+REM Subroutine to copy logs into framework-specific folder
+REM =====================
+:CopyLogs
+IF DEFINED LOG_ARTIFACT_DIR (
+    mkdir "%LOG_ARTIFACT_DIR%\%~1"
+    xcopy /E /I /Y "%ProgramData%\Datadog .NET Tracer\logs" "%LOG_ARTIFACT_DIR%\%~1" >nul
+)
 exit /b 0
