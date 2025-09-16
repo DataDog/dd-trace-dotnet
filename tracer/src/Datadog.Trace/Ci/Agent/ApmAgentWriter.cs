@@ -27,7 +27,7 @@ internal class ApmAgentWriter : IEventWriter
 
     public ApmAgentWriter(TracerSettings settings, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, int maxBufferSize = DefaultMaxBufferSize)
     {
-        var partialFlushEnabled = settings.Exporter.PartialFlushEnabled;
+        var partialFlushEnabled = settings.PartialFlushEnabled;
         var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
         var api = new Api(apiRequestFactory, null, updateSampleRates, partialFlushEnabled);
         var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
