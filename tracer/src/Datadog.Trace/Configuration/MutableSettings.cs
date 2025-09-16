@@ -27,7 +27,7 @@ namespace Datadog.Trace.Configuration;
 /// code or via remote configuration. Note that the specific instance is immutable, but there may be a
 /// new version in the lifetime of the application
 /// </summary>
-public class MutableSettings
+internal sealed class MutableSettings : IEquatable<MutableSettings>
 {
     // we cached the static instance here, because is being used in the hotpath
     // by IsIntegrationEnabled method (called from all integrations)
@@ -366,6 +366,137 @@ public class MutableSettings
         }
 
         return httpErrorCodesArray;
+    }
+
+    public bool Equals(MutableSettings? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        return TraceEnabled == other.TraceEnabled &&
+               CustomSamplingRules == other.CustomSamplingRules &&
+               CustomSamplingRulesIsRemote == other.CustomSamplingRulesIsRemote &&
+               Nullable.Equals(GlobalSamplingRate, other.GlobalSamplingRate) &&
+               LogsInjectionEnabled == other.LogsInjectionEnabled &&
+               StartupDiagnosticLogEnabled == other.StartupDiagnosticLogEnabled &&
+               Environment == other.Environment &&
+               ServiceName == other.ServiceName &&
+               ServiceVersion == other.ServiceVersion &&
+               TracerMetricsEnabled == other.TracerMetricsEnabled &&
+#pragma warning disable 618 // App analytics is deprecated, but still used
+               AnalyticsEnabled == other.AnalyticsEnabled &&
+#pragma warning restore 618
+               MaxTracesSubmittedPerSecond == other.MaxTracesSubmittedPerSecond &&
+               KafkaCreateConsumerScopeEnabled == other.KafkaCreateConsumerScopeEnabled &&
+               GitRepositoryUrl == other.GitRepositoryUrl &&
+               GitCommitSha == other.GitCommitSha &&
+               // Do collection comparisons at the end, as generally more expensive
+               AreEqual(GlobalTags, other.GlobalTags) &&
+               AreEqual(HeaderTags, other.HeaderTags) &&
+               AreEqual(GrpcTags, other.GrpcTags) &&
+               AreEqual(ServiceNameMappings, other.ServiceNameMappings) &&
+               DisabledIntegrationNames.SetEquals(other.DisabledIntegrationNames) &&
+               // Could unroll the Linq, but prob not worth the hassle
+               HttpServerErrorStatusCodes.SequenceEqual(other.HttpServerErrorStatusCodes) &&
+               HttpClientErrorStatusCodes.SequenceEqual(other.HttpClientErrorStatusCodes) &&
+               // Most expensive one
+               AreEqualIntegrations(Integrations, other.Integrations);
+
+        static bool AreEqual(ReadOnlyDictionary<string, string>? dictionary1, ReadOnlyDictionary<string, string>? dictionary2)
+        {
+            if (dictionary1 == null || dictionary2 == null)
+            {
+                return ReferenceEquals(dictionary1, dictionary2);
+            }
+
+            if (dictionary1.Count != dictionary2.Count)
+            {
+                return false;
+            }
+
+            foreach (var pair in dictionary1)
+            {
+                if (dictionary2.TryGetValue(pair.Key, out var value))
+                {
+                    if (!string.Equals(value, pair.Value))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static bool AreEqualIntegrations(IntegrationSettingsCollection integrations1, IntegrationSettingsCollection integrations2)
+        {
+            if (integrations1.Settings.Length != integrations2.Settings.Length)
+            {
+                return false;
+            }
+
+            // They should be the exact same settings in both cases
+            for (var i = 0; i < integrations1.Settings.Length; i++)
+            {
+                var integration1 = integrations1.Settings[i];
+                var integration2 = integrations2.Settings[i];
+
+                if (!integration1.Equals(integration2))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return ReferenceEquals(this, obj) || (obj is MutableSettings other && Equals(other));
+    }
+
+    public override int GetHashCode()
+    {
+        // we can't easily include the collections in the hash code
+        var hashCode = new HashCode();
+        hashCode.Add(TraceEnabled);
+        hashCode.Add(CustomSamplingRules);
+        hashCode.Add(CustomSamplingRulesIsRemote);
+        hashCode.Add(GlobalSamplingRate);
+        hashCode.Add(LogsInjectionEnabled);
+        // hashCode.Add(GlobalTags);
+        // hashCode.Add(HeaderTags);
+        hashCode.Add(StartupDiagnosticLogEnabled);
+        hashCode.Add(Environment);
+        hashCode.Add(ServiceName);
+        hashCode.Add(ServiceVersion);
+        // hashCode.Add(DisabledIntegrationNames);
+        // hashCode.Add(GrpcTags);
+        hashCode.Add(TracerMetricsEnabled);
+        // hashCode.Add(Integrations);
+#pragma warning disable 618 // App analytics is deprecated, but still used
+        hashCode.Add(AnalyticsEnabled);
+#pragma warning restore 618
+        hashCode.Add(MaxTracesSubmittedPerSecond);
+        hashCode.Add(KafkaCreateConsumerScopeEnabled);
+        // hashCode.Add(HttpServerErrorStatusCodes);
+        // hashCode.Add(HttpClientErrorStatusCodes);
+        // hashCode.Add(ServiceNameMappings);
+        hashCode.Add(GitRepositoryUrl);
+        hashCode.Add(GitCommitSha);
+        return hashCode.ToHashCode();
     }
 
     internal bool IsErrorStatusCode(int statusCode, bool serverStatusCode)
