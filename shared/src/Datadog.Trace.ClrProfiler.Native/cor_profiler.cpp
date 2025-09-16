@@ -10,8 +10,8 @@
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
 
 #if defined(BUILD_WITH_WORKLOAD_SELECTION)
-  #include "dd/policies/wls.h"
-  namespace plcs = datadog::plcs;
+  #include <dd/policies/policies.hpp>
+  namespace plcs = datadog::policies;
 #endif
 
 using namespace shared;
@@ -336,11 +336,11 @@ namespace datadog::shared::nativeloader
           plcs::set_params(plcs::StringEvaluator::RUNTIME_LANGUAGE, "dotnet");
 
           // TODO: Remove once the policy engine will be able to log the context.
-          Log::Info("CorProfiler::Initialize: Workload Selection Context: \"process.name:", p, " runtime:dotnet\"");
+          Log::Info("CorProfiler::Initialize: Workload Selection Context: \"process.name:", process_name, " runtime:dotnet\"");
 
           plcs::register_action(plcs::Action::INJECT_ALLOW, [&injection_status](plcs::Result eval_result, const std::vector<const char*>&, const char* desc) -> std::optional<plcs::Error> {
               if (injection_status == InjectionStatus::ALLOW) return std::nullopt;
-              if (eval_result == plcs::Result::TTRUE)
+              if (eval_result == plcs::Result::ALLOW)
               {
                   injection_status = InjectionStatus::ALLOW;
               }
@@ -1380,3 +1380,5 @@ namespace datadog::shared::nativeloader
     }
 
 } // namespace datadog::shared::nativeloader
+
+
