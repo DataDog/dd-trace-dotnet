@@ -9,11 +9,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Processors;
@@ -34,6 +36,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     private readonly DomainMetadata _domainMetadata = DomainMetadata.Instance;
 
     private MutableSettings(
+        bool isInitialSettings,
         bool traceEnabled,
         string? customSamplingRules,
         bool customSamplingRulesIsRemote,
@@ -60,6 +63,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         OverrideErrorLog errorLog,
         IConfigurationTelemetry telemetry)
     {
+        IsInitialSettings = isInitialSettings;
         TraceEnabled = traceEnabled;
         CustomSamplingRules = customSamplingRules;
         CustomSamplingRulesIsRemote = customSamplingRulesIsRemote;
@@ -245,17 +249,24 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     public string? GitCommitSha { get; }
 
     // Infra
+    internal bool IsInitialSettings { get; }
+
     internal OverrideErrorLog ErrorLog { get; }
 
     internal IConfigurationTelemetry Telemetry { get; }
 
     internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
-    {
-        var configurationDictionary = config
-                                     .WithKeys(key)
-                                     .AsDictionary(allowOptionalMappings: true, defaultValue: null, "[]");
+        => InitializeHeaderTags(
+            config.WithKeys(key).AsDictionaryResult(allowOptionalMappings: true),
+            headerTagsNormalizationFixEnabled);
 
-        if (configurationDictionary == null)
+    private static ReadOnlyDictionary<string, string>? InitializeHeaderTags(
+        ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> configurationResult,
+        bool headerTagsNormalizationFixEnabled)
+    {
+        var configurationDictionary = configurationResult.WithDefault(new DefaultResult<IDictionary<string, string>>(null!, "[]"));
+
+        if (configurationDictionary == null!)
         {
             return null;
         }
@@ -533,14 +544,445 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
     }
 
+    private static void RemoveDisallowedGlobalTags(Dictionary<string, string> globalTags)
+    {
+        globalTags.Remove(Tags.Service);
+        globalTags.Remove(Tags.Env);
+        globalTags.Remove(Tags.Version);
+        globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
+        globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
+    }
+
     /// <summary>
-    /// Create an instance of <see cref="MutableSettings"/>
+    /// Create an instance of <see cref="MutableSettings"/> based on dynamic configuration sources
+    /// </summary>
+    /// <param name="dynamicSource">The <see cref="IConfigurationSource"/> for dynamic config</param>
+    /// <param name="manualSource">The <see cref="IConfigurationSource"/> for manual configuration</param>
+    /// <param name="initialSettings">The initial mutable settings created from static sources </param>
+    /// <param name="tracerSettings">The global <see cref="TracerSettings"/> object</param>
+    /// <param name="telemetry">The <see cref="IConfigurationTelemetry"/> for recording telemetry updates</param>
+    /// <param name="errorLog">The <see cref="OverrideErrorLog"/> for recording errors in configuration</param>
+    /// <returns>The <see cref="MutableSettings"/> updated images</returns>
+    public static MutableSettings CreateUpdatedMutableSettings(
+        IConfigurationSource dynamicSource,
+        ManualInstrumentationConfigurationSourceBase manualSource,
+        MutableSettings initialSettings, // Might be the "real" initial mutable settings or the "null" version
+        TracerSettings tracerSettings,
+        IConfigurationTelemetry telemetry,
+        OverrideErrorLog errorLog)
+    {
+        var dynamicConfig = new ConfigurationBuilder(dynamicSource, telemetry);
+        var manualConfig = new ConfigurationBuilder(manualSource, telemetry);
+
+        // Dynamic code overwrites manual, which means for telemetry to be correct we have to read the code sources first
+        // and _then_ the dynamic sources. If all of those are empty/have errors then we need to record the previous/default
+        // result from either the initial settings or the simple defaults.
+
+        // Telemetry needs to be recorded in "reverse" order to ensure precedence is correct
+        // - Code
+        // - Remote config
+        // - Fallback (If neither of the above)
+
+        var manualTraceEnabled = manualConfig.WithKeys(ConfigurationKeys.TraceEnabled).AsBoolResult();
+        var remoteTraceEnabled = dynamicConfig.WithKeys(ConfigurationKeys.TraceEnabled).AsBoolResult();
+        var traceEnabled = GetBoolResult2(manualTraceEnabled, remoteTraceEnabled, telemetry, initialSettings.TraceEnabled);
+
+        // Note: Calling GetAsClass<string>() here instead of GetAsString() as we need to get the
+        // "serialized JToken", which in JsonConfigurationSource is different, as it allows for non-string tokens
+        // Also note that this value is incompatible with values set locally.
+        var manualCustomSamplingRules = manualConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).AsStringResult();
+        var remoteCustomSamplingRules = dynamicConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).GetAsClassResult<string>(validator: null, converter: s => s);
+        var customSamplingRules = GetStringResult2(manualCustomSamplingRules, remoteCustomSamplingRules, telemetry, initialSettings.CustomSamplingRules);
+        var customSamplingRulesIsRemote = remoteCustomSamplingRules.ConfigurationResult.IsValid;
+
+        var manualSampleRate = manualConfig.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
+        var dynamicSampleRate = dynamicConfig.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
+        var globalSamplingRate = GetDoubleResult(manualSampleRate, dynamicSampleRate, telemetry, initialSettings.GlobalSamplingRate);
+
+        var manualLogsInjectionEnabled = manualConfig.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBoolResult();
+        var dynamicLogsInjectionEnabled = dynamicConfig.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBoolResult();
+        var logsInjectionEnabled = GetBoolResult2(manualLogsInjectionEnabled, dynamicLogsInjectionEnabled, telemetry, initialSettings.LogsInjectionEnabled);
+
+        var manualHeaderTags = manualConfig.WithKeys(ConfigurationKeys.HeaderTags).AsDictionaryResult(allowOptionalMappings: true);
+        var dynamicHeaderTags = dynamicConfig.WithKeys(ConfigurationKeys.HeaderTags).AsDictionaryResult(allowOptionalMappings: true);
+        var headerTags = GetHeaderTagsResult(manualHeaderTags, dynamicHeaderTags, headerTagsNormalizationFixEnabled: true, telemetry, initialSettings.HeaderTags);
+
+        // No point checking the fallback keys, they're not used
+        var manualGlobalTags = manualConfig.WithKeys(ConfigurationKeys.GlobalTags).AsDictionaryResult();
+        var dynamicGlobalTags = dynamicConfig.WithKeys(ConfigurationKeys.GlobalTags).AsDictionaryResult();
+        // TODO: should we be checking for experimental tags format here?
+        // Also, note that this _prevents_ customers from setting service etc via the tags collection
+        // They have to set it via the specific properties instead
+        var globalTags = GetDictionaryResult(manualGlobalTags, dynamicGlobalTags, telemetry, initialSettings.GlobalTags);
+
+        // The remaining properties are only exposed via manual config, so that's all we need to check
+        // NOTE: If dynamic config _does_ support these in the future, need to update to use the above pattern instead.
+        var startupDiagnosticLogEnabled = GetBoolResult(
+            manualConfig.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBoolResult(),
+            telemetry,
+            initialSettings.StartupDiagnosticLogEnabled);
+
+        var environment = GetStringResult(
+            manualConfig.WithKeys(ConfigurationKeys.Environment).AsStringResult(),
+            telemetry,
+            initialSettings.Environment);
+
+        var serviceName = GetStringResult(
+            manualConfig.WithKeys(ConfigurationKeys.ServiceName).AsStringResult(),
+            telemetry,
+            initialSettings.ServiceName);
+
+        var serviceVersion = GetStringResult(
+            manualConfig.WithKeys(ConfigurationKeys.ServiceVersion).AsStringResult(),
+            telemetry,
+            initialSettings.ServiceVersion);
+
+        var disabledIntegrationNameResult = manualConfig.WithKeys(ConfigurationKeys.DisabledIntegrations)
+                                                        .AsStringResult();
+        HashSet<string> disabledIntegrationNames;
+        if (disabledIntegrationNameResult.ConfigurationResult is { IsValid: true, Result: var stringResult })
+        {
+            // If Activity support is enabled, we shouldn't enable the OTel listener
+            var disabledIntegrationNamesArray = stringResult.Split([';'], StringSplitOptions.RemoveEmptyEntries);
+            disabledIntegrationNames = tracerSettings.IsActivityListenerEnabled
+                                           ? new HashSet<string>(disabledIntegrationNamesArray, StringComparer.OrdinalIgnoreCase)
+                                           : new HashSet<string>([..disabledIntegrationNamesArray, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
+        }
+        else
+        {
+            disabledIntegrationNames = initialSettings.DisabledIntegrationNames;
+            if (disabledIntegrationNameResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(disabledIntegrationNameResult.Key, string.Join(";", disabledIntegrationNameResult), recordValue: true, ConfigurationOrigins.Calculated);
+            }
+        }
+
+        var integrations = new IntegrationSettingsCollection(manualSource, disabledIntegrationNames, initialSettings.Integrations);
+
+        var grpcTagsResult = manualConfig.WithKeys(ConfigurationKeys.GrpcTags).AsDictionaryResult(allowOptionalMappings: true);
+        var grpcTags = GetHeaderTagsResult(
+            grpcTagsResult,
+            grpcTagsResult, // easy hacky way to save creating a new overload
+            headerTagsNormalizationFixEnabled: true,
+            telemetry,
+            initialSettings.GrpcTags);
+
+        var tracerMetricsEnabled = GetBoolResult(
+            manualConfig.WithKeys(ConfigurationKeys.TracerMetricsEnabled).AsBoolResult(),
+            telemetry,
+            initialSettings.TracerMetricsEnabled);
+
+#pragma warning disable 618 // App analytics is deprecated, but still used
+        var analyticsEnabled = GetBoolResult(
+            manualConfig.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled).AsBoolResult(),
+            telemetry,
+            initialSettings.AnalyticsEnabled);
+#pragma warning restore 618
+
+#pragma warning disable 618 // this parameter has been replaced but may still be used
+        var maxTracesSubmittedPerSecond = GetIntResult(
+            manualConfig.WithKeys(ConfigurationKeys.MaxTracesSubmittedPerSecond).AsInt32Result(),
+            telemetry,
+            initialSettings.MaxTracesSubmittedPerSecond);
+#pragma warning restore 618
+
+        var kafkaCreateConsumerScopeEnabled = GetBoolResult(
+            manualConfig.WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled).AsBoolResult(),
+            telemetry,
+            initialSettings.KafkaCreateConsumerScopeEnabled);
+
+        var httpServerErrorStatusCodes = GetStatusCodesResult(
+            manualConfig.WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes).AsStringResult(),
+            telemetry,
+            initialSettings.HttpServerErrorStatusCodes);
+
+        var httpClientErrorStatusCodes = GetStatusCodesResult(
+            manualConfig.WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes).AsStringResult(),
+            telemetry,
+            initialSettings.HttpClientErrorStatusCodes);
+
+        var serviceNamesResult = manualConfig.WithKeys(ConfigurationKeys.ServiceNameMappings).AsDictionaryResult();
+        var serviceNameMappings = GetDictionaryResult(
+            serviceNamesResult,
+            serviceNamesResult,
+            telemetry,
+            initialSettings.ServiceNameMappings);
+
+        // These can't actually be changed in code right now, so just set them to the same values
+        var gitRepositoryUrl = initialSettings.GitRepositoryUrl;
+        var gitCommitSha = initialSettings.GitCommitSha;
+
+        return new MutableSettings(
+            isInitialSettings: false,
+            traceEnabled: traceEnabled,
+            customSamplingRules: customSamplingRules,
+            customSamplingRulesIsRemote: customSamplingRulesIsRemote,
+            globalSamplingRate: globalSamplingRate,
+            logsInjectionEnabled: logsInjectionEnabled,
+            globalTags: globalTags,
+            headerTags: headerTags,
+            startupDiagnosticLogEnabled: startupDiagnosticLogEnabled,
+            environment: environment,
+            serviceName: serviceName,
+            serviceVersion: serviceVersion,
+            disabledIntegrationNames: disabledIntegrationNames,
+            grpcTags: grpcTags,
+            tracerMetricsEnabled: tracerMetricsEnabled,
+            integrations: integrations,
+            analyticsEnabled: analyticsEnabled,
+            maxTracesSubmittedPerSecond: maxTracesSubmittedPerSecond,
+            kafkaCreateConsumerScopeEnabled: kafkaCreateConsumerScopeEnabled,
+            httpServerErrorStatusCodes: httpServerErrorStatusCodes,
+            httpClientErrorStatusCodes: httpClientErrorStatusCodes,
+            serviceNameMappings: serviceNameMappings,
+            gitRepositoryUrl: gitRepositoryUrl,
+            gitCommitSha: gitCommitSha,
+            errorLog: errorLog,
+            telemetry: telemetry);
+
+        static double? GetDoubleResult(
+            ConfigurationBuilder.StructConfigurationResultWithKey<double> manualResult,
+            ConfigurationBuilder.StructConfigurationResultWithKey<double> remoteResult,
+            IConfigurationTelemetry telemetry,
+            double? fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            if (remoteResult.ConfigurationResult is { IsValid: true, Result: var r2 })
+            {
+                return r2;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent || remoteResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        static bool GetBoolResult(
+            ConfigurationBuilder.StructConfigurationResultWithKey<bool> manualResult,
+            IConfigurationTelemetry telemetry,
+            bool fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        static bool GetBoolResult2(
+            ConfigurationBuilder.StructConfigurationResultWithKey<bool> manualResult,
+            ConfigurationBuilder.StructConfigurationResultWithKey<bool> remoteResult,
+            IConfigurationTelemetry telemetry,
+            bool fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            if (remoteResult.ConfigurationResult is { IsValid: true, Result: var r2 })
+            {
+                return r2;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent || remoteResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        static int GetIntResult(
+            ConfigurationBuilder.StructConfigurationResultWithKey<int> manualResult,
+            IConfigurationTelemetry telemetry,
+            int fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        static string? GetStringResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<string> manualResult,
+            IConfigurationTelemetry telemetry,
+            string? fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        static string? GetStringResult2(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<string> manualResult,
+            ConfigurationBuilder.ClassConfigurationResultWithKey<string> remoteResult,
+            IConfigurationTelemetry telemetry,
+            string? fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return r1;
+            }
+
+            if (remoteResult.ConfigurationResult is { IsValid: true, Result: var r2 })
+            {
+                return r2;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent || remoteResult.ConfigurationResult.IsPresent)
+            {
+                telemetry.Record(manualResult.Key, fallback, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> manualResult,
+            ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> remoteResult,
+            bool headerTagsNormalizationFixEnabled,
+            IConfigurationTelemetry telemetry,
+            ReadOnlyDictionary<string, string> fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true })
+            {
+                // Non-null return if result is valid, but play it safe
+                return InitializeHeaderTags(manualResult, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+            }
+
+            if (remoteResult.ConfigurationResult is { IsValid: true })
+            {
+                // Non-null return if r1 is non-null
+                return InitializeHeaderTags(remoteResult, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent || remoteResult.ConfigurationResult.IsPresent)
+            {
+                // this is obviously super annoying
+                var stringifiedFallback = string.Join(",", fallback.Select(x => $"{x.Key}:{x.Value}"));
+                telemetry.Record(manualResult.Key, stringifiedFallback, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+
+        static ReadOnlyDictionary<string, string> GetDictionaryResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> manualResult,
+            ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> remoteResult,
+            IConfigurationTelemetry telemetry,
+            ReadOnlyDictionary<string, string> fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
+            {
+                return FixupDictionary(r1);
+            }
+
+            if (remoteResult.ConfigurationResult is { IsValid: true, Result: var r2 })
+            {
+                return FixupDictionary(r2);
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent || remoteResult.ConfigurationResult.IsPresent)
+            {
+                // this is obviously super annoying
+                var stringifiedFallback = string.Join(",", fallback.Select(x => $"{x.Key}:{x.Value}"));
+                telemetry.Record(manualResult.Key, stringifiedFallback, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+
+            static ReadOnlyDictionary<string, string> FixupDictionary(IDictionary<string, string>? r1)
+            {
+                if (r1 is null)
+                {
+                    return ReadOnlyDictionary.Empty;
+                }
+
+                // Filter out tags with empty keys or empty values, and trim whitespace
+                return new(
+                    r1
+                       .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                       .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim()));
+            }
+        }
+
+        static bool[] GetStatusCodesResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<string> manualResult,
+            IConfigurationTelemetry telemetry,
+            bool[] fallback)
+        {
+            if (manualResult.ConfigurationResult is { IsValid: true, Result: var codes })
+            {
+                return ParseHttpCodesToArray(codes);
+            }
+
+            // Have to "re-record" the value so telemetry has the correct value
+            // Ideally we would know the "real" source, but we don't
+            if (manualResult.ConfigurationResult.IsPresent)
+            {
+                // this is obviously super annoying
+                var stringifiedFallback = string.Join(",", fallback.Select(i => i.ToString(CultureInfo.InvariantCulture)));
+                telemetry.Record(manualResult.Key, stringifiedFallback, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return fallback;
+        }
+    }
+
+    /// <summary>
+    /// Create an instance of <see cref="MutableSettings"/> based on static source
     /// </summary>
     /// <param name="source">The global, static, <see cref="IConfigurationSource"/></param>
     /// <param name="telemetry">The <see cref="IConfigurationTelemetry"/> for recording telemetry updates</param>
     /// <param name="errorLog">The <see cref="OverrideErrorLog"/> for recording errors in configuration</param>
     /// <param name="tracerSettings">The global <see cref="TracerSettings"/> object</param>
-    public static MutableSettings Create(
+    /// <returns>The initial, static settings. These are fixed for the lifetime of the application</returns>
+    public static MutableSettings CreateInitialMutableSettings(
         IConfigurationSource source,
         IConfigurationTelemetry telemetry,
         OverrideErrorLog errorLog,
@@ -735,11 +1177,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // mutate dictionary to remove without "env", "version", "git.commit.sha" or "git.repository.url" tags
         // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
         // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
-        globalTags.Remove(Tags.Service);
-        globalTags.Remove(Tags.Env);
-        globalTags.Remove(Tags.Version);
-        globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
-        globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
+        RemoveDisallowedGlobalTags(globalTags);
 
         var headerTagsNormalizationFixEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
@@ -791,6 +1229,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var httpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodesString);
 
         return new MutableSettings(
+            isInitialSettings: true,
             traceEnabled: traceEnabled,
             customSamplingRules: customSamplingRules,
             customSamplingRulesIsRemote: false, // Can't be remote as these are static sources
@@ -817,6 +1256,18 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             errorLog: errorLog,
             telemetry: telemetry);
     }
+
+    /// <summary>
+    /// Creates an instance of <see cref="MutableSettings"/> built
+    /// by excluding all the default sources. Effectively gives all the settings their default
+    /// values. Should only be used with the manual instrumentation source
+    /// </summary>
+    public static MutableSettings CreateWithoutDefaultSources(TracerSettings tracerSettings)
+        => CreateInitialMutableSettings(
+            NullConfigurationSource.Instance,
+            new ConfigurationTelemetry(),
+            new OverrideErrorLog(),
+            tracerSettings);
 
     private static ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> RemapOtelTags(
         in ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> original)
