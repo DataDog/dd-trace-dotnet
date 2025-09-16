@@ -23,5 +23,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         /// Gets the size of the batch in bytes
         /// </summary>
         long SizeInBytes { get; }
+
+        /// <summary>
+        /// Gets the name of the Event Hub that the batch is associated with
+        /// </summary>
+        string EventHubName { get; }
     }
 }

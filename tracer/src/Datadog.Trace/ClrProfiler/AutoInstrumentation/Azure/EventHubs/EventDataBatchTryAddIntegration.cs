@@ -38,6 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         internal static CallTargetState OnMethodBegin<TTarget, TEventData>(
             TTarget instance,
             TEventData eventData)
+            where TTarget : IEventDataBatch, IDuckType
             where TEventData : IEventData, IDuckType
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs, false) ||
@@ -53,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             var span = scope.Span;
 
             span.Type = SpanTypes.Queue;
-            span.ResourceName = "batch.add";
+            span.ResourceName = instance.EventHubName;
 
             if (eventData?.Instance != null)
             {

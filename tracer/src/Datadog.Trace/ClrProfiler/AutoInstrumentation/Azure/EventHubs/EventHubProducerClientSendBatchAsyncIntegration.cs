@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Queue;
-                span.ResourceName = $"send {instance.EventHubName}";
+                span.ResourceName = instance.EventHubName;
 
                 // Set network destination tags
                 var endpoint = instance.Connection?.ServiceEndpoint;
