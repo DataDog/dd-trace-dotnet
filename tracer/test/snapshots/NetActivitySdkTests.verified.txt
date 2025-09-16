@@ -375,6 +375,7 @@
       otel.trace_id: Guid_6,
       runtime-id: Guid_2,
       span.kind: server,
+      version: 1.0.0,
       _dd.base_service: Samples.NetActivitySdk
     },
     Metrics: {
