@@ -351,7 +351,12 @@ public sealed class TracerSettings
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether stats are computed on the tracer side
+    /// Gets or sets a value indicating whether stats are computed on the tracer side.
+    ///
+    /// NOTE: as of tracer version 3.27.0, this property cannot be used to enable or
+    /// disable stats computation. You must use a static configuration source such
+    /// as environment variables or datadog.json to set the property instead. This
+    /// property will be marked obsolete and removed in a future version of Datadog.Trace.
     /// </summary>
     public bool StatsComputationEnabled
     {

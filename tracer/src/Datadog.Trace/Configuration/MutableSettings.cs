@@ -135,13 +135,12 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     public ReadOnlyDictionary<string, string> HeaderTags { get; }
 
     // Additional settings that can be set in code
-
-    // TODO: This one will be hard, we should likely consider something completely different to handle these changes
-    // public const string AgentUriKey = "DD_TRACE_AGENT_URL";
-
-    // TODO: this one is a problem - it can be changed in code, but the data pipeline needs to be enabled/disabled based on it
-    // we will likely need to make a breaking change so that it _can't_ be changed in code
-    // public const string StatsComputationEnabledKey = "DD_TRACE_STATS_COMPUTATION_ENABLED";
+    // NOTE: this includes everything except:
+    // - DD_TRACE_AGENT_URL; This can be set in code, but is handled separately in TracerSettings
+    // - DD_TRACE_STATS_COMPUTATION_ENABLED; This can currently be set in code, but it's problematic for
+    //   various reasons related to data pipeline, so this change makes it so that you CAN'T set the value
+    //   in code, despite the API appearing to let you. The change is addressed via documentation, and
+    //   in the future we should remove the property entirely (or at least mark it as obsolete)
 
     /// <summary>
     /// Gets a value indicating whether the diagnostic log at startup is enabled
