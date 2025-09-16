@@ -636,7 +636,7 @@ namespace Datadog.Trace.Configuration
                 config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
                 commaSeparator);
 
-            MutableSettings = MutableSettings.Create(source, telemetry, errorLog, this);
+            MutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
         }
 
         internal bool IsRunningInCiVisibility { get; }
