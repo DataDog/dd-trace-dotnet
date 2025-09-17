@@ -104,7 +104,7 @@ variables:
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
   DD_LOGGER_DD_TRACE_LOG_DIRECTORY: $(System.DefaultWorkingDirectory)/artifacts/build_data/infra_logs
-  ForceDebugRun: $(ForceDebugRun)
+  DD_TRACE_DEBUG: $(ForceDebugRun)
   DD_LOGGER_TF_BUILD: True
   DD_LOGGER_BUILD_BUILDID: $(Build.BuildId)
   DD_LOGGER_BUILD_DEFINITIONNAME: $(Build.DefinitionName)
@@ -4848,7 +4848,7 @@ stages:
           SCENARIOS_TO_RUN="+S ${SCENARIOS//,/ +S }"
 
           DEBUG_FLAG=""
-          if [[ "$(ForceDebugRun)" == "true" || "$(ForceDebugRun)" == "1" ]]; then
+          if [[ "$(DD_TRACE_DEBUG)" == "true" || "$(DD_TRACE_DEBUG)" == "1" ]]; then
             DEBUG_FLAG="--force-dd-trace-debug"
           fi
 
