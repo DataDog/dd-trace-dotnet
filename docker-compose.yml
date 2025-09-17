@@ -208,24 +208,25 @@ services:
     environment:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Strong!Passw0rd -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   azureservicebus-emulator:
     image: mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2
     hostname: azureservicebus-emulator
     container_name: azureservicebus-emulator
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
     environment:
       - ACCEPT_EULA=Y
       - SQL_SERVER=sqlserver:1433
       - MSSQL_SA_PASSWORD=Strong!Passw0rd
     volumes:
       - ./docker/servicebus-emulator-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json:ro
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 5672 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # this docker image doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
   oracle:
@@ -655,43 +656,25 @@ services:
   StartDependencies:
     image: andrewlock/wait-for-dependencies
     depends_on:
-      servicestackredis:
-        condition: service_started
-      stackexchangeredis:
-        condition: service_started
-      stackexchangeredis-replica:
-        condition: service_started
-      stackexchangeredis-single:
-        condition: service_started
-      elasticsearch7:
-        condition: service_started
-      elasticsearch6:
-        condition: service_started
-      elasticsearch5:
-        condition: service_started
-      sqlserver:
-        condition: service_started
+      - servicestackredis
+      - stackexchangeredis
+      - stackexchangeredis-replica
+      - stackexchangeredis-single
+      - elasticsearch7
+      - elasticsearch6
+      - elasticsearch5
+      - sqlserver
       # - oracle disabled for now, image is too big for CI
-      mongo:
-        condition: service_started
-      postgres:
-        condition: service_started
-      mysql:
-        condition: service_started
-      mysql57:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-      kafka-broker:
-        condition: service_started
-      kafka-zookeeper:
-        condition: service_started
-      localstack:
-        condition: service_started
-      couchbase:
-        condition: service_started
-      azureservicebus-emulator:
-        condition: service_healthy
+      - mongo
+      - postgres
+      - mysql
+      - mysql57
+      - rabbitmq
+      - kafka-broker
+      - kafka-zookeeper
+      - localstack
+      - couchbase
+      - azureservicebus-emulator
     environment:
       - TIMEOUT_LENGTH=120
     command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210 azureservicebus-emulator:5672  # oracle:1521
