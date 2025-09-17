@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+#if NET6_0_OR_GREATER
+using System.Data.Common;
+#endif
 
 // ReSharper disable MethodHasAsyncOverloadWithCancellation
 // ReSharper disable MethodSupportsCancellation
@@ -14,6 +17,7 @@ namespace Samples.DatabaseHelper
         /// <summary>
         /// Helper method that runs ADO.NET test suite for the specified <see cref="IDbCommandExecutor"/>
         /// in addition to other built-in implementations.
+        /// Does NOT run batch commands, this is done in <see cref="RunBatchAsync"/>
         /// </summary>
         /// <param name="connection">The <see cref="IDbConnection"/> to use to connect to the database.</param>
         /// <param name="commandFactory">A <see cref="DbCommandFactory"/> implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</param>
@@ -263,5 +267,75 @@ namespace Samples.DatabaseHelper
                 }
             }
         }
+
+#if NET6_0_OR_GREATER
+        /// <summary>
+        /// Runs batch command tests for the specified batch command handler.
+        /// Not all DBs support this, and it's only available on .NET 6.0+
+        /// </summary>
+        public static async Task RunBatchAsync(
+            IDbConnection connection,
+            DbCommandFactory commandFactory,
+            IBatchCommandHandler batchCommandHandler,
+            CancellationToken cancellationToken)
+        {
+            var batchName = batchCommandHandler.BatchTypeName;
+            Console.WriteLine($"BATCH command: {batchName}");
+
+            using (var parentScope = SampleHelpers.CreateScope("batch"))
+            {
+                SampleHelpers.TrySetResourceName(parentScope, batchName);
+
+                using (var scope = SampleHelpers.CreateScope("sync"))
+                {
+                    SampleHelpers.TrySetResourceName(scope, batchName);
+
+                    Console.WriteLine("  Synchronous batch");
+                    Console.WriteLine();
+
+                    var batch = CreateStandardBatch(connection, commandFactory, batchCommandHandler);
+                    batchCommandHandler.ExecuteBatch(batch);
+                }
+
+                using (var scope = SampleHelpers.CreateScope("async"))
+                {
+                    SampleHelpers.TrySetResourceName(scope, batchName);
+
+                    Console.WriteLine("  Asynchronous batch");
+                    Console.WriteLine();
+
+                    var batch = CreateStandardBatch(connection, commandFactory, batchCommandHandler);
+                    await batchCommandHandler.ExecuteBatchAsync(batch);
+                }
+
+                using (var scope = SampleHelpers.CreateScope("async-with-cancellation"))
+                {
+                    SampleHelpers.TrySetResourceName(scope, batchName);
+
+                    Console.WriteLine("  Asynchronous batch with cancellation");
+                    Console.WriteLine();
+
+                    var batch = CreateStandardBatch(connection, commandFactory, batchCommandHandler);
+                    await batchCommandHandler.ExecuteBatchAsync(batch, cancellationToken);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates a commands batch containing first a (DROP TABLE, CREATE TABLE), and then an INSERT command
+        /// </summary>
+        private static DbBatch CreateStandardBatch(
+            IDbConnection connection,
+            DbCommandFactory commandFactory,
+            IBatchCommandHandler batchCommandHandler)
+        {
+            var batch = batchCommandHandler.CreateBatch(connection);
+
+            batch.BatchCommands.Add(batchCommandHandler.CreateBatchCommand(commandFactory.GetCreateTableCommand(connection)));
+            batch.BatchCommands.Add(batchCommandHandler.CreateBatchCommand(commandFactory.GetInsertRowCommand(connection)));
+
+            return batch;
+        }
+#endif
     }
 }
