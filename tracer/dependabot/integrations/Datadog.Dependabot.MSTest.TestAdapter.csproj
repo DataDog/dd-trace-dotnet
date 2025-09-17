@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
+    <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
+    <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices -->
+    <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices -->
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.10.4 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="3.10.4" />
+  </ItemGroup>
+
+</Project>

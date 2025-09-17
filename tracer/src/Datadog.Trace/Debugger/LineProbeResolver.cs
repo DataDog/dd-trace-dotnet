@@ -186,7 +186,10 @@ namespace Datadog.Trace.Debugger
 
             private string GetReversePath(string documentFullPath)
             {
-                var partsReverse = documentFullPath.Split(DirectorySeparatorsCrossPlatform, StringSplitOptions.None).Reverse();
+                // We hit the `public static void Reverse<T>(this Span<T> span)` function here on .NET 3.1+
+                // This causes this to fail to compile.
+                // Just specifying .AsEnumerable for now to minimize changes
+                var partsReverse = documentFullPath.Split(DirectorySeparatorsCrossPlatform, StringSplitOptions.None).AsEnumerable().Reverse();
                 // Preserve the type of slash (back- or forward- slash) that was originally inserted.
                 return string.Join(_directoryPathSeparator ?? Path.DirectorySeparatorChar.ToString(), partsReverse);
             }

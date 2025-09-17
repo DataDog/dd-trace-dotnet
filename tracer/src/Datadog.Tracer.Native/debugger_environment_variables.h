@@ -16,12 +16,17 @@ namespace environment
     const WSTRING internal_instrument_all_lines_enabled = WStr("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES");
     const WSTRING internal_instrument_all_lines_path = WStr("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH");
 
-    // Determines if the Dynamic Instrumentation (aka live debugger) is enabled.
+    // Determines if the Dynamic Instrumentation (aka live debugger) product is enabled.
     const WSTRING dynamic_instrumentation_enabled = WStr("DD_DYNAMIC_INSTRUMENTATION_ENABLED");
 
     // Determines if the Exception Replay product is enabled.
-    const WSTRING exception_debugging_enabled = WStr("DD_EXCEPTION_DEBUGGING_ENABLED"); // Old name
     const WSTRING exception_replay_enabled = WStr("DD_EXCEPTION_REPLAY_ENABLED");
+
+    // Determines if Dynamic Instrumentation should be controlled by managed activation
+    const WSTRING dynamic_instrumentation_managed_activation_enabled = WStr("DD_DYNAMIC_INSTRUMENTATION_MANAGED_ACTIVATION_ENABLED");
+
+    // Determines if Exception Replay should be controlled by managed activation
+    const WSTRING exception_replay_managed_activation_enabled = WStr("DD_EXCEPTION_REPLAY_MANAGED_ACTIVATION_ENABLED");
 
 } // namespace environment
 } // namespace debugger

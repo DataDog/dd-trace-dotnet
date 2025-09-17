@@ -229,6 +229,28 @@ namespace Datadog.Trace.Debugger.Helpers
             return method?.DeclaringType?.GetInterfaces().Any(i => i == typeof(IAsyncStateMachine)) == true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ref AsyncDebuggerState GetStateRef(ref object state)
+        {
+#if NETCOREAPP
+            if (state is not AsyncDebuggerState)
+            {
+                state = new AsyncDebuggerState();
+            }
+
+            return ref Unsafe.Unbox<AsyncDebuggerState>(state);
+#else
+            if (state is StrongBox<AsyncDebuggerState> strongBox)
+            {
+                return ref strongBox.Value;
+            }
+
+            var newBox = new StrongBox<AsyncDebuggerState>(default);
+            state = newBox;
+            return ref newBox.Value;
+#endif
+        }
+
         internal readonly ref struct AsyncKickoffMethodInfo
         {
             public AsyncKickoffMethodInfo(object kickoffParentObject, Type kickoffParentType, MethodBase kickoffMethod)
