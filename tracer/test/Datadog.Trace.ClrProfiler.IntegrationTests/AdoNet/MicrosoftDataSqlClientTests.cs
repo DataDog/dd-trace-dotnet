@@ -58,8 +58,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // - BATCH (v > 5.2): 3 spans
             var isVersion4OrHigher = string.IsNullOrWhiteSpace(packageVersion)
                                   || new Version(packageVersion) >= new Version("4.0.0");
-            var isVersion52OrHigher = string.IsNullOrWhiteSpace(packageVersion)
-                                   || new Version(packageVersion) >= new Version("5.2.0");
+            var batchSupported = (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("5.2.0"))
+                              && Environment.Version.Major >= 6;
 
             if (isVersion4OrHigher && FrameworkDescription.Instance.OSPlatform != OSPlatformName.Windows)
             {
@@ -67,8 +67,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 return;
             }
 
-            var expectedSpanCount = isVersion52OrHigher ? 94 :
-                                    isVersion4OrHigher  ? 91 : 147;
+            var expectedSpanCount = batchSupported     ? 94 :
+                                    isVersion4OrHigher ? 91 : 147;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 

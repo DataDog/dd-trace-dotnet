@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -55,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // BATCH (v6+): +3 spans
             var expectedSpanCount = 150;
-            if (!string.IsNullOrEmpty(packageVersion) && packageVersion[0] < '6')
+            if ((!string.IsNullOrEmpty(packageVersion) && packageVersion[0] < '6') || Environment.Version.Major < 6)
             {
                 // no batch support in older versions
                 expectedSpanCount -= 3;
