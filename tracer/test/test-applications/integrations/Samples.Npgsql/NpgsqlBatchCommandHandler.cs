@@ -1,4 +1,4 @@
-#if NET6_0_OR_GREATER
+#if HAS_BATCH_SUPPORT && NET6_0_OR_GREATER
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
