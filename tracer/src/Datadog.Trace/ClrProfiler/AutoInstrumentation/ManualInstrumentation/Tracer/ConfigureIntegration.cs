@@ -55,6 +55,9 @@ public class ConfigureIntegration
                 ? new ManualInstrumentationLegacyConfigurationSource(values, isFromDefaults)
                 : new ManualInstrumentationConfigurationSource(values, isFromDefaults);
 
+        // We need to save this immediately, even if there's no manifest changes in the final settings
+        GlobalConfigurationSource.UpdateManualConfigurationSource(manualConfig);
+
         var tracerSettings = Datadog.Trace.Tracer.Instance.Settings;
         var dynamicConfig = GlobalConfigurationSource.DynamicConfigurationSource;
         var initialSettings = isFromDefaults
@@ -94,8 +97,6 @@ public class ConfigureIntegration
         }
 
         Log.Information("Applying new configuration in code");
-        GlobalConfigurationSource.UpdateManualConfigurationSource(manualConfig);
-
         TracerSettings newSettings;
         if (isSameExporterSettings)
         {

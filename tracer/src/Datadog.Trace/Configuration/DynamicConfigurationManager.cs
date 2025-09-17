@@ -70,6 +70,9 @@ namespace Datadog.Trace.Configuration
                                       ? tracerSettings.InitialMutableSettings
                                       : MutableSettings.CreateWithoutDefaultSources(tracerSettings);
 
+            // We save this immediately, even if there's no manifest changes in the final settings
+            GlobalConfigurationSource.UpdateDynamicConfigConfigurationSource(dynamicConfig);
+
             OnConfigurationChanged(
                 dynamicConfig,
                 manualSource,
@@ -105,8 +108,6 @@ namespace Datadog.Trace.Configuration
             }
 
             Log.Information("Applying new dynamic configuration");
-            GlobalConfigurationSource.UpdateDynamicConfigConfigurationSource(dynamicConfig);
-
             var newSettings = tracerSettings with { MutableSettings = newMutableSettings };
 
             /*
