@@ -90,7 +90,7 @@ namespace Datadog.Trace.Configuration
                 tracerSettings,
                 // TODO: In the future this will 'live' elsewhere
                 currentSettings: tracerSettings.MutableSettings,
-                TelemetryFactory.Config,
+                new ConfigurationTelemetry(),
                 new OverrideErrorLog()); // TODO: We'll later report these
         }
 
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Configuration
             MutableSettings initialSettings,
             TracerSettings tracerSettings,
             MutableSettings currentSettings,
-            IConfigurationTelemetry telemetry,
+            ConfigurationTelemetry telemetry,
             OverrideErrorLog errorLog)
         {
             var newMutableSettings = MutableSettings.CreateUpdatedMutableSettings(
@@ -114,6 +114,12 @@ namespace Datadog.Trace.Configuration
             if (currentSettings.Equals(newMutableSettings))
             {
                 Log.Debug("No changes detected in the new dynamic configuration");
+                // Even though there were no "real" changes, there may be _effective_ changes in telemetry that
+                // need to be recorded (e.g. the customer set the value in code but it was already set via
+                // env vars). We _should_ record exporter settings too, but that introduces a bunch of complexity
+                // which we'll resolve later anyway, so just have that gap for now (it's very niche).
+                // If there are changes, they're recorded automatically in ConfigureInternal
+                telemetry.CopyTo(TelemetryFactory.Config);
                 return;
             }
 

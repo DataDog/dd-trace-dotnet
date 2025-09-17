@@ -67,12 +67,13 @@ public class ConfigureIntegration
         // TODO: these will eventually live elsewhere
         var currentSettings = tracerSettings.MutableSettings;
 
+        var manualTelemetry = new ConfigurationTelemetry();
         var newMutableSettings = MutableSettings.CreateUpdatedMutableSettings(
             dynamicConfig,
             manualConfig,
             initialSettings,
             tracerSettings,
-            TelemetryFactory.Config,
+            manualTelemetry,
             new OverrideErrorLog()); // TODO: We'll later report these
 
         var isSameMutableSettings = currentSettings.Equals(newMutableSettings);
@@ -93,6 +94,12 @@ public class ConfigureIntegration
         if (isSameMutableSettings && isSameExporterSettings)
         {
             Log.Debug("No changes detected in the new configuration in code");
+            // Even though there were no "real" changes, there may be _effective_ changes in telemetry that
+            // need to be recorded (e.g. the customer set the value in code but it was already set via
+            // env vars). We _should_ record exporter settings too, but that introduces a bunch of complexity
+            // which we'll resolve later anyway, so just have that gap for now (it's very niche).
+            // If there are changes, they're recorded automatically in ConfigureInternal
+            manualTelemetry.CopyTo(TelemetryFactory.Config);
             return;
         }
 
