@@ -104,6 +104,7 @@ variables:
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
   DD_LOGGER_DD_TRACE_LOG_DIRECTORY: $(System.DefaultWorkingDirectory)/artifacts/build_data/infra_logs
+  ForceDebugRun: false
   DD_TRACE_DEBUG: $(ForceDebugRun)
   DD_LOGGER_TF_BUILD: True
   DD_LOGGER_BUILD_BUILDID: $(Build.BuildId)
