@@ -4665,7 +4665,7 @@ stages:
     #   artifact: execution_time_report
 
 - stage: system_tests
-  dependsOn: [package_linux, merge_commit_id]
+  dependsOn: [merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -4690,7 +4690,7 @@ stages:
             versionSpec: '3.12'
           displayName: Install python 3.12
 
-        - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+        - script: git clone --depth 1 --branch andrew/config-testing https://github.com/DataDog/system-tests.git
           displayName: Get system tests repo
           
         - script: |
@@ -4735,12 +4735,18 @@ stages:
           displayName: Generate scenarios matrix JSON
           name: create_matrix
           workingDirectory: system-tests
-          
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: linux-packages-linux-x64
-            patterns: '**/*tar.gz'
-            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: "Download artifact"
+          inputs:
+            buildType: 'specific'
+            project: 'dd-trace-dotnet'
+            definition: 54
+            buildVersionToDownload: 'specific'
+            pipelineId: 187298
+            artifactName: linux-packages-linux-x64
+            targetPath: $(Build.ArtifactStagingDirectory)
+            itemPattern: '**/*tar.gz'
 
         - script: |
             PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
@@ -4792,7 +4798,7 @@ stages:
           versionSpec: '3.12'
         displayName: Install python 3.12
 
-      - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+      - script: git clone --depth 1 --branch andrew/config-testing https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
         
       - template: steps/download-artifact.yml
