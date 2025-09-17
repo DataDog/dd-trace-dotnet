@@ -109,6 +109,12 @@ void SsiManager::OnShortLivedEnds()
 
 void SsiManager::OnSpanCreated()
 {
+    // useful only for the first span
+    if (_hasSpan)
+    {
+        return;
+    }
+
     _hasSpan = true;
 
     auto enablementStatus = GetCurrentEnabledStatus();
