@@ -1,4 +1,5 @@
 #if NET6_0_OR_GREATER
+using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +20,7 @@ public interface IBatchCommandHandler
 
     DbBatch CreateBatch(IDbConnection connection);
 
-    DbBatchCommand CreateBatchCommand(IDbCommand command);
+    DbBatchCommand CreateBatchCommand(string commandText, params KeyValuePair<string, object>[] parameters);
 
     void ExecuteBatch(DbBatch batch);
 

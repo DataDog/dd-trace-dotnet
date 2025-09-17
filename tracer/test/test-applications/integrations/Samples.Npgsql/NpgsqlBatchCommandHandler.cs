@@ -1,4 +1,5 @@
 #if HAS_BATCH_SUPPORT && NET6_0_OR_GREATER
+using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,12 +19,12 @@ public class NpgsqlBatchCommandHandler : IBatchCommandHandler
         return new NpgsqlBatch(npgsqlConnection);
     }
 
-    public DbBatchCommand CreateBatchCommand(IDbCommand command)
+    public DbBatchCommand CreateBatchCommand(string commandText, params KeyValuePair<string, object>[] parameters)
     {
-        var batchCommand = new NpgsqlBatchCommand(command.CommandText);
-        foreach (IDataParameter parameter in command.Parameters)
+        var batchCommand = new NpgsqlBatchCommand(commandText);
+        foreach (var parameter in parameters)
         {
-            var npgsqlParam = new NpgsqlParameter(parameter.ParameterName, parameter.Value);
+            var npgsqlParam = new NpgsqlParameter(parameter.Key, parameter.Value);
             batchCommand.Parameters.Add(npgsqlParam);
         }
 

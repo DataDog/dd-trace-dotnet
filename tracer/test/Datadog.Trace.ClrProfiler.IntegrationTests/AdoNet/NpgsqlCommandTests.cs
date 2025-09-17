@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -45,8 +43,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // - DbCommand:  42 spans (6 groups * 7 spans)
             // - IDbCommand: 14 spans (2 groups * 7 spans)
             //
-            // BATCH (v6+): +1 span
-            //
             // NETSTANDARD: +56 spans
             // - DbCommand-netstandard:  42 spans (6 groups * 7 spans)
             // - IDbCommand-netstandard: 14 spans (2 groups * 7 spans)
@@ -56,11 +52,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<NpgsqlCommand>-netstandard: 7 spans (1 group * 7 spans)
-            var expectedSpanCount = 148;
+            //
+            // BATCH (v6+): +3 spans
+            var expectedSpanCount = 150;
             if (!string.IsNullOrEmpty(packageVersion) && packageVersion[0] < '6')
             {
                 // no batch support in older versions
-                expectedSpanCount--;
+                expectedSpanCount -= 3;
             }
 
             const string dbType = "postgres";

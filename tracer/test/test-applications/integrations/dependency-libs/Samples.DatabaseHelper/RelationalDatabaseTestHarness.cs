@@ -293,7 +293,7 @@ namespace Samples.DatabaseHelper
                     Console.WriteLine("  Synchronous batch");
                     Console.WriteLine();
 
-                    var batch = CreateStandardBatch(connection, commandFactory, batchCommandHandler);
+                    var batch = commandFactory.GetBatchCommand(connection, batchCommandHandler);
                     batchCommandHandler.ExecuteBatch(batch);
                 }
 
@@ -304,7 +304,7 @@ namespace Samples.DatabaseHelper
                     Console.WriteLine("  Asynchronous batch");
                     Console.WriteLine();
 
-                    var batch = CreateStandardBatch(connection, commandFactory, batchCommandHandler);
+                    var batch = commandFactory.GetBatchCommand(connection, batchCommandHandler);
                     await batchCommandHandler.ExecuteBatchAsync(batch);
                 }
 
@@ -315,26 +315,10 @@ namespace Samples.DatabaseHelper
                     Console.WriteLine("  Asynchronous batch with cancellation");
                     Console.WriteLine();
 
-                    var batch = CreateStandardBatch(connection, commandFactory, batchCommandHandler);
+                    var batch = commandFactory.GetBatchCommand(connection, batchCommandHandler);
                     await batchCommandHandler.ExecuteBatchAsync(batch, cancellationToken);
                 }
             }
-        }
-
-        /// <summary>
-        /// Creates a commands batch containing first a (DROP TABLE, CREATE TABLE), and then an INSERT command
-        /// </summary>
-        private static DbBatch CreateStandardBatch(
-            IDbConnection connection,
-            DbCommandFactory commandFactory,
-            IBatchCommandHandler batchCommandHandler)
-        {
-            var batch = batchCommandHandler.CreateBatch(connection);
-
-            batch.BatchCommands.Add(batchCommandHandler.CreateBatchCommand(commandFactory.GetCreateTableCommand(connection)));
-            batch.BatchCommands.Add(batchCommandHandler.CreateBatchCommand(commandFactory.GetInsertRowCommand(connection)));
-
-            return batch;
         }
 #endif
     }

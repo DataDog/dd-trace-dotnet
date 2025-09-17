@@ -1,4 +1,5 @@
 #if NET6_0_OR_GREATER && HAS_BATCH_SUPPORT
+using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,12 +19,12 @@ public class SqlClientBatchCommandHandler : IBatchCommandHandler
         return new SqlBatch(sqlConnection);
     }
 
-    public DbBatchCommand CreateBatchCommand(IDbCommand command)
+    public DbBatchCommand CreateBatchCommand(string commandText, params KeyValuePair<string, object>[] parameters)
     {
-        var batchCommand = new SqlBatchCommand(command.CommandText);
-        foreach (IDataParameter parameter in command.Parameters)
+        var batchCommand = new SqlBatchCommand(commandText);
+        foreach (var parameter in parameters)
         {
-            var npgsqlParam = new SqlParameter(parameter.ParameterName, parameter.Value);
+            var npgsqlParam = new SqlParameter(parameter.Key, parameter.Value);
             batchCommand.Parameters.Add(npgsqlParam);
         }
 
