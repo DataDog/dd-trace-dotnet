@@ -1232,7 +1232,7 @@ namespace Datadog.Trace.Configuration
             => MutableSettings.IsErrorStatusCode(statusCode, serverStatusCode);
 
         internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
-            => MutableSettings.IsIntegrationEnabled(integration, defaultValue);
+            => DynamicSettings.TraceEnabled != false && MutableSettings.IsIntegrationEnabled(integration, defaultValue);
 
         [Obsolete(DeprecationMessages.AppAnalytics)]
         internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
