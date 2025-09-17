@@ -4848,7 +4848,7 @@ stages:
           SCENARIOS_TO_RUN="+S ${SCENARIOS//,/ +S }"
 
           DEBUG_FLAG=""
-          if [[ "$(DD_TRACE_DEBUG)" == "true" ]]; then
+          if [[ "$(DD_TRACE_DEBUG)" == "True" ]]; then
             DEBUG_FLAG="--force-dd-trace-debug"
           fi
 
