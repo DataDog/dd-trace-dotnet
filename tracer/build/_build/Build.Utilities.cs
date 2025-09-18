@@ -498,7 +498,6 @@ partial class Build
                      "updates the bundle contents with a local build of Datadog.Trace.dll, " +
                      "and rebuilds the package")
         .Requires(() => BuildId)
-        .Requires(() => AzureDevopsToken)
         .Triggers(BuildAzureFunctionsNuget)
         .Executes(async () =>
         {
