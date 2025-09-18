@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
             try
             {
                 tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsStepFunctionsServiceName);
+                var serviceName = tracer.CurrentTraceSettings.GetServiceName(DatadogAwsStepFunctionsServiceName);
                 var operationName = GetOperationName(tracer, spanKind);
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
