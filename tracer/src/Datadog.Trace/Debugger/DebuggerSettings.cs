@@ -9,12 +9,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger
 {
-    internal class DebuggerSettings
+    internal record DebuggerSettings
     {
         public const string DebuggerMetricPrefix = "dynamic.instrumentation.metric.probe";
         public const int DefaultMaxDepthToSerialize = 3;
@@ -34,8 +35,11 @@ namespace Datadog.Trace.Debugger
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(false);
-            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
+            var diEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBoolResult();
+            DynamicInstrumentationEnabled = diEnabledResult.WithDefault(false);
+            DynamicInstrumentationCanBeEnabled = diEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
+
+            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(DynamicInstrumentationCanBeEnabled);
 
             MaximumDepthOfMembersToCopy = config
                                          .WithKeys(ConfigurationKeys.Debugger.MaxDepthToSerialize)
@@ -131,7 +135,9 @@ namespace Datadog.Trace.Debugger
 
             RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
 
-            CodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(false);
+            var coEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBoolResult();
+            CodeOriginForSpansCanBeEnabled = coEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
+            CodeOriginForSpansEnabled = CodeOriginForSpansCanBeEnabled && (coEnabledResult.WithDefault(false) || DynamicInstrumentationEnabled);
 
             CodeOriginMaxUserFrames = config
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
@@ -141,7 +147,11 @@ namespace Datadog.Trace.Debugger
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
         }
 
+        internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
+
         public bool DynamicInstrumentationEnabled { get; }
+
+        public bool DynamicInstrumentationCanBeEnabled { get; }
 
         public bool SymbolDatabaseUploadEnabled { get; }
 
@@ -174,6 +184,8 @@ namespace Datadog.Trace.Debugger
         public HashSet<string> RedactedTypes { get; }
 
         public bool CodeOriginForSpansEnabled { get; }
+
+        public bool CodeOriginForSpansCanBeEnabled { get; }
 
         public int CodeOriginMaxUserFrames { get; }
 
