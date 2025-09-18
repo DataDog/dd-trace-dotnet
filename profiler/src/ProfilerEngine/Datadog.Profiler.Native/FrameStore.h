@@ -14,6 +14,9 @@
 #include "shared/src/native-src/com_ptr.h"
 
 class IConfiguration;
+namespace libdatadog {
+    class SymbolsStore;
+}
 
 class FrameStore : public IFrameStore
 {
@@ -46,7 +49,7 @@ public:
     FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore);
 
 public:
-    std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override;
+    std::pair<bool, MyFrameInfo> GetFrame(uintptr_t instructionPointer) override;
     bool GetTypeName(ClassID classId, std::string& name) override;
     bool GetTypeName(ClassID classId, std::string_view& name) override;
 
@@ -79,8 +82,8 @@ private:
         const char* arraySuffix);
     bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc);
-    FrameInfoView GetManagedFrame(FunctionID functionId);
-    std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
+    MyFrameInfo GetManagedFrame(FunctionID functionId);
+    std::pair<ddog_prof_MappingId, ddog_prof_FunctionId> GetNativeFrame(uintptr_t instructionPointer);
 
 public:   // global helpers
     static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName);
@@ -127,31 +130,18 @@ private:  // global helpers
     static void ConcatUnknownGenericType(std::stringstream& builder);
 
 private:
-    struct FrameInfo
-    {
-    public:
-        std::string ModuleName;
-        std::string Frame;
-        std::string_view Filename;
-        std::uint32_t StartLine;
-
-        operator FrameInfoView() const
-        {
-            return {ModuleName, Frame, Filename, StartLine};
-        }
-    };
-
     ICorProfilerInfo4* _pCorProfilerInfo;
     IDebugInfoStore* _pDebugInfoStore;
+    libdatadog::SymbolsStore* _pSymbolsStore;
 
     std::mutex _methodsLock;
     std::mutex _nativeLock;
 
     // frame relate caches functions
-    std::unordered_map<FunctionID, FrameInfo> _methods;
+    std::unordered_map<FunctionID, MyFrameInfo> _methods;
     std::mutex _typesLock;
     std::unordered_map<ClassID, TypeDesc> _types;
-    std::unordered_map<std::string, std::string> _framePerNativeModule;
+    std::unordered_map<ddog_prof_MappingId, ddog_prof_FunctionId> _framePerNativeModule;
 
     // for allocation recorder
     std::mutex _fullTypeNamesLock;

@@ -103,12 +103,12 @@ void Sample::AddValue(std::int64_t value, size_t index)
     _values[index] = value;
 }
 
-void Sample::AddFrame(FrameInfoView const& frame)
+void Sample::AddFrame(MyFrameInfo frame)
 {
     _callstack.push_back(frame);
 }
 
-const std::vector<FrameInfoView>& Sample::GetCallstack() const
+const std::vector<MyFrameInfo>& Sample::GetCallstack() const
 {
     return _callstack;
 }
