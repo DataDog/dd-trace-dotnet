@@ -74,7 +74,7 @@ namespace Datadog.Trace
             {
                 if (Profiler.Instance.Status.IsProfilerReady)
                 {
-                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.DefaultServiceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.PerTraceSettings.Settings.DefaultServiceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
                 }
             }
             catch (Exception ex)
@@ -121,7 +121,7 @@ namespace Datadog.Trace
                 Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
             }
 
-            var defaultServiceName = settings.MutableSettings.ServiceName ?? ApplicationNameHelpers.GetFallbackApplicationName(settings);
+            var defaultServiceName = settings.MutableSettings.DefaultServiceName;
 
             discoveryService ??= GetDiscoveryService(settings);
 
@@ -183,7 +183,7 @@ namespace Datadog.Trace
                     var rcmApi = RemoteConfigurationApiFactory.Create(settings.Exporter, rcmSettings, discoveryService);
 
                     // Service Name must be lowercase, otherwise the agent will not be able to find the service
-                    var serviceName = TraceUtil.NormalizeTag(settings.ServiceName ?? defaultServiceName);
+                    var serviceName = TraceUtil.NormalizeTag(defaultServiceName);
 
                     remoteConfigurationManager =
                         RemoteConfigurationManager.Create(
@@ -225,7 +225,6 @@ namespace Datadog.Trace
                 telemetry,
                 discoveryService,
                 dataStreamsManager,
-                defaultServiceName,
                 gitMetadataTagsProvider,
                 sampler,
                 GetSpanSampler(settings),
@@ -261,7 +260,6 @@ namespace Datadog.Trace
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
-            string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -269,7 +267,7 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
