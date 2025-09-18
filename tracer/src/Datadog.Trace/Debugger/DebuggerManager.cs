@@ -88,7 +88,7 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                return TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? TracerManager.Instance.DefaultServiceName);
+                return TraceUtil.NormalizeTag(tracerSettings.MutableSettings.DefaultServiceName);
             }
             catch (Exception e)
             {
