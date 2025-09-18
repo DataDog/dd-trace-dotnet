@@ -8,6 +8,11 @@
 #include <string>
 #include <cstdint>
 
+extern "C" {
+    #include "datadog/common.h"
+    #include "datadog/profiling.h"
+}
+
 struct FrameInfoView
 {
 public:
@@ -17,6 +22,14 @@ public:
     std::uint32_t StartLine;
 };
 
+struct MyFrameInfo
+{
+public:
+    ddog_prof_FunctionId  FunctionId;
+    ddog_prof_MappingId ModuleId;
+    std::uint32_t       StartLine;
+};
+
 class IFrameStore
 {
 public:
@@ -24,7 +37,7 @@ public:
 
     // return
     //  - true if managed frame
-    virtual std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) = 0;
+    virtual std::pair<bool, MyFrameInfo> GetFrame(uintptr_t instructionPointer) = 0;
     virtual bool GetTypeName(ClassID classId, std::string& name) = 0;
     virtual bool GetTypeName(ClassID classId, std::string_view& name) = 0;
 };

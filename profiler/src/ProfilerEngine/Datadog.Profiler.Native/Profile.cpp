@@ -96,9 +96,11 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     {
         // All timestamps give the time when "something" ends and the associated duration
         // happened in the past
+        ddog_prof_SampleBuilder_timestamp
         timestamp = sample->GetTimeStamp();
     }
 
+    //ddog_prof_SampleBuilder_build_into_profile
     auto add_res = ddog_prof_Profile_add(&profile, ffiSample, timestamp.count());
     if (add_res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
     {

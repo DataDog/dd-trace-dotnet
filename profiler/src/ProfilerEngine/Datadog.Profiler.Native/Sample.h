@@ -61,7 +61,7 @@ private:
 public:
     std::chrono::nanoseconds GetTimeStamp() const;
     const Values& GetValues() const;
-    const std::vector<FrameInfoView>& GetCallstack() const;
+    const std::vector<MyFrameInfo>& GetCallstack() const;
     const Labels& GetLabels() const;
     std::string_view GetRuntimeId() const;
 
@@ -72,7 +72,7 @@ public:
     // but it seems better for encapsulation to do the transformation between collected raw data
     // and a Sample in each Provider (this is behind CollectorBase template class)
     void AddValue(std::int64_t value, size_t index);
-    void AddFrame(FrameInfoView const& frame);
+    void AddFrame(MyFrameInfo frame);
 
     template <typename T>
     void AddLabel(T&& label)
@@ -181,7 +181,7 @@ public:
 
 private:
     std::chrono::nanoseconds _timestamp;
-    std::vector<FrameInfoView> _callstack;
+    std::vector<MyFrameInfo> _callstack;
     Values _values;
     Labels _allLabels;
     std::string_view _runtimeId;
