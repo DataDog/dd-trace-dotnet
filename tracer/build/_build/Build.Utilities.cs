@@ -493,12 +493,9 @@ partial class Build
                     }
                 });
 
-       Target UpdateAzureFunctionsNugetFromBuild => _ => _
-        .Description("Downloads Datadog.AzureFunctions package from Azure DevOps, " +
-                     "updates the bundle contents with a local build of Datadog.Trace.dll, " +
-                     "and rebuilds the package")
+       Target DownloadBundleNugetFromBuild => _ => _
+        .Description("Downloads Datadog.Trace.Bundle package from Azure DevOps and extracts it to the local bundle home directory")
         .Requires(() => BuildId)
-        .Triggers(BuildAzureFunctionsNuget)
         .Executes(async () =>
         {
             if (!int.TryParse(BuildId, out var buildNumber))
@@ -506,17 +503,15 @@ partial class Build
                 throw new InvalidParametersException("BuildId should be an int");
             }
 
-            const string artifactName = "azurefunctions-nuget-package";
+            const string artifactName = "bundle-nuget-package";
 
-            var tempRoot = TemporaryDirectory / "azurefunctions-local-build";
+            var tempRoot = TemporaryDirectory / "bundle-nuget";
             var downloadDirectory = tempRoot / "download";
             var packageExtractionDirectory = tempRoot / "package";
-            var publishDirectory = tempRoot / "publish";
 
             EnsureCleanDirectory(tempRoot);
             EnsureExistingDirectory(downloadDirectory);
             EnsureExistingDirectory(packageExtractionDirectory);
-            EnsureExistingDirectory(publishDirectory);
 
             using var connection = new VssConnection(
                 new Uri(AzureDevopsOrganisation),
@@ -533,11 +528,11 @@ partial class Build
 
             var artifactDirectory = downloadDirectory / artifact.Name;
 
-            var packageFile = artifactDirectory.GlobFiles("Datadog.AzureFunctions*.nupkg").FirstOrDefault();
+            var packageFile = artifactDirectory.GlobFiles("Datadog.Trace.Bundle.*.nupkg").FirstOrDefault();
 
             if (packageFile is null)
             {
-                throw new Exception($"Datadog.AzureFunctions package was not found in artifact '{artifact.Name}'.");
+                throw new Exception($"Datadog.Trace.Bundle package was not found in artifact '{artifact.Name}'.");
             }
 
             EnsureCleanDirectory(packageExtractionDirectory);
@@ -552,8 +547,21 @@ partial class Build
 
             EnsureCleanDirectory(BundleHomeDirectory);
             CopyDirectoryRecursively(contentDirectory, BundleHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+        });
 
+       Target UpdateAzureFunctionsNugetFromBuild => _ => _
+        .Description("Updates the bundle home contents with local builds of Datadog.Trace.dll, and rebuilds the Datadog.AzureFunctions package")
+        .DependsOn(DownloadBundleNugetFromBuild)
+        .Triggers(BuildAzureFunctionsNuget)
+        .Executes(() =>
+        {
             var frameworks = new[] { TargetFramework.NET6_0, TargetFramework.NET461 };
+
+            var tempRoot = TemporaryDirectory / "azurefunctions-local-build";
+            var publishDirectory = tempRoot / "publish";
+
+            EnsureCleanDirectory(tempRoot);
+            EnsureExistingDirectory(publishDirectory);
 
             DotNetPublish(settings => settings
                 .SetProject(Solution.GetProject(Projects.DatadogTrace))
