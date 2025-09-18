@@ -65,7 +65,7 @@ namespace Datadog.Trace.ContinuousProfiler
 
                 if (!ProfilerAvailabilityHelper.IsContinuousProfilerAvailable)
                 {
-                    Log.Debug("The continuous profiler is not available in this environment.");
+                    Log.Information("The continuous profiler is not available in this environment.");
                     return;
                 }
 
