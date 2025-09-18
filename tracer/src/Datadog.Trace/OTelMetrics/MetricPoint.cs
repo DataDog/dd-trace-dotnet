@@ -14,13 +14,13 @@ using System.Threading;
 
 namespace Datadog.Trace.OTelMetrics
 {
-    internal class MetricPoint(string instrumentName, string meterName, string instrumentType, string temporality, Dictionary<string, object?> tags, bool isIntegerValue = false)
+    internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, string temporality, Dictionary<string, object?> tags, bool isIntegerValue = false)
     {
         // Static fields first
         internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
 
         // Instance fields
-        private readonly long[] _runningBucketCounts = instrumentType == "Histogram" ? new long[DefaultHistogramBounds.Length + 1] : [];
+        private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
         private readonly object _histogramLock = new();
         private long _runningCountValue;     // For counters and histogram count
         private double _runningDoubleValue;  // For gauges and histogram sum
@@ -34,7 +34,7 @@ namespace Datadog.Trace.OTelMetrics
 
         public string MeterName { get; } = meterName;
 
-        public string InstrumentType { get; } = instrumentType;
+        public InstrumentType InstrumentType { get; } = instrumentType;
 
         public string AggregationTemporality { get; } = temporality;
 

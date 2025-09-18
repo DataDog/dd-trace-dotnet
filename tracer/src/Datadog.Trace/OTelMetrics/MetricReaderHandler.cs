@@ -11,7 +11,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.OTelMetrics
@@ -22,15 +24,23 @@ namespace Datadog.Trace.OTelMetrics
 
         // Temporary storage for aggregation (like RuntimeMetrics._exceptionCounts)
         // Will be cleared after each export to prevent memory leaks
-        private static readonly ConcurrentDictionary<string, MetricPoint> CapturedMetrics = new();
+        private static readonly ConcurrentDictionary<MetricStreamIdentity, MetricPoint> CapturedMetrics = new();
+        private static readonly HashSet<string> MetricStreamNames = new(StringComparer.OrdinalIgnoreCase);
 
-        private static readonly Dictionary<string, object?> EmptyTags = new();
-        private static string? _cachedTemporality;
+        private static int _metricCount;
 
         public static void OnInstrumentPublished(Instrument instrument, MeterListener listener)
         {
-            bool shouldEnable;
             var meterName = instrument.Meter.Name;
+
+            // RFC requirement: Validate instrument name syntax
+            if (!IsValidInstrumentName(instrument.Name))
+            {
+                Log.Warning("Invalid instrument name '{InstrumentName}' from meter '{MeterName}'. Instrument names must be ASCII, start with letter, contain only alphanumeric characters, '_', '.', '/', '-' and be max 255 characters.", instrument.Name, meterName);
+                return; // Skip this instrument
+            }
+
+            bool shouldEnable;
             var enabledMeterNames = Tracer.Instance.Settings.OpenTelemetryMeterNames;
 
             if (enabledMeterNames.Length > 0)
@@ -44,127 +54,68 @@ namespace Datadog.Trace.OTelMetrics
 
             if (shouldEnable)
             {
-                listener.EnableMeasurementEvents(instrument, state: null);
-                Log.Debug("Enabled measurement events for instrument: {InstrumentName} from meter: {MeterName}", instrument.Name, meterName);
+                // Create state object for this instrument to avoid ConcurrentDictionary contention
+                var state = CreateMetricState(instrument);
+                if (state != null)
+                {
+                    listener.EnableMeasurementEvents(instrument, state);
+                    Log.Debug("Enabled measurement events for instrument: {InstrumentName} from meter: {MeterName}", instrument.Name, meterName);
+                }
+                else
+                {
+                    Log.Warning("Failed to create MetricState for instrument '{InstrumentName}' from meter '{MeterName}'. Instrument will be ignored.", instrument.Name, meterName);
+                }
             }
         }
 
         public static void OnMeasurementRecordedLong(Instrument instrument, long value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
         {
-            ProcessMeasurement(instrument, value, tags, isInteger: true);
+            if (state is MetricState metricState)
+            {
+                metricState.RecordMeasurementLong(value, tags);
+            }
+            else
+            {
+                // Log error - this should not happen if we follow OTel SDK pattern
+                Log.Warning("Measurement recorded for instrument '{InstrumentName}' but no MetricState provided. Measurement will be dropped.", instrument.Name);
+            }
         }
 
         public static void OnMeasurementRecordedDouble(Instrument instrument, double value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
         {
-            ProcessMeasurement(instrument, value, tags, isInteger: false);
-        }
-
-        private static void ProcessMeasurement<T>(Instrument instrument, T value, ReadOnlySpan<KeyValuePair<string, object?>> tags, bool isInteger)
-            where T : struct
-        {
-            try
+            if (state is MetricState metricState)
             {
-                var instrumentType = instrument.GetType().FullName;
-                if (instrumentType is null)
-                {
-                    Log.Warning("Unable to get the full name of the instrument type for: {InstrumentName}", instrument.Name);
-                    return;
-                }
-
-                ProcessMeasurementCore(instrument, instrumentType, value, tags, isInteger);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error processing measurement for instrument: {InstrumentName}", instrument.Name);
-            }
-        }
-
-        private static void ProcessMeasurementCore<T>(Instrument instrument, string instrumentType, T value, ReadOnlySpan<KeyValuePair<string, object?>> tags, bool isInteger)
-            where T : struct
-        {
-            string aggregationType;
-            if (instrumentType.StartsWith("System.Diagnostics.Metrics.Counter`1") ||
-                instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableCounter`1"))
-            {
-                aggregationType = "Counter";
-            }
-            else if (instrumentType.StartsWith("System.Diagnostics.Metrics.UpDownCounter`1") ||
-                     instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableUpDownCounter`1"))
-            {
-                aggregationType = "UpDownCounter";
-            }
-            else if (instrumentType.StartsWith("System.Diagnostics.Metrics.Gauge`1") ||
-                     instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableGauge`1"))
-            {
-                aggregationType = "Gauge";
-            }
-            else if (instrumentType.StartsWith("System.Diagnostics.Metrics.Histogram`1"))
-            {
-                aggregationType = "Histogram";
+                metricState.RecordMeasurementDouble(value, tags);
             }
             else
             {
-                Log.Debug("Skipping unsupported instrument: {InstrumentName} of type: {InstrumentType}", instrument.Name, instrumentType);
-                return;
+                // Log error - this should not happen if we follow OTel SDK pattern
+                Log.Warning("Measurement recorded for instrument '{InstrumentName}' but no MetricState provided. Measurement will be dropped.", instrument.Name);
             }
-
-            var doubleValue = Convert.ToDouble(value);
-
-            // RFC requirement: Validate negative values for Counter and Histogram
-            if ((aggregationType == "Counter" || aggregationType == "Histogram") && doubleValue < 0)
-            {
-                Log.Warning("Ignoring negative value {Value} for {InstrumentType} instrument: {InstrumentName}. API usage is incorrect.", doubleValue, aggregationType, instrument.Name);
-                return;
-            }
-
-            var meterName = instrument.Meter.Name;
-            var key = string.Concat(meterName, ".", instrument.Name);
-            var temporality = GetTemporalityString();
-
-            var tagsDict = tags.Length == 0 ? EmptyTags : CreateTagsDictionary(tags);
-
-            CapturedMetrics.AddOrUpdate(
-                key,
-                _ =>
-                {
-                    var newMetric = new MetricPoint(instrument.Name, meterName, aggregationType, temporality, tagsDict, isInteger);
-                    UpdateMetricPoint(newMetric, aggregationType, doubleValue);
-                    return newMetric;
-                },
-                (_, existing) =>
-                {
-                    existing.IsIntegerValue = isInteger;
-                    UpdateMetricPoint(existing, aggregationType, doubleValue);
-                    return existing;
-                });
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void UpdateMetricPoint(MetricPoint metricPoint, string aggregationType, double value)
+        // Overloads for different numeric types
+        public static void OnMeasurementRecordedByte(Instrument instrument, byte value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
         {
-            switch (aggregationType)
-            {
-                case "Counter":
-                case "UpDownCounter":
-                    metricPoint.UpdateCounter(value);
-                    break;
-                case "Gauge":
-                    metricPoint.UpdateGauge(value);
-                    break;
-                case "Histogram":
-                    metricPoint.UpdateHistogram(value);
-                    break;
-            }
+            OnMeasurementRecordedLong(instrument, value, tags, state);
         }
 
-        internal static void TriggerAsyncCollection()
+        public static void OnMeasurementRecordedShort(Instrument instrument, short value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
         {
-            Log.Debug("Manually triggering async instrument collection...");
-            MetricReader.CollectObservableInstruments();
-            Log.Debug("Async collection triggered.");
+            OnMeasurementRecordedLong(instrument, value, tags, state);
         }
 
-        internal static IReadOnlyDictionary<string, MetricPoint> GetMetricsForExport(bool clearAfterGet = false)
+        public static void OnMeasurementRecordedInt(Instrument instrument, int value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
+        {
+            OnMeasurementRecordedLong(instrument, value, tags, state);
+        }
+
+        public static void OnMeasurementRecordedFloat(Instrument instrument, float value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
+        {
+            OnMeasurementRecordedDouble(instrument, value, tags, state);
+        }
+
+        internal static IReadOnlyDictionary<MetricStreamIdentity, MetricPoint> GetMetricsForExport(bool clearAfterGet = false)
         {
             var metrics = CapturedMetrics;
 
@@ -177,25 +128,206 @@ namespace Datadog.Trace.OTelMetrics
         }
 
         // For testing only
-        internal static IReadOnlyDictionary<string, MetricPoint> GetCapturedMetricsForTesting() => CapturedMetrics;
+        internal static IReadOnlyDictionary<MetricStreamIdentity, MetricPoint> GetCapturedMetricsForTesting() => CapturedMetrics;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static string GetTemporalityString()
+        private static bool IsValidInstrumentName(string name)
         {
-            return _cachedTemporality ??= Tracer.Instance.Settings.OtlpMetricsTemporalityPreference.ToString();
+            // RFC requirement: Instrument name validation
+            // 1. Not null and not empty
+            if (string.IsNullOrEmpty(name))
+            {
+                return false;
+            }
+
+            // 2. Maximum length 255 characters
+            if (name.Length > 255)
+            {
+                return false;
+            }
+
+            // 3. ASCII string
+            if (!IsAsciiString(name))
+            {
+                return false;
+            }
+
+            // 4. First character must be alphabetic
+            if (!char.IsLetter(name[0]))
+            {
+                return false;
+            }
+
+            // 5. Subsequent characters must be alphanumeric, '_', '.', '/', '-'
+            for (int i = 1; i < name.Length; i++)
+            {
+                char c = name[i];
+                if (!char.IsLetterOrDigit(c) && c != '_' && c != '.' && c != '/' && c != '-')
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Dictionary<string, object?> CreateTagsDictionary(ReadOnlySpan<KeyValuePair<string, object?>> tags)
+        private static bool IsAsciiString(string str)
         {
-            var tagsDict = new Dictionary<string, object?>(tags.Length);
-            for (var i = 0; i < tags.Length; i++)
+            // ASCII range is 0-127
+            foreach (char c in str)
             {
-                var tag = tags[i];
-                tagsDict[tag.Key] = tag.Value;
+                if (c > 127)
+                {
+                    return false;
+                }
             }
 
-            return tagsDict;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string GetTemporalityString(InstrumentType instrumentType)
+        {
+            var preference = Tracer.Instance.Settings.OtlpMetricsTemporalityPreference;
+
+            // Debug logging to see what's happening
+            Log.Debug("GetTemporalityString: instrumentType={InstrumentType}, preference={Preference}", instrumentType, preference);
+
+            var result = preference switch
+            {
+                Configuration.OtlpTemporality.Cumulative => instrumentType switch
+                {
+                    InstrumentType.Gauge => "N/A",
+                    _ => "Cumulative"
+                },
+                Configuration.OtlpTemporality.Delta => instrumentType switch
+                {
+                    InstrumentType.Counter => "Delta",
+                    InstrumentType.ObservableCounter => "Delta",
+                    InstrumentType.UpDownCounter => "Cumulative",
+                    InstrumentType.ObservableUpDownCounter => "Cumulative",
+                    InstrumentType.Histogram => "Delta",
+                    InstrumentType.Gauge => "N/A",
+                    InstrumentType.ObservableGauge => "N/A",
+                    _ => "Delta"
+                },
+                Configuration.OtlpTemporality.LowMemory => instrumentType switch
+                {
+                    InstrumentType.Counter => "Delta",
+                    InstrumentType.ObservableCounter => "Cumulative",
+                    InstrumentType.UpDownCounter => "Cumulative",
+                    InstrumentType.ObservableUpDownCounter => "Cumulative",
+                    InstrumentType.Histogram => "Delta",
+                    InstrumentType.Gauge => "N/A",
+                    InstrumentType.ObservableGauge => "N/A",
+                    _ => "Delta"
+                },
+                _ => "Delta"
+            };
+
+            Log.Debug("GetTemporalityString: returning {Result} for {InstrumentType} with {Preference}", result, instrumentType, preference);
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static InstrumentType? GetInstrumentType(string instrumentType)
+        {
+            if (instrumentType.StartsWith("System.Diagnostics.Metrics.Counter`1"))
+            {
+                return InstrumentType.Counter;
+            }
+            else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableCounter`1"))
+            {
+                return InstrumentType.ObservableCounter;
+            }
+            else if (instrumentType.StartsWith("System.Diagnostics.Metrics.UpDownCounter`1"))
+            {
+                return InstrumentType.UpDownCounter;
+            }
+            else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableUpDownCounter`1"))
+            {
+                return InstrumentType.ObservableUpDownCounter;
+            }
+            else if (instrumentType.StartsWith("System.Diagnostics.Metrics.Gauge`1"))
+            {
+                return InstrumentType.Gauge;
+            }
+            else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableGauge`1"))
+            {
+                return InstrumentType.ObservableGauge;
+            }
+            else if (instrumentType.StartsWith("System.Diagnostics.Metrics.Histogram`1"))
+            {
+                return InstrumentType.Histogram;
+            }
+
+            return null;
+        }
+
+        private static MetricState? CreateMetricState(Instrument instrument)
+        {
+            try
+            {
+                var instrumentType = instrument.GetType().FullName;
+                if (instrumentType is null)
+                {
+                    Log.Warning("Unable to get the full name of the instrument type for: {InstrumentName}", instrument.Name);
+                    return null;
+                }
+
+                var aggregationType = GetInstrumentType(instrumentType);
+                if (aggregationType == null)
+                {
+                    Log.Debug("Skipping unsupported instrument: {InstrumentName} of type: {InstrumentType}", instrument.Name, instrumentType);
+                    return null;
+                }
+
+                var metricStreamIdentity = new MetricStreamIdentity(instrument, aggregationType.Value);
+                var temporality = GetTemporalityString(aggregationType.Value);
+                var tagsDict = new Dictionary<string, object?>();
+
+                // RFC requirement: Check for duplicate instrument registration
+                if (CapturedMetrics.Any(kvp =>
+                    kvp.Key.InstrumentType == aggregationType.Value &&
+                    string.Equals(kvp.Key.InstrumentName, instrument.Name, StringComparison.OrdinalIgnoreCase) &&
+                    kvp.Key.Unit == instrument.Unit &&
+                    kvp.Key.Description == instrument.Description))
+                {
+                    Log.Warning(
+                        "Duplicate instrument registration detected: {InstrumentType} '{InstrumentName}' from meter '{MeterName}'. Previous instrument will be reused.",
+                        aggregationType.Value.ToString(),
+                        instrument.Name,
+                        instrument.Meter.Name);
+                    return null; // Return null to skip this duplicate
+                }
+
+                // Check for duplicate metric stream names
+                if (!MetricStreamNames.Add(metricStreamIdentity.MetricStreamName))
+                {
+                    Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", metricStreamIdentity.MetricStreamName);
+                }
+
+                // Determine if this is an integer instrument based on the instrument type
+                var isIntegerValue = aggregationType.Value == InstrumentType.Counter ||
+                                   aggregationType.Value == InstrumentType.UpDownCounter ||
+                                   aggregationType.Value == InstrumentType.ObservableCounter ||
+                                   aggregationType.Value == InstrumentType.ObservableUpDownCounter;
+
+                var metricPoint = new MetricPoint(instrument.Name, instrument.Meter.Name, aggregationType.Value, temporality, tagsDict, isIntegerValue);
+                var state = new MetricState(metricStreamIdentity, metricPoint);
+
+                // Store in global dictionary for export
+                CapturedMetrics.TryAdd(metricStreamIdentity, metricPoint);
+                Interlocked.Increment(ref _metricCount);
+
+                return state;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating metric state for instrument: {InstrumentName}", instrument.Name);
+                return null;
+            }
         }
     }
 }
