@@ -146,6 +146,8 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
         var tests = await FlakyRetries(packageVersion);
 
+        Output.WriteLine("Tests (in JSON):\n{0}", JsonConvert.SerializeObject(tests,  Formatting.Indented));
+
         // AlwaysFails => 1 + 5 retries
         var alwaysFailsTests = tests.Where(t => t.Resource == AlwaysFails).ToList();
         alwaysFailsTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
