@@ -418,7 +418,14 @@ public class InstrumentationTestsBase : IDisposable
         }
         else
         {
-            return expression.Invoke();
+            try
+            {
+                return expression.Invoke();
+            }
+            catch (System.Data.SqlClient.SqlException) // System.Data.SqlClient.SqlException : Timeout expired.  The timeout period elapsed prior to completion of the operation or the server is not responding.
+            {
+                return default(T);
+            }
         }
     }
 
