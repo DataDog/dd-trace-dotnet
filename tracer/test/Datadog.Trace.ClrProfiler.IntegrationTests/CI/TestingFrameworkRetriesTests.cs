@@ -142,6 +142,8 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.RateLimitSeconds, "0");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.UploadFlushInterval, "1000");
+        SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "0");
+
         var tests = await FlakyRetries(packageVersion);
 
         // AlwaysFails => 1 + 5 retries
