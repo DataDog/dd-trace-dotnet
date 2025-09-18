@@ -111,7 +111,7 @@ namespace Datadog.Trace.Debugger
             catch (Exception e)
             {
                 Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
-                return TracerManager.Instance.DefaultServiceName;
+                return tracerSettings.MutableSettings.DefaultServiceName;
             }
         }
 
