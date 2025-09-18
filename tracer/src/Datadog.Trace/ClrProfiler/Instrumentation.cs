@@ -83,7 +83,8 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
-            var tracerSettings = Tracer.Instance.Settings;
+            var tracer = Tracer.Instance;
+            var tracerSettings = tracer.Settings;
             var profilerSettings = Profiler.Instance.Settings;
 
             NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
@@ -101,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler
                 DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
                 RuntimeId = RuntimeId.Get(),
                 Environment = tracerSettings.Environment,
-                ServiceName = TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? string.Empty),
+                ServiceName = tracer.DefaultServiceName,
                 Version = tracerSettings.ServiceVersion
             };
 
