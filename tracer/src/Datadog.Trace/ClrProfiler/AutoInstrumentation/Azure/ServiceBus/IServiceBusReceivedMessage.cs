@@ -13,7 +13,5 @@ internal interface IServiceBusReceivedMessage : IServiceBusMessage
 {
     public DateTimeOffset EnqueuedTime { get; }
 
-    public string? MessageId { get; }
-
     IAmqpAnnotatedMessage? AmqpMessage { get; }
 }

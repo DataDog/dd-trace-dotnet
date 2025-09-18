@@ -3740,6 +3740,32 @@
     "IntegrationName": "AzureServiceBus",
     "AssemblyName": "Azure.Messaging.ServiceBus",
     "TargetTypeName": "Azure.Messaging.ServiceBus.ServiceBusSender",
+    "TargetMethodName": "ScheduleMessagesAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Collections.Generic.IReadOnlyList`1[System.Int64]]",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.ServiceBus.ServiceBusMessage]",
+      "System.DateTimeOffset",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 14,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.ServiceBusSenderScheduleMessagesAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureServiceBus",
+    "AssemblyName": "Azure.Messaging.ServiceBus",
+    "TargetTypeName": "Azure.Messaging.ServiceBus.ServiceBusSender",
     "TargetMethodName": "SendMessagesAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [

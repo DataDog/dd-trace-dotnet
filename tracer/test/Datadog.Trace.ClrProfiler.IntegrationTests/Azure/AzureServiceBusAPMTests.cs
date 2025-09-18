@@ -49,11 +49,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "SendMessages");
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(4, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
 
@@ -86,11 +87,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "ReceiveMessages");
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(4, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
 
@@ -118,11 +120,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "ReceiveMessagesMultiple");
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(4, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
 
@@ -140,6 +143,48 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 }
 
                 ValidateSpanLinks(sendSpans, receiveSpans, spans);
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestScheduleMessagesAsyncIntegration(string packageVersion, string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "ScheduleMessages");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                var scheduleSpans = spans.Where(span => span.Name == "azure_servicebus.send" &&
+                                                        span.Tags.ContainsKey("messaging.operation") &&
+                                                        span.Tags["messaging.operation"] == "send").ToList();
+
+                Output.WriteLine($"Datadog Service Bus schedule spans found: {scheduleSpans.Count}");
+
+                if (scheduleSpans.Any())
+                {
+                    scheduleSpans.Should().HaveCount(1, "Expected exactly 1 span from ScheduleMessagesAsync");
+
+                    foreach (var span in scheduleSpans)
+                    {
+                        var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                        result.Success.Should().BeTrue($"Schedule span validation failed: {result}");
+                    }
+                }
+                else
+                {
+                    var diagnosticInfo = $"No Datadog Service Bus schedule spans found. " +
+                        $"Total spans: {spans.Count}, " +
+                        $"Operations: [{string.Join(", ", spans.Select(s => s.Name).Distinct())}]";
+                    Assert.Fail(diagnosticInfo);
+                }
             }
         }
 

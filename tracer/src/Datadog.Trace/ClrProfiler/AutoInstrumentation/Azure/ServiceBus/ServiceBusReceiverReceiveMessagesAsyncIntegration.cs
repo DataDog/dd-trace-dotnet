@@ -148,6 +148,11 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         span.Type = SpanTypes.Queue;
         span.ResourceName = entityPath;
 
+        if (messagesList?.Count > 1)
+        {
+            span.SetTag(Tags.MessagingBatchMessageCount, messagesList.Count.ToString());
+        }
+
         // Set MessagingMessageId if single message received
         if (messagesList?.Count == 1)
         {

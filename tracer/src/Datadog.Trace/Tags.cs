@@ -322,6 +322,11 @@ namespace Datadog.Trace
         internal const string MessagingMessageId = "messaging.message_id";
 
         /// <summary>
+        /// The number of messages in a batch operation.
+        /// </summary>
+        internal const string MessagingBatchMessageCount = "messaging.batch.message_count";
+
+        /// <summary>
         /// The messaging destination kind (queue, topic, etc.).
         /// </summary>
         internal const string MessagingDestinationKind = "messaging.destination.kind";
