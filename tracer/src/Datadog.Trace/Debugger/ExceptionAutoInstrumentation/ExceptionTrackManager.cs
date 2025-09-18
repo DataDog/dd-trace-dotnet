@@ -691,6 +691,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             var frames = isTopFrame
                              ? stackTrace.GetFrames()?.
+                                          AsEnumerable().
                                           Reverse().
                                           SkipWhile(frame =>
                                           {

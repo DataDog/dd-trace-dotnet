@@ -21,7 +21,7 @@ internal static class TracerDebugger
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracerDebugger));
 
-    [Conditional("DEBUG")]
+    // [Conditional("DEBUG")]
     internal static void WaitForDebugger()
     {
         // We check for the managed debugger first then for the native debugger.
@@ -36,23 +36,26 @@ internal static class TracerDebugger
     {
         if (SD.Debugger.IsAttached)
         {
+            Console.WriteLine(@"Debugger attached: {0}", SD.Debugger.IsAttached);
             return true;
         }
 
         var debugEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.WaitForDebuggerAttach);
         if (!string.IsNullOrEmpty(debugEnabled) && debugEnabled!.Equals("1", StringComparison.Ordinal))
         {
-            Console.WriteLine("Waiting for debugger attach...");
+            Console.WriteLine(@"Waiting for debugger attach...");
             Log.Information("Waiting for debugger attach...");
             var currentProcess = Process.GetCurrentProcess();
-            Console.WriteLine("Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
+            Console.WriteLine(@"Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
             Log.Information<int, string>("Process Id: {Id}, Name: {Name}", currentProcess.Id, currentProcess.ProcessName);
             while (!SD.Debugger.IsAttached)
             {
                 Task.Delay(1000).Wait();
             }
 
+            Console.WriteLine(@"Debugger attached: {0}", SD.Debugger.IsAttached);
             Break();
+            Console.WriteLine(@"Continuing...");
             return true;
         }
 
@@ -66,17 +69,19 @@ internal static class TracerDebugger
         if (!string.IsNullOrEmpty(nativeDebugEnabled) && nativeDebugEnabled!.Equals("1", StringComparison.Ordinal)
                                                       && FrameworkDescription.Instance.IsWindows())
         {
-            Console.WriteLine("Waiting for native debugger attach...");
+            Console.WriteLine(@"Waiting for native debugger attach...");
             Log.Information("Waiting for native debugger attach...");
             var currentProcess = Process.GetCurrentProcess();
-            Console.WriteLine("Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
+            Console.WriteLine(@"Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
             Log.Information<int, string>("Process Id: {Id}, Name: {Name}", currentProcess.Id, currentProcess.ProcessName);
             while (!IsDebuggerPresent())
             {
                 Task.Delay(1000).Wait();
             }
 
+            Console.WriteLine(@"Debugger attached: {0}", IsDebuggerPresent());
             BreakNative();
+            Console.WriteLine(@"Continuing...");
             return true;
         }
 
@@ -86,6 +91,8 @@ internal static class TracerDebugger
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void Break()
     {
+        // System.Diagnostics.Debugger.IsLogging();
+        System.Diagnostics.Debugger.NotifyOfCrossThreadDependency();
         System.Diagnostics.Debugger.Break();
     }
 

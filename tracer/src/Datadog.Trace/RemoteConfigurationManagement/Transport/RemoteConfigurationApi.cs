@@ -30,6 +30,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 
         private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
+            System.Diagnostics.Debugger.Break();
             _apiRequestFactory = apiRequestFactory;
             discoveryService.SubscribeToChanges(
                 config =>
@@ -43,11 +44,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 
         public static RemoteConfigurationApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
+            System.Diagnostics.Debugger.Break();
             return new RemoteConfigurationApi(apiRequestFactory, discoveryService);
         }
 
         public async Task<GetRcmResponse?> GetConfigs(GetRcmRequest request)
         {
+            System.Diagnostics.Debugger.Break();
             var configEndpoint = Volatile.Read(ref _configEndpoint);
             if (string.IsNullOrEmpty(configEndpoint))
             {

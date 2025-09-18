@@ -46,7 +46,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 // For reference, see the following test: ExceptionCaughtAndRethrownAsInnerTest.
 
                 var firstFrame = Frames?.FirstOrDefault();
-                var lastFrameOfInner = InnerFrame.Frames?.Reverse().FirstOrDefault();
+                var lastFrameOfInner = InnerFrame.Frames?.AsEnumerable().Reverse().FirstOrDefault();
 
                 var skipDuplicatedMethod = 0;
                 if (lastFrameOfInner?.Method == firstFrame?.Method)
