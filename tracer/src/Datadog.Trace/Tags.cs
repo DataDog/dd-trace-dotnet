@@ -146,6 +146,11 @@ namespace Datadog.Trace
         public const string OutPort = "out.port";
 
         /// <summary>
+        /// The server address for the remote service.
+        /// </summary>
+        public const string ServerAddress = "server.address";
+
+        /// <summary>
         /// The size of the message.
         /// </summary>
         public const string MessageSize = "message.size";

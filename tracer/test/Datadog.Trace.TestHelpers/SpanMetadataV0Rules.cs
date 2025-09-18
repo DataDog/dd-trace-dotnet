@@ -316,7 +316,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("messaging.message_id")
                 .IsOptional("net.peer.name")
                 .IsOptional("peer.address")
-                .IsOptional("server.address")
+                .IsPresent("server.address")
                 .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "consumer")
                 .IsOptional("_dd.base_service")

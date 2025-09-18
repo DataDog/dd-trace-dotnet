@@ -167,6 +167,12 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             }
         }
 
+        var endpoint = receiverInstance.Connection?.ServiceEndpoint;
+        if (endpoint != null)
+        {
+            tags.ServerAddress = endpoint.Host;
+        }
+
         return scope;
     }
 

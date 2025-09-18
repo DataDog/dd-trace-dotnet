@@ -12,4 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 internal interface IServiceBusReceiver : IDuckType
 {
     string EntityPath { get; }
+
+    [DuckField(Name = "_connection")]
+    IServiceBusConnection Connection { get; }
 }

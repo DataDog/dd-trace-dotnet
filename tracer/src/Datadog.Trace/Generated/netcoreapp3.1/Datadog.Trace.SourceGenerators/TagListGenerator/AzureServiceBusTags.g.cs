@@ -30,6 +30,8 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> NetworkDestinationNameBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
         // NetworkDestinationPortBytes = MessagePack.Serialize("network.destination.port");
         private static ReadOnlySpan<byte> NetworkDestinationPortBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
+        // ServerAddressBytes = MessagePack.Serialize("server.address");
+        private static ReadOnlySpan<byte> ServerAddressBytes => new byte[] { 174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
 
         public override string? GetTag(string key)
         {
@@ -41,6 +43,7 @@ namespace Datadog.Trace.Tagging
                 "message_bus.destination" => LegacyMessageBusDestination,
                 "network.destination.name" => NetworkDestinationName,
                 "network.destination.port" => NetworkDestinationPort,
+                "server.address" => ServerAddress,
                 _ => base.GetTag(key),
             };
         }
@@ -66,6 +69,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "network.destination.port": 
                     NetworkDestinationPort = value;
+                    break;
+                case "server.address": 
+                    ServerAddress = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -103,6 +109,11 @@ namespace Datadog.Trace.Tagging
             if (NetworkDestinationPort is not null)
             {
                 processor.Process(new TagItem<string>("network.destination.port", NetworkDestinationPort, NetworkDestinationPortBytes));
+            }
+
+            if (ServerAddress is not null)
+            {
+                processor.Process(new TagItem<string>("server.address", ServerAddress, ServerAddressBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -149,6 +160,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("network.destination.port (tag):")
                   .Append(NetworkDestinationPort)
+                  .Append(',');
+            }
+
+            if (ServerAddress is not null)
+            {
+                sb.Append("server.address (tag):")
+                  .Append(ServerAddress)
                   .Append(',');
             }
 
