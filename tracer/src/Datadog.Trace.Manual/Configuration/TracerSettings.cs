@@ -370,6 +370,8 @@ public sealed class TracerSettings
         [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get => _statsComputationEnabled.Value;
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         set => _statsComputationEnabled = _statsComputationEnabled.Override(value);
     }
 
