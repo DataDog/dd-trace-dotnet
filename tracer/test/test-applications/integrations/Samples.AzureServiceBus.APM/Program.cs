@@ -37,7 +37,7 @@ namespace Samples.AzureServiceBus.APM
 
                 if (string.IsNullOrEmpty(testModeString) || !Enum.TryParse<TestMode>(testModeString, ignoreCase: true, out var testMode))
                 {
-                    var validModes = string.Join(", ", Enum.GetNames<TestMode>());
+                    var validModes = string.Join(", ", Enum.GetNames(typeof(TestMode)));
                     throw new ArgumentException($"Invalid or missing ASB_TEST_MODE environment variable. Expected one of: {validModes}. Got: '{testModeString}'");
                 }
 
