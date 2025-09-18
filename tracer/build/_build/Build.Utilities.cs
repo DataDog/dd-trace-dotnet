@@ -551,7 +551,7 @@ partial class Build
 
        Target UpdateAzureFunctionsNugetFromBuild => _ => _
         .Description("Updates the bundle home contents with local builds of Datadog.Trace.dll, and rebuilds the Datadog.AzureFunctions package")
-        .DependsOn(DownloadBundleNugetFromBuild)
+        .After(DownloadBundleNugetFromBuild)
         .Triggers(BuildAzureFunctionsNuget)
         .Executes(() =>
         {
