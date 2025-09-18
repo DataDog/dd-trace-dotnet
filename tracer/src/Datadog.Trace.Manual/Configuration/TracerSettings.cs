@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.SourceGenerators;
@@ -46,6 +47,8 @@ public sealed class TracerSettings
     /// </summary>
     [Instrumented]
     [MethodImpl(MethodImplOptions.NoInlining)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public TracerSettings()
         : this(PopulateDictionary(new(), useDefaultSources: false), isFromDefaultSources: false)
     {
@@ -63,6 +66,8 @@ public sealed class TracerSettings
     /// the default sources such as environment variables etc. If <c>false</c>, uses the default values.</param>
     [Instrumented]
     [MethodImpl(MethodImplOptions.NoInlining)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public TracerSettings(bool useDefaultSources)
         : this(PopulateDictionary(new(), useDefaultSources), useDefaultSources)
     {
@@ -153,6 +158,8 @@ public sealed class TracerSettings
         [Obsolete("This value cannot be set in code. Instead, set it using the DD_DIAGNOSTIC_SOURCE_ENABLED environment variable, or in configuration files")]
         [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         set
         {
             // As this was previously obsolete, we could just remove it?
@@ -351,7 +358,12 @@ public sealed class TracerSettings
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether stats are computed on the tracer side
+    /// Gets or sets a value indicating whether stats are computed on the tracer side.
+    ///
+    /// NOTE: as of tracer version 3.27.0, this property cannot be used to enable or
+    /// disable stats computation. You must use a static configuration source such
+    /// as environment variables or datadog.json to set the property instead. This
+    /// property will be marked obsolete and removed in a future version of Datadog.Trace.
     /// </summary>
     public bool StatsComputationEnabled
     {
@@ -370,6 +382,8 @@ public sealed class TracerSettings
         [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         get => _agentUri.Value;
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         set => _agentUri = _agentUri.Override(value);
     }
 

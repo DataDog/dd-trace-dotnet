@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
+
 namespace Datadog.Trace.Configuration;
 
 /// <summary>
@@ -26,6 +28,8 @@ public sealed class ExporterSettings
     public Uri AgentUri
     {
         get => _tracerSettings.AgentUri;
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         set => _tracerSettings.AgentUri = value;
     }
 }
