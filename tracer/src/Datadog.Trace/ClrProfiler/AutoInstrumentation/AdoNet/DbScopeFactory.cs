@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 #if NET6_0_OR_GREATER
         private static Scope? CreateDbBatchScope(Tracer tracer, DbBatch batch, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
-            var allCommandsText = string.Join(";", batch.BatchCommands.Select(c => c.CommandText));
+            var allCommandsText = string.Join(";", batch.BatchCommands.Select(c => c.CommandText.TrimEnd(';')));
             var scope = CreateDbCommandScope(tracer, allCommandsText, integrationId, dbType, operationName, serviceName, ref tagsFromConnectionString, out var sqlTags);
 
             if (scope == null || sqlTags == null)
