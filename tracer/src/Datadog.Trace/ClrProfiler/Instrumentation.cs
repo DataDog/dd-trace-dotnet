@@ -75,13 +75,6 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            // it is also possible that the profiler binary is not "there" such as Azure Function and some CI tests
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH")))
-            {
-                Log.Information("Profiling native library path is not set, skipping setting profiler configuration.");
-                return;
-            }
-
             Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
             var tracerSettings = Tracer.Instance.Settings;
             var profilerSettings = Profiler.Instance.Settings;
