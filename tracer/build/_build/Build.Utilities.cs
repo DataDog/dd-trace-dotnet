@@ -536,7 +536,7 @@ partial class Build
             }
 
             EnsureCleanDirectory(packageExtractionDirectory);
-            CompressionTasks.UncompressZip(packageFile, packageExtractionDirectory);
+            UncompressZipQuiet(packageFile, packageExtractionDirectory);
 
             var contentDirectory = packageExtractionDirectory / "contentFiles" / "any" / "any" / "datadog";
 
