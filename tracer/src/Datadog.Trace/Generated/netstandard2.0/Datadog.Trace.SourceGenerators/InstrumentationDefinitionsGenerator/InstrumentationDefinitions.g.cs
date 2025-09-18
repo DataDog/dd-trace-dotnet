@@ -726,6 +726,15 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"
@@ -812,6 +821,15 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"
@@ -947,7 +965,16 @@ namespace Datadog.Trace.ClrProfiler
                     or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlDataReader" }
                     or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlDataReader" }
                     => Datadog.Trace.Configuration.IntegrationId.MySql,
-                    { Key: "Npgsql", Value: "Npgsql.NpgsqlCommand" }
+                    { Key: "Npgsql", Value: "Npgsql.NpgsqlBatch" }
+                    or { Key: "Npgsql", Value: "Npgsql.NpgsqlBatch" }
+                    or { Key: "Npgsql", Value: "Npgsql.NpgsqlBatch" }
+                    or { Key: "Npgsql", Value: "Npgsql.NpgsqlBatch" }
+                    or { Key: "Npgsql", Value: "Npgsql.NpgsqlBatch" }
+                    or { Key: "Npgsql", Value: "Npgsql.NpgsqlBatch" }
+                    or { Key: "Npgsql", Value: "Npgsql.NpgsqlBatch" }
+                    or { Key: "Npgsql", Value: "Npgsql.NpgsqlBatch" }
+                    or { Key: "Npgsql", Value: "Npgsql.NpgsqlBatch" }
+                    or { Key: "Npgsql", Value: "Npgsql.NpgsqlCommand" }
                     or { Key: "Npgsql", Value: "Npgsql.NpgsqlCommand" }
                     or { Key: "Npgsql", Value: "Npgsql.NpgsqlCommand" }
                     or { Key: "Npgsql", Value: "Npgsql.NpgsqlCommand" }
@@ -1035,6 +1062,15 @@ namespace Datadog.Trace.ClrProfiler
                     or { Key: "Microsoft.Data.Sqlite", Value: "Microsoft.Data.Sqlite.SqliteDataReader" }
                     or { Key: "Microsoft.Data.Sqlite", Value: "Microsoft.Data.Sqlite.SqliteDataReader" }
                     or { Key: "Microsoft.Data.Sqlite", Value: "Microsoft.Data.Sqlite.SqliteDataReader" }
+                    or { Key: "System.Data", Value: "System.Data.SqlClient.SqlBatch" }
+                    or { Key: "System.Data", Value: "System.Data.SqlClient.SqlBatch" }
+                    or { Key: "System.Data", Value: "System.Data.SqlClient.SqlBatch" }
+                    or { Key: "System.Data", Value: "System.Data.SqlClient.SqlBatch" }
+                    or { Key: "System.Data", Value: "System.Data.SqlClient.SqlBatch" }
+                    or { Key: "System.Data", Value: "System.Data.SqlClient.SqlBatch" }
+                    or { Key: "System.Data", Value: "System.Data.SqlClient.SqlBatch" }
+                    or { Key: "System.Data", Value: "System.Data.SqlClient.SqlBatch" }
+                    or { Key: "System.Data", Value: "System.Data.SqlClient.SqlBatch" }
                     or { Key: "System.Data", Value: "System.Data.SqlClient.SqlCommand" }
                     or { Key: "System.Data", Value: "System.Data.SqlClient.SqlCommand" }
                     or { Key: "System.Data", Value: "System.Data.SqlClient.SqlCommand" }

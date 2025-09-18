@@ -24,6 +24,15 @@ namespace Samples.Microsoft.Data.SqlClient
                 }
                 
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+
+#if HAS_BATCH_SUPPORT && NET6_0_OR_GREATER
+                var batchCommandHandler = new SqlClientBatchCommandHandler();
+                await RelationalDatabaseTestHarness.RunBatchAsync(
+                    connection,
+                    commandFactory,
+                    batchCommandHandler,
+                    cts.Token);
+#endif
             }
 
             // Version 4.0.0 causes a hard crash

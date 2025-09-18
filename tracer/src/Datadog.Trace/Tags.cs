@@ -102,6 +102,11 @@ namespace Datadog.Trace
         public const string DbName = "db.name";
 
         /// <summary>
+        /// Number of operations in a batch (name matches otel spec)
+        /// </summary>
+        public const string DbBatchSize = "db.operation.batch.size";
+
+        /// <summary>
         /// The query text
         /// </summary>
         public const string SqlQuery = "sql.query";
