@@ -47,6 +47,7 @@ namespace Datadog.Trace.Configuration
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);     // 12
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true); // 19
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, true);    // 29
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingMulticonfig, true);    // 44
             }
         }
 
@@ -138,14 +139,15 @@ namespace Datadog.Trace.Configuration
                 }
                 else
                 {
-                    var compositeConfigurationSource = new CompositeConfigurationSource();
+                    // Get current service name and environment for configuration matching and use the merger for multiple configurations
+                    var currentSettings = Tracer.Instance.Settings;
+                    var serviceName = currentSettings.ServiceName ?? "unknown";
+                    var environment = currentSettings.Environment ?? "unknown";
 
-                    foreach (var item in apmLibrary)
-                    {
-                        compositeConfigurationSource.Add(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
-                    }
+                    // APM_TRACING have also k8s_target_v2, but we don't support it in the tracer atm
 
-                    configurationSource = compositeConfigurationSource;
+                    var mergedConfigJson = ApmTracingConfigMerger.MergeConfigurations(apmLibrary, serviceName, environment);
+                    configurationSource = new DynamicConfigConfigurationSource(mergedConfigJson, ConfigurationOrigins.RemoteConfig);
                 }
 
                 var configurationBuilder = new ConfigurationBuilder(configurationSource, _configurationTelemetry);
