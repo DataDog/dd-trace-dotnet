@@ -374,6 +374,7 @@ namespace Datadog.Trace.Configuration
     {
         [System.Obsolete("This property is obsolete and will be removed in a future version. To set the Age" +
             "ntUri, use the TracerSettings.AgentUri property")]
+        [set: System.ComponentModel.Browsable(false)]
         public System.Uri AgentUri { get; set; }
     }
     public sealed class GlobalSettings
@@ -438,13 +439,17 @@ namespace Datadog.Trace.Configuration
     }
     public sealed class TracerSettings
     {
+        [System.ComponentModel.Browsable(false)]
         public TracerSettings() { }
+        [System.ComponentModel.Browsable(false)]
         public TracerSettings(bool useDefaultSources) { }
+        [set: System.ComponentModel.Browsable(false)]
         public System.Uri AgentUri { get; set; }
         [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
             "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
         public bool AnalyticsEnabled { get; set; }
         public string? CustomSamplingRules { get; set; }
+        [set: System.ComponentModel.Browsable(false)]
         [set: System.Obsolete("This value cannot be set in code. Instead, set it using the DD_DIAGNOSTIC_SOURCE_" +
             "ENABLED environment variable, or in configuration files")]
         public bool DiagnosticSourceEnabled { get; set; }
