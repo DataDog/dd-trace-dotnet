@@ -13,7 +13,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     AssemblyName = "Npgsql",
     TypeName = "Npgsql.NpgsqlBatch",
     MinimumVersion = "6.0.0", // didn't exist before
-    MaximumVersion = "8.*.*",
+    MaximumVersion = "9.*.*",
     IntegrationName = nameof(IntegrationId.Npgsql),
     DataReaderType = "Npgsql.NpgsqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]",
