@@ -87,6 +87,12 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             return null;
         }
 
+        // Check if batch links are enabled
+        if (!tracer.Settings.AzureServiceBusBatchLinksEnabled)
+        {
+            return null;
+        }
+
         var extractedContexts = new HashSet<SpanContext>(new SpanContextComparer());
 
         try

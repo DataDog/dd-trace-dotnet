@@ -74,6 +74,44 @@ namespace Samples.AzureServiceBus.APM
                 }
                 Console.WriteLine($"Completed {receivedMessages.Count} messages");
 
+                Console.WriteLine("\n=== Message Batch ===");
+
+                var messageBatch = await sender.CreateMessageBatchAsync();
+                Console.WriteLine("Created message batch");
+
+                var batchMessage1 = new ServiceBusMessage("Batch Message 1") { MessageId = Guid.NewGuid().ToString() };
+                var batchMessage2 = new ServiceBusMessage("Batch Message 2") { MessageId = Guid.NewGuid().ToString() };
+                var batchMessage3 = new ServiceBusMessage("Batch Message 3") { MessageId = Guid.NewGuid().ToString() };
+
+                Console.WriteLine($"Adding message 1 to batch (ID: {batchMessage1.MessageId})");
+                var added1 = messageBatch.TryAddMessage(batchMessage1);
+                Console.WriteLine($"Message 1 added to batch: {added1}");
+
+                Console.WriteLine($"Adding message 2 to batch (ID: {batchMessage2.MessageId})");
+                var added2 = messageBatch.TryAddMessage(batchMessage2);
+                Console.WriteLine($"Message 2 added to batch: {added2}");
+
+                Console.WriteLine($"Adding message 3 to batch (ID: {batchMessage3.MessageId})");
+                var added3 = messageBatch.TryAddMessage(batchMessage3);
+                Console.WriteLine($"Message 3 added to batch: {added3}");
+
+                Console.WriteLine($"Batch contains {messageBatch.Count} messages, Size: {messageBatch.SizeInBytes} bytes");
+
+                Console.WriteLine("Sending message batch...");
+                await sender.SendMessagesAsync(messageBatch);
+                Console.WriteLine("Message batch sent successfully");
+
+                Console.WriteLine("Attempting to receive batch messages...");
+                var batchReceivedMessages = await receiver.ReceiveMessagesAsync(maxMessages: 3, maxWaitTime: TimeSpan.FromSeconds(10));
+
+                Console.WriteLine($"Received {batchReceivedMessages.Count} batch messages");
+                foreach (var msg in batchReceivedMessages)
+                {
+                    Console.WriteLine($"Received batch message ID: {msg.MessageId}, Body: {msg.Body}");
+                    await receiver.CompleteMessageAsync(msg);
+                }
+                Console.WriteLine($"Completed {batchReceivedMessages.Count} batch messages");
+
                 Console.WriteLine("Resources handled successfully");
             }
             catch (Exception ex)

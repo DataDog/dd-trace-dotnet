@@ -392,6 +392,14 @@ namespace Datadog.Trace.Configuration
         public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
+        /// Configuration key to enable or disable the creation of individual message spans and span links
+        /// when using Azure Service Bus batch operations.
+        /// Default value is <c>true</c> (enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.AzureServiceBusBatchLinksEnabled"/>
+        public const string AzureServiceBusBatchLinksEnabled = "DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED";
+
+        /// <summary>
         /// Configuration key for controlling whether route parameters in ASP.NET and ASP.NET Core resource names
         /// should be expanded with their values. Only applies when
         /// <see cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/> is enabled.
