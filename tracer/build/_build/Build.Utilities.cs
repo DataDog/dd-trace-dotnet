@@ -493,7 +493,7 @@ partial class Build
                     }
                 });
 
-       Target UpdateAzureFunctionsPackageFromBuild => _ => _
+       Target UpdateAzureFunctionsNugetFromBuild => _ => _
         .Description("Downloads Datadog.AzureFunctions package from Azure DevOps, " +
                      "updates the bundle contents with a local build of Datadog.Trace.dll, " +
                      "and rebuilds the package")
