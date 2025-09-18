@@ -487,17 +487,20 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData("true", "none", true)]
+        [InlineData("true", "otlp", true)]
         [InlineData("true", "random", true)]
         [InlineData("true", null, true)]
         [InlineData("false", "none", false)]
+        [InlineData("false", "otlp", false)]
         [InlineData("false", "random", false)]
         [InlineData("false", null, false)]
         [InlineData("A", "none", false)]
-        [InlineData("A", "random", false)]
+        [InlineData("A", "otlp", false)]
         [InlineData("", "none", false)]
-        [InlineData("", "random", false)]
+        [InlineData("", "otlp", false)]
         [InlineData(null, "none", false)]
         [InlineData(null, "random", false)]
+        [InlineData(null, "otlp", false)]
         [InlineData(null, null, false)]
         public void RuntimeMetricsEnabled(string value, string otelValue, bool expected)
         {
@@ -511,6 +514,7 @@ namespace Datadog.Trace.Tests.Configuration
             settings.RuntimeMetricsEnabled.Should().Be(expected);
             Count? metric = (value, otelValue) switch
             {
+                (null, "otlp") => null,
                 (null, "random") => Count.OpenTelemetryConfigInvalid,
                 (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
                 _ => null,
@@ -1380,6 +1384,159 @@ namespace Datadog.Trace.Tests.Configuration
             var tracerSettings = new TracerSettings(source);
 
             tracerSettings.LogsInjectionEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void OpenTelemetryMetricsEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.OpenTelemetryMetricsEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(null, "otlp", true)]
+        [InlineData("otlp", "otlp", true)]
+        [InlineData("none", "none", false)]
+        [InlineData("console", "console", false)]
+        [InlineData("invalid", "invalid", false)]
+        [InlineData("prometheus", "prometheus", false)]
+        public void OtelMetricsExporterEnabled(string value, string expected, bool enabled)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricsExporter, value));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new());
+
+            var entries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.MetricsExporter })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            entries[0].StringValue.Should().Be(expected);
+            settings.OtelMetricsExporterEnabled.Should().Be(enabled);
+        }
+
+        [Theory]
+        [InlineData(null, 10000)]
+        [InlineData("5000", 5000)]  // User custom value
+        [InlineData("60000", 60000)]  // OTel spec default
+        public void OtelMetricExportIntervalCustomValues(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs, value));
+            var settings = new TracerSettings(source);
+            settings.OtelMetricExportIntervalMs.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(null, 7500)]
+        [InlineData("3000", 3000)]  // User custom value
+        [InlineData("30000", 30000)]  // OTel spec default
+        public void OtelMetricExportTimeoutCustomValues(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricExportTimeoutMs, value));
+            var settings = new TracerSettings(source);
+
+            settings.OtelMetricExportTimeoutMs.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(null, null, OtlpProtocol.HttpProtobuf)]
+        [InlineData("invalid", null, OtlpProtocol.HttpProtobuf)]
+        [InlineData("grpc", null, OtlpProtocol.Grpc)]
+        [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
+        [InlineData(null, "http/json", OtlpProtocol.HttpJson)]
+        public void OtlpProtocolFallbacks(string metricsProtocol, string generalProtocol, object expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, metricsProtocol),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol));
+            var settings = new TracerSettings(source);
+
+            settings.OtlpMetricsProtocol.Should().Be((OtlpProtocol)expected);
+        }
+
+        [Theory]
+        [InlineData("grpc", null, "http://localhost:4317/", null, "http://localhost:4317/")]
+        [InlineData("grpc", "http://base:4333/", "http://base:4333/", null, "http://base:4333/")]
+        [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/metrics")]
+        [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/", null, "http://base:4333/v1/metrics")]
+        [InlineData("http/json", "http://base:4333/", "http://base:4333/", "http://metrics:4333/", "http://metrics:4333/")]
+        [InlineData("http/json", null, "http://localhost:4318/", "http://localhost:4318/proxy/metrics", "http://localhost:4318/proxy/metrics")]
+        public void OtlpMetricsEndpoint(string protocol, string baseInput, string baseOutput, string metricsInput, string metricsOutput)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, protocol),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, baseInput),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, metricsInput));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new());
+
+            var baseEndpointEntries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            var metricsEndpointEntries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            baseEndpointEntries[0].StringValue.Should().Be(baseOutput);
+            metricsEndpointEntries[0].StringValue.Should().Be(metricsOutput);
+            settings.OtlpEndpoint.ToString().Should().Be(baseOutput);
+            settings.OtlpMetricsEndpoint.ToString().Should().Be(metricsOutput);
+        }
+
+        [Theory]
+        [InlineData("DELTA", OtlpTemporality.Delta)]
+        [InlineData("cumulative", OtlpTemporality.Cumulative)]
+        [InlineData("loWmemOry", OtlpTemporality.LowMemory)]
+        [InlineData(null, OtlpTemporality.Delta)]
+        [InlineData("bad-value", OtlpTemporality.Delta)]
+        public void OtlpTemporalityPreference(string value, object expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, value));
+            var settings = new TracerSettings(source);
+
+            settings.OtlpMetricsTemporalityPreference.Should().Be((OtlpTemporality)expected);
+        }
+
+        [Theory]
+        [InlineData("api-key=secret,auth=token", null, new[] { "api-key=secret", "auth=token" })]
+        [InlineData(null, "key1 = value1 , key2 = value2 ", new[] { "key1=value1", "key2=value2" })]
+        [InlineData("valid=value,invalid-no-equals,another=valid", "fallback-key=fallback-value", new[] { "valid=value", "another=valid" })]
+        public void OtlpHeadersParsing(string primaryValue, string fallbackValue, string[] expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, primaryValue),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, fallbackValue));
+            var settings = new TracerSettings(source);
+
+            settings.OtlpMetricsHeaders.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split('=').First(), v => v.Split('=').Last()));
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void PartialFlushEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource(("DD_TRACE_PARTIAL_FLUSH_ENABLED", value));
+            var settings = new TracerSettings(source);
+            settings.PartialFlushEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("", 500)]
+        [InlineData("200", 200)]
+        [InlineData("1", 1)]
+        [InlineData("0", 500)]
+        [InlineData("-200", 500)]
+        public void PartialFlushMinSpans(string value, int expected)
+        {
+            var source = CreateConfigurationSource(("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", value));
+            var settings = new TracerSettings(source);
+            settings.PartialFlushMinSpans.Should().Be(expected);
         }
 
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)

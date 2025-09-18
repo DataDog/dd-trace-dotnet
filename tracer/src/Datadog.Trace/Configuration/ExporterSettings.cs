@@ -130,11 +130,6 @@ namespace Datadog.Trace.Configuration
                                  .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)
                                  .AsInt32(500, value => value > 0)
                                  .Value;
-
-            PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool(false);
-            PartialFlushMinSpans = config
-                                  .WithKeys(ConfigurationKeys.PartialFlushMinSpans)
-                                  .AsInt32(500, value => value > 0).Value;
         }
 
         /// <summary>
@@ -201,16 +196,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
         public int DogStatsdPort { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether partial flush is enabled
-        /// </summary>
-        public bool PartialFlushEnabled { get; }
-
-        /// <summary>
-        /// Gets the minimum number of closed spans in a trace before it's partially flushed
-        /// </summary>
-        public int PartialFlushMinSpans { get; }
 
         /// <summary>
         /// Gets the transport used to send traces to the Agent.

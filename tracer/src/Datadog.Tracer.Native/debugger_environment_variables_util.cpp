@@ -11,15 +11,17 @@ bool IsDynamicInstrumentationEnabled()
 
 bool IsExceptionReplayEnabled()
 {
-    static int sValue = -1;
-    if (sValue == -1)
-    {
-        const auto old_exception_replay_flag = GetEnvironmentValue(environment::exception_debugging_enabled);
-        const auto new_exception_replay_flag = GetEnvironmentValue(environment::exception_replay_enabled);
-        sValue = (IsTrue(old_exception_replay_flag) || IsTrue(new_exception_replay_flag)) ? 1 : 0;
-    }
+    CheckIfTrue(GetEnvironmentValue(environment::exception_replay_enabled));
+}
 
-    return sValue == 1;
+bool IsDynamicInstrumentationManagedActivationDisabled()
+{
+    CheckIfFalse(GetEnvironmentValue(environment::dynamic_instrumentation_managed_activation_enabled));
+}
+
+bool IsExceptionReplayManagedActivationDisabled()
+{
+    CheckIfFalse(GetEnvironmentValue(environment::exception_replay_managed_activation_enabled));
 }
 
 bool IsDebuggerInstrumentAllEnabled()

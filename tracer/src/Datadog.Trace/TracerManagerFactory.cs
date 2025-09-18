@@ -408,7 +408,7 @@ namespace Datadog.Trace
                     {
                         telemetryClientConfiguration = new TelemetryClientConfiguration
                         {
-                            Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
+                            Interval = (ulong)telemetrySettings.HeartbeatInterval.TotalMilliseconds,
                             RuntimeId = new CharSlice(Tracer.RuntimeId),
                             DebugEnabled = telemetrySettings.DebugEnabled
                         };
@@ -428,7 +428,7 @@ namespace Datadog.Trace
                         Version = settings.ServiceVersion,
                         Service = settings.ServiceName,
                         Hostname = HostMetadata.Instance.Hostname,
-                        Language = ".NET",
+                        Language = TracerConstants.Language,
                         LanguageVersion = frameworkDescription.ProductVersion,
                         LanguageInterpreter = frameworkDescription.Name,
                         ComputeStats = settings.StatsComputationEnabled,
@@ -445,7 +445,7 @@ namespace Datadog.Trace
                 }
             }
 
-            return new Api(apiRequestFactory, statsd, updateSampleRates, settings.Exporter.PartialFlushEnabled);
+            return new Api(apiRequestFactory, statsd, updateSampleRates, settings.PartialFlushEnabled);
         }
 
         private static string GetUrl(TracerSettings settings)

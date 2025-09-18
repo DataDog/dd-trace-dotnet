@@ -2,7 +2,7 @@
 #include "log.h"
 #include "util.h"
 #include "../../../shared/src/native-src/version.h"
-#include "EnvironmentVariables.h"
+#include "environment.h"
 #include "single_step_guard_rails.h"
 #include "process_helper.h"
 
@@ -18,8 +18,8 @@ SingleStepGuardRails::SingleStepGuardRails()
 {
     // This variable is non-empty when we're in single step
     Log::Debug("SingleStepGuardRails::CheckRuntime: Checking for Single step instrumentation environment using ",
-               EnvironmentVariables::SingleStepInstrumentationEnabled);
-    const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
+               environment::single_step_instrumentation_enabled);
+    const auto isSingleStepVariable = GetEnvironmentValue(environment::single_step_instrumentation_enabled);
 
     m_isRunningInSingleStep = !isSingleStepVariable.empty(); 
     m_forcedRuntimeDescription = "";
@@ -159,7 +159,7 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
         "SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime ", eolDescription);
 
     // Are we supposed to override the EOL check?
-    const auto forceEolInstrumentationVariable = GetEnvironmentValue(EnvironmentVariables::ForceEolInstrumentation);
+    const auto forceEolInstrumentationVariable = GetEnvironmentValue(environment::force_eol_instrumentation);
 
     bool forceEolInstrumentation;
     if (!forceEolInstrumentationVariable.empty()
@@ -171,7 +171,7 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
         
         Log::Info(
             "SingleStepGuardRails::ShouldForceInstrumentationOverride: ",
-            EnvironmentVariables::ForceEolInstrumentation,
+            environment::force_eol_instrumentation,
             " enabled, allowing unsupported runtimes and continuing");
         return true;
     }
@@ -267,11 +267,11 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         return;
     }
 
-    auto forwarderPath = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath);
+    auto forwarderPath = GetEnvironmentValue(environment::single_step_instrumentation_telemetry_forwarder_path);
     if (forwarderPath.empty())
     {
         Log::Info("SingleStepGuardRails::SendTelemetry: Unable to send telemetry, ",
-                  EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath, " is not set");
+                  environment::single_step_instrumentation_telemetry_forwarder_path, " is not set");
         return;
     }
 
@@ -279,7 +279,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     if (!fs::exists(forwarderPath, ec))
     {
         Log::Info("SingleStepGuardRails::SendTelemetry: Unable to send telemetry, ",
-                  EnvironmentVariables::SingleStepInstrumentationTelemetryForwarderPath, " path does not exist:",
+                  environment::single_step_instrumentation_telemetry_forwarder_path, " path does not exist:",
                   forwarderPath);
         return;
     }
