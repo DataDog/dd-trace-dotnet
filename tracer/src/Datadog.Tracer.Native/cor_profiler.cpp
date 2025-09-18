@@ -876,6 +876,11 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
         call_target_state_skip_method_body_function_available = IsSkipMethodBodyEnabled() && EnsureCallTargetStateSkipMethodBodyFunctionAvailable(module_metadata);
 
+        if (!asyncmethoddebuggerinvokerv2_type_available)
+        {
+            asyncmethoddebuggerinvokerv2_type_available = EnsureAsyncMethodDebuggerInvokerV2TypeAvailable(module_metadata);
+        }
+
         auto native_loader_library_path = GetNativeLoaderFilePath();
         if (fs::exists(native_loader_library_path))
         {
@@ -1227,6 +1232,11 @@ bool CorProfiler::IsCallTargetBubbleUpExceptionTypeAvailable() const
 bool CorProfiler::IsCallTargetBubbleUpFunctionAvailable() const
 {
     return call_target_bubble_up_exception_function_available;
+}
+
+bool CorProfiler::IsAsyncMethodDebuggerInvokerV2TypeAvailable() const
+{
+    return asyncmethoddebuggerinvokerv2_type_available;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
@@ -3138,6 +3148,16 @@ bool CorProfiler::EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const Mod
     auto res = SUCCEEDED(found_call_target_bubble_up_exception_function);
     DBG("CallTargetBubbleUpException.IsCallTargetBubbleUpException method found: ", res);
     return res;
+}
+
+bool CorProfiler::EnsureAsyncMethodDebuggerInvokerV2TypeAvailable(const ModuleMetadata& module_metadata)
+{
+    // *** Ensure Datadog.Trace.Debugger.Instrumentation.AsyncMethodDebuggerInvokerV2 available
+    const auto asyncdebuggertypename = asyncmethoddebuggerinvokerv2_type_name.c_str();
+    mdTypeDef typeDef;
+    const auto found_asyncmethoddebuggerinvokerv2_type = module_metadata.metadata_import->FindTypeDefByName(asyncdebuggertypename, mdTokenNil, &typeDef);
+    DBG("AsyncMethodDebuggerInvokerV2 type available check, hresult is: ", found_asyncmethoddebuggerinvokerv2_type);
+    return SUCCEEDED(found_asyncmethoddebuggerinvokerv2_type);
 }
 
 bool CorProfiler::EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const ModuleMetadata& module_metadata)
