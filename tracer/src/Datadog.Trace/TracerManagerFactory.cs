@@ -421,7 +421,7 @@ namespace Datadog.Trace
                         TraceVersion = TracerConstants.AssemblyVersion,
                         Env = settings.Environment,
                         Version = settings.ServiceVersion,
-                        Service = settings.ServiceName,
+                        Service = settings.MutableSettings.DefaultServiceName,
                         Hostname = HostMetadata.Instance.Hostname,
                         Language = TracerConstants.Language,
                         LanguageVersion = frameworkDescription.ProductVersion,
