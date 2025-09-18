@@ -63,6 +63,12 @@ namespace Datadog.Trace.ContinuousProfiler
 
                 _isInitialized = true;
 
+                if (!ProfilerAvailabilityHelper.IsContinuousProfilerAvailable)
+                {
+                    Log.Debug("The continuous profiler is not available in this environment.");
+                    return;
+                }
+
                 try
                 {
                     _engineStatusPtr = NativeInterop.GetProfilerStatusPointer();
