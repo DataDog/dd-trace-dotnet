@@ -678,8 +678,24 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // Note: Calling GetAsClass<string>() here instead of GetAsString() as we need to get the
         // "serialized JToken", which in JsonConfigurationSource is different, as it allows for non-string tokens
         var remoteCustomSamplingRules = dynamicConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).GetAsClassResult<string>(validator: null, converter: s => s);
-        var customSamplingRules = GetCombinedResult(manualCustomSamplingRules, remoteCustomSamplingRules, initialSettings.CustomSamplingRules);
-        var customSamplingRulesIsRemote = remoteCustomSamplingRules.ConfigurationResult.IsValid;
+        string? customSamplingRules;
+        bool customSamplingRulesIsRemote;
+
+        if (remoteCustomSamplingRules.ConfigurationResult is { IsValid: true, Result: var remoteRules })
+        {
+            customSamplingRules = remoteRules;
+            customSamplingRulesIsRemote = true;
+        }
+        else if (manualCustomSamplingRules.ConfigurationResult is { IsValid: true, Result: var manualRules })
+        {
+            customSamplingRules = manualRules;
+            customSamplingRulesIsRemote = false;
+        }
+        else
+        {
+            customSamplingRules = initialSettings.CustomSamplingRules;
+            customSamplingRulesIsRemote = initialSettings.CustomSamplingRulesIsRemote;
+        }
 
         // These can't actually be changed in code right now, so just set them to the same values
         var gitRepositoryUrl = initialSettings.GitRepositoryUrl;
@@ -712,24 +728,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             gitCommitSha: gitCommitSha,
             errorLog: errorLog,
             telemetry: telemetry);
-
-        static string? GetCombinedResult(
-            ConfigurationBuilder.ClassConfigurationResultWithKey<string> manualResult,
-            ConfigurationBuilder.ClassConfigurationResultWithKey<string> remoteResult,
-            string? fallback)
-        {
-            if (manualResult.ConfigurationResult is { IsValid: true, Result: var r1 })
-            {
-                return r1;
-            }
-
-            if (remoteResult.ConfigurationResult is { IsValid: true, Result: var r2 })
-            {
-                return r2;
-            }
-
-            return fallback;
-        }
 
         static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
             ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> result,
