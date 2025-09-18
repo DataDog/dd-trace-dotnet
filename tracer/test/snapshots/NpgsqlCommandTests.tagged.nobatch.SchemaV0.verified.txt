@@ -1,10 +1,10 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_3,
     Tags: {
@@ -14,11 +14,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -26,7 +28,7 @@
     SpanId: Id_4,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_5,
     Tags: {
@@ -36,11 +38,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -48,7 +52,7 @@
     SpanId: Id_6,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_7,
     Tags: {
@@ -58,11 +62,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -70,7 +76,7 @@
     SpanId: Id_8,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_9,
     Tags: {
@@ -80,11 +86,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -92,7 +100,7 @@
     SpanId: Id_10,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_11,
     Tags: {
@@ -102,11 +110,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -114,7 +124,7 @@
     SpanId: Id_12,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_13,
     Tags: {
@@ -124,11 +134,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -136,7 +148,7 @@
     SpanId: Id_14,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_15,
     Tags: {
@@ -146,11 +158,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -158,7 +172,7 @@
     SpanId: Id_16,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_17,
     Tags: {
@@ -168,11 +182,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -180,7 +196,7 @@
     SpanId: Id_18,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -190,11 +206,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -202,7 +220,7 @@
     SpanId: Id_20,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -212,11 +230,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -224,7 +244,7 @@
     SpanId: Id_22,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -234,11 +254,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -246,7 +268,7 @@
     SpanId: Id_24,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -256,11 +278,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -268,7 +292,7 @@
     SpanId: Id_26,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -278,11 +302,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -290,7 +316,7 @@
     SpanId: Id_29,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -300,11 +326,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -312,7 +340,7 @@
     SpanId: Id_31,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -322,11 +350,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -334,7 +364,7 @@
     SpanId: Id_33,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -344,11 +374,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -356,7 +388,7 @@
     SpanId: Id_35,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -366,11 +398,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -378,7 +412,7 @@
     SpanId: Id_37,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -388,11 +422,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -400,7 +436,7 @@
     SpanId: Id_39,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -410,11 +446,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -422,7 +460,7 @@
     SpanId: Id_41,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -432,11 +470,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -444,7 +484,7 @@
     SpanId: Id_43,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -454,11 +494,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -466,7 +508,7 @@
     SpanId: Id_45,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_3,
     Tags: {
@@ -476,11 +518,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -488,7 +532,7 @@
     SpanId: Id_46,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_5,
     Tags: {
@@ -498,11 +542,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -510,7 +556,7 @@
     SpanId: Id_47,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_7,
     Tags: {
@@ -520,11 +566,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -532,7 +580,7 @@
     SpanId: Id_48,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_9,
     Tags: {
@@ -542,11 +590,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -554,7 +604,7 @@
     SpanId: Id_49,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_11,
     Tags: {
@@ -564,11 +614,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -576,7 +628,7 @@
     SpanId: Id_50,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_13,
     Tags: {
@@ -586,11 +638,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -598,7 +652,7 @@
     SpanId: Id_51,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_15,
     Tags: {
@@ -608,11 +662,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -620,7 +676,7 @@
     SpanId: Id_52,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_17,
     Tags: {
@@ -630,11 +686,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -642,7 +700,7 @@
     SpanId: Id_53,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -652,11 +710,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -664,7 +724,7 @@
     SpanId: Id_54,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -674,11 +734,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -686,7 +748,7 @@
     SpanId: Id_55,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -696,11 +758,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -708,7 +772,7 @@
     SpanId: Id_56,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -718,11 +782,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -730,7 +796,7 @@
     SpanId: Id_57,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -740,11 +806,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -752,7 +820,7 @@
     SpanId: Id_58,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -762,11 +830,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -774,7 +844,7 @@
     SpanId: Id_59,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -784,11 +854,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -796,7 +868,7 @@
     SpanId: Id_60,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -806,11 +878,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -818,7 +892,7 @@
     SpanId: Id_61,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -828,11 +902,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -840,7 +916,7 @@
     SpanId: Id_62,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -850,11 +926,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -862,7 +940,7 @@
     SpanId: Id_63,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -872,11 +950,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -884,7 +964,7 @@
     SpanId: Id_64,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -894,11 +974,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -906,7 +988,7 @@
     SpanId: Id_65,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -916,80 +998,181 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_66,
+    TraceId: Id_1,
+    SpanId: Id_66,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_3,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
     SpanId: Id_67,
     Name: postgres.query,
-    Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID";;CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));;INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_68,
+    ParentId: Id_5,
     Tags: {
       component: Npgsql,
       db.name: postgres,
-      db.operation.batch.size: 3,
       db.type: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_66,
+    TraceId: Id_1,
+    SpanId: Id_68,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_7,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
     SpanId: Id_69,
     Name: postgres.query,
-    Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID";;CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));;INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_70,
+    ParentId: Id_9,
     Tags: {
       component: Npgsql,
       db.name: postgres,
-      db.operation.batch.size: 3,
       db.type: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_66,
-    SpanId: Id_71,
+    TraceId: Id_1,
+    SpanId: Id_70,
     Name: postgres.query,
-    Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID";;CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));;INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_72,
+    ParentId: Id_11,
     Tags: {
       component: Npgsql,
       db.name: postgres,
-      db.operation.batch.size: 3,
       db.type: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_71,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_72,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -997,9 +1180,9 @@
     SpanId: Id_73,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_17,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1007,11 +1190,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1019,9 +1204,9 @@
     SpanId: Id_74,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_19,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1029,11 +1214,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1041,9 +1228,9 @@
     SpanId: Id_75,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_21,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1051,11 +1238,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1063,9 +1252,9 @@
     SpanId: Id_76,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_23,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1073,11 +1262,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1085,9 +1276,9 @@
     SpanId: Id_77,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_25,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1095,11 +1286,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1107,161 +1300,7 @@
     SpanId: Id_78,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_79,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_15,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_80,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_17,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_81,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_19,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_82,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_21,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_83,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_23,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_84,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_25,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_85,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -1271,11 +1310,181 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_79,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_30,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_80,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_32,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_81,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_34,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_82,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_36,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_83,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_38,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_84,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_40,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_85,
+    Name: postgres.query,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_42,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1283,161 +1492,7 @@
     SpanId: Id_86,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_30,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_28,
-    SpanId: Id_87,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_32,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_28,
-    SpanId: Id_88,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_34,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_28,
-    SpanId: Id_89,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_36,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_28,
-    SpanId: Id_90,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_38,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_28,
-    SpanId: Id_91,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_40,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_28,
-    SpanId: Id_92,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_42,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_28,
-    SpanId: Id_93,
-    Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -1447,11 +1502,181 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_87,
+    Name: postgres.query,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_3,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_88,
+    Name: postgres.query,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_3,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_89,
+    Name: postgres.query,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_5,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_90,
+    Name: postgres.query,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_5,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_91,
+    Name: postgres.query,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_7,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_92,
+    Name: postgres.query,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_7,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_93,
+    Name: postgres.query,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_9,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1459,9 +1684,9 @@
     SpanId: Id_94,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_9,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1469,11 +1694,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1481,9 +1708,9 @@
     SpanId: Id_95,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_11,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1491,11 +1718,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1503,9 +1732,9 @@
     SpanId: Id_96,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_11,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1513,11 +1742,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1525,9 +1756,9 @@
     SpanId: Id_97,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_13,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1535,11 +1766,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1547,9 +1780,9 @@
     SpanId: Id_98,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_13,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1557,11 +1790,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1569,9 +1804,9 @@
     SpanId: Id_99,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_15,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1579,11 +1814,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1591,9 +1828,9 @@
     SpanId: Id_100,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_15,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1601,11 +1838,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1613,9 +1852,9 @@
     SpanId: Id_101,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_17,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1623,11 +1862,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1635,9 +1876,9 @@
     SpanId: Id_102,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_17,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1645,11 +1886,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1657,9 +1900,9 @@
     SpanId: Id_103,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_19,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1667,11 +1910,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1679,9 +1924,9 @@
     SpanId: Id_104,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_13,
+    ParentId: Id_19,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1689,11 +1934,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1701,9 +1948,9 @@
     SpanId: Id_105,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_13,
+    ParentId: Id_21,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1711,11 +1958,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1723,9 +1972,9 @@
     SpanId: Id_106,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_15,
+    ParentId: Id_21,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1733,11 +1982,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1745,9 +1996,9 @@
     SpanId: Id_107,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_15,
+    ParentId: Id_23,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1755,11 +2006,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1767,9 +2020,9 @@
     SpanId: Id_108,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_17,
+    ParentId: Id_23,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1777,11 +2030,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1789,9 +2044,9 @@
     SpanId: Id_109,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_17,
+    ParentId: Id_25,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1799,11 +2054,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1811,9 +2068,9 @@
     SpanId: Id_110,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_19,
+    ParentId: Id_25,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1821,11 +2078,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1833,9 +2092,9 @@
     SpanId: Id_111,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_19,
+    ParentId: Id_27,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1843,11 +2102,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1855,9 +2116,9 @@
     SpanId: Id_112,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_21,
+    ParentId: Id_27,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1865,21 +2126,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_113,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_21,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1887,21 +2150,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_114,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_23,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1909,21 +2174,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_115,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_23,
+    ParentId: Id_32,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1931,21 +2198,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_116,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_25,
+    ParentId: Id_32,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1953,21 +2222,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_117,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_25,
+    ParentId: Id_34,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1975,21 +2246,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_118,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_27,
+    ParentId: Id_34,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1997,21 +2270,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_119,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_27,
+    ParentId: Id_36,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2019,11 +2294,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2031,9 +2308,9 @@
     SpanId: Id_120,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_30,
+    ParentId: Id_36,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2041,11 +2318,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2053,9 +2332,9 @@
     SpanId: Id_121,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_30,
+    ParentId: Id_38,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2063,11 +2342,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2075,9 +2356,9 @@
     SpanId: Id_122,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_32,
+    ParentId: Id_38,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2085,11 +2366,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2097,9 +2380,9 @@
     SpanId: Id_123,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_32,
+    ParentId: Id_40,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2107,11 +2390,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2119,9 +2404,9 @@
     SpanId: Id_124,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_34,
+    ParentId: Id_40,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2129,11 +2414,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2141,9 +2428,9 @@
     SpanId: Id_125,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_34,
+    ParentId: Id_42,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2151,11 +2438,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2163,9 +2452,9 @@
     SpanId: Id_126,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_36,
+    ParentId: Id_42,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2173,11 +2462,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2185,9 +2476,9 @@
     SpanId: Id_127,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_36,
+    ParentId: Id_44,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2195,11 +2486,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2207,9 +2500,9 @@
     SpanId: Id_128,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_38,
+    ParentId: Id_44,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2217,21 +2510,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_129,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_38,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2239,21 +2534,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_130,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_40,
+    ParentId: Id_5,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2261,21 +2558,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_131,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_40,
+    ParentId: Id_7,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2283,21 +2582,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_132,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_9,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2305,21 +2606,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_133,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_11,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2327,21 +2630,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_134,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_44,
+    ParentId: Id_13,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2349,21 +2654,23 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_135,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_44,
+    ParentId: Id_15,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2371,11 +2678,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2383,9 +2692,9 @@
     SpanId: Id_136,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_17,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2393,11 +2702,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2405,161 +2716,7 @@
     SpanId: Id_137,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_5,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_138,
-    Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_7,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_139,
-    Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_9,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_140,
-    Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_11,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_141,
-    Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_142,
-    Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_15,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_143,
-    Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_17,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_144,
-    Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -2569,19 +2726,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_145,
+    SpanId: Id_138,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -2591,19 +2750,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_146,
+    SpanId: Id_139,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -2613,19 +2774,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_147,
+    SpanId: Id_140,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -2635,19 +2798,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_148,
+    SpanId: Id_141,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -2657,19 +2822,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_149,
+    SpanId: Id_142,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -2679,19 +2846,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_150,
+    SpanId: Id_143,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -2701,19 +2870,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_151,
+    SpanId: Id_144,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -2723,19 +2894,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_152,
+    SpanId: Id_145,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -2745,19 +2918,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_153,
+    SpanId: Id_146,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -2767,19 +2942,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_154,
+    SpanId: Id_147,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -2789,19 +2966,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_155,
+    SpanId: Id_148,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -2811,19 +2990,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_156,
+    SpanId: Id_149,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -2833,19 +3014,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_157,
+    SpanId: Id_150,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_3,
     Tags: {
@@ -2855,19 +3038,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_158,
+    SpanId: Id_151,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_5,
     Tags: {
@@ -2877,19 +3062,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_159,
+    SpanId: Id_152,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_7,
     Tags: {
@@ -2899,19 +3086,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_160,
+    SpanId: Id_153,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_9,
     Tags: {
@@ -2921,19 +3110,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_161,
+    SpanId: Id_154,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_11,
     Tags: {
@@ -2943,19 +3134,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_162,
+    SpanId: Id_155,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_13,
     Tags: {
@@ -2965,19 +3158,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_163,
+    SpanId: Id_156,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_15,
     Tags: {
@@ -2987,19 +3182,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_164,
+    SpanId: Id_157,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_17,
     Tags: {
@@ -3009,19 +3206,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_165,
+    SpanId: Id_158,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -3031,19 +3230,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_166,
+    SpanId: Id_159,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -3053,19 +3254,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_167,
+    SpanId: Id_160,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -3075,19 +3278,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_168,
+    SpanId: Id_161,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -3097,19 +3302,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_169,
+    SpanId: Id_162,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -3119,19 +3326,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_170,
+    SpanId: Id_163,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -3141,19 +3350,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_171,
+    SpanId: Id_164,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -3163,19 +3374,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_172,
+    SpanId: Id_165,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -3185,19 +3398,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_173,
+    SpanId: Id_166,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -3207,19 +3422,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_174,
+    SpanId: Id_167,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -3229,19 +3446,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_175,
+    SpanId: Id_168,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -3251,19 +3470,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_176,
+    SpanId: Id_169,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -3273,19 +3494,21 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_28,
-    SpanId: Id_177,
+    SpanId: Id_170,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql,
+    Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -3295,11 +3518,13 @@
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
-      peer.service: postgres,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.Npgsql,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   }
 ]

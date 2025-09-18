@@ -56,9 +56,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // BATCH (v6+): +3 spans
             var expectedSpanCount = 150;
-            if ((!string.IsNullOrEmpty(packageVersion) && packageVersion[0] < '6') || Environment.Version.Major < 6)
+            var hasBatchSupport = (string.IsNullOrEmpty(packageVersion) || packageVersion[0] >= '6') && Environment.Version.Major >= 6;
+            if (!hasBatchSupport)
             {
-                // no batch support in older versions
                 expectedSpanCount -= 3;
             }
 
@@ -88,17 +88,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             var fileName = nameof(NpgsqlCommandTests);
 #if NETFRAMEWORK
-            fileName = fileName + ".Net462";
+            fileName += ".Net462";
 #endif
-            fileName = fileName + (dbmPropagation switch
+            fileName += dbmPropagation switch
             {
                 "full" => ".tagged",
                 _ => ".untagged",
-            });
+            };
+            fileName += hasBatchSupport ? ".withbatch" : ".nobatch";
 
             await VerifyHelper.VerifySpans(filteredSpans, settings)
-                              .DisableRequireUniquePrefix()
-                              .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
+                .DisableRequireUniquePrefix()
+                .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
         }
 
         [SkippableFact]
