@@ -50,10 +50,10 @@ public class BeforeAfterAspectCodeFixProvider : CodeFixProvider
 
         // Find the methodDeclaration identified by the diagnostic.
         var methodDeclaration = root?.FindToken(diagnosticSpan.Start)
-                                    .Parent
+                                     .Parent
                                     ?.AncestorsAndSelf()
-                                    .OfType<MethodDeclarationSyntax>()
-                                    .First();
+                                     .OfType<MethodDeclarationSyntax>()
+                                     .First();
 
         if (methodDeclaration is null)
         {
@@ -80,7 +80,7 @@ public class BeforeAfterAspectCodeFixProvider : CodeFixProvider
         }
 
         var parentType = methodDeclaration.AncestorsAndSelf()
-                                        .FirstOrDefault(x => x is TypeDeclarationSyntax or RecordDeclarationSyntax or StructDeclarationSyntax);
+                                          .FirstOrDefault(x => x is TypeDeclarationSyntax or RecordDeclarationSyntax or StructDeclarationSyntax);
 
         var typeName = parentType switch
         {

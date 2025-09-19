@@ -126,7 +126,7 @@ namespace Datadog.Trace.Configuration
                         string s => new HashSet<string>(s.Split([','], StringSplitOptions.RemoveEmptyEntries)),
                     };
 
-            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
+            GCPFunctionSettings = new ImmutableGCPFunctionSettings(_telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
             // We don't want/need to record this value, so explicitly use null telemetry
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Configuration
 
             LambdaMetadata = LambdaMetadata.Create();
 
-            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
+            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(telemetry))
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }

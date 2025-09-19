@@ -12,15 +12,13 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
-internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConfigurationTelemetry telemetry)
+internal readonly partial struct ConfigurationBuilder(IConfigurationSource source, IConfigurationTelemetry telemetry)
 {
     private readonly IConfigurationSource _source = source;
     private readonly IConfigurationTelemetry _telemetry = telemetry;
     private readonly EnvironmentConfigurationSource _environmentConfigurationSource = EnvironmentConfigurationSource.Instance;
 
     public HasKeys WithKeys(string key) => new(_source, _telemetry, key);
-
-    public HasKeys WithPlatformKeys(string key) => new(_environmentConfigurationSource, _telemetry, key);
 
     public HasKeys WithIntegrationKey(string integrationName) => new(
         _source,
@@ -763,5 +761,39 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
         internal static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<double, bool>?, Func<string, ParsingResult<double>>, bool, ConfigurationResult<double>> AsDoubleWithConverter
             = (source, key, telemetry, validator, converter, _) => source.GetAs(key, telemetry, converter, validator, recordValue: true);
+    }
+
+    /// <summary>
+    /// Private nested class that represents a configuration source that
+    /// retrieves values from environment variables.
+    /// This class can only be accessed through ConfigurationBuilder.
+    /// </summary>
+    private sealed class EnvironmentConfigurationSource : StringConfigurationSource
+    {
+        internal static readonly EnvironmentConfigurationSource Instance = new();
+
+        private EnvironmentConfigurationSource()
+        {
+            // Private constructor prevents external instantiation
+        }
+
+        /// <inheritdoc />
+        public override ConfigurationOrigins Origin => ConfigurationOrigins.EnvVars;
+
+        /// <inheritdoc />
+        protected override string? GetString(string key)
+        {
+            try
+            {
+                return Environment.GetEnvironmentVariable(key);
+            }
+            catch
+            {
+                // We should not add a dependency from the Configuration system to the Logger system,
+                // so do nothing
+            }
+
+            return null;
+        }
     }
 }

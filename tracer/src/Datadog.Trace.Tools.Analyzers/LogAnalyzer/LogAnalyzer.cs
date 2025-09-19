@@ -154,21 +154,21 @@ public class LogAnalyzer : DiagnosticAnalyzer
                 // crude handling case where we pass an object[] as the single extra argument
                 var nextParameterIndex = messageTemplateArgumentIndex + 1;
                 if ((invocationArguments.Count == nextParameterIndex + 1)
-                    && method.Parameters.Length > nextParameterIndex
-                    && (method.Parameters[nextParameterIndex].Type.ToString() == "object[]"
-                        || method.Parameters[nextParameterIndex].Type.ToString() == "object?[]"))
+                 && method.Parameters.Length > nextParameterIndex
+                 && (method.Parameters[nextParameterIndex].Type.ToString() == "object[]"
+                  || method.Parameters[nextParameterIndex].Type.ToString() == "object?[]"))
                 {
                     // we're in the object[] version of the log message,
                     if (invocationArguments[nextParameterIndex].Expression is ArrayCreationExpressionSyntax { Initializer: { } initializer })
                     {
                         // The object[] is being created inline, e.g. new object[] {"arg1", "arg2"}
                         // so we fudge the analysis to treat these as individual arguments instead
-                        arguments = initializer.Expressions.Select(
-                            x =>
-                            {
-                                var location = x.GetLocation().SourceSpan;
-                                return new SourceArgument(x, location.Start, location.Length);
-                            }).ToList();
+                        arguments = initializer.Expressions.Select(x =>
+                                                {
+                                                    var location = x.GetLocation().SourceSpan;
+                                                    return new SourceArgument(x, location.Start, location.Length);
+                                                })
+                                               .ToList();
                         break;
                     }
                     else
@@ -180,11 +180,13 @@ public class LogAnalyzer : DiagnosticAnalyzer
                 }
                 else
                 {
-                    arguments = invocationArguments.Skip(messageTemplateArgumentIndex + 1).Select(x =>
-                    {
-                        var location = x.GetLocation().SourceSpan;
-                        return new SourceArgument(x.Expression, location.Start, location.Length);
-                    }).ToList();
+                    arguments = invocationArguments.Skip(messageTemplateArgumentIndex + 1)
+                                                   .Select(x =>
+                                                    {
+                                                        var location = x.GetLocation().SourceSpan;
+                                                        return new SourceArgument(x.Expression, location.Start, location.Length);
+                                                    })
+                                                   .ToList();
                     break;
                 }
             }

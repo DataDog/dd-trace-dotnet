@@ -54,7 +54,7 @@ public class ReplaceAspectCodeFixProvider : CodeFixProvider
                                      .OfType<MethodDeclarationSyntax>()
                                      .First();
 
-        if (methodDeclaration?.Body is { Statements.Count: >2 } body
+        if (methodDeclaration?.Body is { Statements.Count: > 2 } body
          && body.Statements[0] is LocalDeclarationStatementSyntax localDeclaration
          && body.Statements[body.Statements.Count - 1] is ReturnStatementSyntax { Expression: IdentifierNameSyntax identifierName }
          && localDeclaration.Declaration.Variables.Count == 1

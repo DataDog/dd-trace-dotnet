@@ -56,8 +56,8 @@ namespace Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer
                     // We are only checking the direct ancestors (nesting breaks this analysis)
                     // and if you have an expression, it must be the exception declared in the
                     willRethrowThreadAbort = catchSyntax.Block.Statements
-                        .OfType<ThrowStatementSyntax>()
-                        .Any();
+                                                        .OfType<ThrowStatementSyntax>()
+                                                        .Any();
                     break;
                 }
             }

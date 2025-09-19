@@ -14,7 +14,7 @@ namespace Datadog.Trace.ContinuousProfiler;
 internal class ProfilerSettings
 {
     public ProfilerSettings(IConfigurationSource config, IConfigurationTelemetry telemetry)
-        : this(config, new EnvironmentConfigurationSource(), telemetry)
+        : this(config, ConfigurationBuilder.GetEnvironmentConfigurationSource(), telemetry)
     {
     }
 

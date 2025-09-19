@@ -10,7 +10,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 internal readonly struct PlatformConfigurationBuilder(IConfigurationTelemetry telemetry)
 {
     private readonly IConfigurationTelemetry _telemetry = telemetry;
-    private readonly EnvironmentConfigurationSource _environmentConfigurationSource = EnvironmentConfigurationSource.Instance;
+    private readonly IConfigurationSource _environmentConfigurationSource = ConfigurationBuilder.GetEnvironmentConfigurationSource();
 
     /// <summary>
     /// Platform key builder

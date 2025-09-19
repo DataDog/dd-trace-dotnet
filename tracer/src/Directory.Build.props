@@ -44,7 +44,11 @@
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
-    <AdditionalFiles Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers/ConfigurationAnalyzer/BannedSymbols.txt"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.0.0-1.25277.114">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers/ConfigurationKeysAnalyzer/BannedSymbols.txt"/>
   </ItemGroup>
 
 </Project>
