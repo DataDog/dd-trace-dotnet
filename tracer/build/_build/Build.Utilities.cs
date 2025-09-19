@@ -260,7 +260,7 @@ partial class Build
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
        });
-    
+
     Target GenerateSpanDocumentation => _ => _
         .Description("Regenerate documentation from our code models")
         .Executes(() =>
@@ -585,9 +585,9 @@ partial class Build
             // not in CI
             return false;
         }
-        
+
         return scheduleName == "Daily Debug Run";
-    } 
+    }
 
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()
     {
@@ -603,7 +603,7 @@ partial class Build
 
         return MSBuildTargetPlatform.x64;
     }
-    
+
     private static string GetDefaultRuntimeIdentifier(bool isAlpine)
     {
         // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
@@ -614,7 +614,7 @@ partial class Build
 
             (PlatformFamily.Linux, "x64") => isAlpine ? "linux-musl-x64" : "linux-x64",
             (PlatformFamily.Linux, "ARM64" or "ARM64EC") => isAlpine ? "linux-musl-arm64" : "linux-arm64",
-            
+
             (PlatformFamily.OSX, "ARM64" or "ARM64EC") => "osx-arm64",
             _ => null
         };
