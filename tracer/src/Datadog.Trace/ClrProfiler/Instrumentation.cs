@@ -326,25 +326,22 @@ namespace Datadog.Trace.ClrProfiler
             {
                 if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
                 {
-                    Log.Debug("Initializing OTel Metrics Exporter.");
+                    // Check if the apporach I have for all works or should follow this setting as OTEL does.
                     if (Tracer.Instance.Settings.OpenTelemetryMeterNames.Length > 0)
                     {
-                        OTelMetrics.OtlpMetricsExporter.Initialize();
-                    }
-                    else
-                    {
-                        Log.Debug("No meters were found for DD_METRICS_OTEL_METER_NAMES, OTel Metrics Exporter won't be initialized.");
+                        Log.Debug("Initializing OTel Metrics collection.");
+                        OTelMetrics.MetricReader.Initialize();
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error initializing OTel Metrics Exporter");
+                Log.Error(ex, "Error initializing OTel Metrics collection.");
             }
 #else
             if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
             {
-                Log.Information("Unable to initialize OTel Metrics collection, this is only available starting with .NET 6.0..");
+                Log.Information("Unable to initialize OTel Metrics collection, this is only available starting with .NET 6.0.");
             }
 #endif
 

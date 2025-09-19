@@ -406,6 +406,13 @@ internal static class MetricTags
         [Description("framework:unknown;event_type:signup")] Unknown,
     }
 
+    internal enum Protocol
+    {
+        [Description("protocol:grpc")] Grpc,
+        [Description("protocol:http/protobuf")] HttpProtobuf,
+        [Description("protocol:http/json")] HttpJson,
+    }
+
     public enum CIVisibilityTestFramework
     {
         [Description("test_framework:xunit")] XUnit,

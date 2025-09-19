@@ -3,6 +3,7 @@ using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Metrics;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
@@ -33,6 +34,11 @@ public static class Program
                 ResourceBuilder.CreateDefault()
                     .AddService(serviceName: serviceName, serviceVersion: serviceVersion))
             .AddConsoleExporter()
+            .AddOtlpExporterIfEnvironmentVariablePresent()
+            .Build();
+
+        // Set up metrics provider for OTel SDK approach (only if env var is set)
+        using var meterProvider = Sdk.CreateMeterProviderBuilder()
             .AddOtlpExporterIfEnvironmentVariablePresent()
             .Build();
 
@@ -102,6 +108,9 @@ public static class Program
         {
             Thread.Sleep(100);
         }
+
+        // Ensure metrics are exported before shutdown
+        meterProvider?.Dispose();
     }
 
     private static async Task RunStartSpanOverloadsAsync(TelemetrySpan span)
