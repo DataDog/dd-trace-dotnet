@@ -494,7 +494,8 @@ partial class Build
                 });
 
        Target DownloadBundleNugetFromBuild => _ => _
-        .Description("Downloads Datadog.Trace.Bundle package from Azure DevOps and extracts it to the local bundle home directory")
+        .Description("Downloads Datadog.Trace.Bundle package from Azure DevOps and extracts it to the local bundle home directory." +
+                     " Useful for building Datadog.Trace.Bundle or Datadog.AzureFunctions nupkg packages locally.")
         .Requires(() => BuildId)
         .Executes(async () =>
         {
