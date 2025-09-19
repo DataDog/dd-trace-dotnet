@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ServiceBusSenderSendMessagesAsyncIntegration
 {
-    private const string OperationName = "azure_servicebus.send";
+    private const string OperationName = "send";
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref IEnumerable messages, ref CancellationToken cancellationToken)
         where TTarget : IServiceBusSender, IDuckType

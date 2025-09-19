@@ -60,8 +60,59 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             return size;
         }
 
-        internal static CallTargetState CreateSenderSpan<TTarget>(TTarget instance, string operationName = "azure_servicebus.send", IEnumerable? messages = null)
-            where TTarget : IServiceBusSender, IDuckType
+        internal static CallTargetState CreateSenderSpan(
+            IServiceBusSender instance,
+            string operationName,
+            IEnumerable? messages = null,
+            int? messageCount = null,
+            IEnumerable<SpanLink>? spanLinks = null)
+        {
+            var entityPath = instance.EntityPath;
+            var endpoint = instance.Connection?.ServiceEndpoint;
+            var networkDestinationName = endpoint?.Host;
+            // https://learn.microsoft.com/en-us/dotnet/api/system.uri.port#remarks
+            var networkDestinationPort = endpoint?.Port is null or -1 or 5671 ?
+                                            "5671" :
+                                            endpoint.Port.ToString();
+
+            return CreateSenderSpanInternal(
+                entityPath,
+                networkDestinationName,
+                networkDestinationPort,
+                operationName,
+                messages,
+                messageCount,
+                spanLinks);
+        }
+
+        internal static CallTargetState CreateSenderSpan(
+            IMessagingClientDiagnostics clientDiagnostics,
+            string operationName,
+            IEnumerable? messages = null,
+            int? messageCount = null,
+            IEnumerable<SpanLink>? spanLinks = null)
+        {
+            var entityPath = clientDiagnostics.EntityPath;
+            var networkDestinationName = clientDiagnostics.FullyQualifiedNamespace;
+
+            return CreateSenderSpanInternal(
+                entityPath,
+                networkDestinationName,
+                null,
+                operationName,
+                messages,
+                messageCount,
+                spanLinks);
+        }
+
+        private static CallTargetState CreateSenderSpanInternal(
+            string? entityPath,
+            string? networkDestinationName,
+            string? networkDestinationPort,
+            string operationName,
+            IEnumerable? messages,
+            int? messageCount,
+            IEnumerable<SpanLink>? spanLinks)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
@@ -71,31 +122,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
             var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
 
-            var entityPath = instance.EntityPath ?? "unknown";
             tags.MessagingDestinationName = entityPath;
-            tags.MessagingOperation = "send";
+            tags.MessagingOperation = operationName;
             tags.MessagingSystem = "servicebus";
             tags.InstrumentationName = "AzureServiceBus";
 
             string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
             var scope = tracer.StartActiveInternal(
-                operationName,
+                "azure_servicebus." + operationName,
                 tags: tags,
-                serviceName: serviceName);
+                serviceName: serviceName,
+                links: spanLinks);
             var span = scope.Span;
 
             span.Type = SpanTypes.Queue;
             span.ResourceName = entityPath;
 
-            var messageCount = messages is ICollection collection ? collection.Count : 0;
+            var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
             string? singleMessageId = null;
 
-            if (messageCount > 1)
+            if (actualMessageCount > 1)
             {
-                span.SetTag(Tags.MessagingBatchMessageCount, messageCount.ToString());
+                span.SetTag(Tags.MessagingBatchMessageCount, actualMessageCount.ToString());
             }
 
-            if (messageCount == 1 && messages != null)
+            if (actualMessageCount == 1 && messages != null)
             {
                 foreach (var message in messages)
                 {
@@ -110,14 +161,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 }
             }
 
-            var endpoint = instance.Connection?.ServiceEndpoint;
-            if (endpoint != null)
+            if (!string.IsNullOrEmpty(networkDestinationName))
             {
-                tags.NetworkDestinationName = endpoint.Host;
-                // https://learn.microsoft.com/en-us/dotnet/api/system.uri.port?view=net-8.0#remarks
-                tags.NetworkDestinationPort = endpoint.Port is -1 or 5671 ?
-                                    "5671" :
-                                    endpoint.Port.ToString();
+                tags.NetworkDestinationName = networkDestinationName;
+            }
+
+            if (!string.IsNullOrEmpty(networkDestinationPort))
+            {
+                tags.NetworkDestinationPort = networkDestinationPort;
             }
 
             return new CallTargetState(scope);

@@ -631,6 +631,10 @@ namespace Datadog.Trace.Configuration
                                              .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                              .AsBool(defaultValue: true);
 
+            AzureServiceBusBatchLinksEnabled = config
+                                             .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
+                                             .AsBool(defaultValue: true);
+
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             .AsBool(defaultValue: true);
@@ -1193,6 +1197,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.KafkaCreateConsumerScopeEnabled"/>
         public bool KafkaCreateConsumerScopeEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to enable span linking for individual messages
+        /// when using Azure Service Bus batch operations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AzureServiceBusBatchLinksEnabled"/>
+        public bool AzureServiceBusBatchLinksEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
