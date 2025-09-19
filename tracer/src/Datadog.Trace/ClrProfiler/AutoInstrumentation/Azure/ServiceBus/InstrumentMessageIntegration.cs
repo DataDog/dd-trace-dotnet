@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -41,15 +42,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IDictionary<string, object> properties, string activityName, ref string traceparent, ref string tracestate)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-                && Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
             {
-                // Adding DSM to the send operation of IReadOnlyCollection<ServiceBusMessage>|ServiceBusMessageBatch - Step Two:
-                // In between the OnMethodBegin and OnMethodEnd, a new Activity will be created to represent
-                // the Azure Service Bus message. To access the active message that is being instrumented,
-                // save the active message properties object to an AsyncLocal field. This will limit
-                // our lookup to one AsyncLocal field and one static field
-                AzureServiceBusCommon.ActiveMessageProperties.Value = properties;
+                if (Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
+                {
+                    // Adding DSM to the send operation of IReadOnlyCollection<ServiceBusMessage>|ServiceBusMessageBatch - Step Two:
+                    // In between the OnMethodBegin and OnMethodEnd, a new Activity will be created to represent
+                    // the Azure Service Bus message. To access the active message that is being instrumented,
+                    // save the active message properties object to an AsyncLocal field. This will limit
+                    // our lookup to one AsyncLocal field and one static field
+                    AzureServiceBusCommon.ActiveMessageProperties.Value = properties;
+                }
+
+                // Inject tracing context into the final message properties
+                var activeScope = Tracer.Instance.ActiveScope;
+                if (activeScope?.Span?.Context is SpanContext spanContext && properties != null)
+                {
+                    var context = new PropagationContext(spanContext, Baggage.Current);
+                    Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, properties, default(ContextPropagation));
+                }
             }
 
             return CallTargetState.GetDefault();

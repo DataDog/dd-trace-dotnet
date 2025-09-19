@@ -17,6 +17,9 @@ namespace Datadog.Trace.Tagging
     {
         private string _spanKind;
 
+        [Tag(Trace.Tags.InstrumentationName)]
+        public string InstrumentationName { get; set; }
+
         [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
@@ -28,6 +31,15 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.LegacyMessageBusDestination)]
         public string LegacyMessageBusDestination { get; set; }
+
+        [Tag(Trace.Tags.NetworkDestinationName)]
+        public string NetworkDestinationName { get; set; }
+
+        [Tag(Trace.Tags.NetworkDestinationPort)]
+        public string NetworkDestinationPort { get; set; }
+
+        [Tag(Trace.Tags.ServerAddress)]
+        public string ServerAddress { get; set; }
 
         public override string SpanKind
         {

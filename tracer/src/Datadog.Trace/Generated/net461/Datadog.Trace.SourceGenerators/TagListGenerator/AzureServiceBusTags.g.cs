@@ -18,20 +18,32 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> AnalyticsSampleRateBytes => new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
         // MessageQueueTimeMsBytes = MessagePack.Serialize("message.queue_time_ms");
         private static ReadOnlySpan<byte> MessageQueueTimeMsBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // MessagingSourceNameBytes = MessagePack.Serialize("messaging.source.name");
         private static ReadOnlySpan<byte> MessagingSourceNameBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
         // MessagingDestinationNameBytes = MessagePack.Serialize("messaging.destination.name");
         private static ReadOnlySpan<byte> MessagingDestinationNameBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
         // LegacyMessageBusDestinationBytes = MessagePack.Serialize("message_bus.destination");
         private static ReadOnlySpan<byte> LegacyMessageBusDestinationBytes => new byte[] { 183, 109, 101, 115, 115, 97, 103, 101, 95, 98, 117, 115, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110 };
+        // NetworkDestinationNameBytes = MessagePack.Serialize("network.destination.name");
+        private static ReadOnlySpan<byte> NetworkDestinationNameBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+        // NetworkDestinationPortBytes = MessagePack.Serialize("network.destination.port");
+        private static ReadOnlySpan<byte> NetworkDestinationPortBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
+        // ServerAddressBytes = MessagePack.Serialize("server.address");
+        private static ReadOnlySpan<byte> ServerAddressBytes => new byte[] { 174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
 
         public override string? GetTag(string key)
         {
             return key switch
             {
+                "component" => InstrumentationName,
                 "messaging.source.name" => MessagingSourceName,
                 "messaging.destination.name" => MessagingDestinationName,
                 "message_bus.destination" => LegacyMessageBusDestination,
+                "network.destination.name" => NetworkDestinationName,
+                "network.destination.port" => NetworkDestinationPort,
+                "server.address" => ServerAddress,
                 _ => base.GetTag(key),
             };
         }
@@ -40,6 +52,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "messaging.source.name": 
                     MessagingSourceName = value;
                     break;
@@ -49,6 +64,15 @@ namespace Datadog.Trace.Tagging
                 case "message_bus.destination": 
                     LegacyMessageBusDestination = value;
                     break;
+                case "network.destination.name": 
+                    NetworkDestinationName = value;
+                    break;
+                case "network.destination.port": 
+                    NetworkDestinationPort = value;
+                    break;
+                case "server.address": 
+                    ServerAddress = value;
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;
@@ -57,6 +81,11 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
+            if (InstrumentationName is not null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
             if (MessagingSourceName is not null)
             {
                 processor.Process(new TagItem<string>("messaging.source.name", MessagingSourceName, MessagingSourceNameBytes));
@@ -72,11 +101,33 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("message_bus.destination", LegacyMessageBusDestination, LegacyMessageBusDestinationBytes));
             }
 
+            if (NetworkDestinationName is not null)
+            {
+                processor.Process(new TagItem<string>("network.destination.name", NetworkDestinationName, NetworkDestinationNameBytes));
+            }
+
+            if (NetworkDestinationPort is not null)
+            {
+                processor.Process(new TagItem<string>("network.destination.port", NetworkDestinationPort, NetworkDestinationPortBytes));
+            }
+
+            if (ServerAddress is not null)
+            {
+                processor.Process(new TagItem<string>("server.address", ServerAddress, ServerAddressBytes));
+            }
+
             base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
+            if (InstrumentationName is not null)
+            {
+                sb.Append("component (tag):")
+                  .Append(InstrumentationName)
+                  .Append(',');
+            }
+
             if (MessagingSourceName is not null)
             {
                 sb.Append("messaging.source.name (tag):")
@@ -95,6 +146,27 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("message_bus.destination (tag):")
                   .Append(LegacyMessageBusDestination)
+                  .Append(',');
+            }
+
+            if (NetworkDestinationName is not null)
+            {
+                sb.Append("network.destination.name (tag):")
+                  .Append(NetworkDestinationName)
+                  .Append(',');
+            }
+
+            if (NetworkDestinationPort is not null)
+            {
+                sb.Append("network.destination.port (tag):")
+                  .Append(NetworkDestinationPort)
+                  .Append(',');
+            }
+
+            if (ServerAddress is not null)
+            {
+                sb.Append("server.address (tag):")
+                  .Append(ServerAddress)
                   .Append(',');
             }
 
