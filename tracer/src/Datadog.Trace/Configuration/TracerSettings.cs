@@ -196,7 +196,7 @@ namespace Datadog.Trace.Configuration
                 };
 
                 globalTags = config
-                                .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                                .WithKeys(ConfigurationKeys.GlobalTags)
                                 .AsDictionaryResult(parser: updatedTagsParser)
                                 .OverrideWith(
                                      RemapOtelTags(in otelTags),
@@ -210,7 +210,7 @@ namespace Datadog.Trace.Configuration
             else
             {
                 globalTags = config
-                                .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                                .WithKeys(ConfigurationKeys.GlobalTags)
                                 .AsDictionaryResult()
                                 .OverrideWith(
                                      RemapOtelTags(in otelTags),
@@ -231,7 +231,7 @@ namespace Datadog.Trace.Configuration
 
             var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
             var serviceName = config
-                                 .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                                 .WithKeys(ConfigurationKeys.ServiceName)
                                  .AsStringResult()
                                  .OverrideWith(in otelServiceName, ErrorLog);
 
@@ -320,7 +320,8 @@ namespace Datadog.Trace.Configuration
                                                                ? ParsingResult<bool>.Success(result: false)
                                                                : ParsingResult<bool>.Failure());
             IsActivityListenerEnabled = config
-                                       .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
+                                       .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
+                                       .Or(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled)
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
@@ -345,7 +346,7 @@ namespace Datadog.Trace.Configuration
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
             MaxTracesSubmittedPerSecond = config
-                                         .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
+                                         .WithKeys(ConfigurationKeys.TraceRateLimit)
 #pragma warning restore 618
                                          .AsInt32(defaultValue: 100);
 
@@ -513,7 +514,7 @@ namespace Datadog.Trace.Configuration
 
             var httpServerErrorStatusCodes = config
 #pragma warning disable 618 // This config key has been replaced but may still be used
-                                            .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
+                                            .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes)
 #pragma warning restore 618
                                             .AsString(defaultValue: "500-599");
 
@@ -521,7 +522,7 @@ namespace Datadog.Trace.Configuration
 
             var httpClientErrorStatusCodes = config
 #pragma warning disable 618 // This config key has been replaced but may still be used
-                                            .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
+                                            .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
 #pragma warning restore 618
                                             .AsString(defaultValue: "400-499");
 
@@ -604,14 +605,14 @@ namespace Datadog.Trace.Configuration
                                  converter: otelConverter);
 
             PropagationStyleInject = config
-                                    .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
+                                    .WithKeys(ConfigurationKeys.PropagationStyleInject)
                                     .GetAsClassResult(
                                          validator: injectionValidator, // invalid individual values are rejected later
                                          converter: style => TrimSplitString(style, commaSeparator))
                                     .OverrideWith(in otelPropagation, ErrorLog, getDefaultPropagationHeaders);
 
             PropagationStyleExtract = config
-                                     .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
+                                     .WithKeys(ConfigurationKeys.PropagationStyleExtract)
                                      .GetAsClassResult(
                                           validator: injectionValidator, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator))
@@ -666,7 +667,8 @@ namespace Datadog.Trace.Configuration
                                                    .Value;
 
             IpHeader = config
-                      .WithKeys(ConfigurationKeys.IpHeader, ConfigurationKeys.AppSec.CustomIpHeader)
+                      .WithKeys(ConfigurationKeys.IpHeader)
+                      .Or(ConfigurationKeys.AppSec.CustomIpHeader) // todo is this deprecated instead?
                       .AsString();
 
             IpHeaderEnabled = config

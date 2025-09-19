@@ -34,58 +34,90 @@ public class ConfigurationKeyMatcherGenerator : IIncrementalGenerator
         // Get the supported-configurations.json file and parse only the aliases section
         // We only track changes to the aliases section since that's what affects the generated code
         var additionalText = context.AdditionalTextsProvider
-                                    .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase)).WithTrackingName(TrackingNames.ConfigurationKeysAdditionalText);
+                                    .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
+                                    .WithTrackingName(TrackingNames.ConfigurationKeysAdditionalText);
 
-        var aliasSection = additionalText.Select(static (file, ct) => ExtractAliasesSection(file, ct));
+        var aliasSection = additionalText.Collect()
+                                        .Select(static (files, ct) =>
+                                        {
+                                            if (files.Length == 0)
+                                            {
+                                                // No supported-configurations.json file found
+                                                return new Result<string>(
+                                                    string.Empty,
+                                                    new EquatableArray<DiagnosticInfo>(
+                                                    [
+                                                        CreateDiagnosticInfo("DDSG0003", "Configuration file not found", $"The file '{SupportedConfigurationsFileName}' was not found. Make sure the supported-configurations.json file exists and is included as an AdditionalFile.", DiagnosticSeverity.Error)
+                                                    ]));
+                                            }
 
-        var aliasesContent = aliasSection.Select(static (aliasesContent, ct) => ParseAliasesContent(aliasesContent, ct))
-                                         .WithTrackingName(TrackingNames.ConfigurationKeysParseConfiguration)
-                                         .Where(static result => result is not null);
+                                            // Extract from the first (and should be only) file
+                                            return ExtractAliasesSection(files[0], ct);
+                                        });
 
-        // Generate source for valid configuration data
-        var validConfigurationData = aliasesContent
-                                    .Where(static result => result.Value is not null)
-                                    .Select(static (result, _) => result.Value)
-                                    .WithTrackingName(TrackingNames.ConfigurationKeyMatcherValidData);
+        var aliasesContent = aliasSection.Select(static (extractResult, ct) =>
+                                          {
+                                              if (extractResult.Errors.Count > 0)
+                                              {
+                                                  // Return the errors from extraction
+                                                  return new Result<ConfigurationAliases>(null!, extractResult.Errors);
+                                              }
 
+                                              return ParseAliasesContent(extractResult.Value, ct);
+                                          })
+                                         .WithTrackingName(TrackingNames.ConfigurationKeysParseConfiguration);
+
+        // Always generate source code, even when there are errors
+        // This ensures compilation doesn't fail due to missing generated types
         context.RegisterSourceOutput(
-            validConfigurationData,
-            static (spc, configData) => Execute(spc, configData));
-
-        // Report diagnostics for any parsing errors
-        context.ReportDiagnostics(
-            aliasesContent
-               .Where(static result => result.Errors.Count > 0)
-               .SelectMany(static (result, _) => result.Errors)
-               .WithTrackingName(TrackingNames.ConfigurationKeyMatcherDiagnostics));
+            aliasesContent,
+            static (spc, result) => Execute(spc, result));
     }
 
-    private static void Execute(SourceProductionContext context, ConfigurationAliases configurationAliases)
+    private static void Execute(SourceProductionContext context, Result<ConfigurationAliases> result)
     {
+        // Report any diagnostics first
+        foreach (var diagnostic in result.Errors)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(diagnostic.Descriptor, diagnostic.Location?.ToLocation()));
+        }
+
+        // Generate source code even if there are errors (use empty configuration as fallback)
+        var configurationAliases = result.Value ?? new ConfigurationAliases(new Dictionary<string, string[]>());
         var compilationUnit = GenerateConfigurationKeyMatcher(configurationAliases);
         var generatedSource = compilationUnit.NormalizeWhitespace().ToFullString();
         context.AddSource($"{ClassName}.g.cs", SourceText.From(generatedSource, Encoding.UTF8));
     }
 
-    private static string ExtractAliasesSection(AdditionalText file, CancellationToken cancellationToken)
+    private static Result<string> ExtractAliasesSection(AdditionalText file, CancellationToken cancellationToken)
     {
         try
         {
             var sourceText = file.GetText(cancellationToken);
             if (sourceText is null)
             {
-                return string.Empty;
+                return new Result<string>(
+                    string.Empty,
+                    new EquatableArray<DiagnosticInfo>(
+                    [
+                        CreateDiagnosticInfo("DDSG0003", "Configuration file not found", $"The file '{file.Path}' could not be read. Make sure the supported-configurations.json file exists and is included as an AdditionalFile.", DiagnosticSeverity.Error)
+                    ]));
             }
 
             var jsonContent = sourceText.ToString();
 
             // Extract only the aliases section from the JSON
             var aliasesSection = JsonReader.ExtractJsonObjectSection(jsonContent, "aliases");
-            return aliasesSection ?? string.Empty;
+            return new Result<string>(aliasesSection ?? string.Empty, default);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return string.Empty;
+            return new Result<string>(
+                string.Empty,
+                new EquatableArray<DiagnosticInfo>(
+                [
+                    CreateDiagnosticInfo("DDSG0004", "Configuration file read error", $"Failed to read configuration file '{file.Path}': {ex.Message}", DiagnosticSeverity.Error)
+                ]));
         }
     }
 
@@ -122,14 +154,14 @@ public class ConfigurationKeyMatcherGenerator : IIncrementalGenerator
         }
     }
 
-    private static DiagnosticInfo CreateDiagnosticInfo(string id, string title, string message)
+    private static DiagnosticInfo CreateDiagnosticInfo(string id, string title, string message, DiagnosticSeverity severity = DiagnosticSeverity.Warning)
     {
         var descriptor = new DiagnosticDescriptor(
             id,
             title,
             message,
             "Configuration",
-            DiagnosticSeverity.Warning,
+            severity,
             isEnabledByDefault: true);
 
         return new DiagnosticInfo(descriptor, Location.None);

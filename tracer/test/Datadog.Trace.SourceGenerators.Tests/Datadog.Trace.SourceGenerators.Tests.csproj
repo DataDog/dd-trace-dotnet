@@ -13,4 +13,10 @@
     <ProjectReference Include="..\..\src\Datadog.Trace.SourceGenerators\Datadog.Trace.SourceGenerators.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="supported-configurations.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

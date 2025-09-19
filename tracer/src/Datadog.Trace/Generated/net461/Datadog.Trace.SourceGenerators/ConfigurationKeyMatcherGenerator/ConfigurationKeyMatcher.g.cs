@@ -26,6 +26,16 @@ internal static partial class ConfigurationKeyMatcher
                 {
                     "DD_EXPERIMENTAL_API_SECURITY_ENABLED"
                 };
+            case "DD_EXCEPTION_REPLAY_ENABLED":
+                return new string[]
+                {
+                    "DD_EXCEPTION_DEBUGGING_ENABLED"
+                };
+            case "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS":
+                return new string[]
+                {
+                    "DD_INTERNAL_RCM_POLL_INTERVAL"
+                };
             case "DD_SERVICE":
                 return new string[]
                 {
@@ -46,6 +56,21 @@ internal static partial class ConfigurationKeyMatcher
                 {
                     "DD_DOTNET_TRACER_CONFIG_FILE"
                 };
+            case "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES":
+                return new string[]
+                {
+                    "DD_HTTP_CLIENT_ERROR_STATUSES"
+                };
+            case "DD_TRACE_HTTP_SERVER_ERROR_STATUSES":
+                return new string[]
+                {
+                    "DD_HTTP_SERVER_ERROR_STATUSES"
+                };
+            case "DD_TRACE_LOG_DIRECTORY":
+                return new string[]
+                {
+                    "DD_TRACE_LOG_PATH"
+                };
             case "DD_TRACE_OTEL_ENABLED":
                 return new string[]
                 {
@@ -60,6 +85,11 @@ internal static partial class ConfigurationKeyMatcher
                 return new string[]
                 {
                     "DD_PROPAGATION_STYLE_INJECT"
+                };
+            case "DD_TRACE_RATE_LIMIT":
+                return new string[]
+                {
+                    "DD_MAX_TRACES_PER_SECOND"
                 };
             default:
                 return Array.Empty<string>();

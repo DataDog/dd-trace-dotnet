@@ -16,38 +16,57 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 {
     private readonly IConfigurationSource _source = source;
     private readonly IConfigurationTelemetry _telemetry = telemetry;
+    private readonly EnvironmentConfigurationSource _environmentConfigurationSource = EnvironmentConfigurationSource.Instance;
 
     public HasKeys WithKeys(string key) => new(_source, _telemetry, key);
 
-    public HasKeys WithKeys(string key, string fallbackKey) => new(_source, _telemetry, key, fallbackKey);
+    public HasKeys WithPlatformKeys(string key) => new(_environmentConfigurationSource, _telemetry, key);
 
-    public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2);
+    public HasKeys WithIntegrationKey(string integrationName) => new(
+        _source,
+        _telemetry,
+        integrationName,
+        [
+            string.Format(ConfigurationKeys.Integrations.Enabled, integrationName.ToUpperInvariant()),
+            string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
+            $"DD_{integrationName}_ENABLED"
+        ]);
 
-    public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
+    public HasKeys WithIntegrationAnalyticsKey(string integrationName) => new(
+        _source,
+        _telemetry,
+        integrationName,
+        [
+#pragma warning disable 618 // App analytics is deprecated, but still used
+            string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName.ToUpperInvariant()),
+            string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
+#pragma warning restore 618
+            $"DD_{integrationName}_ANALYTICS_ENABLED"
+        ]);
 
-    internal readonly struct HasKeys
+    public HasKeys WithIntegrationAnalyticsSampleRateKey(string integrationName) => new(
+        _source,
+        _telemetry,
+        integrationName,
+        [
+#pragma warning disable 618 // App analytics is deprecated, but still used
+            string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName.ToUpperInvariant()),
+            string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName),
+#pragma warning restore 618
+            $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
+        ]);
+
+    internal readonly struct HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string[]? allKeys = null)
     {
-        public HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string? fallbackKey1 = null, string? fallbackKey2 = null, string? fallbackKey3 = null)
-        {
-            Source = source;
-            Telemetry = telemetry;
-            Key = key;
-            FallbackKey1 = fallbackKey1;
-            FallbackKey2 = fallbackKey2;
-            FallbackKey3 = fallbackKey3;
-        }
+        private readonly string[]? _allKeys = allKeys;
 
-        private IConfigurationSource Source { get; }
+        private IConfigurationSource Source { get; } = source;
 
-        private IConfigurationTelemetry Telemetry { get; }
+        private IConfigurationTelemetry Telemetry { get; } = telemetry;
 
-        private string Key { get; }
+        private string Key { get; } = key;
 
-        private string? FallbackKey1 { get; }
-
-        private string? FallbackKey2 { get; }
-
-        private string? FallbackKey3 { get; }
+        public HasKeys Or(string key) => new(Source, Telemetry, key);
 
         // ****************
         // String accessors
@@ -493,24 +512,9 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
         private ConfigurationResult<T> GetResult<T>(Func<IConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, bool recordValue)
         {
-            var result = selector(Source, Key, Telemetry, validator, recordValue);
-            // todo call helper to find fallbacks
-            if (result.ShouldFallBack && FallbackKey1 is not null)
-            {
-                result = selector(Source, FallbackKey1, Telemetry, validator, recordValue);
-            }
-
-            if (result.ShouldFallBack && FallbackKey2 is not null)
-            {
-                result = selector(Source, FallbackKey2, Telemetry, validator, recordValue);
-            }
-
-            if (result.ShouldFallBack && FallbackKey3 is not null)
-            {
-                result = selector(Source, FallbackKey3, Telemetry, validator, recordValue);
-            }
-
-            return result;
+            var source = Source;
+            var telemetry = Telemetry;
+            return GetResultWithFallback(key => selector(source, key, telemetry, validator, recordValue));
         }
 
         /// <summary>
@@ -524,62 +528,50 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
         private ConfigurationResult<T> GetResult<T>(Func<IConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, Func<string, ParsingResult<T>>, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter, bool recordValue)
         {
-            var result = selector(Source, Key, Telemetry, validator, converter, recordValue);
-            if (result.ShouldFallBack && FallbackKey1 is not null)
-            {
-                result = selector(Source, FallbackKey1, Telemetry, validator, converter, recordValue);
-            }
-
-            if (result.ShouldFallBack && FallbackKey2 is not null)
-            {
-                result = selector(Source, FallbackKey2, Telemetry, validator, converter, recordValue);
-            }
-
-            if (result.ShouldFallBack && FallbackKey3 is not null)
-            {
-                result = selector(Source, FallbackKey3, Telemetry, validator, converter, recordValue);
-            }
-
-            return result;
+            var source = Source;
+            var telemetry = Telemetry;
+            return GetResultWithFallback(key => selector(source, key, telemetry, validator, converter, recordValue));
         }
 
         private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(bool allowOptionalMappings, char separator)
         {
-            var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings, separator);
-            if (result.ShouldFallBack && FallbackKey1 is not null)
-            {
-                result = Source.GetDictionary(FallbackKey1, Telemetry, validator: null, allowOptionalMappings, separator);
-            }
-
-            if (result.ShouldFallBack && FallbackKey2 is not null)
-            {
-                result = Source.GetDictionary(FallbackKey2, Telemetry, validator: null, allowOptionalMappings, separator);
-            }
-
-            if (result.ShouldFallBack && FallbackKey3 is not null)
-            {
-                result = Source.GetDictionary(FallbackKey3, Telemetry, validator: null, allowOptionalMappings, separator);
-            }
-
-            return result;
+            var source = Source;
+            var telemetry = Telemetry;
+            return GetResultWithFallback(key => source.GetDictionary(key, telemetry, validator: null, allowOptionalMappings, separator));
         }
 
         private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(Func<string, IDictionary<string, string>> parser)
         {
-            var result = Source.GetDictionary(Key, Telemetry, validator: null, parser);
-            if (result.ShouldFallBack && FallbackKey1 is not null)
+            var source = Source;
+            var telemetry = Telemetry;
+            return GetResultWithFallback(key => source.GetDictionary(key, telemetry, validator: null, parser));
+        }
+
+        /// <summary>
+        /// Common method that handles key resolution and alias fallback logic
+        /// </summary>
+        /// <param name="selector">The method to call for each key</param>
+        /// <typeparam name="T">The type being retrieved</typeparam>
+        /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
+        private ConfigurationResult<T> GetResultWithFallback<T>(Func<string, ConfigurationResult<T>> selector)
+        {
+            var hasAllKeys = _allKeys is not null;
+            var canonicalKey = hasAllKeys ? _allKeys![0] : Key;
+            var result = selector(canonicalKey);
+            if (!result.ShouldFallBack)
             {
-                result = Source.GetDictionary(FallbackKey1, Telemetry, validator: null, parser);
+                return result;
             }
 
-            if (result.ShouldFallBack && FallbackKey2 is not null)
-            {
-                result = Source.GetDictionary(FallbackKey2, Telemetry, validator: null, parser);
-            }
+            string[] aliases = !hasAllKeys ? ConfigurationKeyMatcher.GetAliases(Key) : [_allKeys![1], _allKeys[2]];
 
-            if (result.ShouldFallBack && FallbackKey3 is not null)
+            foreach (var alias in aliases)
             {
-                result = Source.GetDictionary(FallbackKey3, Telemetry, validator: null, parser);
+                result = selector(alias);
+                if (!result.ShouldFallBack)
+                {
+                    break;
+                }
             }
 
             return result;
@@ -607,10 +599,9 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public static StructConfigurationResultWithKey<int> Create(IConfigurationTelemetry telemetry, string key, ConfigurationResult<int> configurationResult)
             => new(telemetry, key, configurationResult);
 
-        public static StructConfigurationResultWithKey<double> Create(IConfigurationTelemetry telemetry, string key, ConfigurationResult<double> configurationResult)
-            => new(telemetry, key, configurationResult);
+        public static StructConfigurationResultWithKey<double> Create(IConfigurationTelemetry telemetry, string key, ConfigurationResult<double> configurationResult) => new(telemetry, key, configurationResult);
 
-        [return:NotNullIfNotNull(nameof(defaultValue))]
+        [return: NotNullIfNotNull(nameof(defaultValue))]
         public T? WithDefault(T? defaultValue)
         {
             if (ConfigurationResult is { Result: { } ddResult, IsValid: true })
@@ -624,7 +615,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
         public T WithDefault(T defaultValue)
         {
-            if (ConfigurationResult is { Result: { } ddResult, IsValid: true })
+            if (ConfigurationResult is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }

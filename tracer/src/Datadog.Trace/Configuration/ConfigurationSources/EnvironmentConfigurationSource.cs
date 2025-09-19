@@ -16,6 +16,8 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     internal class EnvironmentConfigurationSource : StringConfigurationSource
     {
+        internal static readonly EnvironmentConfigurationSource Instance = new();
+
         /// <inheritdoc />
         public override ConfigurationOrigins Origin => ConfigurationOrigins.EnvVars;
 

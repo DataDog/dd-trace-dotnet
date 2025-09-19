@@ -40,11 +40,27 @@
     <Compile Update="AppSec\Coordinator\SecurityReporter.Framework.cs">
       <DependentUpon>SecurityReporter.cs</DependentUpon>
     </Compile>
+    <Compile Update="Configuration\PlatformKeys.AzureAppService.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.AzureFunctions.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.GCPFunction.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.SourceGenerators\Datadog.Trace.SourceGenerators.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
   </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Configuration\supported-configurations.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </AdditionalFiles>
+  </ItemGroup>
+
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Configuration" />

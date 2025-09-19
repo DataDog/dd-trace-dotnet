@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -51,8 +52,8 @@ namespace Datadog.Trace.Configuration
         {
             source ??= NullConfigurationSource.Instance;
             // TODO: This is retrieved from other places too... need to work out how to not replace config
-            var config = new ConfigurationBuilder(source, telemetry);
-            var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+            var platformConfig = new PlatformConfigurationBuilder(telemetry);
+            var apiKey = platformConfig.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
 
             if (string.IsNullOrEmpty(apiKey))
             {
@@ -61,17 +62,17 @@ namespace Datadog.Trace.Configuration
             }
 
             SubscriptionId = GetSubscriptionId(source, telemetry);
-            ResourceGroup = config.WithKeys(ConfigurationKeys.AzureAppService.ResourceGroupKey).AsString();
-            SiteName = config.WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey).AsString();
+            ResourceGroup = platformConfig.WithKeys(PlatformKeys.AzureAppService.ResourceGroupKey).AsString();
+            SiteName = platformConfig.WithKeys(PlatformKeys.AzureAppService.SiteNameKey).AsString();
             ResourceId = CompileResourceId(subscriptionId: SubscriptionId, siteName: SiteName, resourceGroup: ResourceGroup);
-            InstanceId = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceIdKey).AsString("unknown");
-            InstanceName = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceNameKey).AsString("unknown");
-            OperatingSystem = config.WithKeys(ConfigurationKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
-            SiteExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
-            WebsiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
+            InstanceId = platformConfig.WithKeys(PlatformKeys.AzureAppService.InstanceIdKey).AsString("unknown");
+            InstanceName = platformConfig.WithKeys(PlatformKeys.AzureAppService.InstanceNameKey).AsString("unknown");
+            OperatingSystem = platformConfig.WithKeys(PlatformKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
+            SiteExtensionVersion = platformConfig.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
+            WebsiteSKU = platformConfig.WithKeys(PlatformKeys.AzureAppService.WebsiteSKU).AsString();
 
-            FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
-            FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
+            FunctionsWorkerRuntime = platformConfig.WithKeys(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
+            FunctionsExtensionVersion = platformConfig.WithKeys(PlatformKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
 
             if (FunctionsWorkerRuntime is not null && FunctionsExtensionVersion is not null)
             {
@@ -89,9 +90,9 @@ namespace Datadog.Trace.Configuration
                 SiteType = "app";
             }
 
-            DebugModeEnabled = config.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
-            CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
-            NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
+            DebugModeEnabled = platformConfig.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
+            CustomTracingEnabled = platformConfig.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
+            NeedsDogStatsD = platformConfig.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
         }
 
         public bool DebugModeEnabled { get; }
@@ -142,19 +143,19 @@ namespace Datadog.Trace.Configuration
         {
             if (subscriptionId == null)
             {
-                Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
+                Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", PlatformKeys.AzureAppService.WebsiteOwnerNameKey);
                 return null;
             }
 
             if (siteName == null)
             {
-                Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", ConfigurationKeys.AzureAppService.SiteNameKey);
+                Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", PlatformKeys.AzureAppService.SiteNameKey);
                 return null;
             }
 
             if (resourceGroup == null)
             {
-                Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", ConfigurationKeys.AzureAppService.ResourceGroupKey);
+                Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", PlatformKeys.AzureAppService.ResourceGroupKey);
                 return null;
             }
 
@@ -164,7 +165,7 @@ namespace Datadog.Trace.Configuration
         private static string? GetSubscriptionId(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var websiteOwner = new ConfigurationBuilder(source, telemetry)
-                              .WithKeys(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey)
+                              .WithKeys(PlatformKeys.AzureAppService.WebsiteOwnerNameKey)
                               .AsString(websiteOwner => !string.IsNullOrWhiteSpace(websiteOwner));
 
             if (!string.IsNullOrWhiteSpace(websiteOwner))
@@ -186,7 +187,7 @@ namespace Datadog.Trace.Configuration
         public static bool IsRunningInAzureAppServices(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var siteName = new ConfigurationBuilder(source, telemetry)
-                           .WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey)
+                           .WithKeys(PlatformKeys.AzureAppService.SiteNameKey)
                            .AsString();
 
             return !string.IsNullOrEmpty(siteName);
@@ -200,7 +201,7 @@ namespace Datadog.Trace.Configuration
         public static bool IsRunningInAzureFunctions(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var siteName = new ConfigurationBuilder(source, telemetry)
-                           .WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey)
+                           .WithKeys(PlatformKeys.AzureAppService.SiteNameKey)
                            .AsString();
 
             // "dotnet", "dotnet-isolated"

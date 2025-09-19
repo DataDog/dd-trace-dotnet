@@ -104,7 +104,7 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsAzureAppServices()
         {
-            return EnvironmentVariableExists(ConfigurationKeys.AzureAppService.SiteNameKey);
+            return EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
         }
 
         /// <summary>
