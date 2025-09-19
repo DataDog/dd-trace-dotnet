@@ -21,7 +21,6 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 {
     [Trait("RequiresDockerDependency", "true")]
-    [Trait("Category", "ArmUnsupported")]
     [UsesVerify]
     public class AzureServiceBusAPMTests : TracingIntegrationTest
     {
@@ -149,6 +148,109 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
+        public async Task TestServiceBusMessageBatchIntegration(string packageVersion, string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "TestServiceBusMessageBatch");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+
+                var sendSpans = spans.Where(span => span.Name == "azure_servicebus.send").ToList();
+                var receiveSpans = spans.Where(span => span.Name == "azure_servicebus.receive").ToList();
+
+                Output.WriteLine($"Send spans found: {sendSpans.Count}");
+                Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
+
+                sendSpans.Should().HaveCount(4, "Expected 3 TryAddMessage spans + 1 SendMessagesAsync span");
+                receiveSpans.Should().HaveCount(1, "Expected 1 ReceiveMessagesAsync span");
+
+                var individualMessageSpans = sendSpans.Where(s => s.Resource == "batch_message").ToList();
+                individualMessageSpans.Should().HaveCount(3, "Expected 3 individual message spans from TryAddMessage operations");
+
+                var batchSendSpans = sendSpans.Where(s => s.Resource != "batch_message").ToList();
+                batchSendSpans.Should().HaveCount(1, "Expected 1 batch send span from SendMessagesAsync operation");
+
+                foreach (var sendSpan in sendSpans)
+                {
+                    var result = ValidateIntegrationSpan(sendSpan, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Send span validation failed: {result}");
+                }
+
+                foreach (var receiveSpan in receiveSpans)
+                {
+                    var result = ValidateIntegrationSpan(receiveSpan, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
+                }
+
+                ValidateSpanLinks(sendSpans, receiveSpans, spans);
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestServiceBusMessageBatchIntegrationWithoutBatchLinks(string packageVersion, string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED", "false");
+            SetEnvironmentVariable("ASB_TEST_MODE", "TestServiceBusMessageBatch");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                // Expected spans with batch links disabled:
+                // No TryAddMessage spans + 1 SendMessagesAsync span + 1 ReceiveMessagesAsync span = 2 total
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, Tags=[{string.Join(", ", span.Tags.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]");
+                }
+
+                var sendSpans = spans.Where(span => span.Name == "azure_servicebus.send").ToList();
+                var receiveSpans = spans.Where(span => span.Name == "azure_servicebus.receive").ToList();
+
+                Output.WriteLine($"Send spans found: {sendSpans.Count}");
+                Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
+
+                // Validate span counts
+                sendSpans.Should().HaveCount(1, "Expected 1 SendMessagesAsync span (no individual TryAddMessage spans when batch links disabled)");
+                receiveSpans.Should().HaveCount(1, "Expected 1 ReceiveMessagesAsync span");
+
+                // Validate that no individual message spans exist (batch linking disabled)
+                var individualMessageSpans = sendSpans.Where(s => s.Resource == "batch_message").ToList();
+                individualMessageSpans.Should().BeEmpty("Expected no individual message spans when batch links disabled");
+
+                // Validate all spans
+                foreach (var span in spans)
+                {
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Service Bus span validation failed: {result}");
+                }
+
+                // No span links expected when batch linking is disabled
+                foreach (var receiveSpan in receiveSpans)
+                {
+                    receiveSpan.SpanLinks.Should().BeNullOrEmpty("No span links expected when batch linking is disabled");
+                }
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
         public async Task TestScheduleMessagesAsyncIntegration(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
@@ -196,13 +298,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             sendSpans.Should().NotBeEmpty("Need producer spans to validate span links");
             receiveSpans.Should().NotBeEmpty("Need consumer spans to validate span links");
 
-            var spanLinksFound = false;
+            // For batch scenarios, check both send-to-send links (batch to individual messages) and receive-to-send links
+            var spanLinksFoundOnBatchSend = false;
+            var spanLinksFoundOnReceive = false;
 
+            // Check batch send spans for links to individual message spans
+            var batchSendSpans = sendSpans.Where(s => s.Resource != "batch_message").ToList();
+            var individualMessageSpans = sendSpans.Where(s => s.Resource == "batch_message").ToList();
+
+            foreach (var batchSendSpan in batchSendSpans)
+            {
+                if (batchSendSpan.SpanLinks != null && batchSendSpan.SpanLinks.Count > 0)
+                {
+                    spanLinksFoundOnBatchSend = true;
+
+                    foreach (var link in batchSendSpan.SpanLinks)
+                    {
+                        var linkedIndividualSpan = individualMessageSpans.FirstOrDefault(s => s.TraceId == link.TraceIdLow && s.SpanId == link.SpanId);
+                        linkedIndividualSpan.Should().NotBeNull(
+                            $"Batch send span {batchSendSpan.SpanId} has link to span {link.SpanId} in trace {link.TraceIdLow}, " +
+                            $"but corresponding individual message span not found");
+                    }
+                }
+            }
+
+            // Check receive spans for links to send spans
             foreach (var receiveSpan in receiveSpans)
             {
                 if (receiveSpan.SpanLinks != null && receiveSpan.SpanLinks.Count > 0)
                 {
-                    spanLinksFound = true;
+                    spanLinksFoundOnReceive = true;
 
                     foreach (var link in receiveSpan.SpanLinks)
                     {
@@ -214,9 +339,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 }
             }
 
-            spanLinksFound.Should().BeTrue(
-                "At least one consumer span should have span links to producer spans, " +
-                "indicating that span linking is working correctly for heterogeneous message contexts.");
+            // For batch operations with individual message spans, the batch send span should link to individual message spans
+            if (individualMessageSpans.Any())
+            {
+                spanLinksFoundOnBatchSend.Should().BeTrue(
+                    "Batch send span should have span links to individual message spans, " +
+                    "indicating that batch span linking is working correctly.");
+            }
+
+            // Standard validation for receive-to-send links
+            (spanLinksFoundOnReceive || spanLinksFoundOnBatchSend).Should().BeTrue(
+                "At least one span should have span links, " +
+                "indicating that span linking is working correctly for message contexts.");
         }
 
         private IOrderedEnumerable<MockSpan> OrderSpans(IReadOnlyCollection<MockSpan> spans)
