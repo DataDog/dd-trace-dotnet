@@ -44,7 +44,11 @@ namespace Datadog.Trace.OTelMetrics
             var meterListener = new System.Diagnostics.Metrics.MeterListener();
             meterListener.InstrumentPublished = MetricReaderHandler.OnInstrumentPublished;
 
+            meterListener.SetMeasurementEventCallback<byte>(MetricReaderHandler.OnMeasurementRecordedByte);
+            meterListener.SetMeasurementEventCallback<short>(MetricReaderHandler.OnMeasurementRecordedShort);
+            meterListener.SetMeasurementEventCallback<int>(MetricReaderHandler.OnMeasurementRecordedInt);
             meterListener.SetMeasurementEventCallback<long>(MetricReaderHandler.OnMeasurementRecordedLong);
+            meterListener.SetMeasurementEventCallback<float>(MetricReaderHandler.OnMeasurementRecordedFloat);
             meterListener.SetMeasurementEventCallback<double>(MetricReaderHandler.OnMeasurementRecordedDouble);
 
             meterListener.Start();
@@ -75,6 +79,7 @@ namespace Datadog.Trace.OTelMetrics
                 _meterListenerInstance = null;
                 disposableListener.Dispose();
                 Interlocked.Exchange(ref _stopped, 1);
+                Interlocked.Exchange(ref _initialized, 0);
                 Log.Debug("MeterListener stopped.");
             }
 
