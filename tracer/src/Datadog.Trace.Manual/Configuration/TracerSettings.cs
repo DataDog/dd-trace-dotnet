@@ -45,6 +45,9 @@ public sealed class TracerSettings
     /// <summary>
     /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
     /// </summary>
+    /// <remarks>As of tracer version 3.27.0, this method is hidden, as it encourages the pattern of
+    /// not reading from the default configuration sources, which is discouraged. Use
+    /// <see cref="FromDefaultSources" /> instead.</remarks>
     [Instrumented]
     [MethodImpl(MethodImplOptions.NoInlining)]
     [Browsable(false)]
@@ -62,6 +65,9 @@ public sealed class TracerSettings
     /// or initializes the configuration from environment variables and configuration files.
     /// Calling <c>new TracerSettings(true)</c> is equivalent to calling <c>TracerSettings.FromDefaultSources()</c>
     /// </summary>
+    /// <remarks>As of tracer version 3.27.0, this method is hidden, as it encourages the pattern of
+    /// not reading from the default configuration sources, which is discouraged. Use
+    /// <see cref="FromDefaultSources" /> instead.</remarks>
     /// <param name="useDefaultSources">If <c>true</c>, creates a <see cref="TracerSettings"/> populated from
     /// the default sources such as environment variables etc. If <c>false</c>, uses the default values.</param>
     [Instrumented]
@@ -144,11 +150,11 @@ public sealed class TracerSettings
     /// of System.Diagnostics.DiagnosticSource is enabled.
     /// Default is <c>true</c>.
     /// </summary>
-    /// <remark>
+    /// <remarks>
     /// This value cannot be set in code. Instead,
     /// set it using the <c>DD_DIAGNOSTIC_SOURCE_ENABLED</c>
     /// environment variable or in configuration files.
-    /// </remark>
+    /// </remarks>
     public bool DiagnosticSourceEnabled
     {
         [Instrumented]
@@ -359,12 +365,12 @@ public sealed class TracerSettings
 
     /// <summary>
     /// Gets or sets a value indicating whether stats are computed on the tracer side.
-    ///
-    /// NOTE: as of tracer version 3.27.0, this property cannot be used to enable or
+    /// </summary>
+    /// <remarks>As of tracer version 3.27.0, this property cannot be used to enable or
     /// disable stats computation. You must use a static configuration source such
     /// as environment variables or datadog.json to set the property instead. This
     /// property will be marked obsolete and removed in a future version of Datadog.Trace.
-    /// </summary>
+    /// </remarks>
     public bool StatsComputationEnabled
     {
         [Instrumented]
@@ -379,6 +385,11 @@ public sealed class TracerSettings
     /// Gets or sets the Uri where the Tracer can connect to the Agent.
     /// Default is <c>"http://localhost:8126"</c>.
     /// </summary>
+    /// <remarks>As of tracer version 3.27.0, this property cannot be used to set the
+    /// agent URI. You must instead use a static configuration source such
+    /// as environment variables or datadog.json to set the value instead. This
+    /// property will be marked obsolete and removed in a future version of Datadog.Trace.
+    /// </remarks>
     public Uri AgentUri
     {
         [Instrumented]
