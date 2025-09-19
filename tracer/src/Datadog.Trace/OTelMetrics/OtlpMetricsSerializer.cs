@@ -158,15 +158,16 @@ namespace Datadog.Trace.OTelMetrics
                 var metric = metrics[i];
                 byte[]? metricData = null;
 
-                if (metric.InstrumentType == "Counter" || metric.InstrumentType == "UpDownCounter")
+                if (metric.InstrumentType == InstrumentType.Counter || metric.InstrumentType == InstrumentType.UpDownCounter ||
+                    metric.InstrumentType == InstrumentType.ObservableCounter || metric.InstrumentType == InstrumentType.ObservableUpDownCounter)
                 {
                     metricData = SerializeCounterMetric(metric, settings);
                 }
-                else if (metric.InstrumentType == "Gauge")
+                else if (metric.InstrumentType == InstrumentType.Gauge || metric.InstrumentType == InstrumentType.ObservableGauge)
                 {
                     metricData = SerializeGaugeMetric(metric);
                 }
-                else if (metric.InstrumentType == "Histogram")
+                else if (metric.InstrumentType == InstrumentType.Histogram)
                 {
                     metricData = SerializeHistogramMetric(metric, settings);
                 }
@@ -280,15 +281,15 @@ namespace Datadog.Trace.OTelMetrics
             int temporality;
             bool isMonotonic;
 
-            if (metric.InstrumentName.Contains("upDownCounter"))
+            if (metric.InstrumentType == InstrumentType.UpDownCounter || metric.InstrumentType == InstrumentType.ObservableUpDownCounter)
             {
-                // UpDownCounter: always Cumulative (per RFC table), not monotonic
+                // UpDownCounter/ObservableUpDownCounter: always Cumulative (per RFC table), not monotonic
                 temporality = 2; // Cumulative
                 isMonotonic = false;
             }
             else
             {
-                // Regular Counter: Delta for Delta/LowMemory, Cumulative for Cumulative preference
+                // Regular Counter/ObservableCounter: Delta for Delta/LowMemory, Cumulative for Cumulative preference
                 temporality = settings.OtlpMetricsTemporalityPreference switch
                 {
                     OtlpTemporality.Delta => 1,      // Delta
