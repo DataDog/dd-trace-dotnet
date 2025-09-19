@@ -65,6 +65,10 @@ namespace Datadog.Trace.Tests.Configuration
 
             // TODO: test that changing this changes the settings. Currently this is always false, so can't test it
             properties.Remove(nameof(MutableSettings.CustomSamplingRulesIsRemote));
+
+            // This property depends directly on ServiceName, and so isn't required to be part of the equality tests
+            // We _could_ add it though if that's preferable
+            properties.Remove(nameof(MutableSettings.DefaultServiceName));
             properties.Should().BeEmpty("should compare all properties as part of MutableSettings, but some properties were not used");
         }
 

@@ -47,6 +47,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         bool startupDiagnosticLogEnabled,
         string? environment,
         string? serviceName,
+        string defaultServiceName,
         string? serviceVersion,
         HashSet<string> disabledIntegrationNames,
         ReadOnlyDictionary<string, string> grpcTags,
@@ -74,6 +75,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         StartupDiagnosticLogEnabled = startupDiagnosticLogEnabled;
         Environment = environment;
         ServiceName = serviceName;
+        DefaultServiceName = defaultServiceName;
         ServiceVersion = serviceVersion;
         DisabledIntegrationNames = disabledIntegrationNames;
         GrpcTags = grpcTags;
@@ -158,10 +160,18 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     public string? Environment { get; }
 
     /// <summary>
-    /// Gets the service name applied to top-level spans and used to build derived service names.
+    /// Gets the user-specified service name for the application. You should typically
+    /// favor <see cref="DefaultServiceName"/> which includes the calculated application
+    /// name where an explicit service name is not provided.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.ServiceName"/>
     public string? ServiceName { get; }
+
+    /// <summary>
+    /// Gets the service name applied to top-level spans and used to build derived service names.
+    /// Composed based on <see cref="ServiceName"/> if provided, or a fallback value
+    /// </summary>
+    public string DefaultServiceName { get; }
 
     /// <summary>
     /// Gets the version tag applied to all spans.
@@ -713,6 +723,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             startupDiagnosticLogEnabled: startupDiagnosticLogEnabled,
             environment: environment,
             serviceName: serviceName,
+            defaultServiceName: serviceName ?? tracerSettings.FallbackApplicationName,
             serviceVersion: serviceVersion,
             disabledIntegrationNames: disabledIntegrationNames,
             grpcTags: grpcTags,
@@ -1046,6 +1057,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             startupDiagnosticLogEnabled: startupDiagnosticLogEnabled,
             environment: environment,
             serviceName: serviceName,
+            defaultServiceName: serviceName ?? tracerSettings.FallbackApplicationName,
             serviceVersion: serviceVersion,
             disabledIntegrationNames: disabledIntegrationNames,
             grpcTags: grpcTags,
