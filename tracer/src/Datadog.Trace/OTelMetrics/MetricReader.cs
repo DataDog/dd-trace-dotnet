@@ -55,6 +55,7 @@ namespace Datadog.Trace.OTelMetrics
                 _meterListenerInstance = null;
                 disposableListener.Dispose();
                 Interlocked.Exchange(ref _stopped, 1);
+                Interlocked.Exchange(ref _initialized, 0);
                 Log.Debug("MeterListener stopped.");
             }
         }

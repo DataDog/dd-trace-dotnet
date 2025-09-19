@@ -130,6 +130,14 @@ namespace Datadog.Trace.OTelMetrics
         // For testing only
         internal static IReadOnlyDictionary<MetricStreamIdentity, MetricPoint> GetCapturedMetricsForTesting() => CapturedMetrics;
 
+        // For testing only - reset all captured metrics
+        internal static void ResetForTesting()
+        {
+            CapturedMetrics.Clear();
+            MetricStreamNames.Clear();
+            Interlocked.Exchange(ref _metricCount, 0);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsValidInstrumentName(string name)
         {
@@ -187,47 +195,41 @@ namespace Datadog.Trace.OTelMetrics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static string GetTemporalityString(InstrumentType instrumentType)
+        private static AggregationTemporality? GetTemporality(InstrumentType instrumentType)
         {
-            var preference = Tracer.Instance.Settings.OtlpMetricsTemporalityPreference;
-
-            // Debug logging to see what's happening
-            Log.Debug("GetTemporalityString: instrumentType={InstrumentType}, preference={Preference}", instrumentType, preference);
-
-            var result = preference switch
+            // Gauges have no temporality according to OTLP spec
+            if (instrumentType is InstrumentType.Gauge or InstrumentType.ObservableGauge)
             {
-                Configuration.OtlpTemporality.Cumulative => instrumentType switch
-                {
-                    InstrumentType.Gauge => "N/A",
-                    _ => "Cumulative"
-                },
+                return null;
+            }
+
+            return Tracer.Instance.Settings.OtlpMetricsTemporalityPreference switch
+            {
+                // CumulativePreference: All instruments get Cumulative
+                Configuration.OtlpTemporality.Cumulative => AggregationTemporality.Cumulative,
+
+                // DeltaPreference: Counter/ObservableCounter/Histogram → Delta, UpDownCounter/ObservableUpDownCounter → Cumulative
                 Configuration.OtlpTemporality.Delta => instrumentType switch
                 {
-                    InstrumentType.Counter => "Delta",
-                    InstrumentType.ObservableCounter => "Delta",
-                    InstrumentType.UpDownCounter => "Cumulative",
-                    InstrumentType.ObservableUpDownCounter => "Cumulative",
-                    InstrumentType.Histogram => "Delta",
-                    InstrumentType.Gauge => "N/A",
-                    InstrumentType.ObservableGauge => "N/A",
-                    _ => "Delta"
+                    InstrumentType.Counter or InstrumentType.ObservableCounter or InstrumentType.Histogram
+                        => AggregationTemporality.Delta,
+                    InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter
+                        => AggregationTemporality.Cumulative,
+                    _ => AggregationTemporality.Delta
                 },
+
+                // LowMemoryPreference: Counter/Histogram → Delta, ObservableCounter/UpDownCounter/ObservableUpDownCounter → Cumulative
                 Configuration.OtlpTemporality.LowMemory => instrumentType switch
                 {
-                    InstrumentType.Counter => "Delta",
-                    InstrumentType.ObservableCounter => "Cumulative",
-                    InstrumentType.UpDownCounter => "Cumulative",
-                    InstrumentType.ObservableUpDownCounter => "Cumulative",
-                    InstrumentType.Histogram => "Delta",
-                    InstrumentType.Gauge => "N/A",
-                    InstrumentType.ObservableGauge => "N/A",
-                    _ => "Delta"
+                    InstrumentType.Counter or InstrumentType.Histogram
+                        => AggregationTemporality.Delta,
+                    InstrumentType.ObservableCounter or InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter
+                        => AggregationTemporality.Cumulative,
+                    _ => AggregationTemporality.Delta
                 },
-                _ => "Delta"
-            };
 
-            Log.Debug("GetTemporalityString: returning {Result} for {InstrumentType} with {Preference}", result, instrumentType, preference);
-            return result;
+                _ => AggregationTemporality.Delta
+            };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -284,7 +286,7 @@ namespace Datadog.Trace.OTelMetrics
                 }
 
                 var metricStreamIdentity = new MetricStreamIdentity(instrument, aggregationType.Value);
-                var temporality = GetTemporalityString(aggregationType.Value);
+                var temporality = GetTemporality(aggregationType.Value);
                 var tagsDict = new Dictionary<string, object?>();
 
                 // RFC requirement: Check for duplicate instrument registration

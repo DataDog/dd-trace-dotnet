@@ -14,7 +14,7 @@ using System.Threading;
 
 namespace Datadog.Trace.OTelMetrics
 {
-    internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, string temporality, Dictionary<string, object?> tags, bool isIntegerValue = false)
+    internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, bool isIntegerValue = false)
     {
         // Static fields first
         internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
@@ -36,7 +36,7 @@ namespace Datadog.Trace.OTelMetrics
 
         public InstrumentType InstrumentType { get; } = instrumentType;
 
-        public string AggregationTemporality { get; } = temporality;
+        public AggregationTemporality? AggregationTemporality { get; } = temporality;
 
         public Dictionary<string, object?> Tags { get; } = tags;
 
@@ -54,7 +54,7 @@ namespace Datadog.Trace.OTelMetrics
         internal long[] RunningBucketCounts => _runningBucketCounts;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void UpdateCounter(double value)
+        internal void UpdateCounter(double value)
         {
             // Use lock to avoid floating-point precision issues with CompareExchange
             lock (_histogramLock)
@@ -64,13 +64,13 @@ namespace Datadog.Trace.OTelMetrics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void UpdateGauge(double value)
+        internal void UpdateGauge(double value)
         {
             Interlocked.Exchange(ref _runningDoubleValue, value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void UpdateHistogram(double value)
+        internal void UpdateHistogram(double value)
         {
             // Find bucket index first (outside lock for performance)
             var bucketIndex = FindBucketIndex(value);

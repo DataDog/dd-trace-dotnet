@@ -3,39 +3,43 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.TestHelpers.TestTracer;
 #if NET6_0_OR_GREATER
-using System;
+
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.OTelMetrics;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
-#endif
 
 namespace Datadog.Trace.Tests
 {
-#if NET6_0_OR_GREATER
-    [CollectionDefinition(nameof(MeterListenerTests), DisableParallelization = true)]
-    [Collection(nameof(MeterListenerTests))]
     [UsesVerify]
-    public class MeterListenerTests : IDisposable
+    [TracerRestorer]
+    public class MeterListenerTests
     {
         [Theory]
-        [InlineData("delta", "Delta", "Cumulative")]
-        [InlineData("cumulative", "Cumulative", "Cumulative")]
-        [InlineData("lowmemory", "Delta", "Cumulative")]
-        public void CapturesAllMetricsWithCorrectTemporality(string temporality, string expectedCounterTemporality, string expectedUpDownTemporality)
+        [InlineData("cumulative", AggregationTemporality.Cumulative, AggregationTemporality.Cumulative, AggregationTemporality.Cumulative, AggregationTemporality.Cumulative)]
+        [InlineData("delta", AggregationTemporality.Delta, AggregationTemporality.Cumulative, AggregationTemporality.Delta, AggregationTemporality.Delta)]
+        [InlineData("lowmemory", AggregationTemporality.Delta, AggregationTemporality.Cumulative, AggregationTemporality.Delta, AggregationTemporality.Cumulative)]
+        public void CapturesAllMetricsWithCorrectTemporality(
+            string temporalityPreference,
+            AggregationTemporality expectedCounterTemporality,
+            AggregationTemporality expectedUpDownTemporality,
+            AggregationTemporality expectedHistogramTemporality,
+            AggregationTemporality expectedObservableCounterTemporality)
         {
-            var settings = TracerSettings.Create(new()
-            {
-                { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, temporality }
-            });
+            var settings = TracerSettings.Create(
+                new()
+                {
+                    { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, temporalityPreference }
+                });
 
-            var tracer = TracerHelper.Create(settings);
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
             MetricReader.Initialize();
@@ -65,7 +69,9 @@ namespace Datadog.Trace.Tests
 
             upDownCounter.Add(55L, testTags);
             expectedMetricsCount += 2;
-#elif NET9_0_OR_GREATER
+#endif
+
+#if NET9_0_OR_GREATER
             var gauge = meter.CreateGauge<double>("test.gauge");
             gauge.Record(77L, testTags);
             expectedMetricsCount += 1;
@@ -73,13 +79,15 @@ namespace Datadog.Trace.Tests
 
             // Trigger async collection and get metrics for testing
             MetricReader.CollectObservableInstruments();
-            var capturedMetrics = OTelMetrics.MetricReaderHandler.GetCapturedMetricsForTesting();
+            var capturedMetrics = MetricReaderHandler.GetCapturedMetricsForTesting();
 
             capturedMetrics.Count.Should().Be(expectedMetricsCount, $"Should capture exactly {expectedMetricsCount} metrics based on .NET version");
 
             // Verify expected temporality values are valid
-            expectedCounterTemporality.Should().BeOneOf("Delta", "Cumulative");
-            expectedUpDownTemporality.Should().BeOneOf("Delta", "Cumulative");
+            expectedCounterTemporality.Should().BeOneOf(AggregationTemporality.Delta, AggregationTemporality.Cumulative);
+            expectedUpDownTemporality.Should().BeOneOf(AggregationTemporality.Delta, AggregationTemporality.Cumulative);
+            expectedHistogramTemporality.Should().BeOneOf(AggregationTemporality.Delta, AggregationTemporality.Cumulative);
+            expectedObservableCounterTemporality.Should().BeOneOf(AggregationTemporality.Delta, AggregationTemporality.Cumulative);
 
             // Verify Counter metrics
             var counterMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.counter");
@@ -93,23 +101,21 @@ namespace Datadog.Trace.Tests
             var asyncCounterMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.async.counter");
             asyncCounterMetric.Should().NotBeNull();
             asyncCounterMetric.InstrumentType.Should().Be(InstrumentType.ObservableCounter);
-            // Observable Counter temporality depends on preference: Delta for delta/lowmemory, Cumulative for cumulative
-            var expectedAsyncCounterTemporality = temporality == "cumulative" ? "Cumulative" : "Delta";
-            asyncCounterMetric.AggregationTemporality.Should().Be(expectedAsyncCounterTemporality);
+            asyncCounterMetric.AggregationTemporality.Should().Be(expectedObservableCounterTemporality);
             asyncCounterMetric.RunningSum.Should().Be(22.0);
             asyncCounterMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 
             var asyncGaugeMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.async.gauge");
             asyncGaugeMetric.Should().NotBeNull();
             asyncGaugeMetric.InstrumentType.Should().Be(InstrumentType.ObservableGauge);
-            asyncGaugeMetric.AggregationTemporality.Should().Be("N/A", "Gauges don't have temporality");
+            asyncGaugeMetric.AggregationTemporality.Should().BeNull("Gauges have no temporality according to OTLP spec");
             asyncGaugeMetric.RunningSum.Should().Be(88.0);
             asyncGaugeMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 
             var histogramMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.histogram");
             histogramMetric.Should().NotBeNull();
             histogramMetric.InstrumentType.Should().Be(InstrumentType.Histogram);
-            histogramMetric.AggregationTemporality.Should().Be(expectedCounterTemporality, "Histogram follows same temporality as Counter");
+            histogramMetric.AggregationTemporality.Should().Be(expectedHistogramTemporality);
             histogramMetric.RunningCount.Should().Be(1L);
             histogramMetric.RunningSum.Should().Be(33.0);
             histogramMetric.RunningMin.Should().Be(33.0);
@@ -121,40 +127,30 @@ namespace Datadog.Trace.Tests
 
 #if NET7_0_OR_GREATER
             var upDownMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.upDownCounter");
-            if (upDownMetric != null)
-            {
-                upDownMetric.InstrumentType.Should().Be(InstrumentType.UpDownCounter);
-                upDownMetric.AggregationTemporality.Should().Be(expectedUpDownTemporality);
-                upDownMetric.RunningSum.Should().Be(55.0);
-                upDownMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
-            }
+            upDownMetric.Should().NotBeNull("UpDown counter metric should be captured");
+            upDownMetric!.InstrumentType.Should().Be(InstrumentType.UpDownCounter);
+            upDownMetric.AggregationTemporality.Should().Be(expectedUpDownTemporality);
+            upDownMetric.RunningSum.Should().Be(55.0);
+            upDownMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
 
             var asyncUpDownMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.async.upDownCounter");
-            if (asyncUpDownMetric != null)
-            {
-                asyncUpDownMetric.InstrumentType.Should().Be(InstrumentType.ObservableUpDownCounter);
-                asyncUpDownMetric.AggregationTemporality.Should().Be(expectedUpDownTemporality);
-                asyncUpDownMetric.RunningSum.Should().Be(66.0);
-                asyncUpDownMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
-            }
-#elif NET9_0_OR_GREATER
-            var gaugeMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.gauge");
-            if (gaugeMetric != null)
-            {
-                gaugeMetric.InstrumentType.Should().Be(InstrumentType.Gauge);
-                gaugeMetric.RunningSum.Should().Be(77.0);
-                gaugeMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
-            }
+            asyncUpDownMetric.Should().NotBeNull("Async UpDown counter metric should be captured");
+            asyncUpDownMetric!.InstrumentType.Should().Be(InstrumentType.ObservableUpDownCounter);
+            asyncUpDownMetric.AggregationTemporality.Should().Be(expectedUpDownTemporality);
+            asyncUpDownMetric.RunningSum.Should().Be(66.0);
+            asyncUpDownMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 #endif
-        }
-
-        public void Dispose()
-        {
-            Tracer.UnsafeSetTracerInstance(null);
-
+#if NET9_0_OR_GREATER
+            var gaugeMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.gauge");
+            gaugeMetric.Should().NotBeNull("Gauge metric should be captured");
+            gaugeMetric!.InstrumentType.Should().Be(InstrumentType.Gauge);
+            gaugeMetric.AggregationTemporality.Should().BeNull("Gauges have no temporality according to OTLP spec");
+            gaugeMetric.RunningSum.Should().Be(77.0);
+            gaugeMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
+#endif
             MetricReader.Stop();
-            MetricReaderHandler.GetCapturedMetricsForTesting();
+            MetricReaderHandler.ResetForTesting();
         }
     }
-#endif
 }
+#endif
