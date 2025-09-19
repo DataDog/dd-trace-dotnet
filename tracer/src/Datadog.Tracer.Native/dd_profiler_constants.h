@@ -118,6 +118,9 @@ const shared::WSTRING libdatadog_libraryconfig_nativemethods_type = WStr("Datado
 const shared::WSTRING calltargetstate_type_name = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
 const shared::WSTRING calltargetstate_skipmethodbody_function_name = WStr("GetSkipMethodBody");
 
+// Also defined in `debugger_tokens.h` as `managed_profiler_debugger_async_method_invoker_type`
+const shared::WSTRING asyncmethoddebuggerinvokerv2_type_name = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncMethodDebuggerInvokerV2");
+
 #ifdef _WIN32
 const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACER.NATIVE.DLL");
 #elif MACOS

@@ -73,6 +73,8 @@ const WSTRING non_supported_compiled_bytecode =
     WStr("Compiled code with `tail` call is not yet supported (F#).");
 const WSTRING type_contains_invalid_symbol = 
     WStr("The type is not supported.");
+const WSTRING too_low_datadog_trace_version_for_async_method =
+    WStr("Please upgrade your `Datadog.Trace` assembly reference to version `3.27.0` or later to enable probing of async methods.");
 const WSTRING async_method_could_not_load_this = WStr("Instrumentation of async method in a generic class is not yet supported.");
 const WSTRING invalid_probe_failed_to_instrument_method_probe =
     GetGenericErrorMessageWithErrorCode(1);
