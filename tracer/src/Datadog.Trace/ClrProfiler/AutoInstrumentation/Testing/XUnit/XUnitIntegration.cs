@@ -209,12 +209,19 @@ internal static class XUnitIntegration
                 }
                 else
                 {
-                    if (testCaseMetadata?.IsAttemptToFix == true)
+                    if (testCaseMetadata != null)
                     {
-                        testCaseMetadata.AllAttemptsPassed = false;
+                        testCaseMetadata.HasAnException = true;
+                        if (testCaseMetadata.IsAttemptToFix)
+                        {
+                            testCaseMetadata.AllAttemptsPassed = false;
+                        }
                     }
 
                     WriteFinalTagsFromMetadata(test, testCaseMetadata);
+                    var span = Tracer.Instance.ActiveScope?.Span;
+                    Common.Log.Debug("XUnitIntegration: Reporting exception {ExceptionType} for test {TestName}", exception.GetType().FullName, test.Name);
+                    Common.Log.Debug("XUnitIntegration: Tracer.ActiveScope: TraceId: {TraceId}, SpanId: {SpanId}, ResourceName: {ResourceName}", span?.TraceId, span?.SpanId, span?.ResourceName);
                     test.SetErrorInfo(exception);
                     test.Close(TestStatus.Fail, duration);
                 }

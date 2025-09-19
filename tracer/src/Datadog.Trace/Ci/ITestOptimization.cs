@@ -39,6 +39,8 @@ internal interface ITestOptimization
 
     ITestOptimizationFlakyRetryFeature? FlakyRetryFeature { get; }
 
+    ITestOptimizationDynamicInstrumentationFeature? DynamicInstrumentationFeature { get; }
+
     ITestOptimizationTestManagementFeature? TestManagementFeature { get; }
 
     CIEnvironmentValues CIValues { get; }
