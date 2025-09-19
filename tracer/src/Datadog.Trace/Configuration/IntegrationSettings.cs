@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration.Telemetry;
 
@@ -13,7 +14,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains integration-specific settings.
     /// </summary>
-    public class IntegrationSettings
+    public class IntegrationSettings : IEquatable<IntegrationSettings>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationSettings"/> class.
@@ -82,5 +83,51 @@ namespace Datadog.Trace.Configuration
         /// that determines the sampling rate for this integration.
         /// </summary>
         public double AnalyticsSampleRate { get; }
+
+        /// <inheritdoc/>
+        public bool Equals(IntegrationSettings? other)
+        {
+            if (other is null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            return IntegrationName == other.IntegrationName &&
+                   Enabled == other.Enabled &&
+                   AnalyticsEnabled == other.AnalyticsEnabled &&
+                   AnalyticsSampleRate.Equals(other.AnalyticsSampleRate);
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj)
+        {
+            if (obj is null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((IntegrationSettings)obj);
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(IntegrationName, Enabled, AnalyticsEnabled, AnalyticsSampleRate);
+        }
     }
 }
