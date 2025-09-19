@@ -298,7 +298,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     if (DbTypeName != dbTypeName)
                     {
                         // We cannot cache in the base class
-                        return tracer.CurrentTraceSettings.GetServiceName(tracer, dbTypeName);
+                        return tracer.CurrentTraceSettings.GetServiceName(dbTypeName);
                     }
 
                     var serviceNameCache = _serviceNameCache;
@@ -314,7 +314,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     // We create or replace the cache with the new service name
                     // Slowpath
                     var defaultServiceName = tracer.DefaultServiceName;
-                    serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, dbTypeName);
+                    serviceName = tracer.CurrentTraceSettings.GetServiceName(dbTypeName);
                     _serviceNameCache = new KeyValuePair<string, string>(defaultServiceName, serviceName);
                 }
 

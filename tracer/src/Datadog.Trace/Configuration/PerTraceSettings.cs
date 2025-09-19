@@ -38,7 +38,7 @@ namespace Datadog.Trace.Configuration
 
         public MutableSettings Settings { get; }
 
-        internal string GetServiceName(Tracer tracer, string serviceName)
+        internal string GetServiceName(string serviceName)
         {
             if (ServiceNames.TryGetValue(serviceName, out var name))
             {
@@ -47,12 +47,12 @@ namespace Datadog.Trace.Configuration
 
             if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
             {
-                return tracer.DefaultServiceName;
+                return Settings.DefaultServiceName;
             }
 
             if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
             {
-                finalServiceName = $"{tracer.DefaultServiceName}-{serviceName}";
+                finalServiceName = $"{Settings.DefaultServiceName}-{serviceName}";
                 _serviceNameCache.TryAdd(serviceName, finalServiceName);
             }
 
