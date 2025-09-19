@@ -549,42 +549,6 @@ partial class Build
             CopyDirectoryRecursively(contentDirectory, BundleHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
         });
 
-       Target UpdateAzureFunctionsNugetFromBuild => _ => _
-        .Description("Updates the bundle home contents with local builds of Datadog.Trace.dll, and rebuilds the Datadog.AzureFunctions package")
-        .After(DownloadBundleNugetFromBuild)
-        .Triggers(BuildAzureFunctionsNuget)
-        .Executes(() =>
-        {
-            var frameworks = new[] { TargetFramework.NET6_0, TargetFramework.NET461 };
-
-            var tempRoot = TemporaryDirectory / "azurefunctions-local-build";
-            var publishDirectory = tempRoot / "publish";
-
-            EnsureCleanDirectory(tempRoot);
-            EnsureExistingDirectory(publishDirectory);
-
-            DotNetPublish(settings => settings
-                .SetProject(Solution.GetProject(Projects.DatadogTrace))
-                .SetConfiguration(BuildConfiguration)
-                .CombineWith(frameworks, (publishSettings, framework) => publishSettings
-                    .SetFramework(framework)
-                    .SetOutput(publishDirectory / framework)));
-
-            foreach (var framework in frameworks)
-            {
-                var publishOutput = publishDirectory / framework / "Datadog.Trace.dll";
-
-                if (!File.Exists(publishOutput))
-                {
-                    throw new Exception($"Datadog.Trace.dll for target framework '{framework}' was not found in publish output.");
-                }
-
-                var destinationDirectory = BundleHomeDirectory / framework;
-                EnsureExistingDirectory(destinationDirectory);
-                CopyFile(publishOutput, destinationDirectory / "Datadog.Trace.dll", FileExistsPolicy.Overwrite);
-            }
-        });
-
     private void ReplaceReceivedFilesInSnapshots()
     {
         var snapshotsDirectory = TestsDirectory / "snapshots";
