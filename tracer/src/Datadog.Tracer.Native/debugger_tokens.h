@@ -66,6 +66,7 @@ static const WSTRING managed_profiler_debugger_async_linestatetype = WStr("Datad
 static const WSTRING managed_profiler_debugger_is_first_entry_field_name = WStr("<>dd_liveDebugger_isReEntryToMoveNext");
 static const WSTRING managed_profiler_debugger_async_method_debugger_state_field_name = WStr("LogState"); // See `Datadog.Trace.Debugger.Instrumentation.AsyncDebuggerState.LogState`
 static const WSTRING managed_profiler_debugger_begin_async_method_name = WStr("BeginMethod");
+// Also defined in `dd_profiler_constants.h` as `asyncmethoddebuggerinvokerv2_type_name`
 static const WSTRING managed_profiler_debugger_async_method_invoker_type = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncMethodDebuggerInvokerV2");
 static const WSTRING managed_profiler_debugger_async_method_state_type = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncDebuggerState");
 

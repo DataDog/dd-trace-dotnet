@@ -894,6 +894,11 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
 
+            PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool(false);
+            PartialFlushMinSpans = config
+                                  .WithKeys(ConfigurationKeys.PartialFlushMinSpans)
+                                  .AsInt32(500, value => value > 0).Value;
+
             GraphQLErrorExtensions = TrimSplitString(
                 config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
                 commaSeparator);
@@ -1500,6 +1505,16 @@ namespace Datadog.Trace.Configuration
         /// Gets the disabled ADO.NET Command Types that won't have spans generated for them.
         /// </summary>
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether partial flush is enabled
+        /// </summary>
+        public bool PartialFlushEnabled { get; }
+
+        /// <summary>
+        /// Gets the minimum number of closed spans in a trace before it's partially flushed
+        /// </summary>
+        public int PartialFlushMinSpans { get; }
 
         internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
 

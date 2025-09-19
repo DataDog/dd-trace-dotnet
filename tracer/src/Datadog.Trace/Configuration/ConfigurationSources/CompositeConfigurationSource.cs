@@ -26,10 +26,17 @@ namespace Datadog.Trace.Configuration
             _sources = new();
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        public CompositeConfigurationSource(ReadOnlySpan<IConfigurationSource> sources)
+        {
+            _sources = [..sources];
+        }
+#else
         public CompositeConfigurationSource(IEnumerable<IConfigurationSource> sources)
         {
             _sources = [..sources];
         }
+#endif
 
         public ConfigurationOrigins Origin => ConfigurationOrigins.Unknown;
 

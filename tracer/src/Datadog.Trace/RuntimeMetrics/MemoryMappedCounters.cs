@@ -8,6 +8,7 @@
 using System;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -20,8 +21,9 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<MemoryMappedCounters>();
 
-        private readonly IDogStatsd _statsd;
         private readonly int _processId;
+
+        private IDogStatsd _statsd;
 
         private int? _previousGen0Count;
         private int? _previousGen1Count;
@@ -170,6 +172,11 @@ namespace Datadog.Trace.RuntimeMetrics
             _previousGen2Count = gen2;
 
             Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GarbageCollectionMetrics);
+        }
+
+        public void UpdateStatsd(IDogStatsd statsd)
+        {
+            Interlocked.Exchange(ref _statsd, statsd);
         }
 
         [StructLayout(LayoutKind.Sequential)]
