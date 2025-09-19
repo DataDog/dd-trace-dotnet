@@ -243,10 +243,10 @@ tracer/src/Datadog.Trace
 
 ## CallTarget Wiring
 
-- Define an integration class decorated with `InstrumentMethod` describing the target assembly/type/method, version range, and integration name. Example: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Couchbase/ClusterNodeIntegration.cs:1` and attribute API in `tracer/src/Datadog.Trace/ClrProfiler/InstrumentMethodAttribute.cs:1`.
-- Build collects attributes and generates native definitions used by the CLR profiler (see generator `tracer/build/_build/CodeGenerators/CallTargetsGenerator.cs:560`). This emits a C++ list (registered at startup) and a JSON snapshot.
+- Define an integration class decorated with `InstrumentMethod` describing the target assembly/type/method, version range, and integration name. Example: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Couchbase/ClusterNodeIntegration.cs` and attribute API in `tracer/src/Datadog.Trace/ClrProfiler/InstrumentMethodAttribute.cs`.
+- Build collects attributes and generates native definitions used by the CLR profiler (see generator `tracer/build/_build/CodeGenerators/CallTargetsGenerator.cs`). This emits a C++ list (registered at startup) and a JSON snapshot.
 - Native CLR profiler (C++) registers those definitions and rewrites IL for matched methods during JIT/ReJIT to call the managed invoker.
-- The managed entry point is `CallTargetInvoker` (`tracer/src/Datadog.Trace/ClrProfiler/CallTarget/CallTargetInvoker.cs:1`). It invokes `OnMethodBegin` and `OnMethodEnd`/`OnAsyncMethodEnd` on your integration type, handling generics, ref/out, and async continuations.
+- The managed entry point is `CallTargetInvoker` (`tracer/src/Datadog.Trace/ClrProfiler/CallTarget/CallTargetInvoker.cs`). It invokes `OnMethodBegin` and `OnMethodEnd`/`OnAsyncMethodEnd` on your integration type, handling generics, ref/out, and async continuations.
 - `OnMethodBegin` returns `CallTargetState`, which can contain a tracing `Scope` to represent the span. That state flows to the end handler; async returns are awaited and then `OnAsyncMethodEnd` runs.
 - Integrations typically create a scope in `OnMethodBegin` and tag/finish it in the end handler. See the Couchbase example’s `OnMethodBegin`/`OnAsyncMethodEnd` methods.
 - Enable/disable per-integration via config (IntegrationName), and by framework/versions declared in the attribute.
@@ -255,17 +255,17 @@ tracer/src/Datadog.Trace
 ## Duck Typing Mechanism
 
 - Purpose: Interact with external types across versions without adding hard dependencies. Provides fast, strongly-typed access via generated proxies.
-- Shape interfaces: Define minimal contracts (properties/methods) you need, e.g., `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/IPutRecordsRequest.cs:1` and `IAmazonKinesisRequestWithStreamName.cs:1`.
-- Interface + IDuckType constraints: In CallTarget integrations, use `where TReq : IMyShape, IDuckType`. Example: `PutRecordsIntegration.OnMethodBegin` in `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/PutRecordsIntegration.cs:1`.
+- Shape interfaces: Define minimal contracts (properties/methods) you need, e.g., `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/IPutRecordsRequest.cs` and `IAmazonKinesisRequestWithStreamName.cs`.
+- Interface + IDuckType constraints: In CallTarget integrations, use `where TReq : IMyShape, IDuckType`. Example: `PutRecordsIntegration.OnMethodBegin` in `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/PutRecordsIntegration.cs`.
 - Creating proxies:
   - Generic constraints (above) let the woven callsite pass a proxy automatically.
-  - At runtime by type: `DuckType.GetOrCreateProxyType(typeof(IMyShape), targetType)` and `CreateInstance(...)` (see `tracer/src/Datadog.Trace/OTelMetrics/OtlpMetricsExporter.cs:1`).
-  - From an instance: `obj.DuckCast<IMyShape>()` for nested values (see `GetRecordsIntegration` `DuckCast<IRecord>` in `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/GetRecordsIntegration.cs:1`).
-- Accessing originals: All proxies implement `IDuckType` (`tracer/src/Datadog.Trace/DuckTyping/IDuckType.cs:1`) exposing `Instance` and `Type`.
+  - At runtime by type: `DuckType.GetOrCreateProxyType(typeof(IMyShape), targetType)` and `CreateInstance(...)` (see `tracer/src/Datadog.Trace/OTelMetrics/OtlpMetricsExporter.cs`).
+  - From an instance: `obj.DuckCast<IMyShape>()` for nested values (see `GetRecordsIntegration` `DuckCast<IRecord>` in `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/GetRecordsIntegration.cs`).
+- Accessing originals: All proxies implement `IDuckType` (`tracer/src/Datadog.Trace/DuckTyping/IDuckType.cs`) exposing `Instance` and `Type`.
 - Binding rules: Name/signature matching; support for properties/fields/methods. Use attributes in `tracer/src/Datadog.Trace/DuckTyping/` to control binding:
   - `[DuckField]`, `[DuckPropertyOrField]`, `[DuckIgnore]`, `[DuckInclude]`, `[DuckReverseMethod]`, `[DuckCopy]`, `[DuckAsClass]`, `[DuckType]`, `[DuckTypeTarget]`.
-- Visibility: Proxies can access non-public members; the library emits IL and uses `IgnoresAccessChecksToAttribute` if present (`tracer/src/Datadog.Trace/DuckTyping/IgnoresAccessChecksToAttribute.cs:1`).
-- Nullability/perf: Enable `#nullable` in new files; proxies are cached per (shape,target) for low overhead. See core implementation `tracer/src/Datadog.Trace/DuckTyping/DuckType.cs:1` and partials.
+- Visibility: Proxies can access non-public members; the library emits IL and uses `IgnoresAccessChecksToAttribute` if present (`tracer/src/Datadog.Trace/DuckTyping/IgnoresAccessChecksToAttribute.cs`).
+- Nullability/perf: Enable `#nullable` in new files; proxies are cached per (shape,target) for low overhead. See core implementation `tracer/src/Datadog.Trace/DuckTyping/DuckType.cs` and partials.
 - Guidance: Prefer interface shapes; avoid vendor types in signatures; check for `proxy.Instance != null` before use; keep shapes stable across upstream versions. Deep dive: `docs/development/DuckTyping.md`.
 
 ## Integrations
@@ -275,7 +275,7 @@ tracer/src/Datadog.Trace
   - Add shape interfaces for third‑party types you consume (no direct package refs).
   - Add an integration class with one or more `InstrumentMethod` attributes specifying: `AssemblyName`, `TypeName`, `MethodName`, `ReturnTypeName`, `ParameterTypeNames`, `MinimumVersion`, `MaximumVersion`, `IntegrationName` (and `CallTargetIntegrationKind` if needed).
   - Implement static handlers: `OnMethodBegin` returns `CallTargetState`; end handlers are `OnMethodEnd` for sync or `OnAsyncMethodEnd` for async. Use `Tracer.Instance` to create a `Scope`, tag it, and dispose in the end handler.
-  - Use duck typing in method generics: `where TReq : IMyShape, IDuckType` and `DuckCast<TShape>()` for nested members. Examples: `AWS/Kinesis/PutRecordsIntegration.cs:1`, `Couchbase/ClusterNodeIntegration.cs:1`.
+  - Use duck typing in method generics: `where TReq : IMyShape, IDuckType` and `DuckCast<TShape>()` for nested members. Examples: `AWS/Kinesis/PutRecordsIntegration.cs`, `Couchbase/ClusterNodeIntegration.cs`.
 - Build/registration: Definitions are discovered and generated during build; no manual native changes required.
 - Tests: Add tests under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` and corresponding samples under `tracer/test/test-applications/integrations`. Run with OS‑specific Nuke targets; filter with `--filter`/`--framework`.
 
