@@ -79,4 +79,8 @@ public:
     virtual std::chrono::milliseconds GetHttpRequestDurationThreshold() const = 0;
     virtual bool ForceHttpSampling() const = 0;
     virtual bool IsWaitHandleProfilingEnabled() const = 0;
+    virtual bool IsManagedActivationEnabled() const = 0;
+
+    // these setter functions are needed for Stable Configuration support
+    virtual void SetEnablementStatus(EnablementStatus status) = 0;
 };

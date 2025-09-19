@@ -15,6 +15,7 @@ class ISsiManager
 public:
     virtual ~ISsiManager() = default;
 
+    virtual void OnStableConfiguration() = 0;
     virtual void OnSpanCreated() = 0;
     virtual bool IsSpanCreated() const = 0;
     virtual bool IsLongLived() const = 0;

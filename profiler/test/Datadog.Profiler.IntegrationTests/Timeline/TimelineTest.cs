@@ -48,7 +48,8 @@ namespace Datadog.Profiler.IntegrationTests.Timeline
                 {
                     if (!sample.Labels(profile).Any(l =>
                         (l.Name == "end_timestamp_ns") ||
-                        (l.Name == "gc_cpu_sample"))) // only the GC CPU sample does not have a timestamp label
+                        // only the GC CPU sample does not have a timestamp label
+                        (l.Name == "gc_cpu_sample")))
                     {
                         return false;
                     }
