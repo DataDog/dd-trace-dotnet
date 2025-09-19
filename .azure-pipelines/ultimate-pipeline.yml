@@ -4323,7 +4323,7 @@ stages:
           GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
 
 - stage: execution_benchmarks
-  dependsOn: [build_windows_tracer, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_profiler, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -4355,7 +4355,7 @@ stages:
 
     - template: steps/download-artifact.yml
       parameters:
-        artifact: windows-tracer-home
+        artifact: windows-profiler-home
         path: $(monitoringHome)
         retryCountOnTaskFailure: 5
 
