@@ -66,19 +66,11 @@ namespace Datadog.Trace.ClrProfiler
             // TODO: only for profiler today
             //
 
-            // profiler is not available on ARM(64) don't even try to call the p/invoke
+            // The profiler is not available in various environments, so don't try to P/Invoke in those cases
             // as the binary won't be there
-            var fd = FrameworkDescription.Instance;
-            if ((fd.ProcessArchitecture == ProcessArchitecture.Arm64) || (fd.ProcessArchitecture == ProcessArchitecture.Arm))
+            if (!ProfilerAvailabilityHelper.IsContinuousProfilerAvailable)
             {
-                Log.Information("Profiling is not available on ARM.");
-                return;
-            }
-
-            // it is also possible that the profiler binary is not "there" such as Azure Function and some CI tests
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH")))
-            {
-                Log.Information("Profiling native library path is not set, skipping setting profiler configuration.");
+                Log.Information("The Continuous Profiler is not available");
                 return;
             }
 
@@ -106,8 +98,7 @@ namespace Datadog.Trace.ClrProfiler
                 Version = tracerSettings.ServiceVersion
             };
 
-            // It is possible that the profiler binary is not "there" such as Azure Function and some CI tests
-            // So, ensure that no exception bubbles up
+            // Make sure nothing bubbles up, even if there are issues
             try
             {
                 NativeInterop.ProfilerSetConfiguration(config);
