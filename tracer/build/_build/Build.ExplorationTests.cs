@@ -566,7 +566,7 @@ public enum ExplorationTestUseCase
 
 public enum ExplorationTestName
 {
-    eShopOnWeb, protobuf, cake, swashbuckle, RestSharp, serilog, polly, automapper, // paket, FIXME: .NET 9 - Paket doesn't support .NET 9 yet
+    eShopOnWeb, protobuf, cake, swashbuckle, RestSharp, serilog, polly, // FIXME: .NET 10 issue with automapper automapper, // paket, FIXME: .NET 9 - Paket doesn't support .NET 9 yet
 }
 
 class ExplorationTestDescription
@@ -720,18 +720,19 @@ class ExplorationTestDescription
                 PathToUnitTestProject = "src/Polly.Specs",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET461 },
             },
-            ExplorationTestName.automapper => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.automapper,
-                GitRepositoryUrl = "https://github.com/automapper/automapper.git",
-                GitRepositoryTag = "v11.0.0",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "src/UnitTests",
-                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
-                SupportedOSPlatforms = new[] { OSPlatform.Windows },
-                // Workaround for https://github.com/dotnet/runtime/issues/95653
-                EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
-            },
+            // FIXME: currently fails to compile due to .NET 10 changes with latest C# lang version (14)
+            //ExplorationTestName.automapper => new ExplorationTestDescription()
+            //{
+            //    Name = ExplorationTestName.automapper,
+            //    GitRepositoryUrl = "https://github.com/automapper/automapper.git",
+            //    GitRepositoryTag = "v11.0.0",
+            //    IsGitShallowCloneSupported = true,
+            //    PathToUnitTestProject = "src/UnitTests",
+            //    SupportedFrameworks = new[] { TargetFramework.NET6_0 },
+            //    SupportedOSPlatforms = new[] { OSPlatform.Windows },
+            //    // Workaround for https://github.com/dotnet/runtime/issues/95653
+            //    EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
+            //},
             _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
         };
 
