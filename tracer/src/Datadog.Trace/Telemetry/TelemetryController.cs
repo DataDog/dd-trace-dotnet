@@ -95,6 +95,14 @@ internal class TelemetryController : ITelemetryController
         // ImmutableTracerSettings, at which point that config would become "current", so we
         // need to keep it around
         settings.Telemetry.CopyTo(_configuration);
+        // if the mutable settings have changed since the start, re-record them
+        // to ensure they have the correct values. This is a temporary measure before
+        // we fully extract mutable settings
+        if (!ReferenceEquals(settings.MutableSettings, settings.InitialMutableSettings))
+        {
+            settings.MutableSettings.Telemetry.CopyTo(_configuration);
+        }
+
         _application.RecordTracerSettings(settings, defaultServiceName);
         _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
         _logTagBuilder.Update(settings);
