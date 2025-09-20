@@ -47,6 +47,7 @@ internal enum PublicApiUsage
     [Description("name:tracer_instance_set")] Tracer_Instance_Set,
     [Description("name:tracer_configure")] Tracer_Configure,
     [Description("name:tracer_forceflushasync")] Tracer_ForceFlushAsync,
+    [Description("name:tracer_addrootspanfilter")] Tracer_AddRootSpanFilter,
     [Description("name:tracer_startactive")] Tracer_StartActive,
     [Description("name:tracer_startactive_settings")] Tracer_StartActive_Settings,
     [Description("name:itracer_startactive")] ITracer_StartActive,

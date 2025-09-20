@@ -17,7 +17,7 @@ internal static partial class PublicApiUsageExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 172;
+    public const int Length = 173;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.PublicApiUsage"/> value.
@@ -54,6 +54,7 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Instance_Set => "name:tracer_instance_set",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Configure => "name:tracer_configure",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync => "name:tracer_forceflushasync",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_AddRootSpanFilter => "name:tracer_addrootspanfilter",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive => "name:tracer_startactive",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive_Settings => "name:tracer_startactive_settings",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ITracer_StartActive => "name:itracer_startactive",
@@ -239,6 +240,7 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Instance_Set,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Configure,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_AddRootSpanFilter,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive_Settings,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ITracer_StartActive,
@@ -424,6 +426,7 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Instance_Set),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Configure),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_AddRootSpanFilter),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive_Settings),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ITracer_StartActive),
@@ -609,6 +612,7 @@ internal static partial class PublicApiUsageExtensions
             "name:tracer_instance_set",
             "name:tracer_configure",
             "name:tracer_forceflushasync",
+            "name:tracer_addrootspanfilter",
             "name:tracer_startactive",
             "name:tracer_startactive_settings",
             "name:itracer_startactive",
