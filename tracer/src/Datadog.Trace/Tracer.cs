@@ -362,6 +362,24 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Registers a predicate evaluated against the root span when a trace completes.
+        /// If the predicate returns <c>true</c>, the trace is dropped and not sent to the agent.
+        /// </summary>
+        /// <param name="shouldRejectTrace">Predicate that receives the root span and returns <c>true</c> to drop the trace.</param>
+        [PublicApi]
+        public void AddRootSpanFilter(Func<ISpan, bool> shouldRejectTrace)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_AddRootSpanFilter);
+
+            if (shouldRejectTrace is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(shouldRejectTrace));
+            }
+
+            AddRootSpanFilterInternal(shouldRejectTrace);
+        }
+
+        /// <summary>
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
@@ -382,6 +400,11 @@ namespace Datadog.Trace
         internal Scope ActivateSpan(Span span, bool finishOnClose = true)
         {
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
+        }
+
+        internal void AddRootSpanFilterInternal(Func<ISpan, bool> shouldRejectTrace)
+        {
+            TracerManager.AddRootSpanFilter(shouldRejectTrace);
         }
 
         internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)

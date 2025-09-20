@@ -6655,6 +6655,54 @@
     "IntegrationName": "DatadogTraceManual",
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Tracer",
+    "TargetMethodName": "AddRootSpanFilter",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Func`2[[Datadog.Trace.ISpan, Datadog.Trace.Manual],[System.Boolean, mscorlib]]"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.AddRootSpanFilterIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.Tracer",
+    "TargetMethodName": "AddRootSpanFilter",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Func`2[[Datadog.Trace.ISpan, Datadog.Trace.Manual],[System.Boolean, System.Private.CoreLib]]"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.AddRootSpanFilterIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.Tracer",
     "TargetMethodName": "Configure",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [

@@ -29,6 +29,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -51,6 +52,8 @@ namespace Datadog.Trace
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
+        private readonly object _rootSpanFiltersLock = new();
+        private Func<ISpan, bool>[] _rootSpanFilters = Array.Empty<Func<ISpan, bool>>();
         private volatile bool _isClosing = false;
 
         public TracerManager(
@@ -172,6 +175,23 @@ namespace Datadog.Trace
         public PerTraceSettings PerTraceSettings { get; }
 
         public SpanContextPropagator SpanContextPropagator { get; }
+
+        internal void AddRootSpanFilter(Func<ISpan, bool> shouldRejectTrace)
+        {
+            if (shouldRejectTrace is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(shouldRejectTrace));
+            }
+
+            lock (_rootSpanFiltersLock)
+            {
+                var current = _rootSpanFilters;
+                var next = new Func<ISpan, bool>[current.Length + 1];
+                Array.Copy(current, next, current.Length);
+                next[next.Length - 1] = shouldRejectTrace;
+                Volatile.Write(ref _rootSpanFilters, next);
+            }
+        }
 
         /// <summary>
         /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances
@@ -779,10 +799,56 @@ namespace Datadog.Trace
                 }
             }
 
-            if (trace.Count > 0)
+            if (trace.Count > 0 && !ShouldDropTrace(trace))
             {
                 AgentWriter.WriteTrace(trace);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool ShouldDropTrace(ArraySegment<Span> trace)
+        {
+            var filters = Volatile.Read(ref _rootSpanFilters);
+
+            if (filters.Length == 0 || trace.Count == 0)
+            {
+                return false;
+            }
+
+            var spans = trace.Array;
+            if (spans is null || trace.Offset < 0 || trace.Offset >= spans.Length)
+            {
+                return false;
+            }
+
+            var rootSpan = spans[trace.Offset];
+            if (rootSpan is null)
+            {
+                return false;
+            }
+
+            foreach (var filter in filters)
+            {
+                if (filter is null)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    if (filter(rootSpan))
+                    {
+                        Log.Debug("Trace dropped by root span filter {Filter}. Root span resource: {ResourceName}", filter.Method, rootSpan.ResourceName);
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error executing root span filter {Filter}", filter.Method);
+                }
+            }
+
+            return false;
         }
     }
 }

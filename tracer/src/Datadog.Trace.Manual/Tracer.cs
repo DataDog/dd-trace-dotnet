@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration;
@@ -147,6 +148,21 @@ namespace Datadog.Trace
         [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         public Task ForceFlushAsync() => Task.CompletedTask;
+
+        /// <summary>
+        /// Registers a predicate evaluated against the root span when a trace completes.
+        /// If the predicate returns <c>true</c>, the trace is dropped and not sent to the agent.
+        /// </summary>
+        /// <param name="shouldRejectTrace">Predicate that receives the root span and returns <c>true</c> to drop the trace.</param>
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public void AddRootSpanFilter(Func<ISpan, bool> shouldRejectTrace)
+        {
+            if (shouldRejectTrace is null)
+            {
+                throw new ArgumentNullException(nameof(shouldRejectTrace));
+            }
+        }
 
         /// <summary>
         /// Automatic instrumentation intercepts this method and reconfigures the automatic tracer

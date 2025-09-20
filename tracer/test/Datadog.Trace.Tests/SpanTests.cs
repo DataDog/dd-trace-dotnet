@@ -125,6 +125,32 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void RootSpanFilter_DropsTraceWhenPredicateReturnsTrue()
+        {
+            _tracer.AddRootSpanFilter(span => span.ResourceName == "GET /healthcheck");
+
+            using (var scope = (Scope)_tracer.StartActive("Operation"))
+            {
+                scope.Span.ResourceName = "GET /healthcheck";
+            }
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
+        }
+
+        [Fact]
+        public void RootSpanFilter_AllowsTraceWhenPredicateReturnsFalse()
+        {
+            _tracer.AddRootSpanFilter(span => span.ResourceName == "GET /healthcheck");
+
+            using (var scope = (Scope)_tracer.StartActive("Operation"))
+            {
+                scope.Span.ResourceName = "GET /other";
+            }
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Once);
+        }
+
+        [Fact]
         public void Finish_EndTimeProvided_SpanWritenWithCorrectDuration()
         {
             var startTime = DateTimeOffset.UtcNow;
