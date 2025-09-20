@@ -28,30 +28,26 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public static string MergeConfigurations(List<RemoteConfiguration> configs, string serviceName, string environment)
         {
-            if (configs.Count == 1)
+            if (configs.Count == 0)
             {
-                // Single config - still need to check if it matches the service/environment
-                var singleConfigContent = Encoding.UTF8.GetString(configs[0].Contents);
-                var singleConfig = ParseConfiguration(configs[0].Path.Id, singleConfigContent);
-
-                if (singleConfig == null || !singleConfig.Matches(serviceName, environment))
-                {
-                    return "{\"lib_config\":{}}";
-                }
-
-                return singleConfigContent;
+                return "{\"lib_config\":{}}";
             }
 
-            var parsedConfigs = new List<ApmTracingConfig>();
+            // Pre-allocate with known capacity
+            var applicableConfigs = new List<ApmTracingConfig>(configs.Count);
+
+            // Single pass: parse and filter simultaneously
             foreach (var config in configs)
             {
                 try
                 {
                     var jsonContent = Encoding.UTF8.GetString(config.Contents);
                     var configData = ParseConfiguration(config.Path.Id, jsonContent);
-                    if (configData != null)
+
+                    // Filter immediately during parsing
+                    if (configData?.Matches(serviceName, environment) == true)
                     {
-                        parsedConfigs.Add(configData);
+                        applicableConfigs.Add(configData);
                     }
                 }
                 catch (Exception ex)
@@ -60,29 +56,20 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            if (parsedConfigs.Count == 0)
-            {
-                Log.Warning("No valid APM_TRACING configurations found");
-                return "{\"lib_config\":{}}";
-            }
-
-            // Filter configurations that match the current service and environment
-            var applicableConfigs = parsedConfigs
-                .Where(c => c.Matches(serviceName, environment))
-                .OrderByDescending(c => c.Priority)
-                .ThenBy(c => c.ConfigId) // For deterministic ordering when priorities are equal
-                .ToList();
-
             if (applicableConfigs.Count == 0)
             {
                 Log.Debug("No APM_TRACING configurations match service '{ServiceName}' and environment '{Environment}'", serviceName, environment);
                 return "{\"lib_config\":{}}";
             }
 
-            // Merge configurations based on priority using the new MergeWith method
+            applicableConfigs.Sort((a, b) =>
+            {
+                var priorityComparison = b.Priority.CompareTo(a.Priority); // Descending
+                return priorityComparison != 0 ? priorityComparison : string.Compare(a.ConfigId, b.ConfigId, StringComparison.Ordinal); // Ascending
+            });
+
             var mergedConfig = applicableConfigs.Aggregate((current, next) => current.MergeWith(next));
 
-            // Wrap in the expected structure for DynamicConfigConfigurationSource
             var result = new { lib_config = mergedConfig.LibConfig };
             return JsonConvert.SerializeObject(result);
         }
@@ -103,7 +90,7 @@ namespace Datadog.Trace.Configuration
                 }
 
                 // ServiceTarget might be null (org-level config)
-                return new ApmTracingConfig(configId, configDto.ServiceTarget, configDto.LibConfig);
+                return new ApmTracingConfig(configId, configDto.LibConfig, configDto.ServiceTarget, configDto.K8sTargetV2);
             }
             catch (Exception ex)
             {

@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -15,18 +16,21 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     internal class ApmTracingConfig
     {
-        public ApmTracingConfig(string configId, ServiceTarget? serviceTarget, LibConfig libConfig)
+        public ApmTracingConfig(string configId, LibConfig libConfig, ServiceTarget? serviceTarget, K8sTargetV2? clusterTarget)
         {
             ConfigId = configId;
-            ServiceTarget = serviceTarget;
             LibConfig = libConfig;
+            ServiceTarget = serviceTarget;
+            ClusterTarget = clusterTarget;
         }
 
         public string ConfigId { get; }
 
+        public LibConfig LibConfig { get; }
+
         public ServiceTarget? ServiceTarget { get; }
 
-        public LibConfig LibConfig { get; }
+        public K8sTargetV2? ClusterTarget { get; }
 
         /// <summary>
         /// Gets the priority of this configuration based on targeting specificity.
@@ -36,20 +40,17 @@ namespace Datadog.Trace.Configuration
         {
             get
             {
-                if (ServiceTarget == null)
-                {
-                    return 0; // Org level (lowest priority)
-                }
+                var hasService = !string.IsNullOrEmpty(ServiceTarget?.Service) && ServiceTarget?.Service != "*";
+                var hasEnv = !string.IsNullOrEmpty(ServiceTarget?.Env) && ServiceTarget?.Env != "*";
+                var hasCluster = ClusterTarget != null;
 
-                var hasService = !string.IsNullOrEmpty(ServiceTarget.Service) && ServiceTarget.Service != "*";
-                var hasEnv = !string.IsNullOrEmpty(ServiceTarget.Env) && ServiceTarget.Env != "*";
-
-                return new ConfigurationTarget(hasService, hasEnv) switch
+                return new ConfigurationTarget(hasService, hasEnv, hasCluster) switch
                 {
-                    (true, true) => 4, // Service+env (highest priority)
-                    (true, false) => 3, // Service only
-                    (false, true) => 2, // Env only
-                    (false, false) => 1 // Cluster target or wildcard
+                    (true, true, _) => 5, // Service+env (highest priority)
+                    (true, false, _) => 4, // Service only
+                    (false, true, _) => 3, // Env only
+                    (false, false, true) => 2, // Cluster
+                    (false, false, false) => 1 // Org level
                 };
             }
         }
@@ -64,13 +65,13 @@ namespace Datadog.Trace.Configuration
                 return true; // Org-level config matches everything
             }
 
-            var serviceMatches = string.IsNullOrEmpty(ServiceTarget.Service) ||
-                                ServiceTarget.Service == "*" ||
-                                ServiceTarget.Service == serviceName;
+            var serviceMatches = string.IsNullOrEmpty(ServiceTarget?.Service) ||
+                                 ServiceTarget?.Service == "*" ||
+                                 ServiceTarget?.Service == serviceName;
 
-            var envMatches = string.IsNullOrEmpty(ServiceTarget.Env) ||
-                            ServiceTarget.Env == "*" ||
-                            ServiceTarget.Env == environment;
+            var envMatches = string.IsNullOrEmpty(ServiceTarget?.Env) ||
+                             ServiceTarget?.Env == "*" ||
+                             ServiceTarget?.Env == environment;
 
             return serviceMatches && envMatches;
         }
@@ -85,8 +86,9 @@ namespace Datadog.Trace.Configuration
 
             return new ApmTracingConfig(
                 higherPriority.ConfigId,
+                MergeLibConfigs(higherPriority.LibConfig, lowerPriority.LibConfig),
                 higherPriority.ServiceTarget,
-                MergeLibConfigs(higherPriority.LibConfig, lowerPriority.LibConfig));
+                higherPriority.ClusterTarget);
         }
 
         private static LibConfig MergeLibConfigs(LibConfig higher, LibConfig lower)
@@ -102,21 +104,21 @@ namespace Datadog.Trace.Configuration
             };
         }
 
-        internal record struct ConfigurationTarget(bool HasService, bool HasEnv);
+        internal record struct ConfigurationTarget(bool HasService, bool HasEnv, bool HasCluster);
     }
 
     internal class ApmTracingConfigDto
     {
+        [JsonProperty("lib_config")]
+        public LibConfig? LibConfig { get; set; }
+
         [JsonProperty("service_target")]
         public ServiceTarget? ServiceTarget { get; set; }
 
-        [JsonProperty("lib_config")]
-        public LibConfig? LibConfig { get; set; }
+        [JsonProperty("k8s_target_v2")]
+        public K8sTargetV2? K8sTargetV2 { get; set; }
     }
 
-    /// <summary>
-    /// Represents the service_target field in APM_TRACING configuration
-    /// </summary>
     internal class ServiceTarget
     {
         [JsonProperty("service")]
@@ -126,9 +128,24 @@ namespace Datadog.Trace.Configuration
         public string? Env { get; set; }
     }
 
-    /// <summary>
-    /// Represents the lib_config field in APM_TRACING configuration
-    /// </summary>
+    internal class K8sTargetV2
+    {
+        [JsonProperty("cluster_targets")]
+        public List<ClusterTarget>? ClusterTargets { get; set; }
+    }
+
+    internal class ClusterTarget
+    {
+        [JsonProperty("cluster_name")]
+        public string? ClusterName { get; set; }
+
+        [JsonProperty("enabled")]
+        public bool? Enabled { get; set; }
+
+        [JsonProperty("enabled_namespaces")]
+        public List<string>? EnabledNamespaces { get; set; }
+    }
+
     internal class LibConfig
     {
         [JsonProperty("tracing_enabled")]
@@ -148,5 +165,20 @@ namespace Datadog.Trace.Configuration
 
         [JsonProperty("tracing_tags")]
         public string? TracingTags { get; set; }
+
+        [JsonProperty("tracing_debug")]
+        public bool? DebugEnabled { get; set; }
+
+        [JsonProperty("runtime_metrics_enabled")]
+        public bool? RuntimeMetricsEnabled { get; set; }
+
+        [JsonProperty("tracing_service_mapping")]
+        public string? ServiceMapping { get; set; }
+
+        [JsonProperty("data_streams_enabled")]
+        public bool? DataStreamsEnabled { get; set; }
+
+        [JsonProperty("span_sampling_rules")]
+        public bool? SpanSamplingRules { get; set; }
     }
 }
