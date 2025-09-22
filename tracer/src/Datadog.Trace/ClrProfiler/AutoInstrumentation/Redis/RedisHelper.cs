@@ -22,7 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         internal static Scope? CreateScope(Tracer tracer, IntegrationId integrationId, string integrationName, string? host, string? port, string rawCommand, long? databaseIndex)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -36,12 +37,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 return null;
             }
 
-            string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(ServiceName);
+            string serviceName = perTraceSettings.Schema.Database.GetServiceName(ServiceName);
             Scope? scope = null;
 
             try
             {
-                var tags = tracer.CurrentTraceSettings.Schema.Database.CreateRedisTags();
+                var tags = perTraceSettings.Schema.Database.CreateRedisTags();
                 tags.InstrumentationName = integrationName;
 
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
@@ -68,8 +69,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                     tags.DatabaseIndex = databaseIndex.Value;
                 }
 
-                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex)

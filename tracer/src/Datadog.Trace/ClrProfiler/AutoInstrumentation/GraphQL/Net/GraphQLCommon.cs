@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
         internal static Scope CreateScopeFromValidate(Tracer tracer, string documentSource)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 span.Type = SpanTypes.GraphQL;
                 tags.Source = documentSource;
 
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
         internal static Scope CreateScopeFromExecuteAsync(Tracer tracer, IExecutionContext executionContext)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
         internal static Scope CreateScopeFromExecuteAsyncV5AndV7(Tracer tracer, IExecutionContextV5AndV7 executionContext)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;

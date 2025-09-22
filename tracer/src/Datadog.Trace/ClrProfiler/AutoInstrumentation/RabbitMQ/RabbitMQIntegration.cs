@@ -48,7 +48,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -58,8 +59,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
             try
             {
-                tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateRabbitMqTags(spanKind);
-                var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
+                tags = perTraceSettings.Schema.Messaging.CreateRabbitMqTags(spanKind);
+                var serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
                 var operation = GetOperationName(tracer, spanKind);
 
                 scope = tracer.StartActiveInternal(
@@ -82,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 tags.OutHost = host;
 
                 tags.InstrumentationName = IntegrationName;
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
