@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigurationKeys.DirectLogSubmission.cs" company="Datadog">
+// <copyright file="ConfigurationKeys.DirectLogSubmission.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key to enable or disable direct log submission for Azure Functions host.
-            /// Default value is <c>true</c>.
+            /// Default value is <c>false</c>.
             /// </summary>
             /// <seealso cref="DirectLogSubmissionSettings.AzureFunctionsHostEnabled"/>
             public const string AzureFunctionsHostEnabled = "DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED";
