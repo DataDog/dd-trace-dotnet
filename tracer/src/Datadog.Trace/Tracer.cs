@@ -46,47 +46,6 @@ namespace Datadog.Trace
         private readonly TracerManager _tracerManager;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/> class with default settings. Replaces the
-        /// settings for all tracers in the application with the default settings.
-        /// </summary>
-        [Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create spans.")]
-        [PublicApi]
-        public Tracer()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor);
-            // Don't call Configure because it will call Start on the TracerManager
-            // before this new instance of Tracer is assigned to Tracer.Instance
-            TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance);
-
-            // update the count of Tracer instances
-            Interlocked.Increment(ref _liveTracerCount);
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/>
-        /// class using the specified <see cref="IConfigurationSource"/>. This constructor updates the global settings
-        /// for all <see cref="Tracer"/> instances in the application.
-        /// </summary>
-        /// <param name="settings">
-        /// A <see cref="TracerSettings"/> instance with the desired settings,
-        /// or null to use the default configuration sources. This is used to configure global settings
-        /// </param>
-        [Obsolete("This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
-                  "If you were using this API to configure the global Tracer.Instance in code, use the static "
-                + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
-        [PublicApi]
-        public Tracer(TracerSettings settings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
-            // Don't call Configure because it will call Start on the TracerManager
-            // before this new instance of Tracer is assigned to Tracer.Instance
-            TracerManager.ReplaceGlobalManager(settings is null ? null : settings, TracerManagerFactory.Instance);
-
-            // update the count of Tracer instances
-            Interlocked.Increment(ref _liveTracerCount);
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="Tracer"/> class.
         /// For testing only.
         /// Note that this API does NOT replace the global Tracer instance.
@@ -127,7 +86,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets or sets the global <see cref="Tracer"/> instance.
+        /// Gets the global <see cref="Tracer"/> instance.
         /// Used by all automatic instrumentation and recommended
         /// as the entry point for manual instrumentation.
         /// </summary>
@@ -159,34 +118,6 @@ namespace Datadog.Trace
 
                 instance.TracerManager.Start();
                 return instance;
-            }
-
-            // TODO: Make this API internal
-            [Obsolete("Use " + nameof(Tracer) + "." + nameof(Configure) + " to configure the global Tracer" +
-                      " instance in code.")]
-            [PublicApi]
-            set
-            {
-                TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Instance_Set);
-                if (value is null)
-                {
-                    ThrowHelper.ThrowArgumentNullException("The tracer instance shouldn't be set to null as this will cause issues with automatic instrumentation.");
-                }
-
-                lock (GlobalInstanceLock)
-                {
-                    // This check is probably no longer necessary, as it's the TracerManager we really care about
-                    // Kept for safety reasons
-                    if (_instance is { TracerManager: ILockedTracer })
-                    {
-                        ThrowHelper.ThrowInvalidOperationException("The current tracer instance cannot be replaced.");
-                    }
-
-                    _instance = value;
-                    _globalInstanceInitialized = true;
-                }
-
-                value?.TracerManager.Start();
             }
         }
 
