@@ -10,8 +10,8 @@
 #include <libunwind.h>
 #include <mutex>
 #include <ucontext.h>
-#include <unordered_map>
 #include <unistd.h>
+#include <unordered_map>
 
 #include "CallstackProvider.h"
 #include "CorProfilerCallback.h"
@@ -52,7 +52,6 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     // For now have one metric for both walltime and cpu (naive)
     _samplingRequest = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_walltime_cpu_sampling_requests");
     _discardMetrics = metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_walltime_cpu_sample_discarded");
-
 }
 
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
@@ -95,7 +94,6 @@ void LinuxStackFramesCollector::UpdateErrorStats(std::int32_t errorCode)
     }
 }
 
-
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                        uint32_t* pHR,
                                                                                        bool selfCollect)
@@ -134,7 +132,10 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
         s_pInstanceCurrentlyStackWalking = this;
 
-        on_leave { s_pInstanceCurrentlyStackWalking = nullptr; };
+        on_leave
+        {
+            s_pInstanceCurrentlyStackWalking = nullptr;
+        };
 
         _stackWalkFinished = false;
 
@@ -159,7 +160,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
             if (status == std::cv_status::timeout)
             {
                 _lastStackWalkErrorCode = E_ABORT;
-                
+
                 if (!_signalManager->CheckSignalHandler())
                 {
                     _lastStackWalkErrorCode = E_FAIL;
@@ -211,7 +212,8 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
         // Collect data for TraceContext tracking:
         TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
-        if (_useHybridUnwinding) {
+        if (_useHybridUnwinding)
+        {
             return CollectStackHybrid(ctx);
         }
         return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
@@ -299,7 +301,6 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
 
     return S_OK;
 }
-
 
 bool IsInSigSegvHandler(void* context)
 {
@@ -503,7 +504,8 @@ bool LinuxStackFramesCollector::IsManagedCode(uintptr_t instructionPointer)
         return false;
     }
 
-    // Check if the instruction pointer falls within any loaded library that indicates managed code
+    // Check if the instruction pointer falls within any known mapping
+    // This will return the cached result if found, or trigger missing mapping flag if not found
     return librariesCache->IsAddressInManagedRegion(instructionPointer);
 }
 
@@ -534,7 +536,7 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
             {
                 // Update cursor registers for next frame
                 unw_set_reg(cursor, UNW_AARCH64_X29, prev_fp);
-                unw_set_reg(cursor, UNW_REG_SP, fp + 16);  // Skip saved fp + lr
+                unw_set_reg(cursor, UNW_REG_SP, fp + 16); // Skip saved fp + lr
                 unw_set_reg(cursor, UNW_REG_IP, return_addr);
 
                 return 1; // Success, frame unwound
@@ -578,7 +580,7 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
             {
                 // Update cursor registers for next frame
                 unw_set_reg(cursor, UNW_X86_64_RBP, prev_rbp);
-                unw_set_reg(cursor, UNW_REG_SP, rbp + 16);  // Skip saved rbp + return addr
+                unw_set_reg(cursor, UNW_REG_SP, rbp + 16); // Skip saved rbp + return addr
                 unw_set_reg(cursor, UNW_REG_IP, return_addr);
 
                 return 1; // Success, frame unwound
@@ -594,13 +596,13 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
 bool LinuxStackFramesCollector::ReadStackMemory(uintptr_t address, void* buffer, size_t size)
 {
     // Basic validation: check if address looks reasonable
-    if (address == 0 || size == 0 || size > 1024)  // Sanity check on size
+    if (address == 0 || size == 0 || size > 1024) // Sanity check on size
     {
         return false;
     }
 
     // Check alignment - stack addresses should be reasonably aligned
-    if ((address & 0x7) != 0)  // 8-byte alignment check
+    if ((address & 0x7) != 0) // 8-byte alignment check
     {
         return false;
     }
@@ -610,12 +612,18 @@ bool LinuxStackFramesCollector::ReadStackMemory(uintptr_t address, void* buffer,
     // or using getrlimit(RLIMIT_STACK), but this gives basic protection
     void* current_stack_ptr;
 #ifdef ARM64
-    asm volatile("mov %0, sp" : "=r"(current_stack_ptr) : : "memory");
+    asm volatile("mov %0, sp"
+                 : "=r"(current_stack_ptr)
+                 :
+                 : "memory");
 #else
-    asm volatile("mov %%rsp, %0" : "=r"(current_stack_ptr) : : "memory");
+    asm volatile("mov %%rsp, %0"
+                 : "=r"(current_stack_ptr)
+                 :
+                 : "memory");
 #endif
     uintptr_t current_sp = reinterpret_cast<uintptr_t>(current_stack_ptr);
-    
+
     // Stack typically grows downward, so valid addresses should be >= current SP
     // and within a reasonable distance (e.g., 8MB stack limit)
     if (address < current_sp || (address - current_sp) > (8 * 1024 * 1024))

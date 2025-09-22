@@ -6,10 +6,10 @@
 #include "Log.h"
 #include "OpSysTools.h"
 
-#include <unistd.h>
 #include <algorithm>
-#include <string>
 #include <cstring>
+#include <string>
+#include <unistd.h>
 
 using namespace std::chrono_literals;
 
@@ -20,7 +20,9 @@ extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((we
 LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
     _stopRequested{false},
     _event(true), // set the event to force updating the cache the first time Wait is called
-    _wrappersAllocator{resource}
+    _wrappersAllocator{resource},
+    _managedRegionCount(0),
+    _hasMissingMappings(false)
 {
 }
 
@@ -135,15 +137,45 @@ void LibrariesInfoCache::UpdateCache()
         },
         &data);
 
+    // Pre-compute managed regions for signal-safe lookup
+    std::vector<ManagedRegion> newManagedRegions;
+    
+    for (const auto& wrapper : newCache)
+    {
+        auto [info, size] = wrapper.Get();
+
+        // Check each executable loadable segment
+        for (int i = 0; i < info->dlpi_phnum; i++)
+        {
+            const ElfW(Phdr)& phdr = info->dlpi_phdr[i];
+
+            // Only check executable loadable segments (PT_LOAD with execute permission)
+            if (phdr.p_type != PT_LOAD || !(phdr.p_flags & PF_X))
+                continue;
+
+            // Anonymous mappings (no file backing) are likely JIT-compiled managed code
+            const char* libName = info->dlpi_name;
+            bool isAnonymous = (libName == nullptr || strlen(libName) == 0);
+
+            if (isAnonymous)
+            {
+                // Calculate the segment's virtual address range
+                uintptr_t segmentStart = info->dlpi_addr + phdr.p_vaddr;
+                uintptr_t segmentEnd = segmentStart + phdr.p_memsz;
+
+                newManagedRegions.push_back({segmentStart, segmentEnd, info->dlpi_addr});
+            }
+        }
+    }
+
     {
         std::unique_lock l{_cacheLock};
         _librariesInfo.swap(newCache);
-    }
-
-    // Clear managed region cache when libraries change
-    {
-        std::lock_guard<std::mutex> lock(_managedCacheLock);
-        _managedRegionCache.clear();
+        _managedRegions.swap(newManagedRegions);
+        _managedRegionCount.store(_managedRegions.size(), std::memory_order_release);
+        
+        // Reset the missing mappings flag since we just did a full update
+        _hasMissingMappings.store(false, std::memory_order_release);
     }
 
     newCache.clear();
@@ -198,74 +230,43 @@ LibrariesInfoCache* LibrariesInfoCache::GetInstance()
     return s_instance;
 }
 
-bool LibrariesInfoCache::IsAddressInManagedRegion(uintptr_t address)
+void LibrariesInfoCache::UpdateManagedRegionsIfNeeded()
 {
-    // Use page-aligned address for caching to reduce cache size
-    const uintptr_t pageSize = 4096;
-    uintptr_t pageAddress = address & ~(pageSize - 1);
+    // Check if we have encountered unknown mappings (potential new JIT compilation)
+    bool hasMissingMappings = _hasMissingMappings.load(std::memory_order_acquire);
     
-    // Check cache first
-    {   // todo: lock free mechanism ?
-        std::lock_guard<std::mutex> lock(_managedCacheLock);
-        auto it = _managedRegionCache.find(pageAddress);
-        if (it != _managedRegionCache.end())
-        {
-            return it->second;
-        }
-    }
+    if (!hasMissingMappings)
+        return;
     
-    // Cache miss - do the expensive lookup
-    bool isManaged = false;
-    bool found = false;
-    {
-        std::shared_lock l(_cacheLock);
-
-        for (const auto& wrapper : _librariesInfo)
-        {
-            auto [info, size] = wrapper.Get();
-            
-            // Check if the address falls within this library's segments
-            for (int i = 0; i < info->dlpi_phnum && !found; i++)
-            {
-                const ElfW(Phdr)& phdr = info->dlpi_phdr[i];
-                
-                // Only check executable loadable segments (PT_LOAD with execute permission)
-                if (phdr.p_type != PT_LOAD || !(phdr.p_flags & PF_X))
-                    continue;
-                    
-                // Calculate the segment's virtual address range
-                uintptr_t segmentStart = info->dlpi_addr + phdr.p_vaddr;
-                uintptr_t segmentEnd = segmentStart + phdr.p_memsz;
-                
-                // Check if address falls within this segment
-                if (address >= segmentStart && address < segmentEnd)
-                {
-                    // Anonymous mappings (no file backing) are likely JIT-compiled managed code
-                    const char* libName = info->dlpi_name;
-                    bool isAnonymous = (libName == nullptr || strlen(libName) == 0);
-                    
-                    isManaged = isAnonymous;
-                    found = true;
-                }
-            }
-            
-            if (found) break;
-        }
-        
-        // If we can't find the address in any mapping, assume native (isManaged = false)
-    }
-    
-    // Cache the result
-    {
-        std::lock_guard<std::mutex> lock(_managedCacheLock);
-        // Limit cache size to prevent unbounded growth
-        if (_managedRegionCache.size() > 1000)
-        {
-            _managedRegionCache.clear();
-        }
-        _managedRegionCache[pageAddress] = isManaged;
-    }
-    
-    return isManaged;
+    // Force a full cache update to discover new mappings
+    UpdateCache();
+    _hasMissingMappings.store(false, std::memory_order_release);
 }
 
+bool LibrariesInfoCache::IsAddressInManagedRegion(uintptr_t address)
+{
+    // Signal-safe lookup using pre-computed managed regions
+    // No locks needed - we use atomic loads and read-only data
+
+    size_t regionCount = _managedRegionCount.load(std::memory_order_acquire);
+
+    // Simple linear search through managed regions
+    // This is signal-safe as we're only reading pre-computed data
+    for (size_t i = 0; i < regionCount; i++)
+    {
+        const ManagedRegion& region = _managedRegions[i];
+        if (address >= region.start && address < region.end)
+        {
+            return true;
+        }
+    }
+
+    // Address not found in any known managed region
+    // This could mean:
+    // 1. It's in a native library (normal case)
+    // 2. It's in a new JIT-compiled region we haven't discovered yet
+    // Set flag to trigger cache update on next safe opportunity
+    _hasMissingMappings.store(true, std::memory_order_release);
+
+    return false;
+}

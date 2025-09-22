@@ -74,7 +74,7 @@ private:
     std::int32_t CollectStackWithBacktrace2(void* ctx);
     std::int32_t CollectStackHybrid(void* ctx);
     void MarkAsInterrupted();
-    
+
     // Hybrid unwinding helper methods
     bool IsManagedCode(uintptr_t instructionPointer);
     std::int32_t UnwindManagedFrameManually(unw_cursor_t* cursor, uintptr_t ip);
@@ -91,7 +91,6 @@ private:
     std::atomic<bool> _stackWalkFinished;
     pid_t _processId;
     ProfilerSignalManager* _signalManager;
-
 
 private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);

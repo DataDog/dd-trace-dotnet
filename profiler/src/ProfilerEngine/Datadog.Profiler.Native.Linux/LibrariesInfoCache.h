@@ -16,8 +16,8 @@
 #include <memory>
 #include <shared_mutex>
 #include <thread>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 class LibrariesInfoCache : public ServiceBase
 {
@@ -35,6 +35,7 @@ public:
 
     static LibrariesInfoCache* GetInstance();
     bool IsAddressInManagedRegion(uintptr_t address);
+    void UpdateManagedRegionsIfNeeded();
 
 protected:
     bool StartImpl() final override;
@@ -60,9 +61,20 @@ private:
     std::shared_mutex _cacheLock;
     std::vector<DlPhdrInfoWrapper> _librariesInfo;
 
-    // Simple cache for managed region lookups (page-aligned addresses)
-    mutable std::unordered_map<uintptr_t, bool> _managedRegionCache;
-    mutable std::mutex _managedCacheLock;
+    // Signal-safe managed regions data structure
+    struct ManagedRegion
+    {
+        uintptr_t start;
+        uintptr_t end;
+        uintptr_t mappingId; // Unique identifier for the mapping
+    };
+    
+    std::vector<ManagedRegion> _managedRegions;
+    std::atomic<size_t> _managedRegionCount;
+    
+    // Flag to indicate that we've encountered unknown mappings
+    // This forces a full rescan on next update
+    std::atomic<bool> _hasMissingMappings;
 
     std::thread _worker;
     std::atomic<bool> _stopRequested;

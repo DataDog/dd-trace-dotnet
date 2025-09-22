@@ -8,6 +8,10 @@
 #include "OpSysTools.h"
 #include "SamplesEnumerator.h"
 
+#ifdef LINUX
+#include "LibrariesInfoCache.h"
+#endif
+
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -81,6 +85,17 @@ void SamplesCollector::SamplesWork()
 
     while (future.wait_for(CollectingPeriod) == std::future_status::timeout)
     {
+#ifdef LINUX
+        // Update managed regions if needed (safe context - worker thread, every 60ms)
+        // This is a good balance: frequent enough to catch JIT compilation quickly,
+        // but not so frequent as to impact performance significantly
+        auto* librariesCache = LibrariesInfoCache::GetInstance();
+        if (librariesCache != nullptr)
+        {
+            librariesCache->UpdateManagedRegionsIfNeeded();
+        }
+#endif
+        
         CollectSamples(_samplesProviders);
     }
 }

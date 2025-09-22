@@ -8,6 +8,10 @@
 #include "IFrameStore.h"
 #include "IRuntimeIdStore.h"
 
+#ifdef LINUX
+#include "LibrariesInfoCache.h"
+#endif
+
 #include <chrono>
 #include <string>
 #include <string_view>
