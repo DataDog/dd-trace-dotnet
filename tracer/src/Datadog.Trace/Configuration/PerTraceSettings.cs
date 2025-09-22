@@ -16,11 +16,10 @@ namespace Datadog.Trace.Configuration
     {
         private readonly ConcurrentDictionary<string, string> _serviceNameCache = new();
 
-        public PerTraceSettings(ITraceSampler? traceSampler, ISpanSampler? spanSampler, IReadOnlyDictionary<string, string> serviceNames, NamingSchema schema, MutableSettings mutableSettings)
+        public PerTraceSettings(ITraceSampler? traceSampler, ISpanSampler? spanSampler, NamingSchema schema, MutableSettings mutableSettings)
         {
             TraceSampler = traceSampler;
             SpanSampler = spanSampler;
-            ServiceNames = serviceNames;
             Schema = schema;
             HasResourceBasedSamplingRule = (traceSampler?.HasResourceBasedSamplingRule ?? false) || (spanSampler?.HasResourceBasedSamplingRule ?? false);
             Settings = mutableSettings;
@@ -30,7 +29,7 @@ namespace Datadog.Trace.Configuration
 
         public ISpanSampler? SpanSampler { get; }
 
-        public IReadOnlyDictionary<string, string> ServiceNames { get; }
+        public IReadOnlyDictionary<string, string> ServiceNames => Settings.ServiceNameMappings;
 
         public NamingSchema Schema { get; }
 
