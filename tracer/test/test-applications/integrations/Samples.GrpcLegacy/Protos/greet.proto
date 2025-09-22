@@ -12,7 +12,7 @@ service Greeter {
   // Unary call
   rpc Unary (HelloRequest) returns (HelloReply);
 
-  // Hangs for 10s, so should exceed deadlines
+  // Hangs for 200ms, so should exceed deadlines
   rpc VerySlow (HelloRequest) returns (HelloReply);
 
   // Server streaming

@@ -65,7 +65,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         // Default config does not block
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
         var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
-        resultEph.BlockInfo["status_code"].Should().Be("403");
+        resultEph.BlockInfo["status_code"].Should().Be(403);
         resultEph.Timeout.Should().BeFalse("Timeout should be false");
         var jsonString = JsonConvert.SerializeObject(resultEph.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
@@ -80,7 +80,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         context.Run(args, TimeoutMicroSeconds);
         var resultEph1 = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
         resultEph1.Timeout.Should().BeFalse("Timeout should be false");
-        resultEph1.BlockInfo["status_code"].Should().Be("500");
+        resultEph1.BlockInfo["status_code"].Should().Be(500);
         resultEph1.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
         resultEph1.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0);
     }

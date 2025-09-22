@@ -192,7 +192,7 @@ namespace Datadog.Trace.AspNet
                 // Attempt to set Resource Name to something that will be close to what is expected
                 // Note: we will go and re-do it in OnEndRequest, but doing it here will allow for resource-based sampling
                 // this likely won't be perfect - but we need something to try and allow resource-based sampling to function
-                var resourceName = tracer.TracerManager.PerTraceSettings.HasResourceBasedSamplingRule
+                var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule
                                        ? BuildResourceName(tracer, httpRequest)
                                        : null;
                 scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);

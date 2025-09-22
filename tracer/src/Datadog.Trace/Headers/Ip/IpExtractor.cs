@@ -19,7 +19,7 @@ namespace Datadog.Trace.Headers.Ip
         {
             _ipv4LocalCidrs = [];
 
-            foreach (var currentCidrMask in new[] { "127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16" })
+            foreach (var currentCidrMask in new[] { "127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "100.65.0.0/10" })
             {
                 var parts = currentCidrMask.Split('/');
 
@@ -36,15 +36,16 @@ namespace Datadog.Trace.Headers.Ip
         /// </summary>
         /// <param name="headerValue">the extracted values from releveant ip related header</param>
         /// <param name="https">is a secure connection</param>
+        /// <param name="extractor">function that extracts the potential IP from the header fragment</param>
         /// <returns>return ip and port, may be null</returns>
-        internal static IpInfo? RealIpFromValue(string headerValue, bool https)
+        internal static IpInfo? RealIpFromValue(string headerValue, bool https, Func<string?, string?> extractor)
         {
             IpInfo? privateIpInfo = null;
-            var values = headerValue.Split(',');
+            var values = headerValue.Split(',', ';');
             foreach (var potentialIp in values)
             {
-                var consideredPotentialIp = potentialIp.Trim();
-                if (string.IsNullOrEmpty(consideredPotentialIp))
+                var consideredPotentialIp = extractor(potentialIp);
+                if (consideredPotentialIp is null || consideredPotentialIp.Length == 0)
                 {
                     continue;
                 }

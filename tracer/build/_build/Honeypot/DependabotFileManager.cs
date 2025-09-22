@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using GeneratePackageVersions;
@@ -34,10 +35,10 @@ namespace Honeypot
             File.WriteAllText(honeypotProject, honeypotProjTemplate);
         }
 
-        public static Task UpdateIntegrations(AbsolutePath honeypotProject, List<IntegrationMap> distinctIntegrations)
+        public static async Task UpdateIntegrations(AbsolutePath honeypotDirectory, List<IntegrationMap> distinctIntegrations)
         {
-            var fakeRefs = string.Empty;
-            
+            FileSystemTasks.EnsureCleanDirectory(honeypotDirectory);
+
             // have to group by packages so we don't have duplicate package references
             // so reverse the dependencies here
             var integrationsByPackageName = distinctIntegrations
@@ -45,31 +46,36 @@ namespace Honeypot
                 .GroupBy(x => x.package)
                 .OrderBy(x => x.Key.NugetName);
 
+            var sb = new StringBuilder();
             foreach (var packageNameGroup in integrationsByPackageName)
             {
+                var filename = honeypotDirectory / $"Datadog.Dependabot.{packageNameGroup.Key.NugetName}.csproj";
+                sb.Clear();
+
                 var package = packageNameGroup.Key;
                 foreach (var (integration, _) in packageNameGroup.OrderBy(x => x.integration.Name))
                 {
-                    fakeRefs += $@"{Environment.NewLine}    <!-- Integration: {integration.Name} -->";
-                    fakeRefs += $@"{Environment.NewLine}    <!--    Assembly: {integration.AssemblyName} -->";
+                    sb.AppendLine($"    <!-- Integration: {integration.Name} -->");
+                    sb.AppendLine($"    <!--    Assembly: {integration.AssemblyName} -->");
                 }
 
-                fakeRefs += $@"{Environment.NewLine}    <!-- Latest package https://www.nuget.org/packages/{package.NugetName}/{package.LatestVersion} -->";
-                fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{package.NugetName}"" Version=""{package.LatestTestedVersion ?? package.LatestSupportedVersion}"" />{Environment.NewLine}";
+                sb.AppendLine($"    <!-- Latest package https://www.nuget.org/packages/{package.NugetName}/{package.LatestVersion} -->");
+                sb.AppendLine($"""    <PackageReference Include="{package.NugetName}" Version="{package.LatestTestedVersion ?? package.LatestSupportedVersion}" />""");
+                var honeypotProjTemplate = GetHoneyPotProjTemplate();
+
+                honeypotProjTemplate = honeypotProjTemplate.Replace("##PACKAGE_REFS##", sb.ToString());
+
+                await File.WriteAllTextAsync(filename, honeypotProjTemplate);
             }
-
-            var honeypotProjTemplate = GetHoneyPotProjTemplate();
-            honeypotProjTemplate = honeypotProjTemplate.Replace("##PACKAGE_REFS##", fakeRefs);
-
-            return File.WriteAllTextAsync(honeypotProject, honeypotProjTemplate);
         }
 
-        public static List<(string NugetName, Version LatestTestedVersion)> GetCurrentlyTestedVersions(AbsolutePath honeypotProject)
-            => XElement.Load(honeypotProject)
-                       .Descendants("PackageReference")
-                       .Select(x => ((string)x.Attribute("Include"), new Version(((string)x.Attribute("Version"))!)))
-                       .Distinct()
-                       .ToList();
+        public static List<(string NugetName, Version LatestTestedVersion)> GetCurrentlyTestedVersions(AbsolutePath honeypotFolder)
+            => Directory.EnumerateFiles(honeypotFolder, "*.csproj", SearchOption.AllDirectories)
+                .Select(XElement.Load)
+                .Descendants("PackageReference")
+                .Select(x => ((string) x.Attribute("Include"), new Version(((string) x.Attribute("Version"))!)))
+                .Distinct()
+                .ToList();
 
         public static async Task<List<IntegrationMap>> BuildDistinctIntegrationMaps(List<InstrumentedAssembly> targets, List<PackageVersionGenerator.TestedPackage> testedVersions)
         {

@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CodeGenerators;
+using ICSharpCode.SharpZipLib.Zip;
 using LogParsing;
 using Mono.Cecil;
 using Nuke.Common;
@@ -66,7 +67,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.27.0";
+    const string LibDdwafVersion = "1.28.1";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0", "1.23.0" };
 
@@ -275,6 +276,7 @@ partial class Build
                 NuGetTasks.NuGetRestore(s => s
                     .SetTargetPath(Solution)
                     .SetVerbosity(NuGetVerbosity.Normal)
+                    .SetProcessLogOutput(!IsServerBuild)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
             }
@@ -282,7 +284,7 @@ partial class Build
             {
                 DotNetRestore(s => s
                     .SetProjectFile(Solution)
-                    .SetVerbosity(DotNetVerbosity.Normal)
+                    .SetVerbosity(DotNetVerbosity.Minimal)
                     .SetProperty("configuration", BuildConfiguration.ToString())
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory)));
@@ -356,8 +358,12 @@ partial class Build
 
             var envVariables = new Dictionary<string, string>
             {
+                ["HOME"] = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ["PATH"] = Environment.GetEnvironmentVariable("PATH"),
                 ["CMAKE_OSX_ARCHITECTURES"] = finalArchs,
-                ["PATH"] = Environment.GetEnvironmentVariable("PATH")
+                ["CMAKE_MAKE_PROGRAM"] = "make",
+                ["CMAKE_CXX_COMPILER"] = "clang++",
+                ["CMAKE_C_COMPILER"] = "clang",
             };
 
             // Build native
@@ -541,7 +547,7 @@ partial class Build
         uncompressFolderTarget ??= LibDdwafDirectory(libddwafVersion);
         Console.WriteLine($"{libDdwafZip} downloaded. Extracting to {uncompressFolderTarget}...");
 
-        UncompressZip(libDdwafZip, uncompressFolderTarget);
+        UncompressZipQuiet(libDdwafZip, uncompressFolderTarget);
     }
 
     Target CopyLibDdwaf => _ => _
@@ -680,18 +686,27 @@ partial class Build
 
                 var testBinFolder = testDir / "bin" / BuildConfiguration;
 
-                var (ext, source) = Platform switch
+                var (ext, source, libdatadog) = Platform switch
                 {
-                    PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}" / "datadog_profiling_ffi.dll"),
-                    PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch / "libdatadog_profiling.so"),
-                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx" / $"libdatadog_profiling.dylib"),
+                    PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}", "datadog_profiling_ffi.dll"),
+                    PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch, "libdatadog_profiling.so"),
+                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx", "libdatadog_profiling.dylib"),
                     _ => throw new NotSupportedException($"Unsupported platform: {Platform}")
+                };
+
+                var libs = new[]
+                {
+                    (libdatadog, $"LibDatadog.{ext}"),
+                    ($"Datadog.Tracer.Native.{ext}", $"Datadog.Tracer.Native.{ext}"),
                 };
 
                 foreach (var framework in frameworks)
                 {
-                    var dest = testBinFolder / framework / $"LibDatadog.{ext}";
-                    CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    foreach (var lib in libs)
+                    {
+                        var dest = testBinFolder / framework / lib.Item2;
+                        CopyFile(source / lib.Item1, dest, FileExistsPolicy.Overwrite);
+                    }
                 }
             }
         });
@@ -2763,9 +2778,34 @@ partial class Build
         EnsureExistingParentDirectory(destinationFolder);
         var parentFolder = destinationFolder.Parent;
 
-        CompressionTasks.UncompressZip(vcpkgZip, parentFolder);
+        UncompressZipQuiet(vcpkgZip, parentFolder);
 
         RenameDirectory(parentFolder / $"vcpkg-{vcpkgVersion}", destinationFolder.Name);
+    }
+
+    // Quiet version of CompressionTasks:UncompressZip, which displays a log line for every created directory when uncompressing
+    private static void UncompressZipQuiet(string archiveFile, string directory)
+    {
+        Logger.Information("Uncompressing {File} to {Directory} ...", Path.GetFileName(archiveFile), directory);
+
+        using var fileStream = File.OpenRead(archiveFile);
+        using var zipFile = new ZipFile(fileStream);
+
+        var entries = zipFile.Cast<ZipEntry>().Where(x => !x.IsDirectory);
+        foreach (var entry in entries)
+        {
+            var file = PathConstruction.Combine(directory, entry.Name);
+            var path = Path.GetDirectoryName(file);
+
+            if (!Directory.Exists(path) && !string.IsNullOrEmpty(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+
+            using var entryStream = zipFile.GetInputStream(entry);
+            using var outputStream = File.Open(file, FileMode.Create);
+            entryStream.CopyTo(outputStream);
+        }
     }
 
     public static class LibdatadogLogParser

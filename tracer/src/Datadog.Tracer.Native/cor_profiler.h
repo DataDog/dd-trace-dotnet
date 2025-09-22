@@ -84,6 +84,7 @@ private:
     // Debugger Members
     //
     std::unique_ptr<debugger::DebuggerProbesInstrumentationRequester> debugger_instrumentation_requester = nullptr;
+    bool asyncmethoddebuggerinvokerv2_type_available = false;
 
     //
     // Fault-Tolerant Instrumentation Members
@@ -226,6 +227,8 @@ public:
                    debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                    debugger::DebuggerRemoveProbesDefinition* revertProbes, int revertProbesLength) const;
     int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
+    static bool EnsureAsyncMethodDebuggerInvokerV2TypeAvailable(const ModuleMetadata& module_metadata);
+    bool IsAsyncMethodDebuggerInvokerV2TypeAvailable() const;
 
     //
     // Fault-Tolerant Instrumentation methods

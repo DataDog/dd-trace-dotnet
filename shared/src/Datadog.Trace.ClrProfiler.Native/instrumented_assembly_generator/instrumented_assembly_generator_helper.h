@@ -117,7 +117,7 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
 {
     try
     {
-        const auto instrumentationVerificationEnv = shared::GetEnvironmentValue(cfg_instrumentation_verification_env);
+        const auto instrumentationVerificationEnv = shared::GetEnvironmentValue(environment::write_instrumentation_to_disk);
         bool isInstrumentedAssemblyGeneratorEnabled;
         // default is false
         if (shared::TryParseBooleanEnvironmentValue(instrumentationVerificationEnv, isInstrumentedAssemblyGeneratorEnabled) && isInstrumentedAssemblyGeneratorEnabled)
@@ -143,7 +143,7 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
 
 inline bool IsCopyingOriginalsModulesEnabled()
 {
-    const auto copyingOriginalModulesEnv = shared::GetEnvironmentValue(cfg_copying_originals_modules_env);
+    const auto copyingOriginalModulesEnv = shared::GetEnvironmentValue(environment::copy_original_modules_to_disk);
     bool isCopyingOriginalsModulesEnabled;
     return shared::TryParseBooleanEnvironmentValue(copyingOriginalModulesEnv, isCopyingOriginalsModulesEnabled) &&
            isCopyingOriginalsModulesEnabled;

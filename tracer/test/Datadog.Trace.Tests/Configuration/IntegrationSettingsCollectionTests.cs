@@ -97,5 +97,30 @@ namespace Datadog.Trace.Tests.Configuration
             var redis = final[IntegrationId.StackExchangeRedis];
             redis.Enabled.Should().BeFalse();
         }
+
+        [Fact]
+        public void RespectsFallbackValues()
+        {
+            var originalSource = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { "DD_TRACE_Kafka_ENABLED", "true" },
+                { "DD_TRACE_Kafka_ANALYTICS_ENABLED", "true" },
+                { "DD_TRACE_Kafka_ANALYTICS_SAMPLE_RATE", "0.2" },
+            });
+            var original = new IntegrationSettingsCollection(originalSource, []);
+
+            // Preconditions
+            var kafka = original[IntegrationId.Kafka];
+            kafka.Enabled.Should().BeTrue();
+            kafka.AnalyticsEnabled.Should().BeTrue();
+            kafka.AnalyticsSampleRate.Should().Be(0.2);
+
+            var updated = new IntegrationSettingsCollection(NullConfigurationSource.Instance, [], original);
+
+            var kafka2 = updated[IntegrationId.Kafka];
+            kafka.Enabled.Should().BeTrue();
+            kafka.AnalyticsEnabled.Should().BeTrue();
+            kafka.AnalyticsSampleRate.Should().Be(0.2);
+        }
     }
 }
