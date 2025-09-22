@@ -11,10 +11,13 @@
 #include <mutex>
 #include <ucontext.h>
 #include <unordered_map>
+#include <unistd.h>
 
 #include "CallstackProvider.h"
+#include "CorProfilerCallback.h"
 #include "DiscardMetrics.h"
 #include "IConfiguration.h"
+#include "LibrariesInfoCache.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
@@ -38,7 +41,8 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
     _errorStatistics{},
-    _useBacktrace2{configuration->UseBacktrace2()}
+    _useBacktrace2{configuration->UseBacktrace2()},
+    _useHybridUnwinding{configuration->UseHybridUnwinding()}
 {
     if (_signalManager != nullptr)
     {
@@ -207,6 +211,9 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
         // Collect data for TraceContext tracking:
         TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
+        if (_useHybridUnwinding) {
+            return CollectStackHybrid(ctx);
+        }
         return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
     }
     catch (...)
@@ -413,4 +420,263 @@ void LinuxStackFramesCollector::ErrorStatistics::Log()
                   ss.str());
         _stats.clear();
     }
+}
+
+// Hybrid unwinding implementation
+std::int32_t LinuxStackFramesCollector::CollectStackHybrid(void* ctx)
+{
+    std::int32_t resultErrorCode;
+
+    // Initialize libunwind context as in CollectStackManually
+    auto flag = UNW_INIT_SIGNAL_FRAME;
+    unw_context_t context;
+    if (ctx != nullptr)
+    {
+        context = *reinterpret_cast<unw_context_t*>(ctx);
+    }
+    else
+    {
+        // not in signal handler. Get the context and initialize the cursor from here
+        resultErrorCode = unw_getcontext(&context);
+        if (resultErrorCode != 0)
+        {
+            return E_ABORT; // unw_getcontext does not return a specific error code. Only -1
+        }
+
+        flag = static_cast<unw_init_local2_flags_t>(0);
+    }
+
+    unw_cursor_t cursor;
+    resultErrorCode = unw_init_local2(&cursor, &context, flag);
+
+    if (resultErrorCode < 0)
+    {
+        return resultErrorCode;
+    }
+
+    do
+    {
+        // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
+        if (IsCurrentCollectionAbortRequested())
+        {
+            AddFakeFrame();
+            return E_ABORT;
+        }
+
+        unw_word_t ip;
+        resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        if (resultErrorCode != 0)
+        {
+            return resultErrorCode;
+        }
+
+        if (!AddFrame(ip))
+        {
+            return S_FALSE;
+        }
+
+        // HYBRID LOGIC: Check if current frame is managed
+        if (IsManagedCode(ip))
+        {
+            // Use manual unwinding for managed frames
+            resultErrorCode = UnwindManagedFrameManually(&cursor, ip);
+        }
+        else
+        {
+            // Use libunwind for native frames
+            resultErrorCode = unw_step(&cursor);
+        }
+
+    } while (resultErrorCode > 0);
+
+    return resultErrorCode;
+}
+
+bool LinuxStackFramesCollector::IsManagedCode(uintptr_t instructionPointer)
+{
+    // Use the LibrariesInfoCache to detect if the instruction pointer falls within
+    // .NET runtime or managed code regions
+    auto* librariesCache = LibrariesInfoCache::GetInstance();
+    if (librariesCache == nullptr)
+    {
+        // Fallback: assume native if no cache available
+        return false;
+    }
+
+    // Check if the instruction pointer falls within any loaded library that indicates managed code
+    return librariesCache->IsAddressInManagedRegion(instructionPointer);
+}
+
+std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t* cursor, uintptr_t ip)
+{
+#ifdef ARM64
+    // ARM64-specific manual unwinding for managed frames
+    unw_word_t fp, sp, lr;
+
+    // Get current frame pointer (x29), stack pointer, link register (x30)
+    int fp_result = unw_get_reg(cursor, UNW_AARCH64_X29, &fp);
+    int sp_result = unw_get_reg(cursor, UNW_REG_SP, &sp);
+    int lr_result = unw_get_reg(cursor, UNW_AARCH64_X30, &lr);
+
+    if (fp_result == 0 && fp != 0)
+    {
+        // Frame pointer available - use it
+        // ARM64 frame layout: [previous_fp][return_address]
+        unw_word_t prev_fp = 0;
+        unw_word_t return_addr = 0;
+
+        // Read previous frame pointer and return address from stack
+        if (ReadStackMemory(fp, &prev_fp, sizeof(prev_fp)) &&
+            ReadStackMemory(fp + 8, &return_addr, sizeof(return_addr)))
+        {
+            // Validate the return address looks reasonable
+            if (IsValidReturnAddress(return_addr))
+            {
+                // Update cursor registers for next frame
+                unw_set_reg(cursor, UNW_AARCH64_X29, prev_fp);
+                unw_set_reg(cursor, UNW_REG_SP, fp + 16);  // Skip saved fp + lr
+                unw_set_reg(cursor, UNW_REG_IP, return_addr);
+
+                return 1; // Success, frame unwound
+            }
+        }
+    }
+
+    // Fallback: try to use link register if it looks valid
+    if (lr_result == 0 && lr != 0 && IsValidReturnAddress(lr))
+    {
+        unw_set_reg(cursor, UNW_REG_IP, lr);
+        // Estimate stack adjustment (this is heuristic)
+        unw_set_reg(cursor, UNW_REG_SP, sp + EstimateStackFrameSize(ip));
+        return 1;
+    }
+
+    // Last resort: fall back to libunwind
+    return unw_step(cursor);
+
+#else
+    // For x86_64, similar logic but with different registers
+    unw_word_t rbp, rsp;
+
+    // Get current frame pointer (RBP), stack pointer (RSP)
+    int rbp_result = unw_get_reg(cursor, UNW_X86_64_RBP, &rbp);
+    int rsp_result = unw_get_reg(cursor, UNW_REG_SP, &rsp);
+
+    if (rbp_result == 0 && rbp != 0)
+    {
+        // Frame pointer available - use it
+        // x86_64 frame layout: [previous_rbp][return_address]
+        unw_word_t prev_rbp = 0;
+        unw_word_t return_addr = 0;
+
+        // Read previous frame pointer and return address from stack
+        if (ReadStackMemory(rbp, &prev_rbp, sizeof(prev_rbp)) &&
+            ReadStackMemory(rbp + 8, &return_addr, sizeof(return_addr)))
+        {
+            // Validate the return address looks reasonable
+            if (IsValidReturnAddress(return_addr))
+            {
+                // Update cursor registers for next frame
+                unw_set_reg(cursor, UNW_X86_64_RBP, prev_rbp);
+                unw_set_reg(cursor, UNW_REG_SP, rbp + 16);  // Skip saved rbp + return addr
+                unw_set_reg(cursor, UNW_REG_IP, return_addr);
+
+                return 1; // Success, frame unwound
+            }
+        }
+    }
+
+    // Fallback to libunwind for x86_64
+    return unw_step(cursor);
+#endif
+}
+
+bool LinuxStackFramesCollector::ReadStackMemory(uintptr_t address, void* buffer, size_t size)
+{
+    // Basic validation: check if address looks reasonable
+    if (address == 0 || size == 0 || size > 1024)  // Sanity check on size
+    {
+        return false;
+    }
+
+    // Check alignment - stack addresses should be reasonably aligned
+    if ((address & 0x7) != 0)  // 8-byte alignment check
+    {
+        return false;
+    }
+
+    // Simple bounds check: ensure we're in a reasonable stack range
+    // This is heuristic - real stack bounds checking would require parsing /proc/self/maps
+    // or using getrlimit(RLIMIT_STACK), but this gives basic protection
+    void* current_stack_ptr;
+#ifdef ARM64
+    asm volatile("mov %0, sp" : "=r"(current_stack_ptr) : : "memory");
+#else
+    asm volatile("mov %%rsp, %0" : "=r"(current_stack_ptr) : : "memory");
+#endif
+    uintptr_t current_sp = reinterpret_cast<uintptr_t>(current_stack_ptr);
+    
+    // Stack typically grows downward, so valid addresses should be >= current SP
+    // and within a reasonable distance (e.g., 8MB stack limit)
+    if (address < current_sp || (address - current_sp) > (8 * 1024 * 1024))
+    {
+        return false;
+    }
+
+    // Direct memory access - we're in the same process and have done basic validation above
+    // TODO: Implement proper bounds checking by:
+    // 1. Parsing /proc/self/maps to get actual stack boundaries
+    // 2. Using getrlimit(RLIMIT_STACK) for stack size limits
+    // 3. Consider using signal handlers (SIGSEGV) for true crash protection
+    // 4. Or use mincore() to check if pages are mapped before accessing
+    memcpy(buffer, reinterpret_cast<void*>(address), size);
+    return true;
+}
+
+bool LinuxStackFramesCollector::IsValidReturnAddress(uintptr_t address)
+{
+    // Check if address looks like a valid code address
+    if (address == 0)
+    {
+        return false;
+    }
+
+    // Check reasonable alignment (ARM64 instructions are 4-byte aligned, x86_64 can be 1-byte)
+#ifdef ARM64
+    if ((address & 0x3) != 0)
+    {
+        return false;
+    }
+#endif
+
+    // Basic sanity checks - address should be in a reasonable range
+    // Typically code is above 0x10000 and below kernel space
+    if (address < 0x10000 || address >= 0x7f0000000000ULL)
+    {
+        return false;
+    }
+
+    // Additional validation: try to read a few bytes to see if it's accessible
+    uint32_t instruction;
+    if (!ReadStackMemory(address, &instruction, sizeof(instruction)))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+size_t LinuxStackFramesCollector::EstimateStackFrameSize(uintptr_t ip)
+{
+    // Heuristic to estimate managed frame size
+    // JIT-compiled managed methods typically have modest stack frames
+    // This is a conservative estimate that should work for most cases
+
+#ifdef ARM64
+    // ARM64 stack frames are typically 16-byte aligned
+    return 64; // Conservative estimate: 4 saved registers * 8 bytes + padding
+#else
+    // x86_64 stack frames
+    return 32; // Conservative estimate: 4 saved registers * 8 bytes
+#endif
 }

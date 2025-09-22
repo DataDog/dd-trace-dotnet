@@ -18,6 +18,7 @@ docker run -it --rm \
     --env artifacts=/project/tracer/bin/artifacts \
     --env DD_INSTRUMENTATION_TELEMETRY_ENABLED=0 \
     --env NUKE_TELEMETRY_OPTOUT=1 \
+    --env DD_INTERNAL_USE_HYBRID_UNWINDING="${DD_INTERNAL_USE_HYBRID_UNWINDING:-}" \
     -p 5003:5003 \
     -v /var/log/datadog:/var/log/datadog/dotnet \
     $IMAGE_NAME \

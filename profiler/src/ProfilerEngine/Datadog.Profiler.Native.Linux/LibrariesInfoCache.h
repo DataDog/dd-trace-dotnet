@@ -17,6 +17,7 @@
 #include <shared_mutex>
 #include <thread>
 #include <vector>
+#include <unordered_map>
 
 class LibrariesInfoCache : public ServiceBase
 {
@@ -31,6 +32,9 @@ public:
     LibrariesInfoCache& operator=(LibrariesInfoCache&&) = delete;
 
     const char* GetName() final override;
+
+    static LibrariesInfoCache* GetInstance();
+    bool IsAddressInManagedRegion(uintptr_t address);
 
 protected:
     bool StartImpl() final override;
@@ -55,6 +59,10 @@ private:
 
     std::shared_mutex _cacheLock;
     std::vector<DlPhdrInfoWrapper> _librariesInfo;
+
+    // Simple cache for managed region lookups (page-aligned addresses)
+    mutable std::unordered_map<uintptr_t, bool> _managedRegionCache;
+    mutable std::mutex _managedCacheLock;
 
     std::thread _worker;
     std::atomic<bool> _stopRequested;

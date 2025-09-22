@@ -7,6 +7,9 @@
 #include "OpSysTools.h"
 
 #include <unistd.h>
+#include <algorithm>
+#include <string>
+#include <cstring>
 
 using namespace std::chrono_literals;
 
@@ -137,6 +140,12 @@ void LibrariesInfoCache::UpdateCache()
         _librariesInfo.swap(newCache);
     }
 
+    // Clear managed region cache when libraries change
+    {
+        std::lock_guard<std::mutex> lock(_managedCacheLock);
+        _managedRegionCache.clear();
+    }
+
     newCache.clear();
 }
 
@@ -183,3 +192,80 @@ void LibrariesInfoCache::NotifyCacheUpdateImpl()
 {
     _event.Set();
 }
+
+LibrariesInfoCache* LibrariesInfoCache::GetInstance()
+{
+    return s_instance;
+}
+
+bool LibrariesInfoCache::IsAddressInManagedRegion(uintptr_t address)
+{
+    // Use page-aligned address for caching to reduce cache size
+    const uintptr_t pageSize = 4096;
+    uintptr_t pageAddress = address & ~(pageSize - 1);
+    
+    // Check cache first
+    {   // todo: lock free mechanism ?
+        std::lock_guard<std::mutex> lock(_managedCacheLock);
+        auto it = _managedRegionCache.find(pageAddress);
+        if (it != _managedRegionCache.end())
+        {
+            return it->second;
+        }
+    }
+    
+    // Cache miss - do the expensive lookup
+    bool isManaged = false;
+    bool found = false;
+    {
+        std::shared_lock l(_cacheLock);
+
+        for (const auto& wrapper : _librariesInfo)
+        {
+            auto [info, size] = wrapper.Get();
+            
+            // Check if the address falls within this library's segments
+            for (int i = 0; i < info->dlpi_phnum && !found; i++)
+            {
+                const ElfW(Phdr)& phdr = info->dlpi_phdr[i];
+                
+                // Only check executable loadable segments (PT_LOAD with execute permission)
+                if (phdr.p_type != PT_LOAD || !(phdr.p_flags & PF_X))
+                    continue;
+                    
+                // Calculate the segment's virtual address range
+                uintptr_t segmentStart = info->dlpi_addr + phdr.p_vaddr;
+                uintptr_t segmentEnd = segmentStart + phdr.p_memsz;
+                
+                // Check if address falls within this segment
+                if (address >= segmentStart && address < segmentEnd)
+                {
+                    // Anonymous mappings (no file backing) are likely JIT-compiled managed code
+                    const char* libName = info->dlpi_name;
+                    bool isAnonymous = (libName == nullptr || strlen(libName) == 0);
+                    
+                    isManaged = isAnonymous;
+                    found = true;
+                }
+            }
+            
+            if (found) break;
+        }
+        
+        // If we can't find the address in any mapping, assume native (isManaged = false)
+    }
+    
+    // Cache the result
+    {
+        std::lock_guard<std::mutex> lock(_managedCacheLock);
+        // Limit cache size to prevent unbounded growth
+        if (_managedRegionCache.size() > 1000)
+        {
+            _managedRegionCache.clear();
+        }
+        _managedRegionCache[pageAddress] = isManaged;
+    }
+    
+    return isManaged;
+}
+

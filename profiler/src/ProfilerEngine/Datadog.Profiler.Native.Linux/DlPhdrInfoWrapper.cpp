@@ -17,9 +17,9 @@ DlPhdrInfoWrapper::DlPhdrInfoWrapper(struct dl_phdr_info const* info, std::size_
     DeepCopy(_info, info);
 }
 
-std::pair<struct dl_phdr_info*, std::size_t> DlPhdrInfoWrapper::Get()
+std::pair<struct dl_phdr_info*, std::size_t> DlPhdrInfoWrapper::Get() const
 {
-    return {&_info, _size};
+    return {const_cast<struct dl_phdr_info*>(&_info), _size};
 }
 
 using custom_deleter = std::function<void(void*)>;

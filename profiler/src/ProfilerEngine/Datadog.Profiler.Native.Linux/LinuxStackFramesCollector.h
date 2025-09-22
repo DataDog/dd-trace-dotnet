@@ -26,6 +26,9 @@ class IConfiguration;
 class CallstackProvider;
 class DiscardMetrics;
 
+// libunwind includes for hybrid unwinding
+#include <libunwind.h>
+
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
@@ -69,7 +72,15 @@ private:
     bool CanCollect(int32_t threadId, siginfo_t* info, void* ucontext) const;
     std::int32_t CollectStackManually(void* ctx);
     std::int32_t CollectStackWithBacktrace2(void* ctx);
+    std::int32_t CollectStackHybrid(void* ctx);
     void MarkAsInterrupted();
+    
+    // Hybrid unwinding helper methods
+    bool IsManagedCode(uintptr_t instructionPointer);
+    std::int32_t UnwindManagedFrameManually(unw_cursor_t* cursor, uintptr_t ip);
+    bool ReadStackMemory(uintptr_t address, void* buffer, size_t size);
+    bool IsValidReturnAddress(uintptr_t address);
+    size_t EstimateStackFrameSize(uintptr_t ip);
 
     std::int32_t _lastStackWalkErrorCode;
     std::condition_variable _stackWalkInProgressWaiter;
@@ -93,6 +104,7 @@ private:
 
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;
+    bool _useHybridUnwinding;
     std::shared_ptr<CounterMetric> _samplingRequest;
 
     std::shared_ptr<DiscardMetrics> _discardMetrics;
