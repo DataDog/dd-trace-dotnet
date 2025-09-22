@@ -100,7 +100,7 @@ namespace Datadog.Trace
             TracerFlareManager = tracerFlareManager;
             SpanEventsManager = new SpanEventsManager(discoveryService);
 
-            var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, settings.MutableSettings.DefaultServiceName, settings.ServiceNameMappings, settings.PeerServiceNameMappings);
+            var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, settings.MutableSettings.DefaultServiceName, settings.MutableSettings.ServiceNameMappings, settings.PeerServiceNameMappings);
             PerTraceSettings = new(traceSampler, spanSampler, schema, settings.MutableSettings);
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
@@ -309,11 +309,12 @@ namespace Datadog.Trace
 
                 string agentError = null;
                 var instanceSettings = instance.Settings;
+                var mutableSettings = instance.PerTraceSettings.Settings;
 
                 // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
                 // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
                 // Also disable if tracing is not enabled (as likely to be in an environment where agent is not available)
-                if (instanceSettings.TraceEnabled && !instanceSettings.IsRunningInAzureAppService)
+                if (mutableSettings.TraceEnabled && !instanceSettings.IsRunningInAzureAppService)
                 {
                     try
                     {
@@ -377,13 +378,13 @@ namespace Datadog.Trace
                     writer.WriteValue(FrameworkDescription.Instance.ProductVersion);
 
                     writer.WritePropertyName("env");
-                    writer.WriteValue(instanceSettings.Environment);
+                    writer.WriteValue(mutableSettings.Environment);
 
                     writer.WritePropertyName("enabled");
-                    writer.WriteValue(instanceSettings.TraceEnabled);
+                    writer.WriteValue(mutableSettings.TraceEnabled);
 
                     writer.WritePropertyName("service");
-                    writer.WriteValue(instance.PerTraceSettings.Settings.DefaultServiceName);
+                    writer.WriteValue(mutableSettings.DefaultServiceName);
 
                     writer.WritePropertyName("agent_url");
                     writer.WriteValue(instanceSettings.Exporter.TraceAgentUriBase);
@@ -395,24 +396,24 @@ namespace Datadog.Trace
                     writer.WriteValue(GlobalSettings.Instance.DebugEnabledInternal);
 
                     writer.WritePropertyName("health_checks_enabled");
-                    writer.WriteValue(instanceSettings.TracerMetricsEnabled);
+                    writer.WriteValue(mutableSettings.TracerMetricsEnabled);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
                     writer.WritePropertyName("analytics_enabled");
-                    writer.WriteValue(instanceSettings.AnalyticsEnabled);
+                    writer.WriteValue(mutableSettings.AnalyticsEnabled);
 #pragma warning restore 618
 
                     writer.WritePropertyName("sample_rate");
-                    writer.WriteValue(instanceSettings.GlobalSamplingRate);
+                    writer.WriteValue(mutableSettings.GlobalSamplingRate);
 
                     writer.WritePropertyName("sampling_rules");
-                    writer.WriteValue(instanceSettings.CustomSamplingRules);
+                    writer.WriteValue(mutableSettings.CustomSamplingRules);
 
                     writer.WritePropertyName("tags");
-                    WriteDictionary(instanceSettings.GlobalTags);
+                    WriteDictionary(mutableSettings.GlobalTags);
 
                     writer.WritePropertyName("log_injection_enabled");
-                    writer.WriteValue(instanceSettings.LogsInjectionEnabled);
+                    writer.WriteValue(mutableSettings.LogsInjectionEnabled);
 
                     writer.WritePropertyName("runtime_metrics_enabled");
                     writer.WriteValue(instanceSettings.RuntimeMetricsEnabled);
@@ -424,7 +425,7 @@ namespace Datadog.Trace
                     // lists them whether they were explicitly disabled with
                     // DD_DISABLED_INTEGRATIONS, DD_TRACE_{0}_ENABLED, DD_{0}_ENABLED,
                     // or manually in code.
-                    foreach (var integration in instanceSettings.Integrations.Settings)
+                    foreach (var integration in mutableSettings.Integrations.Settings)
                     {
                         if (integration.Enabled == false)
                         {
@@ -550,10 +551,10 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.IsRemoteConfigurationAvailable);
 
                     writer.WritePropertyName("header_tags");
-                    WriteDictionary(instanceSettings.HeaderTags);
+                    WriteDictionary(mutableSettings.HeaderTags);
 
                     writer.WritePropertyName("service_mapping");
-                    WriteDictionary(instanceSettings.ServiceNameMappings);
+                    WriteDictionary(mutableSettings.ServiceNameMappings);
 
                     writer.WritePropertyName("trace_propagation_style_extract_first_only");
                     writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
@@ -666,7 +667,7 @@ namespace Datadog.Trace
                 OneTimeSetup(newManager.Settings);
             }
 
-            if (newManager.Settings.StartupDiagnosticLogEnabled)
+            if (newManager.PerTraceSettings.Settings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(() => WriteDiagnosticLog(newManager));
             }
@@ -748,7 +749,7 @@ namespace Datadog.Trace
             // use the count of Tracer instances as the heartbeat value
             // to estimate the number of "live" Tracers than can potentially
             // send traces to the Agent
-            if (_instance?.Settings.TracerMetricsEnabled == true)
+            if (_instance?.PerTraceSettings.Settings.TracerMetricsEnabled == true)
             {
                 _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
             }
