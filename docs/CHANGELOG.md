@@ -29,6 +29,75 @@
 
 
 
+
+## [Release 3.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.27.0)
+
+## Summary
+
+Various bug fixes and optimizations. Includes fix for Runtime Metrics that could be missing and more accurate telemetry reporting.
+
+## Changes
+
+### Tracer
+* Remove unused dynamic settings (#7487)
+* Fix incorrect usages of TracerManager PerTraceSettings (#7488)
+* Add additional compiler flags to allow `required` (#7501)
+* Fix .NET 10 RC1 bugs (#7506)
+* fix(telemetry): correct heartbeat interval calculation (#7507)
+* Fix `ManualInstrumentationConfigSource` and introduce base type (#7508)
+* Allow optimized creating of composite configuration source (#7509)
+* Move partial flush settings from `ExporterSettings` to `TracerSettings` (#7516)
+* fix: change Language value from '.NET' to 'dotnet' in trace headers (#7523)
+* Hide problematic public APIs using `[EditorBrowsable]` (#7531)
+* Add a Continuous Profiler availability check (#7534)
+
+### ASM
+* [AAP] Update waf version to v1.28.0 (#7494)
+* [AAP] Update waf to v1.28.1 (#7524)
+* [AAP] Test endpoint collection with APM tracing disabled (#7535)
+
+### Debugger
+* [Dynamic Instrumentation] Added native hot standby mode to support Remote Enablement and Stable Config (#7441)
+* [Dynamic Instrumentation] Avoid async instrumentation if the type `AsyncMethodDebuggerInvokerV2` does not exist (#7513)
+
+### Serverless
+* [Azure Functions] bump `Datadog.Serverless.Compat` nuget package reference (#7497)
+
+### Fixes
+* More cleanup in native loader code (#7475)
+* Fix dependabot again by allowing private feed access (#7480)
+* [Tracer] Updating Statsd in RuntimeEventListener (#7512)
+
+### Miscellaneous
+* [OTEL] Metrics API Support - Configurations & Telemetry (#7420)
+  * This feature is incomplete and still in development
+* Simplify Windows benchmarks credential setup (#7498)
+* Allow passing fallback values to `IntegrationSettingsCollection` (#7510)
+* Add AGENTS.md file (#7539)
+
+### Build / Test
+* Timeout error installer_smoke_tests (#7468)
+* Attempt to improve Kafka timeout flake in tests (#7474)
+* Try fixing ASAN job crashes (#7476)
+* Update Windows macrobenchmark tooling (#7481)
+* Update Windows microbenchmark tooling (#7482)
+* [Hands-off config] add integration test (#7483)
+* [Test Package Versions Bump] Updating package versions (#7484)
+* Check for errors when signing (#7490)
+* Sign artifacts using 0.3.5 of the `dd wcs` tool (#7492)
+* Decrease Nuke restore verbosity job (#7493)
+* Decrease log level when uncompressing files in Nuke (#7496)
+* Fix macos build (#7503)
+* Mark kafkatests as flaky (#7505)
+* Upload execution benchmark log files and cleanup (#7521)
+* chore(CI): add ForceDebugRun variable for debug control system tests (#7528)
+* Ensure `execution_benchmarks` download the profiler (#7529)
+* Capture timeout exceptions in IAST tests (#7533)
+* Fix the `verify_app_trimming_changes_are_persisted` job (#7542)
+
+
+[Changes since 3.26.3](https://github.com/DataDog/dd-trace-dotnet/compare/v3.26.3...v3.27.0)
+
 ## [Release 3.26.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.26.0)
 
 ## Summary
