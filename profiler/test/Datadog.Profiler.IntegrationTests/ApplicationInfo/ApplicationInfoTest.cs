@@ -53,7 +53,7 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
             distinctInfos.Count.Should().BeInRange(1, 2);
 
             // NOTE: the tracer is sometimes using the service name in lower case
-            infos.Last().Should().Be(("Buggybitsservice", "BuggyBitsEnv", "BuggyBitsVersion"));
+            infos.Last().Should().Be(("BuggyBitsService", "BuggyBitsEnv", "BuggyBitsVersion"));
         }
 
         [TestAppFact("Samples.Computer01")]
