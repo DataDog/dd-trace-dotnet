@@ -101,7 +101,7 @@ namespace Datadog.Trace
             SpanEventsManager = new SpanEventsManager(discoveryService);
 
             var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, settings.MutableSettings.DefaultServiceName, settings.ServiceNameMappings, settings.PeerServiceNameMappings);
-            PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema, settings.MutableSettings);
+            PerTraceSettings = new(traceSampler, spanSampler, schema, settings.MutableSettings);
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
         }
