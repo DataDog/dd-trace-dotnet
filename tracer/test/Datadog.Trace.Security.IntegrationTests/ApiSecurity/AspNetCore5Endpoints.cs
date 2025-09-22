@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit.Abstractions;
@@ -33,5 +34,14 @@ namespace Datadog.Trace.Security.IntegrationTests.ApiSecurity
 
     public class AspNetCore5EndpointsDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : AspNetCoreEndpoints(fixture, outputHelper, sampleName: "AspNetCore5", false);
+
+    public class AspNetCore5EndpointsApmTracingDisabled : AspNetCoreEndpoints
+    {
+        public AspNetCore5EndpointsApmTracingDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, sampleName: "AspNetCore5", true)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.ApmTracingEnabled, "0");
+        }
+    }
 }
 #endif

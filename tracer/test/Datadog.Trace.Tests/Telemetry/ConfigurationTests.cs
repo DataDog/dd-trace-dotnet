@@ -51,6 +51,7 @@ public class ConfigurationTests
         "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER",
         // Internal env vars that we only ever read from environment
         "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
+        "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH",
         "DD_DOTNET_TRACER_HOME",
         "DD_INSTRUMENTATION_INSTALL_ID",
         "DD_INSTRUMENTATION_INSTALL_TYPE",

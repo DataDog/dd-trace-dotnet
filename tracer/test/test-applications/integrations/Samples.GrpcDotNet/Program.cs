@@ -69,6 +69,18 @@ public static class Program
     {
         app.UseRouting();
         app.UseAuthorization();
+
+        // Add custom middleware to handle invalid content types
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path.Value?.Contains("InvalidContentTypeMethod") == true)
+            {
+                context.Request.Headers["content-type"] = "application/json";
+            }
+
+            await next();
+        });
+
         app.UseEndpoints(
             endpoints =>
             {
