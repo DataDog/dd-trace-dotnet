@@ -413,7 +413,7 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
-      - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
+      - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd;TrustServerCertificate=true
       - POSTGRES_HOST=postgres
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
@@ -691,7 +691,7 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-      - SQLSERVER_CONNECTION_STRING=Server=sqledge_arm64;User=sa;Password=Strong!Passw0rd
+      - SQLSERVER_CONNECTION_STRING=Server=sqledge_arm64;User=sa;Password=Strong!Passw0rd;TrustServerCertificate=true
       - POSTGRES_HOST=postgres_arm64
       - MYSQL_HOST=mysql_arm64
       - MYSQL_PORT=3306
