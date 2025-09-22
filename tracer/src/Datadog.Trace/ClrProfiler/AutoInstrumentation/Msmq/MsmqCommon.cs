@@ -19,7 +19,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         internal static Scope? CreateScope<TMessageQueue>(Tracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? isMessagePartOfTransaction = null)
             where TMessageQueue : IMessageQueue
         {
-            if (!tracer.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -30,8 +31,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             try
             {
                 string operationName = GetOperationName(tracer, spanKind);
-                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MsmqConstants.MessagingType);
-                MsmqTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
+                string serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MsmqConstants.MessagingType);
+                MsmqTags tags = perTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
 
                 tags.Command = command;
                 try
@@ -71,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                 span.ResourceName = $"{command} {tags.Path}";
 
                 // TODO: PBT: I think this span should be measured when span kind is consumer or producer
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MsmqConstants.IntegrationId);
             }
             catch (Exception ex)

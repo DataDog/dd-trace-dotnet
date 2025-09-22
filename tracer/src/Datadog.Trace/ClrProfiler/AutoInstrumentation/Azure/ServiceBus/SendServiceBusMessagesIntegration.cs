@@ -44,8 +44,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         internal static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, IEnumerable messages, string activityName, TOperation operation)
             where TTarget : ITransportSender, IDuckType
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-                && Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
+            var tracer = Tracer.Instance;
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+             && tracer.TracerManager.DataStreamsManager.IsEnabled)
             {
                 if (messages is not null)
                 {

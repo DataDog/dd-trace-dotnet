@@ -53,16 +53,6 @@ namespace Datadog.Trace.Tagging
 
         [Metric(Trace.Metrics.MessageQueueTimeMs)]
         public double? MessageQueueTimeMs { get; set; }
-
-        public void SetAnalyticsSampleRate(IntegrationId integration, TracerSettings settings, bool enabledWithGlobalSetting)
-        {
-            if (settings != null)
-            {
-#pragma warning disable 618 // App analytics is deprecated, but still used
-                AnalyticsSampleRate = settings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);
-#pragma warning restore 618
-            }
-        }
     }
 
     internal partial class AzureServiceBusV1Tags : AzureServiceBusTags

@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is null)
@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     };
 
                     // This is the root scope
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags);
                 }
                 else
@@ -184,7 +184,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 var scope = CreateIsolatedFunctionScope(tracer, functionContext);
 
@@ -258,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 if (tracer.InternalActiveScope == null)
                 {
                     // This is the root scope
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
                 }
                 else

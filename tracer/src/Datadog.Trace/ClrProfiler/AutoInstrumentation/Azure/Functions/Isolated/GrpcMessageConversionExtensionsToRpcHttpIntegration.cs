@@ -49,7 +49,7 @@ public class GrpcMessageConversionExtensionsToRpcHttpIntegration
         }
 
         var tracer = Tracer.Instance;
-        if (!tracer.Settings.IsIntegrationEnabled(AzureFunctionsCommon.IntegrationId)
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(AzureFunctionsCommon.IntegrationId)
          || tracer.ActiveScope is not Scope { Span: { OperationName: AzureFunctionsCommon.OperationName } span })
         {
             return returnValue;

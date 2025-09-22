@@ -38,7 +38,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation, IClusterNode clusterNode)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -47,12 +48,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             var normalizedSeedNodes = GetNormalizedSeedNodesFromConnectionString(clusterNode.Context.ClusterOptions.ConnectionStringValue);
             var operation = tOperation.DuckCast<OperationStructV3>();
 
-            var tags = tracer.CurrentTraceSettings.Schema.Database.CreateCouchbaseTags();
+            var tags = perTraceSettings.Schema.Database.CreateCouchbaseTags();
             tags.OperationCode = operation.OpCode.ToString();
             tags.Bucket = operation.BucketName;
             tags.Key = operation.Key;
             tags.SeedNodes = normalizedSeedNodes;
-            tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+            perTraceSettings.Schema.RemapPeerService(tags);
 
             return CommonOnMethodBegin(tracer, tags);
         }
@@ -60,7 +61,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal static CallTargetState CommonOnMethodBegin<TOperation>(TOperation tOperation, string normalizedSeedNodes)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -72,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             var port = operation.CurrentHost?.Port.ToString();
             var code = operation.OperationCode.ToString();
 
-            var tags = tracer.CurrentTraceSettings.Schema.Database.CreateCouchbaseTags();
+            var tags = perTraceSettings.Schema.Database.CreateCouchbaseTags();
             tags.OperationCode = code;
             tags.Key = operation.Key;
             tags.Host = host;
