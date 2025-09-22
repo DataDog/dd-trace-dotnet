@@ -19,7 +19,7 @@ RuntimeIdStore::RuntimeIdStore(bool isIis) :
     }
     else
     {
-        const auto internalRuntimeId = ::shared::GetEnvironmentValue(EnvironmentVariables::InternalRuntimeId);
+        const auto internalRuntimeId = ::shared::GetEnvironmentValue(environment::internal_runtime_id);
         if (internalRuntimeId.empty())
         {
             m_process_runtime_id = ::shared::GenerateRuntimeId();

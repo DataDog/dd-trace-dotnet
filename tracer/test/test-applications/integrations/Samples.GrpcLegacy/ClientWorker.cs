@@ -218,7 +218,7 @@ public class ClientWorker
         try
         {
             _logger.LogInformation("Sending very slow request to self");
-            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(600));
+            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(20));
 
             throw new Exception("Received reply, when should have exceeded deadline");
         }

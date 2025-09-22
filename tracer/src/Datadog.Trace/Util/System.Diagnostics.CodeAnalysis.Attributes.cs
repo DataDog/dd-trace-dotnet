@@ -166,6 +166,18 @@ namespace System.Diagnostics.CodeAnalysis
         public string[] Members { get; }
     }
 #endif
+
+#if !NET7_0_OR_GREATER
+    /// <summary>
+    /// Specifies that this constructor sets all required members for the current type, and callers
+    /// do not need to set any required members themselves.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Constructor)]
+    internal sealed class SetsRequiredMembersAttribute : Attribute
+    {
+    }
+#endif
+
 }
 
 #pragma warning restore SA1402

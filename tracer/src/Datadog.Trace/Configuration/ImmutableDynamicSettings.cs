@@ -14,12 +14,6 @@ namespace Datadog.Trace.Configuration
     {
         public bool? TraceEnabled { get; init; }
 
-        public bool? ApmTracingEnabled { get; init; }
-
-        public bool? RuntimeMetricsEnabled { get; init; }
-
-        public bool? DataStreamsMonitoringEnabled { get; init; }
-
         public double? GlobalSamplingRate { get; init; }
 
         public string? SamplingRules { get; init; }
@@ -27,8 +21,6 @@ namespace Datadog.Trace.Configuration
         public bool? LogsInjectionEnabled { get; init; }
 
         public IReadOnlyDictionary<string, string>? HeaderTags { get; init; }
-
-        public IReadOnlyDictionary<string, string>? ServiceNameMappings { get; init; }
 
         public IReadOnlyDictionary<string, string>? GlobalTags { get; init; }
 
@@ -46,14 +38,10 @@ namespace Datadog.Trace.Configuration
 
             return
                 TraceEnabled == other.TraceEnabled
-             && ApmTracingEnabled == other.ApmTracingEnabled
-             && RuntimeMetricsEnabled == other.RuntimeMetricsEnabled
-             && DataStreamsMonitoringEnabled == other.DataStreamsMonitoringEnabled
              && Nullable.Equals(GlobalSamplingRate, other.GlobalSamplingRate)
              && SamplingRules == other.SamplingRules
              && LogsInjectionEnabled == other.LogsInjectionEnabled
              && AreEqual(HeaderTags, other.HeaderTags)
-             && AreEqual(ServiceNameMappings, other.ServiceNameMappings)
              && AreEqual(GlobalTags, other.GlobalTags);
         }
 
@@ -81,9 +69,6 @@ namespace Datadog.Trace.Configuration
         {
             return HashCode.Combine(
                 TraceEnabled,
-                ApmTracingEnabled,
-                RuntimeMetricsEnabled,
-                DataStreamsMonitoringEnabled,
                 GlobalSamplingRate,
                 SamplingRules,
                 LogsInjectionEnabled);
