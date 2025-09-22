@@ -47,8 +47,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         internal static CallTargetState OnMethodBegin<TTarget>(HttpResponse response, int httpStatusCode, GrpcStatusCode grpcStatusCode, string message)
         {
             var tracer = Tracer.Instance;
+            var settings = tracer.CurrentTraceSettings.Settings;
             if (GrpcCoreApiVersionHelper.IsSupported
-             && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
+             && settings.IsIntegrationEnabled(IntegrationId.Grpc)
              && tracer.ActiveScope?.Span is Span { Tags: GrpcServerTags } span)
             {
                 // This code path is only called when there's a fundamental failure that isn't even processed
@@ -58,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
                 // There won't be any response metadata, as interceptors haven't executed, but we can grab
                 // the request metadata directly from the HttpRequest
                 var request = response.HttpContext.Request;
-                span.SetHeaderTags(new HeadersCollectionAdapter(request.Headers), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
+                span.SetHeaderTags(new HeadersCollectionAdapter(request.Headers), settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
             }
 
             return CallTargetState.GetDefault();

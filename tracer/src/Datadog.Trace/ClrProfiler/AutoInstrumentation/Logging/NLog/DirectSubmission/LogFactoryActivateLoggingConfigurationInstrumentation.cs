@@ -40,7 +40,7 @@ public class LogFactoryActivateLoggingConfigurationInstrumentation
             return CallTargetState.GetDefault();
         }
 
-        if (tracerManager.Settings.LogsInjectionEnabled)
+        if (tracerManager.PerTraceSettings.Settings.LogsInjectionEnabled)
         {
             LogsInjectionHelper<TTarget>.ConfigureLogsInjectionForLoggerConfiguration(configuration);
         }

@@ -29,9 +29,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         internal DatadogLoggingScope(Tracer tracer)
         {
             _tracer = tracer;
-            _service = tracer.DefaultServiceName ?? string.Empty;
-            _env = tracer.Settings.Environment ?? string.Empty;
-            _version = tracer.Settings.ServiceVersion ?? string.Empty;
+            // TODO: Subscribe to changes in settings
+            var mutableSettings = tracer.CurrentTraceSettings.Settings;
+            _service = mutableSettings.DefaultServiceName;
+            _env = mutableSettings.Environment ?? string.Empty;
+            _version = mutableSettings.ServiceVersion ?? string.Empty;
             _use128Bits = _tracer.Settings.TraceId128BitLoggingEnabled;
 
             _cachedFormat = string.Format(
