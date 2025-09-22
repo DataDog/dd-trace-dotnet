@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
             var tracer = Tracer.Instance;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -176,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.CurrentTraceSettings.Settings.HeaderTags!, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
