@@ -21,6 +21,10 @@ namespace Datadog.Trace.Activity.Handlers
     /// Handles Quartz.NET activities for job scheduling and execution.
     /// This handler captures Quartz diagnostic events to trace job execution,
     /// scheduling, and other Quartz-related operations.
+    /// This handler is responsible for Quartz v4.x.
+    /// Earlier Quartz library versions are handled by:
+    /// - tracer/src/Datadog.Trace/DiagnosticListeners/QuartzDiagnosticObserver.cs
+    /// - tracer/src/Datadog.Trace/Activity/Handlers/DefaultActivityHandler.cs
     /// </summary>
     internal class QuartzActivityHandler : IActivityHandler
     {
@@ -55,12 +59,12 @@ namespace Datadog.Trace.Activity.Handlers
                 }
                 else
                 {
-                    Log.Debug("No job.name tag found in Activity.Tags");
+                    Log.Debug("Unable to update Quartz span resource name: No job.name tag found in Activity.Tags");
                 }
             }
             else
             {
-                Log.Debug("Activity.Tags or Activity.OperationName are null");
+                Log.Debug("Unable to update Quartz span resource name: Activity.Tags or Activity.OperationName are null");
             }
         }
 
@@ -79,8 +83,8 @@ namespace Datadog.Trace.Activity.Handlers
                 Log.Debug("ActivityStopped: Processing span for activity '{ActivityId}'", activity.Id);
 
                 // Finish the span manually
+                EnhanceActivityMetadata((IActivity5)activity);
                 OtlpHelpers.UpdateSpanFromActivity(activity, span);
-                UpdateSpanResourceName(span, activity);
 
                 span.Finish(activity.StartTimeUtc.Add(activity.Duration));
                 activityMapping.Scope.Close();

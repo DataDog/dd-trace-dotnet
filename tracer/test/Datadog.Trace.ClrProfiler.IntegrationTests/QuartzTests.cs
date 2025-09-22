@@ -59,7 +59,8 @@ public class QuartzTests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
-            var filename = nameof(QuartzTests) + GetSuffix(packageVersion, out var expectedSpanCount);
+            var (suffix, expectedSpanCount) = GetSuffix(packageVersion);
+            var filename = nameof(QuartzTests) + suffix;
             var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
             using var s = new AssertionScope();
@@ -97,26 +98,17 @@ public class QuartzTests : TracingIntegrationTest
         }
     }
 
-    private static string GetSuffix(string packageVersion, out int expectedSpanCount)
+    private static Tuple<string, int> GetSuffix(string packageVersion)
     {
         if (string.IsNullOrEmpty(packageVersion))
         {
-            return Set(out expectedSpanCount, 2, "V3");
+            return new("V4", 3);
         }
 
         return new Version(packageVersion) switch
         {
-            { } v when v >= new Version("4.0.0") => Set(out expectedSpanCount, 3, "V4"),
-#if NETCOREAPP3_1
-            { } v when v >= new Version("3.15.0") => Set(out expectedSpanCount, 2, "V315plusNETCOREAPP31"),
-#endif
-            _ => Set(out expectedSpanCount, 2, "V3")
+            { } v when v >= new Version("4.0.0") => new("V4", 3),
+            _ => new("V3", 2)
         };
-    }
-
-    private static string Set(out int expectedSpanCount, int count, string suffix)
-    {
-        expectedSpanCount = count;
-        return suffix;
     }
 }

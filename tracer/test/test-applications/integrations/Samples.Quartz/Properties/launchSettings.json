@@ -23,7 +23,7 @@
     "NoDatadog": {
       "commandName": "Project",
       "environmentVariables": {
-        "DD_ENV": "mohammad",
+        "DD_ENV": "",
         "DD_SERVICE": "",
         "DD_VERSION": "",
 

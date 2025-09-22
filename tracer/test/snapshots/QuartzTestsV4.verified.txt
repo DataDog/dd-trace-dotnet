@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: internal,
+    Name: quartz.job.execute,
     Resource: execute exceptionJob,
     Service: Samples.Quartz,
     Type: custom,
@@ -10,13 +10,6 @@
     Tags: {
       env: integration_tests,
       error.msg: Expected InvalidOperationException thrown,
-      error.stack:
-Parameters: refire = False, unscheduleFiringTrigger = False, unscheduleAllTriggers = False 
-Quartz.JobExecutionException: Expected InvalidOperationException thrown
----> System.InvalidOperationException: Expected InvalidOperationException thrown
-at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext context),
-      error.type: Quartz.JobExecutionException,
-      events: <error_stack>","exception.type":"Quartz.JobExecutionException"}}],
       fire.instance.id: <fire.instance.id>,
       job.group: group2,
       job.name: exceptionJob,
@@ -44,7 +37,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
   {
     TraceId: Id_3,
     SpanId: Id_4,
-    Name: internal,
+    Name: quartz.job.execute,
     Resource: execute helloJob,
     Service: Samples.Quartz,
     Type: custom,
@@ -77,7 +70,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
   {
     TraceId: Id_5,
     SpanId: Id_6,
-    Name: internal,
+    Name: quartz.job.vetoed,
     Resource: veto vetoableJob,
     Service: Samples.Quartz,
     Type: custom,
