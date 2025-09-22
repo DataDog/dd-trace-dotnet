@@ -68,15 +68,11 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             // Find the span and update it before the common handler processes it
-            string key;
-            if (activity is IW3CActivity w3cActivity)
+            string key = activity switch
             {
-                key = w3cActivity.TraceId + w3cActivity.SpanId;
-            }
-            else
-            {
-                key = activity.Id;
-            }
+                IW3CActivity w3cActivity => w3cActivity.TraceId + w3cActivity.SpanId,
+                _ => activity.Id,
+            };
 
             if (key != null && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope.Span is Span span)
             {
