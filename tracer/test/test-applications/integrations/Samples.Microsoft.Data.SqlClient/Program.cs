@@ -17,12 +17,6 @@ namespace Samples.Microsoft.Data.SqlClient
 
             using (var connection = OpenConnection(typeof(SqlConnection)))
             {
-                if (connection is null)
-                {
-                    Console.WriteLine("No connection could be established. Exiting with skip code (13)");
-                    return 13;
-                }
-                
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
             }
 
@@ -43,28 +37,31 @@ namespace Samples.Microsoft.Data.SqlClient
 
         private static DbConnection OpenConnection(Type connectionType)
         {
-            int numAttempts = 3;
+            var remainingAttempts = 3;
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
 @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
 
-            for (int i = 0; i < numAttempts; i++)
+            DbConnection connection = null;
+            retry:
+            try
             {
-                DbConnection connection = null;
-
-                try
-                {
-                    connection = Activator.CreateInstance(connectionType, connectionString) as DbConnection;
-                    connection.Open();
-                    return connection;
-                }
-                catch (Exception ex)
+                connection = Activator.CreateInstance(connectionType, connectionString) as DbConnection;
+                connection.Open();
+                return connection;
+            }
+            catch (Exception ex)
+            {
+                if (remainingAttempts > 0)
                 {
                     Console.WriteLine(ex);
                     connection?.Dispose();
+                    remainingAttempts--;
+                    goto retry;
                 }
-            }
 
-            return null;
+                // else
+                throw;
+            }
         }
     }
 }
