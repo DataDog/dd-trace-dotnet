@@ -193,14 +193,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="settings"> A <see cref="TracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources. This is used to configure global settings</param>
-        [PublicApi]
-        public static void Configure(TracerSettings settings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
-            ConfigureInternal(settings);
-        }
-
-        internal static void ConfigureInternal(TracerSettings settings)
+        internal static void Configure(TracerSettings settings)
         {
             TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
             Tracer.Instance.TracerManager.Start();
@@ -227,13 +220,8 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
         /// <returns>A scope wrapping the newly created span</returns>
-        [PublicApi]
         public IScope StartActive(string operationName)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive);
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
-            return StartActiveInternal(operationName);
-        }
+            => StartActiveInternal(operationName);
 
         /// <summary>
         /// This creates a new span with the given parameters and makes it active.
@@ -241,14 +229,8 @@ namespace Datadog.Trace
         /// <param name="operationName">The span's operation name</param>
         /// <param name="settings">Settings for the new <see cref="IScope"/></param>
         /// <returns>A scope wrapping the newly created span</returns>
-        [PublicApi]
         public IScope StartActive(string operationName, SpanCreationSettings settings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive_Settings);
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
-            var finishOnClose = settings.FinishOnClose ?? true;
-            return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
-        }
+            => StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, settings.FinishOnClose ?? true);
 
         /// <summary>
         /// Creates a new <see cref="ISpan"/> with the specified parameters.
@@ -285,12 +267,7 @@ namespace Datadog.Trace
         /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
         /// </summary>
         /// <returns>Task used to track the async flush operation</returns>
-        [PublicApi]
-        public Task ForceFlushAsync()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_ForceFlushAsync);
-            return FlushAsync();
-        }
+        public Task FlushAsync() => TracerManager.AgentWriter.FlushTracesAsync();
 
         /// <summary>
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
@@ -463,11 +440,6 @@ namespace Datadog.Trace
             DebuggerManager.Instance.CodeOrigin?.SetCodeOriginForExitSpan(span);
 
             return span;
-        }
-
-        internal Task FlushAsync()
-        {
-            return TracerManager.AgentWriter.FlushTracesAsync();
         }
     }
 }

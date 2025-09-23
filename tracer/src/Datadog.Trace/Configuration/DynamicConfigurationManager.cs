@@ -104,14 +104,14 @@ namespace Datadog.Trace.Configuration
             /*
             if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
             {
-                GlobalSettings.SetDebugEnabledInternal(debugLogsEnabled.Value);
+                GlobalSettings.SetDebugEnabled(debugLogsEnabled.Value);
                 Security.Instance.SetDebugEnabled(debugLogsEnabled.Value);
 
                 NativeMethods.UpdateSettings(new[] { ConfigurationKeys.DebugEnabled }, new[] { debugLogsEnabled.Value ? "1" : "0" });
             }
             */
 
-            Tracer.ConfigureInternal(newSettings);
+            Tracer.Configure(newSettings);
         }
 
         private ApplyDetails[] ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)

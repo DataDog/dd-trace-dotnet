@@ -266,7 +266,7 @@ public class SettingsInstrumentationTests
 
         manual.AnalyticsEnabled.Should().Be(automatic.AnalyticsEnabled);
         manual.CustomSamplingRules.Should().Be(automatic.CustomSamplingRules);
-        manual.DiagnosticSourceEnabled.Should().Be(automatic.DiagnosticSourceEnabled);
+        manual.DiagnosticSourceEnabled.Should().Be(GlobalSettings.Instance.DiagnosticSourceEnabled);
         manual.Environment.Should().Be(automatic.Environment);
         manual.GlobalSamplingRate.Should().Be(automatic.GlobalSamplingRate);
         manual.GlobalTags.Should().BeEquivalentTo(automatic.GlobalTags);
@@ -336,7 +336,7 @@ public class SettingsInstrumentationTests
             { ConfigurationKeys.MaxTracesSubmittedPerSecond, 50 },
             { ConfigurationKeys.ServiceName, "my-test-service" },
             { ConfigurationKeys.ServiceVersion, "1.2.3" },
-            { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+            { ConfigurationKeys.StartupDiagnosticLogEnabled, false }, // can't actually be changed
             { ConfigurationKeys.StatsComputationEnabled, true },
             { ConfigurationKeys.TraceEnabled, false },
             { ConfigurationKeys.TracerMetricsEnabled, true },
@@ -349,7 +349,7 @@ public class SettingsInstrumentationTests
         // verify that all the settings are as expected
         automatic.AnalyticsEnabled.Should().Be(true);
         automatic.CustomSamplingRules.Should().Be("""[{"sample_rate":0.3, "service":"shopping-cart.*"}]""");
-        automatic.DiagnosticSourceEnabled.Should().Be(true);
+        GlobalSettings.Instance.DiagnosticSourceEnabled.Should().Be(true);
         automatic.DisabledIntegrationNames.Should().BeEquivalentTo(["something", "OpenTelemetry", "Kafka"]);
         automatic.Environment.Should().Be("my-test-env");
         automatic.GlobalSamplingRate.Should().Be(0.5);

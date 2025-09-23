@@ -34,7 +34,7 @@ public class TestModuleInternalCreateIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string name, string framework, string frameworkVersion, in DateTimeOffset? startDate)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Module);
-        var automaticModule = TestModule.InternalCreate(name, framework, frameworkVersion, startDate);
+        var automaticModule = TestModule.Create(name, framework, frameworkVersion, startDate);
         return new(scope: null, state: automaticModule);
     }
 

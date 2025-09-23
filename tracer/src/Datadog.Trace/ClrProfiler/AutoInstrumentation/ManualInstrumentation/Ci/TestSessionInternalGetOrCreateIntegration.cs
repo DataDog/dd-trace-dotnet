@@ -34,7 +34,7 @@ public class TestSessionInternalGetOrCreateIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string command, string workingDirectory, string framework, in DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Session);
-        var automaticSession = TestSession.InternalGetOrCreate(command, workingDirectory, framework, startDate, propagateEnvironmentVariables);
+        var automaticSession = TestSession.GetOrCreate(command, workingDirectory, framework, startDate, propagateEnvironmentVariables);
         return new(scope: null, state: automaticSession);
     }
 
