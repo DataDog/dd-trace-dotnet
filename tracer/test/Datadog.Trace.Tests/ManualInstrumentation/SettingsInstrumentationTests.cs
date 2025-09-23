@@ -208,8 +208,8 @@ public class SettingsInstrumentationTests
 
         AssertEquivalent(manual, automatic);
         automatic.ServiceNameMappings.Should().Equal(mappings);
-        automatic.HttpClientErrorStatusCodes.Should().Equal(TracerSettings.ParseHttpCodesToArray(string.Join(",", clientErrors)));
-        automatic.HttpServerErrorStatusCodes.Should().Equal(TracerSettings.ParseHttpCodesToArray(string.Join(",", serverErrors)));
+        automatic.HttpClientErrorStatusCodes.Should().Equal(MutableSettings.ParseHttpCodesToArray(string.Join(",", clientErrors)));
+        automatic.HttpServerErrorStatusCodes.Should().Equal(MutableSettings.ParseHttpCodesToArray(string.Join(",", serverErrors)));
 
         automatic.Integrations[IntegrationId.OpenTelemetry].Enabled.Should().BeFalse();
         automatic.Integrations[IntegrationId.Kafka].Enabled.Should().BeFalse();
@@ -236,7 +236,11 @@ public class SettingsInstrumentationTests
         manual.GlobalSamplingRate.Should().Be(automatic.GlobalSamplingRate);
         manual.GlobalTags.Should().BeEquivalentTo(automatic.GlobalTags);
         manual.HeaderTags.Should().BeEquivalentTo(automatic.HeaderTags);
-        manual.Integrations.Settings.Should().BeEquivalentTo(automatic.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x));
+        // force fluent assertions to just compare the properties, not use the `Equals` implementation
+        manual.Integrations.Settings.Should()
+              .BeEquivalentTo(
+                   automatic.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x),
+                   options => options.ComparingByMembers(typeof(IntegrationSettings)));
         manual.KafkaCreateConsumerScopeEnabled.Should().Be(automatic.KafkaCreateConsumerScopeEnabled);
         manual.LogsInjectionEnabled.Should().Be(automatic.LogsInjectionEnabled);
         manual.MaxTracesSubmittedPerSecond.Should().Be(automatic.MaxTracesSubmittedPerSecond);
