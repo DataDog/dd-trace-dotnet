@@ -23,7 +23,7 @@ public static class EventTrackingSdk
     /// <param name="userId">The userId associated with the login success</param>
     /// <param name="metadata">Metadata associated with the login success</param>
     /// <param name="tracer">The tracer instance for retrieving the active scope</param>
-    internal static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata, Tracer tracer)
+    public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata, Tracer tracer)
     {
         TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventLoginSuccessSdkV1);
 
@@ -108,7 +108,7 @@ public static class EventTrackingSdk
     /// <param name="exists">If the userId associated with the login failure exists</param>
     /// <param name="metadata">Metadata associated with the login failure</param>
     /// <param name="tracer">The tracer instance for retrieving the active scope</param>
-    internal static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata, Tracer tracer)
+    public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata, Tracer tracer)
     {
         TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventFailureSdkV1);
 
