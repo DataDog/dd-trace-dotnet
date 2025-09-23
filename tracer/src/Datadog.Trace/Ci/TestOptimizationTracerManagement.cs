@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci;
 
@@ -41,7 +42,10 @@ internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagem
                     if (settings.DynamicInstrumentationEnabled == true)
                     {
                         DiscoveryService = getDiscoveryServiceFunc?.Invoke(settings) ?? NullDiscoveryService.Instance;
-                        Log.Debug("TestOptimizationTracerManagement: Discovery service set to {DiscoveryServiceType}.", DiscoveryService.GetType().Name);
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Debug("TestOptimizationTracerManagement: Discovery service set to {DiscoveryServiceType}.", DiscoveryService.GetType().Name);
+                        }
                     }
                 }
                 else if (getDiscoveryServiceFunc != null)

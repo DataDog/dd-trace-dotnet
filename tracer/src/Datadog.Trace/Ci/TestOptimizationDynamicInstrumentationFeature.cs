@@ -19,6 +19,8 @@ internal class TestOptimizationDynamicInstrumentationFeature : ITestOptimization
     private readonly Task<ExceptionIdentifier?> _doneTask;
     private TaskCompletionSource<ExceptionIdentifier?> _doneTaskSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    public const int DefaultExceptionHandlerTimeout = 2_000;
+
     public TestOptimizationDynamicInstrumentationFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
     {
         _doneTask = Task.FromResult<ExceptionIdentifier?>(null);

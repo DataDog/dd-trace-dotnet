@@ -85,7 +85,7 @@ internal class TestOptimizationTestCommand
             {
                 // let's wait for the instrumentation of an exception has been done
                 Common.Log.Debug("TestOptimizationTestCommand: First execution with an exception detected. Waiting for the exception instrumentation.");
-                testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(2_000).SafeWait();
+                testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).SafeWait();
                 Common.Log.Debug("TestOptimizationTestCommand: Exception instrumentation was set or timed out.");
             }
 
