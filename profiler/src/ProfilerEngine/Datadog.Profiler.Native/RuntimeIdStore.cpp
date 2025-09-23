@@ -86,6 +86,7 @@ const char* RuntimeIdStore::GetName()
 
 const char* RuntimeIdStore::GetId(AppDomainID appDomainId)
 {
+    // TODO: why not using the cache?
     if (_getIdFn != nullptr)
     {
         return _getIdFn(appDomainId);
