@@ -158,13 +158,13 @@ namespace Datadog.Trace.Configuration
         public double? TracingSamplingRate { get; set; }
 
         [JsonProperty("tracing_sampling_rules")]
-        public string? TracingSamplingRules { get; set; }
+        public object? TracingSamplingRules { get; set; }
 
         [JsonProperty("tracing_header_tags")]
-        public string? TracingHeaderTags { get; set; }
+        public object? TracingHeaderTags { get; set; }
 
         [JsonProperty("tracing_tags")]
-        public string? TracingTags { get; set; }
+        public object? TracingTags { get; set; }
 
         [JsonProperty("tracing_debug")]
         public bool? DebugEnabled { get; set; }
@@ -179,6 +179,6 @@ namespace Datadog.Trace.Configuration
         public bool? DataStreamsEnabled { get; set; }
 
         [JsonProperty("span_sampling_rules")]
-        public bool? SpanSamplingRules { get; set; }
+        public object? SpanSamplingRules { get; set; }
     }
 }

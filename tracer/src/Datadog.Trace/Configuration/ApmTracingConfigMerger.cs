@@ -12,7 +12,6 @@ using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Configuration
 {
@@ -33,10 +32,8 @@ namespace Datadog.Trace.Configuration
                 return "{\"lib_config\":{}}";
             }
 
-            // Pre-allocate with known capacity
             var applicableConfigs = new List<ApmTracingConfig>(configs.Count);
 
-            // Single pass: parse and filter simultaneously
             foreach (var config in configs)
             {
                 try
@@ -52,7 +49,7 @@ namespace Datadog.Trace.Configuration
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Failed to parse APM_TRACING configuration {ConfigPath}", config.Path.Path);
+                    Log.Error(ex, "Failed to merge APM_TRACING configuration {ConfigPath}", config.Path.Path);
                 }
             }
 
