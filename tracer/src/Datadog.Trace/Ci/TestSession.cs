@@ -363,6 +363,16 @@ public sealed class TestSession
     /// Create a new Test Module
     /// </summary>
     /// <param name="name">Test module name</param>
+    /// <returns>New test module instance</returns>
+    public TestModule CreateModule(string name)
+    {
+        return new TestModule(name, null, null, null, Tags);
+    }
+
+    /// <summary>
+    /// Create a new Test Module
+    /// </summary>
+    /// <param name="name">Test module name</param>
     /// <param name="framework">Testing framework name</param>
     /// <param name="frameworkVersion">Testing framework version</param>
     /// <returns>New test module instance</returns>
