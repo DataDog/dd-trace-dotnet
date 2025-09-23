@@ -56,4 +56,9 @@ internal static partial class ConfigurationKeys
         /// Defaults to <c>file</c>
         /// </summary>
         public const string LogSinks = "DD_TRACE_LOG_SINKS";
+
+        /// <summary>
+        /// Configuration key for setting the log level.
+        /// </summary>
+        public const string LogLevel = "DD_LOG_LEVEL";
 }

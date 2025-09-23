@@ -1,0 +1,19 @@
+// <copyright file="PlatformKeys.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+namespace Datadog.Trace.Configuration;
+
+internal static partial class PlatformKeys
+{
+    /// <summary>
+    /// Platform key indicating the path to the .net core clr profiler
+    /// </summary>
+    public const string DotNetCoreClrProfiler = "CORECLR_PROFILER_PATH";
+
+    /// <summary>
+    /// Platform key indicating the path to the .net clr profiler
+    /// </summary>
+    public const string DotNetClrProfiler = "COR_PROFILER_PATH";
+}

@@ -97,6 +97,8 @@ namespace Datadog.Trace.Configuration
                        : token.Value<T>();
         }
 
+        public bool IsPresent(string key) => SelectToken(key) is not null;
+
         /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {

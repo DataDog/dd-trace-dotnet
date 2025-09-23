@@ -6,7 +6,9 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
@@ -50,9 +52,9 @@ namespace Datadog.Trace.Configuration
         public ImmutableAzureAppServiceSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
             source ??= NullConfigurationSource.Instance;
+            var configBuilder = new ConfigurationBuilder(source, telemetry);
             // TODO: This is retrieved from other places too... need to work out how to not replace config
-            var config = new ConfigurationBuilder(source, telemetry);
-            var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+            var apiKey = configBuilder.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
 
             if (string.IsNullOrEmpty(apiKey))
             {
@@ -60,18 +62,22 @@ namespace Datadog.Trace.Configuration
                 IsUnsafeToTrace = true;
             }
 
-            SubscriptionId = GetSubscriptionId(source, telemetry);
-            ResourceGroup = config.WithKeys(ConfigurationKeys.AzureAppService.ResourceGroupKey).AsString();
-            SiteName = config.WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey).AsString();
+            var envConfigBuilder = ConfigurationBuilder.FromEnvironmentSourceOnly(telemetry);
+            var websiteOwner = envConfigBuilder
+                              .WithKeys(PlatformKeys.AzureAppService.WebsiteOwnerNameKey)
+                              .AsString(websiteOwner => !string.IsNullOrWhiteSpace(websiteOwner));
+            SubscriptionId = GetSubscriptionId(websiteOwner);
+            ResourceGroup = envConfigBuilder.WithKeys(PlatformKeys.AzureAppService.ResourceGroupKey).AsString();
+            SiteName = envConfigBuilder.WithKeys(PlatformKeys.AzureAppService.SiteNameKey).AsString();
             ResourceId = CompileResourceId(subscriptionId: SubscriptionId, siteName: SiteName, resourceGroup: ResourceGroup);
-            InstanceId = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceIdKey).AsString("unknown");
-            InstanceName = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceNameKey).AsString("unknown");
-            OperatingSystem = config.WithKeys(ConfigurationKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
-            SiteExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
-            WebsiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
+            InstanceId = envConfigBuilder.WithKeys(PlatformKeys.AzureAppService.InstanceIdKey).AsString("unknown");
+            InstanceName = envConfigBuilder.WithKeys(PlatformKeys.AzureAppService.InstanceNameKey).AsString("unknown");
+            OperatingSystem = envConfigBuilder.WithKeys(PlatformKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
+            SiteExtensionVersion = configBuilder.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
+            WebsiteSKU = envConfigBuilder.WithKeys(PlatformKeys.AzureAppService.WebsiteSKU).AsString();
 
-            FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
-            FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
+            FunctionsWorkerRuntime = envConfigBuilder.WithKeys(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
+            FunctionsExtensionVersion = envConfigBuilder.WithKeys(PlatformKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
 
             if (FunctionsWorkerRuntime is not null && FunctionsExtensionVersion is not null)
             {
@@ -89,9 +95,9 @@ namespace Datadog.Trace.Configuration
                 SiteType = "app";
             }
 
-            DebugModeEnabled = config.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
-            CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
-            NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
+            DebugModeEnabled = configBuilder.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
+            CustomTracingEnabled = configBuilder.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
+            NeedsDogStatsD = configBuilder.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
         }
 
         public bool DebugModeEnabled { get; }
@@ -142,38 +148,36 @@ namespace Datadog.Trace.Configuration
         {
             if (subscriptionId == null)
             {
-                Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
+                Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", PlatformKeys.AzureAppService.WebsiteOwnerNameKey);
                 return null;
             }
 
             if (siteName == null)
             {
-                Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", ConfigurationKeys.AzureAppService.SiteNameKey);
+                Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", PlatformKeys.AzureAppService.SiteNameKey);
                 return null;
             }
 
             if (resourceGroup == null)
             {
-                Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", ConfigurationKeys.AzureAppService.ResourceGroupKey);
+                Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", PlatformKeys.AzureAppService.ResourceGroupKey);
                 return null;
             }
 
             return $"/subscriptions/{subscriptionId}/resourcegroups/{resourceGroup}/providers/microsoft.web/sites/{siteName}".ToLowerInvariant();
         }
 
-        private static string? GetSubscriptionId(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        private static string? GetSubscriptionId(string? websiteOwner)
         {
-            var websiteOwner = new ConfigurationBuilder(source, telemetry)
-                              .WithKeys(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey)
-                              .AsString(websiteOwner => !string.IsNullOrWhiteSpace(websiteOwner));
-
-            if (!string.IsNullOrWhiteSpace(websiteOwner))
+            if (string.IsNullOrWhiteSpace(websiteOwner))
             {
-                var plusSplit = websiteOwner!.Split('+');
-                if (plusSplit.Length > 0 && !string.IsNullOrWhiteSpace(plusSplit[0]))
-                {
-                    return plusSplit[0];
-                }
+                return null;
+            }
+
+            var plusSplit = websiteOwner!.Split('+');
+            if (plusSplit.Length > 0 && !string.IsNullOrWhiteSpace(plusSplit[0]))
+            {
+                return plusSplit[0];
             }
 
             return null;
@@ -183,11 +187,11 @@ namespace Datadog.Trace.Configuration
         /// Returns <c>true</c> if the app is running in Azure App Services.
         /// Checks for the presence of "WEBSITE_SITE_NAME" in the configuration.
         /// </summary>
-        public static bool IsRunningInAzureAppServices(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        public static bool IsRunningInAzureAppServices(IConfigurationTelemetry telemetry)
         {
-            var siteName = new ConfigurationBuilder(source, telemetry)
-                           .WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey)
-                           .AsString();
+            var siteName = ConfigurationBuilder.FromEnvironmentSourceOnly(telemetry)
+                                               .WithKeys(PlatformKeys.AzureAppService.SiteNameKey)
+                                               .AsString();
 
             return !string.IsNullOrEmpty(siteName);
         }
@@ -197,21 +201,22 @@ namespace Datadog.Trace.Configuration
         /// Checks for the presence of "WEBSITE_SITE_NAME", "FUNCTIONS_WORKER_RUNTIME",
         /// and "FUNCTIONS_EXTENSION_VERSION" in the configuration.
         /// </summary>
-        public static bool IsRunningInAzureFunctions(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        public static bool IsRunningInAzureFunctions(IConfigurationTelemetry telemetry)
         {
-            var siteName = new ConfigurationBuilder(source, telemetry)
-                           .WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey)
-                           .AsString();
+            var configBuilder = ConfigurationBuilder.FromEnvironmentSourceOnly(telemetry);
+            var siteName = configBuilder
+                          .WithKeys(PlatformKeys.AzureAppService.SiteNameKey)
+                          .AsString();
 
             // "dotnet", "dotnet-isolated"
-            var workerRuntime = new ConfigurationBuilder(source, telemetry)
-                           .WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime)
-                           .AsString();
+            var workerRuntime = configBuilder
+                              .WithKeys(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime)
+                              .AsString();
 
             // "~4", "~1"
-            var extensionVersion = new ConfigurationBuilder(source, telemetry)
-                           .WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion)
-                           .AsString();
+            var extensionVersion = configBuilder
+                                  .WithKeys(PlatformKeys.AzureFunctions.FunctionsExtensionVersion)
+                                  .AsString();
 
             return !string.IsNullOrEmpty(siteName) &&
                    !string.IsNullOrEmpty(workerRuntime) &&

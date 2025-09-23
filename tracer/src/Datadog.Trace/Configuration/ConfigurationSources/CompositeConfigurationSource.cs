@@ -7,7 +7,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
@@ -50,6 +49,21 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         [PublicApi]
         IEnumerator IEnumerable.GetEnumerator() => _sources.GetEnumerator();
+
+        public bool IsPresent(string key)
+        {
+            for (var i = _sources.Count - 1; i >= 0; i--)
+            {
+                var source = _sources[i];
+                var value = source.IsPresent(key);
+                if (value)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)

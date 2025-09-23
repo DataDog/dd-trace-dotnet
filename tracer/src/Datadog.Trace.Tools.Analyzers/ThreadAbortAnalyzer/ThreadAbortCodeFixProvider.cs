@@ -46,9 +46,10 @@ namespace Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer
 
             // Find the while block catch declaration identified by the diagnostic.
             var catchClause = root.FindToken(diagnosticSpan.Start)
-                .Parent
-                .AncestorsAndSelf()
-                .OfType<CatchClauseSyntax>().First();
+                                  .Parent
+                                  .AncestorsAndSelf()
+                                  .OfType<CatchClauseSyntax>()
+                                  .First();
 
             // Register a code action that will invoke the fix.
             context.RegisterCodeFix(

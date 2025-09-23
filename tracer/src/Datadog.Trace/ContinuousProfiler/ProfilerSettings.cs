@@ -14,12 +14,12 @@ namespace Datadog.Trace.ContinuousProfiler;
 internal class ProfilerSettings
 {
     public ProfilerSettings(IConfigurationSource config, IConfigurationTelemetry telemetry)
-        : this(config, new EnvironmentConfigurationSource(), telemetry)
+        : this(config, ConfigurationBuilder.FromEnvironmentSourceOnly(telemetry), telemetry)
     {
     }
 
     // Internal for testing only
-    internal ProfilerSettings(IConfigurationSource config, IConfigurationSource envConfig, IConfigurationTelemetry telemetry)
+    internal ProfilerSettings(IConfigurationSource config, ConfigurationBuilder envConfigBuilder, IConfigurationTelemetry telemetry)
     {
         if (!IsProfilingSupported)
         {
@@ -30,7 +30,6 @@ internal class ProfilerSettings
 
         // If managed activation is enabled, we need to _just_ read from the environment variables,
         // as that's all that applies
-        var envConfigBuilder = new ConfigurationBuilder(envConfig, telemetry);
         var managedActivationEnabled = envConfigBuilder
                                       .WithKeys(ConfigurationKeys.ProfilerManagedActivationEnabled)
                                       .AsBool(true);

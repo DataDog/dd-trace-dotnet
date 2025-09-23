@@ -526,7 +526,7 @@ namespace Datadog.Trace.AppSec
             // initialization of WafLibraryInvoker
             if (_libraryInitializationResult == null)
             {
-                _libraryInitializationResult = WafLibraryInvoker.Initialize();
+                _libraryInitializationResult = WafLibraryInvoker.Initialize(_settings.TracerHome);
                 if (!_libraryInitializationResult.Success)
                 {
                     _configurationState.AppsecEnabled = false;

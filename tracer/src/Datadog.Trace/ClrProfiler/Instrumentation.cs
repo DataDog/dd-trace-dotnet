@@ -14,6 +14,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
@@ -185,8 +186,9 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
+                    var injectionEnabled = ConfigurationBuilder.FromEnvironmentSourceOnly().WithKeys(ConfigurationKeys.InjectionEnabled).AsString();
                     // Not using the ReadEnvironmentVariable method here to avoid logging (which could cause a crash itself)
-                    return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED"));
+                    return !string.IsNullOrEmpty(injectionEnabled);
                 }
                 catch
                 {
@@ -421,8 +423,8 @@ namespace Datadog.Trace.ClrProfiler
             var observers = new List<DiagnosticObserver>();
 
             // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
+            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
+            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime);
 
             if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
             {
@@ -447,21 +449,20 @@ namespace Datadog.Trace.ClrProfiler
         {
             var manager = DebuggerManager.Instance;
             if (manager.DebuggerSettings.CodeOriginForSpansEnabled
-                || manager.DebuggerSettings.DynamicInstrumentationEnabled
-                || manager.ExceptionReplaySettings.Enabled)
+             || manager.DebuggerSettings.DynamicInstrumentationEnabled
+             || manager.ExceptionReplaySettings.Enabled)
             {
-                _ = Task.Run(
-                    async () =>
+                _ = Task.Run(async () =>
+                {
+                    try
                     {
-                        try
-                        {
-                            await DebuggerManager.Instance.UpdateConfiguration(tracerSettings).ConfigureAwait(false);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error initializing debugger");
-                        }
-                    });
+                        await DebuggerManager.Instance.UpdateConfiguration(tracerSettings).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error initializing debugger");
+                    }
+                });
             }
             else
             {

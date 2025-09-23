@@ -126,7 +126,7 @@ namespace Datadog.Trace.Configuration
                         string s => new HashSet<string>(s.Split([','], StringSplitOptions.RemoveEmptyEntries)),
                     };
 
-            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
+            GCPFunctionSettings = new ImmutableGCPFunctionSettings(_telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
             // We don't want/need to record this value, so explicitly use null telemetry
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Configuration
 
             LambdaMetadata = LambdaMetadata.Create();
 
-            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
+            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(telemetry))
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
@@ -196,7 +196,7 @@ namespace Datadog.Trace.Configuration
                 };
 
                 globalTags = config
-                                .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                                .WithKeys(ConfigurationKeys.GlobalTags)
                                 .AsDictionaryResult(parser: updatedTagsParser)
                                 .OverrideWith(
                                      RemapOtelTags(in otelTags),
@@ -210,7 +210,7 @@ namespace Datadog.Trace.Configuration
             else
             {
                 globalTags = config
-                                .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                                .WithKeys(ConfigurationKeys.GlobalTags)
                                 .AsDictionaryResult()
                                 .OverrideWith(
                                      RemapOtelTags(in otelTags),
@@ -231,7 +231,7 @@ namespace Datadog.Trace.Configuration
 
             var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
             var serviceName = config
-                                 .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                                 .WithKeys(ConfigurationKeys.ServiceName)
                                  .AsStringResult()
                                  .OverrideWith(in otelServiceName, ErrorLog);
 
@@ -320,7 +320,8 @@ namespace Datadog.Trace.Configuration
                                                                ? ParsingResult<bool>.Success(result: false)
                                                                : ParsingResult<bool>.Failure());
             IsActivityListenerEnabled = config
-                                       .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
+                                       .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
+                                       .Or(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled)
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
@@ -345,7 +346,7 @@ namespace Datadog.Trace.Configuration
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
             MaxTracesSubmittedPerSecond = config
-                                         .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
+                                         .WithKeys(ConfigurationKeys.TraceRateLimit)
 #pragma warning restore 618
                                          .AsInt32(defaultValue: 100);
 
@@ -364,7 +365,7 @@ namespace Datadog.Trace.Configuration
                                                .AsBool(defaultValue: true);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            _headerTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+            _headerTags = ProcessHeaderTags(config.WithKeys(ConfigurationKeys.HeaderTags), headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
 
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
@@ -376,7 +377,8 @@ namespace Datadog.Trace.Configuration
                .WithKeys(ConfigurationKeys.SpanPointersEnabled)
                .AsBool(defaultValue: true);
 
-            PeerServiceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.PeerServiceNameMappings);
+            var peerServiceNameHasKeys = config.WithKeys(ConfigurationKeys.PeerServiceNameMappings);
+            PeerServiceNameMappings = TrimKeysAndValues(peerServiceNameHasKeys);
 
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
@@ -390,7 +392,8 @@ namespace Datadog.Trace.Configuration
                                         },
                                         validator: null);
 
-            _serviceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
+            var serviceNameMappingsHasKeys = config.WithKeys(ConfigurationKeys.ServiceNameMappings);
+            _serviceNameMappings = TrimKeysAndValues(serviceNameMappingsHasKeys) ?? ReadOnlyDictionary.Empty;
 
             TracerMetricsEnabled = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
@@ -413,6 +416,8 @@ namespace Datadog.Trace.Configuration
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
                                   .AsBool(defaultValue: EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension() && !EnvironmentHelpers.IsAzureFunctions());
 
+            var environmentConfigurationBuilder = ConfigurationBuilder.FromEnvironmentSourceOnly();
+            var injectionEnabled = environmentConfigurationBuilder.WithKeys(ConfigurationKeys.InjectionEnabled).AsString();
             if (DataPipelineEnabled)
             {
                 // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
@@ -456,11 +461,10 @@ namespace Datadog.Trace.Configuration
                 // SSI already utilizes libdatadog. To prevent unexpected behavior,
                 // we proactively disable the data pipeline when SSI is enabled. Theoretically, this should not cause any issues,
                 // but as a precaution, we are taking a conservative approach during the initial rollout phase.
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")))
+                if (!string.IsNullOrEmpty(injectionEnabled))
                 {
                     DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
+                    Log.Warning($"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
                     _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
             }
@@ -513,7 +517,7 @@ namespace Datadog.Trace.Configuration
 
             var httpServerErrorStatusCodes = config
 #pragma warning disable 618 // This config key has been replaced but may still be used
-                                            .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
+                                            .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes)
 #pragma warning restore 618
                                             .AsString(defaultValue: "500-599");
 
@@ -521,7 +525,7 @@ namespace Datadog.Trace.Configuration
 
             var httpClientErrorStatusCodes = config
 #pragma warning disable 618 // This config key has been replaced but may still be used
-                                            .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
+                                            .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
 #pragma warning restore 618
                                             .AsString(defaultValue: "400-499");
 
@@ -604,14 +608,14 @@ namespace Datadog.Trace.Configuration
                                  converter: otelConverter);
 
             PropagationStyleInject = config
-                                    .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
+                                    .WithKeys(ConfigurationKeys.PropagationStyleInject)
                                     .GetAsClassResult(
                                          validator: injectionValidator, // invalid individual values are rejected later
                                          converter: style => TrimSplitString(style, commaSeparator))
                                     .OverrideWith(in otelPropagation, ErrorLog, getDefaultPropagationHeaders);
 
             PropagationStyleExtract = config
-                                     .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
+                                     .WithKeys(ConfigurationKeys.PropagationStyleExtract)
                                      .GetAsClassResult(
                                           validator: injectionValidator, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator))
@@ -655,8 +659,7 @@ namespace Datadog.Trace.Configuration
                           .AsString(string.Empty);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            GrpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true)
-                     ?? ReadOnlyDictionary.Empty;
+            GrpcTags = ProcessHeaderTags(config.WithKeys(ConfigurationKeys.GrpcTags), headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
 
             OutgoingTagPropagationHeaderMaxLength = config
                                                    .WithKeys(ConfigurationKeys.TagPropagation.HeaderMaxLength)
@@ -666,7 +669,8 @@ namespace Datadog.Trace.Configuration
                                                    .Value;
 
             IpHeader = config
-                      .WithKeys(ConfigurationKeys.IpHeader, ConfigurationKeys.AppSec.CustomIpHeader)
+                      .WithKeys(ConfigurationKeys.IpHeader)
+                      .Or(ConfigurationKeys.AppSec.CustomIpHeader) // todo is this deprecated instead?
                       .AsString();
 
             IpHeaderEnabled = config
@@ -789,11 +793,12 @@ namespace Datadog.Trace.Configuration
             telemetry.Record(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted, ConfigurationOrigins.Default);
             telemetry.Record(ConfigTelemetryData.ManagedTracerTfm, value: ConfigTelemetryData.ManagedTracerTfmValue, recordValue: true, ConfigurationOrigins.Default);
 
+            var injectForce = environmentConfigurationBuilder.WithKeys(ConfigurationKeys.InjectForce).AsString();
             // these are SSI variables that would be useful for correlation purposes
-            telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
-            telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
+            telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: injectionEnabled, recordValue: true, ConfigurationOrigins.EnvVars);
+            telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: injectForce, recordValue: true, ConfigurationOrigins.EnvVars);
 
-            var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
+            var installType = environmentConfigurationBuilder.WithKeys(ConfigurationKeys.InstrumentationInstallType).AsString();
 
             var instrumentationSource = installType switch
             {
@@ -801,7 +806,7 @@ namespace Datadog.Trace.Configuration
                 "dd_trace_tool" => "cmd_line",
                 "dotnet_msi" => "env_var",
                 "windows_fleet_installer" => "ssi", // windows SSI on IIS
-                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")) => "ssi", // "normal" ssi
+                _ when !string.IsNullOrEmpty(injectionEnabled) => "ssi", // "normal" ssi
                 _ => "manual" // everything else
             };
 
@@ -1383,21 +1388,18 @@ namespace Datadog.Trace.Configuration
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
 
-        internal static ReadOnlyDictionary<string, string>? InitializeServiceNameMappings(ConfigurationBuilder config, string key)
+        internal static ReadOnlyDictionary<string, string>? TrimKeysAndValues(ConfigurationBuilder.HasKeys hasKeys)
         {
-            var mappings = config
-               .WithKeys(key)
+            var mappings = hasKeys
                .AsDictionary()
               ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
-            return mappings is not null ? new(mappings) : null;
+            return mappings is not null ? new ReadOnlyDictionary<string, string>(mappings) : null;
         }
 
-        internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
+        internal static ReadOnlyDictionary<string, string>? ProcessHeaderTags(ConfigurationBuilder.HasKeys keys, bool headerTagsNormalizationFixEnabled)
         {
-            var configurationDictionary = config
-                   .WithKeys(key)
-                   .AsDictionary(allowOptionalMappings: true, defaultValue: null, "[]");
+            var configurationDictionary = keys.AsDictionary(allowOptionalMappings: true, defaultValue: null, "[]");
 
             if (configurationDictionary == null)
             {
@@ -1621,8 +1623,7 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        internal static TracerSettings Create(Dictionary<string, object?> settings)
-            => Create(settings, LibDatadogAvailabilityHelper.IsLibDatadogAvailable);
+        internal static TracerSettings Create(Dictionary<string, object?> settings) => Create(settings, LibDatadogAvailabilityHelper.IsLibDatadogAvailable);
 
         internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable)
             => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new(), isLibDatadogAvailable);

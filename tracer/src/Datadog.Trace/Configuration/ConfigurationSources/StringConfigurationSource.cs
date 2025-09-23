@@ -114,14 +114,25 @@ namespace Datadog.Trace.Configuration
 
         protected abstract string? GetString(string key);
 
+        public bool IsPresent(string key) => GetString(key) is not null;
+
         /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
-            var value = GetString(key);
+            Exception? exception = null;
+            string? value = null;
+            try
+            {
+                value = GetString(key);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
 
             if (value is null)
             {
-                return ConfigurationResult<string>.NotFound();
+                return ConfigurationResult<string>.NotFound(exception);
             }
 
             if (validator is null || validator(value))

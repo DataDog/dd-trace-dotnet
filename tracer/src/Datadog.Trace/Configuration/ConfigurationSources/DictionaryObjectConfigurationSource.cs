@@ -33,6 +33,8 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
     protected virtual bool TryGetValue(string key, out object? value)
         => Dictionary.TryGetValue(key, out value);
 
+    public bool IsPresent(string key) => Dictionary.ContainsKey(key);
+
     public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
     {
         if (TryGetValue(key, out var objValue) && objValue is not null)

@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util
@@ -21,7 +22,9 @@ namespace Datadog.Trace.Util
     {
         // EnvironmentHelpers is called when initialising DataDogLogging.SharedLogger
         // Using Lazy<> here avoids setting the Logger field to the "null" logger, before initialization is complete
-        private static readonly Lazy<IDatadogLogger> Logger = new Lazy<IDatadogLogger>(() => DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers)));
+        private static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers)));
+
+        private static readonly ConfigurationBuilder EnvironmentBuilder = ConfigurationBuilder.FromEnvironmentSourceOnly();
 
         /// <summary>
         /// Safe wrapper around Environment.SetEnvironmentVariable
@@ -68,7 +71,10 @@ namespace Datadog.Trace.Util
         {
             try
             {
+// authorize for now, but needs to be removed
+#pragma warning disable RS0030
                 return Environment.GetEnvironmentVariable(key);
+#pragma warning restore RS0030
             }
             catch (Exception ex)
             {
@@ -96,16 +102,15 @@ namespace Datadog.Trace.Util
             return new Dictionary<object, object>();
         }
 
+        public static string? GetLogLevelName() => EnvironmentBuilder.WithKeys(ConfigurationKeys.LogLevel).AsString();
+
         /// <summary>
         /// Check if the current environment is Azure App Services
         /// by checking for the presence of "WEBSITE_SITE_NAME".
         /// Note that this is a superset of IsAzureFunctions().
         /// This method reads environment variables directly and bypasses the configuration system.
         /// </summary>
-        public static bool IsAzureAppServices()
-        {
-            return EnvironmentVariableExists(ConfigurationKeys.AzureAppService.SiteNameKey);
-        }
+        public static bool IsAzureAppServices() => EnvironmentBuilder.WithKeys(PlatformKeys.AzureAppService.SiteNameKey).AsStringResult().ConfigurationResult.IsPresent;
 
         /// <summary>
         /// Check if the current environment is Azure Functions
@@ -116,8 +121,8 @@ namespace Datadog.Trace.Util
         public static bool IsAzureFunctions()
         {
             return IsAzureAppServices() &&
-                   EnvironmentVariableExists(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime) &&
-                   EnvironmentVariableExists(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
+                   EnvironmentBuilder.WithKeys(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime).AsStringResult().ConfigurationResult.IsPresent &&
+                   EnvironmentBuilder.WithKeys(PlatformKeys.AzureFunctions.FunctionsExtensionVersion).AsStringResult().ConfigurationResult.IsPresent;
         }
 
         /// <summary>
@@ -125,10 +130,7 @@ namespace Datadog.Trace.Util
         /// by checking for the presence of "DD_AZURE_APP_SERVICES=1".
         /// This method reads environment variables directly and bypasses the configuration system.
         /// </summary>
-        public static bool IsUsingAzureAppServicesSiteExtension()
-        {
-            return GetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1";
-        }
+        public static bool IsUsingAzureAppServicesSiteExtension() => EnvironmentBuilder.WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey).AsString() == "1";
 
         /// <summary>
         /// Check if the current environment is AWS Lambda
@@ -148,10 +150,10 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsGoogleCloudFunctions()
         {
-            return (EnvironmentVariableExists(ConfigurationKeys.GCPFunction.FunctionNameKey) &&
-                    EnvironmentVariableExists(ConfigurationKeys.GCPFunction.FunctionTargetKey)) ||
-                   (EnvironmentVariableExists(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey) &&
-                    EnvironmentVariableExists(ConfigurationKeys.GCPFunction.DeprecatedProjectKey));
+            return (EnvironmentBuilder.WithKeys(PlatformKeys.GCPFunction.FunctionNameKey).IsPresent &&
+                    EnvironmentBuilder.WithKeys(PlatformKeys.GCPFunction.FunctionTargetKey).IsPresent) ||
+                   (EnvironmentBuilder.WithKeys(PlatformKeys.GCPFunction.DeprecatedFunctionNameKey).IsPresent &&
+                    EnvironmentBuilder.WithKeys(PlatformKeys.GCPFunction.DeprecatedProjectKey).IsPresent);
         }
 
         /// <summary>

@@ -21,7 +21,6 @@ internal abstract class LambdaCommon
     private const string PlaceholderServiceName = "placeholder-service";
     private const string PlaceholderOperationName = "placeholder-operation";
     private const double ServerlessMaxWaitingFlushTime = 3;
-    private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
@@ -129,7 +128,7 @@ internal abstract class LambdaCommon
 
     internal static void Log(string message, Exception ex = null, bool debug = true)
     {
-        if (!debug || EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName)?.ToLower() == "debug")
+        if (!debug || EnvironmentHelpers.GetLogLevelName()?.ToLower() == "debug")
         {
             Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} [DD_TRACE_DOTNET] {message} {ex?.ToString().Replace("\n", "\\n")}");
         }

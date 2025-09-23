@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Util;
 
@@ -18,36 +19,47 @@ namespace Datadog.Trace.Util;
 /// </summary>
 internal static class EnvironmentHelpersNoLogging
 {
+    private static readonly ConfigurationBuilder Builder = ConfigurationBuilder.FromEnvironmentSourceOnly();
+
     internal static bool IsServerlessEnvironment(out Exception? exceptionInReading)
     {
-        // Track the first exception encountered while reading env vars
-        Exception? firstException = null;
-
-        var isServerless = CheckEnvVar(LambdaMetadata.FunctionNameEnvVar, ref firstException)
-                        || (CheckEnvVar(ConfigurationKeys.AzureAppService.SiteNameKey, ref firstException)
-                         && !CheckEnvVar(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, ref firstException))
-                        || (CheckEnvVar(ConfigurationKeys.GCPFunction.FunctionNameKey, ref firstException)
-                         && CheckEnvVar(ConfigurationKeys.GCPFunction.FunctionTargetKey, ref firstException))
-                        || (CheckEnvVar(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, ref firstException)
-                         && CheckEnvVar(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, ref firstException));
-
-        exceptionInReading = firstException;
-        return isServerless;
-
-        static bool CheckEnvVar(string key, ref Exception? storedException)
+        exceptionInReading = null;
+        var awsResult = Builder.WithKeys(PlatformKeys.Aws.FunctionName).AsStringResult();
+        exceptionInReading = awsResult.ConfigurationResult.Exception;
+        if (awsResult.ConfigurationResult.IsPresent)
         {
-            try
-            {
-                var value = Environment.GetEnvironmentVariable(key);
-                return !string.IsNullOrEmpty(value);
-            }
-            catch (Exception ex)
-            {
-                // Store only the first exception encountered
-                storedException ??= ex;
-                return false;
-            }
+            return true;
         }
+
+        var azureResult = Builder.WithKeys(PlatformKeys.AzureAppService.SiteNameKey).AsStringResult();
+        var azureAppServiceContextKey = Builder.WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey).AsStringResult();
+        exceptionInReading ??= azureResult.ConfigurationResult.Exception;
+        exceptionInReading ??= azureAppServiceContextKey.ConfigurationResult.Exception;
+
+        if (azureResult.ConfigurationResult.IsPresent && !azureAppServiceContextKey.ConfigurationResult.IsPresent)
+        {
+            return true;
+        }
+
+        var gcpResult = Builder.WithKeys(PlatformKeys.GCPFunction.FunctionNameKey).AsStringResult();
+        var gcpTargetKey = Builder.WithKeys(PlatformKeys.GCPFunction.FunctionTargetKey).AsStringResult();
+        exceptionInReading ??= gcpResult.ConfigurationResult.Exception;
+        exceptionInReading ??= gcpTargetKey.ConfigurationResult.Exception;
+        if (gcpResult.ConfigurationResult.IsPresent && gcpTargetKey.ConfigurationResult.IsPresent)
+        {
+            return true;
+        }
+
+        var gcpResultDep = Builder.WithKeys(PlatformKeys.GCPFunction.DeprecatedFunctionNameKey).AsStringResult();
+        var gcpTargetKeyDep = Builder.WithKeys(PlatformKeys.GCPFunction.DeprecatedProjectKey).AsStringResult();
+        exceptionInReading ??= gcpResultDep.ConfigurationResult.Exception;
+        exceptionInReading ??= gcpTargetKeyDep.ConfigurationResult.Exception;
+        if (gcpResultDep.ConfigurationResult.IsPresent && gcpTargetKeyDep.ConfigurationResult.IsPresent)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     public static bool IsClrProfilerAttachedSafe()

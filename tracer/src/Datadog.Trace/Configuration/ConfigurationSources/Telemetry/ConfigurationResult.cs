@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -15,11 +16,12 @@ namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 /// <typeparam name="T">The type of the returned value</typeparam>
 public readonly record struct ConfigurationResult<T>
 {
-    private ConfigurationResult(T? result, string? telemetryOverride, ConfigurationLoadResult loadResult)
+    private ConfigurationResult(T? result, string? telemetryOverride, ConfigurationLoadResult loadResult, Exception? exception = null)
     {
         Result = result;
         TelemetryOverride = telemetryOverride;
         LoadResult = loadResult;
+        Exception = exception;
     }
 
     /// <summary>
@@ -56,6 +58,11 @@ public readonly record struct ConfigurationResult<T>
     /// Gets a value indicating the result of trying to load the configuration
     /// </summary>
     public ConfigurationLoadResult LoadResult { get; }
+
+    /// <summary>
+    /// Gets the potential exception that was thrown while loading the configuration
+    /// </summary>
+    public Exception? Exception { get; }
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value
@@ -105,8 +112,9 @@ public readonly record struct ConfigurationResult<T>
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.NotFound"/> value
     /// </summary>
+    /// <param name="exception">The exception happening during reading the configuration</param>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<T> NotFound() => new(default, null, ConfigurationLoadResult.NotFound);
+    public static ConfigurationResult<T> NotFound(Exception? exception = null) => new(default, null, ConfigurationLoadResult.NotFound, exception);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.ParsingError"/> value

@@ -6,6 +6,8 @@
 #if NETFRAMEWORK
 
 using System;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -15,7 +17,6 @@ namespace Datadog.Trace.RuntimeMetrics
 {
     internal class AzureAppServicePerformanceCounters : IRuntimeMetricsListener
     {
-        internal const string EnvironmentVariableName = "WEBSITE_COUNTERS_CLR";
         private const string GarbageCollectionMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureAppServicePerformanceCounters>();
@@ -36,7 +37,8 @@ namespace Datadog.Trace.RuntimeMetrics
 
         public void Refresh()
         {
-            var rawValue = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableName);
+            // todo: can this change at every refresh?
+            var rawValue = ConfigurationBuilder.FromEnvironmentSourceOnly().WithKeys(PlatformKeys.AzureAppService.CountersKey).AsString();
             var value = JsonConvert.DeserializeObject<PerformanceCountersValue>(rawValue);
 
             _statsd.Gauge(MetricsNames.Gen0HeapSize, value.Gen0Size);

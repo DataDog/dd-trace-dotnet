@@ -115,8 +115,8 @@ namespace Analyzer.Utilities.Extensions
                 assignmentOperation.Target == operation)
             {
                 return operation.Parent.IsAnyCompoundAssignment()
-                    ? ValueUsageInfo.ReadWrite
-                    : ValueUsageInfo.Write;
+                           ? ValueUsageInfo.ReadWrite
+                           : ValueUsageInfo.Write;
             }
             else if (operation.Parent is IIncrementOrDecrementOperation)
             {
@@ -128,7 +128,7 @@ namespace Analyzer.Utilities.Extensions
                 Debug.Assert(parenthesizedOperation.Language == LanguageNames.VisualBasic);
 
                 return parenthesizedOperation.GetValueUsageInfo(containingSymbol) &
-                    ~(ValueUsageInfo.Write | ValueUsageInfo.Reference);
+                       ~(ValueUsageInfo.Write | ValueUsageInfo.Reference);
             }
             else if (operation.Parent is INameOfOperation or
                      ITypeOfOperation or
@@ -158,7 +158,7 @@ namespace Analyzer.Utilities.Extensions
             else if (operation.Parent is IConditionalOperation conditionalOperation)
             {
                 if (operation == conditionalOperation.WhenTrue
-                    || operation == conditionalOperation.WhenFalse)
+                 || operation == conditionalOperation.WhenFalse)
                 {
                     return GetValueUsageInfo(conditionalOperation, containingSymbol);
                 }
@@ -168,11 +168,11 @@ namespace Analyzer.Utilities.Extensions
                 }
             }
             else if (operation.Parent is IReDimClauseOperation reDimClauseOperation &&
-                reDimClauseOperation.Operand == operation)
+                     reDimClauseOperation.Operand == operation)
             {
                 return (reDimClauseOperation.Parent as IReDimOperation)?.Preserve == true
-                    ? ValueUsageInfo.ReadWrite
-                    : ValueUsageInfo.Write;
+                           ? ValueUsageInfo.ReadWrite
+                           : ValueUsageInfo.Write;
             }
             else if (operation.Parent is IDeclarationExpressionOperation declarationExpression)
             {
@@ -183,7 +183,7 @@ namespace Analyzer.Utilities.Extensions
                 return ValueUsageInfo.Write;
             }
             else if (operation.Parent is IVariableInitializerOperation variableInitializerOperation &&
-                variableInitializerOperation.Parent is IVariableDeclaratorOperation variableDeclaratorOperation)
+                     variableInitializerOperation.Parent is IVariableDeclaratorOperation variableDeclaratorOperation)
             {
                 switch (variableDeclaratorOperation.Symbol.RefKind)
                 {

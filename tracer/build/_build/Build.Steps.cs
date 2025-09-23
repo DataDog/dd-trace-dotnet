@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -2811,4 +2812,193 @@ partial class Build
             string ThreadId
         );
     }
+
+    public Target CheckConfigurationKeysAgainstJsonValidations => _ => 
+        _
+          .Description("Validates that all ConfigurationKeys constants are present in supported-configurations.json")
+           // .DependsOn(CompileManagedSrc)
+          .Executes(() =>
+           {
+               // while (!System.Diagnostics.Debugger.IsAttached)
+               // {
+               //     Logger.Information("Waiting for debugger to attach to pid {PID}...", System.Diagnostics.Process.GetCurrentProcess().Id);
+               //     Thread.Sleep(1000);
+               // }
+               //
+               // System.Diagnostics.Debugger.Break();
+               var jsonPath = TracerDirectory / "src" / "Datadog.Trace" / "Configuration" / "supported-configurations.json";
+               if (!File.Exists(jsonPath))
+               {
+                   Logger.Error("supported-configurations.json file not found at {JsonPath}", jsonPath);
+                   return;
+               }
+
+               // Parse JSON to get supported configuration keys
+               var jsonContent = File.ReadAllText(jsonPath);
+               var jsonDoc = JsonDocument.Parse(jsonContent);
+               var canonicalKeysInJson = new HashSet<string>();
+               var aliasesInJson = new HashSet<string>();
+               var deprecationsInJson = new HashSet<string>();
+
+               // Add keys from supportedConfigurations section
+               if (jsonDoc.RootElement.TryGetProperty("supportedConfigurations", out var supportedConfigs))
+               {
+                   foreach (var property in supportedConfigs.EnumerateObject())
+                   {
+                       canonicalKeysInJson.Add(property.Name);
+                       deprecationsInJson.Add(property.Name);
+                   }
+               }
+
+               // Add keys from aliases section (add elements in the arrays)
+               if (jsonDoc.RootElement.TryGetProperty("aliases", out var aliases))
+               {
+                   foreach (var property in aliases.EnumerateObject())
+                   {
+                       // Add all alias keys from the array
+                       if (property.Value.ValueKind == JsonValueKind.Array)
+                       {
+                           foreach (var aliasElement in property.Value.EnumerateArray())
+                           {
+                               if (aliasElement.ValueKind == JsonValueKind.String)
+                               {
+                                   aliasesInJson.Add(aliasElement.GetString());
+                               }
+                           }
+                       }
+                   }
+               }
+
+               // Add keys from deprecations section (add the deprecated keys themselves)
+               if (jsonDoc.RootElement.TryGetProperty("deprecations", out var deprecations))
+               {
+                   foreach (var property in deprecations.EnumerateObject())
+                   {
+                       deprecationsInJson.Add(property.Name);
+                   }
+               }
+
+               // Target frameworks to check for assembly existence
+               var targetFrameworks = new[] { "net461", "netstandard2.0", "netcoreapp3.1", "net6.0" };
+
+               // Find the first available framework assembly to analyze
+               // Configuration keys should be the same across all frameworks
+               Assembly tracerAssembly = null;
+               string selectedFramework = null;
+
+               foreach (var framework in targetFrameworks)
+               {
+                   var assemblyPath = TracerDirectory / "src" / "Datadog.Trace" / "bin" / BuildConfiguration / framework / "Datadog.Trace.dll";
+
+                   if (File.Exists(assemblyPath))
+                   {
+                       try
+                       {
+                           // Load the assembly directly - no complex resolution needed
+                           tracerAssembly = Assembly.LoadFrom(assemblyPath);
+                           selectedFramework = framework;
+                           Logger.Information("Using {Framework} assembly for configuration key analysis", framework);
+                           break;
+                       }
+                       catch (Exception ex)
+                       {
+                           Logger.Warning(ex, "Failed to load assembly for {Framework}: {Message}", framework, ex.Message);
+                           continue;
+                       }
+                   }
+
+                   Logger.Warning("Assembly not found at {AssemblyPath} for framework {Framework}. Make sure CompileManagedSrc has run.", assemblyPath, framework);
+               }
+
+               if (tracerAssembly == null)
+               {
+                   throw new InvalidOperationException("Could not load Datadog.Trace assembly from any target framework");
+               }
+
+               // Use reflection to get all configuration keys from the ConfigurationKeys class
+               var configurationKeysInCode = new HashSet<string>();
+               var keyToFieldMap = new Dictionary<string, string>();
+
+               const string configKeysClassName = "Datadog.Trace.Configuration.ConfigurationKeys";
+               // Get the ConfigurationKeys type (includes all partial classes)
+               var configKeysType = tracerAssembly.GetType(configKeysClassName);
+               if (configKeysType == null)
+               {
+                   throw new InvalidOperationException($"Could not find {configKeysClassName} type in assembly for framework {selectedFramework}");
+               }
+
+               // Get all public const string fields from the type and all nested types (one level deep)
+               var allTypes = new List<Type> { configKeysType };
+               allTypes.AddRange(configKeysType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic));
+
+               Logger.Information("Found {TypeCount} types to analyze (including nested classes)", allTypes.Count);
+
+               foreach (var type in allTypes)
+               {
+                   var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                                    .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string));
+
+                   Logger.Information("  Type {TypeName} has {FieldCount} const string fields", type.Name, fields.Count());
+
+                   foreach (var field in fields)
+                   {
+                       var value = (string)field.GetValue(null)!;
+                       configurationKeysInCode.Add(value);
+
+                       // Build a more descriptive path for nested classes
+                       var typeName = type.DeclaringType != null ? $"ConfigurationKeys.{type.Name}" : "ConfigurationKeys";
+                       keyToFieldMap[value] = $"{typeName}.{field.Name}";
+                   }
+               }
+
+               Logger.Information("Found {KeyCount} configuration keys in {Framework}", configurationKeysInCode.Count, selectedFramework);
+
+               if (!configurationKeysInCode.Any())
+               {
+                   throw new InvalidOperationException($"Could not extract any configuration keys from {selectedFramework} framework");
+               }
+
+               var canonicalAndDeprecationsInJson = canonicalKeysInJson.Concat(deprecationsInJson);
+               // Find keys that are in JSON but not defined in ConfigurationKeys
+               var missingFromCode = canonicalAndDeprecationsInJson.Except(configurationKeysInCode).ToList();
+
+               var allKeysInJson = canonicalAndDeprecationsInJson.Concat(aliasesInJson);
+               // Find keys that are defined in ConfigurationKeys but missing from JSON
+               var missingFromJson = configurationKeysInCode.Except(allKeysInJson).ToList();
+               // Report results
+               if (missingFromJson.Any())
+               {
+                   Logger.Error("Configuration keys defined in ConfigurationKeys but missing from supported-configurations.json:");
+                   foreach (var key in missingFromJson.OrderBy(k => k))
+                   {
+                       var fieldInfo = keyToFieldMap.GetValueOrDefault(key, "Unknown");
+                       Logger.Error("  - {Key} (defined as {FieldInfo})", key, fieldInfo);
+                   }
+               }
+
+               if (missingFromCode.Any())
+               {
+                   Logger.Warning("Configuration keys in supported-configurations.json but not defined in ConfigurationKeys:");
+                   foreach (var key in missingFromCode.OrderBy(k => k))
+                   {
+                       Logger.Warning("  - {Key}", key);
+                   }
+               }
+
+               if (!missingFromJson.Any() && !missingFromCode.Any())
+               {
+                   Logger.Information("✅ All configuration keys are properly synchronized between ConfigurationKeys and supported-configurations.json");
+                   Logger.Information("Total unique configuration keys found across all frameworks: {TotalKeys}", configurationKeysInCode.Count);
+               }
+               else
+               {
+                   var totalIssues = missingFromJson.Count + missingFromCode.Count;
+                   Logger.Error("❌ Found {TotalIssues} configuration key synchronization issues", totalIssues);
+
+                   if (missingFromJson.Any())
+                   {
+                       throw new InvalidOperationException($"Found {missingFromJson.Count} configuration keys defined in ConfigurationKeys but missing from supported-configurations.json. Please add them to the JSON file.");
+                   }
+               }
+           });
 }

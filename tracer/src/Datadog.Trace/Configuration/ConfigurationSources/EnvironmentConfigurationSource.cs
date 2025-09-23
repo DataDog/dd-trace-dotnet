@@ -8,31 +8,25 @@
 using System;
 using Datadog.Trace.Configuration.Telemetry;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Configuration;
+
+/// <summary>
+/// Represents a configuration source that
+/// retrieves values from environment variables.
+/// </summary>
+internal class EnvironmentConfigurationSource : StringConfigurationSource
 {
-    /// <summary>
-    /// Represents a configuration source that
-    /// retrieves values from environment variables.
-    /// </summary>
-    internal class EnvironmentConfigurationSource : StringConfigurationSource
+    internal static readonly EnvironmentConfigurationSource Instance = new();
+
+    /// <inheritdoc />
+    public override ConfigurationOrigins Origin => ConfigurationOrigins.EnvVars;
+
+    /// <inheritdoc />
+    protected override string? GetString(string key)
     {
-        /// <inheritdoc />
-        public override ConfigurationOrigins Origin => ConfigurationOrigins.EnvVars;
-
-        /// <inheritdoc />
-        protected override string? GetString(string key)
-        {
-            try
-            {
-                return Environment.GetEnvironmentVariable(key);
-            }
-            catch
-            {
-                // We should not add a dependency from the Configuration system to the Logger system,
-                // so do nothing
-            }
-
-            return null;
-        }
+// only place where it's allowed
+#pragma warning disable RS0030
+        return Environment.GetEnvironmentVariable(key);
+#pragma warning restore RS0030
     }
 }

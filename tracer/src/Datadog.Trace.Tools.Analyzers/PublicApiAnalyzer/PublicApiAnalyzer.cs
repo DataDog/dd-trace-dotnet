@@ -4,6 +4,7 @@
 // </copyright>
 
 // Roughly based on https://github.com/dotnet/roslyn-analyzers/blob/4512de66bb6e21c548ab0d5a83242b70969ba576/src/NetAnalyzers/Core/Microsoft.NetCore.Analyzers/InteropServices/PlatformCompatibilityAnalyzer.cs
+
 #nullable enable
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -60,8 +61,7 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
             {
                 var publicApiMembers = new ConcurrentDictionary<ISymbol, PublicApiStatus>(SymbolEqualityComparer.Default);
 
-                context.RegisterOperationBlockStartAction(
-                    context => AnalyzeOperationBlock(context, publicApiMembers));
+                context.RegisterOperationBlockStartAction(context => AnalyzeOperationBlock(context, publicApiMembers));
             });
         }
 

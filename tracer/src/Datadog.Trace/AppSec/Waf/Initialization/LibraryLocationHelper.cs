@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -17,7 +18,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LibraryLocationHelper));
 
-        internal static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string[] runtimeIds)
+        internal static List<string> GetDatadogNativeFolders(string tracerHomePath, FrameworkDescription frameworkDescription, string[] runtimeIds)
         {
             // first get anything "home folder" like
             // if running under Windows:
@@ -34,7 +35,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             foreach (var runtimeId in runtimeIds)
             {
-                AddHomeFolders(paths, runtimeId);
+                AddHomeFolders(tracerHomePath, paths, runtimeId);
             }
 
             foreach (var runtimeId in runtimeIds)
@@ -58,8 +59,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
         private static void AddProfilerFolders(List<string> paths, FrameworkDescription frameworkDescription, string runtimeId)
         {
-            var profilerEnvVar =
-                frameworkDescription.IsCoreClr() ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+            var profilerEnvVar = frameworkDescription.IsCoreClr() ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
 
             if (TryAddProfilerFolders(paths, profilerEnvVar))
             {
@@ -89,10 +89,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
         }
 
-        private static void AddHomeFolders(List<string> paths, string runtimeId)
+        private static void AddHomeFolders(string tracerHome, List<string> paths, string runtimeId)
         {
-            // the real trace home
-            var tracerHome = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
             if (!string.IsNullOrWhiteSpace(tracerHome))
             {
                 // the home folder could contain the native dll directly (in legacy versions of the package),

@@ -24,6 +24,13 @@ public interface IConfigurationSource
     public ConfigurationOrigins Origin { get; }
 
     /// <summary>
+    /// Gets if the key is present in the configuration source.
+    /// </summary>
+    /// <param name="key">key</param>
+    /// <returns>returns if it's present</returns>
+    bool IsPresent(string key);
+
+    /// <summary>
     /// Gets the <see cref="string"/> value of
     /// the setting with the specified key.
     /// </summary>

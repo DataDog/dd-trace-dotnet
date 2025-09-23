@@ -15,6 +15,7 @@ using System.Xml;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -29,6 +30,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
 
         internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
+
+        private static readonly ConfigurationBuilder _environmentBuilder = ConfigurationBuilder.FromEnvironmentSourceOnly();
         private static bool? _isDataCollectorDomainCache;
         private static bool? _isMsBuildTaskCache;
 

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration
@@ -17,17 +18,16 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     internal class ImmutableGCPFunctionSettings
     {
-        public ImmutableGCPFunctionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
+        public ImmutableGCPFunctionSettings(IConfigurationTelemetry telemetry)
         {
-            source ??= NullConfigurationSource.Instance;
-            var config = new ConfigurationBuilder(source, telemetry);
+            var config = ConfigurationBuilder.FromEnvironmentSourceOnly(telemetry);
 
-            var deprecatedFunctionKey = config.WithKeys(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey).AsString();
-            var deprecatedProjectKey = config.WithKeys(ConfigurationKeys.GCPFunction.DeprecatedProjectKey).AsString();
+            var deprecatedFunctionKey = config.WithKeys(PlatformKeys.GCPFunction.DeprecatedFunctionNameKey).AsString();
+            var deprecatedProjectKey = config.WithKeys(PlatformKeys.GCPFunction.DeprecatedProjectKey).AsString();
             IsDeprecatedFunction = deprecatedFunctionKey != null && deprecatedProjectKey != null;
 
-            var functionNameKey = config.WithKeys(ConfigurationKeys.GCPFunction.FunctionNameKey).AsString();
-            var functionTargetKey = config.WithKeys(ConfigurationKeys.GCPFunction.FunctionTargetKey).AsString();
+            var functionNameKey = config.WithKeys(PlatformKeys.GCPFunction.FunctionNameKey).AsString();
+            var functionTargetKey = config.WithKeys(PlatformKeys.GCPFunction.FunctionTargetKey).AsString();
             IsNewerFunction = functionNameKey != null && functionTargetKey != null;
 
             IsGCPFunction = IsDeprecatedFunction || IsNewerFunction;

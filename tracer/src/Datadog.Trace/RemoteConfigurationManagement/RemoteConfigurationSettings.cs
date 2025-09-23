@@ -25,7 +25,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             var pollInterval = new ConfigurationBuilder(configurationSource, telemetry)
 #pragma warning disable CS0618
-                              .WithKeys(ConfigurationKeys.Rcm.PollInterval, ConfigurationKeys.Rcm.PollIntervalInternal)
+                              .WithKeys(ConfigurationKeys.Rcm.PollInterval)
 #pragma warning restore CS0618
                               .AsDouble(DefaultPollIntervalSeconds, pollInterval => pollInterval is > 0 and <= 5);
 

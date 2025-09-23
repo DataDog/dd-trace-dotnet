@@ -31,13 +31,15 @@ namespace Datadog.Trace.AppSec
         {
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
+            TracerHome = config.WithKeys(ConfigurationKeys.TracerHome).AsString();
+
             BlockedHtmlTemplatePath = config
-                                 .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
-                                 .AsRedactedString(); // Redacted because it's huge
+                                     .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
+                                     .AsRedactedString(); // Redacted because it's huge
 
             BlockedJsonTemplatePath = config
-                                 .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
-                                 .AsString();
+                                     .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
+                                     .AsString();
 
             // both should default to false
             var enabledEnvVar = config
@@ -113,18 +115,18 @@ namespace Datadog.Trace.AppSec
             }
 
             if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingSafeMode
-                || UserEventsAutoInstrumentationMode == UserTrackingAnonShortMode)
+             || UserEventsAutoInstrumentationMode == UserTrackingAnonShortMode)
             {
                 UserEventsAutoInstrumentationMode = UserTrackingAnonMode;
             }
 
             if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingExtendedMode
-                || UserEventsAutoInstrumentationMode == UserTrackingIdentShortMode)
+             || UserEventsAutoInstrumentationMode == UserTrackingIdentShortMode)
             {
                 UserEventsAutoInstrumentationMode = UserTrackingIdentMode;
             }
 
-            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled, "DD_EXPERIMENTAL_API_SECURITY_ENABLED")
+            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled)
                                        .AsBool(true);
 
             ApiSecuritySampleDelay = config.WithKeys(ConfigurationKeys.AppSec.ApiSecuritySampleDelay)
@@ -132,15 +134,15 @@ namespace Datadog.Trace.AppSec
                                            .Value;
 
             ApiSecurityEndpointCollectionEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled)
-                                           .AsBool(false);
+                                                         .AsBool(false);
 
             ApiSecurityEndpointCollectionMessageLimit = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionMessageLimit)
-                                           .AsInt32(300, val => val >= 0)
-                                           .Value;
+                                                              .AsInt32(300, val => val >= 0)
+                                                              .Value;
 
             ApiSecurityParseResponseBody = config
-                                .WithKeys(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody)
-                                .AsBool(true);
+                                          .WithKeys(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody)
+                                          .AsBool(true);
 
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
@@ -153,27 +155,27 @@ namespace Datadog.Trace.AppSec
                                       .AsBool(true);
 
             MaxStackTraces = config
-                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
-                                  .AsInt32(defaultValue: 2, validator: val => val >= 1)
-                                  .Value;
+                            .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
+                            .AsInt32(defaultValue: 2, validator: val => val >= 1)
+                            .Value;
 
             MaxStackTraceDepth = config
-                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
-                                  .AsInt32(defaultValue: 32, validator: val => val >= 1)
-                                  .Value;
+                                .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
+                                .AsInt32(defaultValue: 32, validator: val => val >= 1)
+                                .Value;
 
             MaxStackTraceDepthTopPercent = config
-                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepthTopPercent)
-                                  .AsInt32(defaultValue: 75, validator: val => val >= 0 && val <= 100)
-                                  .Value;
+                                          .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepthTopPercent)
+                                          .AsInt32(defaultValue: 75, validator: val => val >= 0 && val <= 100)
+                                          .Value;
 
             WafDebugEnabled = config
                              .WithKeys(ConfigurationKeys.AppSec.WafDebugEnabled)
                              .AsBool(defaultValue: false);
 
             ScaEnabled = config
-                             .WithKeys(ConfigurationKeys.AppSec.ScaEnabled)
-                             .AsBool();
+                        .WithKeys(ConfigurationKeys.AppSec.ScaEnabled)
+                        .AsBool();
 
             NoCustomLocalRules = Rules == null;
         }
@@ -256,6 +258,11 @@ namespace Datadog.Trace.AppSec
         /// Gets the blocking response template for Html content. This template is used in combination with the status code to craft and send a response upon blocking the request.
         /// </summary>
         public string? BlockedHtmlTemplatePath { get; }
+
+        /// <summary>
+        /// Gets the tracer libraries location (to load waf from there).
+        /// </summary>
+        public string? TracerHome { get; }
 
         /// <summary>
         /// Gets the Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
