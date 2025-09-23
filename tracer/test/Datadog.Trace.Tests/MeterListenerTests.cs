@@ -80,19 +80,19 @@ namespace Datadog.Trace.Tests
             var capturedMetrics = MetricReaderHandler.GetCapturedMetricsForTesting();
 
             // Verify we have separate metric points for each tag set
-            var counterMetrics = capturedMetrics.Values.Where(m => m.InstrumentName == "test.counter").ToList();
+            var counterMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.counter").ToList();
             counterMetrics.Count.Should().Be(2, "Counter should have 2 separate metric points for different tag sets");
 
-            var histogramMetrics = capturedMetrics.Values.Where(m => m.InstrumentName == "test.histogram").ToList();
+            var histogramMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.histogram").ToList();
             histogramMetrics.Count.Should().Be(2, "Histogram should have 2 separate metric points for different tag sets");
 
 #if NET7_0_OR_GREATER
-            var upDownMetrics = capturedMetrics.Values.Where(m => m.InstrumentName == "test.upDownCounter").ToList();
+            var upDownMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.upDownCounter").ToList();
             upDownMetrics.Count.Should().Be(2, "UpDownCounter should have 2 separate metric points for different tag sets");
 #endif
 
 #if NET9_0_OR_GREATER
-            var gaugeMetrics = capturedMetrics.Values.Where(m => m.InstrumentName == "test.gauge").ToList();
+            var gaugeMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.gauge").ToList();
             gaugeMetrics.Count.Should().Be(2, "Gauge should have 2 separate metric points for different tag sets");
 #endif
         }
@@ -205,7 +205,7 @@ namespace Datadog.Trace.Tests
             expectedObservableCounterTemporality.Should().BeOneOf(AggregationTemporality.Delta, AggregationTemporality.Cumulative);
 
             // Verify Counter metrics
-            var counterMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.counter");
+            var counterMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.counter");
             counterMetric.Should().NotBeNull();
             counterMetric!.InstrumentType.Should().Be(InstrumentType.Counter);
             counterMetric.AggregationTemporality.Should().Be(expectedCounterTemporality);
@@ -213,21 +213,21 @@ namespace Datadog.Trace.Tests
             counterMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
             counterMetric.Tags.Should().ContainKey("rid").WhoseValue.Should().Be("1234567890");
 
-            var asyncCounterMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.async.counter");
+            var asyncCounterMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.async.counter");
             asyncCounterMetric.Should().NotBeNull();
             asyncCounterMetric!.InstrumentType.Should().Be(InstrumentType.ObservableCounter);
             asyncCounterMetric.AggregationTemporality.Should().Be(expectedObservableCounterTemporality);
             asyncCounterMetric.RunningSum.Should().Be(22.0);
             asyncCounterMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 
-            var asyncGaugeMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.async.gauge");
+            var asyncGaugeMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.async.gauge");
             asyncGaugeMetric.Should().NotBeNull();
             asyncGaugeMetric!.InstrumentType.Should().Be(InstrumentType.ObservableGauge);
             asyncGaugeMetric.AggregationTemporality.Should().BeNull("Gauges have no temporality according to OTLP spec");
             asyncGaugeMetric.RunningSum.Should().Be(88.0);
             asyncGaugeMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 
-            var histogramMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.histogram");
+            var histogramMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.histogram");
             histogramMetric.Should().NotBeNull();
             histogramMetric!.InstrumentType.Should().Be(InstrumentType.Histogram);
             histogramMetric.AggregationTemporality.Should().Be(expectedHistogramTemporality);
@@ -241,14 +241,14 @@ namespace Datadog.Trace.Tests
             bucketCounts[4].Should().Be(1L, "Value 33.0 should fall in bucket 4 (25 < 33.0 <= 50)");
 
 #if NET7_0_OR_GREATER
-            var upDownMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.upDownCounter");
+            var upDownMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.upDownCounter");
             upDownMetric.Should().NotBeNull("UpDown counter metric should be captured");
             upDownMetric!.InstrumentType.Should().Be(InstrumentType.UpDownCounter);
             upDownMetric.AggregationTemporality.Should().Be(expectedUpDownTemporality);
             upDownMetric.RunningSum.Should().Be(55.0);
             upDownMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
 
-            var asyncUpDownMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.async.upDownCounter");
+            var asyncUpDownMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.async.upDownCounter");
             asyncUpDownMetric.Should().NotBeNull("Async UpDown counter metric should be captured");
             asyncUpDownMetric!.InstrumentType.Should().Be(InstrumentType.ObservableUpDownCounter);
             asyncUpDownMetric.AggregationTemporality.Should().Be(expectedUpDownTemporality);
@@ -256,7 +256,7 @@ namespace Datadog.Trace.Tests
             asyncUpDownMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 #endif
 #if NET9_0_OR_GREATER
-            var gaugeMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.gauge");
+            var gaugeMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.gauge");
             gaugeMetric.Should().NotBeNull("Gauge metric should be captured");
             gaugeMetric!.InstrumentType.Should().Be(InstrumentType.Gauge);
             gaugeMetric.AggregationTemporality.Should().BeNull("Gauges have no temporality according to OTLP spec");

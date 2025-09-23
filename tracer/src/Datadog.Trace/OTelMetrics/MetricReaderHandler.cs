@@ -24,7 +24,7 @@ namespace Datadog.Trace.OTelMetrics
 
         // Temporary storage for aggregation (like RuntimeMetrics._exceptionCounts)
         // Will be cleared after each export to prevent memory leaks
-        private static readonly ConcurrentDictionary<MetricStreamIdentity, MetricPoint> CapturedMetrics = new();
+        private static readonly ConcurrentDictionary<MetricStreamIdentity, MetricState> CapturedMetrics = new();
         private static readonly HashSet<string> MetricStreamNames = new(StringComparer.OrdinalIgnoreCase);
 
         private static int _metricCount;
@@ -115,20 +115,39 @@ namespace Datadog.Trace.OTelMetrics
             OnMeasurementRecordedDouble(instrument, value, tags, state);
         }
 
-        internal static IReadOnlyDictionary<MetricStreamIdentity, MetricPoint> GetMetricsForExport(bool clearAfterGet = false)
+        internal static IReadOnlyList<MetricPoint> GetMetricsForExport(bool clearAfterGet = false)
         {
-            var metrics = CapturedMetrics;
+            var allMetricPoints = new List<MetricPoint>();
+
+            foreach (var kvp in CapturedMetrics)
+            {
+                var metricState = kvp.Value;
+                var metricPoints = metricState.GetMetricPoints();
+                allMetricPoints.AddRange(metricPoints);
+            }
 
             if (clearAfterGet)
             {
                 CapturedMetrics.Clear();
             }
 
-            return metrics;
+            return allMetricPoints;
         }
 
         // For testing only
-        internal static IReadOnlyDictionary<MetricStreamIdentity, MetricPoint> GetCapturedMetricsForTesting() => CapturedMetrics;
+        internal static IReadOnlyList<MetricPoint> GetCapturedMetricsForTesting()
+        {
+            var allMetricPoints = new List<MetricPoint>();
+
+            foreach (var kvp in CapturedMetrics)
+            {
+                var metricState = kvp.Value;
+                var metricPoints = metricState.GetMetricPoints();
+                allMetricPoints.AddRange(metricPoints);
+            }
+
+            return allMetricPoints;
+        }
 
         // For testing only - reset all captured metrics
         internal static void ResetForTesting()
@@ -195,7 +214,7 @@ namespace Datadog.Trace.OTelMetrics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static AggregationTemporality? GetTemporality(InstrumentType instrumentType)
+        internal static AggregationTemporality? GetTemporality(InstrumentType instrumentType)
         {
             // Gauges have no temporality according to OTLP spec
             if (instrumentType is InstrumentType.Gauge or InstrumentType.ObservableGauge)
@@ -311,11 +330,10 @@ namespace Datadog.Trace.OTelMetrics
                                    aggregationType.Value == InstrumentType.ObservableCounter ||
                                    aggregationType.Value == InstrumentType.ObservableUpDownCounter;
 
-                var metricPoint = new MetricPoint(instrument.Name, instrument.Meter.Name, aggregationType.Value, temporality, tagsDict, isIntegerValue);
-                var state = new MetricState(metricStreamIdentity, metricPoint);
+                var state = new MetricState(metricStreamIdentity);
 
                 // Store in global dictionary for export
-                CapturedMetrics.TryAdd(metricStreamIdentity, metricPoint);
+                CapturedMetrics.TryAdd(metricStreamIdentity, state);
                 Interlocked.Increment(ref _metricCount);
 
                 return state;
