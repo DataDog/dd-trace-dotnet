@@ -132,7 +132,7 @@ namespace Datadog.Trace.Tests
             // Verify Counter metrics
             var counterMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.counter");
             counterMetric.Should().NotBeNull();
-            counterMetric.InstrumentType.Should().Be(InstrumentType.Counter);
+            counterMetric!.InstrumentType.Should().Be(InstrumentType.Counter);
             counterMetric.AggregationTemporality.Should().Be(expectedCounterTemporality);
             counterMetric.RunningSum.Should().Be(11.0);
             counterMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
@@ -140,21 +140,21 @@ namespace Datadog.Trace.Tests
 
             var asyncCounterMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.async.counter");
             asyncCounterMetric.Should().NotBeNull();
-            asyncCounterMetric.InstrumentType.Should().Be(InstrumentType.ObservableCounter);
+            asyncCounterMetric!.InstrumentType.Should().Be(InstrumentType.ObservableCounter);
             asyncCounterMetric.AggregationTemporality.Should().Be(expectedObservableCounterTemporality);
             asyncCounterMetric.RunningSum.Should().Be(22.0);
             asyncCounterMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 
             var asyncGaugeMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.async.gauge");
             asyncGaugeMetric.Should().NotBeNull();
-            asyncGaugeMetric.InstrumentType.Should().Be(InstrumentType.ObservableGauge);
+            asyncGaugeMetric!.InstrumentType.Should().Be(InstrumentType.ObservableGauge);
             asyncGaugeMetric.AggregationTemporality.Should().BeNull("Gauges have no temporality according to OTLP spec");
             asyncGaugeMetric.RunningSum.Should().Be(88.0);
             asyncGaugeMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 
             var histogramMetric = capturedMetrics.Values.FirstOrDefault(m => m.InstrumentName == "test.histogram");
             histogramMetric.Should().NotBeNull();
-            histogramMetric.InstrumentType.Should().Be(InstrumentType.Histogram);
+            histogramMetric!.InstrumentType.Should().Be(InstrumentType.Histogram);
             histogramMetric.AggregationTemporality.Should().Be(expectedHistogramTemporality);
             histogramMetric.RunningCount.Should().Be(1L);
             histogramMetric.RunningSum.Should().Be(33.0);

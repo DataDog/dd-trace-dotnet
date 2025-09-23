@@ -290,17 +290,12 @@ namespace Datadog.Trace.OTelMetrics
                 var tagsDict = new Dictionary<string, object?>();
 
                 // RFC requirement: Check for duplicate instrument registration
-                if (CapturedMetrics.Any(kvp =>
-                    kvp.Key.InstrumentType == aggregationType.Value &&
-                    string.Equals(kvp.Key.InstrumentName, instrument.Name, StringComparison.OrdinalIgnoreCase) &&
-                    kvp.Key.Unit == instrument.Unit &&
-                    kvp.Key.Description == instrument.Description))
+                if (CapturedMetrics.ContainsKey(metricStreamIdentity))
                 {
                     Log.Warning(
-                        "Duplicate instrument registration detected: {InstrumentType} '{InstrumentName}' from meter '{MeterName}'. Previous instrument will be reused.",
-                        aggregationType.Value.ToString(),
-                        instrument.Name,
-                        instrument.Meter.Name);
+                        "Duplicate instrument registration detected: {InstrumentType} '{InstrumentName}' (Unit='{Unit}', Description='{Description}') from meter '{MeterName}'. Previous instrument will be reused.",
+                        [aggregationType.Value, instrument.Name, instrument.Unit ?? "null", instrument.Description ?? "null", instrument.Meter.Name]);
+
                     return null; // Return null to skip this duplicate
                 }
 
