@@ -22,11 +22,51 @@ namespace Datadog.Trace.Tests
     [TracerRestorer]
     public class MeterListenerTests
     {
-        [Theory]
-        [InlineData("cumulative", AggregationTemporality.Cumulative, AggregationTemporality.Cumulative, AggregationTemporality.Cumulative, AggregationTemporality.Cumulative)]
-        [InlineData("delta", AggregationTemporality.Delta, AggregationTemporality.Cumulative, AggregationTemporality.Delta, AggregationTemporality.Delta)]
-        [InlineData("lowmemory", AggregationTemporality.Delta, AggregationTemporality.Cumulative, AggregationTemporality.Delta, AggregationTemporality.Cumulative)]
-        public void CapturesAllMetricsWithCorrectTemporality(
+        [Fact]
+        public void CapturesAllMetricsWithCorrectTemporality_Default()
+        {
+            CapturesAllMetricsWithCorrectTemporality(
+                null,
+                AggregationTemporality.Delta,
+                AggregationTemporality.Cumulative,
+                AggregationTemporality.Delta,
+                AggregationTemporality.Delta);
+        }
+
+        [Fact]
+        public void CapturesAllMetricsWithCorrectTemporality_DeltaPreference()
+        {
+            CapturesAllMetricsWithCorrectTemporality(
+                "delta",
+                AggregationTemporality.Delta,
+                AggregationTemporality.Cumulative,
+                AggregationTemporality.Delta,
+                AggregationTemporality.Delta);
+        }
+
+        [Fact]
+        public void CapturesAllMetricsWithCorrectTemporality_CumulativePreference()
+        {
+            CapturesAllMetricsWithCorrectTemporality(
+                "cumulative",
+                AggregationTemporality.Cumulative,
+                AggregationTemporality.Cumulative,
+                AggregationTemporality.Cumulative,
+                AggregationTemporality.Cumulative);
+        }
+
+        [Fact]
+        public void CapturesAllMetricsWithCorrectTemporality_LowMemoryPreference()
+        {
+            CapturesAllMetricsWithCorrectTemporality(
+                "lowmemory",
+                AggregationTemporality.Delta,
+                AggregationTemporality.Cumulative,
+                AggregationTemporality.Delta,
+                AggregationTemporality.Cumulative);
+        }
+
+        private void CapturesAllMetricsWithCorrectTemporality(
             string temporalityPreference,
             AggregationTemporality expectedCounterTemporality,
             AggregationTemporality expectedUpDownTemporality,
