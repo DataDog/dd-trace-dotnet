@@ -83,17 +83,45 @@ namespace Datadog.Trace.Tests
             var counterMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.counter").ToList();
             counterMetrics.Count.Should().Be(2, "Counter should have 2 separate metric points for different tag sets");
 
+            // Verify the actual tag values for counter metrics
+            var counterWithTestValue = counterMetrics.FirstOrDefault(m => m.Tags.ContainsKey("test_attr") && m.Tags["test_attr"]?.ToString() == "test_value");
+            var counterWithNonDefaultValue = counterMetrics.FirstOrDefault(m => m.Tags.ContainsKey("test_attr") && m.Tags["test_attr"]?.ToString() == "non_default_value");
+
+            counterWithTestValue.Should().NotBeNull("Counter should have a metric point with test_attr=test_value");
+            counterWithNonDefaultValue.Should().NotBeNull("Counter should have a metric point with test_attr=non_default_value");
+
             var histogramMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.histogram").ToList();
             histogramMetrics.Count.Should().Be(2, "Histogram should have 2 separate metric points for different tag sets");
+
+            // Verify the actual tag values for histogram metrics
+            var histogramWithTestValue = histogramMetrics.FirstOrDefault(m => m.Tags.ContainsKey("test_attr") && m.Tags["test_attr"]?.ToString() == "test_value");
+            var histogramWithNonDefaultValue = histogramMetrics.FirstOrDefault(m => m.Tags.ContainsKey("test_attr") && m.Tags["test_attr"]?.ToString() == "non_default_value");
+
+            histogramWithTestValue.Should().NotBeNull("Histogram should have a metric point with test_attr=test_value");
+            histogramWithNonDefaultValue.Should().NotBeNull("Histogram should have a metric point with test_attr=non_default_value");
 
 #if NET7_0_OR_GREATER
             var upDownMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.upDownCounter").ToList();
             upDownMetrics.Count.Should().Be(2, "UpDownCounter should have 2 separate metric points for different tag sets");
+
+            // Verify the actual tag values for upDownCounter metrics
+            var upDownWithTestValue = upDownMetrics.FirstOrDefault(m => m.Tags.ContainsKey("test_attr") && m.Tags["test_attr"]?.ToString() == "test_value");
+            var upDownWithNonDefaultValue = upDownMetrics.FirstOrDefault(m => m.Tags.ContainsKey("test_attr") && m.Tags["test_attr"]?.ToString() == "non_default_value");
+
+            upDownWithTestValue.Should().NotBeNull("UpDownCounter should have a metric point with test_attr=test_value");
+            upDownWithNonDefaultValue.Should().NotBeNull("UpDownCounter should have a metric point with test_attr=non_default_value");
 #endif
 
 #if NET9_0_OR_GREATER
             var gaugeMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.gauge").ToList();
             gaugeMetrics.Count.Should().Be(2, "Gauge should have 2 separate metric points for different tag sets");
+
+            // Verify the actual tag values for gauge metrics
+            var gaugeWithTestValue = gaugeMetrics.FirstOrDefault(m => m.Tags.ContainsKey("test_attr") && m.Tags["test_attr"]?.ToString() == "test_value");
+            var gaugeWithNonDefaultValue = gaugeMetrics.FirstOrDefault(m => m.Tags.ContainsKey("test_attr") && m.Tags["test_attr"]?.ToString() == "non_default_value");
+
+            gaugeWithTestValue.Should().NotBeNull("Gauge should have a metric point with test_attr=test_value");
+            gaugeWithNonDefaultValue.Should().NotBeNull("Gauge should have a metric point with test_attr=non_default_value");
 #endif
         }
 
