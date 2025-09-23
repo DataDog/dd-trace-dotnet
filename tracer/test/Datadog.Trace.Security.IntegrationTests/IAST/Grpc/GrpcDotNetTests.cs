@@ -25,7 +25,7 @@ public class GrpcDotNetTests : TestHelper
         : base("GrpcDotNet", output)
     {
         SetServiceVersion("1.0.0");
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Iast.TelemetryVerbosity, "Off");
@@ -54,7 +54,7 @@ public class GrpcDotNetTests : TestHelper
         agent.Configuration.SpanMetaStructs = false;
         using var process = await RunSampleAndWaitForExit(agent);
 
-        var spans = agent.WaitForSpans(expectedSpanCount);
+        var spans = await agent.WaitForSpansAsync(expectedSpanCount);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();

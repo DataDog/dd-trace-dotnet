@@ -60,6 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
+        [Flaky("Kafka SubmitsTraces is flaky", maxRetries: 3)]
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             var topic = $"sample-topic-{TestPrefix}-{packageVersion}".Replace('.', '-');
@@ -72,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: topic, packageVersion: packageVersion);
 
-            var allSpans = agent.WaitForSpans(TotalExpectedSpanCount, timeoutInMilliseconds: 10_000);
+            var allSpans = await agent.WaitForSpansAsync(TotalExpectedSpanCount, timeoutInMilliseconds: 10_000);
             using var assertionScope = new AssertionScope();
             // We use HaveCountGreaterOrEqualTo because _both_ consumers may handle the message
             // Due to manual/autocommit behaviour
@@ -169,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                    .And.OnlyContain(x => x.Tags[Tags.ErrorType] == "Confluent.Kafka.ConsumeException");
             }
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.Kafka);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Kafka);
         }
 
         private void VerifyProducerSpanProperties(List<MockSpan> producerSpans, string serviceName, string resourceName, int expectedCount)

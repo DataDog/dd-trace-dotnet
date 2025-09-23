@@ -8,10 +8,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Amazon.SimpleNotificationService.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -72,7 +74,7 @@ public class SnsContextPropagationTests
     }
 
     [Fact]
-    public void InjectHeadersIntoMessage_FullMessageAttributes_DoesntAddTraceContext()
+    public async Task InjectHeadersIntoMessage_FullMessageAttributes_DoesntAddTraceContext()
     {
         var request = new PublishRequest()
         {
@@ -82,7 +84,8 @@ public class SnsContextPropagationTests
         };
         var proxy = request.DuckCast<IContainsMessageAttributes>();
 
-        ContextPropagation.InjectHeadersIntoMessage(proxy, _spanContext, dataStreamsManager: null, CachedMessageHeadersHelper<PublishRequest>.Instance);
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectHeadersIntoMessage(tracer, proxy, _spanContext, dataStreamsManager: null, CachedMessageHeadersHelper<PublishRequest>.Instance);
 
         proxy.MessageAttributes.Count.Should().Be(10);
         proxy.MessageAttributes.Contains(DatadogKey).Should().BeFalse();
@@ -90,9 +93,10 @@ public class SnsContextPropagationTests
 
     [Theory]
     [MemberData(nameof(GetInjectableRequests))]
-    internal void AddsTraceContext(IContainsMessageAttributes requestProxy)
+    internal async Task AddsTraceContext(IContainsMessageAttributes requestProxy)
     {
-        ContextPropagation.InjectHeadersIntoMessage(requestProxy, _spanContext, dataStreamsManager: null, CachedMessageHeadersHelper<PublishRequest>.Instance);
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectHeadersIntoMessage(tracer, requestProxy, _spanContext, dataStreamsManager: null, CachedMessageHeadersHelper<PublishRequest>.Instance);
 
         var messageAttributes = (Dictionary<string, MessageAttributeValue>)requestProxy.MessageAttributes;
         messageAttributes.Count.Should().BeLessOrEqualTo(10);

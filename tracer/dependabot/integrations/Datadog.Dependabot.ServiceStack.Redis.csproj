@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: ServiceStack.Redis -->
+    <!--    Assembly: ServiceStack.Redis -->
+    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/8.8.0 -->
+    <PackageReference Include="ServiceStack.Redis" Version="8.8.0" />
+  </ItemGroup>
+
+</Project>

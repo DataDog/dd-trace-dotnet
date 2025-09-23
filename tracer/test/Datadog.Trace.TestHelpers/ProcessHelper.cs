@@ -6,7 +6,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +13,7 @@ using System.Threading.Tasks;
 namespace Datadog.Trace.TestHelpers
 {
     /// <summary>
-    /// Drains the standard and error output of a process
+    /// Drains the standard and error output of a process in a deadlock-free way.
     /// </summary>
     public partial class ProcessHelper : IDisposable
     {
@@ -45,8 +44,46 @@ namespace Datadog.Trace.TestHelpers
                     _processExit.TrySetResult(true);
                 },
                 TaskCreationOptions.LongRunning);
-            Task.Factory.StartNew(() => DrainOutput(process.StandardOutput, _outputBuffer, _outputTask, onDataReceived), TaskCreationOptions.LongRunning);
-            Task.Factory.StartNew(() => DrainOutput(process.StandardError, _errorBuffer, _errorTask, onErrorReceived ?? onDataReceived), TaskCreationOptions.LongRunning);
+
+            process.OutputDataReceived += (sender, args) =>
+            {
+                if (args.Data == null)
+                {
+                    _outputTask.TrySetResult(true);
+                }
+                else
+                {
+                    _outputBuffer.AppendLine(args.Data);
+                    try
+                    {
+                        onDataReceived?.Invoke(args.Data);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            };
+            process.ErrorDataReceived += (sender, args) =>
+            {
+                if (args.Data == null)
+                {
+                    _errorTask.TrySetResult(true);
+                }
+                else
+                {
+                    _errorBuffer.AppendLine(args.Data);
+                    try
+                    {
+                        (onErrorReceived ?? onDataReceived)?.Invoke(args.Data);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            };
+
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
 
             Process = process;
         }
@@ -63,38 +100,36 @@ namespace Datadog.Trace.TestHelpers
 
         public bool Drain(int timeout = Timeout.Infinite)
         {
+            // Wait for all output and error to be drained
             if (timeout != Timeout.Infinite)
             {
+                // Split timeout between output, error, and process exit
                 timeout /= 2;
             }
 
-            return _outputTask.Task.Wait(timeout) && _errorTask.Task.Wait(timeout);
+            return _outputTask.Task.Wait(timeout)
+                && _errorTask.Task.Wait(timeout);
         }
 
-        public virtual void Dispose()
+        public virtual void Dispose() => Dispose(0);
+
+        public virtual void Dispose(int waitForExitTimeout)
         {
             if (!Process.HasExited)
             {
-                Process.Kill();
-            }
-        }
-
-        private void DrainOutput(StreamReader stream, StringBuilder buffer, TaskCompletionSource<bool> tcs, Action<string> onDataReceived)
-        {
-            while (stream.ReadLine() is { } line)
-            {
-                buffer.AppendLine(line);
-
                 try
                 {
-                    onDataReceived?.Invoke(line);
+                    Process.Kill();
+                    if (waitForExitTimeout > 0)
+                    {
+                        Process.WaitForExit(waitForExitTimeout);
+                    }
                 }
-                catch (Exception)
+                catch
                 {
+                    // Ignore exceptions when killing the process, as it may have already exited
                 }
             }
-
-            tcs.TrySetResult(true);
         }
     }
 }

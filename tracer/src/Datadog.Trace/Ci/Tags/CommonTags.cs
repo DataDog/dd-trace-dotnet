@@ -107,6 +107,11 @@ internal static class CommonTags
     public const string CIJobName = "ci.job.name";
 
     /// <summary>
+    /// CI Job id
+    /// </summary>
+    public const string CIJobId = "ci.job.id";
+
+    /// <summary>
     /// CI Node Name
     /// </summary>
     public const string CINodeName = "ci.node.name";
@@ -197,14 +202,14 @@ internal static class CommonTags
     public const string LogicalCpuCount = "_dd.host.vcpu_count";
 
     /// <summary>
-    /// GIT Head commit hash
-    /// </summary>
-    public const string GitHeadCommit = "git.commit.head_sha";
-
-    /// <summary>
     /// GIT PR Base commit hash
     /// </summary>
     public const string GitPrBaseCommit = "git.pull_request.base_branch_sha";
+
+    /// <summary>
+    /// GIT PR Base head commit hash
+    /// </summary>
+    public const string GitPrBaseHeadCommit = "git.pull_request.base_branch_head_sha";
 
     /// <summary>
     /// GIT PR Base branch name
@@ -212,7 +217,52 @@ internal static class CommonTags
     public const string GitPrBaseBranch = "git.pull_request.base_branch";
 
     /// <summary>
+    /// PR Number
+    /// </summary>
+    public const string PrNumber = "pr.number";
+
+    /// <summary>
     /// Defines if the service is a user provided test service
     /// </summary>
     public const string UserProvidedTestServiceTag = "_dd.test.is_user_provided_service";
+
+    /// <summary>
+    /// GIT Head commit hash
+    /// </summary>
+    public const string GitHeadCommit = "git.commit.head.sha";
+
+    /// <summary>
+    /// GIT Head Commit Author name
+    /// </summary>
+    public const string GitHeadCommitAuthorName = "git.commit.head.author.name";
+
+    /// <summary>
+    /// GIT Head Commit Author email
+    /// </summary>
+    public const string GitHeadCommitAuthorEmail = "git.commit.head.author.email";
+
+    /// <summary>
+    /// GIT Head Commit Author date
+    /// </summary>
+    public const string GitHeadCommitAuthorDate = "git.commit.head.author.date";
+
+    /// <summary>
+    /// GIT Head Commit Committer name
+    /// </summary>
+    public const string GitHeadCommitCommitterName = "git.commit.head.committer.name";
+
+    /// <summary>
+    /// GIT Head Commit Committer email
+    /// </summary>
+    public const string GitHeadCommitCommitterEmail = "git.commit.head.committer.email";
+
+    /// <summary>
+    /// GIT Head Commit Committer date
+    /// </summary>
+    public const string GitHeadCommitCommitterDate = "git.commit.head.committer.date";
+
+    /// <summary>
+    /// GIT Head Commit message
+    /// </summary>
+    public const string GitHeadCommitMessage = "git.commit.head.message";
 }

@@ -24,7 +24,9 @@
 
 using namespace datadog::shared::nativeloader;
 
-IDynamicDispatcher* dispatcher;
+// Keep track of all dispatchers to broadcast DllCanUnloadNow
+// Note: we don't actually do anything meaningful in DllCanUnloadNow so maybe we could remove it
+std::vector<IDynamicDispatcher*> dispatchers;
 
 #if CRASHTRACKING
 std::unique_ptr<CrashHandler> crashHandler;
@@ -43,12 +45,12 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
         constexpr const bool IsLogDebugEnabledDefault = false;
         bool isLogDebugEnabled;
 
-        shared::WSTRING isLogDebugEnabledStr = shared::GetEnvironmentValue(EnvironmentVariables::DebugLogEnabled);
+        shared::WSTRING isLogDebugEnabledStr = shared::GetEnvironmentValue(environment::debug_log_enabled);
 
         // no environment variable set
         if (isLogDebugEnabledStr.empty())
         {
-            Log::Info("No \"", EnvironmentVariables::DebugLogEnabled, "\" environment variable has been found.",
+            Log::Info("No \"", environment::debug_log_enabled, "\" environment variable has been found.",
                 " Enable debug log = ", IsLogDebugEnabledDefault, " (default).");
 
             isLogDebugEnabled = IsLogDebugEnabledDefault;
@@ -59,7 +61,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
             {
                 // invalid value for environment variable
                 Log::Info("Non boolean value \"", isLogDebugEnabledStr, "\" for \"",
-                    EnvironmentVariables::DebugLogEnabled, "\" environment variable.",
+                    environment::debug_log_enabled, "\" environment variable.",
                     " Enable debug log = ", IsLogDebugEnabledDefault, " (default).");
 
                 isLogDebugEnabled = IsLogDebugEnabledDefault;
@@ -67,7 +69,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
             else
             {
                 // take environment variable into account
-                Log::Info("Enable debug log = ", isLogDebugEnabled, " from (", EnvironmentVariables::DebugLogEnabled, " environment variable)");
+                Log::Info("Enable debug log = ", isLogDebugEnabled, " from (", environment::debug_log_enabled, " environment variable)");
             }
         }
 
@@ -93,9 +95,6 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
             Log::Info("Crashtracking - Disabled by configuration.");
         }
 #endif
-
-        dispatcher = new DynamicDispatcherImpl();
-        dispatcher->LoadConfiguration(GetConfigurationFilePath());
 
         // *****************************************************************************************************************
         break;
@@ -126,6 +125,8 @@ EXTERN_C HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID rii
         return E_FAIL;
     }
 
+    auto dispatcher = new DynamicDispatcherImpl();
+    dispatchers.push_back(dispatcher);
     auto factory = new CorProfilerClassFactory(dispatcher);
     if (factory == nullptr)
     {
@@ -139,5 +140,14 @@ EXTERN_C HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
 {
     Log::Debug("DllCanUnloadNow");
 
-    return dispatcher->DllCanUnloadNow();
+    for (auto dispatcher : dispatchers)
+    {
+        HRESULT hr = dispatcher->DllCanUnloadNow();
+        if (FAILED(hr))
+        {
+            return hr;
+        }
+    }
+
+    return S_OK;    
 }

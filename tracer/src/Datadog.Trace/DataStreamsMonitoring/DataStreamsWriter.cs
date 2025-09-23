@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.Logging;
@@ -22,39 +23,41 @@ internal class DataStreamsWriter : IDataStreamsWriter
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
+    private readonly object _initLock = new();
+    private readonly long _bucketDurationMs;
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
-    private readonly Task _processTask;
-    private readonly AsyncManualResetEvent _processingMutex = new(set: false);
-    private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
-    private readonly Timer _flushTimer;
+    private readonly bool _isInDefaultState;
+
+    private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
+    private Task? _processTask;
+    private Timer? _flushTimer;
+    private TaskCompletionSource<bool>? _currentFlushTcs;
+
     private int _isSupported = SupportState.Unknown;
+    private bool _isInitialized;
 
     public DataStreamsWriter(
+        TracerSettings settings,
         DataStreamsAggregator aggregator,
         IDataStreamsApi api,
         long bucketDurationMs,
         IDiscoveryService discoveryService)
     {
+        _isInDefaultState = settings.IsDataStreamsMonitoringInDefaultState;
         _aggregator = aggregator;
         _api = api;
         _discoveryService = discoveryService;
         _discoveryService.SubscribeToChanges(HandleConfigUpdate);
-
-        _processTask = Task.Run(ProcessQueueLoopAsync);
-        _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
-
-        _flushTimer = new Timer(
-            x => ((DataStreamsWriter)x!).RequestFlush(),
-            this,
-            dueTime: bucketDurationMs,
-            period: bucketDurationMs);
+        _bucketDurationMs = bucketDurationMs;
     }
 
     /// <summary>
@@ -70,63 +73,99 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public static DataStreamsWriter Create(
         TracerSettings settings,
+        ProfilerSettings profilerSettings,
         IDiscoveryService discoveryService,
         string defaultServiceName)
-        => new DataStreamsWriter(
+        => new(
+            settings,
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(settings, defaultServiceName),
+                new DataStreamsMessagePackFormatter(settings, profilerSettings, defaultServiceName),
                 bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
             new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter)),
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
             discoveryService);
 
+    private void Initialize()
+    {
+        lock (_initLock)
+        {
+            if (_processTask != null)
+            {
+                return;
+            }
+
+            _processTask = Task.Run(ProcessQueueLoopAsync);
+            _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
+            _flushTimer = new Timer(
+                x => ((DataStreamsWriter)x!).RequestFlush(),
+                this,
+                dueTime: _bucketDurationMs,
+                period: _bucketDurationMs);
+
+            Volatile.Write(ref _isInitialized, true);
+        }
+    }
+
     public void Add(in StatsPoint point)
     {
-        if ((Volatile.Read(ref _isSupported) != SupportState.Unsupported)
-         && _buffer.TryEnqueue(point))
+        if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
         {
-            if (!_processingMutex.IsSet)
+            if (!Volatile.Read(ref _isInitialized))
             {
-                _processingMutex.Set();
+                Initialize();
+            }
+
+            if (_buffer.TryEnqueue(point))
+            {
+                return;
             }
         }
-        else
-        {
-            // TODO: Monitor with telemetry
-            Interlocked.Increment(ref _pointsDropped);
-        }
+
+        Interlocked.Increment(ref _pointsDropped);
     }
 
     public void AddBacklog(in BacklogPoint point)
     {
-        if ((Volatile.Read(ref _isSupported) != SupportState.Unsupported)
-         && _backlogBuffer.TryEnqueue(point))
+        if (!Volatile.Read(ref _isInitialized))
         {
-            if (!_processingMutex.IsSet)
+            Initialize();
+        }
+
+        if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
+        {
+            if (_backlogBuffer.TryEnqueue(point))
             {
-                _processingMutex.Set();
+                return;
             }
         }
-        else
-        {
-            Interlocked.Increment(ref _pointsDropped);
-        }
+
+        Interlocked.Increment(ref _pointsDropped);
     }
 
     public async Task DisposeAsync()
     {
         _discoveryService.RemoveSubscription(HandleConfigUpdate);
 #if NETCOREAPP3_1_OR_GREATER
-        await _flushTimer.DisposeAsync().ConfigureAwait(false);
+        if (_flushTimer != null)
+        {
+            await _flushTimer.DisposeAsync().ConfigureAwait(false);
+        }
 #else
-        _flushTimer.Dispose();
+        _flushTimer?.Dispose();
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
+        _flushSemaphore.Dispose();
     }
 
     private async Task FlushAndCloseAsync()
     {
         if (!_processExit.TrySetResult(true))
+        {
+            return;
+        }
+
+        // nothing else to do, since the writer was not fully initialized
+        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
         {
             return;
         }
@@ -148,18 +187,53 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
+    public async Task FlushAsync()
+    {
+        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var timeout = TimeSpan.FromSeconds(5);
+
+            if (_processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
+            if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+            {
+                return;
+            }
+
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Interlocked.Exchange(ref _currentFlushTcs, tcs);
+
+            RequestFlush();
+
+            var completedTask = await Task.WhenAny(
+                tcs.Task,
+                _processExit.Task,
+                Task.Delay(timeout)).ConfigureAwait(false);
+
+            if (completedTask != tcs.Task)
+            {
+                Log.Error("Data streams flush timeout after {Timeout}ms", timeout.TotalMilliseconds);
+            }
+        }
+        finally
+        {
+            _currentFlushTcs = null;
+            _flushSemaphore.Release();
+        }
+    }
+
     private void RequestFlush()
     {
         Interlocked.Exchange(ref _flushRequested, 1);
-        if (!_processingMutex.IsSet)
-        {
-            _processingMutex.Set();
-        }
     }
 
     private async Task WriteToApiAsync()
     {
-        // This method blocks ingestion of new stats points into the aggregator
+        // This method blocks ingestion of new stats points into the aggregator,
         // but they will continue to be added to the queue, and will be processed later
         // Default buffer capacity matches Java implementation:
         // https://cs.github.com/DataDog/dd-trace-java/blob/3386bd137e58ed7450d1704e269d3567aeadf4c0/dd-trace-core/src/main/java/datadog/trace/core/datastreams/MsgPackDatastreamsPayloadWriter.java?q=MsgPackDatastreamsPayloadWriter#L28
@@ -216,6 +290,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 if (flushRequested == 1)
                 {
                     await WriteToApiAsync().ConfigureAwait(false);
+                    var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
+                    currentFlushTcs?.TrySetResult(true);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
             }
@@ -237,8 +313,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            await _processingMutex.WaitAsync().ConfigureAwait(false);
-            _processingMutex.Reset();
+            // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
+            // and modified to avoid dealing with exceptions
+            var tcs = new TaskCompletionSource<bool>();
+            using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
+            {
+                await Task.WhenAny(_processExit.Task, tcs.Task).ConfigureAwait(false);
+            }
         }
     }
 
@@ -258,8 +339,16 @@ internal class DataStreamsWriter : IDataStreamsWriter
             }
             else
             {
-                Log.Warning("Data streams monitoring was enabled but is not supported by the Agent. Disabling Data streams. " +
-                            "Consider upgrading your Datadog Agent to at least version 7.34.0+");
+                const string msg = "Data streams monitoring was enabled but is not supported by the Agent. Disabling Data streams. " +
+                          "Consider upgrading your Datadog Agent to at least version 7.34.0+";
+                if (_isInDefaultState)
+                {
+                    Log.Information(msg);
+                }
+                else
+                {
+                    Log.Warning(msg);
+                }
             }
         }
     }

@@ -12,7 +12,7 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 3.20.0)
+project("Datadog.Tracer.Native" VERSION 3.28.0)
 
 # ******************************************************
 # Environment detection
@@ -136,6 +136,22 @@ elseif (ISARM)
     add_compile_options(-DARM)
 endif()
 
+if (ISLINUX)
+    # ------------------------------------------------------
+    # Hardening: make sure no target in this project ever
+    # requests an executable stack.  Without this, glibc ≥2.41
+    # (Debian 13 "trixie", Fedora 40, etc.) rejects the shared
+    # library with:
+    #   "cannot enable executable stack as shared object requires"
+    # ------------------------------------------------------
+    # 1. Tell the assembler to emit a .note.GNU-stack note that
+    #    marks the object as **non‑exec‑stack**.
+    add_compile_options("$<$<COMPILE_LANGUAGE:ASM>:-Wa,--noexecstack>")
+    # 2. Instruct the linker to *clear* any stray exec‑stack flag
+    #    that might still be present when it produces the final ELF.
+    add_link_options(-Wl,-z,noexecstack)
+endif()
+
 # ******************************************************
 # Suppress Warning on MacOS
 # ******************************************************
@@ -235,7 +251,7 @@ elseif(ISLINUX)
         ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++
-        -Wl,--build-id
+        -Wl,--build-id=sha1
     )
 endif()
 

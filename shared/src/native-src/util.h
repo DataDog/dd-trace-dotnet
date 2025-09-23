@@ -22,6 +22,9 @@
 #pragma comment(lib, "Rpcrt4.lib")
 #endif
 
+#include "dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
+
 namespace shared
 {
     template <typename In, typename Out>
@@ -105,12 +108,42 @@ namespace shared
 
     std::string GenerateRuntimeId();
 
+#if LINUX
+    /// \brief Checks if the current system has a buggy implementation of dlclose (glibc 2.34-2.36). Does not need
+    /// to be called on Alpine Linux, as it uses musl libc which is not affected by this bug.
+    /// \return A tuple with a boolean that is True if the system is affected by the buggy dlclose, false otherwise.
+    /// The string is the version of glibc found, if any
+    std::tuple<bool, WSTRING> HasBuggyDlclose();
+#endif
+
     bool WStringStartWithCaseInsensitive(const WSTRING& longer, const WSTRING& shorter);
 
     template <class Container>
     bool Contains(const Container& items, const typename Container::value_type& value)
     {
         return std::find(items.begin(), items.end(), value) != items.end();
+    }
+
+    template <typename T, size_t N>
+    void Insert(T (&arr)[N], size_t& count, size_t pos, const T& value)
+    {
+        if (count >= N)
+        {
+            throw std::out_of_range("Array is full, cannot insert.");
+        }
+        if (pos > count)
+        {
+            throw std::out_of_range("Insert position is out of range.");
+        }
+
+        // Shift elements to the right
+        for (size_t i = count; i > pos; --i)
+        {
+            arr[i] = arr[i - 1];
+        }
+
+        arr[pos] = value;
+        ++count;
     }
 
     // Singleton definition
@@ -278,6 +311,17 @@ namespace shared
             return *this;
         }
     };
+
+    inline bool IsRunningOnAlpine()
+    {
+#if LINUX
+        std::error_code ec; // fs::exists might throw if no error_code parameter is provided
+        return fs::exists("/etc/alpine-release", ec);
+#else
+        return false;
+#endif
+    }
+
 
 
 

@@ -39,6 +39,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference 
+      Condition="$([MSBuild]::VersionGreaterThanOrEquals($(ApiVersion), '2.9.0')) AND $([MSBuild]::VersionLessThan($(ApiVersion),  '3.0.0'))"
+      Include="Allure.Xunit"
+      Version="2.12.1" />
   </ItemGroup>
 
   <ItemGroup>

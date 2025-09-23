@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -174,6 +175,113 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
+    public abstract class AspNetMvc5TestsWithBaggage : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
+    {
+        private readonly IisFixture _iisFixture;
+        private readonly string _testName;
+        private readonly bool _classicMode;
+        private readonly bool _enableInferredProxySpans;
+
+        protected AspNetMvc5TestsWithBaggage(IisFixture iisFixture, ITestOutputHelper output)
+            : base("AspNetMvc5", @"test\test-applications\aspnet", output)
+        {
+            SetServiceVersion("1.0.0");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, true.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, false.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, false.ToString());
+
+            _classicMode = false;
+            _enableInferredProxySpans = false;
+            _iisFixture = iisFixture;
+            _iisFixture.ShutdownPath = "/home/shutdown";
+
+            _testName = nameof(AspNetMvc5Tests)
+                      + ".Integrated"  // _classicMode = false
+                      + ".WithFF"      // enableRouteTemplateResourceNames = true, enableRouteTemplateExpansion = false
+                      + ".WithBaggage";
+        }
+
+        public static TheoryData<string, int> Data => new()
+        {
+            { "/", 200 },
+            { "/Home/Index", 200 },
+            { "/badrequest", 500 },
+        };
+
+        protected virtual string ExpectedServiceName => "sample";
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Name switch
+            {
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion, excludeTags: new HashSet<string> { "baggage.user.id" }),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion, excludeTags: new HashSet<string> { "baggage.user.id" }),
+                _ => Result.DefaultSuccess,
+            };
+
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [MemberData(nameof(Data))]
+        public async Task BaggageInSpanTags(string path, int statusCode)
+        {
+            // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
+            var toLowerPath = path.ToLower();
+            if (_testName.Contains(".Classic") && toLowerPath.Contains("badrequest") && toLowerPath.Contains("transferrequest"))
+            {
+                statusCode = 500;
+            }
+
+            var expectedSpanCount = _enableInferredProxySpans ? 3 : 2;
+
+            var spans = await GetWebServerSpans(
+                path: _iisFixture.VirtualApplicationPath + path, // Append virtual directory to the actual request
+                agent: _iisFixture.Agent,
+                httpPort: _iisFixture.HttpPort,
+                expectedHttpStatusCode: (HttpStatusCode)statusCode,
+                expectedSpanCount: expectedSpanCount,
+                filterServerSpans: !_enableInferredProxySpans);
+
+            var serverSpans = spans.Where(s => s.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server);
+            ValidateIntegrationSpans(serverSpans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+
+            await Verifier.Verify(spans, settings)
+                          .UseMethodName("_withBaggage")
+                          .UseTypeName(_testName);
+        }
+
+        public async Task InitializeAsync()
+        {
+            await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
+
+        /// <summary>
+        /// Override <see cref="CreateHttpRequestMessage"/> to add baggage headers to the request.
+        /// </summary>
+        protected override HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string path, DateTimeOffset testStart)
+        {
+            var request = base.CreateHttpRequestMessage(method, path, testStart);
+            request.Headers.Add("baggage", "user.id=doggo");
+            return request;
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5TestsWithBaggageEnabled : AspNetMvc5TestsWithBaggage
+    {
+        public AspNetMvc5TestsWithBaggageEnabled(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output)
+        {
+        }
+    }
+
+    [UsesVerify]
     public abstract class AspNetMvc5Tests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
@@ -255,13 +363,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
+        public async Task SubmitsTraces(string path, int statusCode)
         {
             // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
             var toLowerPath = path.ToLower();
             if (_testName.Contains(".Classic") && toLowerPath.Contains("badrequest") && toLowerPath.Contains("transferrequest"))
             {
-                statusCode = (HttpStatusCode)500;
+                statusCode = 500;
             }
 
             var expectedSpanCount = _enableInferredProxySpans ? 3 : 2;
@@ -270,7 +378,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 path: _iisFixture.VirtualApplicationPath + path, // Append virtual directory to the actual request
                 agent: _iisFixture.Agent,
                 httpPort: _iisFixture.HttpPort,
-                expectedHttpStatusCode: statusCode,
+                expectedHttpStatusCode: (HttpStatusCode)statusCode,
                 expectedSpanCount: expectedSpanCount,
                 filterServerSpans: !_enableInferredProxySpans);
 
@@ -279,7 +387,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ValidateIntegrationSpans(serverSpans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
@@ -342,16 +450,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
+        public async Task SubmitsTraces(string path, int statusCode)
         {
             // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
             if (_testName.Contains(".Classic") && path.ToLowerInvariant().Contains("transferrequest"))
             {
-                statusCode = (HttpStatusCode)500;
+                statusCode = 500;
             }
 
             // Append virtual directory if there is one
-            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount: 1);
+            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, (HttpStatusCode)statusCode, expectedSpanCount: 1);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 

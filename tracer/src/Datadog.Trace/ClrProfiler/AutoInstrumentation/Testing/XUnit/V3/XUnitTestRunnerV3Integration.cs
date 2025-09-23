@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     ParameterTypeNames = ["_"],
     ReturnTypeName = "System.Threading.Tasks.ValueTask`1[System.TimeSpan]",
     MinimumVersion = "1.0.0",
-    MaximumVersion = "2.*.*",
+    MaximumVersion = "3.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

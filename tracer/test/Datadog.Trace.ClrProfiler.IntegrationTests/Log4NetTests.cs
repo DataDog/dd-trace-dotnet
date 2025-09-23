@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -74,7 +74,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping, bool enable128BitInjection)
         {
             SetInstrumentationVerification();
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping)
@@ -88,8 +87,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                IImmutableList<MockSpan> spans = null;
+                if (EnvironmentTools.IsWindows())
+                {
+                    spans = await agent.WaitForSpansAsync(1, 2500);
+                }
+                else if (!string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("3.1.0"))
+                {
+                    // if we are not on Windows and we are above 3.1.0, an additional span is made
+                    // from log4net to determine if we are on Android.
+                    // This is a Process span, we can ultimately just ignore it
+                    spans = await agent.WaitForSpansAsync(2, 2500);
+                }
+                else
+                {
+                    spans = await agent.WaitForSpansAsync(1, 2500);
+                }
+
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
+                // remove the Process span if it exists
+                spans = spans.Where(s => s.Name != "command_execution").ToImmutableList();
 
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
@@ -130,8 +147,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                IImmutableList<MockSpan> spans = null;
+                if (EnvironmentTools.IsWindows())
+                {
+                    spans = await agent.WaitForSpansAsync(1, 2500);
+                }
+                else if (!string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("3.1.0"))
+                {
+                    // if we are not on Windows and we are above 3.1.0, an additional span is made
+                    // from log4net to determine if we are on Android.
+                    // This is a Process span, we can ultimately just ignore it
+                    spans = await agent.WaitForSpansAsync(2, 2500);
+                }
+                else
+                {
+                    spans = await agent.WaitForSpansAsync(1, 2500);
+                }
+
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
+                // remove the Process span if it exists
+                spans = spans.Where(s => s.Name != "command_execution").ToImmutableList();
 
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
@@ -161,7 +196,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var logsIntake = new MockLogsIntake();
 
             SetInstrumentationVerification();
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL", "false");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Log4Net), hostName);
 
@@ -200,7 +234,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             VerifyInstrumentation(processResult.Process);
-            telemetry.AssertIntegrationEnabled(IntegrationId.Log4Net);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Log4Net);
         }
 
         private static bool PackageSupportsLogsInjection(string packageVersion)

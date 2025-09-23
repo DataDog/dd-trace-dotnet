@@ -12,24 +12,26 @@
       "meta": {
         "component": "aspnet_core",
         "span.kind": "server",
-        "http.useragent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.20348.2849",
+        "http.useragent": "FleetInstallerTester/1.0",
         "http.method": "GET",
         "http.request.headers.host": "localhost:5000",
         "http.url": "http://localhost:5000/",
         "http.status_code": "404",
         "network.client.ip": "::1",
         "http.client_ip": "::1",
-        "_dd.appsec.waf.version": "1.25.1",
         "_dd.p.dm": "-5",
         "_dd.p.tid": "67a4e73b00000000",
         "runtime-id": "05dff020-c9cc-4b50-9395-e1fe88603312",
         "language": "dotnet",
         "_dd.runtime_family": "dotnet",
-        "_dd.appsec.event_rules.version": "1.13.3"
+        "_dd.appsec.event_rules.version": "1.15.0",
+        "_dd.appsec.fp.http.endpoint": "http-get-7460da9d--",
+        "_dd.appsec.fp.http.header": "hdr-0000000000--3-98425651",
+        "_dd.appsec.fp.http.network": "net-0-0000000000"
       },
       "metrics": {
         "_dd.tracer_kr": 0.0,
-        "_dd.appsec.event_rules.loaded": 159.0,
+        "_dd.appsec.event_rules.loaded": 167.0,
         "_dd.appsec.event_rules.error_count": 0.0,
         "process_id": 8928.0,
         "_dd.appsec.enabled": 1.0,
@@ -113,6 +115,9 @@
         "http.status_code": "200",
         "network.client.ip": "::1",
         "http.client_ip": "::1",
+        "_dd.appsec.fp.http.endpoint": "http-get-7460da9d--",
+        "_dd.appsec.fp.http.header": "hdr-0100000000-3c930dcb-1-4740ae63",
+        "_dd.appsec.fp.http.network": "net-0-0000000000",
         "_dd.appsec.s.req.params": "H4sIAAAAAAAACouuVkpMLsnMz1OyiraI1VFKzs8rKcrPyUktAgvUxgIAtnr++SEAAAA=",
         "_dd.appsec.s.res.body": "H4sIAAAAAAAACou2iAUA8YntnQMAAAA=",
         "_dd.appsec.s.req.headers": "H4sIAAAAAAAACouuVqrQTUksSUzJT9ctSCxKzSvRzUxRsoq2iNVRysgvLoEyEYpKihKTUxFqEBLFibkFOZl56boFRZn5RZkllVAVYA0QozENS0wvRlZWXJJYkgoWqI0FAJFO9EWbAAAA",
@@ -120,7 +125,7 @@
         "runtime-id": "05dff020-c9cc-4b50-9395-e1fe88603312",
         "language": "dotnet",
         "_dd.runtime_family": "dotnet",
-        "_dd.appsec.event_rules.version": "1.13.3"
+        "_dd.appsec.event_rules.version": "1.15.0"
       },
       "metrics": {
         "_dd.tracer_kr": 0.0,

@@ -279,7 +279,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         using var logsIntake = new MockLogsIntakeForCiVisibility();
         EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
 
-        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: true);
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
         const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
@@ -346,6 +346,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         // Check Suite
         Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId || t.TestSuiteId == unskippableTestSuite.TestSuiteId));
         testSuite.TestModuleId.Should().Be(testModule.TestModuleId);
+        testSuite.Meta.Should().ContainKey(TestTags.SourceFile);
+        testSuite.Meta.Should().ContainKey(TestTags.CodeOwners);
         unskippableTestSuite.TestModuleId.Should().Be(testModule.TestModuleId);
 
         // ITR tags inside the test suite
@@ -554,7 +556,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorParameterizedTest"));
 
         // Smoke check telemetry
-        agent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+        await agent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
         var allData = agent.Telemetry.Cast<TelemetryData>().ToArray();
 
         // we will have multiple app closing events

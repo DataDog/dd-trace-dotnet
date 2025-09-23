@@ -26,7 +26,10 @@ internal class SchemaExtractor
 
     internal static void EnrichActiveSpanWith(MessageDescriptorProxy? descriptor, string operationName)
     {
-        if (descriptor == null || !Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.Protobuf))
+        var tracer = Tracer.Instance;
+
+        var settings = tracer.Settings;
+        if (descriptor == null || !settings.IsDataStreamsMonitoringEnabled || !settings.IsIntegrationEnabled(IntegrationId.Protobuf))
         {
             return;
         }

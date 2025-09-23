@@ -24,18 +24,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
         public static string? StreamNameFromARN(string? arn)
         {
-            if (string.IsNullOrEmpty(arn))
+            if (StringUtil.IsNullOrEmpty(arn))
             {
                 return null;
             }
 
-            var arnComponents = arn!.Split('/');
+            var arnComponents = arn.Split('/');
             if (arnComponents.Length != 2)
             {
                 return null;
             }
 
             return arnComponents[1];
+        }
+
+        public static string? GetStreamName(IAmazonKinesisRequestWithStreamNameAndStreamArn request)
+        {
+            string? arnStreamName = StreamNameFromARN(request.StreamARN);
+            return StringUtil.IsNullOrEmpty(arnStreamName) ? request.StreamName : arnStreamName;
         }
 
         public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, ISpanContext? parentContext, out AwsKinesisTags? tags)

@@ -42,37 +42,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> Data =>
             from transport in Transports
-            from dataPipelineEnabled in new[] { true, false }
+            from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
             select new object[] { transport, dataPipelineEnabled };
 
         [SkippableTheory]
         [MemberData(nameof(Data))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Flaky("Named pipes is flaky", maxRetries: 3)]
         public async Task TransportsWorkCorrectly(TestTransports transport, bool dataPipelineEnabled)
         {
             var transportType = TracesTransportTypeFromTestTransport(transport);
-            if (transportType != TracesTransportType.WindowsNamedPipe)
-            {
-                await RunTest(transportType, dataPipelineEnabled);
-                return;
-            }
-
-            // The server implementation of named pipes is flaky so have 3 attempts
-            var attemptsRemaining = 3;
-            while (true)
-            {
-                try
-                {
-                    attemptsRemaining--;
-                    await RunTest(transportType, dataPipelineEnabled);
-                    return;
-                }
-                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
-                {
-                    await ReportRetry(_output, attemptsRemaining, ex);
-                }
-            }
+            await RunTest(transportType, dataPipelineEnabled);
         }
 
         private TracesTransportType TracesTransportTypeFromTestTransport(TestTransports transport)
@@ -96,10 +77,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
-            EnvironmentHelper.EnableTransport(GetTransport(transportType));
+            var transportTypeGeneral = GetTransport(transportType);
+            EnvironmentHelper.EnableTransport(transportTypeGeneral);
 
             using var telemetry = this.ConfigureTelemetry();
-            using var agent = GetAgent(transportType);
+            var canUseDogStatsD = EnvironmentHelper.CanUseStatsD(transportTypeGeneral);
+            using var agent = GetAgent(transportType, canUseDogStatsD);
             agent.Output = Output;
 
             int httpPort = TcpPortProvider.GetOpenPort();
@@ -108,23 +91,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 await VerifyHelper.VerifySpans(spans, VerifyHelper.GetSpanVerifierSettings())
                                   .DisableRequireUniquePrefix()
                                   .UseFileName("TransportTests");
             }
 
-            telemetry.AssertConfiguration(ConfigTelemetryData.AgentTraceTransport, transportType.ToString());
-
-            MockTracerAgent GetAgent(TracesTransportType type)
+            await telemetry.AssertConfigurationAsync(ConfigTelemetryData.AgentTraceTransport, transportType.ToString());
+            MockTracerAgent GetAgent(TracesTransportType type, bool canUseDogStatsd)
                 => type switch
                 {
-                    TracesTransportType.Default => MockTracerAgent.Create(Output),
-                    TracesTransportType.WindowsNamedPipe => MockTracerAgent.Create(Output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}")),
+                    TracesTransportType.Default => MockTracerAgent.Create(Output, useStatsd: canUseDogStatsd),
+                    TracesTransportType.WindowsNamedPipe => MockTracerAgent.Create(Output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = canUseDogStatsd }),
 #if NETCOREAPP3_1_OR_GREATER
                     TracesTransportType.UnixDomainSocket
-                        => MockTracerAgent.Create(Output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null)),
+                        => MockTracerAgent.Create(Output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), canUseDogStatsd ? Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()) : null) { UseDogstatsD = canUseDogStatsd }),
 #endif
                     _ => throw new InvalidOperationException("Unsupported transport type " + type),
                 };

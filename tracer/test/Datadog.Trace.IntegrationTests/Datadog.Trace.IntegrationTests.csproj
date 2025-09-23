@@ -16,6 +16,11 @@
     <ProjectReference Include="..\..\src\Datadog.FleetInstaller\Datadog.FleetInstaller.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="xunit.runner.json" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Net.Http" />
   </ItemGroup>
@@ -59,5 +64,10 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net9')) ">
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net10')) ">
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0-preview.7.25380.108" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0-preview.7.25380.108" />
   </ItemGroup>
 </Project>

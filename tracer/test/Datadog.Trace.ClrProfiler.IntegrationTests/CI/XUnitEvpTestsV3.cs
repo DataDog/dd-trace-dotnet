@@ -24,7 +24,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
-#if NET6_0_OR_GREATER
+#if NET8_0_OR_GREATER
 [UsesVerify]
 public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 {
@@ -565,7 +565,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
         Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorParameterizedTest"));
 
         // Smoke check telemetry
-        agent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+        await agent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
         var allData = agent.Telemetry.Cast<TelemetryData>().ToArray();
 
         // we will have multiple app closing events

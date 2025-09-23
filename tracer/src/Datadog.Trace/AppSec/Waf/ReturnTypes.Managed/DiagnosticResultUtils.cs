@@ -17,7 +17,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 
 internal static class DiagnosticResultUtils
 {
-    internal static ReportedDiagnostics ExtractReportedDiagnostics(DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)
+    internal static ReportedDiagnostics ExtractReportedDiagnostics(in DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)
     {
         WafStats rules = new(); // Rules only stats
         var rulesetVersion = string.Empty;
@@ -125,6 +125,8 @@ internal struct ReportedDiagnostics
     {
         Rules.Errors = errors;
     }
+
+    public bool HasErrors => Rules.HasErrors || Rest.HasErrors;
 }
 
 internal struct WafStats
@@ -141,6 +143,8 @@ internal struct WafStats
     }
 
     public int Total => (Failed + Loaded + Skipped);
+
+    public bool HasErrors => Errors is { Count: > 0 } || Warnings is { Count: > 0 };
 }
 
 #pragma warning restore SA1402 // File may only contain a single type

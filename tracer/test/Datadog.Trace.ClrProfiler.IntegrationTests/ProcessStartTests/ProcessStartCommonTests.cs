@@ -41,8 +41,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var process = await RunSampleAndWaitForExit(agent);
             var spans = agent.Spans; // no spans expected
 
-            Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-            telemetry.AssertIntegrationDisabled(IntegrationId.Process);
+            spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
+            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Process);
         }
 
         protected async Task RunTest(string metadataSchemaVersion, string testName, int expectedSpanCount, bool collectCommands = false)
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
 
             using var process = await RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             VerifyInstrumentation(process.Process);
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.Process);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Process);
         }
     }
 }

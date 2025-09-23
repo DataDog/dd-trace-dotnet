@@ -108,6 +108,7 @@
    <assembly fullname="Microsoft.TestPlatform.CrossPlatEngine" />
    <assembly fullname="Microsoft.TestPlatform.PlatformAbstractions" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
+   <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
    <assembly fullname="Microsoft.VisualStudio.TraceDataCollector" />
    <assembly fullname="Microsoft.Win32.Primitives">
@@ -241,8 +242,6 @@
       <type fullname="System.Diagnostics.DistributedContextPropagator" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
-      <type fullname="System.Diagnostics.DataReceivedEventArgs" />
-      <type fullname="System.Diagnostics.DataReceivedEventHandler" />
       <type fullname="System.Diagnostics.Process" />
       <type fullname="System.Diagnostics.ProcessStartInfo" />
       <type fullname="System.Diagnostics.ProcessThreadCollection" />
@@ -681,6 +680,7 @@
       <type fullname="System.Predicate`1" />
       <type fullname="System.Random" />
       <type fullname="System.ReadOnlySpan`1" />
+      <type fullname="System.ReadOnlySpan`1/Enumerator" />
       <type fullname="System.Reflection.AmbiguousMatchException" />
       <type fullname="System.Reflection.Assembly" />
       <type fullname="System.Reflection.AssemblyCompanyAttribute" />
@@ -1031,10 +1031,12 @@
       <type fullname="System.Threading.EventWaitHandle" />
       <type fullname="System.Threading.Interlocked" />
       <type fullname="System.Threading.LazyInitializer" />
+      <type fullname="System.Threading.ManualResetEvent" />
       <type fullname="System.Threading.ManualResetEventSlim" />
       <type fullname="System.Threading.Monitor" />
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
+      <type fullname="System.Threading.SemaphoreFullException" />
       <type fullname="System.Threading.SemaphoreSlim" />
       <type fullname="System.Threading.SpinLock" />
       <type fullname="System.Threading.SpinWait" />
@@ -1057,6 +1059,7 @@
       <type fullname="System.Threading.ParameterizedThreadStart" />
       <type fullname="System.Threading.Thread" />
       <type fullname="System.Threading.ThreadAbortException" />
+      <type fullname="System.Threading.ThreadState" />
    </assembly>
    <assembly fullname="System.Threading.ThreadPool">
       <type fullname="System.Threading.ThreadPool" />

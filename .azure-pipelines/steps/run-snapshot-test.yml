@@ -1,4 +1,4 @@
-parameters:
+﻿parameters:
   - name: 'target'
     type: 'string'
 
@@ -20,6 +20,10 @@ parameters:
   - name: 'dockerComposePath'
     type: string
     default: 'docker-compose'
+  
+  - name: 'testAgentTarget'
+    type: string
+    default: ''
 
 steps:
 - template: ./clean-docker-containers.yml
@@ -42,9 +46,11 @@ steps:
 
 - ${{ if eq(parameters.isLinux, true) }}:
   - bash: |
+      testAgentTarget="${{ parameters.testAgentTarget }}"
+      testAgentTarget="${testAgentTarget:-test-agent}"
       echo "##vso[task.setvariable variable=CURL_COMMAND]/usr/bin/curl"
-      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]test-agent"
-      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-test-agent"
+      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]${testAgentTarget}"
+      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-${testAgentTarget}"
       echo "##vso[task.setvariable variable=COMPOSE_PATH]docker-compose.yml"
     displayName: Set env-specific variables
 
@@ -57,9 +63,11 @@ steps:
     displayName: create test data directories
 - ${{ else }}:
   - bash: |
+      testAgentTarget="${{ parameters.testAgentTarget }}"
+      testAgentTarget="${testAgentTarget:-test-agent.windows}"
       echo "##vso[task.setvariable variable=CURL_COMMAND]curl"
-      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]test-agent.windows"
-      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-test-agent.windows"
+      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]${testAgentTarget}"
+      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-${testAgentTarget}"
       echo "##vso[task.setvariable variable=COMPOSE_PATH]docker-compose.windows.yml"
     displayName: Set env-specific  variables
 
@@ -79,11 +87,15 @@ steps:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
 
 - bash: |
-    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e PROFILER_IS_NOT_REQUIRED=${{ parameters.isNoop }} ${{ parameters.target }}
+    # We explicitly set the DD_PROFILING_ENABLED=1 flag here, because we want to ensure that profiling is enabled for this
+    # test, but _not_ for the crash tracking test. For some scenarios (e.g. chiseled tests) we can't set env vars directly
+    # in the container, so we explicitly set this once here because it needs to change between the two tests.
+    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e DD_PROFILING_ENABLED=1 -e PROFILER_IS_NOT_REQUIRED=${{ parameters.isNoop }} ${{ parameters.target }}
   env:
     dockerTag: $(dockerTag)
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   displayName: ${{ parameters.dockerComposePath }} run ${{ parameters.target }}
+  timeoutInMinutes: 15
 
 - script: |
     echo "Dumping traces"
@@ -146,30 +158,54 @@ steps:
 # Run crash tests
 - ${{ if and(eq(parameters.isLinux, true), eq(parameters.isNoop, false)) }}:
   - bash: |
-      LOGS=""
-      while IFS= read -r line
-      do
-        echo "$line"  # Output the log line to stdout in real-time
-        LOGS+="$line"$'\n'  # Capture each line into LOGS variable
-        # Profiling is disabled using DD_PROFILING_ENABLED=0 because there is a flaky freeze we are working around
-        # Once we figure out the freeze, we can re-enable
-      done < <(${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run --rm -e dockerTag=$(dockerTag) -e DD_PROFILING_ENABLED=0 -e CRASH_APP_ON_STARTUP=1 -e DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }} 2>&1)
+      set -u -o pipefail
 
-      # check logs for evidence of crash detection in the output
-      expected="The crash may have been caused by automatic instrumentation"
-      if [[ $LOGS == *"$expected"* ]]; then
-        echo "Correctly found evidence of crash detection"
-      else
-        echo "Did not find required evidence of crash detection running"
-        exit 1;
+      TMPLOG="$(mktemp)"
+      COMPOSE="${{ parameters.dockerComposePath }}"
+      PROJ="ddtrace_$(Build.BuildNumber)"
+
+      # Build the compose run command; -T disables TTY (prevents buffering/hangs)
+      CMD=( "$COMPOSE" -f "$(COMPOSE_PATH)" -p "$PROJ" run --rm -T \
+            -e dockerTag="$(dockerTag)" \
+            -e DD_PROFILING_ENABLED=0 \
+            -e CRASH_APP_ON_STARTUP=1 \
+            -e DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE=1 \
+            -e COMPlus_DbgEnableMiniDump=0 \
+            ${{ parameters.target }} )
+
+      echo "Running: ${CMD[*]}"
+
+      # Bound execution to avoid indefinite hangs; force line-buffered stdout/stderr
+      # (stdbuf is available on Alpine-based agents; if not, remove it)
+      if ! timeout 240s stdbuf -oL -eL "${CMD[@]}" 2>&1 | tee "$TMPLOG" ; then
+        # Don't fail the step yet—crash is expected; just record exit code.
+        rc=${PIPESTATUS[0]}
+        echo "compose run exited with code $rc (non-zero is expected in a crash test)."
       fi
 
+      expected="The crash may have been caused by automatic instrumentation"
+      if grep -Fq "$expected" "$TMPLOG"; then
+        echo "✅ Correctly found evidence of crash detection"
+      else
+        echo "❌ Did not find required evidence of crash detection"
+        # Helpful diagnostics before failing
+        "$COMPOSE" -f "$(COMPOSE_PATH)" -p "$PROJ" ps || true
+        "$COMPOSE" -f "$(COMPOSE_PATH)" -p "$PROJ" logs --no-color || true
+        # Fail the task
+        exit 1
+      fi
+
+      # Always cleanup to avoid orphans impacting subsequent runs
+      "$COMPOSE" -f "$(COMPOSE_PATH)" -p "$PROJ" down -v --remove-orphans || true
     env:
       dockerTag: $(dockerTag)
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
     displayName: Check logs for evidence of crash output
     # This job sometimes hangs, and when it does, we lose all the logs, so explicitly end it early instead
-    timeoutInMinutes: 15
+    # and retry instead. It should be very unlikely to hang on both trys, and if it does, we should probably
+    # investigate the cause of the hang further.
+    timeoutInMinutes: 5
+    retryCountOnTaskFailure: 2
     condition: and(succeeded(), eq(variables['runCrashTest'], 'true'))
 
 - ${{ if eq(parameters.isLinux, true) }}:

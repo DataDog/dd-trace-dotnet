@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.AppSec;
@@ -19,6 +20,7 @@ public static class EventTrackingSdk
     /// </summary>
     /// <param name="userId">The userId associated with the login success</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void TrackUserLoginSuccessEvent(string userId)
     {
     }
@@ -29,6 +31,7 @@ public static class EventTrackingSdk
     /// <param name="userId">The userId associated with the login success</param>
     /// <param name="metadata">Metadata associated with the login success</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata)
     {
     }
@@ -39,6 +42,7 @@ public static class EventTrackingSdk
     /// <param name="userId">The userId associated with the login failure</param>
     /// <param name="exists">If the userId associated with the login failure exists</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void TrackUserLoginFailureEvent(string userId, bool exists)
     {
     }
@@ -50,6 +54,7 @@ public static class EventTrackingSdk
     /// <param name="exists">If the userId associated with the login failure exists</param>
     /// <param name="metadata">Metadata associated with the login failure</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
     {
     }
@@ -59,6 +64,7 @@ public static class EventTrackingSdk
     /// </summary>
     /// <param name="eventName">the name of the event to be tracked</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void TrackCustomEvent(string eventName)
     {
     }
@@ -69,6 +75,7 @@ public static class EventTrackingSdk
     /// <param name="eventName">the name of the event to be tracked</param>
     /// <param name="metadata">Metadata associated with the custom event</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata)
     {
     }

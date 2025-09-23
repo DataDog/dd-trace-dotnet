@@ -36,7 +36,7 @@
     <ClInclude Include="dynamic_instance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EnvironmentVariables.h">
+    <ClInclude Include="environment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_consts.h">

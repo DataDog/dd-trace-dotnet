@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using FluentAssertions;
@@ -59,36 +60,6 @@ namespace Datadog.Trace.Tests.Configuration
             settingsFromSource.DogStatsdPort.Should().Be(param);
 
             CheckDefaultValues(settingsFromSource, "DogStatsdPort");
-        }
-
-        [Fact]
-        public void PartialFlushEnabled()
-        {
-            var param = true;
-            var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_ENABLED", param.ToString());
-
-            settingsFromSource.PartialFlushEnabled.Should().Be(param);
-
-            CheckDefaultValues(settingsFromSource, "PartialFlushEnabled");
-        }
-
-        [Fact]
-        public void PartialFlushMinSpans()
-        {
-            var param = 200;
-            var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", param.ToString());
-
-            settingsFromSource.PartialFlushMinSpans.Should().Be(param);
-
-            CheckDefaultValues(settingsFromSource, "PartialFlushMinSpans");
-        }
-
-        [Fact]
-        public void InvalidPartialFlushMinSpans()
-        {
-            var param = -200;
-            var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", param.ToString());
-            settingsFromSource.PartialFlushMinSpans.Should().Be(500);
         }
 
         [Theory]
@@ -286,6 +257,54 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdpIsConfigured(settingsFromSource, hostname: "someotherhost");
         }
 
+        [Theory]
+        [InlineData(null, null, null)]
+        [InlineData("http://someUrl", null, null)]
+        [InlineData("http://someUrl:1234", null, null)]
+        [InlineData(null, "somehost", null)]
+        [InlineData(null, "somehost", "1234")]
+        [InlineData(null, null, "1234")]
+        public void TraceAgentUriBase_WhenTcp_MatchesAgentUri(string agentUrl, string host, string port)
+        {
+            var settings = Setup(
+                BuildSource(
+                    $"DD_TRACE_AGENT_URL:{agentUrl}",
+                    $"DD_AGENT_HOST:{host}",
+                    $"DD_TRACE_AGENT_PORT:{port}"),
+                NoFile());
+
+            settings.TracesTransport.Should().Be(TracesTransportType.Default);
+            settings.TraceAgentUriBase.Should().Be(settings.AgentUri.ToString());
+        }
+
+#if NETCOREAPP3_1_OR_GREATER
+        [Theory]
+        [InlineData("unix://some/socket.soc", null)]
+        [InlineData(null, "some/socket.soc")]
+        [InlineData(null, "./socket.soc")]
+        public void TraceAgentUriBase_WhenUnix_MatchesAgentUri(string agentUrl, string apmReceiverSocket)
+        {
+            var settings = Setup(
+                BuildSource(
+                    $"DD_TRACE_AGENT_URL:{agentUrl}",
+                    $"DD_APM_RECEIVER_SOCKET:{apmReceiverSocket}"),
+                NoFile());
+
+            settings.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
+            settings.TraceAgentUriBase.Should().Be(settings.AgentUri.ToString());
+        }
+#endif
+
+        [Fact]
+        public void TraceAgentUriBase_WhenNamedPipes_ShowsPipeName()
+        {
+            var pipeName = "something";
+            var settings = Setup("DD_TRACE_PIPE_NAME", pipeName);
+
+            settings.TracesTransport.Should().Be(TracesTransportType.WindowsNamedPipe);
+            settings.TraceAgentUriBase.Should().Be(@"\\.\pipe\" + pipeName);
+        }
+
         private static ExporterSettings Setup(IConfigurationSource source, Func<string, bool> fileExists)
         {
             return new ExporterSettings(source, fileExists, NullConfigurationTelemetry.Instance);
@@ -353,16 +372,6 @@ namespace Datadog.Trace.Tests.Configuration
             if (!paramToIgnore.Contains(nameof(settings.MetricsHostname)))
             {
                 settings.MetricsHostname.Should().Be(ExporterSettings.DefaultDogstatsdHostname);
-            }
-
-            if (!paramToIgnore.Contains("PartialFlushEnabled"))
-            {
-                settings.PartialFlushEnabled.Should().BeFalse();
-            }
-
-            if (!paramToIgnore.Contains("PartialFlushMinSpans"))
-            {
-                settings.PartialFlushMinSpans.Should().Be(500);
             }
         }
     }

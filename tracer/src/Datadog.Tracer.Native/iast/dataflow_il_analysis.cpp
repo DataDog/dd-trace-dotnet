@@ -718,7 +718,14 @@ namespace iast
             if (instruction->IsDirty())
             {
                 memberName = shared::ToString(GetMemberName(body, instruction->m_originalArg32));
-                argument = argument + " Original: [" + Hex(instruction->m_originalArg32) + "] " + memberName;
+                if (instruction->IsNew())
+                {
+                    argument = argument + " NEW ";
+                }
+                else
+                {
+                    argument = argument + " Original: [" + Hex(instruction->m_originalArg32) + "] " + memberName;
+                }
             }
             break;
         case 1 | OPCODEFLAGS_BranchTarget:
@@ -758,6 +765,11 @@ namespace iast
     {
         try
         {
+            if (debugLevel && !trace::Logger::IsDebugEnabled())
+            {
+                return;
+            }
+
             auto method = _body->GetMethodInfo();
             auto module = method->GetModuleInfo();
             Log(debugLevel, "Dumping IL ", extraMessage, " : ", method->GetFullName(), " ",

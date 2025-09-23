@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
@@ -62,6 +63,9 @@ partial class Build
     readonly Lazy<Tool> GacUtil;
     [LazyLocalExecutable(@"C:\Program Files\IIS Express\iisexpress.exe")]
     readonly Lazy<Tool> IisExpress;
+
+    [Parameter("The (overridden) API version to use when building sample projects (e.g. '4.7.1')")]
+    readonly string ApiVersion;
 
     AbsolutePath IisExpressApplicationConfig =>
         RootDirectory / ".vs" / Solution.Name / "config" / "applicationhost.config";
@@ -224,9 +228,10 @@ partial class Build
            }
 
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-           var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
+           var dependabotFolder = TracerDirectory / "dependabot" / "integrations";
            var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
-           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotProj);
+           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotFolder);
+           Logger.Information("Found {CurrentDependenciesCount} existing dependencies", currentDependencies.Count);
            var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
                                          {
                                              (_, { } exclude) => currentDependencies.Where(x => ExcludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
@@ -250,18 +255,12 @@ partial class Build
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
            var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations, testedVersions);
 
-           await DependabotFileManager.UpdateIntegrations(dependabotProj, distinctIntegrations);
+           await DependabotFileManager.UpdateIntegrations(dependabotFolder, distinctIntegrations);
 
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
-           
-           Logger.Information("Verifying that updated dependabot file is valid...");
-
-           var tempProjectFile = TempDirectory / "dependabot_test" / "Project.csproj";
-           CopyFile(dependabotProj, tempProjectFile, FileExistsPolicy.Overwrite);
-           DotNetRestore(x => x.SetProjectFile(tempProjectFile));
        });
-    
+
     Target GenerateSpanDocumentation => _ => _
         .Description("Regenerate documentation from our code models")
         .Executes(() =>
@@ -362,7 +361,7 @@ partial class Build
               var diff = dmp.diff_main(File.ReadAllText(source.ToString().Replace("received", "verified")), File.ReadAllText(source));
               dmp.diff_cleanupSemantic(diff);
 
-              PrintDiff(diff);
+              DiffHelper.PrintDiff(diff);
           }
       });
 
@@ -445,7 +444,7 @@ partial class Build
                             Logger.Information("Removing project '{Name}'", x.Name);
                             sln.RemoveProject(x);
                         });
-                    
+
                     sln.Save();
 
                     bool IsTestApplication(Project x)
@@ -494,6 +493,62 @@ partial class Build
                     }
                 });
 
+       Target DownloadBundleNugetFromBuild => _ => _
+        .Description("Downloads Datadog.Trace.Bundle package from Azure DevOps and extracts it to the local bundle home directory." +
+                     " Useful for building Datadog.Trace.Bundle or Datadog.AzureFunctions nupkg packages locally.")
+        .Requires(() => BuildId)
+        .Executes(async () =>
+        {
+            if (!int.TryParse(BuildId, out var buildNumber))
+            {
+                throw new InvalidParametersException("BuildId should be an int");
+            }
+
+            const string artifactName = "bundle-nuget-package";
+
+            var tempRoot = TemporaryDirectory / "bundle-nuget";
+            var downloadDirectory = tempRoot / "download";
+            var packageExtractionDirectory = tempRoot / "package";
+
+            EnsureCleanDirectory(tempRoot);
+            EnsureExistingDirectory(downloadDirectory);
+            EnsureExistingDirectory(packageExtractionDirectory);
+
+            using var connection = new VssConnection(
+                new Uri(AzureDevopsOrganisation),
+                new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+            using var client = connection.GetClient<BuildHttpClient>();
+
+            var artifact = await client.GetArtifactAsync(
+                project: AzureDevopsProjectId,
+                buildId: buildNumber,
+                artifactName: artifactName);
+
+            await DownloadAzureArtifact(downloadDirectory, artifact, AzureDevopsToken);
+
+            var artifactDirectory = downloadDirectory / artifact.Name;
+
+            var packageFile = artifactDirectory.GlobFiles("Datadog.Trace.Bundle.*.nupkg").FirstOrDefault();
+
+            if (packageFile is null)
+            {
+                throw new Exception($"Datadog.Trace.Bundle package was not found in artifact '{artifact.Name}'.");
+            }
+
+            EnsureCleanDirectory(packageExtractionDirectory);
+            UncompressZipQuiet(packageFile, packageExtractionDirectory);
+
+            var contentDirectory = packageExtractionDirectory / "contentFiles" / "any" / "any" / "datadog";
+
+            if (!contentDirectory.Exists())
+            {
+                throw new Exception($"Could not locate datadog content folder in extracted package at '{packageExtractionDirectory}'.");
+            }
+
+            EnsureCleanDirectory(BundleHomeDirectory);
+            CopyDirectoryRecursively(contentDirectory, BundleHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+        });
 
     private void ReplaceReceivedFilesInSnapshots()
     {
@@ -508,11 +563,6 @@ partial class Build
             {
                 Logger.Warning($"Skipping file '{source}' as filename did not end with 'received'");
                 continue;
-            }
-
-            if (fileName.Contains("VersionMismatchNewerNugetTests"))
-            {
-                Logger.Warning("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
             }
 
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
@@ -536,9 +586,9 @@ partial class Build
             // not in CI
             return false;
         }
-        
+
         return scheduleName == "Daily Debug Run";
-    } 
+    }
 
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()
     {
@@ -554,7 +604,7 @@ partial class Build
 
         return MSBuildTargetPlatform.x64;
     }
-    
+
     private static string GetDefaultRuntimeIdentifier(bool isAlpine)
     {
         // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
@@ -565,7 +615,7 @@ partial class Build
 
             (PlatformFamily.Linux, "x64") => isAlpine ? "linux-musl-x64" : "linux-x64",
             (PlatformFamily.Linux, "ARM64" or "ARM64EC") => isAlpine ? "linux-musl-arm64" : "linux-arm64",
-            
+
             (PlatformFamily.OSX, "ARM64" or "ARM64EC") => "osx-arm64",
             _ => null
         };
@@ -574,41 +624,74 @@ partial class Build
     private static MSBuildTargetPlatform ARM64TargetPlatform = (MSBuildTargetPlatform)"ARM64";
     private static MSBuildTargetPlatform ARM64ECTargetPlatform = (MSBuildTargetPlatform)"ARM64EC";
 
-    private static void PrintDiff(List<Diff> diff, bool printEqual = false)
+    /// <summary>
+    /// Tries to download a file from the provided url, with a retry, and saves it at a temp path
+    /// </summary>
+    /// <param name="url">The URL to download from</param>
+    /// <returns>The temporary path where the file has been saved</returns>
+    /// <exception cref="Exception"></exception>
+    private static async Task<string> DownloadFile(string url)
     {
-        foreach (var t in diff)
+        using var client = new HttpClient();
+        var attemptsRemaining = 3;
+        var defaultDelay = TimeSpan.FromSeconds(2);
+
+        while (attemptsRemaining > 0)
         {
-            if (printEqual || t.operation != Operation.EQUAL)
+            var retryDelay = defaultDelay;
+            try
             {
-                var str = DiffToString(t);
-                if (str.Contains(value: '\n'))
+                Logger.Information("Downloading from {Url}", url);
+                using var response = await client.GetAsync(url);
+                var outputPath = Path.GetTempFileName();
+
+                if (response.IsSuccessStatusCode)
                 {
-                    // if the diff is multiline, start with a newline so that all changes are aligned
-                    // otherwise it's easy to miss the first line of the diff
-                    str = "\n" + str;
+                    Logger.Information("Saving file to {Path}", outputPath);
+                    await using var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
+                    await response.Content.CopyToAsync(fs);
+                    return outputPath;
                 }
 
-                Logger.Information(str);
+                Logger.Warning("Failed to download file from {Url}, {StatusCode}: {Body}", url, response.StatusCode, await response.Content.ReadAsStringAsync());
+
+                if (response.StatusCode == HttpStatusCode.TooManyRequests
+                    && response.Headers.TryGetValues("Retry-After", out var values)
+                    && values.FirstOrDefault() is {} retryAfter)
+                    {
+                        if (int.TryParse(retryAfter, out var seconds))
+                        {
+                            retryDelay = TimeSpan.FromSeconds(seconds);
+                        }
+                        else if (DateTimeOffset.TryParse(retryAfter, out var retryDate))
+                        {
+                            var delta = retryDate - DateTimeOffset.UtcNow;
+                            retryDelay = delta > TimeSpan.Zero ? delta : retryDelay;
+                        }
+                    }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Error downloading file from {Url}", url);
+            }
+
+            attemptsRemaining--;
+            if (attemptsRemaining > 0)
+            {
+                Logger.Debug("Waiting {RetryDelayTotalSeconds} seconds before retry...", retryDelay.TotalSeconds);
+                await Task.Delay(retryDelay);
             }
         }
 
-        string DiffToString(Diff diff)
-        {
-            if (diff.operation == Operation.EQUAL)
-            {
-                return string.Empty;
-            }
+        throw new Exception("Failed to download telemetry forwarder");
+    }
 
-            var symbol = diff.operation switch
-            {
-                Operation.DELETE => '-',
-                Operation.INSERT => '+',
-                _ => throw new Exception("Unknown value of the Option enum.")
-            };
-            // put the symbol at the beginning of each line to make diff clearer when whole blocks of text are missing
-            var lines = diff.text.TrimEnd(trimChar: '\n').Split(Environment.NewLine);
-            return string.Join(Environment.NewLine, lines.Select(l => symbol + l));
-        }
+    static string GetSha512Hash(string filePath)
+    {
+        using var sha512 = SHA512.Create();
+        using var stream = File.OpenRead(filePath);
 
+        var hashBytes = sha512.ComputeHash(stream);
+        return Convert.ToHexString(hashBytes);
     }
 }

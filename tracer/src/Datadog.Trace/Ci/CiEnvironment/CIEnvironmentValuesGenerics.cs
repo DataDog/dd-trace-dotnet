@@ -97,6 +97,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
             return new AWSCodePipelineEnvironmentValues<TValueProvider>(valueProvider);
         }
 
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Drone)))
+        {
+            return new DroneEnvironmentValues<TValueProvider>(valueProvider);
+        }
+
         return new UnsupportedCIEnvironmentValues<TValueProvider>(valueProvider);
     }
 
@@ -155,6 +160,29 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         else
         {
             Log.Warning("Git commit in .git folder is different from the one in the environment variables. [{GitCommit} != {EnvVarCommit}]", gitInfo.Commit, Commit);
+        }
+
+        // **********
+        // Get all head commit information.
+        // **********
+        if (!StringUtil.IsNullOrEmpty(HeadCommit))
+        {
+            // fetching commit data from head commit
+            if (GitCommandHelper.FetchCommitData(WorkspacePath ?? Environment.CurrentDirectory, HeadCommit) is { } commitData &&
+                commitData.CommitSha == HeadCommit)
+            {
+                HeadAuthorDate = commitData.AuthorDate;
+                HeadAuthorEmail = commitData.AuthorEmail;
+                HeadAuthorName = commitData.AuthorName;
+                HeadCommitterDate = commitData.CommitterDate;
+                HeadCommitterEmail = commitData.CommitterEmail;
+                HeadCommitterName = commitData.CommitterName;
+                HeadMessage = commitData.CommitMessage;
+            }
+            else
+            {
+                Log.Warning("Error fetching data for git commit '{HeadCommit}'", HeadCommit);
+            }
         }
 
         // **********
@@ -225,7 +253,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 if (value is not null)
                 {
                     value = value.Trim();
-                    if (value.Length < 40 || !IsHex(value))
+                    if (value.Length != 40 || !IsHex(value))
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
@@ -258,6 +286,33 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         CommitterName = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterName, CommitterName);
         CommitterEmail = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterEmail, CommitterEmail);
         CommitterDate = GetDateTimeOffsetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterDate, CommitterDate);
+        PrBaseBranch = GetVariableIfIsNotEmpty(Constants.DDGitPullRequestBaseBranch, PrBaseBranch);
+        PrBaseCommit = GetVariableIfIsNotEmpty(Constants.DDGitPullRequestBaseBranchSha, PrBaseCommit, (value, defaultValue) =>
+        {
+            if (value is not null)
+            {
+                value = value.Trim();
+                if (value.Length != 40 || !IsHex(value))
+                {
+                    if (string.IsNullOrEmpty(defaultValue))
+                    {
+                        Log.Error("DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA must be a full-length git SHA, and the The Git commit sha couldn't be automatically extracted.");
+                    }
+                    else
+                    {
+                        Log.Error("DD_GIT_CODD_GIT_PULL_REQUEST_BASE_BRANCH_SHAMMIT_SHA must be a full-length git SHA, defaulting to '{Default}", defaultValue);
+                    }
+
+                    return false;
+                }
+
+                // All ok!
+                return true;
+            }
+
+            // If not set use the default value
+            return false;
+        });
 
         Message = Message?.Trim();
     }

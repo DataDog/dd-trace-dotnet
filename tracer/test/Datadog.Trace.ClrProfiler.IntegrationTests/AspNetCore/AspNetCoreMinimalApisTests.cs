@@ -6,6 +6,7 @@
 #if NET6_0_OR_GREATER
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -47,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(Data))]
-        public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
+        public async Task MeetsAllAspNetCoreMvcExpectations(string path, int statusCode)
         {
             SetInstrumentationVerification();
 
@@ -57,12 +58,44 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.AspNetCoreMinimalApis", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
             await Verifier.Verify(spans, settings)
                           .UseMethodName("_")
+                          .UseTypeName(_testName);
+
+            VerifyInstrumentation(Fixture.Process);
+        }
+
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [InlineData("/", 200)]
+        [InlineData("/not-found", 404)]
+        [InlineData("/bad-request", 500)]
+        public async Task BaggageInSpanTags(string path, int statusCode)
+        {
+            SetInstrumentationVerification();
+
+            await Fixture.TryStartApp(this);
+            var headers = new Dictionary<string, string>
+            {
+                { "baggage", "user.id=doggo" },
+            };
+
+            var spans = await Fixture.WaitForSpans(path, headers: headers);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.AspNetCoreMinimalApis", isExternalSpan: false);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            await Verifier.Verify(spans, settings)
+                          .UseMethodName("_withBaggage")
                           .UseTypeName(_testName);
 
             VerifyInstrumentation(Fixture.Process);

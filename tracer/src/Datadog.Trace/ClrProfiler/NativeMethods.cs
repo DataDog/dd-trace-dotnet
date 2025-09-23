@@ -3,18 +3,35 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Iast.Analyzers;
 
 // ReSharper disable MemberHidesStaticFromOuterClass
 namespace Datadog.Trace.ClrProfiler
 {
+    /// <remarks>
+    /// This class should not log or contain a logger field or call a type containing a logger. Logging here could be an issue as this is accessed before Configuration objects are built. Logging here could create a loop where Configuration building tests if profiler is attached to access libdatadog, the test wants to log, the Logger being created for the first time tried to access the Configuration object.
+    /// </remarks>
     internal static class NativeMethods
     {
-        private static readonly bool IsWindows = FrameworkDescription.Instance.IsWindows();
+        public static bool IsWindows
+        {
+            get
+            {
+#if NETFRAMEWORK
+                return true;
+#else
+                return System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#endif
+            }
+        }
 
+        /// <summary>
+        /// Gets a value indicating whether Datadog's instrumentation library (aka CLR profiler) is attached to the current process.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if the profiler is currently attached; <c>false</c> otherwise.
+        /// </value>
         public static bool IsProfilerAttached()
         {
             if (IsWindows)
@@ -226,6 +243,23 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static bool TryGetInodeForPath(string path, out long result)
+        {
+            if (IsWindows)
+            {
+                result = -1;
+                return false;
+            }
+
+            result = NonWindows.GetInodeForPath(path);
+            if (result < 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         // The DllImport methods are re-written by cor_profiler to have the correct vales
@@ -313,6 +347,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native", CharSet = CharSet.Unicode)]
             public static extern int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern long GetInodeForPath([MarshalAs(UnmanagedType.LPWStr)]string path);
         }
     }
 }

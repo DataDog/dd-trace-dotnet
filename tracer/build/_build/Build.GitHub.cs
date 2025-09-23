@@ -118,10 +118,8 @@ partial class Build
                 }
 
                 const string unlinkedLinesExplicitor = "[...]";
-                var crossVersionTestsNamePattern = new [] {"VersionMismatchNewerNugetTests"};
                 var diffCounts = new Dictionary<string, int>();
                 StringBuilder diffsInFile = new();
-                var considerUpdatingPublicFeed = false;
                 var lastLine = string.Empty;
                 foreach (var line in changes)
                 {
@@ -155,11 +153,6 @@ partial class Build
                         diffsInFile.AppendLine(unlinkedLinesExplicitor);
                         lastLine = string.Empty;
                     }
-
-                    if (!considerUpdatingPublicFeed && crossVersionTestsNamePattern.Any(p => line.Contains(p)))
-                    {
-                        considerUpdatingPublicFeed = true;
-                    }
                 }
 
                 RecordChange(diffsInFile, diffCounts);
@@ -168,11 +161,6 @@ partial class Build
                 markdown.AppendLine("## Snapshots difference summary").AppendLine();
                 markdown.AppendLine("The following differences have been observed in committed snapshots. It is meant to help the reviewer.");
                 markdown.AppendLine("The diff is simplistic, so please check some files anyway while we improve it.").AppendLine();
-
-                if (considerUpdatingPublicFeed)
-                {
-                    markdown.AppendLine("**Note** that this PR updates a version mismatch test. You may need to upgrade your code in the Azure public feed");
-                }
 
                 foreach (var diff in diffCounts)
                 {
@@ -219,7 +207,7 @@ partial class Build
 
             // Fixes an issue (ambiguous argument) when we do git diff in the Action.
             GitTasks.Git("fetch origin master:master", logOutput: false);
-            var changedFiles = GitTasks.Git("diff --name-only master").Select(f => f.Text);
+            var changedFiles = GitTasks.Git("diff --name-only master").Select(f => f.Text).ToList();
             var config = GetLabellerConfiguration();
             Console.WriteLine($"Checking labels for PR {PullRequestNumber}");
 
@@ -242,7 +230,7 @@ partial class Build
 
             Console.WriteLine($"PR labels updated");
 
-            HashSet<String> ComputeLabels(LabbelerConfiguration config, string prTitle, IEnumerable<string> labels, IEnumerable<string> changedFiles)
+            static HashSet<string> ComputeLabels(LabbelerConfiguration config, string prTitle, IEnumerable<string> labels, ICollection<string> changedFiles)
             {
                 var updatedLabels = new HashSet<string>(labels);
 
@@ -257,7 +245,7 @@ partial class Build
                             if (regex.IsMatch(prTitle))
                             {
                                 Console.WriteLine("Yes it does. Adding label " + label.Name);
-                                updatedLabels.Add(label.Name);
+                                updatedLabels.AddRange(label.Name.Split(','));
                             }
                         }
                         else if (!string.IsNullOrEmpty(label.AllFilesIn))
@@ -267,7 +255,7 @@ partial class Build
                             if(!changedFiles.Any(x => !regex.IsMatch(x)))
                             {
                                 Console.WriteLine("Yes they do. Adding label " + label.Name);
-                                updatedLabels.Add(label.Name);
+                                updatedLabels.AddRange(label.Name.Split(','));
                             }
                         }
                     }
@@ -576,8 +564,8 @@ partial class Build
             const string profiler = "Continuous Profiler";
             const string debugger = "Debugger";
             const string serverless = "Serverless";
+            const string dsm = "Data Streams Monitoring";
 
-            var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
             var nextVersion = FullVersion;
 
             var client = GetGitHubClient();
@@ -664,9 +652,11 @@ partial class Build
                     { "area:tracer", tracer },
                     { "area:ci-visibility", ciVisibility },
                     { "area:asm", appSecMonitoring },
+                    { "asm-iast", appSecMonitoring },
                     { "area:profiler", profiler },
                     { "area:debugger", debugger },
-                    { "area:serverless", serverless }
+                    { "area:serverless", serverless },
+                    { "area:data-streams-monitoring", dsm },
                 };
 
                 var buildAndTestIssues = new []
@@ -999,32 +989,6 @@ partial class Build
 
                 var stages = string.Join(", ", ssiStatuses.Select(x => x.Key));
                 Logger.Information("All gitlab build stages ({Stages}) completed successfully", stages);
-                
-                // assert that the docker image for the commit is present
-                var image = $"ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:{CommitSha}";
-                VerifyDockerImageExists(image);
-                
-                if(new Version(Version).Major < 3)
-                {
-                    image = $"{image}-musl";
-                    VerifyDockerImageExists(image);
-                }
-
-                static void VerifyDockerImageExists(string image)
-                {
-                    try
-                    {
-                        Logger.Information("Checking for presence of SSI image '{Image}'", image);
-                        DockerTasks.DockerManifest(
-                            s => s.SetCommand($"inspect")
-                                .SetProcessArgumentConfigurator(c => c.Add(image)));
-                        Logger.Information("SSI image '{Image}' exists", image);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception($"Error verifying SSI artifacts: '{image}' could not be found. Ensure GitLab has successfully built and pushed the image", ex);
-                    }
-                }
             });
 
     async Task ReplaceCommentInPullRequest(int prNumber, string title, string markdown)
@@ -1218,7 +1182,7 @@ partial class Build
 
         Console.WriteLine($"{artifact.Name} downloaded. Extracting to {outputDirectory}...");
 
-        UncompressZip(zipPath, outputDirectory);
+        UncompressZipQuiet(zipPath, outputDirectory);
 
         Console.WriteLine($"Artifact download complete");
     }

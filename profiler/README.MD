@@ -29,6 +29,31 @@ You can develop the profiler on various environments.
     - .NET Framework 4.7 targeting pack
     - C++ for Linux Development
     - Windows 10 SDK (10.0.18362)
+    - vcpkg manager
+
+It is needed to setup vcpkg by following the first steps of [the documentation](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started-msbuild):
+
+1. Clone the vcpkg repository
+   ```cmd
+   git clone https://github.com/microsoft/vcpkg.git
+   ```
+
+2. Run the bootstrap script
+
+   Now that you have cloned the vcpkg repository, navigate to the vcpkg directory and execute the bootstrap script:
+
+   ```cmd
+   cd vcpkg; .\bootstrap-vcpkg.bat
+   ```
+
+
+3. Integrate with Visual Studio MSBuild
+
+   Run the following command:
+   ```cmd
+   .\vcpkg.exe integrate install
+   ```
+
 
 #### Building in Visual Studio
 

@@ -1,0 +1,88 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net461</TargetFrameworks>
+    <NoBuild>true</NoBuild>
+    <SourcePath Condition="$(SourcePath) == ''">$(MSBuildThisFileDirectory)../Datadog.Trace.Bundle/home</SourcePath>
+
+    <!-- nuget build properties -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+
+    <!-- nuget package metadata -->
+    <PackageId>Datadog.AzureFunctions</PackageId>
+    <Description>Datadog instrumentation library for Azure Functions</Description>
+    <Copyright>Copyright 2025 Datadog, Inc.</Copyright>
+    <PackageProjectUrl>https://docs.datadoghq.com/serverless/azure_functions/</PackageProjectUrl>
+    <PackageTags>$(PackageTags);serverless;azure;azurefunctions</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>See release notes at https://github.com/DataDog/dd-trace-dotnet/releases.</PackageReleaseNotes>
+
+    <!-- Intentionally not inheriting warnings from ../Directory.Build.props -->
+    <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5100 -->
+    <NoWarn>NU5100</NoWarn>
+
+    <!-- reenable warnings that are disabled in tracer/src/Directory.Build.props -->
+    <NugetAudit>true</NugetAudit>
+    <CheckEolTargetFramework>true</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
+
+    <!-- Use PrivateAssets="none" to stop excluding content files by default -->
+    <PackageReference Include="Datadog.Serverless.Compat" Version="1.1.0" PrivateAssets="none" />
+
+    <!-- managed assemblies -->
+    <None Include="$(SourcePath)/net6.0/Datadog.Trace.dll" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/net6.0/">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </None>
+    <None Include="$(SourcePath)/net461/Datadog.Trace.dll" Pack="true" Visible="false" PackagePath="contentFiles/any/net461/datadog/net461/">
+      <Link>home/net461/Datadog.Trace.dll</Link>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </None>
+
+    <!-- native libraries -->
+    <None Include="$(SourcePath)/win-x64/*" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/win-x64/;contentFiles/any/net461/datadog/win-x64/">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </None>
+    <None Include="$(SourcePath)/win-x86/*" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/win-x86/;contentFiles/any/net461/datadog/win-x86/">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </None>
+    <None Include="$(SourcePath)/linux-x64/*" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/linux-x64/">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </None>
+
+    <!-- extras -->
+    <None Include="README.md" Pack="true" Visible="true" PackagePath="/">
+      <PackageCopyToOutput>false</PackageCopyToOutput>
+    </None>
+
+    <None Include="Datadog.AzureFunctions.props" Pack="true" PackagePath="buildTransitive\Datadog.AzureFunctions.props" />
+    <None Include="Datadog.AzureFunctions.targets" Pack="true" PackagePath="buildTransitive\Datadog.AzureFunctions.targets" />
+
+    <!-- win-x64 and win-x86 exclusions -->
+    <None Remove="$(SourcePath)/win-*/Datadog.Profiler.Native.dll" />
+    <None Remove="$(SourcePath)/win-*/datadog_profiling_ffi.dll" />
+    <None Remove="$(SourcePath)/win-*/dd-dotnet.exe" />
+    <None Remove="$(SourcePath)/win-*/ddwaf.dll" />
+
+    <!-- linux-x64 exclusions -->
+    <None Remove="$(SourcePath)/linux-x64/Datadog.Linux.ApiWrapper.x64.so" />
+    <None Remove="$(SourcePath)/linux-x64/Datadog.Profiler.Native.so" />
+    <None Remove="$(SourcePath)/linux-x64/dd-dotnet" />
+    <None Remove="$(SourcePath)/linux-x64/libdatadog_profiling.so" />
+    <None Remove="$(SourcePath)/linux-x64/libddwaf.so" />
+
+    <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5127 -->
+    <None Include="_._" Pack="true" PackagePath="lib/net6.0/;lib/net461/" />
+
+    <!-- remove items inherited from ../Directory.Build.props and ../../../Directory.Build.props -->
+    <Compile Remove="$(MSBuildThisFileDirectory)../GlobalSuppressions.cs" />
+    <Compile Remove="$(MSBuildThisFileDirectory)../../GlobalSuppressions.cs" />
+    <ProjectReference Remove="$(MSBuildThisFileDirectory)../Datadog.Trace.Tools.Analyzers/Datadog.Trace.Tools.Analyzers.csproj" />
+    <PackageReference Remove="StyleCop.Analyzers" />
+    <AdditionalFiles Remove="$(MSBuildThisFileDirectory)../../stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+
+</Project>

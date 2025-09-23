@@ -4,13 +4,10 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.Ci.Net;
 
 namespace Datadog.Trace.Ci;
 
 internal interface ITestOptimizationImpactedTestsDetectionFeature : ITestOptimizationFeature
 {
-    TestOptimizationClient.ImpactedTestsDetectionResponse ImpactedTestsDetectionResponse { get; }
-
     ImpactedTestsModule ImpactedTestsAnalyzer { get; }
 }

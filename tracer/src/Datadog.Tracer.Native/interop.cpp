@@ -27,7 +27,7 @@ EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, i
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in GetAssemblyAndSymbolsBytes call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in GetAssemblyAndSymbolsBytes call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -38,7 +38,7 @@ EXTERN_C VOID STDAPICALLTYPE InitializeProfiler(WCHAR* id, trace::CallTargetDefi
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in InitializeProfiler call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in InitializeProfiler call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -49,7 +49,7 @@ EXTERN_C VOID STDAPICALLTYPE RemoveCallTargetDefinitions(WCHAR* id, trace::CallT
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in RemoveCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in RemoveCallTargetDefinitions call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -60,7 +60,7 @@ EXTERN_C VOID STDAPICALLTYPE EnableByRefInstrumentation()
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in EnableByRefInstrumentation call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in EnableByRefInstrumentation call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -71,7 +71,7 @@ EXTERN_C VOID STDAPICALLTYPE EnableCallTargetStateByRef()
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in EnableCallTargetStateByRef call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in EnableCallTargetStateByRef call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -82,7 +82,7 @@ EXTERN_C VOID STDAPICALLTYPE AddDerivedInstrumentations(WCHAR* id, trace::CallTa
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in AddDerivedInstrumentations call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in AddDerivedInstrumentations call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -93,7 +93,7 @@ EXTERN_C VOID STDAPICALLTYPE AddInterfaceInstrumentations(WCHAR* id, trace::Call
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in AddInterfaceInstrumentations call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in AddInterfaceInstrumentations call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -105,7 +105,7 @@ EXTERN_C VOID STDAPICALLTYPE AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* 
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in AddTraceAttributeInstrumentation call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in AddTraceAttributeInstrumentation call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -118,7 +118,7 @@ EXTERN_C VOID STDAPICALLTYPE InitializeTraceMethods(WCHAR* id, WCHAR* integratio
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in InitializeTraceMethods call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in InitializeTraceMethods call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -138,7 +138,7 @@ EXTERN_C VOID STDAPICALLTYPE InstrumentProbes(
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in InstrumentProbes call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in InstrumentProbes call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -149,7 +149,7 @@ EXTERN_C int STDAPICALLTYPE GetProbesStatuses(WCHAR** probeIds, int probeIdsLeng
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in GetProbesStatuses call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in GetProbesStatuses call. Instrumentation component was not initialized.");
         return 0;
     }
 
@@ -160,7 +160,7 @@ EXTERN_C VOID STDAPICALLTYPE DisableTracerCLRProfiler()
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in DisableTracerCLRProfiler call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in DisableTracerCLRProfiler call. Instrumentation component was not initialized.");
         return;
     }
 
@@ -171,7 +171,7 @@ EXTERN_C int STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLeng
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in RegisterIastAspects call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in RegisterIastAspects call. Instrumentation component was not initialized.");
         return 0;
     }
 
@@ -183,7 +183,7 @@ EXTERN_C long STDAPICALLTYPE RegisterCallTargetDefinitions3(WCHAR* id, CallTarge
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in RegisterCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in RegisterCallTargetDefinitions call. Instrumentation component was not initialized.");
         return 0;
     }
 
@@ -194,7 +194,7 @@ EXTERN_C long STDAPICALLTYPE EnableCallTargetDefinitions(UINT32 enabledCategorie
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in EnableCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in EnableCallTargetDefinitions call. Instrumentation component was not initialized.");
         return 0;
     }
 
@@ -205,7 +205,7 @@ EXTERN_C long STDAPICALLTYPE DisableCallTargetDefinitions(UINT32 disabledCategor
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in DisableCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in DisableCallTargetDefinitions call. Instrumentation component was not initialized.");
         return 0;
     }
 
@@ -216,7 +216,7 @@ EXTERN_C int STDAPICALLTYPE InitEmbeddedCallSiteDefinitions(UINT32 enabledCatego
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in InitEmbeddedCallSiteDefinitions call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in InitEmbeddedCallSiteDefinitions call. Instrumentation component was not initialized.");
         return 0;
     }
 
@@ -227,7 +227,7 @@ EXTERN_C int STDAPICALLTYPE InitEmbeddedCallTargetDefinitions(UINT32 enabledCate
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in InitEmbeddedCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in InitEmbeddedCallTargetDefinitions call. Instrumentation component was not initialized.");
         return 0;
     }
 
@@ -252,7 +252,7 @@ EXTERN_C VOID STDAPICALLTYPE ReportSuccessfulInstrumentation(ModuleID moduleId, 
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in ReportSuccessfulInstrumentation call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in ReportSuccessfulInstrumentation call. Instrumentation component was not initialized.");
     }
 
     return trace::profiler->ReportSuccessfulInstrumentation(moduleId, methodToken, instrumentationId, products);
@@ -262,13 +262,43 @@ EXTERN_C BOOL STDAPICALLTYPE ShouldHeal(ModuleID moduleId, int methodToken, WCHA
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in ShouldHeal call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in ShouldHeal call. Instrumentation component was not initialized.");
     }
 
     return trace::profiler->ShouldHeal(moduleId, methodToken, instrumentationId, products);
 }
 
+EXTERN_C u_long STDAPICALLTYPE GetInodeForPath(const WCHAR* path)
+{
+#ifdef _WIN32
+    // We don't need to support this on Windows
+    return -1;
+#else
+    if (!path)
+    {
+        return -1;
+    }
+
+    const std::string str = ToString(path);
+    if (str.empty())
+    {
+        return -1;
+    }
+
+    // We use lstat, because that matches the behaviour of the 'stat' command
+    // i.e. don't follow symlinks
+    struct stat st {};
+    if (lstat(str.c_str(), &st) != 0)
+    {
+        return -errno;
+    }
+
+    return st.st_ino;
+#endif
+}
+
 #ifndef _WIN32
+
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {
     return dlopen(__file, __mode);
@@ -286,6 +316,18 @@ EXTERN_C void *dddlsym (void *__restrict __handle, const char *__restrict __name
 
 EXTERN_C int dddlclose (void *handle)
 {
+#if LINUX
+    auto [is_buggy, glibc_version] = ::shared::HasBuggyDlclose();
+    if (is_buggy)
+    {
+        trace::Logger::Warn("Skipping dddlclose for handle '", handle,
+                      "' due to buggy dlclose implementation on this system.",
+                      "GLIBC version 2.34-2.36 has a TLS-reuse bug that can cause crashes when unloading"
+                      " shared libraries. Consider updating the installed version of glibc. Found GLIBC version: ", glibc_version);
+        return 1;
+    }
+#endif
+
     return dlclose(handle);
 }
 #endif

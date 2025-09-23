@@ -19,6 +19,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         public IEnumerable ConfiguredNamedTargets { get; }
 
         /// <summary>
+        /// Gets a collection of configured logging rules. Should be locked before use
+        /// </summary>
+        public IList LoggingRules { get; }
+
+        /// <summary>
         /// Registers the specified target object under a given name.
         /// </summary>
         /// <param name="name">Name of the target.</param>

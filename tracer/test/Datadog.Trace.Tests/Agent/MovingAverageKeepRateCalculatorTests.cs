@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact(Skip = "Flaky as is very timing/load dependent")]
-        public void Calculator_ShouldUpdateAutomatically()
+        public async Task Calculator_ShouldUpdateAutomatically()
         {
             const int bucketSize = 10;
             const int bucketDuration = 10;
@@ -112,12 +112,12 @@ namespace Datadog.Trace.Tests.Agent
                     break;
                 }
 
-                Thread.Sleep(5);
+                await Task.Delay(5);
             }
 
             Assert.True(updatedKeepRate, "Keep rate was not updated automatically");
 
-            Thread.Sleep(bucketDuration * bucketSize);
+            await Task.Delay(bucketDuration * bucketSize);
 
             // buckets should all be empty again now
             Assert.Equal(0, calc.GetKeepRate());

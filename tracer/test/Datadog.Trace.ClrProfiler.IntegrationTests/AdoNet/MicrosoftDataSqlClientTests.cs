@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -46,24 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // - IDbCommandGenericConstraint<SqlCommand>: 7 spans (1 group * 7 spans)
             // - IDbCommandGenericConstraint<SqlCommand>-netstandard: 7 spans (1 group * 7 spans)
 
-            // version 4.0 : 91 spans
-            // - SqlCommand: 21 spans (3 groups * 7 spans)
-            // - DbCommand:  21 spans (3 groups * 7 spans)
-            // - IDbCommand: 7 spans (1 groups * 7 spans)
-            // - DbCommand-netstandard:  21 spans (3 groups * 7 spans)
-            // - IDbCommand-netstandard: 7 spans (1 groups * 7 spans)
-            // - IDbCommandGenericConstraint<SqlCommand>: 7 spans (1 group * 7 spans)
-            // - IDbCommandGenericConstraint<SqlCommand>-netstandard: 7 spans (1 group * 7 spans)
-            var isVersion4 = !string.IsNullOrWhiteSpace(packageVersion)
-                          && new Version(packageVersion) >= new Version("4.0.0");
-
-            if (isVersion4 && FrameworkDescription.Instance.OSPlatform != OSPlatformName.Windows)
-            {
-                // Version 4.0.0 has an issue on Linux https://github.com/dotnet/SqlClient/issues/1390
-                return;
-            }
-
-            var expectedSpanCount = isVersion4 ? 91 : 147;
+            var expectedSpanCount = 147;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 
@@ -76,12 +60,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName);
             var actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
-            telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.SqlClient);
         }
 
         [SkippableFact]
@@ -98,11 +82,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
+            var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
-            Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-            telemetry.AssertIntegrationDisabled(IntegrationId.SqlClient);
+            spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
+            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.SqlClient);
         }
     }
 }

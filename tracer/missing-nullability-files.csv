@@ -48,7 +48,6 @@ src/Datadog.Trace/Agent/IStreamFactory.cs
 src/Datadog.Trace/Agent/MovingAverageKeepRateCalculator.cs
 src/Datadog.Trace/Agent/NullStatsAggregator.cs
 src/Datadog.Trace/Agent/SpanBuffer.cs
-src/Datadog.Trace/Agent/SpanEventConverter.cs
 src/Datadog.Trace/Agent/StatsAggregationKey.cs
 src/Datadog.Trace/Agent/StatsAggregator.cs
 src/Datadog.Trace/Agent/StatsBucket.cs
@@ -104,9 +103,6 @@ src/Datadog.Trace/ContinuousProfiler/ProfilerStatus.cs
 src/Datadog.Trace/DatabaseMonitoring/MultiPartIdentifier.cs
 src/Datadog.Trace/DatabaseMonitoring/VendoredSqlHelpers.cs
 src/Datadog.Trace/DataStreamsMonitoring/CheckpointKind.cs
-src/Datadog.Trace/Debugger/ILineProbeResolver.cs
-src/Datadog.Trace/Debugger/LiveDebugger.cs
-src/Datadog.Trace/Debugger/ProbeLocationType.cs
 src/Datadog.Trace/DiagnosticListeners/AspNetCoreDiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/DiagnosticManager.cs
 src/Datadog.Trace/DiagnosticListeners/DiagnosticObserver.cs
@@ -142,9 +138,7 @@ src/Datadog.Trace/HttpOverStreams/IHttpContent.cs
 src/Datadog.Trace/Iast/ITaintedMap.cs
 src/Datadog.Trace/Iast/SourceType.cs
 src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
-src/Datadog.Trace/PlatformHelpers/AzureContext.cs
 src/Datadog.Trace/PlatformHelpers/ContainerMetadata.cs
-src/Datadog.Trace/PlatformHelpers/PlatformStrategy.cs
 src/Datadog.Trace/PlatformHelpers/ServiceFabric.cs
 src/Datadog.Trace/Processors/ITagProcessor.cs
 src/Datadog.Trace/Processors/NormalizerTraceProcessor.cs
@@ -231,6 +225,7 @@ src/Datadog.Trace/Util/IRandomIdGenerator.cs
 src/Datadog.Trace/Util/RandomIdGenerator.Net6.cs
 src/Datadog.Trace/Util/RuntimeId.cs
 src/Datadog.Trace/Util/SamplingHelpers.cs
+src/Datadog.Trace/Util/SpanEventConverter.cs
 src/Datadog.Trace/Util/StopwatchHelpers.cs
 src/Datadog.Trace/Util/System.Diagnostics.CodeAnalysis.Attributes.cs
 src/Datadog.Trace/Util/System.Runtime.CompilerServices.Attributes.cs
@@ -257,10 +252,8 @@ src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
-src/Datadog.Trace/ClrProfiler/Helpers/HttpBypassHelper.cs
 src/Datadog.Trace/ClrProfiler/Helpers/Interception.cs
 src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/LambdaMetadata.cs
-src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/ServerlessMiniAgent.cs
 src/Datadog.Trace/DataStreamsMonitoring/Transport/DataStreamsHttpHeaderNames.cs
 src/Datadog.Trace/DataStreamsMonitoring/Transport/DataStreamsTransportStrategy.cs
 src/Datadog.Trace/DataStreamsMonitoring/Utils/BinaryPrimitivesHelper.cs
@@ -400,11 +393,9 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ApiController_ExecuteAs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AspNetMvcIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AspNetWebApi2Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AsyncControllerActionInvoker_BeginInvokeAction_Integration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AsyncControllerActionInvoker_EndInvokeAction_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ControllerContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ExceptionHandlerExtensions_HandleAsync_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpConfigurationStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpContextHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpHeadersCollection.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpMethodStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpModule_Integration.cs
@@ -702,5 +693,4 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/DirectSubmissi
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/IJsonLayout4Proxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingConfigurationPre43Proxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingRuleProxy.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingRulesListProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ITargetListProxy.cs

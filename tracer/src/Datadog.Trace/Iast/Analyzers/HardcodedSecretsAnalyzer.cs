@@ -23,7 +23,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HardcodedSecretsAnalyzer>();
     private static HardcodedSecretsAnalyzer? _instance = null;
 
-    private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly TimeSpan _regexTimeout;
     private List<SecretRegex>? _secretRules = null;
 
@@ -32,17 +32,17 @@ internal class HardcodedSecretsAnalyzer : IDisposable
     {
         Log.Debug("HardcodedSecretsAnalyzer -> Init");
         _regexTimeout = regexTimeout;
-        Task.Run(() => PollingThread(_cancellationTokenSource.Token))
+        Task.Run(() => PollingThread())
             .ContinueWith(t => Log.Error(t.Exception, "Error in Hardcoded secret analyzer"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
-    private async Task PollingThread(CancellationToken cancellationToken)
+    private async Task PollingThread()
     {
         try
         {
             Log.Debug("HardcodedSecretsAnalyzer polling thread -> Started");
             var userStrings = new UserStringInterop[UserStringsArraySize];
-            while (!cancellationToken.IsCancellationRequested)
+            while (!_processExit.Task.IsCompleted)
             {
                 if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
                 {
@@ -92,7 +92,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
                     }
                 }
 
-                await Task.Delay(2_000, cancellationToken).ConfigureAwait(false);
+                await Task.WhenAny(_processExit.Task, Task.Delay(2_000)).ConfigureAwait(false);
             }
         }
         catch (Exception err) when (!(err is OperationCanceledException))
@@ -219,7 +219,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
 
     public void Dispose()
     {
-        _cancellationTokenSource.Cancel();
+        _processExit.TrySetResult(true);
         Log.Debug("HardcodedSecretsAnalyzer -> Disposed");
     }
 

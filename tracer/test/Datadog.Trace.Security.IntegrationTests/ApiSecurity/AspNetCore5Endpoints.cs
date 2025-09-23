@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit.Abstractions;
@@ -22,8 +23,9 @@ namespace Datadog.Trace.Security.IntegrationTests.ApiSecurity
             await base.TestEndpointsCollection();
 
             // Tests for specific endpoints that should be collected
-            Endpoints.Should().Contain(e => e.Path == "/iast/executecommand" && e.Method == "GET");
-            Endpoints.Should().Contain(e => e.Path == "/map_endpoint/sub_level");
+            Endpoints.Should().Contain(e => e.Path == "/iast/executecommand" && e.Method == "GET" && e.ResourceName == "GET /iast/executecommand");
+            Endpoints.Should().Contain(e => e.Path == "/health/params/{id}" && e.Method == "GET" && e.ResourceName == "GET /health/params/{id}");
+            Endpoints.Should().Contain(e => e.Path == "/map_endpoint/sub_level" && e.Method == "*" && e.ResourceName == "/map_endpoint/sub_level");
         }
     }
 
@@ -32,5 +34,14 @@ namespace Datadog.Trace.Security.IntegrationTests.ApiSecurity
 
     public class AspNetCore5EndpointsDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : AspNetCoreEndpoints(fixture, outputHelper, sampleName: "AspNetCore5", false);
+
+    public class AspNetCore5EndpointsApmTracingDisabled : AspNetCoreEndpoints
+    {
+        public AspNetCore5EndpointsApmTracingDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, sampleName: "AspNetCore5", true)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.ApmTracingEnabled, "0");
+        }
+    }
 }
 #endif

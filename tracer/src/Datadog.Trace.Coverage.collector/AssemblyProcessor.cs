@@ -824,6 +824,12 @@ namespace Datadog.Trace.Coverage.Collector
         {
             try
             {
+                if (_settings.TracerHome is null)
+                {
+                    _logger.Error("CopyRequiredAssemblies: TracerHome is not set. Cannot copy Datadog.Trace assembly.");
+                    return string.Empty;
+                }
+
                 // Get the Datadog.Trace path
                 string targetFolder = "net461";
                 switch (tracerTarget)
@@ -842,8 +848,8 @@ namespace Datadog.Trace.Coverage.Collector
                         break;
                 }
 
-                var datadogTraceDllPath = Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.dll");
-                var datadogTracePdbPath = Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.pdb");
+                var datadogTraceDllPath = string.IsNullOrEmpty(_settings.TracerHome) ? "Datadog.Trace.dll" : Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.dll");
+                var datadogTracePdbPath = string.IsNullOrEmpty(_settings.TracerHome) ? "Datadog.Trace.pdb" : Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.pdb");
 
                 // Global lock for copying the Datadog.Trace assembly to the output folder
                 lock (PadLock)

@@ -216,7 +216,7 @@ public class WafLibraryRequiredTest : SettingsTestsBase
     {
         var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Rules, ruleFile), (ConfigurationKeys.AppSec.Enabled, "1"));
         var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
-        var configurationState = new ConfigurationState(settings, creation, rulesetConfigs, asmConfigs, asmDataConfigs);
+        var configurationState = new ConfigurationState(settings, NullConfigurationTelemetry.Instance, creation, rulesetConfigs, asmConfigs, asmDataConfigs);
         return configurationState;
     }
 }

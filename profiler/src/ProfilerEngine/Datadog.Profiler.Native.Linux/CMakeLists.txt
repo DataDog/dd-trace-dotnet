@@ -2,13 +2,15 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 3.20.0)
+project("Datadog.Profiler.Native.Linux" VERSION 3.28.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
+option(RUN_TSAN "Build with Clang Thread Sanitizer" OFF)
 
 message(STATUS "Run Clang Address Sanitizer: " ${RUN_ASAN})
 message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
+message(STATUS "Run Clang Thread Sanitizer: " ${RUN_TSAN})
 
 # ******************************************************
 # Compiler options
@@ -31,6 +33,10 @@ if (RUN_UBSAN)
     add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
 endif()
 
+if (RUN_TSAN)
+    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS)
+endif()
+
 if(ISLINUX)
     add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
 endif()
@@ -50,6 +56,21 @@ elseif (ISARM)
     add_compile_options(-DARM)
 endif()
 
+if (ISLINUX)
+    # ------------------------------------------------------
+    # Hardening: make sure no target in this project ever
+    # requests an executable stack.  Without this, glibc ≥2.41
+    # (Debian 13 "trixie", Fedora 40, etc.) rejects the shared
+    # library with:
+    #   "cannot enable executable stack as shared object requires"
+    # ------------------------------------------------------
+    # 1. Tell the assembler to emit a .note.GNU-stack note that
+    #    marks the object as **non‑exec‑stack**.
+    add_compile_options("$<$<COMPILE_LANGUAGE:ASM>:-Wa,--noexecstack>")
+    # 2. Instruct the linker to *clear* any stray exec‑stack flag
+    #    that might still be present when it produces the final ELF.
+    add_link_options(-Wl,-z,noexecstack)
+endif()
 
 # ******************************************************
 # Environment detection
@@ -104,7 +125,7 @@ if (RUN_ASAN)
     target_link_libraries(${PROFILER_STATIC_LIB_NAME} -fsanitize=address)
 endif()
 
-if (NOT RUN_ASAN AND NOT RUN_UBSAN)
+if (NOT RUN_ASAN AND NOT RUN_UBSAN AND NOT RUN_TSAN)
     target_link_libraries(${PROFILER_STATIC_LIB_NAME} -Wl,--no-undefined)
 endif()
 
@@ -121,7 +142,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -lstdc++fs
     -pthread
     -ldl
-    -Wl,--build-id
+    -Wl,--build-id=sha1
 )
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)

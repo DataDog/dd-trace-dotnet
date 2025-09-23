@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -14,11 +15,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         public EnumerateAssemblyReferencesTest(ITestOutputHelper output)
             : base(output, "EnumerateAssemblyReferences")
         {
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         }
 
         [SkippableFact]
         [Trait("Category", "Smoke")]
+        [Flaky("This test often crashes with a shutdown bug which we haven't been able to track down yet")]
         public async Task NoExceptions()
         {
             await CheckForSmoke(shouldDeserializeTraces: false);

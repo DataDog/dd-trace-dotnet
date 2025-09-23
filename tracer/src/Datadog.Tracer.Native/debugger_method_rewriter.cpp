@@ -8,8 +8,6 @@
 #include "stats.h"
 #include "environment_variables_util.h"
 #include "debugger_probes_tracker.h"
-#include "fault_tolerant_envionrment_variables_util.h"
-#include "fault_tolerant_tracker.h"
 #include "instrumenting_product.h"
 
 namespace debugger
@@ -1511,7 +1509,7 @@ HRESULT DebuggerMethodRewriter::LoadProbeIdIntoStack(const ModuleID moduleId, co
 
     if (FAILED(hr))
     {
-        Logger::Warn("*** DebuggerMethodRewriter::ApplyAsyncMethodProbe() DefineUserStringFailed. MethodProbeId = ",
+        Logger::Warn("*** DebuggerMethodRewriter::LoadProbeIdIntoStack() DefineUserStringFailed. MethodProbeId = ",
                      methodProbeId, " module_id= ", moduleId, ", function_token=", functionToken);
         return hr;
     }
@@ -1630,7 +1628,13 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     if (hr != S_OK)
     {
         Logger::Info("Failed to apply Method Probe on Async Method due to failure in the lookup of the isReEntry field in the state machine. module id:", module_id, " method: ", caller->type.name, ".", caller->name);
-        return S_OK; // We do not fail the whole instrumentation as there could be Line Probes that we want to emit. They do not suffer from the absence of the IsReEntry field.
+        return E_NOTIMPL; // We do not fail the whole instrumentation as there could be Line Probes that we want to emit. They do not suffer from the absence of the IsReEntry field.
+    }
+
+    if (!m_corProfiler->IsAsyncMethodDebuggerInvokerV2TypeAvailable())
+    {
+        Logger::Warn("DebuggerMethodRewriter::ApplyAsyncMethodProbe: The type `AsyncMethodDebuggerInvokerV2` is not defined in `Datadog.Trace`. Please upgrade your `Datadog.Trace` to be able to probe async methods.");
+        return E_UNEXPECTED; // We do not fail the whole instrumentation as there could be Line Probes that we want to emit. They do not suffer from the absence of the IsReEntry field.
     }
 
     LogDebugCallerInfo(caller, instrumentedMethodIndex);
@@ -1826,8 +1830,14 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodSpanProbe(
         Logger::Info("Failed to apply Method Probe on Async Method due to failure in the lookup of the isReEntry field "
                      "in the state machine. module id:",
                      moduleId, " method: ", caller->type.name, ".", caller->name);
-        return S_OK; // We do not fail the whole instrumentation as there could be Line Probes that we want to emit.
+        return E_NOTIMPL; // We do not fail the whole instrumentation as there could be Line Probes that we want to emit.
                      // They do not suffer from the absence of the IsReEntry field.
+    }
+
+    if (!m_corProfiler->IsAsyncMethodDebuggerInvokerV2TypeAvailable())
+    {
+        Logger::Warn("DebuggerMethodRewriter::ApplyAsyncMethodSpanProbe: The type `AsyncMethodDebuggerInvokerV2` is not defined in `Datadog.Trace`. Please upgrade your `Datadog.Trace` to be able to probe async methods.");
+        return E_UNEXPECTED; // We do not fail the whole instrumentation as there could be Line Probes that we want to emit. They do not suffer from the absence of the IsReEntry field.
     }
 
     LogDebugCallerInfo(caller, instrumentedMethodIndex);
@@ -2159,7 +2169,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     // First we check if the managed profiler has not been loaded yet
     if (!m_corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
     {
-        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() skipping method: The managed profiler has "
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() skipping method: Datadog.Trace.dll has "
                      "not yet been loaded into AppDomain with id=",
                      module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
                      caller->name, "()");
@@ -2384,7 +2394,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                       instrumentedMethodIndex, beforeLineProbe, newClauses);
         }
 
-        if (hr != E_NOTIMPL && FAILED(hr))
+        if (hr != E_NOTIMPL && hr != E_UNEXPECTED && FAILED(hr))
         {
             MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes,
                                  invalid_probe_failed_to_instrument_method_probe);
@@ -2394,9 +2404,12 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
         if (hr == E_NOTIMPL)
         {
-            ProbesMetadataTracker::Instance()->SetErrorProbeStatus(spanProbeId,
-                                                                   invalid_method_probe_probe_is_not_supported);
+            ProbesMetadataTracker::Instance()->SetErrorProbeStatus(spanProbeId, invalid_method_probe_probe_is_not_supported);
             Logger::Info("Emplacement of a span probe is not supported.");
+        }
+        else if (hr == E_UNEXPECTED)
+        {
+            ProbesMetadataTracker::Instance()->SetErrorProbeStatus(spanProbeId, too_low_datadog_trace_version_for_async_method);
         }
 
         appliedAtLeastOneSpanProbeInstrumentation = hr == S_OK;
@@ -2426,11 +2439,16 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                   firstInstruction, instrumentedMethodIndex, beforeLineProbe, newClauses);
         }
 
-        if (hr != E_NOTIMPL && FAILED(hr))
+        if (hr != E_NOTIMPL && hr != E_UNEXPECTED && FAILED(hr))
         {
             MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_instrument_method_probe);
             // Appropriate error message is already logged in ApplyMethodProbe / ApplyAsyncMethodProbe.
             return E_FAIL;
+        }
+
+        if (hr == E_UNEXPECTED)
+        {
+            MarkAllMethodProbesAsError(methodProbes, too_low_datadog_trace_version_for_async_method);
         }
 
         appliedAtLeastOneMethodProbeInstrumentation = hr == S_OK;

@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: ExpectedOperationName);
                 spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
                                   .DisableRequireUniquePrefix();
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.CosmosDb);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.CosmosDb);
             }
         }
 

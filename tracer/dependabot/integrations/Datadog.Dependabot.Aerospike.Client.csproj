@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: AerospikeClient -->
+    <!--    Assembly: AerospikeClient -->
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/8.2.0 -->
+    <PackageReference Include="Aerospike.Client" Version="8.2.0" />
+  </ItemGroup>
+
+</Project>

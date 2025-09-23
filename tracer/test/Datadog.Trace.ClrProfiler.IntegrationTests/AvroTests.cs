@@ -48,7 +48,7 @@ public class AvroTests : TracingIntegrationTest
         using (await RunSampleAndWaitForExit(agent, type, packageVersion))
         {
             using var assertionScope = new AssertionScope();
-            var spans = agent.WaitForSpans(2);
+            var spans = await agent.WaitForSpansAsync(2);
 
             ValidateIntegrationSpans(spans, metadataSchemaVersion, "Samples.Avro", isExternalSpan: true);
             var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -78,7 +78,7 @@ public class AvroTests : TracingIntegrationTest
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, "Default"))
         {
-            var spans = agent.WaitForSpans(2);
+            var spans = await agent.WaitForSpansAsync(2);
             foreach (var span in spans)
             {
                 span.Tags.Should().NotContain(t => t.Key.StartsWith("schema."));

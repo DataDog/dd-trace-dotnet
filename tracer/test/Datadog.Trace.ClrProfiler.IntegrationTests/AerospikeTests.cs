@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 const int expectedSpanCount = 10 + 9; // Sync + async
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   .DisableRequireUniquePrefix()
                                   .UseFileName(nameof(AerospikeTests) + $".Schema{metadataSchemaVersion.ToUpper()}");
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.Aerospike);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Aerospike);
             }
         }
     }

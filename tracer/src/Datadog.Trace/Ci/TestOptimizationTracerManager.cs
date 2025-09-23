@@ -64,7 +64,7 @@ namespace Datadog.Trace.Ci
                 dynamicConfigurationManager,
                 tracerFlareManager,
                 spanEventsManager,
-                GetProcessors(settings.Exporter.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
+                GetProcessors(settings.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
         {
         }
 

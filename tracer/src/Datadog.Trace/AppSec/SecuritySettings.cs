@@ -60,8 +60,8 @@ namespace Datadog.Trace.AppSec
 
             WafTimeoutMicroSeconds = (ulong)config
                                            .WithKeys(ConfigurationKeys.AppSec.WafTimeout)
-                                           .GetAs<int>(
-                                                getDefaultValue: () => 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
+                                           .AsInt32(
+                                                defaultValue: 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
                                                 converter: ParseWafTimeout,
                                                 validator: wafTimeout => wafTimeout > 0);
 
@@ -137,6 +137,10 @@ namespace Datadog.Trace.AppSec
             ApiSecurityEndpointCollectionMessageLimit = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionMessageLimit)
                                            .AsInt32(300, val => val >= 0)
                                            .Value;
+
+            ApiSecurityParseResponseBody = config
+                                .WithKeys(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody)
+                                .AsBool(true);
 
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
@@ -275,6 +279,8 @@ namespace Datadog.Trace.AppSec
         public bool? ScaEnabled { get; }
 
         public bool NoCustomLocalRules { get; }
+
+        public bool ApiSecurityParseResponseBody { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

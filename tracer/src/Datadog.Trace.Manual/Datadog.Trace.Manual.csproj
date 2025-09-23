@@ -46,8 +46,8 @@
 
   <ItemGroup>
     <None Include="..\..\..\docs\Datadog.Trace\README.md" Pack="true" PackagePath="\" />
-    <None Include="Datadog.Trace.props" Pack="true" PackagePath="build" Visible="false" />
-    <None Include="..\Datadog.Trace.Trimming\build\Datadog.Trace.Trimming.xml" Pack="true" PackagePath="build" Visible="false" />
+    <None Include="Datadog.Trace.props" Pack="true" PackagePath="build;buildTransitive" Visible="false" />
+    <None Include="..\Datadog.Trace.Trimming\build\Datadog.Trace.Trimming.xml" Pack="true" PackagePath="build;buildTransitive" Visible="false" />
   </ItemGroup>
 
 

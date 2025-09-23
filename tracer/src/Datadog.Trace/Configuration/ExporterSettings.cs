@@ -130,11 +130,6 @@ namespace Datadog.Trace.Configuration
                                  .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)
                                  .AsInt32(500, value => value > 0)
                                  .Value;
-
-            PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool(false);
-            PartialFlushMinSpans = config
-                                  .WithKeys(ConfigurationKeys.PartialFlushMinSpans)
-                                  .AsInt32(500, value => value > 0).Value;
         }
 
         /// <summary>
@@ -146,7 +141,22 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
         public Uri AgentUri { get; }
 
-#pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
+        /// <summary>
+        /// Gets the base Uri where traces will be sent, taking the transport into account. It may be
+        /// different for statsd.
+        /// </summary>
+        /// <seealso cref="AgentUri"/>
+        public string TraceAgentUriBase => TracesTransport switch
+        {
+            // Only named pipes doesn't set this prefix on AgentUri, so we need to use the pipe name here
+            // Ideally, we would likely prefer to just have AgentUri include this prefix, but
+            // 1. That's not a valid Uri - we would need to use a custom Uri scheme (e.g. npipe://) and also
+            //    use / instead of \, i.e. @$"npipe:////./pipe/{TracesPipeName}"
+            // 2. AgentUri is exposed publicly, so we can't change it without potentially breaking behaviour
+            TracesTransportType.WindowsNamedPipe => $@"\\.\pipe\{TracesPipeName}",
+            _ => AgentUri.ToString()
+        };
+
         /// <summary>
         /// Gets the windows pipe name where the Tracer can connect to the Agent.
         /// Default is <c>null</c>.
@@ -186,16 +196,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
         public int DogStatsdPort { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether partial flush is enabled
-        /// </summary>
-        public bool PartialFlushEnabled { get; }
-
-        /// <summary>
-        /// Gets the minimum number of closed spans in a trace before it's partially flushed
-        /// </summary>
-        public int PartialFlushMinSpans { get; }
 
         /// <summary>
         /// Gets the transport used to send traces to the Agent.

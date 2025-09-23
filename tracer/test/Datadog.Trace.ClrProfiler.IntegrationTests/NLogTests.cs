@@ -271,7 +271,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         public async Task InjectsLogsWhenEnabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType, Enable128BitInjection enable128BitInjection)
         {
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection == Enable128BitInjection.Enable ? "true" : "false");
             SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
@@ -286,7 +285,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: string.Join(" ", new object[] { context, configType })))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var testFiles = GetTestFiles(packageVersion, true, configType);
@@ -323,7 +322,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: string.Join(" ", new object[] { context, configType })))
             {
-                var spans = agent.WaitForSpans(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var testFiles = GetTestFiles(packageVersion, logsInjectionEnabled: false, configType);
@@ -391,7 +390,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 logs.Should().Contain(x => hasProperty(x, CustomContextKey, CustomContextValue));
             }
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.NLog);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.NLog);
         }
 
         private void VerifyContextProperties(LogFileTest[] testFiles, string packageVersion, string context)
@@ -469,7 +468,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private LogFileTest GetJsonTestFile(UnTracedLogTypes unTracedLogType) => new()
         {
             FileName = "log-jsonFile-withInject.log",
-            RegexFormat = @"""{0}"": {1}",
+            RegexFormat = @"""{0}"":\s*{1}",
             UnTracedLogTypes = unTracedLogType,
             PropertiesUseSerilogNaming = false
         };
@@ -477,7 +476,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private LogFileTest GetJsonTestFileNoInjection(UnTracedLogTypes unTracedLogType) => new()
         {
             FileName = "log-jsonFile-noInject.log",
-            RegexFormat = @"""{0}"": {1}",
+            RegexFormat = @"""{0}"":\s*{1}",
             UnTracedLogTypes = unTracedLogType,
             PropertiesUseSerilogNaming = false
         };

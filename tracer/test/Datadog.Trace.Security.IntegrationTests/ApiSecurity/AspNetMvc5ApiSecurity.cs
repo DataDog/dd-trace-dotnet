@@ -67,7 +67,7 @@ public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixtu
         settings.UseTextForParameters($"scenario={scenario}");
         var dateTime = DateTime.UtcNow;
         var result = await SubmitRequest(url, body, "application/json");
-        var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+        var spans = await agent.WaitForSpansAsync(2, minDateTime: dateTime);
         await VerifySpans(spans, settings);
     }
 

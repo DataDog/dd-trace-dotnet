@@ -669,7 +669,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         await TryStartApp(newFixture, new MockTracerAgent.AgentConfiguration { SpanMetaStructs = false });
 
         var agent = newFixture.Agent;
-        var spans = agent.WaitForSpans(1, minDateTime: datetimeOffset);
+        var spans = await agent.WaitForSpansAsync(1, minDateTime: datetimeOffset);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -697,7 +697,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         await TryStartApp(newFixture, new MockTracerAgent.AgentConfiguration { SpanMetaStructs = false });
 
         var agent = newFixture.Agent;
-        var spans = agent.WaitForSpans(1, minDateTime: datetimeOffset);
+        var spans = await agent.WaitForSpansAsync(1, minDateTime: datetimeOffset);
 
         // Add a scrubber for "Session idle timeout is configured with: options.IdleTimeout, with a value of x minutes" and also for the hash value
         (Regex RegexPattern, string Replacement) sessionIdleTimeoutRegex = (new Regex(@"Session idle timeout is configured with: options.IdleTimeout, with a value of \d+ minutes"), "Session idle timeout is configured with: options.IdleTimeout, with a value of XXX minutes");
@@ -1319,6 +1319,7 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
 
         SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
+        UseNativeLibraryAlpineWorkaround();
     }
 
     protected AspNetCoreTestFixture Fixture { get; }

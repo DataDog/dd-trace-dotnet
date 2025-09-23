@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -230,6 +231,9 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     public async Task WorkingWithContinuousProfiler()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        // The continuous profiler isn't currently supported on ARM
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+
         string archFolder;
 
         if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)
@@ -345,7 +349,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     [InlineData("1", true)]
     [InlineData("0", true)]
     [InlineData(null, true)]
-    public async Task DetectContinuousProfilerState(string enabled, bool? ssiInjectionEnabled)
+    public async Task DetectContinuousProfilerState(string? enabled, bool? ssiInjectionEnabled)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         var ssiInjection = ssiInjectionEnabled is null
@@ -370,6 +374,14 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             (null, { } ssi) => [("DD_INJECTION_ENABLED", ssi)],
             ({ } prof, { } ssi) => [("DD_PROFILING_ENABLED", prof), ("DD_INJECTION_ENABLED", ssi)],
         };
+
+#if NET10_0
+        // TODO: Remove this after .NET 10 is officially released
+        if (!string.IsNullOrEmpty(ssiInjection))
+        {
+            envVars = envVars.Append(("DD_INJECT_FORCE", "1")).ToArray();
+        }
+#endif
 
         using var helper = await StartConsole(enableProfiler: true, envVars);
 

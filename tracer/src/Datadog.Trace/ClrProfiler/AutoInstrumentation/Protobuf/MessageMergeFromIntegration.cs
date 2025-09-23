@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     MethodName = "MergeFrom",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = ["Google.Protobuf.CodedInputStream"],
-    MinimumVersion = "3.0.0",
+    MinimumVersion = "3.13.0",
     MaximumVersion = "3.*.*",
     IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
     CallTargetIntegrationKind = CallTargetKind.Interface)]

@@ -31,6 +31,12 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
     curl --location --fail \
         --output $win_target_dir/fleet-installer.zip \
         "https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/${CI_COMMIT_SHA}/fleet-installer.zip"
+
+    echo "Downloading Telemetry Forwarder from S3"
+
+    curl --location --fail \
+        --output $win_target_dir/telemetry_forwarder.exe \
+        "https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/${CI_COMMIT_SHA}/telemetry_forwarder.exe"
   fi
 
   echo -n $VERSION > $target_dir/version.txt

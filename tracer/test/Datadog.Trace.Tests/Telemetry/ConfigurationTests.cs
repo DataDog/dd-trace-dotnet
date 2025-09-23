@@ -41,6 +41,8 @@ public class ConfigurationTests
         "DD_GIT_COMMIT_COMMITTER_NAME",
         "DD_GIT_COMMIT_COMMITTER_EMAIL",
         "DD_GIT_COMMIT_COMMITTER_DATE",
+        "DD_GIT_PULL_REQUEST_BASE_BRANCH",
+        "DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA",
         "DD_ACTION_EXECUTION_ID",
         "DD_PIPELINE_EXECUTION_ID",
         "DD_TESTSESSION_COMMAND",
@@ -49,6 +51,7 @@ public class ConfigurationTests
         "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER",
         // Internal env vars that we only ever read from environment
         "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
+        "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH",
         "DD_DOTNET_TRACER_HOME",
         "DD_INSTRUMENTATION_INSTALL_ID",
         "DD_INSTRUMENTATION_INSTALL_TYPE",
