@@ -46,47 +46,6 @@ namespace Datadog.Trace
         private readonly TracerManager _tracerManager;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/> class with default settings. Replaces the
-        /// settings for all tracers in the application with the default settings.
-        /// </summary>
-        [Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create spans.")]
-        [PublicApi]
-        public Tracer()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor);
-            // Don't call Configure because it will call Start on the TracerManager
-            // before this new instance of Tracer is assigned to Tracer.Instance
-            TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance);
-
-            // update the count of Tracer instances
-            Interlocked.Increment(ref _liveTracerCount);
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/>
-        /// class using the specified <see cref="IConfigurationSource"/>. This constructor updates the global settings
-        /// for all <see cref="Tracer"/> instances in the application.
-        /// </summary>
-        /// <param name="settings">
-        /// A <see cref="TracerSettings"/> instance with the desired settings,
-        /// or null to use the default configuration sources. This is used to configure global settings
-        /// </param>
-        [Obsolete("This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
-                  "If you were using this API to configure the global Tracer.Instance in code, use the static "
-                + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
-        [PublicApi]
-        public Tracer(TracerSettings settings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
-            // Don't call Configure because it will call Start on the TracerManager
-            // before this new instance of Tracer is assigned to Tracer.Instance
-            TracerManager.ReplaceGlobalManager(settings is null ? null : settings, TracerManagerFactory.Instance);
-
-            // update the count of Tracer instances
-            Interlocked.Increment(ref _liveTracerCount);
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="Tracer"/> class.
         /// For testing only.
         /// Note that this API does NOT replace the global Tracer instance.
@@ -127,7 +86,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets or sets the global <see cref="Tracer"/> instance.
+        /// Gets the global <see cref="Tracer"/> instance.
         /// Used by all automatic instrumentation and recommended
         /// as the entry point for manual instrumentation.
         /// </summary>
@@ -159,34 +118,6 @@ namespace Datadog.Trace
 
                 instance.TracerManager.Start();
                 return instance;
-            }
-
-            // TODO: Make this API internal
-            [Obsolete("Use " + nameof(Tracer) + "." + nameof(Configure) + " to configure the global Tracer" +
-                      " instance in code.")]
-            [PublicApi]
-            set
-            {
-                TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Instance_Set);
-                if (value is null)
-                {
-                    ThrowHelper.ThrowArgumentNullException("The tracer instance shouldn't be set to null as this will cause issues with automatic instrumentation.");
-                }
-
-                lock (GlobalInstanceLock)
-                {
-                    // This check is probably no longer necessary, as it's the TracerManager we really care about
-                    // Kept for safety reasons
-                    if (_instance is { TracerManager: ILockedTracer })
-                    {
-                        ThrowHelper.ThrowInvalidOperationException("The current tracer instance cannot be replaced.");
-                    }
-
-                    _instance = value;
-                    _globalInstanceInitialized = true;
-                }
-
-                value?.TracerManager.Start();
             }
         }
 
@@ -262,14 +193,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="settings"> A <see cref="TracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources. This is used to configure global settings</param>
-        [PublicApi]
-        public static void Configure(TracerSettings settings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
-            ConfigureInternal(settings);
-        }
-
-        internal static void ConfigureInternal(TracerSettings settings)
+        internal static void Configure(TracerSettings settings)
         {
             TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
             Tracer.Instance.TracerManager.Start();
@@ -296,13 +220,8 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
         /// <returns>A scope wrapping the newly created span</returns>
-        [PublicApi]
         public IScope StartActive(string operationName)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive);
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
-            return StartActiveInternal(operationName);
-        }
+            => StartActiveInternal(operationName);
 
         /// <summary>
         /// This creates a new span with the given parameters and makes it active.
@@ -310,14 +229,8 @@ namespace Datadog.Trace
         /// <param name="operationName">The span's operation name</param>
         /// <param name="settings">Settings for the new <see cref="IScope"/></param>
         /// <returns>A scope wrapping the newly created span</returns>
-        [PublicApi]
         public IScope StartActive(string operationName, SpanCreationSettings settings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive_Settings);
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
-            var finishOnClose = settings.FinishOnClose ?? true;
-            return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
-        }
+            => StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, settings.FinishOnClose ?? true);
 
         /// <summary>
         /// Creates a new <see cref="ISpan"/> with the specified parameters.
@@ -354,12 +267,7 @@ namespace Datadog.Trace
         /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
         /// </summary>
         /// <returns>Task used to track the async flush operation</returns>
-        [PublicApi]
-        public Task ForceFlushAsync()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_ForceFlushAsync);
-            return FlushAsync();
-        }
+        public Task FlushAsync() => TracerManager.AgentWriter.FlushTracesAsync();
 
         /// <summary>
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
@@ -532,11 +440,6 @@ namespace Datadog.Trace
             DebuggerManager.Instance.CodeOrigin?.SetCodeOriginForExitSpan(span);
 
             return span;
-        }
-
-        internal Task FlushAsync()
-        {
-            return TracerManager.AgentWriter.FlushTracesAsync();
         }
     }
 }

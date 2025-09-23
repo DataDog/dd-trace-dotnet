@@ -89,7 +89,7 @@ public class DuckTypingTests
     {
         try
         {
-            var autoSession = TestSession.GetOrCreate("blah");
+            var autoSession = TestSession.GetOrCreate("blah", workingDirectory: null, framework: null, startDate: null);
 
             var session = autoSession.DuckCast<ManualITestSession>();
 
