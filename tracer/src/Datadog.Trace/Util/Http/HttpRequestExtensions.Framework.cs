@@ -8,6 +8,8 @@
 using System.Web;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 
+#nullable enable
+
 namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
@@ -36,13 +38,15 @@ namespace Datadog.Trace.Util.Http
         /// <seealso cref="Configuration.ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled"/>
         internal static string GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager, bool bypassHttpRequestUrl)
         {
-            if (bypassHttpRequestUrl)
+            var url = bypassHttpRequestUrl ? RequestDataHelper.BuildUrl(request) : RequestDataHelper.GetUrl(request);
+
+            if (url is not null)
             {
-                return HttpRequestUtils.GetUrl(RequestDataHelper.BuildUrl(request), queryStringManager);
+                return HttpRequestUtils.GetUrl(url, queryStringManager);
             }
             else
             {
-                return HttpRequestUtils.GetUrl(RequestDataHelper.GetUrl(request), queryStringManager);
+                return string.Empty;
             }
         }
     }

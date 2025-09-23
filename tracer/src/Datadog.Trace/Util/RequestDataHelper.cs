@@ -161,11 +161,12 @@ internal static class RequestDataHelper
     /// <returns>The <c>Uri</c>; otherwise <see langword="null"/>.</returns>
     internal static Uri? GetUrl(HttpRequest request)
     {
+        // UriFormatException can happen if, for example, the request contains the variable "SERVER_NAME" with an invalid value
         try
         {
             return request.Url;
         }
-        catch (HttpRequestValidationException)
+        catch (Exception ex) when (ex is HttpRequestValidationException || ex is UriFormatException)
         {
             Log.Debug("Error reading request.Url from the request.");
             return null;
@@ -205,7 +206,16 @@ internal static class RequestDataHelper
                 // it might impact error cases. Consider a situation in which some method in workerRequest throws.
                 // If we evaluate Path early, then some other method might throw, thus producing a different
                 // error behavior for the same conditions. Passing in a Func preserves the old ordering.
-                return duckRequest.BuildUrl(() => path);
+                // UriFormatException can happen if, for example, the request contains the variable "SERVER_NAME" with an invalid value
+                try
+                {
+                    return duckRequest.BuildUrl(() => path);
+                }
+                catch (UriFormatException)
+                {
+                    Log.Debug("Error building request.Url.");
+                    return null;
+                }
             }
         }
 
