@@ -35,7 +35,6 @@ internal struct ConfiguratorHelper
         var configHandle = IntPtr.Zero;
         Error? resultError = null;
         LibraryConfigs? libraryConfigs = null;
-        LibraryConfigResult configurationResult = default;
         try
         {
             languageCs = new CharSlice(TracerConstants.Language);
@@ -56,7 +55,7 @@ internal struct ConfiguratorHelper
                 NativeInterop.LibraryConfig.ConfiguratorWithFleetPath(configHandle, fleetPath.Value);
             }
 
-            configurationResult = NativeInterop.LibraryConfig.ConfiguratorGet(configHandle);
+            var configurationResult = NativeInterop.LibraryConfig.ConfiguratorGet(configHandle);
             var result = configurationResult.Result;
 
             if (configurationResult.Tag == ResultTag.Err)
@@ -109,7 +108,7 @@ internal struct ConfiguratorHelper
 
             if (libraryConfigs.HasValue)
             {
-                NativeInterop.LibraryConfig.LibraryConfigDrop(configurationResult);
+                NativeInterop.LibraryConfig.LibraryConfigDrop(libraryConfigs.Value);
             }
 
             if (configHandle != IntPtr.Zero)
