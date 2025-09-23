@@ -84,52 +84,47 @@ namespace Datadog.Trace.Configuration
         /// Direct use in tests only.
         /// </summary>
         internal ExporterSettings(IConfigurationSource? source, Func<string, bool> fileExists, IConfigurationTelemetry telemetry)
+            : this(new Raw(source ?? NullConfigurationSource.Instance, telemetry), fileExists, telemetry)
+        {
+        }
+
+        internal ExporterSettings(Raw rawSettings, Func<string, bool> fileExists, IConfigurationTelemetry telemetry)
         {
             _fileExists = fileExists;
             _telemetry = telemetry;
+            RawSettings = rawSettings;
 
             ValidationWarnings = new List<string>();
 
-            source ??= NullConfigurationSource.Instance;
+            var traceSettings = GetTraceTransport(
+                agentUri: rawSettings.TraceAgentUri,
+                tracesPipeName: rawSettings.TracesPipeName,
+                agentHost: rawSettings.TraceAgentHost,
+                agentPort: rawSettings.TraceAgentPort,
+                tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
 
-            // Get values from the config
-            var config = new ConfigurationBuilder(source, telemetry);
-            var traceAgentUrl = config.WithKeys(ConfigurationKeys.AgentUri).AsString();
-            var tracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString();
-            var tracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString();
-
-            var agentHost = config
-                           .WithKeys(ConfigurationKeys.AgentHost, "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME")
-                           .AsString();
-
-            var agentPort = config
-                           .WithKeys(ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT")
-                           .AsInt32();
-
-            var metricsUrl = config.WithKeys(ConfigurationKeys.MetricsUri).AsString();
-            var dogStatsdPort = config.WithKeys(ConfigurationKeys.DogStatsdPort).AsInt32(0);
-            var metricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString();
-            var metricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString();
-
-            var traceSettings = GetTraceTransport(traceAgentUrl, tracesPipeName, agentHost, agentPort, tracesUnixDomainSocketPath);
             TracesTransport = traceSettings.Transport;
             TracesPipeName = traceSettings.PipeName;
             TracesUnixDomainSocketPath = traceSettings.UdsPath;
             AgentUri = traceSettings.AgentUri;
 
-            var metricsSettings = ConfigureMetricsTransport(metricsUrl, traceAgentUrl, agentHost, dogStatsdPort, metricsPipeName, metricsUnixDomainSocketPath);
+            var metricsSettings = ConfigureMetricsTransport(
+                metricsUrl: rawSettings.MetricsUrl,
+                traceAgentUrl: rawSettings.TraceAgentUri,
+                agentHost: rawSettings.TraceAgentHost,
+                dogStatsdPort: rawSettings.DogStatsdPort,
+                metricsPipeName: rawSettings.MetricsPipeName,
+                metricsUnixDomainSocketPath: rawSettings.MetricsUnixDomainSocketPath);
+
             MetricsHostname = metricsSettings.Hostname;
             MetricsUnixDomainSocketPath = metricsSettings.UdsPath;
             MetricsTransport = metricsSettings.Transport;
             MetricsPipeName = metricsSettings.PipeName;
             DogStatsdPort = metricsSettings.DogStatsdPort > 0
                                 ? metricsSettings.DogStatsdPort
-                                : (dogStatsdPort > 0 ? dogStatsdPort : DefaultDogstatsdPort);
+                                : (rawSettings.DogStatsdPort > 0 ? rawSettings.DogStatsdPort : DefaultDogstatsdPort);
 
-            TracesPipeTimeoutMs = config
-                                 .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)
-                                 .AsInt32(500, value => value > 0)
-                                 .Value;
+            TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;
         }
 
         /// <summary>
@@ -216,6 +211,8 @@ namespace Datadog.Trace.Configuration
         internal List<string> ValidationWarnings { get; }
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
+
+        internal Raw RawSettings { get; }
 
         // internal for testing
         internal static ExporterSettings Create(Dictionary<string, object?> settings)
@@ -433,5 +430,99 @@ namespace Datadog.Trace.Configuration
             => _telemetry.Record(ConfigTelemetryData.AgentTraceTransport, transport, recordValue: true, origin);
 
         private readonly record struct MetricsTransportSettings(MetricsTransportType Transport, string Hostname = DefaultDogstatsdHostname, int DogStatsdPort = 0, string? UdsPath = null, string? PipeName = null);
+
+        /// <summary>
+        /// These contain the "raw" settings loaded from config. If these don't change, the exporter settings also won't change
+        /// </summary>
+        internal record Raw
+        {
+            public Raw(IConfigurationSource source, IConfigurationTelemetry telemetry)
+            {
+                // Get values from the config
+                var config = new ConfigurationBuilder(source, telemetry);
+                TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString();
+                TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString();
+                TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString();
+
+                TraceAgentHost = config
+                               .WithKeys(ConfigurationKeys.AgentHost, "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME")
+                               .AsString();
+
+                TraceAgentPort = config
+                               .WithKeys(ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT")
+                               .AsInt32();
+
+                MetricsUrl = config.WithKeys(ConfigurationKeys.MetricsUri).AsString();
+                DogStatsdPort = config.WithKeys(ConfigurationKeys.DogStatsdPort).AsInt32(0);
+                MetricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString();
+                MetricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString();
+
+                TracesPipeTimeoutMs = config
+                                     .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)
+                                     .AsInt32(500, value => value > 0)
+                                     .Value;
+            }
+
+            /// <summary>
+            /// Gets the Uri where the Tracer can connect to the Agent.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.AgentUri"/>
+            public string? TraceAgentUri { get; }
+
+            /// <summary>
+            /// Gets the host where the Tracer can connect to the Agent.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.AgentUri"/>
+            public string? TraceAgentHost { get; }
+
+            /// <summary>
+            /// Gets the port where the Tracer can connect to the Agent.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.AgentUri"/>
+            public int? TraceAgentPort { get; }
+
+            /// <summary>
+            /// Gets the windows pipe name where the Tracer can connect to the Agent.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.TracesPipeName"/>
+            public string? TracesPipeName { get; }
+
+            /// <summary>
+            /// Gets the timeout in milliseconds for the windows named pipe requests.
+            /// Default is <c>100</c>.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.TracesPipeTimeoutMs"/>
+            public int TracesPipeTimeoutMs { get; }
+
+            /// <summary>
+            /// Gets the Uri where the Tracer can connect to statsd.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.AgentUri"/>
+            public string? MetricsUrl { get; }
+
+            /// <summary>
+            /// Gets the windows pipe name where the Tracer can send stats.
+            /// Default is <c>null</c>.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.MetricsPipeName"/>
+            public string? MetricsPipeName { get; }
+
+            /// <summary>
+            /// Gets the unix domain socket path where the Tracer can connect to the Agent.
+            /// This parameter is deprecated and shall be removed. Consider using AgentUri instead
+            /// </summary>
+            public string? TracesUnixDomainSocketPath { get; }
+
+            /// <summary>
+            /// Gets the unix domain socket path where the Tracer can send stats.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.MetricsUnixDomainSocketPath"/>
+            public string? MetricsUnixDomainSocketPath { get; }
+
+            /// <summary>
+            /// Gets the port where the DogStatsd server is listening for connections.
+            /// </summary>
+            public int DogStatsdPort { get; }
+        }
     }
 }

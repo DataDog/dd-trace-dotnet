@@ -50,6 +50,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             ServiceName = $"IntegrationTest-{_appName}";
         }
 
+        public string TestOutputDir => _testBaseOutputDir;
+
         public EnvironmentHelper Environment { get; }
 
         public string ServiceName { get; set; }

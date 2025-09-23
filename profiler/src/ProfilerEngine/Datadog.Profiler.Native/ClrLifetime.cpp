@@ -4,13 +4,13 @@
 #include "ClrLifetime.h"
 #include "IClrLifetime.h"
 
-ClrLifetime::ClrLifetime(std::atomic<bool>* pIsRunning)
+ClrLifetime::ClrLifetime(std::atomic<bool>* pIsInitialized)
 {
-    _pIsRunning = pIsRunning;
+    _pIsInitialized = pIsInitialized;
 }
 
-bool ClrLifetime::IsRunning() const
+bool ClrLifetime::IsInitialized() const
 {
-    auto isRunning = _pIsRunning->load();
-    return isRunning;
+    auto IsInitialized = _pIsInitialized->load();
+    return IsInitialized;
 }

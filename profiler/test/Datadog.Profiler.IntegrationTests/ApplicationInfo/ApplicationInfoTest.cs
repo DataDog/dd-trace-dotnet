@@ -52,6 +52,7 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
             // if the profiler sends a sample before the tracer is initialized, it will use the wrong service name
             distinctInfos.Count.Should().BeInRange(1, 2);
 
+            // NOTE: the tracer is sometimes using the service name in lower case
             infos.Last().Should().Be(("BuggyBitsService", "BuggyBitsEnv", "BuggyBitsVersion"));
         }
 
