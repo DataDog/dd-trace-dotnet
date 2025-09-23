@@ -5,6 +5,7 @@
 
 #if NET6_0_OR_GREATER
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
@@ -20,8 +21,82 @@ namespace Datadog.Trace.Tests
 {
     [UsesVerify]
     [TracerRestorer]
-    public class MeterListenerTests
+    public class MeterListenerTests : IDisposable
     {
+        public void Dispose()
+        {
+            MetricReader.Stop();
+            MetricReaderHandler.ResetForTesting();
+        }
+
+        [Fact]
+        public void CreatesSeparateMetricPointsForDifferentTagSets()
+        {
+            var settings = TracerSettings.Create(new());
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
+            MetricReader.Initialize();
+
+            // Create a test meter
+            using var meter = new Meter("TestMeter");
+
+            var defaultTags = new KeyValuePair<string, object>[]
+            {
+                new("test_attr", "test_value")
+            };
+
+            var nonDefaultTags = new KeyValuePair<string, object>[]
+            {
+                new("test_attr", "non_default_value")
+            };
+
+            // Test Counter
+            var counter = meter.CreateCounter<long>("test.counter");
+            counter.Add(10, defaultTags);
+            counter.Add(5, nonDefaultTags);
+
+            // Test Histogram
+            var histogram = meter.CreateHistogram<double>("test.histogram");
+            histogram.Record(3.5, defaultTags);
+            histogram.Record(2.1, nonDefaultTags);
+
+#if NET7_0_OR_GREATER
+            // Test UpDownCounter
+            var upDownCounter = meter.CreateUpDownCounter<long>("test.upDownCounter");
+            upDownCounter.Add(15, defaultTags);
+            upDownCounter.Add(-8, nonDefaultTags);
+#endif
+
+#if NET9_0_OR_GREATER
+            // Test Gauge
+            var gauge = meter.CreateGauge<double>("test.gauge");
+            gauge.Record(42.0, defaultTags);
+            gauge.Record(99.0, nonDefaultTags);
+#endif
+
+            // Collect metrics
+            MetricReader.CollectObservableInstruments();
+            var capturedMetrics = MetricReaderHandler.GetCapturedMetricsForTesting();
+
+            // Verify we have separate metric points for each tag set
+            var counterMetrics = capturedMetrics.Values.Where(m => m.InstrumentName == "test.counter").ToList();
+            counterMetrics.Count.Should().Be(2, "Counter should have 2 separate metric points for different tag sets");
+
+            var histogramMetrics = capturedMetrics.Values.Where(m => m.InstrumentName == "test.histogram").ToList();
+            histogramMetrics.Count.Should().Be(2, "Histogram should have 2 separate metric points for different tag sets");
+
+#if NET7_0_OR_GREATER
+            var upDownMetrics = capturedMetrics.Values.Where(m => m.InstrumentName == "test.upDownCounter").ToList();
+            upDownMetrics.Count.Should().Be(2, "UpDownCounter should have 2 separate metric points for different tag sets");
+#endif
+
+#if NET9_0_OR_GREATER
+            var gaugeMetrics = capturedMetrics.Values.Where(m => m.InstrumentName == "test.gauge").ToList();
+            gaugeMetrics.Count.Should().Be(2, "Gauge should have 2 separate metric points for different tag sets");
+#endif
+        }
+
         [Fact]
         public void CapturesAllMetricsWithCorrectTemporality_Default()
         {
@@ -188,8 +263,6 @@ namespace Datadog.Trace.Tests
             gaugeMetric.RunningSum.Should().Be(77.0);
             gaugeMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
 #endif
-            MetricReader.Stop();
-            MetricReaderHandler.ResetForTesting();
         }
     }
 }
