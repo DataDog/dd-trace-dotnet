@@ -13,6 +13,7 @@ internal record AgentConfiguration
         string? configurationEndpoint,
         string? debuggerEndpoint,
         string? debuggerV2Endpoint,
+        string? diagnosticsEndpoint,
         string? symbolDbEndpoint,
         string? agentVersion,
         string? statsEndpoint,
@@ -21,7 +22,6 @@ internal record AgentConfiguration
         string? telemetryProxyEndpoint,
         string? tracerFlareEndpoint,
         bool clientDropP0,
-        string? diagnosticsEndpoint,
         bool spanMetaStructs,
         bool? spanEvents)
     {
