@@ -74,7 +74,7 @@ public class QuartzTests : TracingIntegrationTest
             var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
             var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
             var fireInstanceId = new Regex(@"fire\.instance\.id:\s*\d+");
-            var scrubErrorEvents = new Regex(@"events:\s*\[.*?\]");
+            var scrubEvents = new Regex(@"events:?\s*:\s*\[(?s:.*?)\],");
             var scrubOtelVersion = new Regex(@"otel\.library\.version:\s*[\d\.]+");
             settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
             settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
@@ -82,7 +82,7 @@ public class QuartzTests : TracingIntegrationTest
             settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
             settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
             settings.AddRegexScrubber(fireInstanceId, "fire.instance.id: <fire.instance.id>");
-            settings.AddRegexScrubber(scrubErrorEvents, "events: <error_stack>");
+            settings.AddRegexScrubber(scrubEvents, "events: <events>,");
             settings.AddRegexScrubber(scrubOtelVersion, "otel.library.version: <otel-library-version>");
 
             await VerifyHelper.VerifySpans(
