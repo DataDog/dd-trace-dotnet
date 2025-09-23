@@ -102,7 +102,7 @@ public class QuartzTests : TracingIntegrationTest
     {
         if (string.IsNullOrEmpty(packageVersion))
         {
-            return new("V4", 3);
+            return new("V3", 2);
         }
 
         return new Version(packageVersion) switch
