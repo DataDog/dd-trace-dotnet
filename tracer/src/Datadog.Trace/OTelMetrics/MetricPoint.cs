@@ -14,7 +14,7 @@ using System.Threading;
 
 namespace Datadog.Trace.OTelMetrics
 {
-    internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, bool isIntegerValue = false)
+    internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags)
     {
         // Static fields first
         internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
@@ -39,8 +39,6 @@ namespace Datadog.Trace.OTelMetrics
         public AggregationTemporality? AggregationTemporality { get; } = temporality;
 
         public Dictionary<string, object?> Tags { get; } = tags;
-
-        public bool IsIntegerValue { get; set; } = isIntegerValue;
 
         // Internal properties for collection access
         internal long RunningCount => _runningCountValue;

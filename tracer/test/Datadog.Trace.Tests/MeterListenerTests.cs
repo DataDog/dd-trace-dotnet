@@ -90,6 +90,10 @@ namespace Datadog.Trace.Tests
             counterWithTestValue.Should().NotBeNull("Counter should have a metric point with test_attr=test_value");
             counterWithNonDefaultValue.Should().NotBeNull("Counter should have a metric point with test_attr=non_default_value");
 
+            // Verify RunningSum values for counter metrics
+            counterWithTestValue!.RunningSum.Should().Be(10.0, "Counter with test_value should have RunningSum of 10");
+            counterWithNonDefaultValue!.RunningSum.Should().Be(5.0, "Counter with non_default_value should have RunningSum of 5");
+
             var histogramMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.histogram").ToList();
             histogramMetrics.Count.Should().Be(2, "Histogram should have 2 separate metric points for different tag sets");
 
@@ -99,6 +103,10 @@ namespace Datadog.Trace.Tests
 
             histogramWithTestValue.Should().NotBeNull("Histogram should have a metric point with test_attr=test_value");
             histogramWithNonDefaultValue.Should().NotBeNull("Histogram should have a metric point with test_attr=non_default_value");
+
+            // Verify RunningSum values for histogram metrics
+            histogramWithTestValue!.RunningSum.Should().Be(3.5, "Histogram with test_value should have RunningSum of 3.5");
+            histogramWithNonDefaultValue!.RunningSum.Should().Be(2.1, "Histogram with non_default_value should have RunningSum of 2.1");
 
 #if NET7_0_OR_GREATER
             var upDownMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.upDownCounter").ToList();
@@ -110,6 +118,10 @@ namespace Datadog.Trace.Tests
 
             upDownWithTestValue.Should().NotBeNull("UpDownCounter should have a metric point with test_attr=test_value");
             upDownWithNonDefaultValue.Should().NotBeNull("UpDownCounter should have a metric point with test_attr=non_default_value");
+
+            // Verify RunningSum values for upDownCounter metrics
+            upDownWithTestValue!.RunningSum.Should().Be(15.0, "UpDownCounter with test_value should have RunningSum of 15");
+            upDownWithNonDefaultValue!.RunningSum.Should().Be(-8.0, "UpDownCounter with non_default_value should have RunningSum of -8");
 #endif
 
 #if NET9_0_OR_GREATER
@@ -122,51 +134,95 @@ namespace Datadog.Trace.Tests
 
             gaugeWithTestValue.Should().NotBeNull("Gauge should have a metric point with test_attr=test_value");
             gaugeWithNonDefaultValue.Should().NotBeNull("Gauge should have a metric point with test_attr=non_default_value");
+
+            // Verify RunningSum values for gauge metrics
+            gaugeWithTestValue!.RunningSum.Should().Be(42.0, "Gauge with test_value should have RunningSum of 42.0");
+            gaugeWithNonDefaultValue!.RunningSum.Should().Be(99.0, "Gauge with non_default_value should have RunningSum of 99.0");
 #endif
+        }
+
+        [Fact]
+        public void DetectsDuplicateInstrumentsWithCaseInsensitiveNames()
+        {
+            // Arrange
+            var settings = TracerSettings.Create(new());
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
+            MetricReader.Initialize();
+
+            var meter = new Meter("TestMeter");
+
+            // Create instruments with same name but different casing within the same meter
+            var counter1 = meter.CreateCounter<long>("duplicate.test.counter");
+            var counter2 = meter.CreateCounter<long>("DUPLICATE.TEST.COUNTER"); // Different casing, same meter
+
+            counter1.Add(1, new KeyValuePair<string, object>("tag1", "value1"));
+            counter2.Add(2, new KeyValuePair<string, object>("tag2", "value2"));
+
+            MetricReader.CollectObservableInstruments();
+            var capturedMetrics = MetricReaderHandler.GetCapturedMetricsForTesting();
+
+            capturedMetrics.Count.Should().Be(1, "Should have 1 metric point.");
+            // Verify both metrics have different instrument names (case-sensitive)
+            var instrumentNames = capturedMetrics.Select(m => m.InstrumentName).ToList();
+            instrumentNames.Should().Contain("duplicate.test.counter");
         }
 
         [Fact]
         public void CapturesAllMetricsWithCorrectTemporality_Default()
         {
             CapturesAllMetricsWithCorrectTemporality(
-                null,
-                AggregationTemporality.Delta,
-                AggregationTemporality.Cumulative,
-                AggregationTemporality.Delta,
-                AggregationTemporality.Delta);
+                temporalityPreference: null,
+                expectedCounterTemporality: AggregationTemporality.Delta,
+                expectedUpDownTemporality: AggregationTemporality.Cumulative,
+                expectedHistogramTemporality: AggregationTemporality.Delta,
+                expectedObservableCounterTemporality: AggregationTemporality.Delta,
+                expectedObservableGaugeTemporality: null,
+                expectedObservableUpDownTemporality: AggregationTemporality.Cumulative,
+                expectedGaugeTemporality: null);
         }
 
         [Fact]
         public void CapturesAllMetricsWithCorrectTemporality_DeltaPreference()
         {
             CapturesAllMetricsWithCorrectTemporality(
-                "delta",
-                AggregationTemporality.Delta,
-                AggregationTemporality.Cumulative,
-                AggregationTemporality.Delta,
-                AggregationTemporality.Delta);
+                temporalityPreference: "delta",
+                expectedCounterTemporality: AggregationTemporality.Delta,
+                expectedUpDownTemporality: AggregationTemporality.Cumulative,
+                expectedHistogramTemporality: AggregationTemporality.Delta,
+                expectedObservableCounterTemporality: AggregationTemporality.Delta,
+                expectedObservableGaugeTemporality: null,
+                expectedObservableUpDownTemporality: AggregationTemporality.Cumulative,
+                expectedGaugeTemporality: null);
         }
 
         [Fact]
         public void CapturesAllMetricsWithCorrectTemporality_CumulativePreference()
         {
             CapturesAllMetricsWithCorrectTemporality(
-                "cumulative",
-                AggregationTemporality.Cumulative,
-                AggregationTemporality.Cumulative,
-                AggregationTemporality.Cumulative,
-                AggregationTemporality.Cumulative);
+                temporalityPreference: "cumulative",
+                expectedCounterTemporality: AggregationTemporality.Cumulative,
+                expectedUpDownTemporality: AggregationTemporality.Cumulative,
+                expectedHistogramTemporality: AggregationTemporality.Cumulative,
+                expectedObservableCounterTemporality: AggregationTemporality.Cumulative,
+                expectedObservableGaugeTemporality: null,
+                expectedObservableUpDownTemporality: AggregationTemporality.Cumulative,
+                expectedGaugeTemporality: null);
         }
 
         [Fact]
         public void CapturesAllMetricsWithCorrectTemporality_LowMemoryPreference()
         {
             CapturesAllMetricsWithCorrectTemporality(
-                "lowmemory",
-                AggregationTemporality.Delta,
-                AggregationTemporality.Cumulative,
-                AggregationTemporality.Delta,
-                AggregationTemporality.Cumulative);
+                temporalityPreference: "lowmemory",
+                expectedCounterTemporality: AggregationTemporality.Delta,
+                expectedUpDownTemporality: AggregationTemporality.Cumulative,
+                expectedHistogramTemporality: AggregationTemporality.Delta,
+                expectedObservableCounterTemporality: AggregationTemporality.Cumulative,
+                expectedObservableGaugeTemporality: null,
+                expectedObservableUpDownTemporality: AggregationTemporality.Cumulative,
+                expectedGaugeTemporality: null);
         }
 
         private void CapturesAllMetricsWithCorrectTemporality(
@@ -174,7 +230,10 @@ namespace Datadog.Trace.Tests
             AggregationTemporality expectedCounterTemporality,
             AggregationTemporality expectedUpDownTemporality,
             AggregationTemporality expectedHistogramTemporality,
-            AggregationTemporality expectedObservableCounterTemporality)
+            AggregationTemporality expectedObservableCounterTemporality,
+            AggregationTemporality? expectedObservableGaugeTemporality,
+            AggregationTemporality expectedObservableUpDownTemporality,
+            AggregationTemporality? expectedGaugeTemporality)
         {
             var settings = TracerSettings.Create(
                 new()
@@ -251,7 +310,7 @@ namespace Datadog.Trace.Tests
             var asyncGaugeMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.async.gauge");
             asyncGaugeMetric.Should().NotBeNull();
             asyncGaugeMetric!.InstrumentType.Should().Be(InstrumentType.ObservableGauge);
-            asyncGaugeMetric.AggregationTemporality.Should().BeNull("Gauges have no temporality according to OTLP spec");
+            asyncGaugeMetric.AggregationTemporality.Should().Be(expectedObservableGaugeTemporality, "ObservableGauge temporality should match expected value");
             asyncGaugeMetric.RunningSum.Should().Be(88.0);
             asyncGaugeMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 
@@ -279,7 +338,7 @@ namespace Datadog.Trace.Tests
             var asyncUpDownMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.async.upDownCounter");
             asyncUpDownMetric.Should().NotBeNull("Async UpDown counter metric should be captured");
             asyncUpDownMetric!.InstrumentType.Should().Be(InstrumentType.ObservableUpDownCounter);
-            asyncUpDownMetric.AggregationTemporality.Should().Be(expectedUpDownTemporality);
+            asyncUpDownMetric.AggregationTemporality.Should().Be(expectedObservableUpDownTemporality);
             asyncUpDownMetric.RunningSum.Should().Be(66.0);
             asyncUpDownMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 #endif
@@ -287,7 +346,7 @@ namespace Datadog.Trace.Tests
             var gaugeMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.gauge");
             gaugeMetric.Should().NotBeNull("Gauge metric should be captured");
             gaugeMetric!.InstrumentType.Should().Be(InstrumentType.Gauge);
-            gaugeMetric.AggregationTemporality.Should().BeNull("Gauges have no temporality according to OTLP spec");
+            gaugeMetric.AggregationTemporality.Should().Be(expectedGaugeTemporality, "Gauge temporality should match expected value");
             gaugeMetric.RunningSum.Should().Be(77.0);
             gaugeMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
 #endif

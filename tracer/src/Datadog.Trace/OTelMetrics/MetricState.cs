@@ -115,29 +115,20 @@ namespace Datadog.Trace.OTelMetrics
         private MetricPoint GetOrCreatePoint(ReadOnlySpan<KeyValuePair<string, object?>> tags)
         {
             var tagSet = TagSet.FromSpan(tags);
-            var tagsArray = tags.ToArray();
 
-            return _points.GetOrAdd(tagSet, _ =>
+            var tagDict = new Dictionary<string, object?>();
+            for (int i = 0; i < tags.Length; i++)
             {
-                var tagDict = new Dictionary<string, object?>();
-                foreach (var kv in tagsArray)
-                {
-                    tagDict[kv.Key] = kv.Value;
-                }
+                var kv = tags[i];
+                tagDict[kv.Key] = kv.Value;
+            }
 
-                var isIntegerValue = _identity.InstrumentType is InstrumentType.Counter
-                    or InstrumentType.UpDownCounter
-                    or InstrumentType.ObservableCounter
-                    or InstrumentType.ObservableUpDownCounter;
-
-                return new MetricPoint(
-                    _identity.InstrumentName,
-                    _identity.MeterName,
-                    _identity.InstrumentType,
-                    MetricReaderHandler.GetTemporality(_identity.InstrumentType),
-                    tagDict,
-                    isIntegerValue);
-            });
+            return _points.GetOrAdd(tagSet, _ => new MetricPoint(
+                _identity.InstrumentName,
+                _identity.MeterName,
+                _identity.InstrumentType,
+                MetricReaderHandler.GetTemporality(_identity.InstrumentType),
+                tagDict));
         }
     }
 }

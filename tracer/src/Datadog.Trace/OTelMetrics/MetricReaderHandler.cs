@@ -11,7 +11,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -305,8 +304,6 @@ namespace Datadog.Trace.OTelMetrics
                 }
 
                 var metricStreamIdentity = new MetricStreamIdentity(instrument, aggregationType.Value);
-                var temporality = GetTemporality(aggregationType.Value);
-                var tagsDict = new Dictionary<string, object?>();
 
                 // RFC requirement: Check for duplicate instrument registration
                 if (CapturedMetrics.ContainsKey(metricStreamIdentity))
@@ -315,7 +312,7 @@ namespace Datadog.Trace.OTelMetrics
                         "Duplicate instrument registration detected: {InstrumentType} '{InstrumentName}' (Unit='{Unit}', Description='{Description}') from meter '{MeterName}'. Previous instrument will be reused.",
                         [aggregationType.Value, instrument.Name, instrument.Unit ?? "null", instrument.Description ?? "null", instrument.Meter.Name]);
 
-                    return null; // Return null to skip this duplicate
+                    return null;
                 }
 
                 // Check for duplicate metric stream names
@@ -323,12 +320,6 @@ namespace Datadog.Trace.OTelMetrics
                 {
                     Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", metricStreamIdentity.MetricStreamName);
                 }
-
-                // Determine if this is an integer instrument based on the instrument type
-                var isIntegerValue = aggregationType.Value == InstrumentType.Counter ||
-                                   aggregationType.Value == InstrumentType.UpDownCounter ||
-                                   aggregationType.Value == InstrumentType.ObservableCounter ||
-                                   aggregationType.Value == InstrumentType.ObservableUpDownCounter;
 
                 var state = new MetricState(metricStreamIdentity);
 
