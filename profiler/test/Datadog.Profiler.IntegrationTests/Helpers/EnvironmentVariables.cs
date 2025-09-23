@@ -40,5 +40,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string HttpRequestDurationThreshold = "DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD";
         public const string ForceHttpSamplingEnabled = "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING";
         public const string WaitHandleContentionProfilingEnabled = "DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED";
+        public const string ManagedActivationEnabled = "DD_PROFILING_MANAGED_ACTIVATION_ENABLED";
     }
 }

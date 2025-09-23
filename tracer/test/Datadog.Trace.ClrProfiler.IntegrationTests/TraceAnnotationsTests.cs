@@ -78,6 +78,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public async Task SubmitTraces()
         {
+#if NET6_0
+            Skip.If(true, "Starting failing after https://github.com/DataDog/dd-trace-dotnet/pull/7287");
+#endif
             const int expectedSpanCount = 50;
             var ddTraceMethodsString = string.Empty;
 
