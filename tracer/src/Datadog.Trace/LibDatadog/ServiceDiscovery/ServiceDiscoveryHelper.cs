@@ -31,7 +31,6 @@ internal static class ServiceDiscoveryHelper
             try
             {
                 var result = StoreTracerMetadata(
-                    1,
                     Tracer.RuntimeId,
                     TracerConstants.Language,
                     TracerConstants.ThreePartVersion,
@@ -66,7 +65,6 @@ internal static class ServiceDiscoveryHelper
     }
 
     private static TracerMemfdHandleResult StoreTracerMetadata(
-        byte schemaVersion,
         string runtimeId,
         string tracerLanguage,
         string tracerVersion,
@@ -75,14 +73,32 @@ internal static class ServiceDiscoveryHelper
         string? serviceEnv,
         string? serviceVersion)
     {
-        using var runtimeIdCharSlice = new CharSlice(runtimeId);
-        using var tracerLanguageCharSlice = new CharSlice(tracerLanguage);
-        using var tracerVersionCharSlice = new CharSlice(tracerVersion);
-        using var hostnameCharSlice = new CharSlice(hostname);
-        using var serviceNameCharSlice = new CharSlice(serviceName);
-        using var serviceEnvCharSlice = new CharSlice(serviceEnv);
-        using var serviceVersionCharSlice = new CharSlice(serviceVersion);
+        IntPtr ptr = IntPtr.Zero;
+        try
+        {
+            ptr = NativeInterop.LibraryConfig.TracerMetadataNew();
+            SetMetadata(ptr, MetadataKind.RuntimeId, runtimeId);
+            SetMetadata(ptr, MetadataKind.TracerLanguage, tracerLanguage);
+            SetMetadata(ptr, MetadataKind.TracerVersion, tracerVersion);
+            SetMetadata(ptr, MetadataKind.Hostname, hostname);
+            SetMetadata(ptr, MetadataKind.ServiceName, serviceName);
+            SetMetadata(ptr, MetadataKind.ServiceEnvironment, serviceEnv);
+            SetMetadata(ptr, MetadataKind.ServiceVersion, serviceVersion);
 
-        return NativeInterop.LibraryConfig.StoreTracerMetadata(schemaVersion, runtimeIdCharSlice, tracerLanguageCharSlice, tracerVersionCharSlice, hostnameCharSlice, serviceNameCharSlice, serviceEnvCharSlice, serviceVersionCharSlice);
+            return NativeInterop.LibraryConfig.StoreTracerMetadata(ptr);
+        }
+        finally
+        {
+            if (ptr != IntPtr.Zero)
+            {
+                NativeInterop.LibraryConfig.TracerMetadataFree(ptr);
+            }
+        }
+
+        void SetMetadata(IntPtr ptr, MetadataKind kind, string? value)
+        {
+            using var valueCharSlice = new CString(value);
+            NativeInterop.LibraryConfig.TracerMetadataSet(ptr, kind, valueCharSlice);
+        }
     }
 }
