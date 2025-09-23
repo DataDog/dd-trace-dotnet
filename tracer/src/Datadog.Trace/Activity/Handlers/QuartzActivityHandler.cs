@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Linq;
 using Datadog.Trace;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz;
@@ -42,32 +41,6 @@ namespace Datadog.Trace.Activity.Handlers
             ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: new OpenTelemetryTags(), out var activityMapping);
         }
 
-        private static void UpdateSpanResourceName<T>(Span span, T activity)
-            where T : IActivity
-        {
-            // Look for job.name tag in the activity tags
-            if (activity.Tags is not null && activity.OperationName is not null)
-            {
-                var jobNameTag = activity.Tags.FirstOrDefault(tag => tag.Key == "job.name");
-                if (!string.IsNullOrEmpty(jobNameTag.Value))
-                {
-                    // Update the span's resource name by appending the job name
-                    var originalResourceName = span.ResourceName;
-                    var newResourceName = CreateResourceName(activity.OperationName, jobNameTag.Value);
-                    span.ResourceName = newResourceName;
-                    Log.Debug("Updated span resource name from '{OriginalResourceName}' to '{NewResourceName}' for job '{JobName}'", originalResourceName, newResourceName, jobNameTag.Value);
-                }
-                else
-                {
-                    Log.Debug("Unable to update Quartz span resource name: No job.name tag found in Activity.Tags");
-                }
-            }
-            else
-            {
-                Log.Debug("Unable to update Quartz span resource name: Activity.Tags or Activity.OperationName are null");
-            }
-        }
-
         public void ActivityStopped<T>(string sourceName, T activity)
             where T : IActivity
         {
@@ -75,7 +48,7 @@ namespace Datadog.Trace.Activity.Handlers
             string key = activity switch
             {
                 IW3CActivity w3cActivity => w3cActivity.TraceId + w3cActivity.SpanId,
-                _ => activity.Id,
+                _ => activity.Id
             };
 
             if (key != null && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope.Span is Span span)
