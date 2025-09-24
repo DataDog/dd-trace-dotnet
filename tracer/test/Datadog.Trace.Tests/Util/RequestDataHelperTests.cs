@@ -6,10 +6,12 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
 using System.Web;
 using System.Web.Hosting;
+using Castle.Core.Internal;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -45,6 +47,27 @@ public class RequestDataHelperTests
             queryString.Should().BeNull();
         }
     }
+
+#if NETFRAMEWORK
+    [Fact]
+    public void GivenAIncorrectHost_WhenGetUrl_HelperAvoidsException()
+    {
+        var workerRequest = new MySimpleWorker("/test", "/test", "test.aspx", null, new StringWriter());
+        var context = new HttpContext(workerRequest);
+        var request = context.Request;
+
+        try
+        {
+            var url = request.Url;
+            Assert.Fail();
+        }
+        catch (UriFormatException)
+        {
+            RequestDataHelper.BuildUrl(request).Should().BeNull();
+            RequestDataHelper.GetUrl(request).Should().BeNull();
+        }
+    }
+#endif
 
     [Fact]
     public void GivenADangerousBody_WhenGetQueryString_HelperAvoidsException()
@@ -346,5 +369,19 @@ public class RequestDataHelperTests
             _host = host;
         }
     }
+
+    public class MySimpleWorker : SimpleWorkerRequest
+    {
+        public MySimpleWorker(string appVirtualDir, string appPhysicalDir, string page, string query, TextWriter output)
+            : base(appVirtualDir, appPhysicalDir, page, query, output)
+        {
+        }
+
+        public override string GetServerName()
+        {
+            return "invalid:rrr";
+        }
+    }
 }
+
 #endif
