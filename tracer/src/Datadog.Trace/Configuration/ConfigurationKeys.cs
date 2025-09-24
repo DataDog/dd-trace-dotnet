@@ -763,29 +763,6 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <summary>
-        /// String format patterns used to match integration-specific configuration keys.
-        /// </summary>
-        public static class Integrations
-        {
-            /// <summary>
-            /// Configuration key pattern for enabling or disabling an integration.
-            /// </summary>
-            public const string Enabled = "DD_TRACE_{0}_ENABLED";
-
-            /// <summary>
-            /// Configuration key pattern for enabling or disabling Analytics in an integration.
-            /// </summary>
-            [Obsolete(DeprecationMessages.AppAnalytics)]
-            public const string AnalyticsEnabled = "DD_TRACE_{0}_ANALYTICS_ENABLED";
-
-            /// <summary>
-            /// Configuration key pattern for setting Analytics sampling rate in an integration.
-            /// </summary>
-            [Obsolete(DeprecationMessages.AppAnalytics)]
-            public const string AnalyticsSampleRate = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
-        }
-
-        /// <summary>
         /// String constants for debug configuration keys.
         /// </summary>
         internal static class Debug
