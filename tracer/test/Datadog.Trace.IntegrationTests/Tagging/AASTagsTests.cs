@@ -202,12 +202,12 @@ public class AASTagsTests
             // This is a needed configuration for the AAS extension
             { ConfigurationKeys.ApiKey, "1" },
             { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
-            { ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, $"SubscriptionId+ResourceGroup-EastUSwebspace" },
-            { ConfigurationKeys.AzureAppService.ResourceGroupKey, "SiteResourceGroup" },
-            { ConfigurationKeys.AzureAppService.SiteNameKey, "SiteName" },
-            { ConfigurationKeys.AzureAppService.OperatingSystemKey, "windows" },
-            { ConfigurationKeys.AzureAppService.InstanceIdKey, "InstanceId" },
-            { ConfigurationKeys.AzureAppService.InstanceNameKey, "InstanceName" },
+            { PlatformKeys.AzureAppService.WebsiteOwnerNameKey, $"SubscriptionId+ResourceGroup-EastUSwebspace" },
+            { PlatformKeys.AzureAppService.ResourceGroupKey, "SiteResourceGroup" },
+            { PlatformKeys.AzureAppService.SiteNameKey, "SiteName" },
+            { PlatformKeys.AzureAppService.OperatingSystemKey, "windows" },
+            { PlatformKeys.AzureAppService.InstanceIdKey, "InstanceId" },
+            { PlatformKeys.AzureAppService.InstanceNameKey, "InstanceName" },
         };
 
         return new NameValueConfigurationSource(collection);

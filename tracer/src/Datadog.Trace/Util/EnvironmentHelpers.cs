@@ -174,10 +174,10 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsGoogleCloudFunctions()
         {
-            return (EnvironmentVariableExists(PlatformKeys.GCPFunction.FunctionNameKey) &&
-                    EnvironmentVariableExists(PlatformKeys.GCPFunction.FunctionTargetKey)) ||
-                   (EnvironmentVariableExists(PlatformKeys.GCPFunction.DeprecatedFunctionNameKey) &&
-                    EnvironmentVariableExists(PlatformKeys.GCPFunction.DeprecatedProjectKey));
+            return (EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionNameKey) &&
+                    EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionTargetKey)) ||
+                   (EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey) &&
+                    EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedProjectKey));
         }
 
         /// <summary>
