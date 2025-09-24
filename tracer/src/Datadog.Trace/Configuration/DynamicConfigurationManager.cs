@@ -114,7 +114,7 @@ namespace Datadog.Trace.Configuration
                 /*
                 if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
                 {
-                	GlobalSettings.SetDebugEnabled(debugLogsEnabled.Value);
+                    GlobalSettings.SetDebugEnabled(debugLogsEnabled.Value);
                     Security.Instance.SetDebugEnabled(debugLogsEnabled.Value);
 
                     NativeMethods.UpdateSettings(new[] { ConfigurationKeys.DebugEnabled }, new[] { debugLogsEnabled.Value ? "1" : "0" });
