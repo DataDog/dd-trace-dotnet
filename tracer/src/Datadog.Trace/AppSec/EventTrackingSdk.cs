@@ -21,26 +21,9 @@ public static class EventTrackingSdk
     /// Sets the details of a successful logon on the local root span
     /// </summary>
     /// <param name="userId">The userId associated with the login success</param>
-    [PublicApi]
-    public static void TrackUserLoginSuccessEvent(string userId)
-    {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent);
-        TrackUserLoginSuccessEvent(userId, null, Tracer.Instance);
-    }
-
-    /// <summary>
-    /// Sets the details of a successful logon on the local root span
-    /// </summary>
-    /// <param name="userId">The userId associated with the login success</param>
     /// <param name="metadata">Metadata associated with the login success</param>
-    [PublicApi]
-    public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata)
-    {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata);
-        TrackUserLoginSuccessEvent(userId, metadata, Tracer.Instance);
-    }
-
-    internal static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata, Tracer tracer)
+    /// <param name="tracer">The tracer instance for retrieving the active scope</param>
+    public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata, Tracer tracer)
     {
         TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventLoginSuccessSdkV1);
 
@@ -123,27 +106,9 @@ public static class EventTrackingSdk
     /// </summary>
     /// <param name="userId">The userId associated with the login failure</param>
     /// <param name="exists">If the userId associated with the login failure exists</param>
-    [PublicApi]
-    public static void TrackUserLoginFailureEvent(string userId, bool exists)
-    {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent);
-        TrackUserLoginFailureEvent(userId, exists, null, Tracer.Instance);
-    }
-
-    /// <summary>
-    /// Sets the details of a logon failure on the local root span
-    /// </summary>
-    /// <param name="userId">The userId associated with the login failure</param>
-    /// <param name="exists">If the userId associated with the login failure exists</param>
     /// <param name="metadata">Metadata associated with the login failure</param>
-    [PublicApi]
-    public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
-    {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent_Metadata);
-        TrackUserLoginFailureEvent(userId, exists, metadata, Tracer.Instance);
-    }
-
-    internal static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata, Tracer tracer)
+    /// <param name="tracer">The tracer instance for retrieving the active scope</param>
+    public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata, Tracer tracer)
     {
         TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventFailureSdkV1);
 
@@ -184,25 +149,8 @@ public static class EventTrackingSdk
     /// Sets the details of a custom event the local root span
     /// </summary>
     /// <param name="eventName">the name of the event to be tracked</param>
-    [PublicApi]
-    public static void TrackCustomEvent(string eventName)
-    {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackCustomEvent);
-        TrackCustomEvent(eventName, null, Tracer.Instance);
-    }
-
-    /// <summary>
-    /// Sets the details of a custom event the local root span
-    /// </summary>
-    /// <param name="eventName">the name of the event to be tracked</param>
     /// <param name="metadata">Metadata associated with the custom event</param>
-    [PublicApi]
-    public static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata)
-    {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackCustomEvent_Metadata);
-        TrackCustomEvent(eventName, metadata, Tracer.Instance);
-    }
-
+    /// <param name="tracer">The tracer instance for retrieving the active scope</param>
     internal static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata, Tracer tracer)
     {
         TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventCustomSdkV1);

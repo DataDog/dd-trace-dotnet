@@ -303,6 +303,25 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "consumer"));
 
+        public static Result IsAzureServiceBusInboundAPMV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => s
+                .Matches(Name, "azure_servicebus.receive")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IfPresentMatchesOneOf("messaging.operation", "receive", "process")
+                .IsOptional("messaging.source.name")
+                .IsOptional("messaging.destination.name", "message_bus.destination")
+                .IfPresentMatches("messaging.system", "servicebus")
+                .IsOptional("messaging.batch.message_count")
+                .IsOptional("messaging.message_id")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .IsPresent("server.address")
+                .Matches("component", "AzureServiceBus")
+                .IfPresentMatches("kind", "consumer")
+                .IsOptional("_dd.base_service")
+                .Matches("span.kind", "consumer"));
+
         public static Result IsAzureServiceBusOutboundV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "producer")
@@ -321,6 +340,26 @@ namespace Datadog.Trace.TestHelpers
                 .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
                 .IsOptional("otel.status_description")
                 .IfPresentMatches("component", "servicebus")
+                .IfPresentMatches("kind", "producer")
+                .IsOptional("_dd.base_service")
+                .Matches("span.kind", "producer"));
+
+        public static Result IsAzureServiceBusOutboundAPMV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => s
+                .Matches(Name, "azure_servicebus.send")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsPresent("messaging.destination.name", "message_bus.destination")
+                .IfPresentMatches("messaging.system", "servicebus")
+                .Matches("messaging.operation", "send")
+                .IsOptional("messaging.batch.message_count")
+                .IsOptional("messaging.message_id")
+                .IsPresent("network.destination.name")
+                .IsPresent("network.destination.port")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .IsOptional("server.address")
+                .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "producer"));

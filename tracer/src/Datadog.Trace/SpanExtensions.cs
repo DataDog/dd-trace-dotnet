@@ -27,14 +27,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="span">The span to be tagged</param>
         /// <param name="userDetails">The details of the current logged on user</param>
-        [PublicApi]
         public static void SetUser(this ISpan span, UserDetails userDetails)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetUser);
-            SetUserInternal(span, userDetails);
-        }
-
-        internal static void SetUserInternal(this ISpan span, UserDetails userDetails)
         {
             if (span is null)
             {
@@ -97,14 +90,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        [PublicApi]
         public static ISpan SetTag(this ISpan span, string key, double? value)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTag);
-            return span.SetTagInternal(key, value);
-        }
-
-        internal static ISpan SetTagInternal(this ISpan span, string key, double? value)
         {
             if (span is null)
             {

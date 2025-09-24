@@ -67,7 +67,7 @@ namespace Datadog.Trace.Configuration
         {
             var oldSettings = Tracer.Instance.Settings;
 
-            var headerTags = TracerSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled: true);
+            var headerTags = MutableSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled: true);
             // var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, ConfigurationKeys.ServiceNameMappings);
 
             var globalTags = settings.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
@@ -104,14 +104,14 @@ namespace Datadog.Trace.Configuration
             /*
             if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
             {
-                GlobalSettings.SetDebugEnabledInternal(debugLogsEnabled.Value);
+                GlobalSettings.SetDebugEnabled(debugLogsEnabled.Value);
                 Security.Instance.SetDebugEnabled(debugLogsEnabled.Value);
 
                 NativeMethods.UpdateSettings(new[] { ConfigurationKeys.DebugEnabled }, new[] { debugLogsEnabled.Value ? "1" : "0" });
             }
             */
 
-            Tracer.ConfigureInternal(newSettings);
+            Tracer.Configure(newSettings);
         }
 
         private ApplyDetails[] ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)

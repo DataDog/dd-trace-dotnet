@@ -104,6 +104,7 @@ variables:
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
   DD_LOGGER_DD_TRACE_LOG_DIRECTORY: $(System.DefaultWorkingDirectory)/artifacts/build_data/infra_logs
+  DD_TRACE_DEBUG: $[eq(variables['ForceDebugRun'], 'true')]
   DD_LOGGER_TF_BUILD: True
   DD_LOGGER_BUILD_BUILDID: $(Build.BuildId)
   DD_LOGGER_BUILD_DEFINITIONNAME: $(Build.DefinitionName)
@@ -127,7 +128,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.27.0
+  ToolVersion: 3.28.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -405,7 +406,7 @@ stages:
       dependsOn: []
       pool:
         name: $(linuxX64Pool)
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -862,7 +863,7 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-      
+
       # Download _both_ musl and glibc if we're building the universal package
       # but only the musl package if we're building alpine package
     - template: steps/download-artifact.yml
@@ -1875,7 +1876,7 @@ stages:
         where dotnet
       displayName: 'Rename default dotnet.exe'
     - template: steps/restore-working-directory.yml
-        
+
     - template: steps/install-msi.yml
       parameters:
         # Pin to a specific version of Azure Functions, as beyond this requires Azurite
@@ -1975,7 +1976,7 @@ stages:
 - stage: static_analysis_tests_profiler
   condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -2428,7 +2429,7 @@ stages:
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
-        
+
     - script: |
         # Include the serverless dockerfile
         docker-compose -p $(DockerComposeProjectName) \
@@ -2813,7 +2814,7 @@ stages:
   #address sanitizer tests
   condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -2857,7 +2858,7 @@ stages:
         baseImage: debian
         command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        
+
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
@@ -2896,9 +2897,9 @@ stages:
 
 - stage: ubsan_profiler_tests
 #undefined behavior sanitizer tests
-  condition: > 
+  condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -2958,7 +2959,7 @@ stages:
   #thread sanitizer tests
   condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -3010,7 +3011,7 @@ stages:
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
 
- 
+
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -4223,7 +4224,7 @@ stages:
             LABELS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$(System.PullRequest.PullRequestNumber)" \
             | jq -r '.labels[].name')
-          
+
             if echo "$LABELS" | grep -q "docker_image_artifacts"; then
               BRANCH_NAME="$(System.PullRequest.SourceBranch)"
               REF="refs/heads/$BRANCH_NAME"
@@ -4281,7 +4282,7 @@ stages:
     - job: Windows
       dependsOn: create_github_token
       variables:
-        GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]  
+        GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]
 
       timeoutInMinutes: 30
 
@@ -4322,7 +4323,7 @@ stages:
           GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
 
 - stage: execution_benchmarks
-  dependsOn: [build_windows_tracer, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_profiler, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -4354,7 +4355,7 @@ stages:
 
     - template: steps/download-artifact.yml
       parameters:
-        artifact: windows-tracer-home
+        artifact: windows-profiler-home
         path: $(monitoringHome)
         retryCountOnTaskFailure: 5
 
@@ -4675,16 +4676,16 @@ stages:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [compute_scenarios, tests]
-        
+
     - job: compute_scenarios
       timeoutInMinutes: 60
       displayName: Compute system-tests scenarios
       pool:
           vmImage: ubuntu-latest
-          
+
       steps:
         - checkout: none
-          
+
         - task: UsePythonVersion@0
           inputs:
             versionSpec: '3.12'
@@ -4692,15 +4693,15 @@ stages:
 
         - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
           displayName: Get system tests repo
-          
+
         - script: |
             ./build.sh -i runner
           displayName: Install runner
           workingDirectory: system-tests
-          
+
         - script: |
             set -e
-            
+
             source venv/bin/activate
             # Try to get each workflow to take 15 mins = 900s
             PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g "$(scenarioGroups)" -s "$(additionalScenarios)" -t 900 > out.txt
@@ -4710,7 +4711,7 @@ stages:
 
             echo "Found scenario groups: $endtoend_scenario_groups"
             echo "Found weblogs: $endtoend_weblogs"
-            
+
             # Write the weblogs to a file (for later use to generate the docker images)
             python -c "import json; variants = json.loads('$endtoend_weblogs'); print('\n'.join(variants))" > /tmp/weblogs_list.txt
             # Generate matrix and write to file
@@ -4735,7 +4736,7 @@ stages:
           displayName: Generate scenarios matrix JSON
           name: create_matrix
           workingDirectory: system-tests
-          
+
         - template: steps/download-artifact.yml
           parameters:
             artifact: linux-packages-linux-x64
@@ -4752,14 +4753,14 @@ stages:
             set -e
             cd system-tests
             mkdir -p ../docker-images
-        
+
             while read w; do
               echo "------------------------------------"
               echo "Building images for variant: $w"
               echo "------------------------------------"
               # Build the images. For example:
               ./build.sh dotnet --weblog-variant $w
-            
+
               # Save weblog variant image
               docker save system_tests/weblog:latest -o ../docker-images/$w.tar
             done < /tmp/weblogs_list.txt
@@ -4780,7 +4781,7 @@ stages:
       pool:
           vmImage: ubuntu-latest
       dependsOn: compute_scenarios
-     
+
       strategy:
         matrix: $[ dependencies.compute_scenarios.outputs['create_matrix.matrixJson'] ]
 
@@ -4794,7 +4795,7 @@ stages:
 
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
-        
+
       - template: steps/download-artifact.yml
         parameters:
           artifact: system-test-docker-images
@@ -4817,7 +4818,7 @@ stages:
       - script: |
           echo "Loading images for variant: $(WEBLOG_VARIANT)"
           docker load -i "$(Build.SourcesDirectory)/$(WEBLOG_VARIANT).tar"
-          
+
           echo "Available Docker images after loading:"
           docker images
         displayName: Docker load the correct variant
@@ -4845,7 +4846,13 @@ stages:
           # Replace ',' with ' +S ' and add initial +S prefix
           SCENARIOS=$(SCENARIO)
           SCENARIOS_TO_RUN="+S ${SCENARIOS//,/ +S }"
-          ./run.sh $SCENARIOS_TO_RUN --splits=$(N) --group=$(I)
+
+          DEBUG_FLAG=""
+          if [[ "$(DD_TRACE_DEBUG)" == "True" ]]; then
+            DEBUG_FLAG="--force-dd-trace-debug"
+          fi
+
+          ./run.sh $SCENARIOS_TO_RUN --splits=$(N) --group=$(I) $DEBUG_FLAG
         workingDirectory: system-tests
         displayName: Run tests
         env:
@@ -4964,7 +4971,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         name: $(linuxX64SmokePool)
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -4993,7 +5000,7 @@ stages:
           parameters:
             target: 'chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
-        
+
         # Run the "dd-dotnet" installer smoke tests
         - script: |
             docker-compose -p $(DockerComposeProjectName) build \
@@ -5430,7 +5437,7 @@ stages:
             mkdir -p artifacts/build_data/logs
           displayName: create test data directories
 
-        # Run the "normal" installer smoke tests 
+        # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
@@ -5508,7 +5515,7 @@ stages:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
-        # Run the "normal" installer smoke tests 
+        # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
@@ -5525,7 +5532,7 @@ stages:
           parameters:
             target: 'chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
-        
+
         # Run the "dd-dotnet" installer smoke tests
         - script: |
             docker-compose -p $(DockerComposeProjectName) build \
@@ -5978,7 +5985,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         vmImage: windows-2022
-      
+
       steps:
         - template: steps/install-docker-compose-v1.yml
           parameters:
@@ -6210,7 +6217,7 @@ stages:
         snapshotOutputDir: "$(System.DefaultWorkingDirectory)/artifacts/build_data/snapshots"
       pool:
         vmImage: $(vmImage)
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -6263,7 +6270,7 @@ stages:
             echo "##vso[task.setvariable variable=AGENT_PID]$agent_pid"
             echo "Agent PID: $agent_pid, waiting for startup"
 
-            while ! nc -z localhost 8126; do   
+            while ! nc -z localhost 8126; do
               sleep 0.1 # wait for 1/10 of the second before check again
             done
 
@@ -6299,10 +6306,10 @@ stages:
         - script: |
             echo "Dumping traces"
             $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_traces.json "http://localhost:8126$(TRACE_DUMP_ENDPOINT)"
-            
+
             echo "Dumping stats"
             $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_stats.json "http://localhost:8126$(STATS_DUMP_ENDPOINT)"
-            
+
             echo "Dumping all requests"
             $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
 
@@ -6344,7 +6351,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         vmImage: ubuntu-latest
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
