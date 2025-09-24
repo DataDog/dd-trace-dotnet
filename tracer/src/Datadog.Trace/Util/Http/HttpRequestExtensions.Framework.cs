@@ -36,7 +36,7 @@ namespace Datadog.Trace.Util.Http
         /// <param name="bypassHttpRequestUrl">Whether or not to call access HttpRequest.Url (which caches the URL in HttpRequest).</param>
         /// <returns>The retrieved Url.</returns>
         /// <seealso cref="Configuration.ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled"/>
-        internal static string GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager, bool bypassHttpRequestUrl)
+        internal static string? GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager, bool bypassHttpRequestUrl)
         {
             var url = bypassHttpRequestUrl ? RequestDataHelper.BuildUrl(request) : RequestDataHelper.GetUrl(request);
 
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Util.Http
             }
             else
             {
-                return string.Empty;
+                return null;
             }
         }
     }
