@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -13,6 +14,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 #if NETCOREAPP
 using Microsoft.AspNetCore.Http;
@@ -104,7 +106,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             var context = contextMoq.Object;
             CoreHttpContextStore.Instance.Set(context);
 
-            var securityCoordinator = TryGet(AppSec.Security.Instance, rootTestScope.Span);
+            using var security = new AppSec.Security();
+            var securityCoordinator = TryGet(security, rootTestScope.Span);
             securityCoordinator.HasValue.Should().BeTrue();
 
             var nativeResult = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
@@ -131,7 +134,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             contextMoq.Setup(x => x.Response.StatusCode).Throws(new NullReferenceException("Test exception"));
             contextMoq.Setup(x => x.Features).Returns(mockedFeatures.Object);
 
-            var securityCoordinator = SecurityCoordinator.Get(AppSec.Security.Instance, rootTestScope.Span, new HttpTransport(contextMoq.Object));
+            using var security = new AppSec.Security();
+            var securityCoordinator = SecurityCoordinator.Get(security, rootTestScope.Span, new HttpTransport(contextMoq.Object));
             var result = securityCoordinator.RunWaf(new(), runWithEphemeral: true, isRasp: true);
             result.Should().BeNull();
         }
@@ -174,7 +178,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             headersWrittenProperty.SetValue(response, true);
 
             HttpContext.Current = new HttpContext(new HttpRequest("file", "http://localhost/benchmarks", "data=param"), response);
-            var securityCoordinator = SecurityCoordinator.TryGet(AppSec.Security.Instance, span);
+            using var security = new AppSec.Security();
+            var securityCoordinator = SecurityCoordinator.TryGet(security, span);
             securityCoordinator.Should().NotBeNull();
             var resultMock = new Mock<IResult>();
             resultMock.SetupGet(x => x.ShouldBlock).Returns(true);
