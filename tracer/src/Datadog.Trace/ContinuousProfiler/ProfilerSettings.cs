@@ -55,20 +55,7 @@ internal class ProfilerSettings
                                        _ when x.ToBoolean() is { } boolean => boolean ? "true" : "false",
                                        _ => ParsingResult<string>.Failure(),
                                    },
-                                   getDefaultValue: () =>
-                                   {
-                                       // If there's no explicit `DD_PROFILING_ENABLED` key,
-                                       // we set the state based on the SSI value, only checking env vars (not the full stack)
-                                       var isSsiDeployment = envConfigBuilder
-                                                            .WithKeys(ConfigurationKeys.SsiDeployed)
-                                                            .AsString();
-
-                                       return isSsiDeployment switch
-                                       {
-                                           { Length: > 0 } => "auto",
-                                           _ => "false",
-                                       };
-                                   },
+                                   getDefaultValue: () => string.Empty,
                                    validator: null);
 
         ProfilerState = profilingEnabled switch
