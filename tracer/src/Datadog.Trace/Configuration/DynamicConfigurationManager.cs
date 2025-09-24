@@ -121,7 +121,7 @@ namespace Datadog.Trace.Configuration
                 }
                 */
 
-            Tracer.Configure(newSettings);
+                Tracer.Configure(newSettings);
             }
 
             var dynamicDebuggerSettings = new ImmutableDynamicDebuggerSettings
