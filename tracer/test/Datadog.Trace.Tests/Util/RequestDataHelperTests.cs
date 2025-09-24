@@ -52,7 +52,7 @@ public class RequestDataHelperTests
     [Fact]
     public void GivenAIncorrectHost_WhenGetUrl_HelperAvoidsException()
     {
-        var workerRequest = new MySimpleWorker("/test", "/test", "test.aspx", null, new StringWriter());
+        var workerRequest = new SimpleWorkerInvalidHost("/test", "/test", "test.aspx", null, new StringWriter());
         var context = new HttpContext(workerRequest);
         var request = context.Request;
 
@@ -370,9 +370,9 @@ public class RequestDataHelperTests
         }
     }
 
-    public class MySimpleWorker : SimpleWorkerRequest
+    public class SimpleWorkerInvalidHost : SimpleWorkerRequest
     {
-        public MySimpleWorker(string appVirtualDir, string appPhysicalDir, string page, string query, TextWriter output)
+        public SimpleWorkerInvalidHost(string appVirtualDir, string appPhysicalDir, string page, string query, TextWriter output)
             : base(appVirtualDir, appPhysicalDir, page, query, output)
         {
         }
