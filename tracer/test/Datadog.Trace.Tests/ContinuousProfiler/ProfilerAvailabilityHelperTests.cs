@@ -58,6 +58,16 @@ public class ProfilerAvailabilityHelperTests
         ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(attachedCheck).Should().BeTrue();
     }
 
+    [SkippableTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void IsContinuousProfilerAvailable_OnWindows_NoEnvVar_IgnoresAttachment_ReturnsFalse(bool clrAttached)
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+        var attachedCheck = clrAttached ? ClrProfilerIsAttached : ClrProfilerNotAttached;
+        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(attachedCheck).Should().BeFalse();
+    }
+
     [SkippableFact]
     public void IsContinuousProfilerAvailable_InLambda_IgnoresAttachment_ReturnsFalse()
     {
@@ -67,7 +77,7 @@ public class ProfilerAvailabilityHelperTests
     }
 
     [SkippableFact]
-    public void IsContinuousProfilerAvailable_InAzureFunctionsWithoutExtension_IgnoresAttachment_ReturnsFalse()
+    public void IsContinuousProfilerAvailable_InAzureFunctions_IgnoresAttachment_ReturnsFalse()
     {
         SkipUnsupported();
         Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, "MyApp");
@@ -76,25 +86,12 @@ public class ProfilerAvailabilityHelperTests
         ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(ClrProfilerIsAttached).Should().BeFalse();
     }
 
-    [SkippableTheory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void IsContinuousProfilerAvailable_InAzureFunctionsWithExtension_ReturnsClrAttached(bool clrAttached)
-    {
-        SkipUnsupported();
-        var attachedCheck = clrAttached ? ClrProfilerIsAttached : ClrProfilerNotAttached;
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, "MyApp");
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet");
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "v6.0");
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1");
-        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(attachedCheck).Should().Be(clrAttached);
-    }
-
     private static void SkipUnsupported()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.X86);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.ARM64);
+        SkipOn.Platform(SkipOn.PlatformValue.Windows); // Windows is controlled by env var only, so doesn't apply to most tests
     }
 }
