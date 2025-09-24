@@ -29,8 +29,7 @@ namespace Datadog.Trace.Tests.Configuration
             var result = ApmTracingConfigMerger.MergeConfigurations(configs, "test-service", "test-env");
 
             // Assert
-            var resultJson = JObject.Parse(result);
-            resultJson["lib_config"]?["tracing_enabled"]?.Value<bool>().Should().BeTrue();
+            result["lib_config"]?["tracing_enabled"]?.Value<bool>().Should().BeTrue();
         }
 
         [Fact]
@@ -66,8 +65,7 @@ namespace Datadog.Trace.Tests.Configuration
             var result = ApmTracingConfigMerger.MergeConfigurations(configs, "test-service", "production");
 
             // Assert
-            var resultJson = JObject.Parse(result);
-            var libConfig = resultJson["lib_config"];
+            var libConfig = result["lib_config"];
 
             // Service+Env config should override others for log_injection_enabled
             libConfig?["log_injection_enabled"]?.Value<bool>().Should().BeFalse();
@@ -94,13 +92,13 @@ namespace Datadog.Trace.Tests.Configuration
             var result = ApmTracingConfigMerger.MergeConfigurations(configs, "any-service", "production");
 
             // Assert
-            var resultJson = JObject.Parse(result);
-            resultJson["lib_config"]?["tracing_enabled"]?.Value<bool>().Should().BeFalse();
+            result["lib_config"]?["tracing_enabled"]?.Value<bool>().Should().BeFalse();
         }
 
         [Fact]
-        public void MergeConfigurations_NoMatchingConfigs_ReturnsEmpty()
+        public void MergeConfigurations_NoMatchingConfigs_ReturnsNonEmpty()
         {
+            // We have decided for now to not filter out non-matching configs. We will address it in a later PR.
             // Arrange
             var config = CreateRemoteConfig(
                 "config1",
@@ -116,7 +114,7 @@ namespace Datadog.Trace.Tests.Configuration
             var result = ApmTracingConfigMerger.MergeConfigurations(configs, "test-service", "production");
 
             // Assert
-            result.Should().Be("{\"lib_config\":{}}");
+            result?["lib_config"]?["tracing_enabled"]?.Value<bool>().Should().BeFalse();
         }
 
         [Fact]
@@ -135,19 +133,18 @@ namespace Datadog.Trace.Tests.Configuration
             // Act
             var result = ApmTracingConfigMerger.MergeConfigurations(configs, "test-service", "production");
 
-            var resultJson = JObject.Parse(result);
-            resultJson["lib_config"]?["tracing_enabled"]?.Value<bool>().Should().BeFalse();
+            result["lib_config"]?["tracing_enabled"]?.Value<bool>().Should().BeFalse();
         }
 
         [Fact]
         public void MergeConfigurations_ComplexScenario_CorrectPriorityMerging()
         {
-            // Arrange - Following the priority order:
-            // 1. Service+env (highest priority)
-            // 2. Service
-            // 3. Env
-            // 4. Cluster-target (not implemented)
-            // 5. Org level (lowest priority)
+            // Arrange - Following the priority order (bit-based calculation):
+            // 6 (110): Service+env (highest priority)
+            // 4 (100): Service only
+            // 2 (010): Env only
+            // 1 (001): Cluster-target only
+            // 0 (000): Org level (lowest priority)
 
             var orgConfig = CreateRemoteConfig(
                 "org",
@@ -204,8 +201,7 @@ namespace Datadog.Trace.Tests.Configuration
             var result = ApmTracingConfigMerger.MergeConfigurations(configs, "test-service", "production");
 
             // Assert
-            var resultJson = JObject.Parse(result);
-            var libConfig = resultJson["lib_config"];
+            var libConfig = result["lib_config"];
 
             // Service+Env (highest priority) - should set tracing_sampling_rate
             libConfig?["tracing_sampling_rate"]?.Value<double>().Should().Be(0.8);
@@ -244,12 +240,15 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("test-service", "production", null, 5)] // Service+env
-        [InlineData("test-service", "*", null, 4)]          // Service only
-        [InlineData("*", "production", null, 3)]            // Env only
-        [InlineData(null, null, "", 2)]                     // Cluster only
-        [InlineData("*", "*", null, 1)]                     // Wildcard, Org level
-        [InlineData(null, null, null, 1)]                   // Org level
+        [InlineData("test-service", "production", "test-cluster", 7)]   // Service+env+cluster (111 binary = 7)
+        [InlineData("test-service", "production", null, 6)] // Service+env (110 binary = 6)
+        [InlineData("test-service", "*", "test-cluster", 5)]            // Service+cluster (101 binary = 5)
+        [InlineData("test-service", "*", null, 4)]          // Service only (100 binary = 4)
+        [InlineData("*", "production", "test-cluster", 3)]              // Env+cluster (011 binary = 3)
+        [InlineData("*", "production", null, 2)]            // Env only (010 binary = 2)
+        [InlineData(null, null, "test-cluster", 1)]                     // Cluster only (001 binary = 1)
+        [InlineData("*", "*", null, 0)]                     // Wildcard, Org level (000 binary = 0)
+        [InlineData(null, null, null, 0)]                   // Org level (000 binary = 0)
         public void ApmTracingConfig_Priority_CorrectValues(string? service, string? env, string? cluster, int expectedPriority)
         {
             // Arrange
@@ -264,7 +263,10 @@ namespace Datadog.Trace.Tests.Configuration
             K8sTargetV2? clusterTarget = null;
             if (cluster != null)
             {
-                clusterTarget = new K8sTargetV2();
+                clusterTarget = new K8sTargetV2
+                {
+                    ClusterTargets = [new() { ClusterName = cluster }]
+                };
             }
 
             var config = new ApmTracingConfig("test", libConfig, serviceTarget, clusterTarget);
@@ -281,10 +283,13 @@ namespace Datadog.Trace.Tests.Configuration
                 "org",
                 new { lib_config = new { tracing_enabled = false } });
 
-            var clusterConfig = CreateRemoteConfigWithCluster(
+            var clusterConfig = CreateRemoteConfig(
                 "cluster",
-                new { tracing_enabled = true },
-                new { cluster_targets = new[] { new { cluster_name = "prod-cluster" } } });
+                new
+                {
+                    lib_config = new { tracing_enabled = true },
+                    k8s_target_v2 = new { cluster_targets = new[] { new { cluster_name = "prod-cluster" } } }
+                });
 
             var envConfig = CreateRemoteConfig(
                 "env",
@@ -300,13 +305,12 @@ namespace Datadog.Trace.Tests.Configuration
             var result = ApmTracingConfigMerger.MergeConfigurations(configs, "test-service", "production");
 
             // Assert
-            var resultJson = JObject.Parse(result);
-            var libConfig = resultJson["lib_config"];
+            var libConfig = result["lib_config"];
 
-            // Env config (priority 3) should override cluster (priority 2) for log_injection_enabled
+            // Env config should override cluster for log_injection_enabled
             libConfig?["log_injection_enabled"]?.Value<bool>().Should().BeTrue();
 
-            // Env config (priority 3) should override cluster (priority 2) for tracing_enabled
+            // Env config should override cluster for tracing_enabled
             // But if env doesn't specify it, cluster should override org
             libConfig?["tracing_enabled"]?.Value<bool>().Should().BeTrue();
         }
@@ -315,10 +319,13 @@ namespace Datadog.Trace.Tests.Configuration
         public void MergeConfigurations_ServiceEnvOverridesCluster_CorrectPriority()
         {
             // Arrange
-            var clusterConfig = CreateRemoteConfigWithCluster(
+            var clusterConfig = CreateRemoteConfig(
                 "cluster",
-                new { tracing_enabled = false },
-                new { cluster_targets = new[] { new { cluster_name = "prod-cluster" } } });
+                new
+                {
+                    lib_config = new { tracing_enabled = false },
+                    k8s_target_v2 = new { cluster_targets = new[] { new { cluster_name = "prod-cluster" } } }
+                });
 
             var serviceEnvConfig = CreateRemoteConfig(
                 "service-env",
@@ -334,24 +341,25 @@ namespace Datadog.Trace.Tests.Configuration
             var result = ApmTracingConfigMerger.MergeConfigurations(configs, "test-service", "production");
 
             // Assert
-            var resultJson = JObject.Parse(result);
-
-            // Service+Env (priority 5) should override cluster (priority 2)
-            resultJson["lib_config"]?["tracing_enabled"]?.Value<bool>().Should().BeTrue();
+            // Service+Env should override cluster
+            result["lib_config"]?["tracing_enabled"]?.Value<bool>().Should().BeTrue();
         }
 
         [Fact]
         public void MergeConfigurations_AllPriorityLevels_CorrectOrdering()
         {
-            // Arrange - Test all 5 priority levels
+            // Arrange - Test all 5 priority levels (org, cluster, env, service, service+env)
             var orgConfig = CreateRemoteConfig(
                 "org",
                 new { lib_config = new { tracing_enabled = true, value = "org" } });
 
-            var clusterConfig = CreateRemoteConfigWithCluster(
+            var clusterConfig = CreateRemoteConfig(
                 "cluster",
-                new { log_injection_enabled = true, value = "cluster" },
-                new { cluster_targets = new[] { new { cluster_name = "test" } } });
+                new
+                {
+                    lib_config = new { log_injection_enabled = true, value = "cluster" },
+                    k8s_target_v2 = new { cluster_targets = new[] { new { cluster_name = "test" } } }
+                });
 
             var envConfig = CreateRemoteConfig(
                 "env",
@@ -386,15 +394,14 @@ namespace Datadog.Trace.Tests.Configuration
             var result = ApmTracingConfigMerger.MergeConfigurations(configs, "test-service", "production");
 
             // Assert
-            var resultJson = JObject.Parse(result);
-            var libConfig = resultJson["lib_config"];
+            var libConfig = result["lib_config"];
 
             // Verify priority ordering:
-            libConfig?["tracing_tags"]?.Value<string>().Should().Be("tags");            // Service+Env (5)
+            libConfig?["tracing_tags"]?.Value<string>().Should().Be("tags");            // Service+Env (6)
             libConfig?["tracing_header_tags"]?.Value<string>().Should().Be("headers");  // Service (4)
-            libConfig?["tracing_sampling_rate"]?.Value<double>().Should().Be(0.3);      // Env (3)
-            libConfig?["log_injection_enabled"]?.Value<bool>().Should().BeTrue();               // Cluster (2)
-            libConfig?["tracing_enabled"]?.Value<bool>().Should().BeTrue();                     // Org (1)
+            libConfig?["tracing_sampling_rate"]?.Value<double>().Should().Be(0.3);      // Env (2)
+            libConfig?["log_injection_enabled"]?.Value<bool>().Should().BeTrue();               // Cluster (1)
+            libConfig?["tracing_enabled"]?.Value<bool>().Should().BeTrue();                     // Org (0)
         }
 
         [Fact]
@@ -421,7 +428,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                     // LogInjectionEnabled is null, should use value from low priority
                 },
-                new ServiceTarget { Service = "test-service", Env = "production" }, // Service+env (priority 5)
+                new ServiceTarget { Service = "test-service", Env = "production" }, // Service+env (priority 6)
                 null);
 
             // Act
@@ -429,30 +436,52 @@ namespace Datadog.Trace.Tests.Configuration
 
             // Assert
             merged.ConfigId.Should().Be("high"); // Higher priority config's ID
-            merged.Priority.Should().Be(5); // Higher priority
+            merged.Priority.Should().Be(6); // Higher priority (service+env = 110 binary = 6)
             merged.LibConfig.TracingEnabled.Should().BeTrue(); // From high priority
             merged.LibConfig.LogInjectionEnabled.Should().BeTrue(); // From low priority
             merged.LibConfig.TracingSamplingRate.Should().Be(0.8); // From high priority
         }
 
-        private static RemoteConfiguration CreateRemoteConfigWithCluster(string id, object libConfig, object k8sTarget)
+        [Fact]
+        public void MergeConfigurations_ReturnsValidJToken()
         {
-            var content = new
-            {
-                lib_config = libConfig,
-                k8s_target_v2 = k8sTarget
-            };
+            // Arrange
+            var orgConfig = CreateRemoteConfig(
+                "org",
+                new
+                {
+                    lib_config = new
+                    {
+                        tracing_enabled = true,
+                        log_injection_enabled = true,
+                        tracing_sampling_rate = 0.1,
+                        tracing_tags = "[\"org:global\"]"
+                    }
+                });
 
-            var json = JsonConvert.SerializeObject(content);
-            var bytes = Encoding.UTF8.GetBytes(json);
-            var path = RemoteConfigurationPath.FromPath($"datadog/123/APM_TRACING/{id}/config");
+            var serviceConfig = CreateRemoteConfig(
+                "service",
+                new
+                {
+                    service_target = new { service = "test-service" },
+                    lib_config = new
+                    {
+                        log_injection_enabled = false,
+                        tracing_sampling_rules = "[{\"sample_rate\":0.9}]"
+                    }
+                });
 
-            return new RemoteConfiguration(
-                path: path,
-                contents: bytes,
-                length: bytes.Length,
-                hashes: new Dictionary<string, string> { { "sha256", "dummy-hash" } },
-                version: 1);
+            var configs = new List<RemoteConfiguration> { orgConfig, serviceConfig };
+
+            // Act
+            var result = ApmTracingConfigMerger.MergeConfigurations(configs, "test-service", "production");
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Type.Should().Be(JTokenType.Object);
+            result["lib_config"].Should().NotBeNull();
+            result["lib_config"]?["log_injection_enabled"]?.Value<bool>().Should().BeFalse();
+            result["lib_config"]?["tracing_enabled"]?.Value<bool>().Should().BeTrue();
         }
 
         private static RemoteConfiguration CreateRemoteConfig(string id, object content)
