@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             try
             {
                 tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsSqsTags(spanKind);
-                string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsSqsServiceName);
+                string serviceName = tracer.CurrentTraceSettings.GetServiceName(DatadogAwsSqsServiceName);
                 string operationName = GetOperationName(tracer, spanKind);
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
