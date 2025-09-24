@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tests.Configuration
             var name = nameof(IntegrationId.Kafka);
             var source = new NameValueConfigurationSource(new()
             {
-                { string.Format(ConfigurationKeys.Integrations.Enabled, name), initiallyEnabled.ToString() },
+                { string.Format(IntegrationSettings.IntegrationEnabled, name), initiallyEnabled.ToString() },
             });
 
             var settings = new IntegrationSettings(name, source: source, isExplicitlyDisabled: true);
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tests.Configuration
             var name = nameof(IntegrationId.Kafka);
             var source = new NameValueConfigurationSource(new()
             {
-                { string.Format(ConfigurationKeys.Integrations.Enabled, name), initiallyEnabled.ToString() },
+                { string.Format(IntegrationSettings.IntegrationEnabled, name), initiallyEnabled.ToString() },
             });
 
             var settings = new IntegrationSettings(name, source: source, isExplicitlyDisabled: false);
