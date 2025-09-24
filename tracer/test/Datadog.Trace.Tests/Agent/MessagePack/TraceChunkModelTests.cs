@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -492,7 +493,7 @@ public class TraceChunkModelTests
     private Span CreateSpan(ulong traceId, ulong spanId, ulong parentId)
     {
         var parentContent = new SpanContext(traceId, parentId);
-        var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+        var traceContext = new TraceContext(new StubDatadogTracer());
         var spanContext = new SpanContext(parentContent, traceContext, serviceName: null, spanId: spanId);
         return new Span(spanContext, DateTimeOffset.UtcNow);
     }
