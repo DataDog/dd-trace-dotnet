@@ -84,7 +84,6 @@ src/Datadog.Trace/Configuration/ConfigurationKeys.AzureAppService.cs
 src/Datadog.Trace/Configuration/ConfigurationKeys.Debugger.cs
 src/Datadog.Trace/Configuration/ConfigurationKeys.DirectLogSubmission.cs
 src/Datadog.Trace/Configuration/ConfigurationKeys.Exporter.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.GCPFunction.cs
 src/Datadog.Trace/Configuration/ConfigurationKeys.Iast.cs
 src/Datadog.Trace/Configuration/ConfigurationKeys.Logging.cs
 src/Datadog.Trace/Configuration/ConfigurationKeys.Rcm.cs
