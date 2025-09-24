@@ -124,6 +124,7 @@ namespace Samples.TraceAnnotations
             {
                 // Ignore
             }
+
             // Delay
             await Task.Delay(500);
 
