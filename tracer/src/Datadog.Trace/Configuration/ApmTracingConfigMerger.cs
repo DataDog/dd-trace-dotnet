@@ -41,11 +41,19 @@ namespace Datadog.Trace.Configuration
                     var jsonContent = Encoding.UTF8.GetString(config.Contents);
                     var configData = ParseConfiguration(config.Path.Id, jsonContent);
 
-                    // Filter immediately during parsing
+                    if (configData == null)
+                    {
+                        continue;
+                    }
+
+                    // Do not filter un-matched config for now. We will address it in a later PR.
+                    applicableConfigs.Add(configData);
+                    /*
                     if (configData?.Matches(serviceName, environment) == true)
                     {
                         applicableConfigs.Add(configData);
                     }
+                    */
                 }
                 catch (Exception ex)
                 {
