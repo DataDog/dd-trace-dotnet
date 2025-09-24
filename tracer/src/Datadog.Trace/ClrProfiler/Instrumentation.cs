@@ -466,8 +466,8 @@ namespace Datadog.Trace.ClrProfiler
             var observers = new List<DiagnosticObserver>();
 
             // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
+            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
+            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime);
 
             if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
             {
