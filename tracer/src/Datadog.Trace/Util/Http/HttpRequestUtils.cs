@@ -36,6 +36,6 @@ namespace Datadog.Trace.Util.Http
             return $"{scheme}://{GetNormalizedHost(host)}{(port.HasValue ? $":{port}" : string.Empty)}{pathBase}{path}";
         }
 
-        internal static string GetNormalizedHost(string? host) => host is null || host.Equals(string.Empty) ? NoHostSpecified : host;
+        internal static string GetNormalizedHost(string? host) => host is null || host.Length == 0 ? NoHostSpecified : host;
     }
 }
