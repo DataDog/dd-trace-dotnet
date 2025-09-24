@@ -526,6 +526,11 @@ namespace Datadog.Trace.TestHelpers
                 HandlePotentialDebuggerData(request);
                 responseType = MockTracerResponseType.Debugger;
             }
+            else if (request.PathAndQuery.StartsWith("/debugger/v2/input"))
+            {
+                HandlePotentialDebuggerData(request);
+                responseType = MockTracerResponseType.Debugger;
+            }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/diagnostics"))
             {
                 HandlePotentialDiagnosticsData(request);
