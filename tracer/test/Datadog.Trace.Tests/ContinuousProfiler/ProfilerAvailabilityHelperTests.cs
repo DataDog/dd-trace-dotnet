@@ -77,27 +77,13 @@ public class ProfilerAvailabilityHelperTests
     }
 
     [SkippableFact]
-    public void IsContinuousProfilerAvailable_InAzureFunctionsWithoutExtension_IgnoresAttachment_ReturnsFalse()
+    public void IsContinuousProfilerAvailable_InAzureFunctions_IgnoresAttachment_ReturnsFalse()
     {
         SkipUnsupported();
         Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, "MyApp");
         Environment.SetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet");
         Environment.SetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "v6.0");
         ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(ClrProfilerIsAttached).Should().BeFalse();
-    }
-
-    [SkippableTheory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void IsContinuousProfilerAvailable_InAzureFunctionsWithExtension_ReturnsClrAttached(bool clrAttached)
-    {
-        SkipUnsupported();
-        var attachedCheck = clrAttached ? ClrProfilerIsAttached : ClrProfilerNotAttached;
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, "MyApp");
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet");
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "v6.0");
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1");
-        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(attachedCheck).Should().Be(clrAttached);
     }
 
     private static void SkipUnsupported()
