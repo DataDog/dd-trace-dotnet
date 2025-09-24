@@ -6,27 +6,23 @@
 #nullable enable
 
 using System.Collections.Immutable;
+using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
 {
     /// <summary>
-    /// Checks fo r null checks against IDuckType instances.
+    /// Checks for null checks against IDuckType instances.
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DuckTypeNullCheckAnalyzer : DiagnosticAnalyzer
     {
         private const string DatadogIDuckTypeInterface = "Datadog.Trace.DuckTyping.IDuckType";
-
-        /// <summary>
-        /// We exclude certain namespaces from this rule:
-        /// - Activity because we do a log of "as" pattern matching against various runtime implementations and expect null for some
-        /// </summary>
-        private static readonly ImmutableArray<string> ExcludedNamespacePrefixes =
-            ImmutableArray.Create(
-                "Datadog.Trace.Activity");
 
         /// <inheritdoc/>
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
@@ -42,234 +38,126 @@ namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
             context.RegisterCompilationStartAction(static compilationContext =>
             {
                 var duckType = compilationContext.Compilation.GetTypeByMetadataName(DatadogIDuckTypeInterface);
-                if (duckType is null)
+
+                if (duckType == null)
                 {
                     return;
                 }
 
-                compilationContext.RegisterOperationAction(
-                    ctx => AnalyzeBinaryNullCheck(ctx, duckType),
-                    OperationKind.BinaryOperator);
-
-                compilationContext.RegisterOperationAction(
-                    ctx => AnalyzeIsPatternNullCheck(ctx, duckType),
-                    OperationKind.IsPattern);
+                compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeEquals((BinaryExpressionSyntax)ctx.Node, duckType, ctx), SyntaxKind.EqualsExpression, SyntaxKind.NotEqualsExpression);
+                compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeIsPattern((IsPatternExpressionSyntax)ctx.Node, duckType, ctx), SyntaxKind.IsPatternExpression);
             });
         }
 
-        private static void AnalyzeBinaryNullCheck(OperationAnalysisContext context, INamedTypeSymbol duckType)
+        private static void AnalyzeEquals(BinaryExpressionSyntax binaryExpression, INamedTypeSymbol duckType, SyntaxNodeAnalysisContext ctx)
         {
-            // if (duckType == null) or if (duckType != null) is what we looking for (operands can be swapped)
-            // both are technically incorrect
-            var bin = (IBinaryOperation)context.Operation;
-
-            // make sure it is == or !=
-            if (bin.OperatorKind != BinaryOperatorKind.Equals &&
-                bin.OperatorKind != BinaryOperatorKind.NotEquals)
+            if (!(IsNull(binaryExpression.Left) || IsNull(binaryExpression.Right)))
             {
                 return;
             }
 
-            // find which side we need, really unsure if anyone has ever written null == duckType :)
-            var leftIsNull = IsNullLiteral(bin.LeftOperand);
-            var rightIsNull = IsNullLiteral(bin.RightOperand);
-            if (!leftIsNull && !rightIsNull)
+            var candidate = IsNull(binaryExpression.Left) ? binaryExpression.Right : binaryExpression.Left;
+            if (!IsDuck(candidate, duckType, ctx.SemanticModel, ctx.CancellationToken))
             {
                 return;
             }
 
-            // Look at the non-null side and unwrap casts/boxing to object/dynamic
-            // candidate here is: ConversionOperation Type: object
-            // it is an implicit cast / box to object (unlike the `is null` pattern)
-            // so we need to undo that before we can check if it is a IDuckType
-            var candidate = leftIsNull ? bin.RightOperand : bin.LeftOperand;
-
-            // When we have == or != null it seems that the candidate.Type is just an Object, we need to get the DuckType from it
-            // we can query the SemanticModel to get the actual type, but that proved to be very slow
-            // so we can unwrap it instead
-            var type = UnwrapForType(candidate);
-
-            if (type is null || !ImplementsDuckType(type, duckType) || IsExcluded(type))
-            {
-                return;
-            }
-
-            Report(context);
+            ctx.ReportDiagnostic(Diagnostic.Create(DuckDiagnostics.ADuckIsNeverNullRule, binaryExpression.GetLocation()));
         }
 
-        private static void AnalyzeIsPatternNullCheck(OperationAnalysisContext context, INamedTypeSymbol duckType)
+        private static void AnalyzeIsPattern(IsPatternExpressionSyntax isPattern, INamedTypeSymbol duckType, SyntaxNodeAnalysisContext ctx)
         {
-            var isPattern = (IIsPatternOperation)context.Operation;
-
             if (!IsNullPattern(isPattern.Pattern))
             {
                 return;
             }
 
-            // this just falls through to the default op case as it isn't boxed / casted to object
-            var type = UnwrapForType(isPattern.Value);
-            if (type is null || !ImplementsDuckType(type, duckType) || IsExcluded(type))
+            var expression = isPattern.Expression;
+
+            if (!IsDuck(expression, duckType, ctx.SemanticModel, ctx.CancellationToken))
             {
                 return;
             }
 
-            Report(context);
+            ctx.ReportDiagnostic(Diagnostic.Create(DuckDiagnostics.ADuckIsNeverNullRule, isPattern.GetLocation()));
         }
 
-        private static void Report(OperationAnalysisContext context)
-        {
-            var diagnostic = Diagnostic.Create(
-                DuckDiagnostics.ADuckIsNeverNullRule,
-                context.Operation.Syntax.GetLocation());
-            context.ReportDiagnostic(diagnostic);
-        }
+        private static bool IsNull(ExpressionSyntax expression) =>
+            expression is LiteralExpressionSyntax { RawKind: (int)SyntaxKind.NullLiteralExpression } ||
+            (expression is ParenthesizedExpressionSyntax p && IsNull(p.Expression));
 
-        private static ITypeSymbol? UnwrapForType(IOperation op)
-        {
-            op = Unwrap(op);
+        private static bool IsNullPattern(PatternSyntax pattern) =>
+            pattern is ConstantPatternSyntax { Expression: LiteralExpressionSyntax { RawKind: (int)SyntaxKind.NullLiteralExpression } } ||
+            (pattern is UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern } neg &&
+            neg.Pattern is ConstantPatternSyntax { Expression: LiteralExpressionSyntax { RawKind: (int)SyntaxKind.NullLiteralExpression } });
 
-            // The type here will be the actual type like Datadog.Trace.DuckTyping.IDuckType
-            return op.Type;
-        }
-
-        private static IOperation Unwrap(IOperation op)
+        // this goes through and attempts to extract the type out
+        // we then pass this in to check if it implements IDuckType
+        private static bool IsDuck(
+            ExpressionSyntax expression,
+            INamedTypeSymbol? duckType,
+            SemanticModel semanticModel,
+            CancellationToken token)
         {
-            while (true)
+            // ((object)duckType) casting causes issues so remove the parens
+            expression = StripOuterParentheses(expression);
+            if (expression is CastExpressionSyntax cast && IsObjectTypeSyntax(cast.Type))
             {
-                switch (op)
-                {
-                    case IConversionOperation c when c.IsImplicit:
-                        // implicit meaning that there wasn't a (object) cast
-                        // this happens automatically in the `==` and `!=` operators
-                        // c.Operand here is something like => ParameterReferenceOperation Type: Datadog.Trace.DuckTyping.IDuckType
-                        op = c.Operand;
-                        continue;
-
-                    case IConversionOperation c
-                        when c.Type is { SpecialType: SpecialType.System_Object } ||
-                             c.Type is { TypeKind: TypeKind.Dynamic }:
-                        // Explicit cast/as to object or dynamic — unwrap so we can see the original type
-                        op = c.Operand;
-                        continue;
-
-                    default:
-                        return op;
-                }
-            }
-        }
-
-        private static bool ImplementsDuckType(ITypeSymbol type, INamedTypeSymbol duckType)
-        {
-            // where T : IDuckType
-            // where T : IFoo, IDuckType
-            // where T : IFoo
-            // IFoo : IDuckType (in different file)
-            if (type is ITypeParameterSymbol tp)
-            {
-                foreach (var c in tp.ConstraintTypes)
-                {
-                    if (ImplementsDuckType(c, duckType))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                expression = StripOuterParentheses(cast.Expression);
             }
 
-            // NOTE: IDuckType? == IDuckType which surprised me
-            if (SymbolEqualityComparer.Default.Equals(type, duckType))
+            var operation = semanticModel.GetOperation(expression, token);
+
+            if (operation is IConversionOperation conv)
             {
-                return true;
+                operation = conv.Operand;
             }
 
-            // IFoo : IBar
-            // IBar : IDuckType
-            // NOTE: IFoo : IBar (where IBar implements IDuckType) is handled by the AllInterfaces check below
-            foreach (var i in type.AllInterfaces)
+            var type = operation?.Type;
+
+            if (type is null)
             {
-                if (SymbolEqualityComparer.Default.Equals(i, duckType))
-                {
-                    return true;
-                }
+                var info = semanticModel.GetTypeInfo(expression, token);
+                type = info.Type ?? info.ConvertedType;
             }
 
-            return false;
-        }
-
-        private static bool IsExcluded(ITypeSymbol type)
-        {
-            var ns = GetNamespace(type);
-            if (ns is null)
+            // both Type and ConvertedType can still be null so check again just to be safe
+            if (type is null)
             {
                 return false;
             }
 
-            foreach (var prefix in ExcludedNamespacePrefixes)
-            {
-                if (ns.StartsWith(prefix, System.StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static string? GetNamespace(ITypeSymbol type)
-        {
+            // handle any constraints
             if (type is ITypeParameterSymbol tp)
             {
-                foreach (var c in tp.ConstraintTypes)
-                {
-                    var nam = GetNamespace(c);
-                    if (nam is not null)
-                    {
-                        return nam;
-                    }
-                }
-
-                return null;
+                return tp.ConstraintTypes.Any(t => IsTheTypeAnIDuckType(t, duckType));
             }
 
-            // Avoid allocations from "global::"
-            var ns = type.ContainingNamespace?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            if (ns is null)
-            {
-                return null;
-            }
-
-            return ns.StartsWith("global::", System.StringComparison.Ordinal) ? ns.Substring(8) : ns;
+            return IsTheTypeAnIDuckType(type, duckType);
         }
 
-        private static bool IsNullLiteral(IOperation operation)
+        private static bool IsTheTypeAnIDuckType(ITypeSymbol type, INamedTypeSymbol? duckType)
         {
-            var op = Unwrap(operation);
-            if (op is ILiteralOperation lit && lit.ConstantValue.HasValue)
-            {
-                return lit.ConstantValue.Value is null;
-            }
-
-            return false;
+            return duckType is not null
+                && (SymbolEqualityComparer.Default.Equals(type, duckType)
+                || type.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, duckType)));
         }
 
-        private static bool IsNullPattern(IPatternOperation pattern)
+        private static ExpressionSyntax StripOuterParentheses(ExpressionSyntax expression)
         {
-            // is null
-            if (pattern is IConstantPatternOperation cp && IsNullLiteral(cp.Value))
+            while (expression is ParenthesizedExpressionSyntax p)
             {
-                return true;
+                expression = p.Expression;
             }
 
-            // is not null => Negated(Constant(null))
-            if (pattern is INegatedPatternOperation neg &&
-                neg.Pattern is IConstantPatternOperation cp2 &&
-                IsNullLiteral(cp2.Value))
-            {
-                return true;
-            }
-
-            return false;
+            return expression;
         }
+
+        // this seems seems to be that in VS when you open a code file the operands get boxed(?) to "object"
+        // if we don't account for it, you see the errors at compile time, in the error list, but then disappear
+        // when you open the code file in the editor.
+        private static bool IsObjectTypeSyntax(TypeSyntax t) =>
+            t is PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.ObjectKeyword }
+            || (t is IdentifierNameSyntax id && id.Identifier.ValueText == "object");
     }
 }

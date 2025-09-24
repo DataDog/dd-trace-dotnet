@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -14,7 +15,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
 {
@@ -25,7 +26,7 @@ namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DuckTypeNullCheckCodeFixProvider))]
     public class DuckTypeNullCheckCodeFixProvider : CodeFixProvider
     {
-        private const string Title = "Check .Instance for null instead";
+        private const string Title = "Check ?.Instance for null instead";
 
         /// <inheritdoc/>
         public sealed override ImmutableArray<string> FixableDiagnosticIds
@@ -39,72 +40,77 @@ namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            var diagnostic = context.Diagnostics.First();
 
-            // crab the node that was flagged by the analyzer
-            var span = diagnostic.Location.SourceSpan;
-            var node = root?.FindNode(span);
-
-            if (node == null)
+            if (root == null)
             {
                 return;
             }
 
-            // we could be in either a binary expression (== or !=) or an is-pattern expression (is or is not)
-            var binary = node.FirstAncestorOrSelf<BinaryExpressionSyntax>();
-            var isPattern = node.FirstAncestorOrSelf<IsPatternExpressionSyntax>();
+            var span = context.Span;
 
-            if (binary is null && isPattern is null)
-            {
-                return;
-            }
-
-            // register a code action that will invoke the fix (squiggly thing lightbulb)
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: Title,
-                    createChangedDocument: c => FixAsync(context.Document, binary, isPattern, c),
+                    Title,
+                    c => FixAsync(context.Document, span, c),
                     equivalenceKey: Title),
-                diagnostic);
+                context.Diagnostics);
         }
 
-        private static async Task<Document> FixAsync(
-            Document document,
-            BinaryExpressionSyntax? binary,
-            IsPatternExpressionSyntax? isPattern,
-            CancellationToken ct)
+        private static async Task<Document> FixAsync(Document document, TextSpan span, CancellationToken cancellationToken)
         {
-            var editor = await DocumentEditor.CreateAsync(document, ct).ConfigureAwait(false);
-            if (binary is not null)
+            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            if (root == null)
             {
-                // we have something like:  if (duckType == null)  or           if (duckType != null)
-                // we want something like:  if (duckType.Instance == null)  or  if (duckType.Instance != null)
-                var (duckExpr, isLeft) = GetDuckExpressionFromBinary(binary);
-                if (duckExpr is null)
-                {
+                return document;
+            }
+
+            // Get the node that contains the diagnostic span
+            var node = root.FindNode(span, findInsideTrivia: false, getInnermostNodeForTie: false);
+
+            // Find the expression we need to fix by walking up if necessary
+            var targetNode = node.AncestorsAndSelf()
+                .FirstOrDefault(n => n is BinaryExpressionSyntax { RawKind: (int)SyntaxKind.EqualsExpression or (int)SyntaxKind.NotEqualsExpression }
+                                  || n is IsPatternExpressionSyntax);
+
+            if (targetNode == null)
+            {
+                return document;
+            }
+
+            switch (targetNode)
+            {
+                case BinaryExpressionSyntax binary:
+                    {
+                        var (duckExpression, isLeft) = GetDuckExpressionFromBinary(binary);
+                        if (duckExpression == null)
+                        {
+                            return document;
+                        }
+
+                        var instance = CreateInstanceAccess(duckExpression);
+                        var updated = isLeft ? binary.WithLeft(instance) : binary.WithRight(instance);
+                        var newRoot = root.ReplaceNode(binary, updated);
+                        return document.WithSyntaxRoot(newRoot);
+                    }
+
+                case IsPatternExpressionSyntax isPattern:
+                    {
+                        var instance = CreateInstanceAccess(isPattern.Expression);
+                        var updated = isPattern.WithExpression(instance);
+                        var newRoot = root.ReplaceNode(isPattern, updated);
+                        return document.WithSyntaxRoot(newRoot);
+                    }
+
+                default:
                     return document;
-                }
-
-                var instance = CreateInstanceAccess(duckExpr);
-                var newBinary = isLeft ? binary.WithLeft(instance) : binary.WithRight(instance);
-                editor.ReplaceNode(binary, newBinary);
             }
-            else if (isPattern is not null)
-            {
-                // we have something like:  if (duckType is null)  or           if (duckType is not null)
-                // we want something like:  if (duckType.Instance is null)  or  if (duckType.Instance is not null)
-                var instance = CreateInstanceAccess(isPattern.Expression);
-                editor.ReplaceNode(isPattern, isPattern.WithExpression(instance));
-            }
-
-            return editor.GetChangedDocument();
         }
 
-        private static (ExpressionSyntax? Expr, bool IsLeft) GetDuckExpressionFromBinary(BinaryExpressionSyntax binary)
+        private static (ExpressionSyntax? DuckExpression, bool IsLeft) GetDuckExpressionFromBinary(BinaryExpressionSyntax binary)
         {
-            // Find which side is the null literal
             var leftIsNull = IsNullLiteral(binary.Left);
             var rightIsNull = IsNullLiteral(binary.Right);
+
             if (!leftIsNull && !rightIsNull)
             {
                 return (null, false);
@@ -115,85 +121,53 @@ namespace Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer
 
         private static bool IsNullLiteral(ExpressionSyntax expression)
         {
-            if (expression is null)
-            {
-                return false;
-            }
-
-            if (expression is LiteralExpressionSyntax { RawKind: (int)SyntaxKind.NullLiteralExpression })
-            {
-                return true;
-            }
-
-            // handle parens around the (null) literal - edge case
-            if (expression is ParenthesizedExpressionSyntax p && IsNullLiteral(p.Expression))
-            {
-                return true;
-            }
-
-            return false;
+            return expression is LiteralExpressionSyntax { RawKind: (int)SyntaxKind.NullLiteralExpression }
+                   || (expression is ParenthesizedExpressionSyntax p && IsNullLiteral(p.Expression));
         }
 
-        private static ExpressionSyntax CreateInstanceAccess(ExpressionSyntax baseExpression)
+        private static ExpressionSyntax CreateInstanceAccess(ExpressionSyntax expression)
         {
-            baseExpression = StripOuterParens(baseExpression);
+            expression = StripOuterParentheses(expression);
 
-            // (object)duckType --> duckType?.Instance   (remove cast)
-            if (baseExpression is CastExpressionSyntax cast && IsObject(cast.Type))
+            // Preserve leading and trailing trivia
+            var leadingTrivia = expression.GetLeadingTrivia();
+            var trailingTrivia = expression.GetTrailingTrivia();
+
+            if (expression is CastExpressionSyntax cast && IsObjectTypeSyntax(cast.Type))
             {
-                return CreateInstanceAccessor(cast.Expression).WithTriviaFrom(baseExpression);
+                var result = CreateInstanceAccessor(StripOuterParentheses(cast.Expression));
+                return result.WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTrivia);
             }
 
-            // default: duckType --> duckType?.Instance
-            return CreateInstanceAccessor(baseExpression).WithTriviaFrom(baseExpression);
+            var accessor = CreateInstanceAccessor(expression);
+            return accessor.WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTrivia);
         }
 
-        private static bool IsObject(TypeSyntax t)
+        private static ExpressionSyntax CreateInstanceAccessor(ExpressionSyntax expression)
         {
-            if (t is null)
-            {
-                return false;
-            }
-
-            if (t is PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.ObjectKeyword })
-            {
-                return true;
-            }
-
-            if (t is IdentifierNameSyntax id && (id.Identifier.ValueText == "object"))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private static ExpressionSyntax CreateInstanceAccessor(ExpressionSyntax receiver)
-        {
-            // duckType?.Instance
-            return SyntaxFactory.ConditionalAccessExpression(ParenthesizeIfNeeded(receiver), SyntaxFactory.MemberBindingExpression(SyntaxFactory.IdentifierName("Instance")));
-        }
-
-        private static ExpressionSyntax StripOuterParens(ExpressionSyntax expr)
-        {
-            // if we have casted we need to remove parentheses
-            while (expr is ParenthesizedExpressionSyntax p)
-            {
-                expr = p.Expression.WithTriviaFrom(expr);
-            }
-
-            return expr;
+            return SyntaxFactory.ConditionalAccessExpression(ParenthesizeIfNeeded(expression), SyntaxFactory.MemberBindingExpression(SyntaxFactory.IdentifierName("Instance")));
         }
 
         private static ExpressionSyntax ParenthesizeIfNeeded(ExpressionSyntax expression)
         {
-            // in case we have a more complex pattern add parens as necessary
-            if (expression is IdentifierNameSyntax or MemberAccessExpressionSyntax or ParenthesizedExpressionSyntax)
+            return expression is IdentifierNameSyntax or MemberAccessExpressionSyntax or ParenthesizedExpressionSyntax ? expression : SyntaxFactory.ParenthesizedExpression(expression);
+        }
+
+        private static ExpressionSyntax StripOuterParentheses(ExpressionSyntax expression)
+        {
+            while (expression is ParenthesizedExpressionSyntax p)
             {
-                return expression;
+                expression = p.Expression;
             }
 
-            return SyntaxFactory.ParenthesizedExpression(expression);
+            return expression;
         }
+
+        // this seems seems to be that in VS when you open a code file the operands get boxed(?) to "object"
+        // if we don't account for it, you see the errors at compile time, in the error list, but then disappear
+        // when you open the code file in the editor.
+        private static bool IsObjectTypeSyntax(TypeSyntax t) =>
+            t is PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.ObjectKeyword }
+            || (t is IdentifierNameSyntax id && id.Identifier.ValueText == "object");
     }
 }
