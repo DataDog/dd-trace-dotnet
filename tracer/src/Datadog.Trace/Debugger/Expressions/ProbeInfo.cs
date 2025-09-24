@@ -41,9 +41,9 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal string[] Tags { get; } = Tags;
 
-        public TargetSpan? TargetSpan { get; } = TargetSpan;
+        internal TargetSpan? TargetSpan { get; } = TargetSpan;
 
-        public CaptureLimitInfo CaptureLimitInfo { get; } = CaptureLimitInfo;
+        internal CaptureLimitInfo CaptureLimitInfo { get; } = CaptureLimitInfo;
     }
 
     internal readonly record struct CaptureLimitInfo(
@@ -52,12 +52,12 @@ namespace Datadog.Trace.Debugger.Expressions
         int MaxLength,
         int MaxFieldCount)
     {
-        public int MaxReferenceDepth { get; } = MaxReferenceDepth;
+        internal int MaxReferenceDepth { get; } = MaxReferenceDepth;
 
-        public int MaxCollectionSize { get; } = MaxCollectionSize;
+        internal int MaxCollectionSize { get; } = MaxCollectionSize;
 
-        public int MaxLength { get; } = MaxLength;
+        internal int MaxLength { get; } = MaxLength;
 
-        public int MaxFieldCount { get; } = MaxFieldCount;
+        internal int MaxFieldCount { get; } = MaxFieldCount;
     }
 }

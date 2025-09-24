@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -349,6 +350,8 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.IsNull())
             {
+                LogEvaluationState(snapshotCreator.MethodScopeMembers);
+
                 Log.Error("Evaluation result should not be null. Probe: {ProbeId}", ProbeInfo.ProbeId);
                 evaluationResult.Errors = new List<EvaluationError> { new() { Message = $"Evaluation result is null. Probe ID: {ProbeInfo.ProbeId}" } };
                 return evaluationResult;
@@ -390,15 +393,45 @@ namespace Datadog.Trace.Debugger.Expressions
             return evaluationResult;
         }
 
+        private void LogEvaluationState(MethodScopeMembers methodScopeMembers)
+        {
+            if (_templates == null
+             && _condition == null
+             && _metric == null
+             && _spanDecorations == null)
+            {
+                return;
+            }
+
+            // this should never happen, but if it does, we want to log it for further investigation
+            Log.Error("Evaluation state error: we thought that evaluation result is null but that not true. probably we are using an incorrect version of ProbeExpressionEvaluator");
+
+            try
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    var instance = methodScopeMembers.InvocationTarget;
+                    var members = methodScopeMembers.Members?.Select(m => new { Name = m.Name, Type = m.Type?.FullName ?? m.Type?.Name }).ToList();
+                    string? membersAsString = null;
+                    if (members?.Any() == true)
+                    {
+                        membersAsString = string.Join(";", members);
+                    }
+
+                    Log.Error("Evaluation state error: Target Method: Type = {Type}, Name = {Name}. Method Members: {Members}", instance.Type?.FullName ?? instance.Type?.Name, instance.Name, membersAsString);
+                }
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+
         private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
             if (!TryGetScope(out var scope))
             {
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("No active scope available, skipping span decoration. Probe: {ProbeId}", ProbeInfo.ProbeId);
-                }
-
+                Log.Debug("No active scope available, skipping span decoration. Probe: {ProbeId}", ProbeInfo.ProbeId);
                 return;
             }
 
@@ -411,6 +444,11 @@ namespace Datadog.Trace.Debugger.Expressions
                 var probeIdTag = $"{DynamicPrefix}{decoration.TagName}.probe_id";
                 ISpan? targetSpan = null;
 
+                if (ProbeInfo.TargetSpan == null)
+                {
+                    Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span is null", decoration.TagName, ProbeInfo.ProbeId);
+                }
+
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
@@ -420,13 +458,13 @@ namespace Datadog.Trace.Debugger.Expressions
                         targetSpan = scope.Span;
                         break;
                     default:
-                        Log.Error("Invalid target span. Probe: {ProbeId}", ProbeInfo.ProbeId);
+                        Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span {Span} is invalid", decoration.TagName, ProbeInfo.ProbeId, ProbeInfo.TargetSpan);
                         break;
                 }
 
                 if (targetSpan == null)
                 {
-                    Log.Warning("No root span or active span is available, so we can't set the {Tag} tag. Probe ID: {ProbeId}", decoration.TagName, ProbeInfo.ProbeId);
+                    Log.Warning("We can't set the {Tag} tag. Probe ID: {ProbeId}, because the chosen span {Span} is not available", decoration.TagName, ProbeInfo.ProbeId, ProbeInfo.TargetSpan);
                     continue;
                 }
 
@@ -444,7 +482,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 attachedTags = true;
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID={ProbeId}", decoration.TagName, targetSpan.SpanId, ProbeInfo.ProbeId);
+                    Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID: {ProbeId}", decoration.TagName, targetSpan.SpanId, ProbeInfo.ProbeId);
                 }
             }
 
