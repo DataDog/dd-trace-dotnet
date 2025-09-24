@@ -15,6 +15,7 @@ ThreadLifetimeProvider::ThreadLifetimeProvider(
     CollectorBase<RawThreadLifetimeSample>(
         "ThreadLifetimeProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
 {
+    _index = TimelineSampleType::Definitions[0].Index;
 }
 
 void ThreadLifetimeProvider::OnThreadStart(std::shared_ptr<ManagedThreadInfo> pThreadInfo)
@@ -29,7 +30,7 @@ void ThreadLifetimeProvider::OnThreadStop(std::shared_ptr<ManagedThreadInfo> pTh
 
 RawThreadLifetimeSample ThreadLifetimeProvider::CreateSample(std::shared_ptr<ManagedThreadInfo> pThreadInfo, ThreadEventKind kind)
 {
-    RawThreadLifetimeSample rawSample;
+    RawThreadLifetimeSample rawSample(_index, kind);
     rawSample.Timestamp = OpSysTools::GetHighPrecisionTimestamp();
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;

@@ -26,14 +26,14 @@
 
 std::vector<SampleValueType> AllocationsProvider::SampleTypeDefinitions(
     {
-        {"alloc-samples", "count"},
-        {"alloc-size", "bytes"}
+        {"alloc-samples", "count", -1},
+        {"alloc-size", "bytes", -1}
     }
 );
 
 std::vector<SampleValueType> AllocationsProvider::FrameworkSampleTypeDefinitions(
     {
-        {"alloc-samples", "count"},
+        {"alloc-samples", "count", -1},
     }
 );
 
@@ -62,6 +62,7 @@ AllocationsProvider::AllocationsProvider(
         std::move(pool),
         memoryResource)
 {
+    _index = isFramework ? FrameworkSampleTypeDefinitions[0].Index : SampleTypeDefinitions[0].Index;
 }
 
 AllocationsProvider::AllocationsProvider(
@@ -139,7 +140,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
 
     result->SetUnixTimeUtc(GetCurrentTimestamp());
 
-    RawAllocationSample rawSample;
+    RawAllocationSample rawSample(_index);
     rawSample.Timestamp = result->GetUnixTimeUtc();
     rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
     rawSample.SpanId = result->GetSpanId();
@@ -201,7 +202,7 @@ void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
     }
 
     // create a sample from the allocation
-    RawAllocationSample rawSample;
+    RawAllocationSample rawSample(_index);
 
     // We know that we don't have any span ID nor end point details
 

@@ -28,11 +28,12 @@ StopTheWorldGCProvider::StopTheWorldGCProvider(
     :
     CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
 {
+    _index = TimelineSampleType::Definitions[0].Index;
 }
 
 void StopTheWorldGCProvider::OnSuspension(std::chrono::nanoseconds timestamp, int32_t number, uint32_t generation, std::chrono::nanoseconds pauseDuration)
 {
-    RawStopTheWorldSample rawSample;
+    RawStopTheWorldSample rawSample(_index);
     rawSample.Timestamp = timestamp;
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;

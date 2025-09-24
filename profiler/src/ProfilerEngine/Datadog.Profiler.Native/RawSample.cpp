@@ -3,14 +3,15 @@
 
 #include "RawSample.h"
 
-RawSample::RawSample() noexcept
+RawSample::RawSample(int32_t index) noexcept
     :
     Timestamp {0},
     AppDomainId {0},
     LocalRootSpanId {0},
     SpanId {0},
     ThreadInfo{nullptr},
-    Stack{}
+    Stack{},
+    Index{index}
 {
 }
 
@@ -27,6 +28,7 @@ RawSample& RawSample::operator=(RawSample&& other) noexcept
     SpanId = other.SpanId;
     ThreadInfo = std::move(other.ThreadInfo);
     Stack = std::move(other.Stack);
+    Index = other.Index;
 
     return *this;
 }

@@ -20,6 +20,8 @@ NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(SampleValueTypeProvid
     _previousTotalCpuTime{0},
     _valueOffsets{valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions)}
 {
+    // use the same index as CpuTimeProvider because stores its value at the same offset in the vector of values
+    _index = CpuTimeProvider::SampleTypeDefinitions[0].Index;
 }
 
 class CpuSampleEnumerator : public SamplesEnumerator
@@ -84,7 +86,7 @@ std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
         return enumerator;
     }
 
-    RawCpuSample rawSample;
+    RawCpuSample rawSample(_index);
     rawSample.Duration = cpuTime;
 
     // Cpu Time provider knows the offset of the Cpu value

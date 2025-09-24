@@ -82,6 +82,11 @@ public:
         return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.Move(), _rawSampleTransformer, _valueOffsets);
     }
 
+    int32_t GetIndex() const override
+    {
+        return _index;
+    }
+
 protected:
     std::chrono::nanoseconds GetCurrentTimestamp()
     {
@@ -146,4 +151,11 @@ private:
     std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
     RawSamples<TRawSample> _collectedSamples;
     RawSampleTransformer* _rawSampleTransformer;
+
+ protected:
+    // TODO: refactor the code so that the index is obtained at the same time as the valueOffsets
+    //      i.e. the SampleValueTypeProvider::GetOrRegister() will have to return a pair with both
+    //     that way, each provider won't have to do it by itself in its constructor 
+    // For the moment, not all providers derive from CollectorBase so do it manually today
+    int32_t _index = -1;
 };

@@ -564,7 +564,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
     if (profilingType == PROFILING_TYPE::WallTime)
     {
         // add the WallTime sample to the lipddprof pipeline
-        RawWallTimeSample rawSample;
+        RawWallTimeSample rawSample(_pWallTimeCollector->GetIndex());
         rawSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
         rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawSample.SpanId = pSnapshotResult->GetSpanId();
@@ -578,7 +578,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
     if (profilingType == PROFILING_TYPE::CpuTime)
     {
         // add the CPU sample to the lipddprof pipeline if needed
-        RawCpuSample rawCpuSample;
+        RawCpuSample rawCpuSample(_pCpuTimeCollector->GetIndex());
         rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
         rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawCpuSample.SpanId = pSnapshotResult->GetSpanId();

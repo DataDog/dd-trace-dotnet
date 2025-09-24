@@ -76,7 +76,11 @@ private:
     bool StopImpl() override;
 
 private:
+    // we need to keep track of the index because this class does not derive from CollectorBase
+    int32_t _index = -1;
 
+     // used to access the CLR to create weak handles
+     // and get object generation
     ICorProfilerInfo13* _pCorProfilerInfo = nullptr;
     RawSampleTransformer* _rawSampleTransformer = nullptr;
 
