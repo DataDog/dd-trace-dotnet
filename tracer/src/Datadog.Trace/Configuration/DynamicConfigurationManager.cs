@@ -57,7 +57,7 @@ namespace Datadog.Trace.Configuration
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableExceptionReplay, true);               // 39
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableCodeOrigin, true);                    // 40
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableLiveDebugging, true);                 // 41
-				_subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingMulticonfig, true);    						// 44
+				_subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingMulticonfig, true);    						// 45
             }
         }
 
