@@ -58,6 +58,16 @@ public class ProfilerAvailabilityHelperTests
         ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(attachedCheck).Should().BeTrue();
     }
 
+    [SkippableTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void IsContinuousProfilerAvailable_OnWindows_NoEnvVar_IgnoresAttachment_ReturnsFalse(bool clrAttached)
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+        var attachedCheck = clrAttached ? ClrProfilerIsAttached : ClrProfilerNotAttached;
+        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(attachedCheck).Should().BeFalse();
+    }
+
     [SkippableFact]
     public void IsContinuousProfilerAvailable_InLambda_IgnoresAttachment_ReturnsFalse()
     {
@@ -96,5 +106,6 @@ public class ProfilerAvailabilityHelperTests
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.X86);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.ARM64);
+        SkipOn.Platform(SkipOn.PlatformValue.Windows); // Windows is controlled by env var only, so doesn't apply to most tests
     }
 }
