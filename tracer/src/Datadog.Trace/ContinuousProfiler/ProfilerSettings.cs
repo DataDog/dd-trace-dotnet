@@ -55,7 +55,7 @@ internal class ProfilerSettings
                                        _ when x.ToBoolean() is { } boolean => boolean ? "true" : "false",
                                        _ => ParsingResult<string>.Failure(),
                                    },
-                                   getDefaultValue: () => string.Empty,
+                                   getDefaultValue: () => "false",
                                    validator: null);
 
         ProfilerState = profilingEnabled switch
