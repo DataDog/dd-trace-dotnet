@@ -62,7 +62,7 @@ public class TracerSettingsServerlessTests : SettingsTestsBase
 
         if (isRunningInAppService)
         {
-            configPairs.Add((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
+            configPairs.Add((PlatformKeys.AzureAppService.SiteNameKey, "site-name"));
         }
 
         var settings = new TracerSettings(CreateConfigurationSource(configPairs.ToArray()));
