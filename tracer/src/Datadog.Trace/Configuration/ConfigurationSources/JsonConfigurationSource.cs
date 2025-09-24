@@ -52,6 +52,16 @@ namespace Datadog.Trace.Configuration
             JsonConfigurationFilePath = filename;
         }
 
+        internal JsonConfigurationSource(JToken? configToken, ConfigurationOrigins origin, Func<JToken?, JToken?> extractConfig)
+        {
+            if (configToken is null) { ThrowHelper.ThrowArgumentNullException(nameof(configToken)); }
+
+            if (extractConfig is null) { ThrowHelper.ThrowArgumentNullException(nameof(extractConfig)); }
+
+            _configuration = extractConfig(configToken);
+            Origin = origin;
+        }
+
         private protected JsonConfigurationSource(string json, ConfigurationOrigins origin, Func<string, JToken?> deserialize)
         {
             if (json is null) { ThrowHelper.ThrowArgumentNullException(nameof(json)); }
