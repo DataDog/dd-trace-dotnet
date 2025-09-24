@@ -101,6 +101,11 @@ namespace Datadog.Trace.Configuration
                 TracingSamplingRules = higher.TracingSamplingRules ?? lower.TracingSamplingRules,
                 TracingHeaderTags = higher.TracingHeaderTags ?? lower.TracingHeaderTags,
                 TracingTags = higher.TracingTags ?? lower.TracingTags,
+                DebugEnabled = higher.DebugEnabled ?? lower.DebugEnabled,
+                RuntimeMetricsEnabled = higher.RuntimeMetricsEnabled ?? lower.RuntimeMetricsEnabled,
+                ServiceMapping = higher.ServiceMapping ?? lower.ServiceMapping,
+                DataStreamsEnabled = higher.DataStreamsEnabled ?? lower.DataStreamsEnabled,
+                SpanSamplingRules = higher.SpanSamplingRules ?? lower.SpanSamplingRules,
             };
         }
 
