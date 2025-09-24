@@ -35,6 +35,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the priority of this configuration based on targeting specificity.
         /// Higher values = higher priority.
+        /// Precedence ordering goes from most specific to least specific:
+        /// 1. Service (bit 2), 2. Env (bit 1), 3. Cluster target (bit 0)
         /// </summary>
         public int Priority
         {
@@ -42,16 +44,12 @@ namespace Datadog.Trace.Configuration
             {
                 var hasService = !string.IsNullOrEmpty(ServiceTarget?.Service) && ServiceTarget?.Service != "*";
                 var hasEnv = !string.IsNullOrEmpty(ServiceTarget?.Env) && ServiceTarget?.Env != "*";
-                var hasCluster = ClusterTarget != null;
+                var hasCluster = ClusterTarget is { ClusterTargets.Count: > 0 };
 
-                return new ConfigurationTarget(hasService, hasEnv, hasCluster) switch
-                {
-                    (true, true, _) => 5, // Service+env (highest priority)
-                    (true, false, _) => 4, // Service only
-                    (false, true, _) => 3, // Env only
-                    (false, false, true) => 2, // Cluster
-                    (false, false, false) => 1 // Org level
-                };
+                // This handles all possible combinations
+                return ((hasService ? 1 : 0) << 2) |
+                       ((hasEnv ? 1 : 0) << 1) |
+                       ((hasCluster ? 1 : 0) << 0);
             }
         }
 
@@ -108,8 +106,6 @@ namespace Datadog.Trace.Configuration
                 SpanSamplingRules = higher.SpanSamplingRules ?? lower.SpanSamplingRules,
             };
         }
-
-        internal record struct ConfigurationTarget(bool HasService, bool HasEnv, bool HasCluster);
     }
 
     internal class ApmTracingConfigDto
