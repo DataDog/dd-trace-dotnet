@@ -11,6 +11,7 @@ using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Configuration
 {
@@ -22,13 +23,13 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ApmTracingConfigMerger));
 
         /// <summary>
-        /// Merges multiple APM_TRACING configurations based on priority ordering.
+        /// Merges multiple APM_TRACING configurations based on priority ordering and returns a JToken.
         /// </summary>
-        public static string MergeConfigurations(List<RemoteConfiguration> configs, string serviceName, string environment)
+        public static JToken MergeConfigurations(List<RemoteConfiguration> configs, string serviceName, string environment)
         {
             if (configs.Count == 0)
             {
-                return "{\"lib_config\":{}}";
+                return JToken.Parse("{\"lib_config\":{}}");
             }
 
             var applicableConfigs = new List<ApmTracingConfig>(configs.Count);
@@ -63,7 +64,7 @@ namespace Datadog.Trace.Configuration
             if (applicableConfigs.Count == 0)
             {
                 Log.Debug("No APM_TRACING configurations match service '{ServiceName}' and environment '{Environment}'", serviceName, environment);
-                return "{\"lib_config\":{}}";
+                return JToken.Parse("{\"lib_config\":{}}");
             }
 
             // Sort configs by priority (highest first), then by config ID (alphabetically) for deterministic ordering
@@ -73,7 +74,7 @@ namespace Datadog.Trace.Configuration
             var mergedLibConfig = MergeConfigsInPriorityOrder(applicableConfigs);
 
             var result = new { lib_config = mergedLibConfig };
-            return JsonConvert.SerializeObject(result);
+            return JToken.FromObject(result);
         }
 
         /// <summary>

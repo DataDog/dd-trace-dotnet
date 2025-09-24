@@ -226,12 +226,12 @@ namespace Datadog.Trace.Configuration
             var serviceName = currentSettings.ServiceName ?? "unknown";
             var environment = currentSettings.Environment ?? "unknown";
 
-            var mergedConfigJson = ApmTracingConfigMerger.MergeConfigurations(
+            var mergedConfigJToken = ApmTracingConfigMerger.MergeConfigurations(
                 _activeConfigurations.Values.ToList(),
                 serviceName,
                 environment);
 
-            var configurationSource = new DynamicConfigConfigurationSource(mergedConfigJson, ConfigurationOrigins.RemoteConfig);
+            var configurationSource = new DynamicConfigConfigurationSource(mergedConfigJToken, ConfigurationOrigins.RemoteConfig);
             var configurationBuilder = new ConfigurationBuilder(configurationSource, _configurationTelemetry);
 
             OnConfigurationChanged(configurationBuilder);
