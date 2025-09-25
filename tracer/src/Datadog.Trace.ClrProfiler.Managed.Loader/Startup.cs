@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -209,14 +210,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static string? TryComputeTracerHomePathFromProfilerPath(string envVarName)
         {
-            var profilerPath = ReadEnvironmentVariable(envVarName);
+            var profilerPath = ReadEnvironmentVariable(envVarName)?.Trim();
 
             if (string.IsNullOrWhiteSpace(profilerPath))
             {
                 return null;
             }
-
-            profilerPath = profilerPath!.Trim();
 
             try
             {
@@ -224,23 +223,41 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 if (string.IsNullOrEmpty(profilerDirectory))
                 {
-                    StartupLogger.Log($"Unable to determine tracer home directory because {envVarName} is set to '{profilerPath}' which does not include a directory name.");
+                    StartupLogger.Log("Unable to determine tracer home directory from {0}={1}", envVarName, profilerPath);
                     return null;
                 }
 
-                var parentDirectoryInfo = Directory.GetParent(profilerDirectory);
 
-                if (parentDirectoryInfo is null)
+                var directory = Path.GetDirectoryName(profilerDirectory);
+
+                if (directory is null)
                 {
-                    StartupLogger.Log($"Unable to determine tracer home directory because the parent directory of {envVarName}='{profilerPath}' could not be resolved.");
+                    StartupLogger.Log("Unable to determine tracer home directory from {0}={1}", envVarName, profilerPath);
                     return null;
                 }
 
-                return parentDirectoryInfo.FullName;
+                // if the directory name is one of these, go one level higher
+                List<string> architectures = ["win-x64", "win-x86", "linux-x64", "linux-arm64", "linux-musl-x64", "linux-musl-arm64", "osx"];
+
+                foreach (var architecture in architectures)
+                {
+                    if (directory.EndsWith($"{Path.DirectorySeparatorChar}{architecture}", StringComparison.Ordinal))
+                    {
+                        directory = Path.GetDirectoryName(directory);
+
+                        if (directory is null)
+                        {
+                            StartupLogger.Log("Unable to determine tracer home directory from {0}={1}", envVarName, profilerPath);
+                            return null;
+                        }
+                    }
+                }
+
+                return directory;
             }
             catch (Exception ex)
             {
-                StartupLogger.Log(ex, $"Error while resolving tracer home directory from {envVarName}");
+                StartupLogger.Log(ex, "Error resolving tracer home directory from {0}={1}", envVarName, profilerPath);
                 return null;
             }
         }
