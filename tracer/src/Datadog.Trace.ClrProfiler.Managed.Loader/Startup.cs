@@ -2,10 +2,10 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -18,7 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     public partial class Startup
     {
         private const string AssemblyName = "Datadog.Trace, Version=3.28.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
-        private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
+        private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
+        private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
         private static int _startupCtorInitialized;
 
         /// <summary>
@@ -50,19 +51,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 {
                     // we require dynamic code so we should just bail out ASAP.
                     // This doesn't tell us for sure (the switch is only available on .NET 8+) but it's a minimum requirement
-                    StartupLogger.Log("Dynamic code is not supported (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported context switch is false). Automatic instrumentation will be disabled");
+                    StartupLogger.Log("Dynamic code is not supported (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported context switch is false). Datadog SDK will be disabled.");
                     return;
                 }
 #endif
 
                 ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+
                 if (ManagedProfilerDirectory is null)
                 {
-                    StartupLogger.Log("Managed profiler directory doesn't exist. Automatic instrumentation will be disabled");
+                    StartupLogger.Log("Could not determine Datadog.Trace.dll directory or it doesn't exist. Datadog SDK will be disabled.");
                     return;
                 }
 
-                StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
+                StartupLogger.Debug("Resolved Datadog.Trace.dll directory to: {0}", ManagedProfilerDirectory);
 
                 try
                 {
@@ -84,18 +86,25 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 }
 #endif
 
-                var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
-                if (runInAas)
+                string typeName;
+                string methodName;
+                var usingAasSiteExtension = ReadBooleanEnvironmentVariable(AzureAppServicesSiteExtensionKey, false);
+
+                if (usingAasSiteExtension)
                 {
                     // With V3, pretty much all scenarios require the trace-agent and dogstatsd, so we enable them by default
-                    StartupLogger.Log("Invoking managed method to start external processes.");
-                    TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
+                    typeName = "Datadog.Trace.AgentProcessManager";
+                    methodName = "Initialize";
+                    StartupLogger.Log($"Invoking {typeName}.{methodName}() to start external processes.");
+                    TryInvokeManagedMethod(typeName, methodName, "Datadog.Trace.AgentProcessManagerLoader");
                 }
 
-                // We need to invoke the managed tracer regardless of whether tracing is enabled
+                // We need to initialize the managed tracer regardless of whether tracing is enabled
                 // because other products rely on it
-                StartupLogger.Log("Invoking managed tracer.");
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
+                typeName = "Datadog.Trace.ClrProfiler.Instrumentation";
+                methodName = "Initialize";
+                StartupLogger.Log($"Invoking {typeName}.{methodName}() to initialize instrumentation.");
+                TryInvokeManagedMethod(typeName, methodName, "Datadog.Trace.ClrProfiler.InstrumentationLoader");
             }
             catch (Exception ex)
             {
@@ -175,40 +184,44 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        private static TracerHomeInfo? GetTracerHomeInfo()
+        private static string? GetTracerHomePath()
         {
-            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+            // allow override with DD_DOTNET_TRACER_HOME
+            var tracerHomeDirectory = ReadEnvironmentVariable(TracerHomePathKey);
+
             if (!string.IsNullOrWhiteSpace(tracerHomeDirectory))
             {
-                var normalizedTracerHomeDirectory = TrimMatchingQuotes(tracerHomeDirectory!.Trim());
-                return new TracerHomeInfo(normalizedTracerHomeDirectory, $"the DD_DOTNET_TRACER_HOME value '{normalizedTracerHomeDirectory}'");
+                return tracerHomeDirectory!.Trim();
             }
 
-            foreach (var envVar in EnumerateProfilerPathEnvironmentVariables())
+            // try to compute the path from the various CORECLR_PROFILER_PATH variations
+            foreach (var profilerPath in EnumerateProfilerPathEnvironmentVariables())
             {
-                if (TryDeriveTracerHomeFromProfilerPath(envVar) is { } corInfo)
+                if (TryComputeTracerHomePathFromProfilerPath(profilerPath) is { } tracerHomePath)
                 {
-                    return corInfo;
+                    return tracerHomePath;
                 }
             }
 
-            StartupLogger.Log("The tracer home directory cannot be determined because DD_DOTNET_TRACER_HOME is not set and no profiler path environment variables are available.");
+            StartupLogger.Log("The tracer home directory cannot be determined.");
             return null;
         }
 
-        private static TracerHomeInfo? TryDeriveTracerHomeFromProfilerPath(string envVarName)
+        private static string? TryComputeTracerHomePathFromProfilerPath(string envVarName)
         {
             var profilerPath = ReadEnvironmentVariable(envVarName);
+
             if (string.IsNullOrWhiteSpace(profilerPath))
             {
                 return null;
             }
 
-            profilerPath = TrimMatchingQuotes(profilerPath!.Trim());
+            profilerPath = profilerPath!.Trim();
 
             try
             {
                 var profilerDirectory = Path.GetDirectoryName(profilerPath);
+
                 if (string.IsNullOrEmpty(profilerDirectory))
                 {
                     StartupLogger.Log($"Unable to determine tracer home directory because {envVarName} is set to '{profilerPath}' which does not include a directory name.");
@@ -216,36 +229,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 }
 
                 var parentDirectoryInfo = Directory.GetParent(profilerDirectory);
+
                 if (parentDirectoryInfo is null)
                 {
                     StartupLogger.Log($"Unable to determine tracer home directory because the parent directory of {envVarName}='{profilerPath}' could not be resolved.");
                     return null;
                 }
 
-                var parentDirectory = parentDirectoryInfo.FullName;
-                return new TracerHomeInfo(parentDirectory, $"the {envVarName} value '{profilerPath}'");
+                return parentDirectoryInfo.FullName;
             }
             catch (Exception ex)
             {
                 StartupLogger.Log(ex, $"Error while resolving tracer home directory from {envVarName}");
                 return null;
             }
-        }
-
-        private static string TrimMatchingQuotes(string value)
-        {
-            if (value.Length >= 2)
-            {
-                var first = value[0];
-                var last = value[value.Length - 1];
-
-                if ((first == '"' && last == '"') || (first == '\'' && last == '\''))
-                {
-                    return value.Substring(1, value.Length - 2);
-                }
-            }
-
-            return value;
         }
 
         private static string? ReadEnvironmentVariable(string key)
@@ -262,17 +259,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
-        private static IEnumerable<string> EnumerateProfilerPathEnvironmentVariables()
-        {
-#if NETCOREAPP
-            return EnumerateCoreClrProfilerPathEnvironmentVariables();
-#elif NETFRAMEWORK
-            return EnumerateCorProfilerPathEnvironmentVariables();
-#else
-            return Array.Empty<string>();
-#endif
-        }
-
         private static bool ReadBooleanEnvironmentVariable(string key, bool defaultValue)
         {
             var value = ReadEnvironmentVariable(key);
@@ -283,19 +269,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 "0" or "false" or "False" or "FALSE" or "f" or "F" => false,
                 _ => defaultValue
             };
-        }
-
-        private readonly struct TracerHomeInfo
-        {
-            public TracerHomeInfo(string path, string description)
-            {
-                Path = path;
-                Description = description;
-            }
-
-            public string Path { get; }
-
-            public string Description { get; }
         }
     }
 }
