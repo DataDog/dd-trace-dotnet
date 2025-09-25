@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class Iast
     {
-
         /// <summary>
         /// Configuration key for number of rows to taint on each Db query in IAST.
         /// Default value is 1

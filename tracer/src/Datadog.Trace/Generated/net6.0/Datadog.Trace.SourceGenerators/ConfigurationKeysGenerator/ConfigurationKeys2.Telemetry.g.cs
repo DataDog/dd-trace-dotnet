@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class Telemetry
     {
-
         /// <summary>
         /// Configuration key for sending telemetry via agent proxy. If enabled, sends telemetry
         /// via agent proxy. Enabled by default. If disabled, or agent is not available, telemetry

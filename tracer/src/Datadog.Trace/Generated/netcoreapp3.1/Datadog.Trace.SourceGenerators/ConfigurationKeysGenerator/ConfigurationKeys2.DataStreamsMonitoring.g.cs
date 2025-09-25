@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class DataStreamsMonitoring
     {
-
         /// <summary>
         /// Enables data streams monitoring support
         /// <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsMonitoringEnabled"/>

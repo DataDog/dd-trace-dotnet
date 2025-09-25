@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class DirectLogSubmission
     {
-
         /// <summary>
         /// Configuration key to enable or disable direct log submission for Azure Functions host.
         /// Default value is <c>false</c>.

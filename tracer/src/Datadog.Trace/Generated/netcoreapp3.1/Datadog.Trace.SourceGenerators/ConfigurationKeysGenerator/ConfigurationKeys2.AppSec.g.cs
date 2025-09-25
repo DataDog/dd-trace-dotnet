@@ -17,11 +17,17 @@ internal static partial class ConfigurationKeys2
     internal static class AppSec
     {
         public const string ApiSecurityEnabled = "DD_API_SECURITY_ENABLED";
+
         public const string ApiSecurityEndpointCollectionEnabled = "DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED";
+
         public const string ApiSecurityEndpointCollectionMessageLimit = "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT";
+
         public const string ApiSecurityParseResponseBody = "DD_API_SECURITY_PARSE_RESPONSE_BODY";
+
         public const string ApiSecuritySampleDelay = "DD_API_SECURITY_SAMPLE_DELAY";
+
         public const string AutoUserInstrumentationMode = "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE";
+
         public const string AutomatedUserEventsTracking = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
 
         /// <summary>
@@ -35,7 +41,9 @@ internal static partial class ConfigurationKeys2
         /// Default is value is null.
         /// </summary>
         public const string ExtraHeaders = "DD_APPSEC_EXTRA_HEADERS";
+
         public const string HttpBlockedTemplateHtml = "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML";
+
         public const string HttpBlockedTemplateJson = "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON";
 
         /// <summary>
@@ -43,12 +51,19 @@ internal static partial class ConfigurationKeys2
         /// Default is value is null (do not override).
         /// </summary>
         public const string Ipheader = "DD_APPSEC_IPHEADER";
+
         public const string KeepTraces = "DD_APPSEC_KEEP_TRACES";
+
         public const string MaxStackTraceDepth = "DD_APPSEC_MAX_STACK_TRACE_DEPTH";
+
         public const string MaxStackTraceDepthTopPercent = "DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT";
+
         public const string MaxStackTraces = "DD_APPSEC_MAX_STACK_TRACES";
+
         public const string ObfuscationParameterKeyRegexp = "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP";
+
         public const string ObfuscationParameterValueRegexp = "DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP";
+
         public const string RaspEnabled = "DD_APPSEC_RASP_ENABLED";
 
         /// <summary>
@@ -56,11 +71,17 @@ internal static partial class ConfigurationKeys2
         /// Default is value is null (do not override).
         /// </summary>
         public const string Rules = "DD_APPSEC_RULES";
+
         public const string ScaEnabled = "DD_APPSEC_SCA_ENABLED";
+
         public const string StackTraceEnabled = "DD_APPSEC_STACK_TRACE_ENABLED";
+
         public const string TraceRateLimit = "DD_APPSEC_TRACE_RATE_LIMIT";
+
         public const string WafDebug = "DD_APPSEC_WAF_DEBUG";
+
         public const string WafTimeout = "DD_APPSEC_WAF_TIMEOUT";
+
         public const string ExperimentalAppsecUseUnsafeEncoder = "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER";
     }
 }

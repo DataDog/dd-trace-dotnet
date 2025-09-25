@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class OpenTelemetry
     {
-
         /// <summary>
         /// Configuration key to set the OTLP endpoint URL (fallback for metrics-specific endpoint).
         /// Used when <see cref="OtelExporterOtlpMetricsEndpoint"/> is not set.

@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class TagPropagation
     {
-
         /// <summary>
         /// Configuration key for the maximum length of an outgoing propagation header's value ("x-datadog-tags")
         /// when injecting it into downstream service calls.

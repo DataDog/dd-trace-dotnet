@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class Proxy
     {
-
         /// <summary>
         /// Configuration key to set a proxy server for https requests.
         /// </summary>

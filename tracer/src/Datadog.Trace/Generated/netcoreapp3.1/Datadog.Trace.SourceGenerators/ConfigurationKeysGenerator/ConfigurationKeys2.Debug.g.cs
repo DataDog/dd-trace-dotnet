@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class Debug
     {
-
         /// <summary>
         /// Configuration key for forcing the automatic instrumentation to only use the fallback method lookup mechanism.
         /// </summary>

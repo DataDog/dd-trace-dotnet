@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class Exporter
     {
-
         /// <summary>
         /// Configuration key for the Agent host where the Tracer can send traces.
         /// Overridden by <see cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/> if present.

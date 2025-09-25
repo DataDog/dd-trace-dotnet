@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class CIVisibility
     {
-
         /// <summary>
         /// An internal key used to "tell" tracer settings that we're running in CI Visibility mode
         /// </summary>

@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class Logging
     {
-
         /// <summary>
         /// Configuration key for setting the approximate maximum size,
         /// in bytes, for Tracer log files.

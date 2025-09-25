@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class Tracer
     {
-
         /// <summary>
         /// Configuration key for configuring the interval (in seconds) for sending stats (aka trace metrics)
         /// 
@@ -29,6 +28,7 @@ internal static partial class ConfigurationKeys2
         /// Configuration key for setting the API key, used by the Agent.
         /// </summary>
         public const string ApiKey = "DD_API_KEY";
+
         public const string ApmEnableRareSampler = "DD_APM_ENABLE_RARE_SAMPLER";
 
         /// <summary>

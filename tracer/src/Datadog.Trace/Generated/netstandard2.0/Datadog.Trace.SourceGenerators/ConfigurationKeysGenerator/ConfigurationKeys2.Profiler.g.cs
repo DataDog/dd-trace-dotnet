@@ -17,9 +17,13 @@ internal static partial class ConfigurationKeys2
     internal static class Profiler
     {
         public const string InjectionEnabled = "DD_INJECTION_ENABLED";
+
         public const string ProfilingCodehotspotsEnabled = "DD_PROFILING_CODEHOTSPOTS_ENABLED";
+
         public const string ProfilingEnabled = "DD_PROFILING_ENABLED";
+
         public const string ProfilingEndpointCollectionEnabled = "DD_PROFILING_ENDPOINT_COLLECTION_ENABLED";
+
         public const string ProfilingManagedActivationEnabled = "DD_PROFILING_MANAGED_ACTIVATION_ENABLED";
     }
 }

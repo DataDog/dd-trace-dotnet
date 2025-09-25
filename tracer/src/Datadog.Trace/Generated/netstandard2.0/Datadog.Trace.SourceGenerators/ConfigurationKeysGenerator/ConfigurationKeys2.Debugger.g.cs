@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class Debugger
     {
-
         /// <summary>
         /// Configuration key to enable tag code origin for span.
         /// Default value is false.

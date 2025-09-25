@@ -27,6 +27,7 @@ internal static partial class ConfigurationKeys2
         /// Used to force the loader to start the trace agent (in case automatic instrumentation is disabled)
         /// </summary>
         public const string AasEnableCustomTracing = "DD_AAS_ENABLE_CUSTOM_TRACING";
+
         public const string s = "DD_AZURE_APP_SERVICES";
     }
 }

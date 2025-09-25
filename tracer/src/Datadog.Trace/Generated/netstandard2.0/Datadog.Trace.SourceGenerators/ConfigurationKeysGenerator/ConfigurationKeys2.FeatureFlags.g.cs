@@ -16,7 +16,6 @@ internal static partial class ConfigurationKeys2
 {
     internal static class FeatureFlags
     {
-
         /// <summary>
         /// Configuration key to enable or disable the updated WCF instrumentation that delays execution
         /// until later in the WCF pipeline when the WCF server exception handling is established.
