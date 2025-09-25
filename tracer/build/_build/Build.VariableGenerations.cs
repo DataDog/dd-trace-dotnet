@@ -1355,7 +1355,7 @@ partial class Build : NukeBuild
                         "ubuntu",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.100-rc.1-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", "debian", "bookworm"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy", "ubuntu", "jammy"),
@@ -1373,7 +1373,7 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.100-rc.1-alpine3.22", "alpine", "3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18", "alpine", "3.18"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16", "alpine", "3.16"),
