@@ -861,7 +861,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             };
 
             globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .WithKeys(ConfigurationKeys.GlobalTags)
                         .AsDictionaryResult(parser: updatedTagsParser)
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
@@ -875,7 +875,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         else
         {
             globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .WithKeys(ConfigurationKeys.GlobalTags)
                         .AsDictionaryResult()
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
@@ -896,7 +896,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
         var serviceName = config
-                         .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                         .WithKeys(ConfigurationKeys.ServiceName)
                          .AsStringResult()
                          .OverrideWith(in otelServiceName, errorLog);
 
@@ -982,7 +982,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
         var maxTracesSubmittedPerSecond = config
-                                         .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
+                                         .WithKeys(ConfigurationKeys.TraceRateLimit)
 #pragma warning restore 618
                                          .AsInt32(defaultValue: 100);
 
@@ -1025,17 +1025,13 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                                   .AsBool(defaultValue: false);
 
         var httpServerErrorStatusCodesString = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                              .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
-#pragma warning restore 618
+                                              .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes)
                                               .AsString(defaultValue: "500-599");
 
         var httpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodesString);
 
         var httpClientErrorStatusCodesString = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                              .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
-#pragma warning restore 618
+                                              .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
                                               .AsString(defaultValue: "400-499");
 
         var httpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodesString);
