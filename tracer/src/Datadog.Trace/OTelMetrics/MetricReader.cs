@@ -158,16 +158,9 @@ namespace Datadog.Trace.OTelMetrics
                     return;
                 }
 
-                // Convert to list for export
-                var metricsList = new List<MetricPoint>();
-                foreach (var kvp in capturedMetrics)
-                {
-                    metricsList.Add(kvp.Value);
-                }
-
                 // Export via MetricExporter interface (this is the key RFC pattern!)
                 // Use async method for better performance
-                var result = await _metricExporter.ExportAsync(metricsList).ConfigureAwait(false);
+                var result = await _metricExporter.ExportAsync(capturedMetrics).ConfigureAwait(false);
                 if (result == ExportResult.Failure)
                 {
                     Log.Warning("MetricExporter.ExportAsync() returned Failure - export failed.");

@@ -371,7 +371,7 @@ namespace Datadog.Trace.OTelMetrics
             writer.Write((ulong)metric.EndTime.ToUnixTimeNanoseconds());
 
             // Value (use AsInt for integer measurements, AsDouble for floating point)
-            if (metric.IsIntegerValue)
+            if (metric.InstrumentType is InstrumentType.Counter or InstrumentType.UpDownCounter or InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
             {
                 WriteTag(writer, FieldNumbers.NumberDataPointAsInt, Fixed64);
                 writer.Write((long)metric.SnapshotSum);
@@ -408,7 +408,7 @@ namespace Datadog.Trace.OTelMetrics
             writer.Write((ulong)metric.EndTime.ToUnixTimeNanoseconds());
 
             // Value (use gauge value, not sum)
-            if (metric.IsIntegerValue)
+            if (metric.InstrumentType is InstrumentType.Counter or InstrumentType.UpDownCounter or InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
             {
                 WriteTag(writer, FieldNumbers.NumberDataPointAsInt, Fixed64);
                 writer.Write((long)metric.SnapshotGaugeValue);
