@@ -4,10 +4,6 @@ using Quartz.Impl.Matchers;
 using QuartzSampleApp.Infrastructure;
 using QuartzSampleApp.Jobs;
 using Microsoft.Extensions.DependencyInjection;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using OpenTelemetry;
-using OpenTelemetry.Exporter;
 using Microsoft.Extensions.Hosting;
 
 namespace QuartzSampleApp;
