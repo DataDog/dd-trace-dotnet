@@ -15,6 +15,11 @@ namespace Datadog.Trace.Configuration
     internal static partial class ConfigurationKeys
     {
         /// <summary>
+        /// Configuration key to enable or disable the ActivityListener.
+        /// </summary>
+        public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
+
+        /// <summary>
         /// Configuration key to enable experimental features.
         /// </summary>
         public const string ExperimentalFeaturesEnabled = "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED";
@@ -967,7 +972,7 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for enabling legacy binary headers in Data Streams Monitoring.
             /// false by default if DSM is in default state, true otherwise
             /// </summary>
-             /// <see cref="TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
+            /// <see cref="TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
             public const string LegacyHeadersEnabled = "DD_DATA_STREAMS_LEGACY_HEADERS";
         }
     }
