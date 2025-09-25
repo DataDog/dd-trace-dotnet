@@ -58,6 +58,8 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         IEnumerator IEnumerable.GetEnumerator() => _sources.GetEnumerator();
 
+        public bool IsPresent(string key) => _sources.Any(source => source.IsPresent(key));
+
         /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {

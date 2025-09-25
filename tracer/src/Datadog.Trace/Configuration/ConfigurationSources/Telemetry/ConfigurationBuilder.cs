@@ -19,35 +19,46 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
     public HasKeys WithKeys(string key) => new(_source, _telemetry, key);
 
-    public HasKeys WithKeys(string key, string fallbackKey) => new(_source, _telemetry, key, fallbackKey);
+    public HasKeys WithIntegrationKey(string integrationName) => new(
+        _source,
+        _telemetry,
+        string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName.ToUpperInvariant()),
+        [
+            string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName),
+            $"DD_{integrationName}_ENABLED"
+        ]);
 
-    public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2);
+    public HasKeys WithIntegrationAnalyticsKey(string integrationName) => new(
+        _source,
+        _telemetry,
+#pragma warning disable 618 // App analytics is deprecated, but still used
+        string.Format(IntegrationSettings.AnalyticsEnabledKey, integrationName.ToUpperInvariant()),
+        [
+            string.Format(IntegrationSettings.AnalyticsEnabledKey, integrationName),
+#pragma warning restore 618
+            $"DD_{integrationName}_ANALYTICS_ENABLED"
+        ]);
 
-    public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
+    public HasKeys WithIntegrationAnalyticsSampleRateKey(string integrationName) => new(
+        _source,
+        _telemetry,
+#pragma warning disable 618 // App analytics is deprecated, but still used
+        string.Format(IntegrationSettings.AnalyticsSampleRateKey, integrationName.ToUpperInvariant()),
+        [
+            string.Format(IntegrationSettings.AnalyticsSampleRateKey, integrationName),
+#pragma warning restore 618
+            $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
+        ]);
 
-    internal readonly struct HasKeys
+    internal readonly struct HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string[]? providedAliases = null)
     {
-        public HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string? fallbackKey1 = null, string? fallbackKey2 = null, string? fallbackKey3 = null)
-        {
-            Source = source;
-            Telemetry = telemetry;
-            Key = key;
-            FallbackKey1 = fallbackKey1;
-            FallbackKey2 = fallbackKey2;
-            FallbackKey3 = fallbackKey3;
-        }
+        private readonly string[]? _providedAliases = providedAliases;
 
-        private IConfigurationSource Source { get; }
+        private IConfigurationSource Source { get; } = source;
 
-        private IConfigurationTelemetry Telemetry { get; }
+        private IConfigurationTelemetry Telemetry { get; } = telemetry;
 
-        private string Key { get; }
-
-        private string? FallbackKey1 { get; }
-
-        private string? FallbackKey2 { get; }
-
-        private string? FallbackKey3 { get; }
+        private string Key { get; } = key;
 
         // ****************
         // String accessors
@@ -536,15 +547,13 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
         private ConfigurationResult<T> GetResultWithFallback<T>(Func<string, ConfigurationResult<T>> selector)
         {
-            var hasAllKeys = _allKeys is not null;
-            var canonicalKey = hasAllKeys ? _allKeys![0] : Key;
-            var result = selector(canonicalKey);
+            var result = selector(Key);
             if (!result.ShouldFallBack)
             {
                 return result;
             }
 
-            string[] aliases = !hasAllKeys ? ConfigKeyAliasesSwitcher.GetAliases(Key) : [_allKeys![1], _allKeys[2]];
+            string[] aliases = _providedAliases ?? ConfigKeyAliasesSwitcher.GetAliases(Key);
 
             foreach (var alias in aliases)
             {

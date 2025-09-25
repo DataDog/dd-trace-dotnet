@@ -114,6 +114,8 @@ namespace Datadog.Trace.Configuration
 
         protected abstract string? GetString(string key);
 
+        public abstract bool IsPresent(string key);
+
         /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
