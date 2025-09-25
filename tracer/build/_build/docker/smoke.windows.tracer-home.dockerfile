@@ -26,16 +26,15 @@ ENV PATH=C:\cli;%PATH%
 ARG CHANNEL_32_BIT
 RUN IF DEFINED CHANNEL_32_BIT ( \
     IF EXIST C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe ( \
-        C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
-        "$ErrorActionPreference='Stop';" \
-        "Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1 -OutFile dotnet-install.ps1;" \
-        "./dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel $env:CHANNEL_32_BIT -InstallDir C:\cli;" \
-        "Remove-Item -Force dotnet-install.ps1" \
+        echo Installing x86 ASP.NET Core runtime channel %CHANNEL_32_BIT%... && \
+        curl.exe -L "https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1" -o dotnet-install.ps1 && \
+        C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\dotnet-install.ps1" -Architecture x86 -Runtime aspnetcore -Channel %CHANNEL_32_BIT% -InstallDir C:\cli && \
+        del /q dotnet-install.ps1 \
     ) ELSE ( \
-        ECHO NanoServer detected (no PowerShell). Skipping x86 runtime install. \
+        echo NanoServer detected (no PowerShell). Skipping x86 runtime install. \
     ) \
 ) ELSE ( \
-    ECHO CHANNEL_32_BIT not set. Skipping x86 runtime install. \
+    echo CHANNEL_32_BIT not set. Skipping x86 runtime install. \
 )
 
 # Copy the tracer home file from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
