@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">4.0.10</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">6.0.13</ApiVersion>
+    <!-- batch support was added in https://github.com/npgsql/npgsql/pull/3860
+     we define a constant to be used in a preprocessor directive around code related to batch -->
+    <DefineConstants Condition="'$(ApiVersion)' >= '6.0.0'">$(DefineConstants);HAS_BATCH_SUPPORT</DefineConstants>
     <RequiresDockerDependency>All</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
