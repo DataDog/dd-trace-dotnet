@@ -30,13 +30,13 @@ internal static partial class ConfigurationKeys2
         /// <summary>
         /// Configuration key for enabling or disabling the vulnerability duplication detection.
         /// When enabled, a vulnerability will only be reported once in the lifetime of an app,
-        /// instead of on every usage. Default is value is true (enabled).
+        /// instead of on every usage. Default value is true (enabled).
         /// </summary>
         public const string IsIastDeduplicationEnabled = "DD_IAST_DEDUPLICATION_ENABLED";
 
         /// <summary>
         /// Configuration key for enabling or disabling the IAST.
-        /// Default is value is false (disabled).
+        /// Default value is false (disabled).
         /// </summary>
         public const string Enabled = "DD_IAST_ENABLED";
 

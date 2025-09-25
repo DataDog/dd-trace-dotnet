@@ -58,13 +58,13 @@ internal static partial class ConfigurationKeys2
 
         /// <summary>
         /// Configuration key for enabling or disabling the AppSec.
-        /// Default is value is false (disabled).
+        /// Default value is false (disabled).
         /// </summary>
         public const string Enabled = "DD_APPSEC_ENABLED";
 
         /// <summary>
         /// Comma separated keys indicating the optional custom headers the user wants to send.
-        /// Default is value is null.
+        /// Default value is null.
         /// </summary>
         public const string ExtraHeaders = "DD_APPSEC_EXTRA_HEADERS";
 
@@ -80,7 +80,7 @@ internal static partial class ConfigurationKeys2
 
         /// <summary>
         /// Configuration key indicating the optional name of the custom header to take into account for the ip address.
-        /// Default is value is null (do not override).
+        /// Default value is null (do not override).
         /// </summary>
         public const string CustomIpHeader = "DD_APPSEC_IPHEADER";
 
@@ -123,7 +123,7 @@ internal static partial class ConfigurationKeys2
 
         /// <summary>
         /// Override the default rules file provided. Must be a path to a valid JSON rules file.
-        /// Default is value is null (do not override).
+        /// Default value is null (do not override).
         /// </summary>
         public const string Rules = "DD_APPSEC_RULES";
 

@@ -56,7 +56,7 @@ internal static partial class ConfigurationKeys2
 
     /// <summary>
     /// Configuration key for enabling or disabling the generation of APM traces.
-    /// Default is value is true (enabled).
+    /// Default value is true (enabled).
     /// </summary>
     public const string ApmTracingEnabled = "DD_APM_TRACING_ENABLED";
 
@@ -176,13 +176,13 @@ internal static partial class ConfigurationKeys2
 
     /// <summary>
     /// Configuration key for enabling or disabling the Tracer's debugger mode.
-    /// Default is value is false (disabled).
+    /// Default value is false (disabled).
     /// </summary>
     public const string WaitForDebuggerAttach = "DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH";
 
     /// <summary>
     /// Configuration key for enabling or disabling the Tracer's native debugger mode.
-    /// Default is value is false (disabled).
+    /// Default value is false (disabled).
     /// </summary>
     public const string WaitForNativeDebuggerAttach = "DD_INTERNAL_WAIT_FOR_NATIVE_DEBUGGER_ATTACH";
 
@@ -369,7 +369,7 @@ internal static partial class ConfigurationKeys2
     /// <summary>
     /// Configuration key indicating the optional name of the custom header to take into account to report the ip address from.
     /// If this variable is set all other IP related headers should be ignored
-    /// Default is value is null (do not override).
+    /// Default value is null (do not override).
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.IpHeader"/>
     public const string IpHeader = "DD_TRACE_CLIENT_IP_HEADER";
@@ -389,7 +389,7 @@ internal static partial class ConfigurationKeys2
 
     /// <summary>
     /// Configuration key for enabling or disabling the Tracer's debug mode.
-    /// Default is value is false (disabled).
+    /// Default value is false (disabled).
     /// </summary>
     public const string DebugEnabled = "DD_TRACE_DEBUG";
 
@@ -438,7 +438,7 @@ internal static partial class ConfigurationKeys2
 
     /// <summary>
     /// Configuration key for enabling or disabling the Tracer.
-    /// Default is value is true (enabled).
+    /// Default value is true (enabled).
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.TraceEnabled"/>
     public const string TraceEnabled = "DD_TRACE_ENABLED";
@@ -458,7 +458,7 @@ internal static partial class ConfigurationKeys2
 
     /// <summary>
     /// Configuration key for enabling the tagging of every telemetry event with git metadata.
-    /// Default is value is true (enabled).
+    /// Default value is true (enabled).
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.GitMetadataEnabled"/>
     public const string GitMetadataEnabled = "DD_TRACE_GIT_METADATA_ENABLED";
@@ -622,14 +622,6 @@ internal static partial class ConfigurationKeys2
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.PropagationExtractFirstOnly"/>
     public const string PropagationExtractFirstOnly = "DD_TRACE_PROPAGATION_EXTRACT_FIRST";
-
-    /// <summary>
-    /// Configuration key for setting the propagation style for both header injection and extraction.
-    /// If <see cref="Datadog.Trace.Configuration.TracerSettings.PropagationStyleInject"/> or <see cref="Datadog.Trace.Configuration.TracerSettings.PropagationStyleExtract"/> are also defined,
-    /// they will override any header injections or extraction styled defined here, respectively.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
-    public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
     /// <summary>
     /// Configuration key for setting the header extraction propagation style.
