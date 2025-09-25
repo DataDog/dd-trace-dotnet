@@ -6083,7 +6083,6 @@ stages:
     - bash: |
         $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg SDK_TAG="$(dotnetCoreSdkLatestVersionShort)-$(smokeTestOsVersion)" \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \

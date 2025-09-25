@@ -1595,13 +1595,11 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
-                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
-                        new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
-                        new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
-                        new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
-                        new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
-                        new (publishFramework: TargetFramework.NET9_0, "9.0-nanoserver-ltsc2022", "windows", "nanoserver-ltsc2022"),
-                        new (publishFramework: TargetFramework.NET8_0, "8.0-nanoserver-ltsc2022", "windows", "nanoserver-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET10_0, "10.0-preview-windowsservercore-ltsc2022", "windows", "servercore-2022"),
+                        new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
+                        new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
+                        new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
+                        new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                     };
 
                     var matrix = (

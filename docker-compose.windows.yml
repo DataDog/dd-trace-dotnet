@@ -171,7 +171,6 @@ services:
         # args:
         # Note that the following build arguments must be provided
         # - DOTNETSDK_VERSION=
-        # - SDK_TAG=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
         # - CHANNEL_32_BIT=
