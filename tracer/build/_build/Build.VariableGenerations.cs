@@ -1599,7 +1599,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var servercoreImages = new SmokeTestImage[]
                     {
-                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-windowsservercore-ltsc2022", "windows", "servercore-2022"),
+                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
