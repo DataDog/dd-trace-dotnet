@@ -56,7 +56,7 @@ namespace Datadog.Trace.OTelMetrics
 
         public bool Equals(MetricStreamIdentity other)
         {
-            return InstrumentName == other.InstrumentName &&
+            return string.Equals(InstrumentName, other.InstrumentName, StringComparison.OrdinalIgnoreCase) &&
                    MeterName == other.MeterName &&
                    Unit == other.Unit &&
                    Description == other.Description &&
@@ -70,7 +70,12 @@ namespace Datadog.Trace.OTelMetrics
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(InstrumentName, MeterName, Unit, Description, InstrumentType);
+            return HashCode.Combine(
+                StringComparer.OrdinalIgnoreCase.GetHashCode(InstrumentName),
+                MeterName,
+                Unit,
+                Description,
+                InstrumentType);
         }
     }
 }

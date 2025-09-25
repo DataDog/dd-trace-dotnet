@@ -11,7 +11,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -24,7 +23,7 @@ namespace Datadog.Trace.OTelMetrics
 
         // Temporary storage for aggregation (like RuntimeMetrics._exceptionCounts)
         // Will be cleared after each export to prevent memory leaks
-        private static readonly ConcurrentDictionary<MetricStreamIdentity, MetricPoint> CapturedMetrics = new();
+        private static readonly ConcurrentDictionary<MetricStreamIdentity, MetricState> CapturedMetrics = new();
         private static readonly HashSet<string> MetricStreamNames = new(StringComparer.OrdinalIgnoreCase);
 
         private static int _metricCount;
@@ -115,20 +114,39 @@ namespace Datadog.Trace.OTelMetrics
             OnMeasurementRecordedDouble(instrument, value, tags, state);
         }
 
-        internal static IReadOnlyDictionary<MetricStreamIdentity, MetricPoint> GetMetricsForExport(bool clearAfterGet = false)
+        internal static IReadOnlyList<MetricPoint> GetMetricsForExport(bool clearAfterGet = false)
         {
-            var metrics = CapturedMetrics;
+            var allMetricPoints = new List<MetricPoint>();
+
+            foreach (var kvp in CapturedMetrics)
+            {
+                var metricState = kvp.Value;
+                var metricPoints = metricState.GetMetricPoints();
+                allMetricPoints.AddRange(metricPoints);
+            }
 
             if (clearAfterGet)
             {
                 CapturedMetrics.Clear();
             }
 
-            return metrics;
+            return allMetricPoints;
         }
 
         // For testing only
-        internal static IReadOnlyDictionary<MetricStreamIdentity, MetricPoint> GetCapturedMetricsForTesting() => CapturedMetrics;
+        internal static IReadOnlyList<MetricPoint> GetCapturedMetricsForTesting()
+        {
+            var allMetricPoints = new List<MetricPoint>();
+
+            foreach (var kvp in CapturedMetrics)
+            {
+                var metricState = kvp.Value;
+                var metricPoints = metricState.GetMetricPoints();
+                allMetricPoints.AddRange(metricPoints);
+            }
+
+            return allMetricPoints;
+        }
 
         // For testing only - reset all captured metrics
         internal static void ResetForTesting()
@@ -195,7 +213,7 @@ namespace Datadog.Trace.OTelMetrics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static AggregationTemporality? GetTemporality(InstrumentType instrumentType)
+        internal static AggregationTemporality? GetTemporality(InstrumentType instrumentType)
         {
             // Gauges have no temporality according to OTLP spec
             if (instrumentType is InstrumentType.Gauge or InstrumentType.ObservableGauge)
@@ -286,22 +304,15 @@ namespace Datadog.Trace.OTelMetrics
                 }
 
                 var metricStreamIdentity = new MetricStreamIdentity(instrument, aggregationType.Value);
-                var temporality = GetTemporality(aggregationType.Value);
-                var tagsDict = new Dictionary<string, object?>();
 
                 // RFC requirement: Check for duplicate instrument registration
-                if (CapturedMetrics.Any(kvp =>
-                    kvp.Key.InstrumentType == aggregationType.Value &&
-                    string.Equals(kvp.Key.InstrumentName, instrument.Name, StringComparison.OrdinalIgnoreCase) &&
-                    kvp.Key.Unit == instrument.Unit &&
-                    kvp.Key.Description == instrument.Description))
+                if (CapturedMetrics.ContainsKey(metricStreamIdentity))
                 {
                     Log.Warning(
-                        "Duplicate instrument registration detected: {InstrumentType} '{InstrumentName}' from meter '{MeterName}'. Previous instrument will be reused.",
-                        aggregationType.Value.ToString(),
-                        instrument.Name,
-                        instrument.Meter.Name);
-                    return null; // Return null to skip this duplicate
+                        "Duplicate instrument registration detected: {InstrumentType} '{InstrumentName}' (Unit='{Unit}', Description='{Description}') from meter '{MeterName}'. Previous instrument will be reused.",
+                        [aggregationType.Value, instrument.Name, instrument.Unit ?? "null", instrument.Description ?? "null", instrument.Meter.Name]);
+
+                    return null;
                 }
 
                 // Check for duplicate metric stream names
@@ -310,17 +321,10 @@ namespace Datadog.Trace.OTelMetrics
                     Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", metricStreamIdentity.MetricStreamName);
                 }
 
-                // Determine if this is an integer instrument based on the instrument type
-                var isIntegerValue = aggregationType.Value == InstrumentType.Counter ||
-                                   aggregationType.Value == InstrumentType.UpDownCounter ||
-                                   aggregationType.Value == InstrumentType.ObservableCounter ||
-                                   aggregationType.Value == InstrumentType.ObservableUpDownCounter;
-
-                var metricPoint = new MetricPoint(instrument.Name, instrument.Meter.Name, aggregationType.Value, temporality, tagsDict, isIntegerValue);
-                var state = new MetricState(metricStreamIdentity, metricPoint);
+                var state = new MetricState(metricStreamIdentity);
 
                 // Store in global dictionary for export
-                CapturedMetrics.TryAdd(metricStreamIdentity, metricPoint);
+                CapturedMetrics.TryAdd(metricStreamIdentity, state);
                 Interlocked.Increment(ref _metricCount);
 
                 return state;
