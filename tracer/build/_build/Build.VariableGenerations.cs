@@ -1597,20 +1597,32 @@ partial class Build : NukeBuild
                     var dockerName = "mcr.microsoft.com/dotnet/aspnet";
 
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
-                    var runtimeImages = new SmokeTestImage[]
+                    var servercoreImages = new SmokeTestImage[]
                     {
                         new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022", "windows", "windowsservercore-ltsc2022"),
+                    };
+
+                    var nanoserverImages = new SmokeTestImage[]
+                    {
                         new (publishFramework: TargetFramework.NET9_0, "9.0-nanoserver-ltsc2022", "windows", "nanoserver-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-nanoserver-ltsc2022", "windows", "nanoserver-ltsc2022"),
                     };
 
+                    var servercore = from platform in platforms
+                                     from image in servercoreImages
+                                     select (platform, image);
+
+                    var nanoServer = nanoserverImages.Select(image => (MSBuildTargetPlatform.x64, image));
+                    var runtimeImages = servercore.Concat(nanoServer);
+
                     var matrix = (
-                                     from platform in platforms
-                                     from image in runtimeImages
+                                     from values in runtimeImages
+                                     let platform = values.Item1
+                                     let image = values.image
                                      let dockerTag = $"{platform}_{image.RuntimeTag.Replace('.', '_')}"
                                      let channel32Bit = platform == MSBuildTargetPlatform.x86
                                                                        ? GetInstallerChannel(image.PublishFramework)
