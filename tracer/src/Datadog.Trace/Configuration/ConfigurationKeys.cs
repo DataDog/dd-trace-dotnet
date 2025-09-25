@@ -18,6 +18,11 @@ namespace Datadog.Trace.Configuration
         public const string TraceLogPath = "DD_TRACE_LOG_PATH";
 
         /// <summary>
+        /// Configuration key to enable or disable the ActivityListener.
+        /// </summary>
+        public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
+
+        /// <summary>
         /// Configuration key to enable experimental features.
         /// </summary>
         public const string ExperimentalFeaturesEnabled = "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED";
