@@ -86,6 +86,8 @@ partial class Build
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
 
+    AbsolutePath MsbuildDebugPath => RootDirectory / "logs" / "msbuild";
+
     readonly string[] WindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
     Project NativeTracerTestsProject => Solution.GetProject(Projects.NativeTracerNativeTests);
@@ -785,8 +787,6 @@ partial class Build
                 ? TargetFrameworks
                 : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
 
-            var msbuildDebugPath = (RootDirectory / "logs" / "msbuild").ToString();
-
             try
             {
                 // Publish Datadog.Trace.MSBuild which includes Datadog.Trace
@@ -799,21 +799,22 @@ partial class Build
                     .CombineWith(targetFrameworks, (p, framework) => p
                         .SetFramework(framework)
                         .SetOutput(MonitoringHomeDirectory / framework)
-                    .SetProcessEnvironmentVariable("MSBUILDDEBUGPATH", msbuildDebugPath))
+                    .SetProcessEnvironmentVariable("MSBUILDDEBUGPATH", MsbuildDebugPath))
                 );
             }
             catch
             {
                 // Print tail of MSBuild failure notes, if any, then rethrow
-                DumpMsBuildChildFailures(msbuildDebugPath, tailChars: 128 * 1024, maxFiles: 2);
+                DumpMsBuildChildFailures();
                 throw;
             }
         });
 
-    private static void DumpMsBuildChildFailures(string msbuildDebugPath, int tailChars = 128 * 1024, int maxFiles = 2)
+    private void DumpMsBuildChildFailures(int tailChars = 10 * 1024, int maxFiles = 2)
     {
         try
         {
+            var msbuildDebugPath = MsbuildDebugPath.ToString();
             if (!Directory.Exists(msbuildDebugPath))
             {
                 Logger.Information($"No MSBuild failure directory: {msbuildDebugPath}");
