@@ -41,11 +41,12 @@ internal static class HangfireCommon
             var span = scope.Span;
             span.Type = HangfireType;
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            PopulatePerformSpanTags(scope, performingContext);
+            scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
+            PopulatePerformSpanTags((HangfireTags)scope.Span.Tags, performingContext);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating or populating scope.");
+            Log.Error(ex, "Unable to create Hangfire span.");
         }
 
         return scope;
@@ -71,11 +72,10 @@ internal static class HangfireCommon
         jobParams[key] = value;
     }
 
-    internal static void PopulatePerformSpanTags(Scope scope, IPerformingContextProxy performingContext)
+    internal static void PopulatePerformSpanTags(HangfireTags tags, IPerformingContextProxy performingContext)
     {
-        scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
-        scope.Span.SetTag(HangfireConstants.JobIdTag, performingContext.JobId);
-        scope.Span.SetTag(HangfireConstants.JobCreatedAtTag, performingContext.BackgroundJob.CreatedAt.ToString("O"));
+        tags.JobId = performingContext.JobId;
+        tags.CreatedAt = performingContext.BackgroundJob.CreatedAt.ToString("O");
     }
 
     internal static void CreateDatadogFilter(out object? serverFilter, out object? clientFilter)
@@ -83,40 +83,25 @@ internal static class HangfireCommon
         serverFilter = null;
         clientFilter = null;
 
-        Log.Debug("doing the assmebly thing");
         Assembly? hangfireAssembly = AppDomain.CurrentDomain
                                               .GetAssemblies()
                                               .FirstOrDefault(asm => asm.GetName().Name == "Hangfire.Core");
         if (hangfireAssembly == null)
         {
-            Log.Debug("Error getting hangfire assembly. Did not inject datadog filter");
+            Log.Debug("Error getting required Hangfire assembly. Hangfire integration is not enabled: abort injecting datadog filter");
             return;
         }
 
-        Type? saferServerFilterType = hangfireAssembly.GetType("Hangfire.Server.IServerFilter");
-        Log.Debug("Datadog Jobfilter is not added in yet, attempting to do so.");
-        if (saferServerFilterType != null)
+        Type? serverFilterType = hangfireAssembly.GetType("Hangfire.Server.IServerFilter, Hangfire.Core");
+        Type? clientFilterType = hangfireAssembly.GetType("Hangfire.Client.IClientFilter, Hangfire.Core");
+
+        if (serverFilterType is null || clientFilterType is null)
         {
-            Log.Debug("Registering filter for {FilterType}", saferServerFilterType.ToString());
-            serverFilter = DuckType.CreateReverse(saferServerFilterType, new DatadogHangfireServerFilter());
-            Log.Debug("This is the ducktype using create reverse: {Proxy}", serverFilter.ToString());
-            Log.Debug("We added the serverFilter!");
-        }
-        else
-        {
-            Log.Debug("iserverfilter is null");
+            Log.Debug("Error getting required Hangfire Server/Client filter assembly. Hangfire integration is not enabled: abort injecting datadog filter");
+            return;
         }
 
-        Type? clientFilterType = Type.GetType("Hangfire.Client.IClientFilter, Hangfire.Core");
-        if (clientFilterType != null)
-        {
-            Log.Debug("Registering filter for {FilterType}", clientFilterType.ToString());
-            clientFilter = DuckType.CreateReverse(clientFilterType, new DatadogHangfireClientFilter());
-            Log.Debug("We added the clientFilter!");
-        }
-        else
-        {
-            Log.Debug("iclientfilter is null");
-        }
+        serverFilter = DuckType.CreateReverse(serverFilterType, new DatadogHangfireServerFilter());
+        clientFilter = DuckType.CreateReverse(clientFilterType, new DatadogHangfireClientFilter());
     }
 }

@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using System;
+#nullable enable
 using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 
@@ -12,16 +14,20 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class HangfireTags : InstrumentationTags
     {
-        private const string ComponentName = "Hangfire";
-
         public HangfireTags()
         {
         }
 
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => ComponentName;
+        [Tag(Tags.InstrumentationName)]
+        public string InstrumentationName => nameof(IntegrationId.Hangfire);
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Internal;
+
+        [Tag(Tags.HangfireJobCreatedAt)]
+        public string? CreatedAt { get; set; }
+
+        [Tag(Tags.HangfireJobId)]
+        public string? JobId { get; set; }
     }
 }

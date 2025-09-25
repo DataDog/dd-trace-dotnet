@@ -33,9 +33,6 @@ public class HangfireTests : TracingIntegrationTest
     [Trait("Category", "EndToEnd")]
     public async Task SubmitsTraces()
     {
-        // used to create custom spans
-        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent))

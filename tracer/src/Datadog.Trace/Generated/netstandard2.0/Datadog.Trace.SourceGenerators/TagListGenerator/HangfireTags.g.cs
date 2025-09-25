@@ -18,6 +18,10 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // CreatedAtBytes = MessagePack.Serialize("job.CreatedAt");
+        private static ReadOnlySpan<byte> CreatedAtBytes => new byte[] { 173, 106, 111, 98, 46, 67, 114, 101, 97, 116, 101, 100, 65, 116 };
+        // JobIdBytes = MessagePack.Serialize("job.ID");
+        private static ReadOnlySpan<byte> JobIdBytes => new byte[] { 166, 106, 111, 98, 46, 73, 68 };
 
         public override string? GetTag(string key)
         {
@@ -25,6 +29,8 @@ namespace Datadog.Trace.Tagging
             {
                 "component" => InstrumentationName,
                 "span.kind" => SpanKind,
+                "job.CreatedAt" => CreatedAt,
+                "job.ID" => JobId,
                 _ => base.GetTag(key),
             };
         }
@@ -33,6 +39,12 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "job.CreatedAt": 
+                    CreatedAt = value;
+                    break;
+                case "job.ID": 
+                    JobId = value;
+                    break;
                 case "component": 
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(HangfireTags));
@@ -55,6 +67,16 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
+            if (CreatedAt is not null)
+            {
+                processor.Process(new TagItem<string>("job.CreatedAt", CreatedAt, CreatedAtBytes));
+            }
+
+            if (JobId is not null)
+            {
+                processor.Process(new TagItem<string>("job.ID", JobId, JobIdBytes));
+            }
+
             base.EnumerateTags(ref processor);
         }
 
@@ -71,6 +93,20 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
+                  .Append(',');
+            }
+
+            if (CreatedAt is not null)
+            {
+                sb.Append("job.CreatedAt (tag):")
+                  .Append(CreatedAt)
+                  .Append(',');
+            }
+
+            if (JobId is not null)
+            {
+                sb.Append("job.ID (tag):")
+                  .Append(JobId)
                   .Append(',');
             }
 
