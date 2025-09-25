@@ -13,23 +13,23 @@
 
 # Capabilities, API, and OpenTelemetry
 
-/tracer/src/Datadog.Trace.Manual/                                                                       @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/src/Datadog.Trace/Activity/                                                                     @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/                                @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/                        @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/                             @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace.Manual/                                                                       @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/Activity/                                                                     @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/                                @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/                        @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/                             @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
 
-/tracer/test/test-applications/integrations/Samples.ManualInstrumentation/                              @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.NetActivitySdk/                                     @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.OpenTelemetrySdk/                                   @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.TraceAnnotations/                                   @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.AfterFeature/      @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.BeforeFeature/     @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.ManualInstrumentation/                              @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.NetActivitySdk/                                     @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.OpenTelemetrySdk/                                   @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.TraceAnnotations/                                   @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.AfterFeature/      @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.BeforeFeature/     @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
 
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/ManualInstrumentationTests.cs                   @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/NetActivitySdkTests.cs                          @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/OpenTelemetrySdkTests.cs                        @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TraceAnnotationsTests.cs                        @DataDog/apm-sdk-api-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/ManualInstrumentationTests.cs                   @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/NetActivitySdkTests.cs                          @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/OpenTelemetrySdkTests.cs                        @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TraceAnnotationsTests.cs                        @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
 
 ## DBM and DSM
 /tracer/src/Datadog.Trace/DatabaseMonitoring/                                                           @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
