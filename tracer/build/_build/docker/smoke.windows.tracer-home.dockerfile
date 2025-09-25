@@ -26,6 +26,19 @@ ENV PATH=C:\cli;%PATH%
 ARG CHANNEL_32_BIT
 ENV CHANNEL_32_BIT=${CHANNEL_32_BIT}
 
+# 1) If not set, say so and move on
+RUN IF DEFINED CHANNEL_32_BIT ( where powershell.exe >NUL 2>&1 ) && curl.exe -L ^
+  https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1 ^
+  -o %TEMP%\dotnet-install.ps1
+
+# 2) Run the installer (Server Core only)
+RUN IF DEFINED CHANNEL_32_BIT ( where powershell.exe >NUL 2>&1 ) && ^
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File %TEMP%\dotnet-install.ps1 ^
+    -Architecture x86 -Runtime aspnetcore -Channel %CHANNEL_32_BIT% -InstallDir C:\cli
+
+# 3) Best-effort cleanup (don’t fail if not present)
+RUN del /q %TEMP%\dotnet-install.ps1 2>nul || exit /b 0
+
 RUN cmd /S /C "IF DEFINED CHANNEL_32_BIT ( where powershell.exe >NUL 2>&1 && ( curl.exe -L https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1 -o %TEMP%\dotnet-install.ps1 && powershell.exe -NoProfile -ExecutionPolicy Bypass -File %TEMP%\dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel %CHANNEL_32_BIT% -InstallDir C:\cli && del /q %TEMP%\dotnet-install.ps1 ) || echo PowerShell not found. Skipping x86 install. ) ELSE ( echo CHANNEL_32_BIT not set. Skipping x86 install. )"
 
 # Copy the tracer home file from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
