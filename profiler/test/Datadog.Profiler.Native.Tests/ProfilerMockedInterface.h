@@ -92,6 +92,8 @@ public:
     MOCK_METHOD(std::chrono::milliseconds, GetHttpRequestDurationThreshold, (), (const override));
     MOCK_METHOD(bool, ForceHttpSampling, (), (const override));
     MOCK_METHOD(bool, IsWaitHandleProfilingEnabled, (), (const override));
+    MOCK_METHOD(bool, IsManagedActivationEnabled, (), (const override));
+    MOCK_METHOD(void, SetEnablementStatus, (EnablementStatus status), (override));
 };
 
 class MockExporter : public IExporter
@@ -124,6 +126,7 @@ class MockSsiManager : public ISsiManager
 {
 public:
     // Inherited via ISsiManager
+    MOCK_METHOD(void, OnStableConfiguration, (), (override));
     MOCK_METHOD(void, OnSpanCreated, (), (override));
     MOCK_METHOD(bool, IsSpanCreated, (),  (const override));
     MOCK_METHOD(bool, IsLongLived, (), (const override));

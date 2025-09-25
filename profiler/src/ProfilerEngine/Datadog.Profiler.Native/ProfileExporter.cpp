@@ -833,8 +833,13 @@ std::string ProfileExporter::GetInfo() const
             builder << "auto";
         }
         else
+        if (_configuration->GetEnablementStatus() == EnablementStatus::Standby)
         {
-            builder << "injection";
+            builder << "standby"; // should never occur because the managed layer did not set the activation status
+        }
+        else
+        {
+            builder << "none";
         }
         builder << "\"";
     builder << "}}";

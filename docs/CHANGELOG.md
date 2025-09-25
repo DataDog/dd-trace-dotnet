@@ -28,6 +28,135 @@
 
 
 
+
+
+## [Release 3.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.27.0)
+
+## Summary
+
+Various bug fixes and optimizations. Includes fix for Runtime Metrics that could be missing and more accurate telemetry reporting.
+
+## Changes
+
+### Tracer
+* Remove unused dynamic settings (#7487)
+* Fix incorrect usages of TracerManager PerTraceSettings (#7488)
+* Add additional compiler flags to allow `required` (#7501)
+* Fix .NET 10 RC1 bugs (#7506)
+* fix(telemetry): correct heartbeat interval calculation (#7507)
+* Fix `ManualInstrumentationConfigSource` and introduce base type (#7508)
+* Allow optimized creating of composite configuration source (#7509)
+* Move partial flush settings from `ExporterSettings` to `TracerSettings` (#7516)
+* fix: change Language value from '.NET' to 'dotnet' in trace headers (#7523)
+* Hide problematic public APIs using `[EditorBrowsable]` (#7531)
+* Add a Continuous Profiler availability check (#7534)
+
+### ASM
+* [AAP] Update waf version to v1.28.0 (#7494)
+* [AAP] Update waf to v1.28.1 (#7524)
+* [AAP] Test endpoint collection with APM tracing disabled (#7535)
+
+### Debugger
+* [Dynamic Instrumentation] Added native hot standby mode to support Remote Enablement and Stable Config (#7441)
+* [Dynamic Instrumentation] Avoid async instrumentation if the type `AsyncMethodDebuggerInvokerV2` does not exist (#7513)
+
+### Serverless
+* [Azure Functions] bump `Datadog.Serverless.Compat` nuget package reference (#7497)
+
+### Fixes
+* More cleanup in native loader code (#7475)
+* Fix dependabot again by allowing private feed access (#7480)
+* [Tracer] Updating Statsd in RuntimeEventListener (#7512)
+
+### Miscellaneous
+* [OTEL] Metrics API Support - Configurations & Telemetry (#7420)
+  * This feature is incomplete and still in development
+* Simplify Windows benchmarks credential setup (#7498)
+* Allow passing fallback values to `IntegrationSettingsCollection` (#7510)
+* Add AGENTS.md file (#7539)
+
+### Build / Test
+* Timeout error installer_smoke_tests (#7468)
+* Attempt to improve Kafka timeout flake in tests (#7474)
+* Try fixing ASAN job crashes (#7476)
+* Update Windows macrobenchmark tooling (#7481)
+* Update Windows microbenchmark tooling (#7482)
+* [Hands-off config] add integration test (#7483)
+* [Test Package Versions Bump] Updating package versions (#7484)
+* Check for errors when signing (#7490)
+* Sign artifacts using 0.3.5 of the `dd wcs` tool (#7492)
+* Decrease Nuke restore verbosity job (#7493)
+* Decrease log level when uncompressing files in Nuke (#7496)
+* Fix macos build (#7503)
+* Mark kafkatests as flaky (#7505)
+* Upload execution benchmark log files and cleanup (#7521)
+* chore(CI): add ForceDebugRun variable for debug control system tests (#7528)
+* Ensure `execution_benchmarks` download the profiler (#7529)
+* Capture timeout exceptions in IAST tests (#7533)
+* Fix the `verify_app_trimming_changes_are_persisted` job (#7542)
+
+
+[Changes since 3.26.3](https://github.com/DataDog/dd-trace-dotnet/compare/v3.26.3...v3.27.0)
+
+## [Release 3.26.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.26.0)
+
+## Summary
+
+Various bug fixes and optimizations.
+
+## Changes
+
+### Tracer
+* Update build and testing to use .NET 10 preview 7 (#7170)
+* chore: add logging for data pipeline status in TracerSettings (#7436)
+* Use P/Invoke to call  `lstat` instead of shelling out to `stat` to retrieve the inode (#7453)
+* [Native] Convert Rejitters vector to a fixed array (#7460)
+* [Phase 1] chore(configuration): enable DataPipelineEnabled on AAS + Windows (#7464)
+
+### ASM
+* [AAP] Add Forwarded header as IP source (#7438)
+* [AAP] Add "100.65.0.0/10" as a private IP range (#7461)
+* [IAST] Fix GRPC IAST tests (#7485)
+* [IAST] Delay dataflow creation (#7440, #7451, #7465)
+
+### Continuous Profiler
+* [Profiler] Make sure we generate a build-id using SHA-1 (#7449)
+* [Profiler] Try fixing TSAN job (#7452)
+
+### Serverless
+* [Azure Functions] Restore files moved by in-process Azure Functions SDK (#7419)
+
+### Fixes
+* Support `final="true"` in NLog Logging rules for direct log submission (#7445)
+* Extract the Managed DevOps pools names to variables (#7447)
+* Update language used in native log messages (#7467)
+* Remove `Samples.TraceAnnotations.VersionMismatch.NewerNuget` (#7469)
+* Remove `Samples.CIVisibilityVersionMismatch` (#7471)
+* Add parameter names to MongoDb `IBsonSerializerProxy.Serialize()` method (#7443)
+* Fix GRPC instrumentation for BuildHttpErrorResponse. Enable integration tests. (#7457)
+
+### Build / Test
+* Use mock agent in exploration tests (#7431)
+* [Test Package Versions Bump] Updating package versions (#7435)
+* Use the global.json file to specify the .NET SDK version in GitHub Actions (#7442)
+* Update Managed DevOps pools images (#7446)
+* Remove smoke test image that won't work (#7450)
+* [Test Package Versions Bump] Updating package versions (#7455)
+* Bump the gh-actions-packages group across 2 directories with 2 updates (#7456)
+* [Test Package Versions Bump] Updating package versions (#7458)
+* Split dependabot files into separate projects (#7459)
+* Bump actions/setup-dotnet from 4.3.1 to 5.0.0 in the gh-actions-packages group across 1 directory (#7463)
+* Try to fix dependabot (#7466)
+* Improve logging for `InstrumentationTests` and update dynamic code scenario (#7472)
+* Fix typo in dependabot yaml (#7477)
+* Fix dependabot again (#7478)
+
+### Miscellaneous
+* Consolidate bailout checks into native loader (#7462)
+* [Native] Safer rejitter iterations (#7473)
+
+[Changes since 3.25.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.25.0...v3.26.0)
+
 ## [Release 3.25.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.25.0)
 
 ## Summary

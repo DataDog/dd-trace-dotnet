@@ -62,36 +62,6 @@ namespace Datadog.Trace.Tests.Configuration
             CheckDefaultValues(settingsFromSource, "DogStatsdPort");
         }
 
-        [Fact]
-        public void PartialFlushEnabled()
-        {
-            var param = true;
-            var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_ENABLED", param.ToString());
-
-            settingsFromSource.PartialFlushEnabled.Should().Be(param);
-
-            CheckDefaultValues(settingsFromSource, "PartialFlushEnabled");
-        }
-
-        [Fact]
-        public void PartialFlushMinSpans()
-        {
-            var param = 200;
-            var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", param.ToString());
-
-            settingsFromSource.PartialFlushMinSpans.Should().Be(param);
-
-            CheckDefaultValues(settingsFromSource, "PartialFlushMinSpans");
-        }
-
-        [Fact]
-        public void InvalidPartialFlushMinSpans()
-        {
-            var param = -200;
-            var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", param.ToString());
-            settingsFromSource.PartialFlushMinSpans.Should().Be(500);
-        }
-
         [Theory]
         [InlineData("udp://someurl", ExporterSettings.DefaultDogstatsdPort)]
         [InlineData("udp://someurl:1234", 1234)]
@@ -402,16 +372,6 @@ namespace Datadog.Trace.Tests.Configuration
             if (!paramToIgnore.Contains(nameof(settings.MetricsHostname)))
             {
                 settings.MetricsHostname.Should().Be(ExporterSettings.DefaultDogstatsdHostname);
-            }
-
-            if (!paramToIgnore.Contains("PartialFlushEnabled"))
-            {
-                settings.PartialFlushEnabled.Should().BeFalse();
-            }
-
-            if (!paramToIgnore.Contains("PartialFlushMinSpans"))
-            {
-                settings.PartialFlushMinSpans.Should().Be(500);
             }
         }
     }

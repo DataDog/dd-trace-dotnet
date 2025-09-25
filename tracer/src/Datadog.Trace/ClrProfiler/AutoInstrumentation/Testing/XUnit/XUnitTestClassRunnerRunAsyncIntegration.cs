@@ -43,7 +43,7 @@ public static class XUnitTestClassRunnerRunAsyncIntegration
         if (TestModule.Current is { } testModule)
         {
             var classRunnerInstance = instance.DuckCast<TestClassRunnerStruct>();
-            return new CallTargetState(null, testModule.InternalGetOrCreateSuite(classRunnerInstance.TestClass.Class.Name ?? string.Empty));
+            return new CallTargetState(null, testModule.GetOrCreateSuite(classRunnerInstance.TestClass.Class.Name ?? string.Empty));
         }
 
         Common.Log.Warning("Test module cannot be found.");

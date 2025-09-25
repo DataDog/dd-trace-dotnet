@@ -530,7 +530,7 @@ namespace Datadog.Trace.Tests
 
             await using var tracer = TracerHelper.Create(settings, agent.Object, Mock.Of<ITraceSampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
 
-            await tracer.ForceFlushAsync();
+            await tracer.FlushAsync();
 
             agent.Verify(a => a.FlushTracesAsync(), Times.Once);
         }

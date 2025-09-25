@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration.Telemetry;
 
@@ -13,7 +14,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains integration-specific settings.
     /// </summary>
-    public class IntegrationSettings
+    public class IntegrationSettings : IEquatable<IntegrationSettings>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationSettings"/> class.
@@ -21,7 +22,8 @@ namespace Datadog.Trace.Configuration
         /// <param name="integrationName">The integration name.</param>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         /// <param name="isExplicitlyDisabled">Has the integration been explicitly disabled</param>
-        internal IntegrationSettings(string integrationName, IConfigurationSource? source, bool isExplicitlyDisabled)
+        /// <param name="fallback">The fallback values to use. Only used in manual instrumentation scenarios</param>
+        internal IntegrationSettings(string integrationName, IConfigurationSource? source, bool isExplicitlyDisabled, IntegrationSettings? fallback = null)
         {
             if (integrationName is null)
             {
@@ -33,12 +35,13 @@ namespace Datadog.Trace.Configuration
             // We don't record these in telemetry, because they're blocked anyway
             var config = new ConfigurationBuilder(source ?? NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var upperName = integrationName.ToUpperInvariant();
-            Enabled = isExplicitlyDisabled ? false : config
+            Enabled = isExplicitlyDisabled ? false : (config
                                                   .WithKeys(
                                                        string.Format(ConfigurationKeys.Integrations.Enabled, upperName),
                                                        string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
                                                        $"DD_{integrationName}_ENABLED")
-                                                  .AsBool();
+                                                  .AsBool()
+                                                   ?? fallback?.Enabled);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = config
@@ -46,14 +49,15 @@ namespace Datadog.Trace.Configuration
                                    string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, upperName),
                                    string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
                                    $"DD_{integrationName}_ANALYTICS_ENABLED")
-                              .AsBool();
+                              .AsBool()
+                            ?? fallback?.AnalyticsEnabled;
 
             AnalyticsSampleRate = config
                                  .WithKeys(
                                       string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, upperName),
                                       string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName),
                                       $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE")
-                                 .AsDouble(1.0);
+                                 .AsDouble(fallback?.AnalyticsSampleRate ?? 1.0);
 #pragma warning restore 618
         }
 
@@ -79,5 +83,51 @@ namespace Datadog.Trace.Configuration
         /// that determines the sampling rate for this integration.
         /// </summary>
         public double AnalyticsSampleRate { get; }
+
+        /// <inheritdoc/>
+        public bool Equals(IntegrationSettings? other)
+        {
+            if (other is null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            return IntegrationName == other.IntegrationName &&
+                   Enabled == other.Enabled &&
+                   AnalyticsEnabled == other.AnalyticsEnabled &&
+                   AnalyticsSampleRate.Equals(other.AnalyticsSampleRate);
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj)
+        {
+            if (obj is null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((IntegrationSettings)obj);
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(IntegrationName, Enabled, AnalyticsEnabled, AnalyticsSampleRate);
+        }
     }
 }

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Oracle.ManagedDataAccess -->
+    <!--    Assembly: Oracle.ManagedDataAccess -->
+    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/23.9.1 -->
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="23.9.1" />
+  </ItemGroup>
+
+</Project>

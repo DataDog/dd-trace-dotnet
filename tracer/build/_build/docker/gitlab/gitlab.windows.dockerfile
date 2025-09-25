@@ -31,9 +31,9 @@ RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV
 
 # Install .NET 10
 # To find these links, visit https://dotnet.microsoft.com/en-us/download, click the Windows, x64 installer, and grab the download url + SHA512 hash
-ENV DOTNET_VERSION="10.0.100-preview.7.25380.108" \
-    DOTNET_DOWNLOAD_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100-preview.7.25380.108/dotnet-sdk-10.0.100-preview.7.25380.108-win-x64.exe" \
-    DOTNET_SHA512="5101cb87b0acd2704badc044c3874be02b6338fc21de059c22c695491aa58b5e3e91bea9ba068dfd5c1ebe8523ec843d3fd991628dbafcaf7b3e36ab2b0bc9ae"
+ENV DOTNET_VERSION="10.0.100-rc.1.25451.107" \
+    DOTNET_DOWNLOAD_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100-rc.1.25451.107/dotnet-sdk-10.0.100-rc.1.25451.107-win-x64.exe" \
+    DOTNET_SHA512="92926100cd94d7e3e936c9f433609707c0563dc12cdb591a2cdd92f6a332e92b312cb4ca1174956e16d68f6a42521c30214f878e492990ef3a98db08c03dc75a"
 
 COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL
@@ -41,8 +41,8 @@ RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha5
 # Java and code signing tool environment variables
 ENV JAVA_VERSION "17.0.8"
 ENV JAVA_SHA256 "db6e7e7506296b8a2338f6047fdc94bf4bbc147b7a3574d9a035c3271ae1a92b"
-ENV WINSIGN_VERSION "0.2.3"
-ENV WINSIGN_SHA256 "8091cd41e8e91b8a6b2ec8c2031b12ea4ca42897b972f9f46c2be6ae4c9961f7"
+ENV WINSIGN_VERSION "0.3.5"
+ENV WINSIGN_SHA256 "b2ba5127a5c5141e04d42444ca115af4c95cc053a743caaa9b33c68dd6b13f68"
 ENV PYTHON_VERSION "3.8.2"
 
 # Install Python

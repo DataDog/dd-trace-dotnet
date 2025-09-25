@@ -228,9 +228,10 @@ partial class Build
            }
 
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-           var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
+           var dependabotFolder = TracerDirectory / "dependabot" / "integrations";
            var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
-           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotProj);
+           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotFolder);
+           Logger.Information("Found {CurrentDependenciesCount} existing dependencies", currentDependencies.Count);
            var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
                                          {
                                              (_, { } exclude) => currentDependencies.Where(x => ExcludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
@@ -254,18 +255,12 @@ partial class Build
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
            var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations, testedVersions);
 
-           await DependabotFileManager.UpdateIntegrations(dependabotProj, distinctIntegrations);
+           await DependabotFileManager.UpdateIntegrations(dependabotFolder, distinctIntegrations);
 
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
-           
-           Logger.Information("Verifying that updated dependabot file is valid...");
-
-           var tempProjectFile = TempDirectory / "dependabot_test" / "Project.csproj";
-           CopyFile(dependabotProj, tempProjectFile, FileExistsPolicy.Overwrite);
-           DotNetRestore(x => x.SetProjectFile(tempProjectFile));
        });
-    
+
     Target GenerateSpanDocumentation => _ => _
         .Description("Regenerate documentation from our code models")
         .Executes(() =>
@@ -449,7 +444,7 @@ partial class Build
                             Logger.Information("Removing project '{Name}'", x.Name);
                             sln.RemoveProject(x);
                         });
-                    
+
                     sln.Save();
 
                     bool IsTestApplication(Project x)
@@ -498,6 +493,62 @@ partial class Build
                     }
                 });
 
+       Target DownloadBundleNugetFromBuild => _ => _
+        .Description("Downloads Datadog.Trace.Bundle package from Azure DevOps and extracts it to the local bundle home directory." +
+                     " Useful for building Datadog.Trace.Bundle or Datadog.AzureFunctions nupkg packages locally.")
+        .Requires(() => BuildId)
+        .Executes(async () =>
+        {
+            if (!int.TryParse(BuildId, out var buildNumber))
+            {
+                throw new InvalidParametersException("BuildId should be an int");
+            }
+
+            const string artifactName = "bundle-nuget-package";
+
+            var tempRoot = TemporaryDirectory / "bundle-nuget";
+            var downloadDirectory = tempRoot / "download";
+            var packageExtractionDirectory = tempRoot / "package";
+
+            EnsureCleanDirectory(tempRoot);
+            EnsureExistingDirectory(downloadDirectory);
+            EnsureExistingDirectory(packageExtractionDirectory);
+
+            using var connection = new VssConnection(
+                new Uri(AzureDevopsOrganisation),
+                new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+            using var client = connection.GetClient<BuildHttpClient>();
+
+            var artifact = await client.GetArtifactAsync(
+                project: AzureDevopsProjectId,
+                buildId: buildNumber,
+                artifactName: artifactName);
+
+            await DownloadAzureArtifact(downloadDirectory, artifact, AzureDevopsToken);
+
+            var artifactDirectory = downloadDirectory / artifact.Name;
+
+            var packageFile = artifactDirectory.GlobFiles("Datadog.Trace.Bundle.*.nupkg").FirstOrDefault();
+
+            if (packageFile is null)
+            {
+                throw new Exception($"Datadog.Trace.Bundle package was not found in artifact '{artifact.Name}'.");
+            }
+
+            EnsureCleanDirectory(packageExtractionDirectory);
+            UncompressZipQuiet(packageFile, packageExtractionDirectory);
+
+            var contentDirectory = packageExtractionDirectory / "contentFiles" / "any" / "any" / "datadog";
+
+            if (!contentDirectory.Exists())
+            {
+                throw new Exception($"Could not locate datadog content folder in extracted package at '{packageExtractionDirectory}'.");
+            }
+
+            EnsureCleanDirectory(BundleHomeDirectory);
+            CopyDirectoryRecursively(contentDirectory, BundleHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+        });
 
     private void ReplaceReceivedFilesInSnapshots()
     {
@@ -512,11 +563,6 @@ partial class Build
             {
                 Logger.Warning($"Skipping file '{source}' as filename did not end with 'received'");
                 continue;
-            }
-
-            if (fileName.Contains("VersionMismatchNewerNugetTests"))
-            {
-                Logger.Warning("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
             }
 
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
@@ -540,9 +586,9 @@ partial class Build
             // not in CI
             return false;
         }
-        
+
         return scheduleName == "Daily Debug Run";
-    } 
+    }
 
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()
     {
@@ -558,7 +604,7 @@ partial class Build
 
         return MSBuildTargetPlatform.x64;
     }
-    
+
     private static string GetDefaultRuntimeIdentifier(bool isAlpine)
     {
         // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
@@ -569,7 +615,7 @@ partial class Build
 
             (PlatformFamily.Linux, "x64") => isAlpine ? "linux-musl-x64" : "linux-x64",
             (PlatformFamily.Linux, "ARM64" or "ARM64EC") => isAlpine ? "linux-musl-arm64" : "linux-arm64",
-            
+
             (PlatformFamily.OSX, "ARM64" or "ARM64EC") => "osx-arm64",
             _ => null
         };

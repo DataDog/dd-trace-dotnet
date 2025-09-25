@@ -14,6 +14,8 @@ namespace Samples.GraphQL4
         {
             var directory = Directory.GetCurrentDirectory();
 
+#pragma warning disable ASPDEPR008 // Type or member is obsolete
+#pragma warning disable ASPDEPR004 // Type or member is obsolete
             var host = new WebHostBuilder()
                 .UseKestrel(serverOptions =>
                     // Explicitly set AllowSynchronousIO to true since the default changes
@@ -24,7 +26,8 @@ namespace Samples.GraphQL4
                 .UseIISIntegration()
                 .UseStartup<Startup>()
                 .Build();
-
+#pragma warning restore ASPDEPR008 // Type or member is obsolete
+#pragma warning restore ASPDEPR004 // Type or member is obsolete
             var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
             logger.LogInformation($"Instrumentation.ProfilerAttached = {SampleHelpers.IsProfilerAttached()}");

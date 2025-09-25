@@ -56,7 +56,6 @@ bool IsDebugEnabled();
 bool IsDumpILRewriteEnabled();
 bool IsAzureAppServices();
 bool IsTraceAnnotationEnabled();
-bool IsAzureFunctionsEnabled();
 bool IsVersionCompatibilityEnabled();
 bool IsIastEnabled();
 bool IsRaspEnabled();

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: AWSSDK.EventBridge -->
+    <!--    Assembly: AWSSDK.EventBridge -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.4.1 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.4.1" />
+  </ItemGroup>
+
+</Project>
