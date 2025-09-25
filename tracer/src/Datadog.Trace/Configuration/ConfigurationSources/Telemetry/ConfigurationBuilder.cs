@@ -53,29 +53,22 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
         ]);
 
-    internal readonly struct HasKeys
+    internal readonly struct HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string[]? allKeys = null)
     {
-        public HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string? fallbackKey1 = null, string? fallbackKey2 = null, string? fallbackKey3 = null)
+        private readonly string[]? _allKeys = allKeys;
+
+        private IConfigurationSource Source { get; } = source;
+
+        private IConfigurationTelemetry Telemetry { get; } = telemetry;
+
+        private string Key { get; } = key;
+
+        public bool IsPresent => Source.IsPresent(Key);
+
+        public HasKeys Or(string key)
         {
-            Source = source;
-            Telemetry = telemetry;
-            Key = key;
-            FallbackKey1 = fallbackKey1;
-            FallbackKey2 = fallbackKey2;
-            FallbackKey3 = fallbackKey3;
+            return !IsPresent ? new(Source, Telemetry, key) : this;
         }
-
-        private IConfigurationSource Source { get; }
-
-        private IConfigurationTelemetry Telemetry { get; }
-
-        private string Key { get; }
-
-        private string? FallbackKey1 { get; }
-
-        private string? FallbackKey2 { get; }
-
-        private string? FallbackKey3 { get; }
 
         // ****************
         // String accessors
