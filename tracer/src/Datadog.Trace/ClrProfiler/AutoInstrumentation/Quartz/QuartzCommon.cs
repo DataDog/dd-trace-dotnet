@@ -43,9 +43,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
 
         internal static void EnhanceActivityMetadata(IActivity5 activity)
         {
-            var displayName = CreateResourceName(activity.DisplayName, activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty);
             activity.AddTag("operation.name", activity.DisplayName);
-            activity.DisplayName = displayName;
+            var jobName = activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty;
+            if (string.IsNullOrEmpty(jobName))
+            {
+                Log.Debug("Unable to update Quartz Span's resource name: job.name tag was not found.");
+                return;
+            }
+
+            activity.DisplayName = CreateResourceName(activity.DisplayName, jobName);
         }
 
         internal static void AddException(object exceptionArg, IActivity activity)
