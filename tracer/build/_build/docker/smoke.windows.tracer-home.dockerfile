@@ -24,18 +24,21 @@ ENV PATH=C:\cli;%PATH%
 # Only install x86 ASP.NET Core runtime on Server Core (PowerShell available).
 # On NanoServer, PowerShell isn't present, so this becomes a no-op.
 ARG CHANNEL_32_BIT
-RUN IF DEFINED CHANNEL_32_BIT ( \
-    IF EXIST C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe ( \
-        echo Installing x86 ASP.NET Core runtime channel %CHANNEL_32_BIT%... && \
-        curl.exe -L "https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1" -o dotnet-install.ps1 && \
-        C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\dotnet-install.ps1" -Architecture x86 -Runtime aspnetcore -Channel %CHANNEL_32_BIT% -InstallDir C:\cli && \
-        del /q dotnet-install.ps1 \
-    ) ELSE ( \
-        echo NanoServer detected (no PowerShell). Skipping x86 runtime install. \
-    ) \
-) ELSE ( \
-    echo CHANNEL_32_BIT not set. Skipping x86 runtime install. \
-)
+ENV CHANNEL_32_BIT=${CHANNEL_32_BIT}
+RUN echo @echo off > C:\install_x86.cmd && \
+    echo if not "%%CHANNEL_32_BIT%%"=="" ( >> C:\install_x86.cmd && \
+    echo   if exist C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe ( >> C:\install_x86.cmd && \
+    echo     echo Installing x86 ASP.NET Core runtime channel %%CHANNEL_32_BIT%%... >> C:\install_x86.cmd && \
+    echo     curl.exe -L https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1 -o dotnet-install.ps1 >> C:\install_x86.cmd && \
+    echo     C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel %%CHANNEL_32_BIT%% -InstallDir C:\cli >> C:\install_x86.cmd && \
+    echo     del /q dotnet-install.ps1 >> C:\install_x86.cmd && \
+    echo   ^) else ^( >> C:\install_x86.cmd && \
+    echo     echo NanoServer detected ^(no PowerShell^). Skipping x86 runtime install. >> C:\install_x86.cmd && \
+    echo   ^) >> C:\install_x86.cmd && \
+    echo ^) else ^( >> C:\install_x86.cmd && \
+    echo   echo CHANNEL_32_BIT not set. Skipping x86 runtime install. >> C:\install_x86.cmd && \
+    echo ^) >> C:\install_x86.cmd && \
+    C:\install_x86.cmd && del /q C:\install_x86.cmd
 
 # Copy the tracer home file from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
 COPY --from=builder /src/artifacts /install
