@@ -1,5 +1,15 @@
 [
   {
+    "IntegrationName": "Avro",
+    "SampleProjectName": "Samples.Avro",
+    "NugetPackageSearchName": "Apache.Avro",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.*.*"
+    ]
+  },
+  {
     "IntegrationName": "AwsSdk",
     "SampleProjectName": "Samples.AWS.DynamoDBv2",
     "NugetPackageSearchName": "AWSSDK.Core",

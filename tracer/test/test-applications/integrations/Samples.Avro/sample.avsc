@@ -1,0 +1,48 @@
+{
+  "doc": "IF THE AVSC FILE IS CHANGED, SOURCES NEED TO BE REGENERATED\n To do so, install avro tools with\n `dotnet tool install Apache.Avro.Tools --create-manifest-if-needed`\n and then generate the files by running\n `dotnet avrogen -s tracer/test/test-applications/integrations/Samples.Avro/sample.avsc tracer/test/test-applications/integrations/Samples.Avro/ --skip-directories`",
+  "namespace": "Samples.Avro",
+  "type": "record",
+  "name": "Person",
+  "fields": [
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "email",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "phoneNumbers",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "PhoneNumber",
+          "fields": [
+            {
+              "name": "number",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "type": {
+                "type": "enum",
+                "name": "PhoneType",
+                "symbols": [
+                  "MOBILE",
+                  "HOME",
+                  "WORK"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

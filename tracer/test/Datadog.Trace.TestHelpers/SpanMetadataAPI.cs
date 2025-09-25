@@ -342,6 +342,15 @@ namespace Datadog.Trace.TestHelpers
             };
         }
 
+        public static Result IsAvro(this MockSpan span, string metadataSchemaVersion)
+        {
+            return metadataSchemaVersion switch
+            {
+                "v1" => span.IsAvroV1(),
+                _ => span.IsAvroV0()
+            };
+        }
+
         public static Result IsRabbitMQAdmin(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

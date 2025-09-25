@@ -615,6 +615,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks.OpenTelemetry.In
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.AzureFunctions", "tracer\src\Datadog.AzureFunctions\Datadog.AzureFunctions.csproj", "{BB073E40-F46D-E52B-662E-395EED834111}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Avro", "tracer\test\test-applications\integrations\Samples.Avro\Samples.Avro.csproj", "{8F6706B8-6E9C-4D05-8EDD-28994863B282}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1483,6 +1485,10 @@ Global
 		{BB073E40-F46D-E52B-662E-395EED834111}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB073E40-F46D-E52B-662E-395EED834111}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB073E40-F46D-E52B-662E-395EED834111}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F6706B8-6E9C-4D05-8EDD-28994863B282}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F6706B8-6E9C-4D05-8EDD-28994863B282}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F6706B8-6E9C-4D05-8EDD-28994863B282}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F6706B8-6E9C-4D05-8EDD-28994863B282}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1724,6 +1730,7 @@ Global
 		{501AD343-1951-FF43-0C7F-3FE3FDF5A660} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
 		{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
 		{BB073E40-F46D-E52B-662E-395EED834111} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{8F6706B8-6E9C-4D05-8EDD-28994863B282} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

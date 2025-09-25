@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -21,62 +22,51 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
 internal class SchemaExtractor
 {
-    private const int MaxProtobufSchemas = 100;
-
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SchemaExtractor>();
 
-    private static readonly SmallCacheOrNoCache<string, Schema> SchemaCache = new(MaxProtobufSchemas, "protobuf schema names");
-
-    /// <summary>
-    /// Get the current span, add some tags about the schema,
-    /// and once in a while, tag it with the whole protobuf schema used
-    /// </summary>
     internal static void EnrichActiveSpanWith(MessageDescriptorProxy? descriptor, string operationName)
     {
         var tracer = Tracer.Instance;
 
         var settings = tracer.Settings;
-        if (!settings.IsDataStreamsSchemaExtractionEnabled || !settings.IsIntegrationEnabled(IntegrationId.Protobuf))
+        if (descriptor == null || !settings.IsDataStreamsMonitoringEnabled || !settings.IsIntegrationEnabled(IntegrationId.Protobuf))
         {
             return;
         }
 
-        var activeSpan = (tracer.ActiveScope as Scope)?.Span;
-        if (activeSpan == null || descriptor == null)
+        SchemaTrackingCommon.EnrichActiveSpanWith(new MessageDescriptorWrapper(descriptor.Value), operationName, "protobuf");
+    }
+
+    private class MessageDescriptorWrapper : SchemaTrackingCommon.IDescriptorWrapper
+    {
+        private const int MaxProtobufSchemas = 100;
+
+        private static readonly SmallCacheOrNoCache<string, Schema> SchemaCache = new(MaxProtobufSchemas, "protobuf schema names");
+
+        private readonly MessageDescriptorProxy _descriptor;
+
+        public MessageDescriptorWrapper(MessageDescriptorProxy descriptor)
         {
-            return;
+            _descriptor = descriptor;
         }
 
-        if (activeSpan.GetTag(Tags.SchemaType) == "protobuf")
+        public string? Name
         {
-            // we already instrumented this, we are most likely in a recursive call due to nested schemas.
-            return;
+            get => _descriptor.FullName;
         }
 
-        activeSpan.SetTag(Tags.SchemaType, "protobuf");
-        activeSpan.SetTag(Tags.SchemaName, descriptor.Value.FullName);
-        activeSpan.SetTag(Tags.SchemaOperation, operationName);
-
-        // check rate limit
-        var dsm = tracer.TracerManager.DataStreamsManager;
-        if (!dsm.ShouldExtractSchema(activeSpan, operationName, out var weight))
+        public Schema? GetSchema()
         {
-            return;
+            // check cache (it will be disabled if too many schemas)
+            return SchemaCache.GetOrAdd(
+                _descriptor.Name,
+                _ =>
+                {
+                    var schema = Extractor.ExtractSchemas(_descriptor);
+                    Log.Debug<string, int>("Extracted new protobuf schema with name '{Name}' of size {Size} characters.", _descriptor.Name, schema.Definition.Length);
+                    return schema;
+                });
         }
-
-        // check cache (it will be disabled if too many schemas)
-        var schema = SchemaCache.GetOrAdd(
-            descriptor.Value.Name,
-            _ =>
-            {
-                var schema = Extractor.ExtractSchemas(descriptor.Value);
-                Log.Debug<string, int>("Extracted new protobuf schema with name '{Name}' of size {Size} characters.", descriptor.Value.Name, schema.JsonDefinition.Length);
-                return schema;
-            });
-
-        activeSpan.SetTag(Tags.SchemaDefinition, schema.JsonDefinition);
-        activeSpan.SetTag(Tags.SchemaId, schema.Hash.ToString(CultureInfo.InvariantCulture));
-        activeSpan.SetTag(Tags.SchemaWeight, weight.ToString(CultureInfo.InvariantCulture));
     }
 
     private class Extractor
@@ -104,8 +94,24 @@ internal class SchemaExtractor
         {
             var components = new OpenApiComponents();
             var hash = new Extractor(components.Schemas).FillSchemasWith(descriptor); // fill the component's schemas
+
+            // generate OpenAPI json
             var doc = new OpenApiDocument { Components = components };
-            return new Schema(doc, hash);
+            string jsonDefinition;
+            using var writer = new StringWriter();
+            try
+            {
+                doc.SerializeAsV3(new OpenApiJsonWriter(writer, new OpenApiJsonWriterSettings { Terse = true /* no pretty print */ }));
+                jsonDefinition = writer.ToString();
+            }
+            catch (Exception e)
+            {
+                // Happens if some mandatory elements of the OpenAPI definition are missing for instance
+                jsonDefinition = string.Empty;
+                Log.Warning(e, "Error while writing protobuf schema to JSON, stopped after {PartialJson}", writer.ToString());
+            }
+
+            return new Schema(jsonDefinition, hash.ToString(CultureInfo.InvariantCulture));
         }
 
         /// <summary>
@@ -289,30 +295,5 @@ internal class SchemaExtractor
 
             return properties;
         }
-    }
-
-    private class Schema
-    {
-        public Schema(OpenApiDocument openApiDoc, ulong hash)
-        {
-            using var writer = new StringWriter();
-            try
-            {
-                openApiDoc.SerializeAsV3(new OpenApiJsonWriter(writer, new OpenApiJsonWriterSettings { Terse = true /* no pretty print */ }));
-                JsonDefinition = writer.ToString();
-            }
-            catch (Exception e)
-            {
-                // Happens if some mandatory elements of the OpenAPI definition are missing for instance
-                JsonDefinition = string.Empty;
-                Log.Warning(e, "Error while writing protobuf schema to JSON, stopped after {PartialJson}", writer.ToString());
-            }
-
-            Hash = hash;
-        }
-
-        internal string JsonDefinition { get; }
-
-        internal ulong Hash { get; }
     }
 }

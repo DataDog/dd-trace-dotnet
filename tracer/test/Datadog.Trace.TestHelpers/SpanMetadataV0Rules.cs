@@ -637,12 +637,21 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsProtobufV0(this MockSpan span) => Result.FromSpan(span)
             .Tags(s => s
-                .Matches(Tags.SchemaType, "protobuf")
-                .IsPresent(Tags.SchemaName)
-                .IsPresent(Tags.SchemaOperation)
-                .IsPresent(Tags.SchemaId)
-                .IsPresent(Tags.SchemaDefinition)
-                .IsPresent(Tags.SchemaWeight));
+                .Matches("schema.type", "protobuf")
+                .IsPresent("schema.name")
+                .IsPresent("schema.operation")
+                .IsPresent("schema.id")
+                .IsPresent("schema.definition")
+                .IsPresent("schema.weight"));
+
+        public static Result IsAvroV0(this MockSpan span) => Result.FromSpan(span)
+            .Tags(s => s
+                .Matches("schema.type", "avro")
+                .IsPresent("schema.name")
+                .IsPresent("schema.operation")
+                .IsPresent("schema.id")
+                .IsPresent("schema.definition")
+                .IsPresent("schema.weight"));
 
         public static Result IsRabbitMQV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -661,24 +670,24 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("span.kind"));
 
         public static Result IsRemotingClientV0(this MockSpan span) => Result.FromSpan(span)
-             .Properties(s => s
+            .Properties(s => s
                 .Matches(Name, "dotnet_remoting.client.request"))
-             .Tags(s => s
-               .IsPresent("rpc.method")
-               .Matches("rpc.system", "dotnet_remoting")
-               .Matches("component", "Remoting")
-               .IsOptional("_dd.base_service")
-               .Matches("span.kind", "client"));
+            .Tags(s => s
+                .IsPresent("rpc.method")
+                .Matches("rpc.system", "dotnet_remoting")
+                .Matches("component", "Remoting")
+                .IsOptional("_dd.base_service")
+                .Matches("span.kind", "client"));
 
         public static Result IsRemotingServerV0(this MockSpan span) => Result.FromSpan(span)
-             .Properties(s => s
+            .Properties(s => s
                 .Matches(Name, "dotnet_remoting.server.request"))
-             .Tags(s => s
-               .IsPresent("rpc.method")
-               .Matches("rpc.system", "dotnet_remoting")
-               .Matches("component", "Remoting")
-               .IsOptional("_dd.base_service")
-               .Matches("span.kind", "server"));
+            .Tags(s => s
+                .IsPresent("rpc.method")
+                .Matches("rpc.system", "dotnet_remoting")
+                .Matches("component", "Remoting")
+                .IsOptional("_dd.base_service")
+                .Matches("span.kind", "server"));
 
         public static Result IsServiceRemotingClientV0(this MockSpan span) => Result.FromSpan(span)
             .WithMarkdownSection("Service Remoting - Client")

@@ -27,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler
         internal static bool IsInstrumentedAssembly(string assemblyName)
             => assemblyName.StartsWith("AerospikeClient,", StringComparison.Ordinal)
             || assemblyName.StartsWith("amqmdnetstd,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Avro,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Couchbase.NetClient,", StringComparison.Ordinal)
             || assemblyName.StartsWith("coverlet.core,", StringComparison.Ordinal)
@@ -88,6 +89,11 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ReflectedHttpActionDescriptor_ExecuteAsync_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ExceptionHandlerExtensions_HandleAsync_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetWebApi2,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DefaultReaderReadIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DefaultWriterWriteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumReaderIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumWriterIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.Avro,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.BatchGetItemIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.BatchGetItemAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.BatchWriteItemIntegration"
