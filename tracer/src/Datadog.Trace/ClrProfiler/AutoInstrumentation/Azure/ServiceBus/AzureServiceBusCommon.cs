@@ -64,12 +64,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             where TTarget : IServiceBusSender, IDuckType
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
             {
                 return new CallTargetState(null);
             }
 
-            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
+            var tags = perTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
 
             var entityPath = instance.EntityPath ?? "unknown";
             tags.MessagingDestinationName = entityPath;
@@ -77,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             tags.MessagingSystem = "servicebus";
             tags.InstrumentationName = "AzureServiceBus";
 
-            string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
+            string serviceName = perTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
             var scope = tracer.StartActiveInternal(
                 operationName,
                 tags: tags,
