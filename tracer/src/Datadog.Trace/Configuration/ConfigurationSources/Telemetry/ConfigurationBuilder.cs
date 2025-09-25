@@ -19,11 +19,36 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
     public HasKeys WithKeys(string key) => new(_source, _telemetry, key);
 
-    public HasKeys WithKeys(string key, string fallbackKey) => new(_source, _telemetry, key, fallbackKey);
+    public HasKeys WithIntegrationKey(string integrationName) => new(
+        _source,
+        _telemetry,
+        string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName.ToUpperInvariant()),
+        [
+            string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName),
+            $"DD_{integrationName}_ENABLED"
+        ]);
 
-    public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2);
+    public HasKeys WithIntegrationAnalyticsKey(string integrationName) => new(
+        _source,
+        _telemetry,
+#pragma warning disable 618 // App analytics is deprecated, but still used
+        string.Format(IntegrationSettings.AnalyticsEnabledKey, integrationName.ToUpperInvariant()),
+        [
+            string.Format(IntegrationSettings.AnalyticsEnabledKey, integrationName),
+#pragma warning restore 618
+            $"DD_{integrationName}_ANALYTICS_ENABLED"
+        ]);
 
-    public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
+    public HasKeys WithIntegrationAnalyticsSampleRateKey(string integrationName) => new(
+        _source,
+        _telemetry,
+#pragma warning disable 618 // App analytics is deprecated, but still used
+        string.Format(IntegrationSettings.AnalyticsSampleRateKey, integrationName.ToUpperInvariant()),
+        [
+            string.Format(IntegrationSettings.AnalyticsSampleRateKey, integrationName),
+#pragma warning restore 618
+            $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
+        ]);
 
     internal readonly struct HasKeys
     {
