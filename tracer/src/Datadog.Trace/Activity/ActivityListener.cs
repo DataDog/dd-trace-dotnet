@@ -312,6 +312,19 @@ namespace Datadog.Trace.Activity
 
         private static void CreateActivityKindSetter(Type activityType)
         {
+            var activityKindProperty = activityType.GetProperty("Kind");
+            if (activityKindProperty is null)
+            {
+                Log.Warning("Activity Kind property was not found.");
+                return;
+            }
+
+            if (activityKindProperty?.SetMethod == null)
+            {
+                Log.Warning("ActivityKind did not have a setter.");
+                return;
+            }
+
             // Create dynamic method: (object activity, int kind) => activity.Kind = kind
             var dynMethod = new DynamicMethod(
                 "ActivityKindSetter",
@@ -324,7 +337,7 @@ namespace Datadog.Trace.Activity
             il.Emit(OpCodes.Ldarg_0);                  // Load activity object
             il.Emit(OpCodes.Castclass, activityType);  // Cast to Activity type
             il.Emit(OpCodes.Ldarg_1);                  // Load kind int
-            il.Emit(OpCodes.Call, activityType.GetProperty("Kind")!.SetMethod!); // Call Kind property setter
+            il.Emit(OpCodes.Call, activityKindProperty.SetMethod); // Call Kind property setter
             il.Emit(OpCodes.Ret);
             _setKindProperty = (Action<object, int>)dynMethod.CreateDelegate(typeof(Action<object, int>));
         }
