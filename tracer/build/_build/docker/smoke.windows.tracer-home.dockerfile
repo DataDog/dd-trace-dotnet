@@ -1,8 +1,8 @@
-﻿ARG DOTNETSDK_VERSION
+﻿ARG SDK_TAG
 ARG RUNTIME_IMAGE
 
 # Build the ASP.NET Core app using the latest SDK
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-windowsservercore-ltsc2022 as builder
+FROM mcr.microsoft.com/dotnet/sdk:$SDK_TAG as builder
 
 # Build the smoke test app
 WORKDIR /src
