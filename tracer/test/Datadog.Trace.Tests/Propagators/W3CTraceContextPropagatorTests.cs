@@ -10,6 +10,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -177,7 +178,7 @@ namespace Datadog.Trace.Tests.Propagators
         {
             var propagatedTags = TagPropagation.ParseHeader(tags);
 
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), propagatedTags)
+            var traceContext = new TraceContext(new StubDatadogTracer(), propagatedTags)
             {
                 Origin = origin,
                 AdditionalW3CTraceState = additionalState
@@ -194,7 +195,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void CreateTraceStateHeader_WithPublicPropagatedTags()
         {
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+            var traceContext = new TraceContext(new StubDatadogTracer());
             var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
             var span = new Span(spanContext, DateTimeOffset.Now);
 
@@ -217,7 +218,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void CreateTraceStateHeader_With128Bit_TraceId()
         {
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+            var traceContext = new TraceContext(new StubDatadogTracer());
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
 
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
@@ -233,7 +234,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_IHeadersCollection()
         {
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), tags: null)
+            var traceContext = new TraceContext(new StubDatadogTracer(), tags: null)
             {
                 Origin = "origin",
                 AdditionalW3CTraceState = "key1=value1"
@@ -257,7 +258,7 @@ namespace Datadog.Trace.Tests.Propagators
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
             var spanId = 1UL;
 
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), tags: null)
+            var traceContext = new TraceContext(new StubDatadogTracer(), tags: null)
             {
                 Origin = "origin",
                 AdditionalW3CTraceState = "key1=value1"
@@ -278,7 +279,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_CarrierAndDelegate()
         {
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), tags: null)
+            var traceContext = new TraceContext(new StubDatadogTracer(), tags: null)
             {
                 Origin = "origin",
                 AdditionalW3CTraceState = "key1=value1"

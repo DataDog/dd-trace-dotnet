@@ -257,7 +257,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         pathwayContext);
 
                     message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext); // remove eventual junk
-                    if (!tracer.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
+                    if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
                     {
                         // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual
                         // call to SpanContextExtractor.Extract by a user who'd like to re-pair pathways after a batch consume.
@@ -279,8 +279,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         {
             try
             {
-                if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
-                 || !tracer.Settings.KafkaCreateConsumerScopeEnabled)
+                var settings = tracer.CurrentTraceSettings.Settings;
+                if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
+                 || !settings.KafkaCreateConsumerScopeEnabled)
                 {
                     // integration disabled, skip this trace
                     return;

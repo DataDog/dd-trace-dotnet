@@ -39,8 +39,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
             var tracer = Tracer.Instance;
+            var settings = tracer.CurrentTraceSettings.Settings;
             if (GrpcCoreApiVersionHelper.IsSupported
-             && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
+             && settings.IsIntegrationEnabled(IntegrationId.Grpc)
              && tracer.ActiveScope?.Span is Span { Tags: GrpcServerTags } span)
             {
                 var callContext = instance.DuckCast<HttpContextServerCallContextStruct>();
@@ -49,12 +50,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
 
                 if (callContext.RequestHeaders is { Count: > 0 } requestMetadata)
                 {
-                    span.SetHeaderTags(new MetadataHeadersCollection(requestMetadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
+                    span.SetHeaderTags(new MetadataHeadersCollection(requestMetadata), settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
                 }
 
                 if (callContext.ResponseTrailers is { Count: > 0 } responseMetadata)
                 {
-                    span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                    span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
                 }
             }
 

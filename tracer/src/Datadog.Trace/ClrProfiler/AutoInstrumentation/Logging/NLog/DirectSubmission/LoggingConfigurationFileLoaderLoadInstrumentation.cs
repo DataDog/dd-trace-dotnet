@@ -51,7 +51,7 @@ public class LoggingConfigurationFileLoaderLoadInstrumentation
 
         // If we aren't doing logs injection or direct log submission, we can return null, it doesn't matter
         var tracer = Tracer.Instance;
-        if (!tracer.Settings.LogsInjectionEnabled &&
+        if (!tracer.CurrentTraceSettings.Settings.LogsInjectionEnabled &&
             !tracer.TracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog))
         {
             return new CallTargetReturn<TReturn?>(returnValue);

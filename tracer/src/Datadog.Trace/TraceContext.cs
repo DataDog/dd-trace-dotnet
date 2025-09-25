@@ -52,12 +52,10 @@ namespace Datadog.Trace
             // TODO: Environment and ServiceVersion are stored on the TraceContext
             // even though they likely won't change for the lifetime of the process. We should consider moving them
             // elsewhere to reduce the memory usage.
-            if (tracer.Settings is { } settings)
-            {
-                // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
-                Environment = settings.Environment;
-                ServiceVersion = settings.ServiceVersion;
-            }
+            var settings = CurrentTraceSettings.Settings;
+            // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
+            Environment = settings.Environment;
+            ServiceVersion = settings.ServiceVersion;
 
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection();

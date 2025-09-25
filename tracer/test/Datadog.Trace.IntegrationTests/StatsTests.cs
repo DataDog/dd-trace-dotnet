@@ -532,7 +532,7 @@ namespace Datadog.Trace.IntegrationTests
                 var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose);
                 var span = scope.Span;
                 span.ResourceName = "resourceName";
-                span.SetHttpStatusCode(200, isServer: true, tracerSettings);
+                span.SetHttpStatusCode(200, isServer: true, tracerSettings.InitialMutableSettings);
                 span.Type = "span1";
 
                 return scope;
