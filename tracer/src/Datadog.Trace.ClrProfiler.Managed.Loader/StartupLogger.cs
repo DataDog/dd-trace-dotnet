@@ -84,7 +84,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 {
                     if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
-                        var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
+                        // On Nano Server, this returns "", so we fallback to reading from the env var set in the base image instead
+                        // - https://github.com/dotnet/runtime/issues/22690
+                        // - https://github.com/dotnet/runtime/issues/21430
+                        // - https://github.com/dotnet/runtime/pull/109673
+                        // If _that_ fails, we just hard code it to "C:\ProgramData", which is what the native components do anyway
+                        var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                        if (string.IsNullOrEmpty(programData))
+                        {
+                            programData = Environment.GetEnvironmentVariable("ProgramData");
+                        }
+
+                        var windowsDefaultDirectory = Path.Combine(programData ?? @"C:\ProgramData", "Datadog .NET Tracer", "logs");
                         logDirectory = windowsDefaultDirectory;
                     }
                     else
