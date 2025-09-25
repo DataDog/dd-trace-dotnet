@@ -214,9 +214,13 @@ internal static class DatadogLoggingFactory
                 if (string.IsNullOrEmpty(programData))
                 {
                     programData = Environment.GetEnvironmentVariable("ProgramData");
+                    if (string.IsNullOrEmpty(programData))
+                    {
+                        programData = @"C:\ProgramData";
+                    }
                 }
 
-                logDirectory = Path.Combine(programData ?? @"C:\ProgramData", "Datadog .NET Tracer", "logs");
+                logDirectory = Path.Combine(programData, "Datadog .NET Tracer", "logs");
             }
             else
             {

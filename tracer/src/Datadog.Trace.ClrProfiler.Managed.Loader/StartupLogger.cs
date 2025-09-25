@@ -93,9 +93,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                         if (string.IsNullOrEmpty(programData))
                         {
                             programData = Environment.GetEnvironmentVariable("ProgramData");
+                            if (string.IsNullOrEmpty(programData))
+                            {
+                                programData = @"C:\ProgramData";
+                            }
                         }
 
-                        var windowsDefaultDirectory = Path.Combine(programData ?? @"C:\ProgramData", "Datadog .NET Tracer", "logs");
+                        var windowsDefaultDirectory = Path.Combine(programData, "Datadog .NET Tracer", "logs");
                         logDirectory = windowsDefaultDirectory;
                     }
                     else
