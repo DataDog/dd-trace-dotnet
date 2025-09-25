@@ -217,6 +217,7 @@ partial class Build : NukeBuild
         .DependsOn(CopyLibDatadog)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile)
+        .DependsOn(CheckConfigurationKeysAgainstJsonValidations)
         .DependsOn(RegenerateSolutions);
 
     Target BuildManagedTracerHomeR2R => _ => _
