@@ -19,6 +19,11 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
     public HasKeys WithKeys(string key) => new(_source, _telemetry, key);
 
+    /// <summary>
+    /// try not to use, this is for special obsolete cases
+    /// </summary>
+    internal HasKeys WithKeyNoAliasLookup(string key) => new(_source, _telemetry, key, []);
+
     public HasKeys WithIntegrationKey(string integrationName) => new(
         _source,
         _telemetry,
@@ -50,29 +55,39 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
         ]);
 
-    internal readonly struct HasKeys
+    internal readonly struct HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string[]? providedAliases = null)
     {
-        public HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string? fallbackKey1 = null, string? fallbackKey2 = null, string? fallbackKey3 = null)
+        private readonly string[]? _providedAliases = providedAliases;
+
+        private IConfigurationSource Source { get; } = source;
+
+        private IConfigurationTelemetry Telemetry { get; } = telemetry;
+
+        private string Key { get; } = key;
+
+        public bool IsPresent()
         {
-            Source = source;
-            Telemetry = telemetry;
-            Key = key;
-            FallbackKey1 = fallbackKey1;
-            FallbackKey2 = fallbackKey2;
-            FallbackKey3 = fallbackKey3;
+            if (Source.IsPresent(Key))
+            {
+                return true;
+            }
+
+            string[] aliases = _providedAliases ?? ConfigKeyAliasesSwitcher.GetAliases(Key);
+            foreach (var alias in aliases)
+            {
+                if (Source.IsPresent(alias))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
-        private IConfigurationSource Source { get; }
-
-        private IConfigurationTelemetry Telemetry { get; }
-
-        private string Key { get; }
-
-        private string? FallbackKey1 { get; }
-
-        private string? FallbackKey2 { get; }
-
-        private string? FallbackKey3 { get; }
+        public HasKeys Or(string key)
+        {
+            return !IsPresent() ? new(Source, Telemetry, key) : this;
+        }
 
         // ****************
         // String accessors
@@ -561,15 +576,13 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
         private ConfigurationResult<T> GetResultWithFallback<T>(Func<string, ConfigurationResult<T>> selector)
         {
-            var hasAllKeys = _allKeys is not null;
-            var canonicalKey = hasAllKeys ? _allKeys![0] : Key;
-            var result = selector(canonicalKey);
+            var result = selector(Key);
             if (!result.ShouldFallBack)
             {
                 return result;
             }
 
-            string[] aliases = !hasAllKeys ? ConfigKeyAliasesSwitcher.GetAliases(Key) : [_allKeys![1], _allKeys[2]];
+            string[] aliases = _providedAliases ?? ConfigKeyAliasesSwitcher.GetAliases(Key);
 
             foreach (var alias in aliases)
             {

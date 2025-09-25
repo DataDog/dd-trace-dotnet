@@ -78,6 +78,8 @@ namespace Datadog.Trace.Configuration
 
         internal bool TreatNullDictionaryAsEmpty { get; set; } = true;
 
+        public bool IsPresent(string key) => SelectToken(key) is not null;
+
         /// <summary>
         /// Creates a new <see cref="JsonConfigurationSource"/> instance
         /// by loading the JSON string from the specified file.
