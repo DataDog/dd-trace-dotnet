@@ -56,7 +56,12 @@ namespace Datadog.Trace.Activity.Handlers
                 Log.Debug("ActivityStopped: Processing span for activity '{ActivityId}'", activity.Id);
 
                 // Finish the span manually
-                EnhanceActivityMetadata((IActivity5)activity);
+                // Finish the span manually
+                if (activity is IActivity5 activity5)
+                {
+                    EnhanceActivityMetadata(activity5);
+                }
+
                 OtlpHelpers.UpdateSpanFromActivity(activity, span);
 
                 span.Finish(activity.StartTimeUtc.Add(activity.Duration));
