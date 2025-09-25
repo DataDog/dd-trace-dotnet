@@ -41,6 +41,7 @@ namespace Datadog.Trace.Debugger
         private readonly TaskCompletionSource<bool> _processExit;
         private volatile bool _isDebuggerEndpointAvailable;
         private int _initialized;
+        private int _symDbInitialized;
         private volatile TaskCompletionSource<bool>? _diDebounceGate;
         private volatile DynamicInstrumentation? _dynamicInstrumentation;
         private int _diState; // 0 = disabled, 1 = initializing, 2 = initialized
@@ -48,6 +49,7 @@ namespace Datadog.Trace.Debugger
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
             _initialized = 0;
+            _symDbInitialized = 0;
             _isDebuggerEndpointAvailable = false;
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
@@ -157,6 +159,8 @@ namespace Datadog.Trace.Debugger
 
             OneTimeSetup(tracerSettings);
 
+            InitializeSymbolUploaderIfNeeded(tracerSettings, newDebuggerSettings);
+
             lock (_syncLock)
             {
                 if (_processExit.Task.IsCompleted)
@@ -181,19 +185,31 @@ namespace Datadog.Trace.Debugger
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
             SetGeneralConfig(tracerSettings, DebuggerSettings);
-            InitializeSymbolUploader(tracerSettings);
             if (tracerSettings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(WriteStartupDebuggerDiagnosticLog);
             }
         }
 
-        private void InitializeSymbolUploader(TracerSettings tracerSettings)
+        private void InitializeSymbolUploaderIfNeeded(TracerSettings tracerSettings, DebuggerSettings newDebuggerSettings)
         {
             try
             {
-                if (_processExit.Task.IsCompleted || !DebuggerSettings.SymbolDatabaseUploadEnabled)
+                if (_processExit.Task.IsCompleted)
                 {
+                    return;
+                }
+
+                if (Interlocked.CompareExchange(ref _symDbInitialized, 1, 0) != 0)
+                {
+                    // Once created, the symbol uploader persists even if DI is later disabled
+                    return;
+                }
+
+                if (!DebuggerSettings.SymbolDatabaseUploadEnabled
+                 || !newDebuggerSettings.DynamicInstrumentationCanBeEnabled)
+                {
+                    // explicitly disabled via local env var or DI can not be enabled
                     return;
                 }
 
@@ -203,14 +219,21 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
+                if (!newDebuggerSettings.DynamicInstrumentationEnabled
+                 && newDebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled != true)
+                {
+                    return;
+                }
+
+                // initialize symbol database uploader only if DI is enabled locally or remotely
                 var tracerManager = TracerManager.Instance;
-                SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, ServiceName, tracerSettings, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
-                _ = SymbolsUploader.StartFlushingAsync()
-                                   .ContinueWith(
-                                        t => Log.Error(t?.Exception, "Failed to initialize symbol uploader"),
-                                        CancellationToken.None,
-                                        TaskContinuationOptions.OnlyOnFaulted,
-                                        TaskScheduler.Default);
+                this.SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, this.ServiceName, tracerSettings, this.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                _ = this.SymbolsUploader.StartFlushingAsync()
+                        .ContinueWith(
+                             t => Log.Error(t?.Exception, "Failed to initialize symbol uploader"),
+                             CancellationToken.None,
+                             TaskContinuationOptions.OnlyOnFaulted,
+                             TaskScheduler.Default);
             }
             catch (Exception ex)
             {
@@ -377,7 +400,7 @@ namespace Datadog.Trace.Debugger
         {
             if (requested && !debuggerSettings.DynamicInstrumentationCanBeEnabled)
             {
-                Log.Debug("Code Origin can't be enabled because the local environment variable is set to false");
+                Log.Debug("Dynamic Instrumentation can't be enabled because the local environment variable is set to false");
                 return true;
             }
 

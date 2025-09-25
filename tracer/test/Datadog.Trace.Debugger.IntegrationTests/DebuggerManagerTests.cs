@@ -46,6 +46,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_AllFeaturesByDefault_NoDebuggerObjectsCreated()
     {
 #if NET8_0_OR_GREATER
+
         // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
@@ -55,8 +56,8 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
             memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
             memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 

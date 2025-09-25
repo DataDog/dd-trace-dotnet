@@ -66,9 +66,15 @@ public class DebuggerManagerDynamicTests : TestHelper
                 // Initially, no DI objects should exist
                 memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
                 memoryAssertions.NoObjectsExist<LineProbeResolver>();
+                memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             },
             remoteConfig: new { DD_DYNAMIC_INSTRUMENTATION_ENABLED = true },
-            DynamicInstrumentationEnabledLogEntry);
+            DynamicInstrumentationEnabledLogEntry,
+            finalMemoryAssertions: memoryAssertions =>
+            {
+                // After enabling DI via remote config, symbol uploader should be created
+                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            });
     }
 
     [SkippableFact]
@@ -107,7 +113,7 @@ public class DebuggerManagerDynamicTests : TestHelper
 
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
 
-        await this.RunDynamicConfigurationTest(
+        await RunDynamicConfigurationTest(
             false,
             initialMemoryAssertions: memoryAssertions =>
             {
@@ -140,6 +146,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
                 memoryAssertions.NoObjectsExist<SnapshotSink>();
                 memoryAssertions.NoObjectsExist<LineProbeResolver>();
+                memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             },
             remoteConfig: new
             {
@@ -156,6 +163,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
                 memoryAssertions.ObjectsExist<SnapshotSink>();
                 memoryAssertions.ObjectsExist<LineProbeResolver>();
+                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
             });
     }
 
@@ -169,6 +177,7 @@ public class DebuggerManagerDynamicTests : TestHelper
 #if NET8_0_OR_GREATER
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
+
         // Start with DI enabled via environment variable
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
@@ -181,9 +190,16 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.ObjectsExist<DynamicInstrumentation>();
                 memoryAssertions.ObjectsExist<SnapshotSink>();
                 memoryAssertions.ObjectsExist<LineProbeResolver>();
+                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
             },
             remoteConfig: new { DD_DYNAMIC_INSTRUMENTATION_ENABLED = false },
-            $"Dynamic Instrumentation {DisabledByRemoteConfiguration}");
+            $"Dynamic Instrumentation {DisabledByRemoteConfiguration}",
+            finalMemoryAssertions: memoryAssertions =>
+            {
+                // After disabling DI, symbol uploader should still exist (it's not disposed when DI is disabled)
+                // This is because symbol uploader initialization is one-time only
+                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            });
     }
 
     [SkippableFact]
@@ -200,7 +216,7 @@ public class DebuggerManagerDynamicTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
 
-        await this.RunDynamicConfigurationTest(
+        await RunDynamicConfigurationTest(
             true,
             initialMemoryAssertions: memoryAssertions =>
             {
@@ -225,7 +241,7 @@ public class DebuggerManagerDynamicTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
 
-        await this.RunDynamicConfigurationTest(
+        await RunDynamicConfigurationTest(
             true,
             initialMemoryAssertions: memoryAssertions =>
             {
