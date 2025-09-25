@@ -219,16 +219,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             try
             {
-                var profilerDirectory = Path.GetDirectoryName(profilerPath);
-
-                if (string.IsNullOrEmpty(profilerDirectory))
-                {
-                    StartupLogger.Log("Unable to determine tracer home directory from {0}={1}", envVarName, profilerPath);
-                    return null;
-                }
-
-
-                var directory = Path.GetDirectoryName(profilerDirectory);
+                var directory = Directory.GetParent(profilerPath);
 
                 if (directory is null)
                 {
@@ -239,21 +230,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // if the directory name is one of these, go one level higher
                 List<string> architectures = ["win-x64", "win-x86", "linux-x64", "linux-arm64", "linux-musl-x64", "linux-musl-arm64", "osx"];
 
-                foreach (var architecture in architectures)
+                if (architectures.Contains(directory.Name))
                 {
-                    if (directory.EndsWith($"{Path.DirectorySeparatorChar}{architecture}", StringComparison.Ordinal))
-                    {
-                        directory = Path.GetDirectoryName(directory);
+                    directory = directory.Parent;
 
-                        if (directory is null)
-                        {
-                            StartupLogger.Log("Unable to determine tracer home directory from {0}={1}", envVarName, profilerPath);
-                            return null;
-                        }
+                    if (directory is null)
+                    {
+                        StartupLogger.Log("Unable to determine tracer home directory from {0}={1}", envVarName, profilerPath);
+                        return null;
                     }
                 }
 
-                return directory;
+                return directory.FullName;
             }
             catch (Exception ex)
             {
