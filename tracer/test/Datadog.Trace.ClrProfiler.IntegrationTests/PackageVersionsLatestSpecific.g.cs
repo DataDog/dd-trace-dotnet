@@ -19,8 +19,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestSpecific
     {
-          public class PackageVersionsLatestSpecific
-    {
       public static IEnumerable<object[]> Hangfire =>
 
             new List<object[]>
