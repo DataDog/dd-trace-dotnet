@@ -12,7 +12,7 @@ ARG PUBLISH_FRAMEWORK
 RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework %PUBLISH_FRAMEWORK% -o /src/publish
 
 # ---- Runtime stage -----------------------------------------------------------
-FROM %RUNTIME_IMAGE% AS publish
+FROM $RUNTIME_IMAGE AS publish
 # We have to use cmd instead of powershell, because nanoserver doesn't have 
 SHELL ["cmd", "/S", "/C"]
 
