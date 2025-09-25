@@ -10,7 +10,7 @@
     ],
     "VersionConditions": [{
       "MinVersion": "4.0.0",
-      "IncludeOnlyTargetFrameworks": ["net8.0","net9.0"]
+      "IncludeOnlyTargetFrameworks": ["net8.0","net9.0", "net10.0"]
     }]
   },
   {
