@@ -26,14 +26,7 @@ ENV PATH=C:\cli;%PATH%
 ARG CHANNEL_32_BIT
 ENV CHANNEL_32_BIT=${CHANNEL_32_BIT}
 
-RUN ["cmd","/S","/C",
- "IF NOT DEFINED CHANNEL_32_BIT (echo CHANNEL_32_BIT not set. Skipping x86.) ELSE ( ^
-    curl.exe -L https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1 -o %TEMP%\\dotnet-install.ps1 ^
-    && (powershell.exe -NoProfile -ExecutionPolicy Bypass -File %TEMP%\\dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel %CHANNEL_32_BIT% -InstallDir C:\\cli ^
-        || echo PowerShell not found (NanoServer). Skipping x86 install.) ^
-    & del /q %TEMP%\\dotnet-install.ps1 2>nul ^
- )"
-]
+RUN cmd /S /C "IF DEFINED CHANNEL_32_BIT ( where powershell.exe >NUL 2>&1 && ( curl.exe -L https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1 -o %TEMP%\dotnet-install.ps1 && powershell.exe -NoProfile -ExecutionPolicy Bypass -File %TEMP%\dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel %CHANNEL_32_BIT% -InstallDir C:\cli && del /q %TEMP%\dotnet-install.ps1 ) || echo PowerShell not found. Skipping x86 install. ) ELSE ( echo CHANNEL_32_BIT not set. Skipping x86 install. )"
 
 # Copy the tracer home file from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
 COPY --from=builder /src/artifacts /install
