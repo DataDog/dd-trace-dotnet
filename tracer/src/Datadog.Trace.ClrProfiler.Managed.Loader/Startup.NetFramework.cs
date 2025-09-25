@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
@@ -18,11 +19,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     {
         private static string ResolveManagedProfilerDirectory()
         {
-            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
+            var tracerHomeInfo = GetTracerHomeInfo();
+            if (tracerHomeInfo is null)
+            {
+                return null;
+            }
+
+            var tracerHomeDirectory = tracerHomeInfo.Value.Path;
             var fullPath = Path.GetFullPath(Path.Combine(tracerHomeDirectory, "net461"));
             if (!Directory.Exists(fullPath))
             {
-                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on the DD_DOTNET_TRACER_HOME value '{tracerHomeDirectory}' and current directory {Environment.CurrentDirectory}");
+                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on {tracerHomeInfo.Value.Description} and current directory {Environment.CurrentDirectory}");
                 return null;
             }
 
@@ -78,6 +85,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             StartupLogger.Debug("Assembly not found in path: '{0}'", path);
             return null;
+        }
+
+        private static IEnumerable<string> EnumerateCorProfilerPathEnvironmentVariables()
+        {
+            if (Environment.Is64BitProcess)
+            {
+                yield return "COR_PROFILER_PATH_64";
+            }
+            else
+            {
+                yield return "COR_PROFILER_PATH_32";
+            }
+
+            yield return "COR_PROFILER_PATH";
         }
     }
 }

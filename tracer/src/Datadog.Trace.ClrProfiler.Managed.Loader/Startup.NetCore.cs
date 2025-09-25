@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
@@ -32,12 +33,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 tracerFrameworkDirectory = version.Major >= 6 ? "net6.0" : "netcoreapp3.1";
             }
 
-            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
+            var tracerHomeInfo = GetTracerHomeInfo();
+            if (tracerHomeInfo is null)
+            {
+                return null;
+            }
+
+            var tracerHomeDirectory = tracerHomeInfo.Value.Path;
             var fullPath = Path.GetFullPath(Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory));
 
             if (!Directory.Exists(fullPath))
             {
-                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on the DD_DOTNET_TRACER_HOME value '{tracerHomeDirectory}' and current directory {Environment.CurrentDirectory}");
+                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on {tracerHomeInfo.Value.Description} and current directory {Environment.CurrentDirectory}");
                 return null;
             }
 
@@ -106,6 +113,34 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             // The file doesn't exist in the Home folder.
             StartupLogger.Debug("Assembly not found in path: {0}", path);
             return null;
+        }
+
+        private static IEnumerable<string> EnumerateCoreClrProfilerPathEnvironmentVariables()
+        {
+            var archSpecific = GetCoreClrProfilerPathForCurrentArchitecture();
+            if (!string.IsNullOrEmpty(archSpecific))
+            {
+                yield return archSpecific;
+            }
+
+            yield return "CORECLR_PROFILER_PATH";
+        }
+
+        private static string GetCoreClrProfilerPathForCurrentArchitecture()
+        {
+            switch (RuntimeInformation.ProcessArchitecture)
+            {
+                case Architecture.X64:
+                    return "CORECLR_PROFILER_PATH_64";
+                case Architecture.X86:
+                    return "CORECLR_PROFILER_PATH_32";
+                case Architecture.Arm64:
+                    return "CORECLR_PROFILER_PATH_ARM64";
+                case Architecture.Arm:
+                    return "CORECLR_PROFILER_PATH_ARM";
+                default:
+                    return null;
+            }
         }
 
         private static bool IsDatadogAssembly(string path, out Assembly cachedAssembly)

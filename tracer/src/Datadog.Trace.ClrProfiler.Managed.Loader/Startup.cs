@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -18,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     {
         private const string AssemblyName = "Datadog.Trace, Version=3.28.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
-
         private static int _startupCtorInitialized;
 
         /// <summary>
@@ -175,6 +175,79 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
+        private static TracerHomeInfo? GetTracerHomeInfo()
+        {
+            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+            if (!string.IsNullOrWhiteSpace(tracerHomeDirectory))
+            {
+                var normalizedTracerHomeDirectory = TrimMatchingQuotes(tracerHomeDirectory!.Trim());
+                return new TracerHomeInfo(normalizedTracerHomeDirectory, $"the DD_DOTNET_TRACER_HOME value '{normalizedTracerHomeDirectory}'");
+            }
+
+            foreach (var envVar in EnumerateProfilerPathEnvironmentVariables())
+            {
+                if (TryDeriveTracerHomeFromProfilerPath(envVar) is { } corInfo)
+                {
+                    return corInfo;
+                }
+            }
+
+            StartupLogger.Log("The tracer home directory cannot be determined because DD_DOTNET_TRACER_HOME is not set and no profiler path environment variables are available.");
+            return null;
+        }
+
+        private static TracerHomeInfo? TryDeriveTracerHomeFromProfilerPath(string envVarName)
+        {
+            var profilerPath = ReadEnvironmentVariable(envVarName);
+            if (string.IsNullOrWhiteSpace(profilerPath))
+            {
+                return null;
+            }
+
+            profilerPath = TrimMatchingQuotes(profilerPath!.Trim());
+
+            try
+            {
+                var profilerDirectory = Path.GetDirectoryName(profilerPath);
+                if (string.IsNullOrEmpty(profilerDirectory))
+                {
+                    StartupLogger.Log($"Unable to determine tracer home directory because {envVarName} is set to '{profilerPath}' which does not include a directory name.");
+                    return null;
+                }
+
+                var parentDirectoryInfo = Directory.GetParent(profilerDirectory);
+                if (parentDirectoryInfo is null)
+                {
+                    StartupLogger.Log($"Unable to determine tracer home directory because the parent directory of {envVarName}='{profilerPath}' could not be resolved.");
+                    return null;
+                }
+
+                var parentDirectory = parentDirectoryInfo.FullName;
+                return new TracerHomeInfo(parentDirectory, $"the {envVarName} value '{profilerPath}'");
+            }
+            catch (Exception ex)
+            {
+                StartupLogger.Log(ex, $"Error while resolving tracer home directory from {envVarName}");
+                return null;
+            }
+        }
+
+        private static string TrimMatchingQuotes(string value)
+        {
+            if (value.Length >= 2)
+            {
+                var first = value[0];
+                var last = value[value.Length - 1];
+
+                if ((first == '"' && last == '"') || (first == '\'' && last == '\''))
+                {
+                    return value.Substring(1, value.Length - 2);
+                }
+            }
+
+            return value;
+        }
+
         private static string? ReadEnvironmentVariable(string key)
         {
             try
@@ -189,6 +262,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
+        private static IEnumerable<string> EnumerateProfilerPathEnvironmentVariables()
+        {
+#if NETCOREAPP
+            return EnumerateCoreClrProfilerPathEnvironmentVariables();
+#elif NETFRAMEWORK
+            return EnumerateCorProfilerPathEnvironmentVariables();
+#else
+            return Array.Empty<string>();
+#endif
+        }
+
         private static bool ReadBooleanEnvironmentVariable(string key, bool defaultValue)
         {
             var value = ReadEnvironmentVariable(key);
@@ -199,6 +283,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 "0" or "false" or "False" or "FALSE" or "f" or "F" => false,
                 _ => defaultValue
             };
+        }
+
+        private readonly struct TracerHomeInfo
+        {
+            public TracerHomeInfo(string path, string description)
+            {
+                Path = path;
+                Description = description;
+            }
+
+            public string Path { get; }
+
+            public string Description { get; }
         }
     }
 }
