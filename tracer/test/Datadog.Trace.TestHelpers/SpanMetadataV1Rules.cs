@@ -704,6 +704,7 @@ namespace Datadog.Trace.TestHelpers
                 .MatchesOneOf(Name,  "Hangfire.onPerform")
                 .Matches(Type, "Hangfire"))
            .Tags(s => s
+                .Matches("_dd.base_service", "Samples.Hangfire")
                 .Matches("component", "Hangfire")
                 .Matches("span.kind", "internal")
                 .IsPresent("job.CreatedAt")

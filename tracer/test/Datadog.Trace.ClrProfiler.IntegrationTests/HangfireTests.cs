@@ -33,6 +33,9 @@ public class HangfireTests : TracingIntegrationTest
     [Trait("Category", "EndToEnd")]
     public async Task SubmitsTraces()
     {
+        // needed for context propagation test
+        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent))
@@ -43,9 +46,9 @@ public class HangfireTests : TracingIntegrationTest
             using var s = new AssertionScope();
             spans.Count.Should().Be(expectedSpanCount);
 
-            var myServiceNameSpans = spans.Where(s => s.Service == "Samples.Hangfire");
+            var myServiceNameSpans = spans.Where(s => s.Type == "Hangfire");
 
-            ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.Hangfire", isExternalSpan: false);
+            ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.Hangfire-Hangfire", isExternalSpan: false);
             var settings = VerifyHelper.GetSpanVerifierSettings();
             var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
             var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
@@ -54,7 +57,14 @@ public class HangfireTests : TracingIntegrationTest
             settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
             settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
             settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
-            await VerifyHelper.VerifySpans(spans, settings).UseFileName(nameof(HangfireTests));
+            await VerifyHelper.VerifySpans(
+                                            spans,
+                                            settings,
+                                            orderSpans: s => s
+                                                                                        .OrderBy(x => x.Name)
+                                                                                        .ThenBy(x => x.Resource)
+                                                                                        .ThenBy(x => x.Error))
+                                            .UseFileName(nameof(HangfireTests));
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Hangfire);
         }
     }

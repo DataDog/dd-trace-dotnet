@@ -92,8 +92,8 @@ internal static class HangfireCommon
             return;
         }
 
-        Type? serverFilterType = hangfireAssembly.GetType("Hangfire.Server.IServerFilter, Hangfire.Core");
-        Type? clientFilterType = hangfireAssembly.GetType("Hangfire.Client.IClientFilter, Hangfire.Core");
+        Type? serverFilterType = hangfireAssembly.GetType("Hangfire.Server.IServerFilter");
+        Type? clientFilterType = hangfireAssembly.GetType("Hangfire.Client.IClientFilter");
 
         if (serverFilterType is null || clientFilterType is null)
         {
