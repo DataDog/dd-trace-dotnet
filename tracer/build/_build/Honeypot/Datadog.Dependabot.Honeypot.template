@@ -5,7 +5,7 @@
     <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>##PACKAGE_REFS##
-  </ItemGroup>
+  <ItemGroup>
+##PACKAGE_REFS##  </ItemGroup>
 
 </Project>

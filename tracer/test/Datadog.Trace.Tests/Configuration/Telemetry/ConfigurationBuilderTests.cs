@@ -158,11 +158,13 @@ public class ConfigurationBuilderTests
                 {
                     "" => new List<Entry>
                     {
+                        Entry.String(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.String(Key, string.Empty, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
                         Entry.String(Key, Default, ConfigurationOrigins.Default, error: null),
                     },
                     string s => new List<Entry>
                     {
+                        Entry.String(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.String(Key, s, ConfigurationOrigins.Code, error: null),
                     },
                     null => new()
@@ -171,6 +173,7 @@ public class ConfigurationBuilderTests
                     },
                     { } i => new List<Entry>
                     {
+                        Entry.String(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.String(Key, Convert.ToString(i, CultureInfo.InvariantCulture), ConfigurationOrigins.Code, error: null),
                     },
                 };
@@ -210,10 +213,12 @@ public class ConfigurationBuilderTests
                 {
                     true or "True" or "true" => new List<Entry>()
                     {
+                        Entry.Bool(Key, true, ConfigurationOrigins.Default, error: null),
                         Entry.Bool(Key, true, ConfigurationOrigins.Code, error: null),
                     },
                     false or "False" or "false" => new()
                     {
+                        Entry.Bool(Key, true, ConfigurationOrigins.Default, error: null),
                         Entry.Bool(Key, false, ConfigurationOrigins.Code, TelemetryErrorCode.FailedValidation),
                         Entry.Bool(Key, true, ConfigurationOrigins.Default, error: null),
                     },
@@ -223,6 +228,7 @@ public class ConfigurationBuilderTests
                     },
                     string x1 => new()
                     {
+                        Entry.Bool(Key, true, ConfigurationOrigins.Default, error: null),
                         Entry.String(Key, x1, ConfigurationOrigins.Code, TelemetryErrorCode.JsonBooleanError),
                     },
                     _ => throw new InvalidOperationException("Unexpected value " + value),
@@ -258,23 +264,28 @@ public class ConfigurationBuilderTests
                 {
                     int i and > 0 => new List<Entry>
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, i, ConfigurationOrigins.Code, error: null),
                     },
                     "123" => new List<Entry> // Note the implicit conversion, but not for 23.3!
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, 123, ConfigurationOrigins.Code, error: null),
                     },
                     int i => new List<Entry>
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, i, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
                         Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                     },
                     double d and > 0 => new List<Entry> // Note the implicit conversion!
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, (int)d, ConfigurationOrigins.Code, error: null),
                     },
                     double d => new List<Entry> // Note the implicit conversion!
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, (int)d, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
                         Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                     },
@@ -284,6 +295,7 @@ public class ConfigurationBuilderTests
                     },
                     string x1 => new()
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.String(Key, x1, ConfigurationOrigins.Code, TelemetryErrorCode.JsonInt32Error),
                     },
                     _ => throw new InvalidOperationException("Unexpected value " + value),
@@ -321,28 +333,34 @@ public class ConfigurationBuilderTests
                 {
                     int i and > 0 => new List<Entry>
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, (double)i, ConfigurationOrigins.Code, error: null),
                     },
                     int i => new List<Entry>
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, (double)i, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
                         Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                     },
                     double d and > 0 => new List<Entry>
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, d, ConfigurationOrigins.Code, error: null),
                     },
                     double d => new List<Entry> // Note the implicit conversion!
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, d, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
                         Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                     },
                     string s when TryParse(s, out var d) && d > 0 => new List<Entry>
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, d, ConfigurationOrigins.Code, error: null),
                     },
                     string s when TryParse(s, out var d) => new List<Entry>
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.Number(Key, d, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
                         Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                     },
@@ -352,6 +370,7 @@ public class ConfigurationBuilderTests
                     },
                     string x => new()
                     {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                         Entry.String(Key, x, ConfigurationOrigins.Code, TelemetryErrorCode.JsonDoubleError),
                     },
                     _ => throw new InvalidOperationException("Unexpected value " + value),
@@ -564,7 +583,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
                         .GetAs<Guid>(
-                             getDefaultValue: () => _default,
+                             defaultValue: new(_default, Default),
                              validator: null,
                              converter: _converter);
 
@@ -584,7 +603,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
                         .GetAs<Guid?>(
-                             getDefaultValue: () => _default,
+                             defaultValue: new(_default, Default),
                              validator: null,
                              converter: _nullableConverter);
 
@@ -605,7 +624,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, telemetry)
                         .WithKeys(key)
                         .GetAs<Guid?>(
-                             getDefaultValue: () => _default,
+                             defaultValue: new(_default, Default),
                              validator: null,
                              converter: _nullableConverter);
 
@@ -615,7 +634,7 @@ public class ConfigurationBuilderTests
                                       .OrderByDescending(x => x.SeqId)
                                       .FirstOrDefault()
                                       .Value;
-            finalValue.Should().Be(_default.ToString());
+            finalValue.Should().Be(Default);
         }
 
         [Theory]
@@ -677,7 +696,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
                         .GetAs<Guid>(
-                             getDefaultValue: () => _default,
+                             defaultValue: new(_default, Default),
                              validator: x => x.ToString()[0] != '5',
                              converter: _converter);
 
@@ -876,6 +895,31 @@ public class ConfigurationBuilderTests
                         .AsInt32(Default, validator: null, converter: _absConverter);
 
             actual.Should().Be(expected);
+        }
+
+        [Fact]
+        public void AsInt32Result_WithDefault_ReturnsDefaultAndRecordsTelemetry()
+        {
+            var telemetry = new ConfigurationTelemetry();
+            const int expected = 23;
+            const string key = "unknown";
+            var actual = new ConfigurationBuilder(_source, telemetry)
+                        .WithKeys(key)
+                        .AsInt32Result()
+                        .WithDefault(expected);
+
+            actual.Should().Be(expected);
+            telemetry.GetData()
+                     .Should()
+                     .ContainSingle()
+                     .Which.Should()
+                     .BeEquivalentTo(
+                          new
+                          {
+                              Name = key,
+                              Value = expected,
+                              Origin = "default",
+                          });
         }
     }
 
@@ -1101,6 +1145,31 @@ public class ConfigurationBuilderTests
             {
                 actual.Should().BeEquivalentTo(expected, $"using key '{key}'");
             }
+        }
+
+        [Fact]
+        public void AsDictionaryResult_WithDefault_ReturnsDefaultAndRecordsTelemetry()
+        {
+            var telemetry = new ConfigurationTelemetry();
+            const string expected = "[]";
+            const string key = "unknown";
+            var actual = new ConfigurationBuilder(_source, telemetry)
+                        .WithKeys(key)
+                        .AsDictionaryResult()
+                        .WithDefault(new(null, expected));
+
+            actual.Should().BeNull();
+            telemetry.GetData()
+                     .Should()
+                     .ContainSingle()
+                     .Which.Should()
+                     .BeEquivalentTo(
+                          new
+                          {
+                              Name = key,
+                              Value = expected,
+                              Origin = "default",
+                          });
         }
     }
 

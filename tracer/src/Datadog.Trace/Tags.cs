@@ -146,6 +146,11 @@ namespace Datadog.Trace
         public const string OutPort = "out.port";
 
         /// <summary>
+        /// The server address for the remote service.
+        /// </summary>
+        public const string ServerAddress = "server.address";
+
+        /// <summary>
         /// The size of the message.
         /// </summary>
         public const string MessageSize = "message.size";
@@ -310,6 +315,36 @@ namespace Datadog.Trace
         /// The messaging operation.
         /// </summary>
         internal const string MessagingOperation = "messaging.operation";
+
+        /// <summary>
+        /// The messaging system.
+        /// </summary>
+        internal const string MessagingSystem = "messaging.system";
+
+        /// <summary>
+        /// The message ID.
+        /// </summary>
+        internal const string MessagingMessageId = "messaging.message_id";
+
+        /// <summary>
+        /// The number of messages in a batch operation.
+        /// </summary>
+        internal const string MessagingBatchMessageCount = "messaging.batch.message_count";
+
+        /// <summary>
+        /// The messaging destination kind (queue, topic, etc.).
+        /// </summary>
+        internal const string MessagingDestinationKind = "messaging.destination.kind";
+
+        /// <summary>
+        /// The network destination name (host).
+        /// </summary>
+        internal const string NetworkDestinationName = "network.destination.name";
+
+        /// <summary>
+        /// The network destination port.
+        /// </summary>
+        internal const string NetworkDestinationPort = "network.destination.port";
 
         /// <summary>
         /// The AMQP method.
@@ -613,16 +648,6 @@ namespace Datadog.Trace
         /// Version of the waf
         /// </summary>
         internal const string AppSecWafVersion = "_dd.appsec.waf.version";
-
-        /// <summary>
-        /// The most relevant WAF error code during a request
-        /// </summary>
-        public const string WafError = "_dd.appsec.waf.error";
-
-        /// <summary>
-        /// The most relevant WAF error code during a request when using RASP
-        /// </summary>
-        public const string RaspWafError = "_dd.appsec.rasp.error";
 
         /// <summary>
         ///  String-serialized JSON array, each item being a map containing:

@@ -7,6 +7,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -15,7 +17,7 @@ namespace Datadog.Trace.TestHelpers
     [CollectionDefinition("IisTests", DisableParallelization = false)]
     public sealed class IisFixture : GacFixture, IDisposable
     {
-        public (Process Process, string ConfigFile) IisExpress { get; private set; }
+        public (ProcessHelper Process, string ConfigFile) IisExpress { get; private set; }
 
         public MockTracerAgent Agent { get; private set; }
 
@@ -27,7 +29,7 @@ namespace Datadog.Trace.TestHelpers
 
         public bool UseGac { get; set; } = true;
 
-        public async Task TryStartIis(TestHelper helper, IisAppType appType)
+        public async Task TryStartIis(TestHelper helper, IisAppType appType, bool sendHealthCheck = true, string url = "")
         {
             if (IisExpress.Process == null)
             {
@@ -41,6 +43,8 @@ namespace Datadog.Trace.TestHelpers
 
                 HttpPort = TcpPortProvider.GetOpenPort();
                 IisExpress = await helper.StartIISExpress(Agent, HttpPort, appType, VirtualApplicationPath);
+
+                await EnsureServerStarted(sendHealthCheck, url);
             }
         }
 
@@ -65,22 +69,19 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    if (!IisExpress.Process.HasExited)
-                    {
-                        // sending "Q" to standard input does not work because
-                        // iisexpress is scanning console key press, so just kill it.
-                        // maybe try this in the future:
-                        // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
-                        IisExpress.Process.Kill();
-                        IisExpress.Process.WaitForExit(8000);
-                    }
+                    // sending "Q" to standard input does not work because
+                    // iisexpress is scanning console key press, so just kill it.
+                    // maybe try this in the future:
+                    // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
+                    IisExpress.Process.Dispose(8000);
                 }
                 catch
                 {
                     // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
                 }
 
-                IisExpress.Process.Dispose();
+                // The ProcessHelper doesn't dispose the process automatically, so we need to do it manually
+                IisExpress.Process.Process.Dispose();
 
                 try
                 {
@@ -97,6 +98,85 @@ namespace Datadog.Trace.TestHelpers
                     RemoveAssembliesFromGac();
                 }
             }
+        }
+
+        private async Task EnsureServerStarted(bool sendHealthCheck, string url)
+        {
+            var maxMillisecondsToWait = 30_000;
+            var intervalMilliseconds = 500;
+            var intervals = maxMillisecondsToWait / intervalMilliseconds;
+            var serverReady = false;
+
+            // if we end up retrying, accept spans from previous attempts
+            var dateTime = DateTime.UtcNow;
+
+            // wait for server to be ready to receive requests
+            while (intervals-- > 0)
+            {
+                DateTime startTime = DateTime.Now;
+                try
+                {
+                    if (sendHealthCheck)
+                    {
+                        var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}{url}");
+                        var response = request.GetResponse();
+                        var responseCode = ((HttpWebResponse)response).StatusCode;
+                        response.Close();
+
+                        if (responseCode == HttpStatusCode.OK)
+                        {
+                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
+                            serverReady = true;
+                        }
+                    }
+                    else
+                    {
+                        serverReady = await IsPortListeningAsync(HttpPort);
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+
+                if (serverReady)
+                {
+                    break;
+                }
+
+                var milisecondsElapsed = (DateTime.Now - startTime).TotalMilliseconds;
+
+                if (milisecondsElapsed < intervalMilliseconds)
+                {
+                    await Task.Delay((int)(intervalMilliseconds - milisecondsElapsed));
+                }
+            }
+
+            if (!serverReady)
+            {
+                throw new Exception("Couldn't verify the application is ready to receive requests.");
+            }
+        }
+
+        private async Task<bool> IsPortListeningAsync(int port)
+        {
+            try
+            {
+                using (var client = new TcpClient())
+                {
+                    var task = client.ConnectAsync("127.0.0.1", port);
+                    if (await Task.WhenAny(task, Task.Delay(1000)) == task)
+                    {
+                        return client.Connected;
+                    }
+                }
+            }
+            catch
+            {
+                // If there's an exception, the server is not listening on this port
+            }
+
+            return false;
         }
     }
 }

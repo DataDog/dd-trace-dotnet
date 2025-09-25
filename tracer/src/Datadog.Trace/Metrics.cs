@@ -88,6 +88,21 @@ namespace Datadog.Trace
         public const string AppSecWafAndBindingsDuration = "_dd.appsec.waf.duration_ext";
 
         /// <summary>
+        /// The number of WAF timeouts during a request
+        /// </summary>
+        public const string WafTimeouts = "_dd.appsec.waf.timeouts";
+
+        /// <summary>
+        /// The most relevant WAF error code during a request
+        /// </summary>
+        public const string WafError = "_dd.appsec.waf.error";
+
+        /// <summary>
+        /// The most relevant WAF error code during a request when using RASP
+        /// </summary>
+        public const string RaspWafError = "_dd.appsec.rasp.error";
+
+        /// <summary>
         /// Total cumulative waf duration for RASP calls across spans for one request
         /// </summary>
         public const string RaspWafDuration = "_dd.appsec.rasp.duration";

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Microsoft.Azure.Cosmos.Client -->
+    <!--    Assembly: Microsoft.Azure.Cosmos.Client -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.53.1 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.53.1" />
+  </ItemGroup>
+
+</Project>

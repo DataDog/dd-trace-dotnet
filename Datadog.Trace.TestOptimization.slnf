@@ -28,7 +28,6 @@
       "tracer\\test\\Datadog.Trace.Tools.Runner.Tests\\Datadog.Trace.Tools.Runner.Tests.csproj",
       "tracer\\test\\test-applications\\instrumentation\\CallTargetNativeTest\\CallTargetNativeTest.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.CIVisibilityIpc\\Samples.CIVisibilityIpc.csproj",
-      "tracer\\test\\test-applications\\integrations\\Samples.CIVisibilityVersionMismatch\\Samples.CIVisibilityVersionMismatch.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MSTestTests2\\Samples.MSTestTests2.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MSTestTestsRetries\\Samples.MSTestTestsRetries.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MSTestTests\\Samples.MSTestTests.csproj",

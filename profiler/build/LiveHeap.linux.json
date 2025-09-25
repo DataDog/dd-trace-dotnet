@@ -1,10 +1,11 @@
 {
   "enableDatadog": true,
   "warmUpCount": 2,
-  "count": 10,
+  "count": 20,
   "scenarios": [
     {
       "name": "Baseline_liveheap",
+      "isBaseline": true,
       "environmentVariables": {
         "CORECLR_ENABLE_PROFILING": "0",
         "COR_ENABLE_PROFILING": "0"
@@ -52,5 +53,6 @@
     "benchmark.job.runtime.name": ".NET 7.0",
     "benchmark.job.runtime.moniker": "net7.0"
   },
-  "metricsFilePath": "*metrics.json"
+  "metricsFilePath": "*metrics.json",
+  "overheadThreshold": 100
 }

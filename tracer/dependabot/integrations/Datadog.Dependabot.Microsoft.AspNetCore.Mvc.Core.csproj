@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
+    <!--    Assembly: Microsoft.AspNetCore.Mvc.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Core/2.3.0 -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.0" />
+  </ItemGroup>
+
+</Project>

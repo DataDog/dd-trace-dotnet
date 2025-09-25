@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     ParameterTypeNames = ["!0"],
     ReturnTypeName = "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
     MinimumVersion = "1.0.0",
-    MaximumVersion = "2.*.*",
+    MaximumVersion = "3.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -59,7 +59,7 @@ public static class XUnitTestAssemblyRunnerRunV3Integration
             }
 
             TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
-            var module = TestModule.InternalCreate(testBundleString, CommonTags.TestingFrameworkNameXUnitV3, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty);
+            var module = TestModule.Create(testBundleString, CommonTags.TestingFrameworkNameXUnitV3, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty);
             module.EnableIpcClient();
             return new CallTargetState(null, module);
         }

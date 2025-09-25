@@ -330,7 +330,36 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     m_work_offloader(work_offloader),
     m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
 {
-    is_debugger_or_exception_debugging_enabled = IsDebuggerEnabled() || IsExceptionReplayEnabled();
+    auto diManagedActivationDisabled = IsDynamicInstrumentationManagedActivationDisabled();
+    if (diManagedActivationDisabled)
+    {
+        Logger::Info("Dynamic Instrumentation Stable Config is explicitly disabled");
+    }
+
+    auto diEnabled = !diManagedActivationDisabled || IsDynamicInstrumentationEnabled();
+    if (diEnabled == false)
+    {
+        Logger::Info("Dynamic Instrumentation hot standby is disabled");
+    }
+
+    auto erManagedActivationDisabled = IsExceptionReplayManagedActivationDisabled();
+    if (erManagedActivationDisabled)
+    {
+        Logger::Info("Exception Replay Stable Config is explicitly disabled");
+    }
+
+    auto erEnabled = !erManagedActivationDisabled || IsExceptionReplayEnabled();
+    if (erEnabled == false)
+    {
+        Logger::Info("Exception Replay hot standby is disabled");
+    }
+
+    is_debugger_or_exception_replay_hot_standby = diEnabled || erEnabled;
+
+    if (is_debugger_or_exception_replay_hot_standby)
+    {
+        Logger::Info("Dynamic Instrumentation/Exception Replay Hot Standby is on");
+    }
 }
 
 void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes,
@@ -339,7 +368,7 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
 {
     if (removeProbes != nullptr)
     {
-        Logger::Info("LiveDebugger: received request to remove ", removeProbesLength, " probes from the managed side.");
+        Logger::Info("Dynamic Instrumentation: received request to remove ", removeProbesLength, " probes from the managed side.");
 
         if (removeProbesLength <= 0) return;
 
@@ -449,7 +478,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
 
     if (methodProbes != nullptr && methodProbesLength > 0)
     {
-        Logger::Info("InitializeLiveDebugger: received ", methodProbesLength, " method probes from managed side.");
+        Logger::Info("Dynamic Instrumentation: received ", methodProbesLength, " method probes from managed side.");
 
         for (int i = 0; i < methodProbesLength; i++)
         {
@@ -499,7 +528,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
 
     if (spanProbes != nullptr && spanProbesLength > 0)
     {
-        Logger::Info("InitializeLiveDebugger: received ", methodProbesLength, " span probes from managed side.");
+        Logger::Info("Dynamic Instrumentation: received ", methodProbesLength, " span probes from managed side.");
 
         for (int i = 0; i < spanProbesLength; i++)
         {
@@ -585,7 +614,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
 {
     if (lineProbes != nullptr)
     {
-        Logger::Info("InitializeLiveDebugger: received ", lineProbesLength, " integrations from managed side.");
+        Logger::Info("Dynamic Instrumentation: received ", lineProbesLength, " integrations from managed side.");
 
         if (lineProbesLength <= 0) return;
 
@@ -639,7 +668,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
             m_probes.push_back(lineProbe);
         }
 
-        Logger::Info("LiveDebugger: Total method probes added: ", m_probes.size());
+        Logger::Info("Dynamic Instrumentation: Total method probes added: ", m_probes.size());
     }
 }
 
@@ -876,17 +905,17 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
         return;
     }
 
-    Logger::Debug("Requesting Rejit for Module: ", moduleInfo.assembly.name);
+    Logger::Debug("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: Requesting Rejit for Module: ", moduleInfo.assembly.name);
 
     ComPtr<IUnknown> metadataInterfaces;
 
-    Logger::Debug("  Loading Assembly Metadata...");
+    Logger::Debug("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: Loading Assembly Metadata...");
     auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                  metadataInterfaces.GetAddressOf());
     if (hr != S_OK)
     {
         Logger::Warn(
-            "DebuggerProbesInstrumentationRequester::sAddMetadataToModule failed to get metadata interface for ",
+            "DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: failed to get metadata interface for ",
             moduleInfo.id, " ", moduleInfo.assembly.name);
         return;
     }
@@ -899,7 +928,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
         metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
     std::unique_ptr<AssemblyMetadata> assemblyMetadata =
         std::make_unique<AssemblyMetadata>(GetAssemblyImportMetadata(assemblyImport));
-    Logger::Debug("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(", assemblyMetadata->version.str(),
+    Logger::Debug("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: Assembly Metadata loaded for: ", assemblyMetadata->name, "(", assemblyMetadata->version.str(),
                   ").");
 
     m_fault_tolerant_method_duplicator->DuplicateAll(moduleId, moduleInfo, metadataImport, metadataEmit);
@@ -971,7 +1000,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
 
         if (FAILED(hr) || managed_profiler_assemblyRef == mdAssemblyRefNil)
         {
-            Logger::Warn("Failed to resolve assembly ref of the tracer assembly. [ModuleId=", moduleInfo.id,
+            Logger::Warn("Failed to resolve assembly ref of Datadog.Trace.dll assembly. [ModuleId=", moduleInfo.id,
                          ", Assembly=", moduleInfo.assembly.name, ", Type=", typeInfo.name,
                          ", IsValueType=", typeInfo.valueType, "]");
             return;
@@ -989,14 +1018,10 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
             return;
         }
 
-        unsigned callTargetStateBuffer;
-        auto callTargetStateSize = CorSigCompressToken(asyncMethodDebuggerStateTypeRef, &callTargetStateBuffer);
-
         COR_SIGNATURE fieldSignature[500];
         unsigned offset = 0;
         fieldSignature[offset++] = IMAGE_CEE_CS_CALLCONV_FIELD;
-        fieldSignature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&fieldSignature[offset], &callTargetStateBuffer, callTargetStateSize);
+        fieldSignature[offset++] = ELEMENT_TYPE_OBJECT;
 
         mdFieldDef isFirstEntry = mdFieldDefNil;
         hr = metadataEmit->DefineField(typeDef, managed_profiler_debugger_is_first_entry_field_name.c_str(),
@@ -1008,20 +1033,20 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
                           "_isFirstEntry failed");
         }
 
-        Logger::Debug("Added IsFirstEntry field [ModuleId=", moduleInfo.id, ", Assembly=", moduleInfo.assembly.name,
+        Logger::Debug("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: Added IsFirstEntry field [ModuleId=", moduleInfo.id, ", Assembly=", moduleInfo.assembly.name,
                       ", Type=", typeInfo.name, ", IsValueType=", typeInfo.valueType, "]");
     }
 }
 
 HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFinished(const ModuleID moduleId)
 {
-    if (!is_debugger_or_exception_debugging_enabled)
+    if (!is_debugger_or_exception_replay_hot_standby)
     {
-        return S_OK;
+         return S_OK;
     }
 
     // IMPORTANT: The call to `ModuleLoadFinished_AddMetadataToModule` must be in `ModuleLoadFinished` as mutating the
-    // layout of types is only feasible prior the type is loaded.s
+    // layout of types is only feasible prior the type is loaded.
     ModuleLoadFinished_AddMetadataToModule(moduleId);
     RequestRejitForLoadedModule(moduleId);
     return S_OK;

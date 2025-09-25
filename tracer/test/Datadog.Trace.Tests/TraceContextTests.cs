@@ -40,9 +40,14 @@ namespace Datadog.Trace.Tests
             var traceContext = new TraceContext(_tracerMock.Object);
 
             var t1 = traceContext.Clock.UtcNow;
-            var t2 = traceContext.Clock.UtcNow;
+            DateTimeOffset t2;
+            do
+            {
+                t2 = traceContext.Clock.UtcNow;
+            }
+            while (t1 == t2);
 
-            Assert.True(t2.Subtract(t1) > TimeSpan.Zero);
+            t2.Should().BeAfter(t1);
         }
 
         [Theory]

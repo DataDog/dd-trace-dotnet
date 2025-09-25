@@ -6,7 +6,6 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -14,11 +13,13 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Internal;
@@ -28,7 +29,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.DiagnosticListeners
 {
@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
     public class AspNetCoreDiagnosticObserverTests
     {
         [Fact]
-        public async Task<string> CompleteDiagnosticObserverTest()
+        public async Task CompleteDiagnosticObserverTest()
         {
             TracerRestorerAttribute.SetTracer(GetTracer());
 
@@ -48,8 +48,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var client = testServer.CreateClient();
             var tracer = GetTracer();
             var (security, iast) = GetSecurity();
-            var liveDebugger = GetLiveDebugger();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null) };
+            var spanCodeOrigin = GetSpanCodeOrigin();
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin) };
             string retValue = null;
 
             using (var diagnosticManager = new DiagnosticManager(observers))
@@ -65,17 +65,18 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 DiagnosticManager.Instance = null;
             }
 
-            return retValue;
+            _ = retValue;
         }
 
-        [Fact]
-        public void HttpRequestIn_PopulateSpan()
+        [Theory]
+        [CombinatorialData]
+        public void HttpRequestIn_PopulateSpan(bool hasResourceBasedSamplingRules)
         {
-            var tracer = GetTracer();
+            var tracer = GetTracer(hasResourceBasedSamplingRules);
             var (security, iast) = GetSecurity();
-            var liveDebugger = GetLiveDebugger();
+            var spanCodeOrigin = GetSpanCodeOrigin();
 
-            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null);
+            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin);
 
             var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
 
@@ -97,18 +98,36 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             Assert.Equal("localhost", span.GetTag(Tags.HttpRequestHeadersHost));
             Assert.Equal("http://localhost/home/1/action", span.GetTag(Tags.HttpUrl));
 
-            // Resource isn't populated until request end
-            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop", context));
+            // Resource isn't populated until request end, unless we have resource-based sampling rules
+            if (!hasResourceBasedSamplingRules)
+            {
+                observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop", context));
+            }
+
             Assert.Equal("GET /home/?/action", span.ResourceName);
         }
 
-        private static Tracer GetTracer()
+        private static Tracer GetTracer(bool hasResourceBasedSamplingRules = false)
         {
-            var settings = new TracerSettings();
-            var writerMock = new Mock<IAgentWriter>();
-            var samplerMock = new Mock<ITraceSampler>();
+            TracerSettings settings;
+            if (hasResourceBasedSamplingRules)
+            {
+                settings = TracerSettings.Create(new()
+                {
+                    { ConfigurationKeys.CustomSamplingRules, """[{"sample_rate":0.0, "service":"*", "resource":"GET /status-code/?"}]""" },
+                    { ConfigurationKeys.CustomSamplingRulesFormat, SamplingRulesFormat.Glob },
+                });
+            }
+            else
+            {
+                settings = new TracerSettings();
+            }
 
-            return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            var writerMock = new Mock<IAgentWriter>();
+
+            var tracer = new Tracer(settings, writerMock.Object, sampler: null, scopeManager: null, statsd: null);
+            tracer.TracerManager.PerTraceSettings.HasResourceBasedSamplingRule.Should().Be(hasResourceBasedSamplingRules);
+            return tracer;
         }
 
         private static (Security Security, Iast.Iast Iast) GetSecurity()
@@ -126,9 +145,15 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             return (security, iast);
         }
 
-        private static LiveDebugger GetLiveDebugger()
+        private static SpanCodeOrigin GetSpanCodeOrigin()
         {
-            return LiveDebuggerFactory.Create(null, null, new TracerSettings(), null, null, DebuggerSettings.FromDefaultSource(), null);
+            var settings = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "0" },
+            });
+
+            var co = new SpanCodeOrigin(new DebuggerSettings(settings, new NullConfigurationTelemetry()));
+            return co;
         }
 
         private static HttpContext GetHttpContext()

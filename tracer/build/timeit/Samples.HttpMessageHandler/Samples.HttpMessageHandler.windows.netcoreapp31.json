@@ -13,11 +13,6 @@
           "processArguments": "/c \"..\\remove_logs.cmd\"",
           "workingDirectory": "$(CWD)",
           "redirectStandardOutput": true
-        },
-        "onExecutionEnd": {
-          "processName": "cmd.exe",
-          "processArguments": "/c \"..\\remove_logs.cmd\"",
-          "workingDirectory": "$(CWD)"
         }
       }
     }
@@ -69,5 +64,5 @@
     "benchmark.job.runtime.name": ".NET Core 3.1",
     "benchmark.job.runtime.moniker": "netcoreapp3.1"
   },
-  "overheadThreshold": 10
+  "overheadThreshold": 2.95
 }

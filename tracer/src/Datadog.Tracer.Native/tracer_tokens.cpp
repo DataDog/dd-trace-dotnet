@@ -493,7 +493,7 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
                                                           signatureLength, &beginMethodSpec);
 
     // freeing the dynamic signature allocation
-    for (auto i = 0; i < dynamicSignatureAllocation->size(); i++)
+    for (size_t i = 0; i < dynamicSignatureAllocation->size(); i++)
     {
         delete dynamicSignatureAllocation->at(i);
     }

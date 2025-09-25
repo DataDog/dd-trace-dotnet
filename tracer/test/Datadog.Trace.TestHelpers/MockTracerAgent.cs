@@ -30,6 +30,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
+using OpenTelemetry.Proto.Metrics.V1; // used to deserialize otlp data using proto folder
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -90,6 +91,11 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<string> ProbesStatuses { get; private set; } = ImmutableList<string>.Empty;
 
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
+
+        /// <summary>
+        /// Gets the OTLP requests received by the agent
+        /// </summary>
+        public ConcurrentQueue<MockOtlpRequest> OtlpRequests { get; } = new();
 
         /// <summary>
         /// Gets the wrapped <see cref="TelemetryData"/> requests received by the telemetry endpoint
@@ -554,6 +560,11 @@ namespace Datadog.Trace.TestHelpers
                 HandleTracerFlarePayload(request);
                 responseType = MockTracerResponseType.TracerFlare;
             }
+            else if (request.PathAndQuery.StartsWith("/v1/traces") || request.PathAndQuery.StartsWith("/v1/metrics") || request.PathAndQuery.StartsWith("/v1/logs"))
+            {
+                HandlePotentialOtlpData(request);
+                responseType = MockTracerResponseType.Otlp;
+            }
             else
             {
                 HandlePotentialTraces(request);
@@ -948,6 +959,48 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        private void HandlePotentialOtlpData(MockHttpRequest request)
+        {
+            var body = request.ReadStreamBody();
+            if (body == null || body.Length == 0)
+            {
+                return;
+            }
+
+            var contentType = request.Headers.TryGetValue("Content-Type", out var ct) && !string.IsNullOrEmpty(ct)
+                ? ct
+                : "application/x-protobuf";
+
+            var headersDict = request.Headers.ToDictionary(
+                h => h.Key,
+                h => h.Value.ToList(),
+                StringComparer.OrdinalIgnoreCase);
+
+            MetricsData metricsData = null;
+
+            if (request.PathAndQuery.StartsWith("/v1/metrics") && contentType.Contains("protobuf"))
+            {
+                try
+                {
+                    metricsData = MetricsData.Parser.ParseFrom(body);
+                }
+                catch (Exception ex)
+                {
+                    Output?.WriteLine($"[OTLP] Failed to deserialize metrics data: {ex.Message}");
+                }
+            }
+
+            if (metricsData is not null)
+            {
+                OtlpRequests.Enqueue(new MockOtlpRequest(
+                                         request.PathAndQuery,
+                                         headersDict,
+                                         body,
+                                         contentType,
+                                         metricsData));
+            }
+        }
+
         private void AssertHeader(
             NameValueCollection headers,
             string headerKey,
@@ -1003,6 +1056,12 @@ namespace Datadog.Trace.TestHelpers
                    .Append(Version);
             }
 
+            // The state header is used to indicate if the agent config (i.e. the data at /info) has changed
+            sb
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Datadog-Agent-State: ")
+               .Append(Configuration?.GetHashCode().ToString() ?? "0");
+
             var responseBody = Encoding.UTF8.GetBytes(body);
             var contentLength64 = responseBody.LongLength;
             sb
@@ -1038,7 +1097,7 @@ namespace Datadog.Trace.TestHelpers
             public MockTracerResponse Response { get; set; }
         }
 
-        public class AgentConfiguration
+        public record AgentConfiguration
         {
             [JsonProperty("endpoints")]
             public string[] Endpoints { get; set; } = DiscoveryService.AllSupportedEndpoints.Select(s => s.StartsWith("/") ? s : "/" + s).ToArray();
@@ -1188,6 +1247,9 @@ namespace Datadog.Trace.TestHelpers
                             {
                                 ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
+
+                            // The state header is used to indicate if the agent config (i.e. the data at /info) has changed
+                            ctx.Response.AddHeader("Datadog-Agent-State", Configuration?.GetHashCode().ToString() ?? "0");
 
                             var request = MockHttpRequest.Create(ctx.Request);
 
@@ -1403,7 +1465,9 @@ namespace Datadog.Trace.TestHelpers
                     {
                         _log("Starting PipeServer " + _pipeName);
                         using var mutex = new ManualResetEventSlim();
+#pragma warning disable CA2025 // Ensure tasks using 'IDisposable' instances complete before the instances are disposed
                         var startPipe = StartNamedPipeServer(mutex);
+#pragma warning restore CA2025
                         _tasks.Add(startPipe);
                         mutex.Wait(5_000);
                     }
@@ -1440,7 +1504,9 @@ namespace Datadog.Trace.TestHelpers
                         // start a new Named pipe server to handle additional connections
                         // Yes, this is madness, but apparently the way it's supposed to be done
                         using var m = new ManualResetEventSlim();
+#pragma warning disable CA2025 // Ensure tasks using 'IDisposable' instances complete before the instances are disposed
                         _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
+#pragma warning restore CA2025
                         // Wait for the next instance to start listening before we handle this one
                         m.Wait(5_000);
 
@@ -1465,7 +1531,9 @@ namespace Datadog.Trace.TestHelpers
                         // unexpected exception, so start another listener
                         _log("Unexpected exception " + instance + " " + ex.ToString());
                         using var m = new ManualResetEventSlim();
+#pragma warning disable CA2025 // Ensure tasks using 'IDisposable' instances complete before the instances are disposed
                         _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
+#pragma warning restore CA2025
                         m.Wait(5_000);
                     }
                 }
@@ -1633,5 +1701,30 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 #endif
+
+        public class MockOtlpRequest
+        {
+            public MockOtlpRequest(string pathAndQuery, Dictionary<string, List<string>> headers, byte[] body, string contentType, MetricsData metricsData)
+            {
+                PathAndQuery = pathAndQuery;
+                Headers = headers;
+                Body = body;
+                ContentType = contentType;
+                MetricsData = metricsData;
+            }
+
+            public string PathAndQuery { get; }
+
+            public Dictionary<string, List<string>> Headers { get; }
+
+            public byte[] Body { get; }
+
+            public string ContentType { get; }
+
+            /// <summary>
+            /// Gets the deserialized protobuf data (if available)
+            /// </summary>
+            public MetricsData MetricsData { get; }
+        }
     }
 }

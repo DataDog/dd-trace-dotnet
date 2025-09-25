@@ -53,7 +53,7 @@ public class IisCheckTests : TestHelper
             var result = await CheckIisCommand.ExecuteAsync(
                 siteName,
                 iisFixture.IisExpress.ConfigFile,
-                iisFixture.IisExpress.Process.Id,
+                iisFixture.IisExpress.Process.Process.Id,
                 MockRegistryService());
 
             result.Should().Be(0);
@@ -93,7 +93,7 @@ public class IisCheckTests : TestHelper
             var result = await CheckIisCommand.ExecuteAsync(
                              siteName,
                              iisFixture.IisExpress.ConfigFile,
-                             iisFixture.IisExpress.Process.Id,
+                             iisFixture.IisExpress.Process.Process.Id,
                              MockRegistryService());
 
             result.Should().Be(0);
@@ -126,7 +126,7 @@ public class IisCheckTests : TestHelper
             var result = await CheckIisCommand.ExecuteAsync(
                 "sample",
                 iisFixture.IisExpress.ConfigFile,
-                iisFixture.IisExpress.Process.Id,
+                iisFixture.IisExpress.Process.Process.Id,
                 MockRegistryService());
 
             result.Should().Be(0);
@@ -162,7 +162,7 @@ public class IisCheckTests : TestHelper
             var result = await CheckIisCommand.ExecuteAsync(
                              "sample",
                              iisFixture.IisExpress.ConfigFile,
-                             iisFixture.IisExpress.Process.Id,
+                             iisFixture.IisExpress.Process.Process.Id,
                              MockRegistryService());
 
             result.Should().Be(1);
@@ -188,7 +188,7 @@ public class IisCheckTests : TestHelper
         var result = await CheckIisCommand.ExecuteAsync(
             "sample",
             iisFixture.IisExpress.ConfigFile,
-            iisFixture.IisExpress.Process.Id,
+            iisFixture.IisExpress.Process.Process.Id,
             MockRegistryService());
 
         result.Should().Be(1);
@@ -209,7 +209,7 @@ public class IisCheckTests : TestHelper
         var result = await CheckIisCommand.ExecuteAsync(
             "dummySite",
             iisFixture.IisExpress.ConfigFile,
-            iisFixture.IisExpress.Process.Id,
+            iisFixture.IisExpress.Process.Process.Id,
             MockRegistryService());
 
         result.Should().Be(1);
@@ -230,7 +230,7 @@ public class IisCheckTests : TestHelper
         var result = await CheckIisCommand.ExecuteAsync(
             "sample/dummy",
             iisFixture.IisExpress.ConfigFile,
-            iisFixture.IisExpress.Process.Id,
+            iisFixture.IisExpress.Process.Process.Id,
             MockRegistryService());
 
         result.Should().Be(1);
@@ -251,7 +251,7 @@ public class IisCheckTests : TestHelper
         var result = await CheckIisCommand.ExecuteAsync(
                          "sample",
                          iisFixture.IisExpress.ConfigFile,
-                         iisFixture.IisExpress.Process.Id,
+                         iisFixture.IisExpress.Process.Process.Id,
                          MockRegistryService());
 
         result.Should().Be(1);
@@ -286,7 +286,7 @@ public class IisCheckTests : TestHelper
 
         try
         {
-            await fixture.TryStartIis(this, appType);
+            await fixture.TryStartIis(this, appType, false);
         }
         catch (Exception)
         {

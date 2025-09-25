@@ -4,6 +4,8 @@
 // </copyright>
 
 using System.Threading;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.ContinuousProfiler
 {
@@ -11,16 +13,19 @@ namespace Datadog.Trace.ContinuousProfiler
     {
         private static Profiler _instance;
 
-        internal Profiler(IContextTracker contextTracker, IProfilerStatus status)
+        internal Profiler(IContextTracker contextTracker, IProfilerStatus status, ProfilerSettings settings)
         {
             ContextTracker = contextTracker;
             Status = status;
+            Settings = settings;
         }
 
         public static Profiler Instance
         {
             get { return LazyInitializer.EnsureInitialized(ref _instance, () => Create()); }
         }
+
+        public ProfilerSettings Settings { get; }
 
         public IProfilerStatus Status { get; }
 
@@ -33,9 +38,10 @@ namespace Datadog.Trace.ContinuousProfiler
 
         private static Profiler Create()
         {
-            var status = new ProfilerStatus();
+            var settings = new ProfilerSettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+            var status = new ProfilerStatus(settings);
             var contextTracker = new ContextTracker(status);
-            return new Profiler(contextTracker, status);
+            return new Profiler(contextTracker, status, settings);
         }
     }
 }

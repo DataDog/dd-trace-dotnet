@@ -13,14 +13,12 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
-using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -34,7 +32,6 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
-using NativeInterop = Datadog.Trace.LibDatadog.NativeInterop;
 
 namespace Datadog.Trace
 {
@@ -221,9 +218,6 @@ namespace Datadog.Trace
         /// </summary>
         internal void Start()
         {
-            // Start the Serverless Mini Agent in GCP Functions & Azure Consumption Plan Functions.
-            ServerlessMiniAgent.StartServerlessMiniAgent(Settings);
-
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
@@ -469,10 +463,10 @@ namespace Datadog.Trace
                     }
 
                     writer.WritePropertyName("partialflush_enabled");
-                    writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);
+                    writer.WriteValue(instanceSettings.PartialFlushEnabled);
 
                     writer.WritePropertyName("partialflush_minspans");
-                    writer.WriteValue(instanceSettings.Exporter.PartialFlushMinSpans);
+                    writer.WriteValue(instanceSettings.PartialFlushMinSpans);
 
                     writer.WritePropertyName("runtime_id");
                     writer.WriteValue(Tracer.RuntimeId);
@@ -596,6 +590,10 @@ namespace Datadog.Trace
                     }
 
                     writer.WriteEndArray();
+
+                    writer.WritePropertyName("trace_data_pipeline_enabled");
+                    writer.WriteValue(instanceSettings.DataPipelineEnabled);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
@@ -740,11 +738,8 @@ namespace Datadog.Trace
                         await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
                     }
 
-                    // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
-#if NETFRAMEWORK
-                    Log.Debug("Disposing Runtime Metrics");
                     instance.RuntimeMetrics?.Dispose();
-#endif
+                    instance.Statsd?.Dispose();
 
                     Log.Debug("Finished waiting for disposals.");
                 }

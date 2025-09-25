@@ -18,5 +18,5 @@ internal interface IDeleteBucketRequest : IDuckType
     /// Gets the S3 bucket name.
     /// </summary>
     [Duck(Name = "BucketName")]
-    string BucketName { get; }
+    string? BucketName { get; }
 }

@@ -88,7 +88,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(span1Anon);
             spans.AddRange(spans2Disabled);
 
-            await VerifySpans(spans.ToImmutableList(), settings);
+            await VerifySpans(spans.ToImmutableList(), settings, scrubCookiesFingerprint: true);
         }
     }
 }

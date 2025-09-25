@@ -1,0 +1,4 @@
+config_id: a1
+apm_configuration_default:
+  KEY1: "fleet_file_env"
+  KEY5: "fleet_file_service"

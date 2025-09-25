@@ -8,11 +8,12 @@
 using System;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.Serilog.Events;
+using LogEventLevel = Datadog.Trace.Vendors.Serilog.Events.LogEventLevel;
 
 namespace Datadog.Trace.Configuration
 {
@@ -87,14 +88,7 @@ namespace Datadog.Trace.Configuration
         /// Affects the level of logs written to file.
         /// </summary>
         /// <param name="enabled">Whether debug is enabled.</param>
-        [PublicApi]
-        public static void SetDebugEnabled(bool enabled)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_SetDebugEnabled);
-            SetDebugEnabledInternal(enabled);
-        }
-
-        internal static void SetDebugEnabledInternal(bool enabled)
+        internal static void SetDebugEnabled(bool enabled)
         {
             Instance.DebugEnabledInternal = enabled;
 
@@ -107,7 +101,7 @@ namespace Datadog.Trace.Configuration
                 DatadogLogging.UseDefaultLevel();
             }
 
-            LibDatadog.Logger.Instance.SetLogLevel(debugEnabled: enabled);
+            LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: enabled);
 
             TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }
@@ -121,21 +115,14 @@ namespace Datadog.Trace.Configuration
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_Reload);
             DatadogLogging.Reset();
-            LibDatadog.Logger.Instance.SetLogLevel(debugEnabled: false);
-            GlobalConfigurationSource.Reload();
-            Instance = CreateFromDefaultSources();
-        }
+            var isLibdatadogAvailable = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
+            if (isLibdatadogAvailable.IsAvailable)
+            {
+                LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: false);
+            }
 
-        /// <summary>
-        /// Create a <see cref="GlobalSettings"/> populated from the default sources
-        /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
-        /// </summary>
-        /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
-        [PublicApi]
-        public static GlobalSettings FromDefaultSources()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_FromDefaultSources);
-            return CreateFromDefaultSources();
+            GlobalConfigurationSource.Reload(isLibdatadogAvailable.IsAvailable);
+            Instance = CreateFromDefaultSources();
         }
 
         private static GlobalSettings CreateFromDefaultSources()

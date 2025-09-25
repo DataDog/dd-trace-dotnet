@@ -142,7 +142,7 @@ namespace Datadog.Trace
             // first span added is the local root span
             if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null)
             {
-                span.MarkSpanForExceptionDebugging();
+                span.MarkSpanForExceptionReplay();
             }
 
             lock (_rootSpan)
@@ -153,7 +153,7 @@ namespace Datadog.Trace
 
         public void CloseSpan(Span span)
         {
-            bool ShouldTriggerPartialFlush() => Tracer.Settings.Exporter.PartialFlushEnabled && _spans.Count >= Tracer.Settings.Exporter.PartialFlushMinSpans;
+            bool ShouldTriggerPartialFlush() => Tracer.Settings.PartialFlushEnabled && _spans.Count >= Tracer.Settings.PartialFlushMinSpans;
 
             ArraySegment<Span> spansToWrite = default;
 
@@ -180,7 +180,7 @@ namespace Datadog.Trace
 
                     if (_appSecRequestContext is not null)
                     {
-                        _appSecRequestContext.CloseWebSpan(Tags, span);
+                        _appSecRequestContext.CloseWebSpan(span);
                         _appSecRequestContext.DisposeAdditiveContext();
                     }
                 }

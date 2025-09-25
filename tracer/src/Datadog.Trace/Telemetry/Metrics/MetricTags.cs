@@ -164,6 +164,11 @@ internal static class MetricTags
         [Description("truncation_reason:baggage_byte_count_exceeded")]BaggageByteCountExceeded,
     }
 
+    public enum ContextHeaderMalformed
+    {
+        [Description("header_style:baggage")] Baggage,
+    }
+
     internal enum TelemetryEndpoint
     {
         [Description("endpoint:agent")] Agent,
@@ -613,6 +618,7 @@ internal static class MetricTags
         [Description("provider:travisci")] TravisCi,
         [Description("provider:buddyci")] BuddyCi,
         [Description("provider:aws")] AwsCodePipeline,
+        [Description("provider:drone")] Drone,
     }
 
     public enum CIVisibilityTestSessionType

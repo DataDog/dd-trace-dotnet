@@ -82,6 +82,7 @@ internal static class MsTestIntegration
         ["3fe23123-93a2-4c44-8219-0a5f27a10316"] = "3.8.2",
         ["102f7a9d-d61b-4864-b3c7-0a097a85f47b"] = "3.9.0",
         ["e7bba6ac-32f6-4e62-9a3a-cf259c9e7448"] = "3.9.1",
+        ["71c969a3-3c6d-4215-87ef-48dd76421ad8"] = "3.10.0",
     };
 
     private static long _totalTestCases;
@@ -107,7 +108,7 @@ internal static class MsTestIntegration
             return null;
         }
 
-        var test = startDate is null ? suite.InternalCreateTest(testName) : suite.InternalCreateTest(testName, startDate.Value);
+        var test = startDate is null ? suite.CreateTest(testName) : suite.CreateTest(testName, startDate.Value);
         var testTags = test.GetTags();
 
         // Get test parameters
@@ -359,7 +360,7 @@ internal static class MsTestIntegration
                 }
 
                 Common.Log.Debug("Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
-                var newModule = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
+                var newModule = TestModule.Create(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
                 newModule.EnableIpcClient();
                 return newModule;
             });
@@ -385,7 +386,7 @@ internal static class MsTestIntegration
                 }
 
                 var classTypeName = testClassInfo.ClassType?.FullName ?? throw new NullReferenceException("ClassType is null, a new suite cannot be created.");
-                return module.InternalGetOrCreateSuite(classTypeName);
+                return module.GetOrCreateSuite(classTypeName);
             });
     }
 

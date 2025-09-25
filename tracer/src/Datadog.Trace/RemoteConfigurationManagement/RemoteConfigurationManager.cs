@@ -114,8 +114,15 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public void Dispose()
         {
-            _discoveryService.RemoveSubscription(SetRcmEnabled);
-            _processExit.SetResult(true);
+            if (_processExit.TrySetResult(true))
+            {
+                _discoveryService.RemoveSubscription(SetRcmEnabled);
+            }
+            else
+            {
+                // Double dispose in prod shouldn't happen, and should be avoided, so logging for follow-up
+                Log.Debug($"{nameof(RemoteConfigurationManager)} is already disposed, skipping further disposal.");
+            }
         }
 
         private async Task StartPollingAsync()

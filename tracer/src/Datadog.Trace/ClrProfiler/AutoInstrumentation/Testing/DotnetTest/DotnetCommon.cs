@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     workingDirectory = Environment.CurrentDirectory;
                 }
 
-                var session = TestSession.InternalGetOrCreate(commandLine, workingDirectory, null, null, true);
+                var session = TestSession.GetOrCreate(commandLine, workingDirectory, null, null, true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testOptimization.SkippableFeature?.Enabled == true ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, testOptimizationSettings.CodeCoverageEnabled == true ? "true" : "false");
                 if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)

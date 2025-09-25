@@ -353,7 +353,7 @@ HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
     if (corAssemblyProperty.ppbPublicKey != nullptr)
     {
         // the corlib module is already loaded, use that information to create the assembly ref
-        Logger::Debug("Using existing corlib reference: ", corAssemblyProperty.szName);
+        DBG("Using existing corlib reference: ", corAssemblyProperty.szName);
         return assembly_emit->DefineAssemblyRef(corAssemblyProperty.ppbPublicKey, corAssemblyProperty.pcbPublicKey,
                                                 corAssemblyProperty.szName.c_str(), &corAssemblyProperty.pMetaData,
                                                 nullptr, 0, corAssemblyProperty.assemblyFlags, corlib_ref);
@@ -992,8 +992,7 @@ bool FindTypeDefByName(const shared::WSTRING& instrumentationTargetMethodTypeNam
             // This can happen between .NET framework and .NET core, not all apis are
             // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
             // System.Data
-            Logger::Debug("Can't load the TypeDef for: ", instrumentationTargetMethodTypeName,
-                          ", Module: ", assemblyName);
+            DBG("Can't load the TypeDef for: ", instrumentationTargetMethodTypeName, ", Module: ", assemblyName);
             return false;
         }
     }
@@ -1096,10 +1095,7 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
     mdAssembly candidateAssembly;
     auto foundModule = false;
 
-    if (Logger::IsDebugEnabled())
-    {
-        Logger::Debug("[ResolveTypeInternal] Trying to resolve type ref to type def for: ", shared::WSTRING(refTypeName.data()));
-    }
+    DBG("[ResolveTypeInternal] Trying to resolve type ref to type def for: ", shared::WSTRING(refTypeName.data()));
 
     // iterate over all the loaded modules and search for the correct one that matches the assemblyRef (resolutionScope)
     for (auto& moduleId : loadedModules)
@@ -1350,7 +1346,7 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
     resolvedTypeDefToken = mdTokenNil;
     if (enclosingType != mdTokenNil)
     {
-        Logger::Debug("ResolveType: Found enclosing type, try to get parent token");
+        DBG("ResolveType: Found enclosing type, try to get parent token");
         std::vector<WCHAR> enclosingRefTypeName(kNameMaxSize);
         hr = metadata_import->GetTypeRefProps(enclosingType, &resolutionScope, enclosingRefTypeName.data(),
                                               kNameMaxSize, &nameSize);

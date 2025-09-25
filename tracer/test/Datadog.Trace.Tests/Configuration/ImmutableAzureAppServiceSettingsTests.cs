@@ -6,7 +6,6 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -126,7 +125,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases))]
         public void FunctionsWorkerRuntime(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.FunctionsWorkerRuntime.Should().Be(expected);
@@ -136,33 +135,26 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases))]
         public void FunctionsExtensionVersion(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.FunctionsExtensionVersion.Should().Be(expected);
         }
 
         [Theory]
-        [InlineData("value", null, Trace.PlatformHelpers.AzureContext.AzureFunctions)]
-        [InlineData(null, "value", Trace.PlatformHelpers.AzureContext.AzureFunctions)]
-        [InlineData(null, null, Trace.PlatformHelpers.AzureContext.AzureAppService)]
-        public void AzureContext(string functionsWorkerRuntime, string functionsExtensionVersion, object expected)
+        [InlineData("value", null, false)]
+        [InlineData(null, "value", false)]
+        [InlineData(null, null, false)]
+        [InlineData("value", "value", true)]
+
+        public void IsFunctionsApp(string functionsWorkerRuntime, string functionsExtensionVersion, bool expected)
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, functionsWorkerRuntime),
-                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, functionsExtensionVersion));
+                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, functionsWorkerRuntime),
+                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, functionsExtensionVersion));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.AzureContext.Should().Be((AzureContext)expected);
-        }
-
-        [Fact]
-        public void Runtime()
-        {
-            var source = CreateConfigurationSource();
-            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-
-            settings.Runtime.Should().Be(FrameworkDescription.Instance.Name);
+            settings.IsFunctionsApp.Should().Be(expected);
         }
 
         [Theory]
@@ -193,49 +185,6 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.NeedsDogStatsD.Should().Be(expected);
-        }
-
-        [Fact]
-        public void GetIsRunningMiniAgentInAzureFunctionsFalseWhenNoFunctionsEnvVars()
-        {
-            var settings = new ImmutableAzureAppServiceSettings(CreateConfigurationSource(), NullConfigurationTelemetry.Instance);
-            settings.IsRunningMiniAgentInAzureFunctions.Should().BeFalse();
-        }
-
-        [Fact]
-        public void GetIsRunningMiniAgentInAzureFunctionsFalseWhenNotConsumptionPlan()
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
-                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
-                (ConfigurationKeys.AzureAppService.WebsiteSKU, "basic"));
-
-            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            var usesMiniAgent = Environment.OSVersion.Platform == PlatformID.Unix;
-            settings.IsRunningMiniAgentInAzureFunctions.Should().Be(usesMiniAgent);
-        }
-
-        [Fact]
-        public void GetIsRunningMiniAgentInAzureFunctionsTrueWhenConsumptionPlanWithNoSKU()
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
-                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"));
-
-            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            settings.IsRunningMiniAgentInAzureFunctions.Should().BeTrue();
-        }
-
-        [Fact]
-        public void GetIsRunningMiniAgentInAzureFunctionsTrueWhenConsumptionPlanWithDynamicSKU()
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
-                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
-                (ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic"));
-
-            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            settings.IsRunningMiniAgentInAzureFunctions.Should().BeTrue();
         }
     }
 }

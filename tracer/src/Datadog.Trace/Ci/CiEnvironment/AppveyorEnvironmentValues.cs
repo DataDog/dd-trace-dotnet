@@ -54,5 +54,7 @@ internal sealed class AppveyorEnvironmentValues<TValueProvider>(TValueProvider v
         AuthorEmail = ValueProvider.GetValue(Constants.AppveyorRepoCommitAuthorEmail);
 
         PrBaseBranch = ValueProvider.GetValue(Constants.AppveyorPullRequestBaseRepoBranch);
+        HeadCommit = ValueProvider.GetValue(Constants.AppveyorPullRequestHeadCommit);
+        PrNumber = ValueProvider.GetValue(Constants.AppveyorPullRequestNumber);
     }
 }

@@ -39,7 +39,6 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private readonly TimeSpan _delay;
 
-        private readonly IDogStatsd _statsd;
         private readonly Timer _timer;
 
         private readonly IRuntimeMetricsListener _listener;
@@ -52,6 +51,7 @@ namespace Datadog.Trace.RuntimeMetrics
 #endif
 
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
+        private IDogStatsd _statsd;
         private int _outOfMemoryCount;
 
         // The time when the runtime metrics were last pushed
@@ -59,6 +59,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
+        private int _disposed;
 
         public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
             : this(statsd, delay, inAzureAppServiceContext, InitializeListenerFunc)
@@ -129,14 +130,48 @@ namespace Datadog.Trace.RuntimeMetrics
 
         public void Dispose()
         {
+            if (Interlocked.CompareExchange(ref _disposed, 1, 0) == 1)
+            {
+                Log.Debug("Disposing Runtime Metrics but it was already disposed");
+                return;
+            }
+
+            Log.Debug("Disposing Runtime Metrics timer");
+            // Callbacks can occur after the Dispose() method overload has been called,
+            // because the timer queues callbacks for execution by thread pool threads.
+            // Using the Dispose(WaitHandle) method overload to waits until all callbacks have completed.
+            // ManualResetEventSlim doesn't do well with Timer so need to use ManualResetEvent
+            using (var manualResetEvent = new ManualResetEvent(false))
+            {
+                if (_timer.Dispose(manualResetEvent) && !manualResetEvent.WaitOne(5_000))
+                {
+                    Log.Warning("Failed to dispose Runtime Metrics timer after 5 seconds");
+                }
+            }
+
+            Log.Debug("Disposing other resources for Runtime Metrics");
             AppDomain.CurrentDomain.FirstChanceException -= FirstChanceException;
-            _timer.Dispose();
+            // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
+#if NETFRAMEWORK
             _listener?.Dispose();
+#endif
             _exceptionCounts.Clear();
+        }
+
+        internal void UpdateStatsd(IDogStatsd statsd)
+        {
+            Interlocked.Exchange(ref _statsd, statsd);
+            _listener?.UpdateStatsd(statsd);
         }
 
         internal void PushEvents()
         {
+            if (Volatile.Read(ref _disposed) == 1)
+            {
+                Log.Debug("Runtime metrics is disposed and can't push new events");
+                return;
+            }
+
             var now = DateTime.UtcNow;
 
             try
@@ -243,7 +278,6 @@ namespace Datadog.Trace.RuntimeMetrics
 #if NETCOREAPP
             return new RuntimeEventListener(statsd, delay);
 #elif NETFRAMEWORK
-
             try
             {
                 return new MemoryMappedCounters(statsd);

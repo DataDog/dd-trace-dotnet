@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -62,6 +63,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         }
 
         JobUrl = $"{serverUrl}/{ValueProvider.GetValue(Constants.GitHubRepository)}/commit/{Commit}/checks";
+        JobId = ValueProvider.GetValue(Constants.GitHubJob);
         JobName = ValueProvider.GetValue(Constants.GitHubJob);
 
         VariablesToBypass = new Dictionary<string, string?>();
@@ -101,6 +103,12 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
             {
                 var githubEvent = File.ReadAllText(githubEventPath);
                 var githubEventObject = JObject.Parse(githubEvent);
+                var number = githubEventObject["number"]?.Value<int>();
+                if (number is > 0)
+                {
+                    PrNumber = number.Value.ToString(CultureInfo.InvariantCulture);
+                }
+
                 var pullRequestObject = githubEventObject["pull_request"];
                 if (pullRequestObject is not null)
                 {
@@ -113,7 +121,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
                     var prBaseSha = pullRequestObject["base"]?["sha"]?.Value<string>();
                     if (!string.IsNullOrWhiteSpace(prBaseSha))
                     {
-                        PrBaseCommit = prBaseSha;
+                        PrBaseHeadCommit = prBaseSha;
                     }
 
                     var prBaseRef = pullRequestObject["base"]?["ref"]?.Value<string>();
