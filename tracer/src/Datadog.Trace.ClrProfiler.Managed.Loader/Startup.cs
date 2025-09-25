@@ -228,7 +228,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 }
 
                 // if the directory name is one of these, go one level higher
-                List<string> architectures = ["win-x64", "win-x86", "linux-x64", "linux-arm64", "linux-musl-x64", "linux-musl-arm64", "osx"];
+                List<string> architectures = ["win-x64", "win-x86", "linux-x64", "linux-arm64", "linux-musl-x64", "linux-musl-arm64", "osx", "osx-arm64", "osx-x64"];
 
                 if (architectures.Contains(directory.Name))
                 {
