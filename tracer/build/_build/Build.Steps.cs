@@ -785,18 +785,78 @@ partial class Build
                 ? TargetFrameworks
                 : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
 
-            // Publish Datadog.Trace.MSBuild which includes Datadog.Trace
-            DotNetPublish(s => s
-                .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .CombineWith(targetFrameworks, (p, framework) => p
-                    .SetFramework(framework)
-                    .SetOutput(MonitoringHomeDirectory / framework))
-            );
+            var msbuildDebugPath = (RootDirectory / "logs" / "msbuild").ToString();
+
+            try
+            {
+                // Publish Datadog.Trace.MSBuild which includes Datadog.Trace
+                DotNetPublish(s => s
+                    .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatformAnyCPU()
+                    .EnableNoBuild()
+                    .EnableNoRestore()
+                    .CombineWith(targetFrameworks, (p, framework) => p
+                        .SetFramework(framework)
+                        .SetOutput(MonitoringHomeDirectory / framework)
+                    .SetProcessEnvironmentVariable("MSBUILDDEBUGPATH", msbuildDebugPath))
+                );
+            }
+            catch
+            {
+                // Print tail of MSBuild failure notes, if any, then rethrow
+                DumpMsBuildChildFailures(msbuildDebugPath, tailChars: 128 * 1024, maxFiles: 2);
+                throw;
+            }
         });
+
+    private static void DumpMsBuildChildFailures(string msbuildDebugPath, int tailChars = 128 * 1024, int maxFiles = 2)
+    {
+        try
+        {
+            if (!Directory.Exists(msbuildDebugPath))
+            {
+                Logger.Information($"No MSBuild failure directory: {msbuildDebugPath}");
+                return;
+            }
+
+            var files = Directory.EnumerateFiles(msbuildDebugPath, "MSBuild_*.failure.txt", SearchOption.AllDirectories)
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .Take(maxFiles)
+                .ToList();
+
+            if (files.Count == 0)
+            {
+                Logger.Information("No MSBuild failure notes found.");
+                return;
+            }
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    // Use BOM detection: handles UTF-8/UTF-16 automatically
+                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+                    var text = sr.ReadToEnd();
+
+                    var tail = text.Length > tailChars ? text[^tailChars..] : text;
+
+                    Logger.Error($"----- BEGIN {file} (showing last {tail.Length} of {text.Length} chars) -----");
+                    Logger.Error(tail);
+                    Logger.Error("----- END -----");
+                }
+                catch (Exception exRead)
+                {
+                    Logger.Warning($"Could not read {file}: {exRead.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to dump MSBuild child-node diagnostics: {ex.Message}");
+        }
+    }
 
     Target PublishManagedTracerR2R => _ => _
         .Unlisted()
