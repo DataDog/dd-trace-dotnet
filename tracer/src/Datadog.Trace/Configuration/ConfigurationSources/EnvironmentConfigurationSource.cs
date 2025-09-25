@@ -34,5 +34,7 @@ namespace Datadog.Trace.Configuration
 
             return null;
         }
+
+        public override bool IsPresent(string key) => GetString(key) is not null;
     }
 }

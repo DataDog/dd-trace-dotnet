@@ -24,4 +24,6 @@ internal sealed class HandsOffConfigurationSource(Dictionary<string, string> con
         _configurations.TryGetValue(key, out var value);
         return value;
     }
+
+    public override bool IsPresent(string key) => _configurations.ContainsKey(key);
 }
