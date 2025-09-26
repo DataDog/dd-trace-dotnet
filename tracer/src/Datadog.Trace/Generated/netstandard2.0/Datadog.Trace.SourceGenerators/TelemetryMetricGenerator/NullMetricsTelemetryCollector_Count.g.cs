@@ -104,6 +104,22 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountMetricsExportAttempts(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountMetricsExportSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountMetricsExportPartialSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountMetricsExportFailures(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag, int increment = 1)
+    {
+    }
+
     public void RecordCountTelemetryApiRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag, int increment = 1)
     {
     }
