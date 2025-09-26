@@ -46,7 +46,6 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_AllFeaturesByDefault_NoDebuggerObjectsCreated()
     {
 #if NET8_0_OR_GREATER
-
         // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
@@ -69,6 +68,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_NoDebuggerObjectsCreated()
     {
 #if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
         // at least one product should be enabled to initialize the debugger manager
@@ -90,6 +90,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_ExceptionReplayExplicitlyDisabled_NoExceptionReplayObjectsCreated()
     {
 #if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
         // at least one product should be enabled to initialize the debugger manager
@@ -109,6 +110,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_CodeOriginExplicitlyDisabled_NoCodeOriginObjectsCreated()
     {
 #if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
         // at least one product should be enabled to initialize the debugger manager
@@ -128,6 +130,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_SymbolDatabaseUploadDisabled_NoSymbolUploaderCreated()
     {
 #if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
         // at least one product should be enabled to initialize the debugger manager
@@ -149,6 +152,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_DynamicInstrumentationEnabled_WithoutRemoteConfig_LogsWarning()
     {
 #if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "false");
@@ -164,6 +168,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_DynamicInstrumentationEnabled_WitRemoteConfig_CreateDynamicInstrumentationObjects()
     {
 #if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
@@ -182,6 +187,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_ExceptionReplayEnabled_CreatesExceptionReplayObjects()
     {
 #if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
@@ -199,6 +205,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_CodeOriginEnabled_CreatesCodeOriginObjects()
     {
 #if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
@@ -216,6 +223,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_MultipleFeaturesCombined_CreatesAppropriateObjects()
     {
 #if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
@@ -240,6 +248,7 @@ public class DebuggerManagerTests : TestHelper
     public async Task DebuggerManager_StartupDiagnosticLogEnabled_WritesConfigurationLog()
     {
 #if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
         SetEnvironmentVariable(ConfigurationKeys.StartupDiagnosticLogEnabled, "true");

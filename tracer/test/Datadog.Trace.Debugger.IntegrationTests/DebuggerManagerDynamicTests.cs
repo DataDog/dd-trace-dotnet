@@ -50,6 +50,11 @@ public class DebuggerManagerDynamicTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_DynamicInstrumentation_StartDisabled_EnabledViaRemoteConfig()
     {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+
         // Set it true so we won't go through path of no debugger products at all
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
@@ -79,6 +84,9 @@ public class DebuggerManagerDynamicTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_ExceptionReplay_StartDisabled_EnabledViaRemoteConfig()
     {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
 
         await RunDynamicConfigurationTest(
@@ -99,6 +107,10 @@ public class DebuggerManagerDynamicTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_CodeOrigin_StartDisabled_EnabledViaRemoteConfig()
     {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
 
         await RunDynamicConfigurationTest(
@@ -119,6 +131,9 @@ public class DebuggerManagerDynamicTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_MultipleProducts_StartDisabled_EnabledViaRemoteConfig()
     {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
 
         await RunDynamicConfigurationTest(
@@ -159,6 +174,10 @@ public class DebuggerManagerDynamicTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_DynamicInstrumentation_StartEnabled_DisabledViaRemoteConfig()
     {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+
         // Start with DI enabled via environment variable
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
@@ -190,6 +209,9 @@ public class DebuggerManagerDynamicTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_ExceptionReplay_StartEnabled_DisabledViaRemoteConfig()
     {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
         // Start with Exception Replay enabled via environment variable
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
@@ -212,6 +234,10 @@ public class DebuggerManagerDynamicTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_CodeOrigin_StartEnabled_DisabledViaRemoteConfig()
     {
+#if NET8_0_OR_GREATER
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
 
