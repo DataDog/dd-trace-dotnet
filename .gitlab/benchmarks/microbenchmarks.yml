@@ -70,6 +70,8 @@ run-benchmarks:
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
   when: manual
+  # rules:
+  #   - when: on_success
   variables:
     AWS_REGION: "us-east-1"
     CLEANUP: "true"
@@ -95,9 +97,6 @@ run-benchmarks:
     # Temporarily commented out pending issue resolution with sending files to backend
     # - ./platform/steps/upload-to-bp-ui.sh
     
-  rules:
-    - when: on_success
-
 upload-to-bp-ui:
   stage: benchmarks
   tags: ["arch:amd64"]
