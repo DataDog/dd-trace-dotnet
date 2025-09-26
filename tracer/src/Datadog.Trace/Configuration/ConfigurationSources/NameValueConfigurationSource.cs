@@ -46,5 +46,7 @@ namespace Datadog.Trace.Configuration
         {
             return _nameValueCollection[key];
         }
+
+        public override bool IsPresent(string key) => _nameValueCollection[key] is not null;
     }
 }
