@@ -5,13 +5,12 @@
     <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <ApiVersion Condition="'$(ApiVersion)' == ''">1.7.0</ApiVersion>
-    <DefineConstants Condition="'$(ApiVersion)'&gt;='1.2.0'">$(DefineConstants);OTEL_1_2</DefineConstants>
     <Nullable>enable</Nullable>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Hangfire" Version="1.7.0" />
+    <PackageReference Include="Hangfire" Version="$(ApiVersion)" />
     <PackageReference Include="Hangfire.MemoryStorage" Version="1.4.0" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.8" />
   </ItemGroup>
