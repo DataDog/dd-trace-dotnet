@@ -52,6 +52,7 @@ partial class Build
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
     AbsolutePath BuildDataDirectory => BuildArtifactsDirectory / "build_data";
+    AbsolutePath MsbuildDebugPath => TestLogsDirectory / "msbuild";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
@@ -797,13 +798,13 @@ partial class Build
                     .CombineWith(targetFrameworks, (p, framework) => p
                         .SetFramework(framework)
                         .SetOutput(MonitoringHomeDirectory / framework)
-                    .SetProcessEnvironmentVariable("MSBUILDDEBUGPATH", MSBuildLogHelper.MsbuildDebugPath))
+                    .SetProcessEnvironmentVariable("MSBUILDDEBUGPATH", MsbuildDebugPath))
                 );
             }
             catch
             {
                 // Print tail of MSBuild failure notes, if any, then rethrow
-                MSBuildLogHelper.DumpMsBuildChildFailures();
+                MSBuildLogHelper.DumpMsBuildChildFailures(MsbuildDebugPath);
                 throw;
             }
         });

@@ -10,13 +10,10 @@ using Logger = Serilog.Log;
 
 internal static class MSBuildLogHelper
 {
-    static internal AbsolutePath MsbuildDebugPath => TestLogsDirectory / "msbuild";
-
-    internal static void DumpMsBuildChildFailures(int tailChars = 10 * 1024, int maxFiles = 2)
+    internal static void DumpMsBuildChildFailures(string msbuildDebugPath, int tailChars = 10 * 1024, int maxFiles = 2)
     {
         try
         {
-            var msbuildDebugPath = MsbuildDebugPath.ToString();
             if (!Directory.Exists(msbuildDebugPath))
             {
                 Logger.Information($"No MSBuild failure directory: {msbuildDebugPath}");
