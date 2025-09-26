@@ -69,6 +69,7 @@ run-benchmarks:
   timeout: 2h
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
+  when: manual
   variables:
     AWS_REGION: "us-east-1"
     CLEANUP: "true"
