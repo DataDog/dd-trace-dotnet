@@ -20,8 +20,8 @@ RUN if($env:CHANNEL_32_BIT){ \
     rm ./dotnet-install.ps1; }
 
 RUN mkdir /logs; \
-    mkdir /cli; \
-    mkdir /monitoring-home -Force; \
+    mkdir /cli -Force; \
+    mkdir /monitoring-home; \
     cd /src/artifacts; \
     Expand-Archive 'c:\src/artifacts\windows-tracer-home.zip' -DestinationPath 'c:\monitoring-home\';  \
     cd /src; \
