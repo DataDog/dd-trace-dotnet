@@ -23,7 +23,6 @@ RUN mkdir /logs; \
     mkdir /monitoring-home; \
     cd /src/artifacts; \
     Expand-Archive 'c:\src/artifacts\windows-tracer-home.zip' -DestinationPath 'c:\monitoring-home\';  \
-    cd /app; \
     rm /src/artifacts -r -fo
 
 
