@@ -364,6 +364,25 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "producer"));
 
+        public static Result IsAzureServiceBusCreateV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => s
+                .Matches(Name, "azure_servicebus.create")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsPresent("messaging.destination.name", "message_bus.destination")
+                .IfPresentMatches("messaging.system", "servicebus")
+                .Matches("messaging.operation", "create")
+                .IsOptional("messaging.batch.message_count")
+                .IsOptional("messaging.message_id")
+                .IsPresent("network.destination.name")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .IsOptional("server.address")
+                .Matches("component", "AzureServiceBus")
+                .IfPresentMatches("kind", "producer")
+                .IsOptional("_dd.base_service")
+                .Matches("span.kind", "producer"));
+
         public static Result IsAzureServiceBusRequestV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .MatchesOneOf(Name, "servicebus.publish", "servicebus.settle", "client.request")
