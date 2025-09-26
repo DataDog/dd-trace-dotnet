@@ -26,7 +26,6 @@ namespace Datadog.Trace.OTelMetrics
             InstrumentType = instrumentType;
             IsHistogram = instrumentType == InstrumentType.Histogram;
 
-            // Create a unique stream name that includes all identifying characteristics
             MetricStreamName = $"{MeterName}.{InstrumentName}.{InstrumentType}.{Unit}.{Description}";
         }
 

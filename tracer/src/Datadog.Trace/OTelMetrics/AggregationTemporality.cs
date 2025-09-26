@@ -5,22 +5,23 @@
 
 #if NET6_0_OR_GREATER
 
-namespace Datadog.Trace.OTelMetrics
+#nullable enable
+
+namespace Datadog.Trace.OTelMetrics;
+
+/// <summary>
+/// Represents the aggregation temporality of a metric.
+/// </summary>
+public enum AggregationTemporality
 {
     /// <summary>
-    /// Represents the aggregation temporality of a metric.
+    /// Delta temporality, representing changes since the last measurement.
     /// </summary>
-    public enum AggregationTemporality
-    {
-        /// <summary>
-        /// Delta temporality, representing changes since the last measurement.
-        /// </summary>
-        Delta = 0,
+    Delta = 0,
 
-        /// <summary>
-        /// Cumulative temporality, representing the total value since the start.
-        /// </summary>
-        Cumulative = 1,
-    }
+    /// <summary>
+    /// Cumulative temporality, representing the total value since the start.
+    /// </summary>
+    Cumulative = 1,
 }
 #endif

@@ -7,47 +7,46 @@
 
 #nullable enable
 
-namespace Datadog.Trace.OTelMetrics
+namespace Datadog.Trace.OTelMetrics;
+
+/// <summary>
+/// Represents the type of OpenTelemetry instrument
+/// </summary>
+internal enum InstrumentType
 {
     /// <summary>
-    /// Represents the type of OpenTelemetry instrument
+    /// Counter instrument - monotonic, additive
     /// </summary>
-    internal enum InstrumentType
-    {
-        /// <summary>
-        /// Counter instrument - monotonic, additive
-        /// </summary>
-        Counter = 0,
+    Counter = 0,
 
-        /// <summary>
-        /// UpDownCounter instrument - non-monotonic, additive
-        /// </summary>
-        UpDownCounter = 1,
+    /// <summary>
+    /// UpDownCounter instrument - non-monotonic, additive
+    /// </summary>
+    UpDownCounter = 1,
 
-        /// <summary>
-        /// Histogram instrument - statistical distribution
-        /// </summary>
-        Histogram = 2,
+    /// <summary>
+    /// Histogram instrument - statistical distribution
+    /// </summary>
+    Histogram = 2,
 
-        /// <summary>
-        /// Asynchronous Counter instrument - monotonic, additive, callback-based
-        /// </summary>
-        ObservableCounter = 3,
+    /// <summary>
+    /// Asynchronous Counter instrument - monotonic, additive, callback-based
+    /// </summary>
+    ObservableCounter = 3,
 
-        /// <summary>
-        /// Asynchronous UpDownCounter instrument - non-monotonic, additive, callback-based
-        /// </summary>
-        ObservableUpDownCounter = 4,
+    /// <summary>
+    /// Asynchronous UpDownCounter instrument - non-monotonic, additive, callback-based
+    /// </summary>
+    ObservableUpDownCounter = 4,
 
-        /// <summary>
-        /// Gauge instrument - non-additive, last value
-        /// </summary>
-        Gauge = 5,
+    /// <summary>
+    /// Gauge instrument - non-additive, last value
+    /// </summary>
+    Gauge = 5,
 
-        /// <summary>
-        /// Asynchronous Gauge instrument - non-additive, last value, callback-based
-        /// </summary>
-        ObservableGauge = 6
-    }
+    /// <summary>
+    /// Asynchronous Gauge instrument - non-additive, last value, callback-based
+    /// </summary>
+    ObservableGauge = 6
 }
 #endif
