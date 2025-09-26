@@ -398,6 +398,7 @@
   "DD_CIVISIBILITY_FLAKY_RETRY_COUNT": "ci_visibility_flaky_retry_count",
   "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT": "ci_visibility_total_flaky_retry_count",
   "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED": "dd_civisibility_impacted_tests_detection_enabled",
+  "DD_CIVISIBILITY_DI_ENABLED": "ci_visibility_dynamic_instrumentation_enabled",
   "DD_TEST_MANAGEMENT_ENABLED": "test_management_enabled",
   "DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES": "test_management_attempt_to_fix_retries",
   "DD_TEST_SESSION_NAME": "test_session_name",
