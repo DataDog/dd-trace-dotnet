@@ -10,7 +10,7 @@ WORKDIR /src
 COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
 ARG PUBLISH_FRAMEWORK
-RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
+RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $env:PUBLISH_FRAMEWORK -o /src/publish
 
 ARG CHANNEL_32_BIT
 RUN if($env:CHANNEL_32_BIT){ \
