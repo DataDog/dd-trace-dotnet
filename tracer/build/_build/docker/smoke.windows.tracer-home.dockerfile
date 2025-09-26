@@ -35,7 +35,7 @@ COPY --from=builder /src/artifacts /install
 # Create dirs, extract zip with tar (works on NanoServer), clean up
 RUN mkdir C:\logs && \
     mkdir C:\monitoring-home && \
-    tar -xf C:\install\windows-tracer-home.zip -C C:\monitoring-home && \
+    tar.exe -xf C:\install\windows-tracer-home.zip -C C:\monitoring-home && \
     rmdir /S /Q C:\install
 
 ARG RELATIVE_PROFILER_PATH
