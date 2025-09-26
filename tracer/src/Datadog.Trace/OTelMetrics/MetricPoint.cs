@@ -9,98 +9,82 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace Datadog.Trace.OTelMetrics
+namespace Datadog.Trace.OTelMetrics;
+
+internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags)
 {
-    internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags)
+    internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
+    private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
+    private readonly object _histogramLock = new();
+    private long _runningCountValue;
+    private double _runningDoubleValue;
+    private double _runningMin = double.PositiveInfinity;
+    private double _runningMax = double.NegativeInfinity;
+
+    public string InstrumentName { get; } = instrumentName;
+
+    public string MeterName { get; } = meterName;
+
+    public InstrumentType InstrumentType { get; } = instrumentType;
+
+    public AggregationTemporality? AggregationTemporality { get; } = temporality;
+
+    public Dictionary<string, object?> Tags { get; } = tags;
+
+    internal long RunningCount => _runningCountValue;
+
+    internal double RunningSum => _runningDoubleValue;
+
+    internal double RunningMin => _runningMin;
+
+    internal double RunningMax => _runningMax;
+
+    internal long[] RunningBucketCounts => _runningBucketCounts;
+
+    internal void UpdateCounter(double value)
     {
-        // Static fields first
-        internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
-
-        // Instance fields
-        private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
-        private readonly object _histogramLock = new();
-        private long _runningCountValue;     // For counters and histogram count
-        private double _runningDoubleValue;  // For gauges and histogram sum
-        private double _runningMin = double.PositiveInfinity;
-        private double _runningMax = double.NegativeInfinity;
-
-        // Constructor
-
-        // Public properties
-        public string InstrumentName { get; } = instrumentName;
-
-        public string MeterName { get; } = meterName;
-
-        public InstrumentType InstrumentType { get; } = instrumentType;
-
-        public AggregationTemporality? AggregationTemporality { get; } = temporality;
-
-        public Dictionary<string, object?> Tags { get; } = tags;
-
-        // Internal properties for collection access
-        internal long RunningCount => _runningCountValue;
-
-        internal double RunningSum => _runningDoubleValue;
-
-        internal double RunningMin => _runningMin;
-
-        internal double RunningMax => _runningMax;
-
-        internal long[] RunningBucketCounts => _runningBucketCounts;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void UpdateCounter(double value)
+        lock (_histogramLock)
         {
-            // Use lock to avoid floating-point precision issues with CompareExchange
-            lock (_histogramLock)
+            _runningDoubleValue += value;
+        }
+    }
+
+    internal void UpdateGauge(double value)
+    {
+        Interlocked.Exchange(ref _runningDoubleValue, value);
+    }
+
+    internal void UpdateHistogram(double value)
+    {
+        var bucketIndex = FindBucketIndex(value);
+
+        lock (_histogramLock)
+        {
+            unchecked
             {
+                _runningCountValue++;
                 _runningDoubleValue += value;
+                _runningBucketCounts[bucketIndex]++;
             }
+
+            _runningMin = Math.Min(_runningMin, value);
+            _runningMax = Math.Max(_runningMax, value);
         }
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void UpdateGauge(double value)
+    private static int FindBucketIndex(double value)
+    {
+        for (var i = 0; i < DefaultHistogramBounds.Length; i++)
         {
-            Interlocked.Exchange(ref _runningDoubleValue, value);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void UpdateHistogram(double value)
-        {
-            // Find bucket index first (outside lock for performance)
-            var bucketIndex = FindBucketIndex(value);
-
-            lock (_histogramLock)
+            if (value <= DefaultHistogramBounds[i])
             {
-                unchecked
-                {
-                    _runningCountValue++;
-                    _runningDoubleValue += value; // Sum
-                    _runningBucketCounts[bucketIndex]++;
-                }
-
-                _runningMin = Math.Min(_runningMin, value);
-                _runningMax = Math.Max(_runningMax, value);
+                return i;
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int FindBucketIndex(double value)
-        {
-            // Linear search for default 15 boundaries (fast enough)
-            for (var i = 0; i < DefaultHistogramBounds.Length; i++)
-            {
-                if (value <= DefaultHistogramBounds[i])
-                {
-                    return i;
-                }
-            }
-
-            return DefaultHistogramBounds.Length; // Overflow bucket
-        }
+        return DefaultHistogramBounds.Length;
     }
 }
 #endif

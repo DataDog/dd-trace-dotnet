@@ -11,67 +11,75 @@ using System;
 using System.Threading;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.OTelMetrics
+namespace Datadog.Trace.OTelMetrics;
+
+internal static class MetricReader
 {
-    internal static class MetricReader
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReader));
+
+    private static System.Diagnostics.Metrics.MeterListener? _meterListenerInstance;
+    private static int _initialized;
+    private static int _stopped;
+
+    public static bool IsRunning =>
+        Interlocked.CompareExchange(ref _initialized, 1, 1) == 1 &&
+        Interlocked.CompareExchange(ref _stopped, 0, 0) == 0;
+
+    public static void Initialize()
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReader));
-
-        private static System.Diagnostics.Metrics.MeterListener? _meterListenerInstance;
-        private static int _initialized;
-        private static int _stopped;
-
-        public static bool IsRunning =>
-            Interlocked.CompareExchange(ref _initialized, 1, 1) == 1 &&
-            Interlocked.CompareExchange(ref _stopped, 0, 0) == 0;
-
-        public static void Initialize()
+        if (Interlocked.CompareExchange(ref _initialized, 1, 0) == 1)
         {
-            if (Interlocked.CompareExchange(ref _initialized, 1, 0) == 1)
-            {
-                return;
-            }
-
-            var meterListener = new System.Diagnostics.Metrics.MeterListener();
-            meterListener.InstrumentPublished = MetricReaderHandler.OnInstrumentPublished;
-
-            meterListener.SetMeasurementEventCallback<byte>(MetricReaderHandler.OnMeasurementRecordedByte);
-            meterListener.SetMeasurementEventCallback<short>(MetricReaderHandler.OnMeasurementRecordedShort);
-            meterListener.SetMeasurementEventCallback<int>(MetricReaderHandler.OnMeasurementRecordedInt);
-            meterListener.SetMeasurementEventCallback<long>(MetricReaderHandler.OnMeasurementRecordedLong);
-            meterListener.SetMeasurementEventCallback<float>(MetricReaderHandler.OnMeasurementRecordedFloat);
-            meterListener.SetMeasurementEventCallback<double>(MetricReaderHandler.OnMeasurementRecordedDouble);
-
-            meterListener.Start();
-            _meterListenerInstance = meterListener;
-
-            Log.Debug("MeterListener initialized successfully.");
+            return;
         }
 
-        public static void Stop()
-        {
-            if (_meterListenerInstance is IDisposable disposableListener)
-            {
-                _meterListenerInstance = null;
-                disposableListener.Dispose();
-                Interlocked.Exchange(ref _stopped, 1);
-                Interlocked.Exchange(ref _initialized, 0);
-                Log.Debug("MeterListener stopped.");
-            }
-        }
+        var meterListener = new System.Diagnostics.Metrics.MeterListener();
 
-        internal static void CollectObservableInstruments()
+#if NET6_0 || NET7_0 || NET8_0
+        // Ensures instruments are fully de-registered on Dispose() for 6–8
+        // Static lambda => no captures/allocations
+        meterListener.MeasurementsCompleted = static (_, __) => { };
+#endif
+
+        meterListener.InstrumentPublished = MetricReaderHandler.OnInstrumentPublished;
+
+        meterListener.SetMeasurementEventCallback<byte>(MetricReaderHandler.OnMeasurementRecordedByte);
+        meterListener.SetMeasurementEventCallback<short>(MetricReaderHandler.OnMeasurementRecordedShort);
+        meterListener.SetMeasurementEventCallback<int>(MetricReaderHandler.OnMeasurementRecordedInt);
+        meterListener.SetMeasurementEventCallback<long>(MetricReaderHandler.OnMeasurementRecordedLong);
+        meterListener.SetMeasurementEventCallback<float>(MetricReaderHandler.OnMeasurementRecordedFloat);
+        meterListener.SetMeasurementEventCallback<double>(MetricReaderHandler.OnMeasurementRecordedDouble);
+
+        meterListener.Start();
+
+        Interlocked.Exchange(ref _meterListenerInstance, meterListener);
+        Interlocked.Exchange(ref _stopped, 0);
+
+        Log.Debug("MeterListener initialized successfully.");
+    }
+
+    public static void Stop()
+    {
+        var listener = Interlocked.Exchange(ref _meterListenerInstance, null);
+        if (listener is IDisposable disposableListener)
         {
-            if (_meterListenerInstance != null)
+            disposableListener.Dispose();
+            Interlocked.Exchange(ref _stopped, 1);
+            Interlocked.Exchange(ref _initialized, 0);
+            Log.Debug("MeterListener stopped.");
+        }
+    }
+
+    internal static void CollectObservableInstruments()
+    {
+        if (_meterListenerInstance != null)
+        {
+            try
             {
-                try
-                {
-                    _meterListenerInstance.RecordObservableInstruments();
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Error collecting observable instruments.");
-                }
+                _meterListenerInstance.RecordObservableInstruments();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error collecting observable instruments.");
             }
         }
     }
