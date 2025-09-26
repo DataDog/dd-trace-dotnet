@@ -122,7 +122,7 @@ namespace Datadog.Trace.Configuration
             internal const string ApiSecuritySampleDelay = "DD_API_SECURITY_SAMPLE_DELAY";
 
             /// <summary>
-            /// with a default value of false, it allows a customer to disable the collection of endpoints for API Security.
+            /// with a default value of true, it allows a customer to disable the collection of endpoints for API Security.
             /// </summary>
             internal const string ApiSecurityEndpointCollectionEnabled = "DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED";
 
