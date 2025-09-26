@@ -40,17 +40,16 @@ internal static class ProfilerAvailabilityHelper
 
         // This variable is set by the native loader after trying to load the profiler
         // it means the profiler is _there_ though it may not be _loaded_. This only works
-        // on Windows at the moment. We assume that the CLR profiler must be attached in this scenario
-        if (fd.IsWindows() && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH")))
+        // on Windows at the moment. We assume that the CLR profiler must be attached in this scenario.
+        if (fd.IsWindows())
         {
-            return true;
+            return !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
         }
 
         // Now we're into fuzzy territory. The CP is not available in some environments
         // - AWS Lambda
-        // - Azure Functions where the site extension is _not_ used
-        var isUnsupported = EnvironmentHelpers.IsAwsLambda()
-                            || (EnvironmentHelpers.IsAzureFunctions() && !EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension());
+        // - Azure Functions where the site extension is _not_ used (Site extension is Windows only, so that's already covered)
+        var isUnsupported = EnvironmentHelpers.IsAwsLambda() || EnvironmentHelpers.IsAzureFunctions();
 
         // As a final check, we check whether the ClrProfiler is attached - if it's not, then the P/Invokes won't
         // have been re-written, and native calls won't work.

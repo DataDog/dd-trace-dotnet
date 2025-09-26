@@ -34,14 +34,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <remarks>
         /// This public extension method is meant for external users only. Internal Datadog calls should
         /// use the methods on <see cref="TraceContext"/> instead.</remarks>
-        [PublicApi]
         public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTraceSamplingPriority);
-            SetTraceSamplingPriorityInternal(span, samplingPriority);
-        }
-
-        internal static void SetTraceSamplingPriorityInternal(this ISpan span, SamplingPriority samplingPriority)
         {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 

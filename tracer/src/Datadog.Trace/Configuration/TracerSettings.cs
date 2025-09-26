@@ -830,26 +830,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public bool StatsComputationEnabled { get; }
 
-        /// <summary>
-        /// Gets a value indicating whether the use
-        /// of System.Diagnostics.DiagnosticSource is enabled.
-        /// Default is <c>true</c>.
-        /// </summary>
-        /// <remark>
-        /// This value cannot be set in code. Instead,
-        /// set it using the <c>DD_TRACE_DIAGNOSTIC_SOURCE_ENABLED</c>
-        /// environment variable or in configuration files.
-        /// </remark>
-        [PublicApi]
-        public bool DiagnosticSourceEnabled
-        {
-            get
-            {
-                TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_DiagnosticSourceEnabled_Get);
-                return GlobalSettings.Instance.DiagnosticSourceEnabled;
-            }
-        }
-
         /// <inheritdoc cref="MutableSettings.KafkaCreateConsumerScopeEnabled"/>
         public bool KafkaCreateConsumerScopeEnabled => MutableSettings.KafkaCreateConsumerScopeEnabled;
 

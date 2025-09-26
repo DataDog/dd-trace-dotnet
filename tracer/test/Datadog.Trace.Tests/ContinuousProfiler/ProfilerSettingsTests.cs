@@ -16,9 +16,9 @@ namespace Datadog.Trace.Tests.ContinuousProfiler;
 
 public class ProfilerSettingsTests : SettingsTestsBase
 {
-    // profiling takes precedence over SSI
-    // "auto" is a special profiling value that enables profiling when deployed via SSI
-    // the profiler will also be enabled when "profiler" will be added to the DD_INJECTION_ENABLED environment variable
+    // "auto" is a special profiling value that enables profiling based on heuristics
+    // historically, we set a different value for profiling when we are in SSI. That is no longer
+    // the case, but we keep the test here to ensure that remains the case!
     [Theory]
     [InlineData("1", null, (int)ProfilerState.Enabled)]
     [InlineData("0", null, (int)ProfilerState.Disabled)]
@@ -30,19 +30,19 @@ public class ProfilerSettingsTests : SettingsTestsBase
     [InlineData("true", "not used", (int)ProfilerState.Enabled)]
     [InlineData("false", "not used", (int)ProfilerState.Disabled)]
     [InlineData("auto", "not used", (int)ProfilerState.Auto)]
-    [InlineData("invalid", "foo, profiler, bar", (int)ProfilerState.Auto)]
-    [InlineData("invalid", "profiler", (int)ProfilerState.Auto)]
-    [InlineData("invalid", "anything else", (int)ProfilerState.Auto)]
+    [InlineData("invalid", "foo, profiler, bar", (int)ProfilerState.Disabled)]
+    [InlineData("invalid", "profiler", (int)ProfilerState.Disabled)]
+    [InlineData("invalid", "anything else", (int)ProfilerState.Disabled)]
     [InlineData("invalid", "", (int)ProfilerState.Disabled)]
     [InlineData("invalid", null, (int)ProfilerState.Disabled)]
-    [InlineData("", "foo, profiler, bar", (int)ProfilerState.Auto)]
-    [InlineData("", "profiler", (int)ProfilerState.Auto)]
-    [InlineData("", "anything else", (int)ProfilerState.Auto)]
+    [InlineData("", "foo, profiler, bar", (int)ProfilerState.Disabled)]
+    [InlineData("", "profiler", (int)ProfilerState.Disabled)]
+    [InlineData("", "anything else", (int)ProfilerState.Disabled)]
     [InlineData("", "", (int)ProfilerState.Disabled)]
     [InlineData("", null, (int)ProfilerState.Disabled)]
-    [InlineData(null, "foo, profiler, bar", (int)ProfilerState.Auto)]
-    [InlineData(null, "profiler", (int)ProfilerState.Auto)]
-    [InlineData(null, "anything else", (int)ProfilerState.Auto)]
+    [InlineData(null, "foo, profiler, bar", (int)ProfilerState.Disabled)]
+    [InlineData(null, "profiler", (int)ProfilerState.Disabled)]
+    [InlineData(null, "anything else", (int)ProfilerState.Disabled)]
     [InlineData(null, null, (int)ProfilerState.Disabled)]
     [InlineData(null, "", (int)ProfilerState.Disabled)]
     public void ProfilerState_WhenPassedViaEnvironment(string profilingValue, string ssiValue, int expected)

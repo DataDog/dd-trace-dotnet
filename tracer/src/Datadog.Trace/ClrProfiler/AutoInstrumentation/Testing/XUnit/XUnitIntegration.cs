@@ -46,7 +46,7 @@ internal static class XUnitIntegration
         }
 
         var testOptimization = TestOptimization.Instance;
-        var test = testSuite.InternalCreateTest(testMethod?.Name ?? string.Empty);
+        var test = testSuite.CreateTest(testMethod?.Name ?? string.Empty);
         var testTags = test.GetTags();
 
         // Store test case metadata
