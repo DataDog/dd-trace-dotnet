@@ -7,43 +7,60 @@
     - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
 
 stages:
-  - infra-update
+  - build
   - benchmarks
 
-update-bp-infra:
-  stage: infra-update
+build-dd-trace-dotnet-microbenchmarks-ami:
+  stage: build
+  tags: ["arch:amd64"]
   timeout: 3h
-  tags: ["arch:amd64"]  
   allow_failure: true
-  # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
-
-  script:
-    - git clone --branch dd-trace-dotnet/micro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - mkdir -p ~/.aws
-    - /app/bp-infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER >> ~/.aws/config || exit $?
-    - aws ssm get-parameter --region "$AWS_REGION" --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-pair-name" --with-decryption --query "Parameter.Value" --out text >> ~/.aws/key-pair-name.txt
-    - aws ssm get-parameter --region "$AWS_REGION" --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-private-key" --with-decryption --query "Parameter.Value" --out text >> ~/.aws/key-pair-private-key.pem
-    - export AWS_PROFILE=ephemeral-infra-ci
-    - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
-    - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
-    - bp-infra launch --provision ./platform/ephemeral-infra/base-instance.yaml --region "${AWS_REGION}" --bypass-stack-destroy
-  after_script:
-    - !reference [.setup, script]
-    - |
-      bp-infra cleanup --provision ./platform/ephemeral-infra/base-instance.yaml \
-        --region "${AWS_REGION}" \
-        --bypass-stack-destroy
-    
-  rules:
-    - when: manual
+  # id_tokens:
+  #   DDOCTOSTS_ID_TOKEN:
+  #     aud: dd-octo-sts
   variables:
     AWS_REGION: "us-east-1"
-    CLEANUP: "false"
-    AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
-    AWS_EPHEMERAL_INFRA_PROFILE_NAME: "ephemeral-infra-ci"
-    AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
-    AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
+    PROVISION_FILE: "platform/ephemeral-infra/ami.yaml"
+    CLEANUP: "true"
+    GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+  # before_script:
+  #   - |
+  #     set +e
+  #     error_output=$({ dd-octo-sts token --scope DataDog/dd-trace-dotnet --policy gitlab.github-access.read > "/tmp/github-token"; } 2>&1)
+  #     exit_code=$?
+  #     if [ $exit_code -ne 0 ]; then
+  #       echo "ERROR: Failed to retrieve a GitHub token with dd-octo-sts gitlab.github-access.read policy."
+  #       echo "Original error: $error_output"
+  #       echo "Continuing execution anyway..."
+  #     fi
+  #     set -e
+  script:
+    - |
+      if [ -z "$GITHUB_TOKEN" ]; then
+        GITHUB_TOKEN=$(cat /tmp/github-token)
+      fi
+      echo "GITHUB_TOKEN=$GITHUB_TOKEN" > .env
+    - RESULTS_BUCKET="s3://windows-benchmarking-results/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}/${CI_JOB_ID}"
+    - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
+    - |
+      bp-infra launch --region "${AWS_REGION}" --os "windows" \
+        --provision "${PROVISION_FILE}" \
+        --s3-bucket "${RESULTS_BUCKET}" \
+        --bypass-stack-destroy \
+        --env .env \
+        $CLEANUP_ARG
+  after_script:
+    # Makes sure the instance is cleaned up.
+    # Note: This does not clean up the created AMI.
+    - |
+      if [ "$CLEANUP" == "true" ]; then
+        bp-infra cleanup --region "${AWS_REGION}" --os "windows" \
+          --provision "${PROVISION_FILE}" \
+          --bypass-stack-destroy
+      else 
+        echo "'CLEANUP' is set to 'false'. Will not cleanup."
+      fi
 
 run-benchmarks:
   stage: benchmarks
