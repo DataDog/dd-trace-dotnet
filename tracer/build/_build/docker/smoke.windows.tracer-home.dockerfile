@@ -1,8 +1,9 @@
 ﻿ARG SDK_TAG
 ARG RUNTIME_IMAGE
 
-# Build the ASP.NET Core app using the latest SDK
-FROM mcr.microsoft.com/dotnet/sdk:$SDK_TAG as builder
+# Build the ASP.NET Core app using the latest SDK in the windows server core image
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-windowsservercore-ltsc2022 as builder
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 # Build the smoke test app
 WORKDIR /src
@@ -11,32 +12,34 @@ COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 ARG PUBLISH_FRAMEWORK
 RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework %PUBLISH_FRAMEWORK% -o /src/publish
 
-# ---- Runtime stage -----------------------------------------------------------
-FROM $RUNTIME_IMAGE AS publish
-# We have to use cmd instead of powershell, because nanoserver doesn't have 
-SHELL ["cmd", "/S", "/C"]
-
 WORKDIR /app
 
-# Make sure the path is set, in cases we have to install the 32 bit runtime
-ENV PATH=C:\cli;%PATH%
-
-# Only install x86 ASP.NET Core runtime on Server Core (PowerShell available).
-# On NanoServer, PowerShell isn't present, so this becomes a no-op.
 ARG CHANNEL_32_BIT
-ENV CHANNEL_32_BIT=${CHANNEL_32_BIT}
-
-# Install x86 runtime only if CHANNEL_32_BIT is set; if PowerShell isn’t present (Nano), skip cleanly
-RUN IF DEFINED CHANNEL_32_BIT ( where powershell.exe >NUL 2>&1 && curl.exe -L -o %TEMP%\dotnet-install.ps1 https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1 && powershell.exe -NoProfile -ExecutionPolicy Bypass -File %TEMP%\dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel %CHANNEL_32_BIT% -InstallDir C:\cli && del /q %TEMP%\dotnet-install.ps1 || echo PowerShell not found. Skipping x86 install. )
+RUN if($env:CHANNEL_32_BIT){ \
+    echo 'Installing x86 dotnet runtime ' + $env:CHANNEL_32_BIT; \
+    curl 'https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1' -o dotnet-install.ps1; \
+    ./dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel $env:CHANNEL_32_BIT -InstallDir c:\cli; \
+    [Environment]::SetEnvironmentVariable('Path',  'c:\cli;' + $env:Path, [EnvironmentVariableTarget]::Machine); \
+    rm ./dotnet-install.ps1; }
 
 # Copy the tracer home file from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
 COPY --from=builder /src/artifacts /install
 
-# Create dirs, extract zip with tar (works on NanoServer), clean up
-RUN mkdir C:\logs && \
-    mkdir C:\monitoring-home && \
-    tar.exe -xf C:\install\windows-tracer-home.zip -C C:\monitoring-home && \
-    rmdir /S /Q C:\install
+RUN mkdir /logs; \
+    mkdir /monitoring-home; \
+    cd /install; \
+    Expand-Archive 'c:\install\windows-tracer-home.zip' -DestinationPath 'c:\monitoring-home\';  \
+    cd /app; \
+    rm /install -r -fo
+
+
+# ---- Runtime stage -----------------------------------------------------------
+FROM $RUNTIME_IMAGE AS publish
+# We have to use cmd instead of powershell, because nanoserver doesn't have it
+SHELL ["cmd", "/S", "/C"]
+
+# Make sure the path is set, in cases we have installed the 32 bit runtime
+ENV PATH=C:\cli;%PATH%
 
 ARG RELATIVE_PROFILER_PATH
 ENV CORECLR_PROFILER_PATH="C:\monitoring-home\${RELATIVE_PROFILER_PATH}"
@@ -57,6 +60,12 @@ ENV SUPER_SECRET_CANARY=MySuperSecretCanary
 
 # see https://github.com/DataDog/dd-trace-dotnet/pull/3579
 ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
+
+# Copy across the 32 bit runtime (if it's there) and the install dir
+COPY --from=builder C:\monitoring-home\ C:\monitoring-home\
+COPY --from=builder C:\cli\ C:\cli\
+
+WORKDIR /app
 
 # Copy the app across
 COPY --from=builder /src/publish /app/.
