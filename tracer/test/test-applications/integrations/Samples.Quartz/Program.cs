@@ -3,8 +3,6 @@ using Quartz.Impl;
 using Quartz.Impl.Matchers;
 using QuartzSampleApp.Infrastructure;
 using QuartzSampleApp.Jobs;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace QuartzSampleApp;
 
