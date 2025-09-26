@@ -10,7 +10,7 @@ using Logger = Serilog.Log;
 
 internal static class MSBuildLogHelper
 {
-    static internal AbsolutePath MsbuildDebugPath => NukeBuild.RootDirectory / "logs" / "msbuild";
+    static internal AbsolutePath MsbuildDebugPath => TestLogsDirectory / "msbuild";
 
     internal static void DumpMsBuildChildFailures(int tailChars = 10 * 1024, int maxFiles = 2)
     {
