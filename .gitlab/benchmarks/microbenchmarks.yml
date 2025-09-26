@@ -48,7 +48,6 @@ build-dd-trace-dotnet-microbenchmarks-ami:
     - |
       bp-infra launch --region "${AWS_REGION}" --os "windows" \
         --provision "${PROVISION_FILE}" \
-        --s3-bucket "${RESULTS_BUCKET}" \
         --bypass-stack-destroy \
         --env .env \
         $CLEANUP_ARG
