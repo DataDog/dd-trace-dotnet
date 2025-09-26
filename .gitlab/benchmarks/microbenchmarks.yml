@@ -87,7 +87,7 @@ run-benchmarks:
   after_script:
     - |
       if [ "$CLEANUP" == "true" ]; then
-        bp-infra cleanup --provision ./platform/ephemeral-infra/ephemeral-instance-main.yaml \
+        bp-infra cleanup --provision ./platform/ephemeral-infra/instance.yaml \
           --region "${AWS_REGION}" \
           --bypass-stack-destroy
       else
