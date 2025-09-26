@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json.Nodes;
 using Nuke.Common;
@@ -32,14 +33,14 @@ public class CompareExecutionTime
                                         .GroupBy(x => x.Scenario)
                                         .Select((scenarioResults, i) => GetMermaidSection(scenarioResults.Key, scenarioResults));
                          return $"""
-                        ```mermaid
+                        <code lang="mermaid"><pre lang="mermaid">
                         gantt
                             title Execution time (ms) {group.Key.TestSample} ({GetName(group.Key.Framework)}) 
                             dateFormat  X
                             axisFormat %s
                             todayMarker off
                         {string.Join(Environment.NewLine, scenarios)}
-                        ```
+                        </pre></code>
                         """;
                      });
 
@@ -123,22 +124,30 @@ public class CompareExecutionTime
         return $"""
             ## Execution-Time Benchmarks Report :stopwatch:
 
-            Execution-time results for samples comparing the following branches/commits:
-            {string.Join('\n', GetSourceMarkdown(sources))}
+            Execution-time results for samples comparing 
+            {string.Join(" and ", sources.Select(x => x.Markdown))}.
+            
+            <details>
+              <summary>Comparison explanation</summary>
+              <p>
+              Execution-time benchmarks measure the whole time it takes to execute a program, and are intended to measure the one-off costs.
+              Cases where the execution time results for the PR are worse than latest master results are highlighted in **red**.
+              The following thresholds were used for comparing the execution times:</p>
+              <ul>
+                <li>Welch test with statistical test for significance of <strong>5%</strong></li>
+                <li>Only results indicating a difference greater than <strong>{SignificantResultThreshold}</strong> and <strong>{NoiseThreshold}</strong> are considered.<li>
+              </ul>
+              <p>
+                Note that these results are based on a <em>single</em> point-in-time result for each branch.
+                For full results, see the <a href="https://ddstaging.datadoghq.com/dashboard/4qn-6fi-54p/apm-net-execution-time-benchmarks">dashboard</a>.
+              </p>
+              <p>
+                Graphs show the p99 interval based on the mean and StdDev of the test run, as well as the mean value of the run (shown as a diamond below the graph).
+              </p>
 
-            Execution-time benchmarks measure the whole time it takes to execute a program. And are intended to measure the one-off costs. Cases where the execution time results for the PR are worse than latest master results are shown in **red**. The following thresholds were used for comparing the execution times:
-            * Welch test with statistical test for significance of **5%**
-            * Only results indicating a difference greater than **{SignificantResultThreshold}** and **{NoiseThreshold}** are considered.
-
-
-            Note that these results are based on a _single_ point-in-time result for each branch. For full results, see the [dashboard](https://ddstaging.datadoghq.com/dashboard/4qn-6fi-54p/apm-net-execution-time-benchmarks).
-
-            Graphs show the p99 interval based on the mean and StdDev of the test run, as well as the mean value of the run (shown as a diamond below the graph).
             {string.Join('\n', charts)}
+            </details>
             """;
-
-        IEnumerable<string> GetSourceMarkdown(List<ExecutionTimeResultSource> ExecutionTimeResultSources)
-            => ExecutionTimeResultSources.Select(x => $"- {x.Markdown}");
     }
 
     private static string GetName(ExecutionTimeFramework source) => source switch
