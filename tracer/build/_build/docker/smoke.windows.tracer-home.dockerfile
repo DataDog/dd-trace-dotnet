@@ -65,4 +65,4 @@ COPY --from=builder /src/publish /app/.
 
 WORKDIR /app
 
-ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["dotnet", "/app/AspNetCoreSmokeTest.dll"]
