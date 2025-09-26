@@ -71,23 +71,32 @@ run-benchmarks:
   timeout: 2h
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
-
+  variables:
+    AWS_REGION: "us-east-1"
+    CLEANUP: "true"
   script:
     - git clone --branch dd-trace-dotnet/micro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - AWS_REGION=${AWS_REGION} ./platform/steps/launch-instance.sh
+    - |
+      if [ -z "$GITHUB_TOKEN" ]; then
+        GITHUB_TOKEN=$(cat /tmp/github-token)
+      fi
+      echo "GITHUB_TOKEN=$GITHUB_TOKEN" > .env
+    - CLEANUP=${CLEANUP} AWS_REGION=${AWS_REGION} GITHUB_TOKEN=${GITHUB_TOKEN} ./platform/steps/launch-instance.sh
   after_script:
     - |
-      bp-infra cleanup --provision ./platform/ephemeral-infra/ephemeral-instance-main.yaml \
-        --region "${AWS_REGION}" \
-        --bypass-stack-destroy
+      if [ "$CLEANUP" == "true" ]; then
+        bp-infra cleanup --provision ./platform/ephemeral-infra/ephemeral-instance-main.yaml \
+          --region "${AWS_REGION}" \
+          --bypass-stack-destroy
+      else
+        echo "'CLEANUP' is set to 'false'. Will not cleanup."
+      fi
     - ./platform/steps/post-pr-comment.sh
     # Temporarily commented out pending issue resolution with sending files to backend
     # - ./platform/steps/upload-to-bp-ui.sh
     
   rules:
     - when: on_success
-  variables:
-    AWS_REGION: "us-east-1"
 
 upload-to-bp-ui:
   stage: benchmarks
