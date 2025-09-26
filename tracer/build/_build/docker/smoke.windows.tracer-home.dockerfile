@@ -1,4 +1,4 @@
-﻿ARG SDK_TAG
+﻿ARG DOTNETSDK_VERSION
 ARG RUNTIME_IMAGE
 
 # Build the ASP.NET Core app using the latest SDK in the windows server core image
@@ -12,14 +12,11 @@ COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 ARG PUBLISH_FRAMEWORK
 RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework %PUBLISH_FRAMEWORK% -o /src/publish
 
-WORKDIR /app
-
 ARG CHANNEL_32_BIT
 RUN if($env:CHANNEL_32_BIT){ \
     echo 'Installing x86 dotnet runtime ' + $env:CHANNEL_32_BIT; \
     curl 'https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1' -o dotnet-install.ps1; \
     ./dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel $env:CHANNEL_32_BIT -InstallDir c:\cli; \
-    [Environment]::SetEnvironmentVariable('Path',  'c:\cli;' + $env:Path, [EnvironmentVariableTarget]::Machine); \
     rm ./dotnet-install.ps1; }
 
 # Copy the tracer home file from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
@@ -62,8 +59,8 @@ ENV SUPER_SECRET_CANARY=MySuperSecretCanary
 ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
 # Copy across the 32 bit runtime (if it's there) and the install dir
-COPY --from=builder C:\monitoring-home\ C:\monitoring-home\
-COPY --from=builder C:\cli\ C:\cli\
+COPY --from=builder C:\monitoring-home C:\monitoring-home
+COPY --from=builder C:\cli C:\cli
 
 WORKDIR /app
 
