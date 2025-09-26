@@ -15,6 +15,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   tags: ["arch:amd64"]
   timeout: 3h
   allow_failure: true
+  when: manual
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
   # id_tokens:
   #   DDOCTOSTS_ID_TOKEN:
