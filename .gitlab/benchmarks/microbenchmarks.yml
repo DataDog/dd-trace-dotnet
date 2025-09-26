@@ -24,7 +24,6 @@ build-dd-trace-dotnet-microbenchmarks-ami:
     AWS_REGION: "us-east-1"
     PROVISION_FILE: "platform/ephemeral-infra/ami.yaml"
     CLEANUP: "true"
-    GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
   # before_script:
   #   - |
   #     set +e
