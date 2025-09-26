@@ -19,15 +19,12 @@ RUN if($env:CHANNEL_32_BIT){ \
     ./dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel $env:CHANNEL_32_BIT -InstallDir c:\cli; \
     rm ./dotnet-install.ps1; }
 
-# Copy the tracer home file from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
-COPY --from=builder /src/artifacts /install
-
 RUN mkdir /logs; \
     mkdir /monitoring-home; \
-    cd /install; \
-    Expand-Archive 'c:\install\windows-tracer-home.zip' -DestinationPath 'c:\monitoring-home\';  \
+    cd /src/artifacts; \
+    Expand-Archive 'c:\src/artifacts\windows-tracer-home.zip' -DestinationPath 'c:\monitoring-home\';  \
     cd /app; \
-    rm /install -r -fo
+    rm /src/artifacts -r -fo
 
 
 # ---- Runtime stage -----------------------------------------------------------
