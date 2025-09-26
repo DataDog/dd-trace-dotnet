@@ -86,8 +86,6 @@ partial class Build
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
 
-    AbsolutePath MsbuildDebugPath => RootDirectory / "logs" / "msbuild";
-
     readonly string[] WindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
     Project NativeTracerTestsProject => Solution.GetProject(Projects.NativeTracerNativeTests);
@@ -799,65 +797,16 @@ partial class Build
                     .CombineWith(targetFrameworks, (p, framework) => p
                         .SetFramework(framework)
                         .SetOutput(MonitoringHomeDirectory / framework)
-                    .SetProcessEnvironmentVariable("MSBUILDDEBUGPATH", MsbuildDebugPath))
+                    .SetProcessEnvironmentVariable("MSBUILDDEBUGPATH", MSBuildLogHelper.MsbuildDebugPath))
                 );
             }
             catch
             {
                 // Print tail of MSBuild failure notes, if any, then rethrow
-                DumpMsBuildChildFailures();
+                MSBuildLogHelper.DumpMsBuildChildFailures();
                 throw;
             }
         });
-
-    private void DumpMsBuildChildFailures(int tailChars = 10 * 1024, int maxFiles = 2)
-    {
-        try
-        {
-            var msbuildDebugPath = MsbuildDebugPath.ToString();
-            if (!Directory.Exists(msbuildDebugPath))
-            {
-                Logger.Information($"No MSBuild failure directory: {msbuildDebugPath}");
-                return;
-            }
-
-            var files = Directory.EnumerateFiles(msbuildDebugPath, "MSBuild_*.failure.txt", SearchOption.AllDirectories)
-                .OrderByDescending(File.GetLastWriteTimeUtc)
-                .Take(maxFiles)
-                .ToList();
-
-            if (files.Count == 0)
-            {
-                Logger.Information("No MSBuild failure notes found.");
-                return;
-            }
-
-            foreach (var file in files)
-            {
-                try
-                {
-                    // Use BOM detection: handles UTF-8/UTF-16 automatically
-                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-                    var text = sr.ReadToEnd();
-
-                    var tail = text.Length > tailChars ? text[^tailChars..] : text;
-
-                    Logger.Error($"----- BEGIN {file} (showing last {tail.Length} of {text.Length} chars) -----");
-                    Logger.Error(tail);
-                    Logger.Error("----- END -----");
-                }
-                catch (Exception exRead)
-                {
-                    Logger.Warning($"Could not read {file}: {exRead.Message}");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to dump MSBuild child-node diagnostics: {ex.Message}");
-        }
-    }
 
     Target PublishManagedTracerR2R => _ => _
         .Unlisted()
