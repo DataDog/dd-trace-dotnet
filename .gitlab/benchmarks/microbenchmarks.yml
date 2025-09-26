@@ -73,7 +73,8 @@ run-benchmarks:
     AWS_REGION: "us-east-1"
     CLEANUP: "true"
   script:
-    - git clone --branch dd-trace-dotnet/micro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    # TODO: Change to dd-trace-dotnet/micro before merging
+    - git clone --branch augusto/dd-trace-dotnet-micro-bp-ui https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - |
       if [ -z "$GITHUB_TOKEN" ]; then
         GITHUB_TOKEN=$(cat /tmp/github-token)
