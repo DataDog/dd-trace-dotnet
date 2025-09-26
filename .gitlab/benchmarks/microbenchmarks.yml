@@ -28,10 +28,10 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   # before_script:
   #   - |
   #     set +e
-  #     error_output=$({ dd-octo-sts token --scope DataDog/dd-trace-dotnet --policy gitlab.github-access.read > "/tmp/github-token"; } 2>&1)
+  #     error_output=$({ dd-octo-sts token --scope DataDog/dd-trace-dotnet --policy gitlab.github-access.read-contents > "/tmp/github-token"; } 2>&1)
   #     exit_code=$?
   #     if [ $exit_code -ne 0 ]; then
-  #       echo "ERROR: Failed to retrieve a GitHub token with dd-octo-sts gitlab.github-access.read policy."
+  #       echo "ERROR: Failed to retrieve a GitHub token with dd-octo-sts gitlab.github-access.read-contents policy."
   #       echo "Original error: $error_output"
   #       echo "Continuing execution anyway..."
   #     fi
