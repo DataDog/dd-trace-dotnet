@@ -19,9 +19,7 @@ SingleStepGuardRails::SingleStepGuardRails()
     // This variable is non-empty when we're in single step
     Log::Debug("SingleStepGuardRails::CheckRuntime: Checking for Single step instrumentation environment using ",
                environment::single_step_instrumentation_enabled);
-    const auto isSingleStepVariable = GetEnvironmentValue(environment::single_step_instrumentation_enabled);
-
-    m_isRunningInSingleStep = !isSingleStepVariable.empty(); 
+    m_isRunningInSingleStep = IsSingleStepInstrumentation(); 
     m_forcedRuntimeDescription = "";
 }
 

@@ -9,6 +9,11 @@
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
 
+#if defined(BUILD_WITH_WORKLOAD_SELECTION)
+  #include <dd/policies/policies.hpp>
+  namespace plcs = datadog::policies;
+#endif
+
 using namespace shared;
 
 namespace datadog::shared::nativeloader
@@ -116,6 +121,7 @@ namespace datadog::shared::nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
     {
         Log::Debug("CorProfiler::Initialize");
+
         const auto inferredVersion = InspectRuntimeCompatibility(pICorProfilerInfoUnk);
 
         const auto process_name = ::shared::GetCurrentProcessName();
@@ -316,7 +322,56 @@ namespace datadog::shared::nativeloader
             return E_FAIL;
         }
 
-        // Guard rails have all passed, so we enable (and flush) logs if necessary
+        // Workload Selection
+        #if defined(BUILD_WITH_WORKLOAD_SELECTION)
+        if (IsSingleStepInstrumentation() && !IsRunningOnIIS())
+        {
+          enum class InjectionStatus : uint8_t {
+            ALLOW,
+            DENY,
+            UNKNOWN
+          } injection_status = InjectionStatus::UNKNOWN;
+
+          plcs::init();
+          plcs::set_params(plcs::StringEvaluator::PROCESS_EXE, ToString(process_name));
+          plcs::set_params(plcs::StringEvaluator::RUNTIME_LANGUAGE, "dotnet");
+
+          // TODO: Remove once the policy engine will be able to log the context.
+          Log::Info("CorProfiler::Initialize: Workload Selection Context: \"process.name:", process_name, " runtime:dotnet\"");
+
+          plcs::register_action(plcs::Action::INJECT_ALLOW, [&injection_status](plcs::Result eval_result, const std::vector<const char*>&, const char* desc) -> std::optional<plcs::Error> {
+              if (injection_status == InjectionStatus::ALLOW) return std::nullopt;
+              if (eval_result == plcs::Result::TRUE)
+              {
+                  injection_status = InjectionStatus::ALLOW;
+              }
+              else
+              {
+                  injection_status = InjectionStatus::DENY;
+              }
+
+              return std::nullopt;
+          });
+
+          if (const auto wls_file = fs::path{GetDatadogProgramDataFolderPath()} / "protected" / "workload_selection.fb"; fs::exists(wls_file))
+          {
+            auto maybe_error = plcs::evaluate_buffer_from_file(wls_file);
+            if (maybe_error) {
+              Log::Error("CorProfiler::Initialize: An error occured while evaluating workload selection (reason: ", *maybe_error, ")");
+              return E_FAIL;
+            }
+
+            if (injection_status != InjectionStatus::ALLOW) {
+              Log::Info("CorProfiler::Initialize: Instrumentation denied due to workload selection.");
+              return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+            }
+          } else {
+            Log::Warn("CorProfiler::Initialize: Missing workload selection file.");
+          }
+        }
+        #endif
+
+        // Guard rails and workload selection have all passed, so we enable (and flush) logs if necessary
         Log::EnableAutoFlush();
 
         if (m_dispatcher == nullptr)
@@ -1326,3 +1381,5 @@ namespace datadog::shared::nativeloader
     }
 
 } // namespace datadog::shared::nativeloader
+
+
