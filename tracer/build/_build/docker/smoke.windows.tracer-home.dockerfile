@@ -56,8 +56,8 @@ ENV SUPER_SECRET_CANARY=MySuperSecretCanary
 ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
 # Copy across the 32 bit runtime (if it's there) and the install dir
-COPY --from=builder C:\monitoring-home C:\monitoring-home
-COPY --from=builder C:\cli C:\cli
+COPY --from=builder /monitoring-home /monitoring-home
+COPY --from=builder /cli /cli
 
 WORKDIR /app
 
