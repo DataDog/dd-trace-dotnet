@@ -63,8 +63,6 @@ COPY --from=builder /cli /cli
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-RUN ls /app
-
 WORKDIR /app
 
 ENTRYPOINT ["dotnet", "/app/AspNetCoreSmokeTest.dll"]
