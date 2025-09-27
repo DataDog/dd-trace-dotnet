@@ -13,6 +13,7 @@
       runtime-id: Guid_2,
       SpanDecorationWithoutWhen: Run,
       version: 1.0.0,
+      _dd.code_origin.type: exit,
       _dd.di.SpanDecorationWithoutWhen.probe_id: Guid_3
     },
     Metrics: {

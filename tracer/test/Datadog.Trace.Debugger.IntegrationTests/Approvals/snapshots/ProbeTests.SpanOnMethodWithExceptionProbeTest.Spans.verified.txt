@@ -17,7 +17,8 @@ at Samples.Probes.TestRuns.SmokeTests.SpanOnMethodWithExceptionProbeTest.Calcula
       error.type: System.InvalidOperationException,
       language: dotnet,
       runtime-id: Guid_2,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.code_origin.type: exit
     },
     Metrics: {
       process_id: 0,
