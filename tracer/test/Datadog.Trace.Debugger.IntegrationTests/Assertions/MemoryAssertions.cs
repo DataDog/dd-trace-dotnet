@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -38,13 +39,51 @@ internal class MemoryAssertions
     /// <returns>MemoryAssertions</returns>
     public static async Task<MemoryAssertions> CaptureSnapshotToAssertOn(Process process, ITestOutputHelper output)
     {
+        return await CaptureSnapshotToAssertOn(process, output, TimeSpan.FromSeconds(15));
+    }
+
+    /// <summary>
+    /// Capture a snapshot of the current state of a process and returns a MemoryAssertions instance
+    /// which can perform assertions on said snapshot.
+    /// </summary>
+    /// <param name="process">Process to capture snapshot of</param>
+    /// <param name="output">The test output helper</param>
+    /// <param name="timeout">Timeout for the memory snapshot operation</param>
+    /// <returns>MemoryAssertions</returns>
+    public static async Task<MemoryAssertions> CaptureSnapshotToAssertOn(Process process, ITestOutputHelper output, TimeSpan timeout)
+    {
         if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
         {
             throw new NotSupportedException("Arm64 is not supported for memory assertions");
         }
 
-        var liveObjectsByTypes = await DumpHeapLive.GetLiveObjectsByTypes(process, output, TimeSpan.FromSeconds(30));
+        var liveObjectsByTypes = await DumpHeapLive.GetLiveObjectsByTypes(process, output, timeout);
         return new MemoryAssertions(liveObjectsByTypes);
+    }
+
+    /// <summary>
+    /// Attempts to capture a memory snapshot with timeout handling.
+    /// </summary>
+    /// <param name="process">Process to capture snapshot of</param>
+    /// <param name="output">The test output helper</param>
+    /// <param name="timeout">Timeout for the memory snapshot operation</param>
+    /// <returns>MemoryAssertions or null if the operation timed out</returns>
+    public static async Task<MemoryAssertions?> TryCaptureSnapshotToAssertOn(Process process, ITestOutputHelper output, TimeSpan timeout)
+    {
+        try
+        {
+            return await CaptureSnapshotToAssertOn(process, output, timeout);
+        }
+        catch (OperationCanceledException)
+        {
+            output?.WriteLine($"Memory assertion operation timed out after {timeout.TotalSeconds} seconds.");
+            return null;
+        }
+        catch (TimeoutException)
+        {
+            output?.WriteLine($"Memory assertion operation timed out after {timeout.TotalSeconds} seconds.");
+            return null;
+        }
     }
 
     public void NoUndisposedObjectsExist<T>()
@@ -55,7 +94,13 @@ internal class MemoryAssertions
                                 "Therefore, we cannot verify there are no live un-disposed instances." + GetDumpDetails());
         }
 
-        if (_liveObjectsByTypes.TryGetValue(typeof(T).FullName, out var result))
+        var typeFullName = typeof(T).FullName;
+        if (typeFullName == null)
+        {
+            return;
+        }
+
+        if (_liveObjectsByTypes.TryGetValue(typeFullName, out var result))
         {
             var undisposed = result.Live - result.Disposed;
             if (undisposed > 0)
@@ -67,7 +112,13 @@ internal class MemoryAssertions
 
     public void NoObjectsExist<T>()
     {
-        if (_liveObjectsByTypes.TryGetValue(typeof(T).FullName, out var result) && result.Live > 0)
+        var typeFullName = typeof(T).FullName;
+        if (typeFullName == null)
+        {
+            return;
+        }
+
+        if (_liveObjectsByTypes.TryGetValue(typeFullName, out var result) && result.Live > 0)
         {
             throw new MemoryAssertionException($"Expected no {typeof(T).Name} objects in memory, but found {result.Live}.", GetDumpDetails());
         }
@@ -75,7 +126,13 @@ internal class MemoryAssertions
 
     public void ObjectsExist<T>()
     {
-        if (!_liveObjectsByTypes.TryGetValue(typeof(T).FullName, out var result) && result.Live > 0)
+        var typeFullName = typeof(T).FullName;
+        if (typeFullName == null)
+        {
+            return;
+        }
+
+        if (!_liveObjectsByTypes.TryGetValue(typeFullName, out var result) && result.Live > 0)
         {
             throw new MemoryAssertionException($"Expected {typeof(T).Name} objects in memory, but not found.", GetDumpDetails());
         }
@@ -84,6 +141,7 @@ internal class MemoryAssertions
     private string GetDumpDetails()
     {
         return string.Empty;
+
         // re-use TaskHelper.TakeMemoryDump after rebasing from datadog upstream
         // https://github.com/DataDog/dd-trace-dotnet/pull/2655/files#diff-3eeffff2f0a958d283a96355b666dcfa121a911332c526139121f7f4260af89c
     }

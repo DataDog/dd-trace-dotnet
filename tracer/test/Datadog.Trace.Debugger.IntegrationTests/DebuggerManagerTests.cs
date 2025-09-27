@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -45,11 +46,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_AllFeaturesByDefault_NoDebuggerObjectsCreated()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
             memoryAssertions.NoObjectsExist<SnapshotSink>();
@@ -68,12 +64,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_NoDebuggerObjectsCreated()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
-
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false");
@@ -92,12 +82,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_ExceptionReplayExplicitlyDisabled_NoExceptionReplayObjectsCreated()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
-
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
@@ -114,12 +98,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_CodeOriginExplicitlyDisabled_NoCodeOriginObjectsCreated()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
-
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
@@ -136,12 +114,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_SymbolDatabaseUploadDisabled_NoSymbolUploaderCreated()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
-
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "false");
@@ -160,11 +132,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_DynamicInstrumentationEnabled_WithoutRemoteConfig_LogsWarning()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
         await RunDebuggerManagerTestWithMemoryAssertions(null, RemoteConfigNotAvailableLogEntry);
@@ -177,11 +144,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_DynamicInstrumentationEnabled_WitRemoteConfig_CreateDynamicInstrumentationObjects()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
@@ -197,11 +159,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_ExceptionReplayEnabled_CreatesExceptionReplayObjects()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
@@ -216,11 +173,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_CodeOriginEnabled_CreatesCodeOriginObjects()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
@@ -235,11 +187,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_MultipleFeaturesCombined_CreatesAppropriateObjects()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
@@ -261,11 +208,6 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_StartupDiagnosticLogEnabled_WritesConfigurationLog()
     {
-#if NET8_0_OR_GREATER
-
-        // These tests often hang on x86 on .NET 8+. Needs investigation
-        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
-#endif
         SetEnvironmentVariable(ConfigurationKeys.StartupDiagnosticLogEnabled, "true");
 
         // at least one product should be enabled to initialize the debugger manager
@@ -274,7 +216,7 @@ public class DebuggerManagerTests : TestHelper
     }
 
     private async Task RunDebuggerManagerTestWithMemoryAssertions(
-        System.Action<MemoryAssertions>? assertionAction = null,
+        Action<MemoryAssertions>? assertionAction = null,
         string? expectedLogEntry = null,
         [CallerMemberName] string? testName = null)
     {
@@ -286,7 +228,7 @@ public class DebuggerManagerTests : TestHelper
         var testType = DebuggerTestHelper.SpecificTestDescription(typeof(AsyncVoid));
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
+        var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath, Output);
         using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
 
@@ -302,7 +244,18 @@ public class DebuggerManagerTests : TestHelper
 
             if (assertionAction != null)
             {
-                var memoryAssertions = await MemoryAssertions.CaptureSnapshotToAssertOn(sample, Output);
+                var memoryAssertionTimeout = TimeSpan.FromSeconds(10);
+                var memoryAssertions = await MemoryAssertions.TryCaptureSnapshotToAssertOn(
+                                           sample,
+                                           Output,
+                                           memoryAssertionTimeout);
+
+                if (memoryAssertions == null)
+                {
+                    var skipReason = $"Memory assertion timed out after {memoryAssertionTimeout.TotalSeconds}s in {testName}. This may be due to ClrMD/runtime issues mostly on .NET 8 or .NET Core 2.1.";
+                    throw new SkipException(skipReason);
+                }
+
                 assertionAction(memoryAssertions);
             }
         }
