@@ -701,6 +701,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Extract data from the Activity
                     var activity = Activity.ActivityListener.GetCurrentActivity();
+#pragma warning disable DDDUCK001 // Checking IDuckType for null
                     if (activity is not null)
                     {
                         foreach (var activityTag in activity.Tags)
@@ -713,6 +714,7 @@ namespace Datadog.Trace.DiagnosticListeners
                             scope.Span.SetTag(activityBag.Key, activityBag.Value);
                         }
                     }
+#pragma warning restore DDDUCK001 // Checking IDuckType for null
                 }
                 catch (Exception ex)
                 {

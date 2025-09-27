@@ -66,7 +66,7 @@ public class LogFactoryBuildLoggerConfiguration
         }
 
         // first check to see if the configuration is null
-        if (logFactoryProxy is not null && logFactoryProxy.ConfigurationField is null)
+        if (logFactoryProxy?.Instance is not null && logFactoryProxy.ConfigurationField is null)
         {
             // with 5.3 a change was made to call _config?.BuildLoggingConfiguration instead of static methods
             // if a user doesn't have a configuration for NLog setup the BuildLoggingConfiguration won't be called

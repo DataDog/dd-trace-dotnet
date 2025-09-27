@@ -93,6 +93,7 @@ namespace Datadog.Trace.Activity.Handlers
         {
             if (span is not null && activity is IW3CActivity w3cActivity)
             {
+#pragma warning disable DDDUCK001 // Checking IDuckType for null
                 if ((activity.Parent is null || activity.Parent.StartTimeUtc < span.StartTime.UtcDateTime)
                     && w3cActivity.SpanId is not null
                     && w3cActivity.TraceId is not null)
@@ -113,6 +114,7 @@ namespace Datadog.Trace.Activity.Handlers
                     w3cActivity.RawId = null;
                     w3cActivity.RawParentId = null;
                 }
+#pragma warning restore DDDUCK001 // Checking IDuckType for null
             }
         }
     }

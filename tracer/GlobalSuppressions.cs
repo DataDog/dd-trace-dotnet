@@ -16,3 +16,31 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1413:UseTrailingCommasInMultiLineInitializers", Justification = "Reviewed.")]
 [assembly: SuppressMessage("StyleCop.CSharp.SpecialRules", "SA0001:XmlCommentAnalysisDisabled", Justification = "Documentation is not generated in the CI.")]
 [assembly: SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1129:Do not use default value type constructor", Justification = "Reviewed.")]
+
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "CodeQuality",
+    "DDDUCK001:Checking IDuckType for null",
+    Justification = "The null checks here are correct",
+    Scope = "type",
+    Target = "Datadog.Trace.Activity.OtlpHelpers")]
+
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "CodeQuality",
+    "DDDUCK001:Checking IDuckType for null",
+    Justification = "The null checks here are correct",
+    Scope = "namespaceanddescendants",
+    Target = "Datadog.Trace.Activity")]
+
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "CodeQuality",
+    "DDDUCK001:Checking IDuckType for null",
+    Justification = "The null checks here are correct",
+    Scope = "namespaceanddescendants",
+    Target = "~N:Datadog.Trace.Activity.Handlers")]
+
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "CodeQuality",
+    "DDDUCK001:Checking IDuckType for null",
+    Justification = "The null checks here are correct",
+    Scope = "namespaceanddescendants",
+    Target = "~N:Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing")]
