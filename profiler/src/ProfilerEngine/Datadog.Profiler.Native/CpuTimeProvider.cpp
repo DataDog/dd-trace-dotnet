@@ -13,9 +13,8 @@
 
 std::vector<SampleValueType> CpuTimeProvider::SampleTypeDefinitions(
 {
-    {"cpu", "nanoseconds"},
-    {"cpu-samples", "count"}
-}
+    {"cpu", "nanoseconds", -1},
+    {"cpu-samples", "count", -1}}
 );
 
 CpuTimeProvider::CpuTimeProvider(
@@ -26,4 +25,5 @@ CpuTimeProvider::CpuTimeProvider(
     :
     CollectorBase<RawCpuSample>("CpuTimeProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource)
 {
+    _index = SampleTypeDefinitions[0].Index;
 }

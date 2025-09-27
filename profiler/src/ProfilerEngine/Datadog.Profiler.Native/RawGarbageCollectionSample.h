@@ -14,7 +14,16 @@
 class RawGarbageCollectionSample : public GCBaseRawSample
 {
 public:
-    RawGarbageCollectionSample() = default;
+    RawGarbageCollectionSample(int32_t index)
+        :
+        GCBaseRawSample(index),
+        Reason(GCReason::Empty),
+        Type(GCType::BackgroundGC),
+        IsCompacting(false),
+        PauseDuration(0ns),
+        TotalDuration(0ns)
+    {
+    }
 
     RawGarbageCollectionSample(RawGarbageCollectionSample&& other) noexcept
         :

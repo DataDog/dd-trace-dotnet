@@ -11,7 +11,28 @@
 class RawNetworkSample : public RawSample
 {
 public:
-    RawNetworkSample() = default;
+    RawNetworkSample(int32_t index)
+        :
+        RawSample(index),
+        Url(),
+        StartTimestamp(0ns),
+        StatusCode(0),
+        Error(),
+        EndThreadId(),
+        EndThreadName(),
+        RedirectUrl(),
+        HasBeenRedirected(false),
+        DnsWait(0ns),
+        DnsDuration(0ns),
+        DnsSuccess(false),
+        HandshakeWait(0ns),
+        HandshakeDuration(0ns),
+        HandshakeError(),
+        SocketConnectDuration(0ns),
+        RequestDuration(0ns),
+        ResponseDuration(0ns)
+    {
+    };
 
     RawNetworkSample(RawNetworkSample&& other) noexcept
         :

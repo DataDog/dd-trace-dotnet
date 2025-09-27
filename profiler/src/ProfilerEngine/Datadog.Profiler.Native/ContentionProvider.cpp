@@ -26,8 +26,8 @@ std::vector<uintptr_t> ContentionProvider::_emptyStack;
 
 std::vector<SampleValueType> ContentionProvider::SampleTypeDefinitions(
     {
-        {"lock-count", "count"},
-        {"lock-time", "nanoseconds"}
+        {"lock-count", "count", -1},
+        {"lock-time", "nanoseconds", -1}
     });
 
 ContentionProvider::ContentionProvider(
@@ -51,6 +51,7 @@ ContentionProvider::ContentionProvider(
     _callstackProvider{std::move(callstackProvider)},
     _metricsRegistry{metricsRegistry}
 {
+    _index = SampleTypeDefinitions[0].Index;
     _lockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_lock_contentions");
     _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
     _sampledLockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_lock_contentions");
@@ -188,7 +189,7 @@ void ContentionProvider::AddContentionSample(
         }
     }
 
-    RawContentionSample rawSample;
+    RawContentionSample rawSample(_index);
 
     // Synchronous case where the current thread is the contended thread
     // (i.e. receiving the contention events directly from ICorProfilerCallback)

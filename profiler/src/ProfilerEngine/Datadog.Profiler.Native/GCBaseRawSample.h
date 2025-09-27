@@ -9,7 +9,14 @@
 class GCBaseRawSample : public RawSample
 {
 public:
-    GCBaseRawSample() = default;
+    GCBaseRawSample(int32_t index)
+    :
+        RawSample(index),
+        Number(0),
+        Generation(0),
+        Duration(0ns)
+    {
+    }
 
     GCBaseRawSample(GCBaseRawSample&& other) noexcept
         :

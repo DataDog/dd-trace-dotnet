@@ -12,13 +12,16 @@ SampleValueTypeProvider::SampleValueTypeProvider()
     _sampleTypeDefinitions.reserve(16);
 }
 
-std::vector<SampleValueTypeProvider::Offset> SampleValueTypeProvider::GetOrRegister(std::vector<SampleValueType> const& valueTypes)
+std::vector<SampleValueTypeProvider::Offset> SampleValueTypeProvider::GetOrRegister(std::vector<SampleValueType>& valueTypes)
 {
     std::vector<Offset> offsets;
     offsets.reserve(valueTypes.size());
 
-    for (auto const& valueType : valueTypes)
+    for (auto& valueType : valueTypes)
     {
+        // set the same index for all
+        valueType.Index = _nextIndex;
+
         size_t idx = GetOffset(valueType);
         if (idx == -1)
         {
@@ -27,6 +30,10 @@ std::vector<SampleValueTypeProvider::Offset> SampleValueTypeProvider::GetOrRegis
         }
         offsets.push_back(idx);
     }
+
+    // the next set of SampleValueType will have a different index
+    _nextIndex++;
+
     return offsets;
 }
 

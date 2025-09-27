@@ -20,6 +20,13 @@ public:
     ThreadEventKind Kind;
 
 public:
+    RawThreadLifetimeSample(int32_t index, ThreadEventKind kind)
+        :
+        RawSample(index),
+        Kind(kind)
+    {
+    }
+
     // Inherited via RawSample
     void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffset) const override;
 

@@ -10,7 +10,11 @@
 class RawStopTheWorldSample : public GCBaseRawSample
 {
 public:
-    RawStopTheWorldSample() = default;
+    RawStopTheWorldSample(int32_t index)
+        :
+        GCBaseRawSample(index)
+    {
+    }
 
     RawStopTheWorldSample(RawStopTheWorldSample&& other) = default;
     RawStopTheWorldSample& operator=(RawStopTheWorldSample&& other) noexcept = default;

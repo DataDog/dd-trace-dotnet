@@ -13,7 +13,7 @@
 
 std::vector<SampleValueType> NetworkProvider::SampleTypeDefinitions(
 {
-    {"request-time", "nanoseconds"}
+    {"request-time", "nanoseconds", -1}
 });
 
 
@@ -38,6 +38,8 @@ NetworkProvider::NetworkProvider(
     _callstackProvider{ std::move(callstackProvider) },
     _metricsRegistry{metricsRegistry}
 {
+    _index = SampleTypeDefinitions[0].Index;
+
     // all other durations in the code are in nanoseconds but the config is in milliseconds
     _requestDurationThreshold = std::chrono::duration_cast<std::chrono::nanoseconds>(pConfiguration->GetHttpRequestDurationThreshold());
 
@@ -153,7 +155,7 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
         //       e.g. requests with specific status codes, min duration per phase, dynamic such as for exceptions, etc.
     }
 
-    RawNetworkSample rawSample;
+    RawNetworkSample rawSample(_index);
     FillRawSample(rawSample, requestInfo->second, timestamp);
     _requestsCountMetric->Incr();
 

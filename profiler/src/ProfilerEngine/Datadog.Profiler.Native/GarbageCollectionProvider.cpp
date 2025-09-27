@@ -15,6 +15,8 @@ GarbageCollectionProvider::GarbageCollectionProvider(
     :
     CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
 {
+    _index = TimelineSampleType::Definitions[0].Index;
+
     _gen0CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen0");
     _gen1CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen1");
     _gen2CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen2");
@@ -96,7 +98,7 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     _lohSize = lohSize;
     _pohSize = pohSize;
 
-    RawGarbageCollectionSample rawSample;
+    RawGarbageCollectionSample rawSample(_index);
     rawSample.Timestamp = std::chrono::nanoseconds(endTimestamp);
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;

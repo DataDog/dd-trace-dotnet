@@ -12,4 +12,5 @@ public:
 
 public:
     virtual void Add(TRawSample&& rawSample) = 0;
+    virtual int32_t GetIndex() const = 0;
 };

@@ -16,8 +16,8 @@
 
 std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
 {
-    {"inuse-objects", "count"},
-    {"inuse-space", "bytes"}
+    {"inuse-objects", "count", -1},
+    {"inuse-space", "bytes", -1}
 });
 
 const uint32_t MAX_LIVE_OBJECTS = 1024;
@@ -35,6 +35,7 @@ LiveObjectsProvider::LiveObjectsProvider(
     _rawSampleTransformer{rawSampleTransformer},
     _valueOffsets{valueTypeProvider.GetOrRegister(LiveObjectsProvider::SampleTypeDefinitions)}
 {
+    _index = LiveObjectsProvider::SampleTypeDefinitions[0].Index;
 }
 
 const char* LiveObjectsProvider::GetName()
@@ -160,8 +161,10 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
         auto handle = CreateWeakHandle(rawSample.Address);
         if (handle != nullptr)
         {
+            auto newSample = _rawSampleTransformer->Transform(rawSample, _valueOffsets);
+            newSample->Index = _index; // override the index of the one given by the AllocationProvider in rawSample
             LiveObjectInfo info(
-                _rawSampleTransformer->Transform(rawSample, _valueOffsets),
+                newSample,
                 rawSample.Address,
                 rawSample.Timestamp);
             info.SetHandle(handle);

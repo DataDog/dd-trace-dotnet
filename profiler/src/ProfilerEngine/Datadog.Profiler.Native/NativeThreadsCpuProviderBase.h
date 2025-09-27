@@ -30,6 +30,8 @@ private:
     virtual std::vector<std::shared_ptr<IThreadInfo>> const& GetThreads() = 0;
     virtual Labels GetLabels() = 0;
 
+private:
+    int32_t _index = -1;
     RawSampleTransformer* _sampleTransformer;
     std::chrono::milliseconds _previousTotalCpuTime;
     std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
