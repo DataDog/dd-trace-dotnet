@@ -187,6 +187,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             capabilities[15].Should().BeTrue(); // APM_TRACING_CUSTOM_TAGS
             capabilities[19].Should().BeTrue(); // APM_TRACING_TRACING_ENABLED
             capabilities[29].Should().BeTrue(); // APM_TRACING_SAMPLE_RULES
+            capabilities[45].Should().BeTrue(); // APM_TRACING_MULTICONFIG
 
             request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
                .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
