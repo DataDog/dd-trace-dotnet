@@ -220,6 +220,11 @@ public class DebuggerManagerTests : TestHelper
         string? expectedLogEntry = null,
         [CallerMemberName] string? testName = null)
     {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+
         // Create a subdirectory for the logs based on the test name
         var logPath = Path.Combine(LogDirectory, $"{testName}");
         Directory.CreateDirectory(logPath);

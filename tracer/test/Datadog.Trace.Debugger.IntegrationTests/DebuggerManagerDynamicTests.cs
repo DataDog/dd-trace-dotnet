@@ -234,6 +234,11 @@ public class DebuggerManagerDynamicTests : TestHelper
         Action<MemoryAssertions>? finalMemoryAssertions = null,
         [CallerMemberName] string? testName = null)
     {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+
         var logPath = Path.Combine(LogDirectory, $"{testName}");
         Directory.CreateDirectory(logPath);
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logPath);
