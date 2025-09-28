@@ -64,6 +64,7 @@
       runtime-id: Guid_1,
       span.kind: internal,
       stage: prod,
+      version: 1.0.0,
       _dd.base_service: sample
     },
     Metrics: {

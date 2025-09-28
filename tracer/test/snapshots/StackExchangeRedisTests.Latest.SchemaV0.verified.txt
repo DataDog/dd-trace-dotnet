@@ -15,6 +15,7 @@
       redis.raw_command: APPEND ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -41,6 +42,7 @@
       redis.raw_command: APPEND StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -67,6 +69,7 @@
       redis.raw_command: BITCOUNT ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -93,6 +96,7 @@
       redis.raw_command: BITCOUNT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -119,6 +123,7 @@
       redis.raw_command: BITOP,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -145,6 +150,7 @@
       redis.raw_command: BITOP,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -171,6 +177,7 @@
       redis.raw_command: BITPOS ssetkey1,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -197,6 +204,7 @@
       redis.raw_command: BITPOS StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -229,6 +237,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: DDCUSTOM,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -261,6 +270,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: DDCUSTOM,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -293,6 +303,7 @@ StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with a
       redis.raw_command: DDCUSTOM,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -325,6 +336,7 @@ StackExchange.Redis.RedisServerException: ERR no such key
       redis.raw_command: DEBUG StackExchange.Redis.Batch.DebugObjectAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -357,6 +369,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: DEBUG StackExchange.Redis.Database.DebugObject,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -383,6 +396,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: DUMP key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -409,6 +423,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: DUMP StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -435,6 +450,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ECHO,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -461,6 +477,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: EXEC,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -487,6 +504,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: EXEC,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -513,6 +531,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: EXISTS key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -539,6 +558,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: EXISTS StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -565,6 +585,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: EXPIRE StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -591,6 +612,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: FLUSHDB,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -617,6 +639,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GEOADD StackExchange.Redis.Batch.GeoAddAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -643,6 +666,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GEOADD StackExchange.Redis.Database.GeoAdd,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -669,6 +693,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GEODIST StackExchange.Redis.Batch.GeoDistanceAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -695,6 +720,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GEODIST StackExchange.Redis.Database.GeoDistance,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -721,6 +747,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GEOHASH StackExchange.Redis.Batch.GeoHashAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -747,6 +774,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GEOHASH StackExchange.Redis.Database.GeoHash,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -773,6 +801,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GEOPOS StackExchange.Redis.Batch.GeoPositionAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -799,6 +828,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GEOPOS StackExchange.Redis.Database.GeoPosition,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -825,6 +855,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GEORADIUSBYMEMBER StackExchange.Redis.Batch.GeoRadiusAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -851,6 +882,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GEORADIUSBYMEMBER StackExchange.Redis.Database.GeoRadius,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -877,6 +909,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: GET key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -909,6 +942,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: GET listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -935,6 +969,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: GET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -961,6 +996,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: GET StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -987,6 +1023,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: GET StackExchange.Redis.INCR,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1013,6 +1050,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: GETBIT key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1039,6 +1077,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: GETBIT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1065,6 +1104,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: GETRANGE key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1091,6 +1131,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: GETRANGE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1117,6 +1158,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: GETSET key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1143,6 +1185,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: GETSET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1169,6 +1212,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HDEL StackExchange.Redis.Batch.HashDeleteAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1195,6 +1239,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HDEL StackExchange.Redis.Database.HashDelete,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1221,6 +1266,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HEXISTS StackExchange.Redis.Batch.HashExistsAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1247,6 +1293,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HEXISTS StackExchange.Redis.Database.HashExists,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1273,6 +1320,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HGET StackExchange.Redis.Database.HashGet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1299,6 +1347,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HGETALL StackExchange.Redis.Batch.HashGetAllAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1325,6 +1374,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HGETALL StackExchange.Redis.Database.HashGetAll,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1351,6 +1401,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HINCRBY StackExchange.Redis.Database.HashIncrement,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1377,6 +1428,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Batch.HashDecrementAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1403,6 +1455,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Batch.HashIncrementAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1429,6 +1482,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Database.HashDecrement,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1455,6 +1509,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HKEYS StackExchange.Redis.Batch.HashKeysAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1481,6 +1536,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HKEYS StackExchange.Redis.Database.HashKeys,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1507,6 +1563,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HLEN StackExchange.Redis.Batch.HashLengthAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1533,6 +1590,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HLEN StackExchange.Redis.Database.HashLength,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1559,6 +1617,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HMSET StackExchange.Redis.Batch.HashSetAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1585,6 +1644,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HMSET StackExchange.Redis.Database.HashSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1611,6 +1671,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HVALS StackExchange.Redis.Batch.HashValuesAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1637,6 +1698,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       redis.raw_command: HVALS StackExchange.Redis.Database.HashValues,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1669,6 +1731,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       redis.raw_command: INCR key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1695,6 +1758,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       redis.raw_command: INCR StackExchange.Redis.INCR,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1721,6 +1785,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       redis.raw_command: INCRBYFLOAT key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1747,6 +1812,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       redis.raw_command: INCRBYFLOAT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1779,6 +1845,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: INCRBYFLOAT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1805,6 +1872,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: INCRBYFLOAT StackExchange.Redis.INCR,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1831,6 +1899,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LINDEX listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1857,6 +1926,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LINDEX StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1883,6 +1953,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LINSERT listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1909,6 +1980,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LINSERT listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1935,6 +2007,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LINSERT StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1961,6 +2034,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LINSERT StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -1987,6 +2061,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LLEN listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2013,6 +2088,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LLEN StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2039,6 +2115,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LPOP listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2065,6 +2142,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LPOP StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2091,6 +2169,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LPUSH listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2117,6 +2196,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LPUSH StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2143,6 +2223,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LRANGE listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2169,6 +2250,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LRANGE StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2195,6 +2277,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LREM listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2221,6 +2304,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LREM StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2247,6 +2331,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LSET listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2273,6 +2358,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LSET StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2299,6 +2385,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LTRIM listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2325,6 +2412,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: LTRIM StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2357,6 +2445,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: MIGRATE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2389,6 +2478,7 @@ StackExchange.Redis.RedisServerException: ERR source and destination objects are
       redis.raw_command: MOVE key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2421,6 +2511,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: MOVE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2447,6 +2538,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PERSIST key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2473,6 +2565,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PERSIST StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2499,6 +2592,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PEXPIRE key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2525,6 +2619,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PEXPIRE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2551,6 +2646,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PFADD StackExchange.Redis.Batch.HyperLogLogAddAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2577,6 +2673,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PFADD StackExchange.Redis.Database.HyperLogLog,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2603,6 +2700,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PFCOUNT StackExchange.Redis.Batch.HyperLogLogLengthAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2629,6 +2727,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PFCOUNT StackExchange.Redis.Database.HyperLogLog,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2655,6 +2754,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PFMERGE StackExchange.Redis.Batch.HyperLogLogMergeAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2681,6 +2781,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PFMERGE StackExchange.Redis.Database.HyperLogLog2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2707,6 +2808,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PING,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2732,6 +2834,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PING,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2757,6 +2860,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PING,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2782,6 +2886,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PING,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2807,6 +2912,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PING,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2832,6 +2938,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PTTL key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2858,6 +2965,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PTTL StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2884,6 +2992,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PTTL+GET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2910,6 +3019,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PUBLISH channel,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2935,6 +3045,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: PUBLISH value,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2960,6 +3071,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: RANDOMKEY,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -2986,6 +3098,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: RANDOMKEY,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3018,6 +3131,7 @@ StackExchange.Redis.RedisServerException: ERR no such key
       redis.raw_command: RENAME key1,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3050,6 +3164,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: RENAME StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3082,6 +3197,7 @@ StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum a
       redis.raw_command: RESTORE key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3114,6 +3230,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: RESTORE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3140,6 +3257,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: RPOP listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3166,6 +3284,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: RPOP StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3192,6 +3311,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: RPOPLPUSH listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3218,6 +3338,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: RPOPLPUSH StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3244,6 +3365,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: RPUSH listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3270,6 +3392,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: RPUSH StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3296,6 +3419,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SADD setkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3322,6 +3446,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SADD StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3348,6 +3473,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SCARD setkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3374,6 +3500,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SCARD StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3400,6 +3527,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SET key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3426,6 +3554,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SET listkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3452,6 +3581,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3478,6 +3608,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SET StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3504,6 +3635,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SET StackExchange.Redis.INCR,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3530,6 +3662,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SETBIT key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3556,6 +3689,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SETBIT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3582,6 +3716,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SETRANGE key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3608,6 +3743,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SETRANGE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3634,6 +3770,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SISMEMBER setkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3660,6 +3797,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SISMEMBER StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3686,6 +3824,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SLOWLOG,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3712,6 +3851,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SMEMBERS setkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3738,6 +3878,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SMEMBERS StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3764,6 +3905,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SMOVE setkey1,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3790,6 +3932,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SMOVE StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3816,6 +3959,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SORT setkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3842,6 +3986,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SORT setkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3868,6 +4013,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SORT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3894,6 +4040,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SORT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3920,6 +4067,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SPOP setkey1,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3946,6 +4094,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SPOP StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3972,6 +4121,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SRANDMEMBER setkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -3998,6 +4148,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SRANDMEMBER setkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4024,6 +4175,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SRANDMEMBER StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4050,6 +4202,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SRANDMEMBER StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4076,6 +4229,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SREM setkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4102,6 +4256,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SREM StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4128,6 +4283,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: STRLEN key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4154,6 +4310,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: STRLEN StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4180,6 +4337,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SUNION setkey1,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4206,6 +4364,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SUNION StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4232,6 +4391,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SUNIONSTORE setkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4258,6 +4418,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: SUNIONSTORE StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4284,6 +4445,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: TIME,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4310,6 +4472,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: TYPE key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4336,6 +4499,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: TYPE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4362,6 +4526,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: UNLINK key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4388,6 +4553,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: UNLINK StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4414,6 +4580,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: UNLINK StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4440,6 +4607,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZADD ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4466,6 +4634,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZADD StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4492,6 +4661,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZCARD ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4518,6 +4688,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZCARD StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4544,6 +4715,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZINCRBY ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4570,6 +4742,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZINCRBY ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4596,6 +4769,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZINCRBY StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4622,6 +4796,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZINCRBY StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4648,6 +4823,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZLEXCOUNT ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4674,6 +4850,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZLEXCOUNT StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4700,6 +4877,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANGE ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4726,6 +4904,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANGE ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4752,6 +4931,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANGE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4778,6 +4958,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANGE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4804,6 +4985,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANGEBYLEX ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4830,6 +5012,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANGEBYLEX StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4856,6 +5039,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANGEBYSCORE ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4882,6 +5066,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANGEBYSCORE ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4908,6 +5093,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4934,6 +5120,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4960,6 +5147,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANK ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -4986,6 +5174,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZRANK StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5012,6 +5201,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZREM ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5038,6 +5228,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZREM StackExchange.Redis.Batch.GeoRemoveAsync,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5064,6 +5255,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZREM StackExchange.Redis.Database.GeoRemove,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5090,6 +5282,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZREM StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5116,6 +5309,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZREMRANGEBYLEX ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5142,6 +5336,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZREMRANGEBYLEX StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5168,6 +5363,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZREMRANGEBYRANK ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5194,6 +5390,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZREMRANGEBYRANK StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5220,6 +5417,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZREMRANGEBYSCORE ssetkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5246,6 +5444,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZREMRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5272,6 +5471,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZSCORE ssestkey,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5298,6 +5498,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5324,6 +5525,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZUNIONSTORE ssetkey1,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {
@@ -5350,6 +5552,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       redis.raw_command: ZUNIONSTORE StackExchange.Redis.Database.SortedSet2,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.StackExchange.Redis
     },
     Metrics: {

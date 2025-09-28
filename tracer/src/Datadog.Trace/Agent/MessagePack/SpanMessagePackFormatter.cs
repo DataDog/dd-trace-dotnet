@@ -576,21 +576,17 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
 
-            // add "version" tags to all spans whose service name is the default service name
-            var serviceNameEqualsDefault = string.Equals(span.Context.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase);
-            if (serviceNameEqualsDefault)
+            // add "version" tags to all spans
+            var versionRawBytes = MessagePackStringCache.GetVersionBytes(model.TraceChunk.ServiceVersion);
+            if (versionRawBytes is not null)
             {
-                var versionRawBytes = MessagePackStringCache.GetVersionBytes(model.TraceChunk.ServiceVersion);
-
-                if (versionRawBytes is not null)
-                {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, versionRawBytes);
-                }
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, versionRawBytes);
             }
 
-            // add _dd.base_service tag to spans where the service name has been overrideen
+            // add _dd.base_service tag to spans where the service name has been overriden
+            var serviceNameEqualsDefault = string.Equals(span.Context.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase);
             if (!serviceNameEqualsDefault && !string.IsNullOrEmpty(model.TraceChunk.DefaultServiceName))
             {
                 var serviceNameRawBytes = MessagePackStringCache.GetServiceBytes(model.TraceChunk.DefaultServiceName);

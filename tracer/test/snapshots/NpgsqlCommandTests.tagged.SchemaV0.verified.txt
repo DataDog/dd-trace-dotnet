@@ -16,6 +16,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -40,6 +41,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -64,6 +66,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -88,6 +91,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -112,6 +116,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -136,6 +141,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -160,6 +166,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -184,6 +191,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -208,6 +216,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -232,6 +241,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -256,6 +266,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -280,6 +291,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -304,6 +316,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -328,6 +341,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -352,6 +366,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -376,6 +391,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -400,6 +416,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -424,6 +441,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -448,6 +466,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -472,6 +491,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -496,6 +516,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -520,6 +541,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -544,6 +566,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -568,6 +591,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -592,6 +616,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -616,6 +641,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -640,6 +666,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -664,6 +691,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -688,6 +716,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -712,6 +741,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -736,6 +766,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -760,6 +791,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -784,6 +816,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -808,6 +841,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -832,6 +866,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -856,6 +891,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -880,6 +916,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -904,6 +941,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -928,6 +966,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -952,6 +991,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -976,6 +1016,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1000,6 +1041,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1024,6 +1066,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1048,6 +1091,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1072,6 +1116,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1096,6 +1141,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1120,6 +1166,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1144,6 +1191,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1168,6 +1216,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1192,6 +1241,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1216,6 +1266,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1240,6 +1291,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1264,6 +1316,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1288,6 +1341,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1312,6 +1366,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1336,6 +1391,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1360,6 +1416,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1384,6 +1441,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1408,6 +1466,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1432,6 +1491,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1456,6 +1516,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1480,6 +1541,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1504,6 +1566,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1528,6 +1591,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1552,6 +1616,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1576,6 +1641,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1600,6 +1666,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1624,6 +1691,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1648,6 +1716,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1672,6 +1741,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1696,6 +1766,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1720,6 +1791,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1744,6 +1816,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1768,6 +1841,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1792,6 +1866,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1816,6 +1891,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1840,6 +1916,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1864,6 +1941,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1888,6 +1966,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1912,6 +1991,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1936,6 +2016,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1960,6 +2041,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -1984,6 +2066,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2008,6 +2091,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2032,6 +2116,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2056,6 +2141,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2080,6 +2166,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2104,6 +2191,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2128,6 +2216,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2152,6 +2241,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2176,6 +2266,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2200,6 +2291,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2224,6 +2316,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2248,6 +2341,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2272,6 +2366,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2296,6 +2391,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2320,6 +2416,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2344,6 +2441,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2368,6 +2466,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2392,6 +2491,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2416,6 +2516,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2440,6 +2541,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2464,6 +2566,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2488,6 +2591,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2512,6 +2616,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2536,6 +2641,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2560,6 +2666,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2584,6 +2691,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2608,6 +2716,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2632,6 +2741,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2656,6 +2766,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2680,6 +2791,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2704,6 +2816,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2728,6 +2841,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2752,6 +2866,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2776,6 +2891,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2800,6 +2916,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2824,6 +2941,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2848,6 +2966,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2872,6 +2991,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2896,6 +3016,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2920,6 +3041,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2944,6 +3066,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2968,6 +3091,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -2992,6 +3116,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3016,6 +3141,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3040,6 +3166,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3064,6 +3191,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3088,6 +3216,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3112,6 +3241,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3136,6 +3266,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3160,6 +3291,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3184,6 +3316,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3208,6 +3341,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3232,6 +3366,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3256,6 +3391,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3280,6 +3416,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3304,6 +3441,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3328,6 +3466,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3352,6 +3491,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3376,6 +3516,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3400,6 +3541,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3424,6 +3566,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3448,6 +3591,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3472,6 +3616,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3496,6 +3641,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },
@@ -3520,6 +3666,7 @@
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true
     },

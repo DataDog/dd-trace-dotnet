@@ -14,6 +14,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -44,6 +45,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       error.type: Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -68,6 +70,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -92,6 +95,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -116,6 +120,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -140,6 +145,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -164,6 +170,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -188,6 +195,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -212,6 +220,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -236,6 +245,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -260,6 +270,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
@@ -285,6 +296,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      version: 1.0.0,
       _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
