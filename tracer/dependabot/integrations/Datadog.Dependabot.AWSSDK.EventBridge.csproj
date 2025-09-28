@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.4.1 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.4.1" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/4.0.4.3 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.4.3" />
   </ItemGroup>
 
 </Project>
