@@ -378,25 +378,23 @@ namespace Datadog.Trace.ClrProfiler
             {
                 if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
                 {
-                    Log.Debug("Initializing OTel Metrics Exporter.");
                     if (Tracer.Instance.Settings.OpenTelemetryMeterNames.Length > 0)
                     {
+                        Log.Debug("Initializing OTel Metrics Exporter.");
                         OTelMetrics.OtlpMetricsExporter.Initialize();
-                    }
-                    else
-                    {
-                        Log.Debug("No meters were found for DD_METRICS_OTEL_METER_NAMES, OTel Metrics Exporter won't be initialized.");
+                        Log.Debug("Initializing OTel Metrics Reader.");
+                        OTelMetrics.MetricReader.Initialize();
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error initializing OTel Metrics Exporter");
+                Log.Error(ex, "Error initializing OTel Metrics Reader");
             }
 #else
             if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
             {
-                Log.Information("Unable to initialize OTel Metrics collection, this is only available starting with .NET 6.0..");
+                Log.Information("Unable to initialize OTel Metrics collection, this is only available starting with .NET 6.0.");
             }
 #endif
 
@@ -498,26 +496,28 @@ namespace Datadog.Trace.ClrProfiler
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
             var manager = DebuggerManager.Instance;
-            if (manager.DebuggerSettings.CodeOriginForSpansEnabled
-                || manager.DebuggerSettings.DynamicInstrumentationEnabled
-                || manager.ExceptionReplaySettings.Enabled)
+            var debuggerSettings = manager.DebuggerSettings;
+
+            if (!debuggerSettings.DynamicInstrumentationEnabled)
             {
-                _ = Task.Run(
-                    async () =>
-                    {
-                        try
-                        {
-                            await DebuggerManager.Instance.UpdateConfiguration(tracerSettings).ConfigureAwait(false);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error initializing debugger");
-                        }
-                    });
+                // we need this line for tests
+                Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
+            }
+
+            if (!debuggerSettings.DynamicInstrumentationEnabled
+             && !debuggerSettings.CodeOriginForSpansEnabled
+             && !manager.ExceptionReplaySettings.Enabled)
+            {
+                Log.Debug("Debugger products are not enabled");
             }
             else
             {
-                Log.Information($"Dynamic Instrumentation is disabled. To enable it, please set {Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled} environment variable to 'true'.");
+                _ = manager.UpdateConfiguration(tracerSettings)
+                           .ContinueWith(
+                                t => Log.Error(t?.Exception, "Error initializing debugger"),
+                                CancellationToken.None,
+                                TaskContinuationOptions.OnlyOnFaulted,
+                                TaskScheduler.Default);
             }
         }
 

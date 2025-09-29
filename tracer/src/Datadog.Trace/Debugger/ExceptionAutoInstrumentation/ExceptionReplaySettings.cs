@@ -5,10 +5,6 @@
 
 #nullable enable
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
@@ -26,9 +22,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-#pragma warning disable CS0612 // Type or member is obsolete
-            Enabled = config.WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingEnabled, ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(false);
-#pragma warning restore CS0612 // Type or member is obsolete
+            var erEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBoolResult();
+            Enabled = erEnabledResult.WithDefault(false);
+            CanBeEnabled = erEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
 
             CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled).AsBool(false);
 
@@ -52,6 +48,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         }
 
         public bool Enabled { get; }
+
+        public bool CanBeEnabled { get; }
 
         public int MaximumFramesToCapture { get; }
 

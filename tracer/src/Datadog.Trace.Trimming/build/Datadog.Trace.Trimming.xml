@@ -239,6 +239,10 @@
    <assembly fullname="System.Diagnostics.DiagnosticSource">
       <type fullname="System.Diagnostics.DiagnosticListener" />
       <type fullname="System.Diagnostics.DistributedContextPropagator" />
+      <type fullname="System.Diagnostics.Metrics.Instrument" />
+      <type fullname="System.Diagnostics.Metrics.MeasurementCallback`1" />
+      <type fullname="System.Diagnostics.Metrics.Meter" />
+      <type fullname="System.Diagnostics.Metrics.MeterListener" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
       <type fullname="System.Diagnostics.Process" />
@@ -1035,7 +1039,6 @@
       <type fullname="System.Threading.Monitor" />
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
-      <type fullname="System.Threading.SemaphoreFullException" />
       <type fullname="System.Threading.SemaphoreSlim" />
       <type fullname="System.Threading.SpinLock" />
       <type fullname="System.Threading.SpinWait" />
