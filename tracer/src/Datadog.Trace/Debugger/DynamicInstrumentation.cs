@@ -141,13 +141,13 @@ namespace Datadog.Trace.Debugger
                                       CancellationToken.None,
                                       TaskContinuationOptions.OnlyOnFaulted,
                                       TaskScheduler.Default);
-									  
-			_ = _logUploader.StartFlushingAsync()
-							.ContinueWith(
-                            	t => Log.Error(t?.Exception, "Error in snapshot uploader"),
-                                CancellationToken.None,
-                                TaskContinuationOptions.OnlyOnFaulted,
-                                TaskScheduler.Default);
+
+            _ = _logUploader.StartFlushingAsync()
+                            .ContinueWith(
+                                 t => Log.Error(t?.Exception, "Error in log uploader"),
+                                 CancellationToken.None,
+                                 TaskContinuationOptions.OnlyOnFaulted,
+                                 TaskScheduler.Default);
         }
 
         internal void UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
