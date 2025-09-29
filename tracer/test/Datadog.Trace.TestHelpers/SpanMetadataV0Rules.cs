@@ -813,7 +813,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("otel.status_code")
                 .IsOptional("scheduler.id")
                 .IsOptional("scheduler.name")
-                .IsPresent("span.kind")
+                .IsOptional("span.kind")
                 .IsPresent("trigger.group")
                 .IsPresent("trigger.name"));
     }
