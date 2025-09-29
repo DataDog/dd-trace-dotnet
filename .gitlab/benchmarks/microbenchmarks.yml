@@ -10,6 +10,8 @@ dd-octo-sts-setup:
         echo "Continuing execution anyway..."
       fi
       set -e
+  script:  # Required by GitLab CI
+    - exit 0
 
 stages:
   - build
