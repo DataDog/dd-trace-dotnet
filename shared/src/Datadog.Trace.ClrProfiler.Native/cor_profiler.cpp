@@ -324,7 +324,7 @@ namespace datadog::shared::nativeloader
 
         // Workload Selection
 #ifdef BUILD_WITH_WORKLOAD_SELECTION
-        if (IsSingleStepInstrumentation() && !IsRunningOnIIS())
+        if (IsSingleStepInstrumentation())
         {
           enum class InjectionStatus : uint8_t {
             ALLOW,
@@ -332,8 +332,16 @@ namespace datadog::shared::nativeloader
             UNKNOWN
           } injection_status = InjectionStatus::UNKNOWN;
 
+          const bool isIis = IsRunningOnIIS();
+          auto processName = ToString(process_name);
+          if (isIis) {
+            if (auto maybe_application_pool = GetApplicationPool()) {
+                processName = ToString(*maybe_application_pool);
+            }
+          }
+
           plcs::init();
-          plcs::set_params(plcs::StringEvaluator::PROCESS_EXE, ToString(process_name));
+          plcs::set_params(plcs::StringEvaluator::PROCESS_EXE, processName);
           plcs::set_params(plcs::StringEvaluator::RUNTIME_LANGUAGE, "dotnet");
 
           // TODO: Remove once the policy engine will be able to log the context.
@@ -344,27 +352,32 @@ namespace datadog::shared::nativeloader
               {
                   return std::nullopt;
               }
-              if (eval_result == plcs::Result::TRUE)
-              {
-                  injection_status = InjectionStatus::ALLOW;
-              }
-              else
-              {
-                  injection_status = InjectionStatus::DENY;
-              }
 
+              injection_status = (eval_result == plcs::Result::TRUE) ? InjectionStatus::ALLOW : InjectionStatus::UNKNOWN;
               return std::nullopt;
           });
 
-          const auto wls_file = GetPoliciesPath();
-          if (fs::exists(wls_file))
-          {
-            auto maybe_error = plcs::evaluate_buffer_from_file(wls_file);
-            if (maybe_error) {
-              Log::Error("CorProfiler::Initialize: An error occured while evaluating workload selection (reason: ", *maybe_error, ")");
-              return E_FAIL;
+          plcs::register_action(plcs::Action::INJECT_DENY, [&injection_status](plcs::Result eval_result, const std::vector<const char*>&, const char* desc) -> std::optional<plcs::Error> {
+            if (injection_status == InjectionStatus::DENY)
+            {
+                return std::nullopt;
             }
 
+            injection_status = (eval_result == plcs::Result::TRUE) ? InjectionStatus::DENY : InjectionStatus::UNKNOWN;
+            return std::nullopt;
+          });
+
+          auto maybe_error = plcs::evaluate_buffer_from_file(GetPoliciesPath());
+            if (maybe_error) {
+            Log::Error("CorProfiler::Initialize: An error occured while evaluating workload selection (reason: ", *maybe_error, ")");
+            return E_FAIL;
+          }
+
+          if (isIis) {
+            if (injection_status == InjectionStatus::DENY) {
+              return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+            }
+          } else {
             if (injection_status != InjectionStatus::ALLOW) {
               Log::Info("CorProfiler::Initialize: Instrumentation denied due to workload selection.");
               return CORPROF_E_PROFILER_CANCEL_ACTIVATION;

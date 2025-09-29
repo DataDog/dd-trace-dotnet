@@ -9,6 +9,8 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include <dlfcn.h>
 #endif
 
+#include <optional>
+
 #include "../../../shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 #include "../../../shared/src/native-src/pal.h"
@@ -102,6 +104,31 @@ inline bool IsSingleStepInstrumentation()
 {
     const auto isSingleStepVariable = ::shared::GetEnvironmentValue(environment::single_step_instrumentation_enabled);
     return !isSingleStepVariable.empty();
+}
+
+inline std::optional<::shared::WSTRING> GetApplicationPool()
+{
+    if (const auto& app_pool_id = ::shared::GetEnvironmentValue(environment::azure_app_services_app_pool_id); !app_pool_id.empty())
+    {
+        return app_pool_id;
+    }
+
+    // Try to infer the Application Pool from the command line. w3wp.exe (IIS Worker Process)
+    // can be started with an Application Pool by using `-ap` argument.
+    const auto [_ , argv]  = ::shared::GetCurrentProcessCommandLine();
+    auto it = std::find(argv.cbegin(), argv.cend(), L"-ap");
+    if (it == argv.cend())
+    {
+        return std::nullopt;
+    }
+
+    it = std::next(it);
+    if (it == argv.cend() || it->empty())
+    {
+        return std::nullopt;
+    }
+
+    return *it;
 }
 
 inline std::string GetCurrentOsArch(bool isRunningOnAlpine)
