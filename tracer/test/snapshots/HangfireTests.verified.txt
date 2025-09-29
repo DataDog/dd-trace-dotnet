@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -38,8 +38,7 @@
       env: integration_tests,
       error.msg: An exception occurred during performance of the job.,
       error.stack:
-Hangfire.Server.JobPerformanceException: An exception occurred during performance of the job.
----> System.InvalidOperationException: Boom from TestJob.ThrowException
+Hangfire.Server.JobPerformanceException: An exception occurred during performance of the job. ---> System.InvalidOperationException: Boom from TestJob.ThrowException
 at Samples.Hangfire.Jobs.TestJob.ThrowException(),
       error.type: Hangfire.Server.JobPerformanceException,
       job.CreatedAt: DateTimeOffset_2,
