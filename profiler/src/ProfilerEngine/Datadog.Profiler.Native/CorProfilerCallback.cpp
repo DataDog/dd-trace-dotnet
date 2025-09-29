@@ -846,7 +846,7 @@ bool CorProfilerCallback::DisposeServices()
     // Delete all services instances in reverse order of their creation
     // to avoid using a deleted service...
 
-    _services.clear();
+    //_services.clear();
 
     _pThreadsCpuManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
