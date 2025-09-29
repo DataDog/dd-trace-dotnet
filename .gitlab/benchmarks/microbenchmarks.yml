@@ -14,28 +14,39 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   #     aud: dd-octo-sts
   variables:
     AWS_REGION: "us-east-1"
-    PROVISION_FILE: "platform/ephemeral-infra/ami.yaml"
-    CLEANUP: "true"
-  # before_script:
-  #   - |
-  #     set +e
-  #     error_output=$({ dd-octo-sts token --scope DataDog/dd-trace-dotnet --policy gitlab.github-access.read-contents > "/tmp/github-token"; } 2>&1)
-  #     exit_code=$?
-  #     if [ $exit_code -ne 0 ]; then
-  #       echo "ERROR: Failed to retrieve a GitHub token with dd-octo-sts gitlab.github-access.read-contents policy."
-  #       echo "Original error: $error_output"
-  #       echo "Continuing execution anyway..."
-  #     fi
-  #     set -e
-  script:
+
     # TODO: Change to dd-trace-dotnet/micro before merging
-    - git clone --branch augusto/dd-trace-dotnet-micro-bp-ui https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    # Branch containing a provision for building the AMI
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
+
+    PROVISION_FILE: "platform/ephemeral-infra/ami.yaml"
+
+    # Where AMI creation artifacts will be stored
+    BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
+
+    # Whether to cleanup instances after building the AMI, since the AMI is 
+    # based on an instance that is created in this job
+    CLEANUP: "true"
+  before_script:
+    - |
+      set +e
+      error_output=$({ dd-octo-sts token --scope DataDog/dd-trace-dotnet --policy gitlab.github-access.read-contents > "/tmp/github-token"; } 2>&1)
+      exit_code=$?
+      if [ $exit_code -ne 0 ]; then
+        echo "ERROR: Failed to retrieve a GitHub token with dd-octo-sts gitlab.github-access.read-contents policy."
+        echo "Original error: $error_output"
+        echo "Continuing execution anyway..."
+      fi
+      set -e
+  script:
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    # TODO: Uncomment the second line, remove the first one
     - |
       if [ -z "$GITHUB_TOKEN" ]; then
         GITHUB_TOKEN=$(cat /tmp/github-token)
       fi
       echo "GITHUB_TOKEN=$GITHUB_TOKEN" > .env
-    - RESULTS_BUCKET="s3://windows-benchmarking-results/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}/${CI_JOB_ID}"
+    # - echo "GITHUB_TOKEN=$(cat /tmp/github-token)" > .env
     - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
     - |
       bp-infra launch --region "${AWS_REGION}" --os "windows" \
@@ -79,7 +90,7 @@ run-benchmarks:
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
     
-    BP_INFRA_TEST: "true"
+    BP_INFRA_TEST: "false"
   # TODO: Tune
   artifacts:
     name: "artifacts"
@@ -117,7 +128,10 @@ upload-to-bp-ui:
     paths:
       - candidate-results/
     expire_in: 3 months
+  variables:
+    # Here, we don't include BP_INFRA since we don't use BP_INFRA in this job.
+    BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
   script:
     # TODO: Change to dd-trace-dotnet/micro before merging
-    - git clone --branch augusto/dd-trace-dotnet-micro-bp-ui https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - git clone --branch $BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/upload-to-bp-ui.sh
