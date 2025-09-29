@@ -109,7 +109,7 @@ public class QuartzTests : TracingIntegrationTest
         {
             { } v when v >= new Version("4.0.0") => new("V4", 3),
 #if NETCOREAPP3_1
-            { } v when v >= new Version("3.0.0") => new("V3NETCOREAPP31.1", 2),
+            { } v when v >= new Version("3.0.0") => new("V3NETCOREAPP31", 2),
 #endif
             _ => new("V3", 2)
         };
