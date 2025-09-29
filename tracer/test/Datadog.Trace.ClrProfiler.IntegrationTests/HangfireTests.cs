@@ -31,6 +31,7 @@ public class HangfireTests : TracingIntegrationTest
 
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces()
     {
         // needed for context propagation test
