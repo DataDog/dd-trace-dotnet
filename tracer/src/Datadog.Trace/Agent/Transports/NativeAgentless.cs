@@ -313,8 +313,41 @@ internal class NativeAgentless
         [DllImport("libagent")]
         public static extern void Initialize();
 
+        [DllImport("libagent", EntryPoint = "GetMetrics")]
+        public static extern MetricsData GetMetrics();
+
         [DllImport("libagent")]
         public static extern void Stop();
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MetricsData
+        {
+            public ulong AgentSpawns;
+            public ulong TraceAgentSpawns;
+            public ulong AgentFailures;
+            public ulong TraceAgentFailures;
+            public double UptimeSeconds;
+
+            public ulong ProxyGetRequests;
+            public ulong ProxyPostRequests;
+            public ulong ProxyPutRequests;
+            public ulong ProxyDeleteRequests;
+            public ulong ProxyPatchRequests;
+            public ulong ProxyHeadRequests;
+            public ulong ProxyOptionsRequests;
+            public ulong ProxyOtherRequests;
+
+            public ulong Proxy2xxResponses;
+            public ulong Proxy3xxResponses;
+            public ulong Proxy4xxResponses;
+            public ulong Proxy5xxResponses;
+
+            public double ResponseTimeEmaAll;
+            public double ResponseTimeEma2xx;
+            public double ResponseTimeEma4xx;
+            public double ResponseTimeEma5xx;
+            public ulong ResponseTimeSampleCount;
+        }
     }
 
     // Response data structure
