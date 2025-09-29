@@ -11,7 +11,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_2,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.code_origin.type: exit
     },
     Metrics: {
       process_id: 0,
@@ -34,6 +35,7 @@
       SpanDecorationTwoTags: Run,
       SpanDecorationTwoTags2: 3,
       version: 1.0.0,
+      _dd.code_origin.type: exit,
       _dd.di.SpanDecorationTwoTags.probe_id: Guid_3,
       _dd.di.SpanDecorationTwoTags2.probe_id: Guid_3
     }

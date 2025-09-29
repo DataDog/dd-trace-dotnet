@@ -24,7 +24,7 @@ internal static class DumpHeapLive
     {
         using var cts = new CancellationTokenSource(timeout);
 
-        // Run the task in a backgroun thread, and wait for it to complete or timeout.
+        // Run the task in a background thread, and wait for it to complete or timeout.
         return await Task.Run(() => GetLiveObjectsByTypes(process, output, cts.Token), cts.Token);
     }
 
@@ -51,12 +51,18 @@ internal static class DumpHeapLive
         var rootCount = 0;
         foreach (var root in heap.EnumerateRoots())
         {
+            if (ct.IsCancellationRequested)
+            {
+                throw new OperationCanceledException();
+            }
+
             rootCount++;
             eval.Push(root.Object);
         }
 
         output?.WriteLine($"Found {rootCount} roots in the heap");
         var evalsComplete = 0;
+        var lastProgressReport = 0;
         while (eval.Count > 0)
         {
             if (ct.IsCancellationRequested)
@@ -64,9 +70,11 @@ internal static class DumpHeapLive
                 throw new OperationCanceledException();
             }
 
-            if (evalsComplete % 100 == 0)
+            // Report progress every 1000 objects to help diagnose hangs
+            if (evalsComplete - lastProgressReport >= 1000)
             {
                 output?.WriteLine($"Evaluated {evalsComplete} objects so far, {eval.Count} remaining.");
+                lastProgressReport = evalsComplete;
             }
 
             var obj = eval.Pop();
@@ -76,6 +84,7 @@ internal static class DumpHeapLive
             }
 
             considered.Add(obj);
+            evalsComplete++;
 
             var type = heap.GetObjectType(obj);
 
@@ -97,6 +106,11 @@ internal static class DumpHeapLive
             foreach (var child in heap.GetObject(obj)
                                       .EnumerateReferences(carefully: true, considerDependantHandles: true))
             {
+                if (ct.IsCancellationRequested)
+                {
+                    throw new OperationCanceledException();
+                }
+
                 if (!considered.Contains(child.Address))
                 {
                     eval.Push(child.Address);
@@ -110,16 +124,18 @@ internal static class DumpHeapLive
 
     private static void AddToStats(string typeName, Dictionary<string, (int Live, int Disposed)> objCountByType, bool? disposed)
     {
-        if (typeName != null)
+        if (typeName == null)
         {
-            if (objCountByType.TryGetValue(typeName, out var current))
-            {
-                objCountByType[typeName] = (current.Live + 1, current.Disposed + (disposed == true ? 1 : 0));
-            }
-            else
-            {
-                objCountByType[typeName] = (1, disposed == true ? 1 : 0);
-            }
+            return;
+        }
+
+        if (objCountByType.TryGetValue(typeName, out var current))
+        {
+            objCountByType[typeName] = (current.Live + 1, current.Disposed + (disposed == true ? 1 : 0));
+        }
+        else
+        {
+            objCountByType[typeName] = (1, disposed == true ? 1 : 0);
         }
     }
 }
