@@ -93,8 +93,6 @@ run-benchmarks:
 
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
-    
-    BP_INFRA_TEST: "false"
   # TODO: Tune
   artifacts:
     name: "artifacts"
