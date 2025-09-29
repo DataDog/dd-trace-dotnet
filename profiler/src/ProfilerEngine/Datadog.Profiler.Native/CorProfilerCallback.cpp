@@ -60,7 +60,6 @@
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
 #include "LibrariesInfoCache.h"
-#include "RingBuffer.h"
 #include "CpuSampleProvider.h"
 #endif
 
@@ -246,8 +245,8 @@ void CorProfilerCallback::InitializeServices()
             // So, cpuAllocated will have to be over 37 trillion to have a value that cannot be represented by a std::size_t
             std::size_t rbSize = std::ceil(nbSamplesCollectorTick * cpuAllocated * RawSampleCollectorBase<RawCpuSample>::SampleSize);
             Log::Info("RingBuffer size estimate (bytes): ", rbSize);
-            auto ringBuffer = std::make_unique<RingBuffer>(rbSize, CpuSampleProvider::SampleSize);
-            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer), _metricsRegistry);
+            _pCpuProfilerRb = std::make_unique<RingBuffer>(rbSize, CpuSampleProvider::SampleSize);
+            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), _pCpuProfilerRb.get(), _metricsRegistry);
         }
 #else // WINDOWS
         _pCpuTimeProvider = RegisterService<CpuTimeProvider>(

@@ -37,6 +37,7 @@
 #include "shared/src/native-src/string.h"
 #include "ThreadLifetimeProvider.h"
 #ifdef LINUX
+#include "RingBuffer.h"
 #include "TimerCreateCpuProfiler.h"
 #endif
 #include "IEtwEventsManager.h"
@@ -262,6 +263,7 @@ private :
     SystemCallsShield* _systemCallsShield = nullptr;
     std::unique_ptr<TimerCreateCpuProfiler> _pCpuProfiler = nullptr;
     CpuSampleProvider* _pCpuSampleProvider = nullptr;
+    std::unique_ptr<RingBuffer> _pCpuProfilerRb = nullptr;
 #endif
 
     std::vector<std::unique_ptr<IService>> _services;
