@@ -80,7 +80,13 @@ run-benchmarks:
     CLEANUP: "true"
     
     BP_INFRA_TEST: "true"
-
+  # TODO: Tune
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - platform/artifacts/
+    expire_in: 1 day
   script:
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/run-windows-benchmarks.sh
