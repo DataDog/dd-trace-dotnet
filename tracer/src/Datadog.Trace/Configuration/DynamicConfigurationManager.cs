@@ -223,8 +223,8 @@ namespace Datadog.Trace.Configuration
         {
             // Get current service/environment for filtering
             var currentSettings = Tracer.Instance.Settings;
-            var serviceName = currentSettings.ServiceName ?? "unknown";
-            var environment = currentSettings.Environment ?? "unknown";
+            var serviceName = currentSettings.ServiceName;
+            var environment = currentSettings.Environment ?? Tracer.Instance.DefaultServiceName;
 
             var mergedConfigJToken = ApmTracingConfigMerger.MergeConfigurations(
                 _activeConfigurations.Values.ToList(),

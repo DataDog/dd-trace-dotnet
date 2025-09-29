@@ -56,7 +56,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Checks if this configuration matches the current service and environment
         /// </summary>
-        public bool Matches(string serviceName, string environment)
+        public bool Matches(string? serviceName, string? environment)
         {
             if (ServiceTarget == null)
             {

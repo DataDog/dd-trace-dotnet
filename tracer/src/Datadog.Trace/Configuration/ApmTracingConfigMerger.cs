@@ -25,7 +25,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Merges multiple APM_TRACING configurations based on priority ordering and returns a JToken.
         /// </summary>
-        public static JToken MergeConfigurations(List<RemoteConfiguration> configs, string serviceName, string environment)
+        public static JToken MergeConfigurations(List<RemoteConfiguration> configs, string? serviceName, string? environment)
         {
             if (configs.Count == 0)
             {
