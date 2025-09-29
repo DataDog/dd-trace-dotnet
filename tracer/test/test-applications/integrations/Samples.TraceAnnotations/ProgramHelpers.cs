@@ -112,6 +112,19 @@ namespace Samples.TraceAnnotations
             HttpRequestMessage message = new HttpRequestMessage();
             message.Method = HttpMethod.Get;
 
+            try
+            {
+                // trigger a "standard" instrumented integration to ensure that integration telemetry is always sent,
+                // even when trace annotations are disabled
+                message.RequestUri = new Uri("http://www.google.com");
+                var httpClient = new HttpClient();
+                using var response = await httpClient.SendAsync(message);
+            }
+            catch
+            {
+                // Ignore
+            }
+
             // Delay
             await Task.Delay(500);
 

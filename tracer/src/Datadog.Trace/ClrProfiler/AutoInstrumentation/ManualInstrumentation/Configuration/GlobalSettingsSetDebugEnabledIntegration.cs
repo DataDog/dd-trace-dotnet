@@ -32,7 +32,7 @@ public class GlobalSettingsSetDebugEnabledIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(bool enabled)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_SetDebugEnabled);
-        GlobalSettings.SetDebugEnabledInternal(enabled);
+        GlobalSettings.SetDebugEnabled(enabled);
         return CallTargetState.GetDefault();
     }
 }

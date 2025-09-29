@@ -35,6 +35,7 @@ internal class TestOptimization : ITestOptimization
     private ITestOptimizationSkippableFeature? _skippableFeature;
     private ITestOptimizationImpactedTestsDetectionFeature? _impactedTestsDetectionFeature;
     private ITestOptimizationFlakyRetryFeature? _flakyRetryFeature;
+    private ITestOptimizationDynamicInstrumentationFeature? _dynamicInstrumentationFeature;
     private ITestOptimizationTestManagementFeature? _testManagementFeature;
 
     public TestOptimization(CIEnvironmentValues ciValues)
@@ -194,6 +195,20 @@ internal class TestOptimization : ITestOptimization
         private set => _flakyRetryFeature = value;
     }
 
+    public ITestOptimizationDynamicInstrumentationFeature? DynamicInstrumentationFeature
+    {
+        get
+        {
+            if (_dynamicInstrumentationFeature is null)
+            {
+                _additionalFeaturesTask?.SafeWait();
+            }
+
+            return _dynamicInstrumentationFeature;
+        }
+        private set => _dynamicInstrumentationFeature = value;
+    }
+
     public ITestOptimizationTestManagementFeature? TestManagementFeature
     {
         get
@@ -227,7 +242,7 @@ internal class TestOptimization : ITestOptimization
             getDiscoveryServiceFunc: static s => DiscoveryService.Create(
                 s.TracerSettings.Exporter,
                 tcpTimeout: TimeSpan.FromSeconds(5),
-                initialRetryDelayMs: 10,
+                initialRetryDelayMs: 100,
                 maxRetryDelayMs: 1000,
                 recheckIntervalMs: int.MaxValue),
             useLockedTracerManager: DefaultUseLockedTracerManager);
@@ -409,6 +424,7 @@ internal class TestOptimization : ITestOptimization
         _skippableFeature = null;
         _impactedTestsDetectionFeature = null;
         _flakyRetryFeature = null;
+        _dynamicInstrumentationFeature = null;
     }
 
     private bool InternalEnabled()
@@ -560,6 +576,7 @@ internal class TestOptimization : ITestOptimization
              || settings.TestsSkippingEnabled == null
              || settings.EarlyFlakeDetectionEnabled != false
              || settings.FlakyRetryEnabled == null
+             || settings.DynamicInstrumentationEnabled == null
              || settings.ImpactedTestsDetectionEnabled == null
              || settings.TestManagementEnabled == null)
             {
@@ -577,6 +594,7 @@ internal class TestOptimization : ITestOptimization
                 }
 
                 FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+                DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
                 EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, CIValues);
@@ -626,6 +644,7 @@ internal class TestOptimization : ITestOptimization
     {
         var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement);
         FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+        DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
         EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
         ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, environmentValues);

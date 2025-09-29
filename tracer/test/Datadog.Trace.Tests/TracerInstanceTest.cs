@@ -60,12 +60,6 @@ namespace Datadog.Trace.Tests
             Tracer.Instance.Should().Be(tracerTwo);
             Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
-            // We test the locked tracer cannot be replaced.
-#pragma warning disable CS0618 // Setter isn't actually obsolete, just should be internal
-            Assert.Throws<InvalidOperationException>(() => Tracer.Instance = tracerOne);
-
-            Assert.Throws<ArgumentNullException>(() => Tracer.Instance = null);
-
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new TestOptimizationTracerManagerFactory(TestOptimization.Instance.Settings, TestOptimization.Instance.TracerManagement!, false)));
         }

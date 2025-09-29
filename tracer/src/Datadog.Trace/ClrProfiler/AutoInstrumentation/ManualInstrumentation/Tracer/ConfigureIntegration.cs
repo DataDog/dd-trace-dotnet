@@ -11,6 +11,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
@@ -39,6 +41,8 @@ public class ConfigureIntegration
 
     internal static void ConfigureSettingsWithManualOverrides(Dictionary<string, object?> values, bool useLegacySettings)
     {
+        TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
+
         // Is this from calling new TracerSettings() or TracerSettings.Global?
         var isFromDefaults = values.TryGetValue(TracerSettingKeyConstants.IsFromDefaultSourcesKey, out var value) && value is true;
 
@@ -55,6 +59,6 @@ public class ConfigureIntegration
         var settings = new TracerSettings(source, new ConfigurationTelemetry(), new OverrideErrorLog());
 
         // Update the global instance
-        Trace.Tracer.ConfigureInternal(settings);
+        Trace.Tracer.Configure(settings);
     }
 }

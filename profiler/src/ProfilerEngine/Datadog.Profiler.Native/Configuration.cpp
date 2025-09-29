@@ -94,7 +94,10 @@ Configuration::Configuration()
     }
 
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, true, true);
-    _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
+    _isManagedActivationEnabled = GetEnvironmentValue(EnvironmentVariables::ManagedActivationEnabled, true, true);
+
+    // check that the env var exists (special converter) and log the resulting value
+    _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual, true);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();
@@ -720,6 +723,13 @@ bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
 
 EnablementStatus Configuration::ExtractEnablementStatus()
 {
+    // wait for the managed layer to set the activation status
+    if (_isManagedActivationEnabled)
+    {
+        return EnablementStatus::Standby;
+    }
+
+    // kill switch for local environment variables
     if (shared::EnvironmentExist(EnvironmentVariables::ProfilerEnabled))
     {
         auto isEnabled = false;
@@ -736,25 +746,14 @@ EnablementStatus Configuration::ExtractEnablementStatus()
         // It is possible that a Single Step Instrumentation deployment was done
         // and the profiler was enabled during that step. In that case, the "auto" value
         // will be set and profiler should be enabled.
-        // This should be replaced by adding "profiler" in EnvironmentVariables::SsiDeployed
-        // later that will take into account heuristics
         return !enabled.empty() && enabled == WStr("auto")
             ? EnablementStatus::Auto
             : EnablementStatus::ManuallyDisabled;
     }
 
-    auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
-    auto pos = r.find(WStr("profiler"));
-    auto ssiEnabled = (pos != shared::WSTRING::npos);
-
-    if (ssiEnabled)
-    {
-        return EnablementStatus::SsiEnabled;
-    }
-    else
-    {
-        return EnablementStatus::NotSet;
-    }
+    // Note: the initial support of adding "profiler" in EnvironmentVariables::SsiDeployed
+    // has never been implemented, so we are not checking for it here.
+    return EnablementStatus::NotSet;
 }
 
 std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
@@ -780,6 +779,16 @@ bool Configuration::ForceHttpSampling() const
 bool Configuration::IsWaitHandleProfilingEnabled() const
 {
     return _isWaitHandleProfilingEnabled;
+}
+
+bool Configuration::IsManagedActivationEnabled() const
+{
+    return _isManagedActivationEnabled;
+}
+
+void Configuration::SetEnablementStatus(EnablementStatus status)
+{
+    _enablementStatus = status;
 }
 
 

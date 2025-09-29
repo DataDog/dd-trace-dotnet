@@ -11,6 +11,13 @@ namespace Datadog.Trace.ContinuousProfiler
 {
     internal class NativeInterop
     {
+        public enum ProfilingEnabled
+        {
+            Disabled = 0,
+            Enabled = 1,
+            Auto = 2
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static IntPtr GetProfilerStatusPointer()
         {
@@ -47,6 +54,37 @@ namespace Datadog.Trace.ContinuousProfiler
             NativeMethods.FlushProfile();
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool ProfilerSetConfiguration(SharedConfig config)
+        {
+            return NativeMethods.ProfilerSetConfiguration(config);
+        }
+
+        // TODO: do the same for native tracer
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        public struct SharedConfig
+        {
+            public ProfilingEnabled ProfilingEnabled;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool TracingEnabled;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool IastEnabled;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool RaspEnabled;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool DynamicInstrumentationEnabled;
+
+            [MarshalAs(UnmanagedType.LPStr)]
+            public string RuntimeId;
+            [MarshalAs(UnmanagedType.LPStr)]
+            public string Environment;
+            [MarshalAs(UnmanagedType.LPStr)]
+            public string ServiceName;
+            [MarshalAs(UnmanagedType.LPStr)]
+            public string Version;
+        }
+
         // These methods are rewritten by the native tracer to use the correct paths
         private static class NativeMethods
         {
@@ -67,6 +105,12 @@ namespace Datadog.Trace.ContinuousProfiler
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "FlushProfile")]
             public static extern void FlushProfile();
+
+            // we need to call the same methods for native tracer and native profiler
+            [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetConfiguration")]
+            public static extern bool ProfilerSetConfiguration(SharedConfig config);
+
+            // TODO: do the same for native tracer
         }
     }
 }

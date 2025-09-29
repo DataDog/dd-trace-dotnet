@@ -6,11 +6,15 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -54,6 +58,120 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             }
 
             return size;
+        }
+
+        internal static CallTargetState CreateSenderSpan(
+            IServiceBusSender instance,
+            string operationName,
+            IEnumerable? messages = null,
+            int? messageCount = null,
+            IEnumerable<SpanLink>? spanLinks = null)
+        {
+            var entityPath = instance.EntityPath;
+            var endpoint = instance.Connection?.ServiceEndpoint;
+            var networkDestinationName = endpoint?.Host;
+            // https://learn.microsoft.com/en-us/dotnet/api/system.uri.port#remarks
+            var networkDestinationPort = endpoint?.Port is null or -1 or 5671 ?
+                                            "5671" :
+                                            endpoint.Port.ToString();
+
+            return CreateSenderSpanInternal(
+                entityPath,
+                networkDestinationName,
+                networkDestinationPort,
+                operationName,
+                messages,
+                messageCount,
+                spanLinks);
+        }
+
+        internal static CallTargetState CreateSenderSpan(
+            IMessagingClientDiagnostics clientDiagnostics,
+            string operationName,
+            IEnumerable? messages = null,
+            int? messageCount = null,
+            IEnumerable<SpanLink>? spanLinks = null)
+        {
+            var entityPath = clientDiagnostics.EntityPath;
+            var networkDestinationName = clientDiagnostics.FullyQualifiedNamespace;
+
+            return CreateSenderSpanInternal(
+                entityPath,
+                networkDestinationName,
+                null,
+                operationName,
+                messages,
+                messageCount,
+                spanLinks);
+        }
+
+        private static CallTargetState CreateSenderSpanInternal(
+            string? entityPath,
+            string? networkDestinationName,
+            string? networkDestinationPort,
+            string operationName,
+            IEnumerable? messages,
+            int? messageCount,
+            IEnumerable<SpanLink>? spanLinks)
+        {
+            var tracer = Tracer.Instance;
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+            {
+                return new CallTargetState(null);
+            }
+
+            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
+
+            tags.MessagingDestinationName = entityPath;
+            tags.MessagingOperation = operationName;
+            tags.MessagingSystem = "servicebus";
+            tags.InstrumentationName = "AzureServiceBus";
+
+            string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
+            var scope = tracer.StartActiveInternal(
+                "azure_servicebus." + operationName,
+                tags: tags,
+                serviceName: serviceName,
+                links: spanLinks);
+            var span = scope.Span;
+
+            span.Type = SpanTypes.Queue;
+            span.ResourceName = entityPath;
+
+            var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
+            string? singleMessageId = null;
+
+            if (actualMessageCount > 1)
+            {
+                span.SetTag(Tags.MessagingBatchMessageCount, actualMessageCount.ToString());
+            }
+
+            if (actualMessageCount == 1 && messages != null)
+            {
+                foreach (var message in messages)
+                {
+                    var duckTypedMessage = message?.DuckCast<IServiceBusMessage>();
+                    singleMessageId = duckTypedMessage?.MessageId;
+                    break;
+                }
+
+                if (!string.IsNullOrEmpty(singleMessageId))
+                {
+                    span.SetTag(Tags.MessagingMessageId, singleMessageId);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(networkDestinationName))
+            {
+                tags.NetworkDestinationName = networkDestinationName;
+            }
+
+            if (!string.IsNullOrEmpty(networkDestinationPort))
+            {
+                tags.NetworkDestinationPort = networkDestinationPort;
+            }
+
+            return new CallTargetState(scope);
         }
     }
 }

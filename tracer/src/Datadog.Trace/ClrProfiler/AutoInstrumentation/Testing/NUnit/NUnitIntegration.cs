@@ -236,7 +236,7 @@ internal static class NUnitIntegration
             return null;
         }
 
-        var test = suite.InternalCreateTest(testMethod.Name);
+        var test = suite.CreateTest(testMethod.Name);
         var testTags = test.GetTags();
         string? skipReason = null;
 
