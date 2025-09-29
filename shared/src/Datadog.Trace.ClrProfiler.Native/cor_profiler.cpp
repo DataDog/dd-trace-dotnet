@@ -356,7 +356,8 @@ namespace datadog::shared::nativeloader
               return std::nullopt;
           });
 
-          if (const auto wls_file = fs::path{GetDatadogProgramDataFolderPath()} / "protected" / "workload_selection.fb"; fs::exists(wls_file))
+          const auto wls_file = GetPoliciesPath();
+          if (fs::exists(wls_file))
           {
             auto maybe_error = plcs::evaluate_buffer_from_file(wls_file);
             if (maybe_error) {
@@ -368,8 +369,6 @@ namespace datadog::shared::nativeloader
               Log::Info("CorProfiler::Initialize: Instrumentation denied due to workload selection.");
               return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
-          } else {
-            Log::Warn("CorProfiler::Initialize: Missing workload selection file.");
           }
         }
 #endif
