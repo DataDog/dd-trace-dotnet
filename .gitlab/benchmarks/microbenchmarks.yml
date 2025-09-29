@@ -1,4 +1,4 @@
-dd-octo-sts-setup:
+.dd-octo-sts-setup:
   before_script:
     - |
       set +e
@@ -10,8 +10,6 @@ dd-octo-sts-setup:
         echo "Continuing execution anyway..."
       fi
       set -e
-  script:  # Required by GitLab CI
-    - exit 0
 
 stages:
   - build
@@ -24,9 +22,9 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   allow_failure: true
   when: manual
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
-  # id_tokens:
-  #   DDOCTOSTS_ID_TOKEN:
-  #     aud: dd-octo-sts
+  id_tokens:
+    DDOCTOSTS_ID_TOKEN:
+      aud: dd-octo-sts
   variables:
     AWS_REGION: "us-east-1"
 
@@ -43,7 +41,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
     # based on an instance that is created in this job
     CLEANUP: "true"
   before_script:
-    - !reference [dd-octo-sts-setup, before_script]
+    - !reference [.dd-octo-sts-setup, before_script]
   script:
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     # TODO: Uncomment the second line, remove the first one
@@ -78,6 +76,9 @@ run-benchmarks:
   timeout: 2h
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
+  id_tokens:
+    DDOCTOSTS_ID_TOKEN:
+      aud: dd-octo-sts
   when: manual
   # rules:
   #   - when: on_success
@@ -103,7 +104,7 @@ run-benchmarks:
       - platform/artifacts/
     expire_in: 1 day
   before_script:
-    - !reference [dd-octo-sts-setup, before_script]
+    - !reference [.dd-octo-sts-setup, before_script]
   script:
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/run-windows-benchmarks.sh
