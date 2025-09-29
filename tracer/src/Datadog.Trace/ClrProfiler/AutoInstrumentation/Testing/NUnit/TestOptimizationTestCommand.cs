@@ -80,6 +80,15 @@ internal class TestOptimizationTestCommand
         }
         else if (resultStatus == TestStatus.Failed && testOptimization.FlakyRetryFeature?.Enabled == true)
         {
+            // check if is the first execution and the dynamic instrumentation feature is enabled
+            if (testOptimization.DynamicInstrumentationFeature?.Enabled == true)
+            {
+                // let's wait for the instrumentation of an exception has been done
+                Common.Log.Debug("TestOptimizationTestCommand: First execution with an exception detected. Waiting for the exception instrumentation.");
+                testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).SafeWait();
+                Common.Log.Debug("TestOptimizationTestCommand: Exception instrumentation was set or timed out.");
+            }
+
             result = DoRetries(new FlakyRetryBehavior(testOptimization), context, result);
         }
         else if (testManagementProperties is { AttemptToFix: true })
