@@ -9,7 +9,7 @@
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
 
-#if defined(BUILD_WITH_WORKLOAD_SELECTION)
+#ifdef BUILD_WITH_WORKLOAD_SELECTION
   #include <dd/policies/policies.hpp>
   namespace plcs = datadog::policies;
 #endif
@@ -323,7 +323,7 @@ namespace datadog::shared::nativeloader
         }
 
         // Workload Selection
-        #if defined(BUILD_WITH_WORKLOAD_SELECTION)
+#ifdef BUILD_WITH_WORKLOAD_SELECTION
         if (IsSingleStepInstrumentation() && !IsRunningOnIIS())
         {
           enum class InjectionStatus : uint8_t {
@@ -340,7 +340,10 @@ namespace datadog::shared::nativeloader
           Log::Info("CorProfiler::Initialize: Workload Selection Context: \"process.name:", process_name, " runtime:dotnet\"");
 
           plcs::register_action(plcs::Action::INJECT_ALLOW, [&injection_status](plcs::Result eval_result, const std::vector<const char*>&, const char* desc) -> std::optional<plcs::Error> {
-              if (injection_status == InjectionStatus::ALLOW) return std::nullopt;
+              if (injection_status == InjectionStatus::ALLOW)
+              {
+                  return std::nullopt;
+              }
               if (eval_result == plcs::Result::TRUE)
               {
                   injection_status = InjectionStatus::ALLOW;
@@ -369,7 +372,7 @@ namespace datadog::shared::nativeloader
             Log::Warn("CorProfiler::Initialize: Missing workload selection file.");
           }
         }
-        #endif
+#endif
 
         // Guard rails and workload selection have all passed, so we enable (and flush) logs if necessary
         Log::EnableAutoFlush();
