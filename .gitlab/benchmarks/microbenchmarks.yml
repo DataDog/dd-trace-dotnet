@@ -1,11 +1,3 @@
-.setup:
-  script:
-    - mkdir -p ~/.aws
-    - /app/bp-infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER > ~/.aws/config || exit $?
-    - export AWS_PROFILE=ephemeral-infra-ci
-    - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
-    - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
-
 stages:
   - build
   - benchmarks
@@ -74,17 +66,23 @@ run-benchmarks:
   #   - when: on_success
   variables:
     AWS_REGION: "us-east-1"
+
+    # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
+    # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
+    # benchmarks (to be used by the ephemeral instances).
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
+
+    # Where benchmarking results will be stored
+    BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
+
+    # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
   script:
     # TODO: Change to dd-trace-dotnet/micro before merging
-    - git clone --branch augusto/dd-trace-dotnet-micro-bp-ui https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - |
-      if [ -z "$GITHUB_TOKEN" ]; then
-        GITHUB_TOKEN=$(cat /tmp/github-token)
-      fi
-      echo "GITHUB_TOKEN=$GITHUB_TOKEN" > .env
-    - CLEANUP=${CLEANUP} AWS_REGION=${AWS_REGION} GITHUB_TOKEN=${GITHUB_TOKEN} ./platform/steps/launch-instance.sh
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - ./platform/steps/run-windows-benchmarks.sh
   after_script:
+    # TODO: Ideally, should be in a script.
     - |
       if [ "$CLEANUP" == "true" ]; then
         bp-infra cleanup --provision ./platform/ephemeral-infra/instance.yaml \
@@ -97,33 +95,20 @@ run-benchmarks:
     # Temporarily commented out pending issue resolution with sending files to backend
     # - ./platform/steps/upload-to-bp-ui.sh
     
+# TODO: Remove if unnecessary
 upload-to-bp-ui:
   stage: benchmarks
   tags: ["arch:amd64"]
   timeout: 1h
-  # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks
-
-  script:
-    - git clone --branch fayssal/test-micro-delivery https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    # - ./platform/steps/launch-instance.sh
-    # - ./platform/steps/post-pr-comment.sh
-    # Temporarely commented out pending issue resolution with sending files to backend
-    - ./platform/steps/upload-to-bp-ui.sh
-
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
+  when: manual
   artifacts:
     name: "artifacts"
     when: always
     paths:
       - candidate-results/
     expire_in: 3 months
-    
-  rules:
-    - when: manual
-  variables:
-    AWS_REGION: "us-east-1"
-    CLEANUP: "false"
-    AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
-    AWS_EPHEMERAL_INFRA_PROFILE_NAME: "ephemeral-infra-ci"
-    AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
-    AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
+  script:
+    # TODO: Change to dd-trace-dotnet/micro before merging
+    - git clone --branch augusto/dd-trace-dotnet-micro-bp-ui https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - ./platform/steps/upload-to-bp-ui.sh

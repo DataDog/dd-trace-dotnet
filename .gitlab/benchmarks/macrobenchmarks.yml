@@ -500,9 +500,13 @@ profiler_cpu_timer_create-arm64:
     - ./ephemeral-infra/run-windows-benchmarks.sh
   after_script:
     - |
-      bp-infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \
-        --region "${AWS_REGION}" \
-        --bypass-stack-destroy
+      if [ "$CLEANUP" == "true" ]; then
+        bp-infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \
+          --region "${AWS_REGION}" \
+          --bypass-stack-destroy
+      else
+        echo "'CLEANUP' is set to 'false'. Will not cleanup."
+      fi
 
 baseline-win:
   extends: .benchmarks-win
