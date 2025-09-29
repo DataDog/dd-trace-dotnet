@@ -263,7 +263,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
     internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
         => InitializeHeaderTags(
-            config.WithKeys(key).AsDictionaryResult(allowOptionalMappings: true),
+            key.AsDictionaryResult(allowOptionalMappings: true),
             headerTagsNormalizationFixEnabled);
 
     private static ReadOnlyDictionary<string, string>? InitializeHeaderTags(
@@ -996,10 +996,10 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                                                .AsBool(defaultValue: true);
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var headerTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+        var headerTags = InitializeHeaderTags(config.WithKeys(ConfigurationKeys.HeaderTags), headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var grpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
+        var grpcTags = InitializeHeaderTags(config.WithKeys(ConfigurationKeys.GrpcTags), headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
 
         var customSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
@@ -1018,7 +1018,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var kafkaCreateConsumerScopeEnabled = config
                                              .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                              .AsBool(defaultValue: true);
-        var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
+        var serviceNameMappings = TracerSettings.TrimConfigKeysValues(config.WithKeys(ConfigurationKeys.ServiceNameMappings)) ?? ReadOnlyDictionary.Empty;
 
         var tracerMetricsEnabled = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
