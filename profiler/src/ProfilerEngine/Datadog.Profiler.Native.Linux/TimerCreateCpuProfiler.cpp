@@ -84,7 +84,13 @@ bool TimerCreateCpuProfiler::StartImpl()
         Instance = this;
 
         // Create and start timer for all threads.
-        _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) { RegisterThreadImpl(thread); });
+        _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) {
+            // only register threads that have an OS thread id
+            if (thread->GetOsThreadId() != 0)
+            {
+                RegisterThreadImpl(thread);
+            }
+        });
     }
 
     return registered;
