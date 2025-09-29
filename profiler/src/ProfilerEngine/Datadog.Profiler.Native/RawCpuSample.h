@@ -11,12 +11,7 @@
 class RawCpuSample : public RawSample
 {
 public:
-    RawCpuSample(int32_t index)
-        :
-        RawSample(index),
-        Duration(0ns)
-    {
-    }
+    RawCpuSample() = default;
 
     RawCpuSample(RawCpuSample&& other) noexcept
         :

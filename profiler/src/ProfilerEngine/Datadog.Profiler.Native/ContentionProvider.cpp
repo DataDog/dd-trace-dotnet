@@ -51,7 +51,6 @@ ContentionProvider::ContentionProvider(
     _callstackProvider{std::move(callstackProvider)},
     _metricsRegistry{metricsRegistry}
 {
-    _index = SampleTypeDefinitions[0].Index;
     _lockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_lock_contentions");
     _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
     _sampledLockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_lock_contentions");
@@ -189,7 +188,7 @@ void ContentionProvider::AddContentionSample(
         }
     }
 
-    RawContentionSample rawSample(_index);
+    RawContentionSample rawSample;
 
     // Synchronous case where the current thread is the contended thread
     // (i.e. receiving the contention events directly from ICorProfilerCallback)

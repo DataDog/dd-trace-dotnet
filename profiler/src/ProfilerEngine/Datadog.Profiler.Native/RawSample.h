@@ -19,7 +19,7 @@ class Sample;
 class RawSample
 {
 public:
-    RawSample(int32_t index) noexcept;
+    RawSample() noexcept;
     virtual ~RawSample() = default;
 
     RawSample(RawSample const&) = delete;
@@ -40,9 +40,4 @@ public:
 
     // array of instruction pointers (32 or 64 bit address)
     Callstack Stack;
-
-    // index corresponding to the type of the providers storing their value(s) at the sample offsets
-    // in the values array in a Sample instance
-    // (used for mapping with the profiles used internally by libdatadog)
-    int32_t Index;
 };

@@ -11,12 +11,7 @@
 class RawWallTimeSample : public RawSample
 {
 public:
-    RawWallTimeSample(int32_t index)
-        :
-        RawSample(index),
-        Duration(0ns)
-    {
-    }
+    RawWallTimeSample() = default;
 
     RawWallTimeSample(RawWallTimeSample&& other) noexcept
         :

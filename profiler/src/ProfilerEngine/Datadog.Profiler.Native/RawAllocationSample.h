@@ -9,15 +9,7 @@
 class RawAllocationSample : public RawSample
 {
 public:
-    RawAllocationSample(int32_t index)
-        :
-        RawSample(index),
-        AllocationClass(""),
-        AllocationSize(0),
-        Address(0),
-        MethodTable(0)
-    {
-    };
+    RawAllocationSample() = default;
 
     RawAllocationSample(RawAllocationSample&& other) noexcept
         :

@@ -25,5 +25,4 @@ CpuTimeProvider::CpuTimeProvider(
     :
     CollectorBase<RawCpuSample>("CpuTimeProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource)
 {
-    _index = SampleTypeDefinitions[0].Index;
 }

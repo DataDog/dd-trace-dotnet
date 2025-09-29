@@ -35,7 +35,6 @@ LiveObjectsProvider::LiveObjectsProvider(
     _rawSampleTransformer{rawSampleTransformer},
     _valueOffsets{valueTypeProvider.GetOrRegister(LiveObjectsProvider::SampleTypeDefinitions)}
 {
-    _index = LiveObjectsProvider::SampleTypeDefinitions[0].Index;
 }
 
 const char* LiveObjectsProvider::GetName()
@@ -161,10 +160,8 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
         auto handle = CreateWeakHandle(rawSample.Address);
         if (handle != nullptr)
         {
-            auto newSample = _rawSampleTransformer->Transform(rawSample, _valueOffsets);
-            newSample->Index = _index; // override the index of the one given by the AllocationProvider in rawSample
             LiveObjectInfo info(
-                newSample,
+                _rawSampleTransformer->Transform(rawSample, _valueOffsets),
                 rawSample.Address,
                 rawSample.Timestamp);
             info.SetHandle(handle);

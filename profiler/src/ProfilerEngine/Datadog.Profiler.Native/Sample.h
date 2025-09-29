@@ -44,7 +44,6 @@ class Sample final
 {
 public:
     static size_t ValuesCount;
-    int32_t Index; // index corresponding to the type of the provider (used for libdatadog)
 
 public:
     Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount);

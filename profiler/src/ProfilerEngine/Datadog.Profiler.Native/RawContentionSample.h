@@ -19,16 +19,7 @@ public:
     inline static const std::string ContentionTypeLabelName = "contention type";
 
 public:
-    RawContentionSample(int32_t index)
-        :
-        RawSample(index),
-        ContentionDuration(0ns),
-        Bucket(),
-        BlockingThreadId(0),
-        BlockingThreadName(),
-        Type(ContentionType::Unknown)
-    {
-    }
+    RawContentionSample() = default;
 
     RawContentionSample(RawContentionSample&& other) noexcept
         :

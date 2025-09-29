@@ -62,7 +62,6 @@ AllocationsProvider::AllocationsProvider(
         std::move(pool),
         memoryResource)
 {
-    _index = isFramework ? FrameworkSampleTypeDefinitions[0].Index : SampleTypeDefinitions[0].Index;
 }
 
 AllocationsProvider::AllocationsProvider(
@@ -140,7 +139,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
 
     result->SetUnixTimeUtc(GetCurrentTimestamp());
 
-    RawAllocationSample rawSample(_index);
+    RawAllocationSample rawSample;
     rawSample.Timestamp = result->GetUnixTimeUtc();
     rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
     rawSample.SpanId = result->GetSpanId();
@@ -202,7 +201,7 @@ void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
     }
 
     // create a sample from the allocation
-    RawAllocationSample rawSample(_index);
+    RawAllocationSample rawSample;
 
     // We know that we don't have any span ID nor end point details
 

@@ -24,8 +24,6 @@ void RawSampleTransformer::Transform(const RawSample& rawSample, std::shared_ptr
 {
     sample->Reset();
 
-    sample->Index = rawSample.Index;
-
     auto runtimeId = _pRuntimeIdStore->GetId(rawSample.AppDomainId);
 
     sample->SetRuntimeId(runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId));

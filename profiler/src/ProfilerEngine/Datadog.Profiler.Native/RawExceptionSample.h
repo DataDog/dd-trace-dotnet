@@ -5,13 +5,7 @@
 class RawExceptionSample : public RawSample
 {
 public:
-    RawExceptionSample(int32_t index)
-        :
-        RawSample(index),
-        ExceptionMessage(),
-        ExceptionType()
-    {
-    }
+    RawExceptionSample() = default;
 
     RawExceptionSample(RawExceptionSample&& other) noexcept
         :

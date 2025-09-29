@@ -47,8 +47,6 @@ ExceptionsProvider::ExceptionsProvider(
     _callstackProvider{std::move(callstackProvider)},
     _metricsRegistry{metricsRegistry}
 {
-    _index = SampleTypeDefinitions[0].Index;
-
     _exceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_exceptions");
     _sampledExceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_exceptions");
 }
@@ -165,7 +163,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 
     result->SetUnixTimeUtc(GetCurrentTimestamp());
 
-    RawExceptionSample rawSample(_index);
+    RawExceptionSample rawSample;
 
     rawSample.Timestamp = result->GetUnixTimeUtc();
     rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
