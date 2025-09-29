@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #if NETCOREAPP3_1_OR_GREATER
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -37,7 +38,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
     protected virtual bool UseDotnetExec => false;
 
-    public virtual async Task FlakyRetries(string packageVersion)
+    public virtual async Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
     {
         EnvironmentHelper.EnableDefaultTransport();
         var tests = new List<MockCIVisibilityTest>();
@@ -132,7 +133,103 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
             throw;
         }
 
-        await Task.CompletedTask;
+        return tests;
+    }
+
+    public virtual async Task FlakyRetriesWithExceptionReplay(string packageVersion)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.RateLimitSeconds, "0");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.UploadFlushInterval, "1000");
+
+        var tests = await FlakyRetries(packageVersion);
+
+        try
+        {
+            // AlwaysFails => 1 + 5 retries
+            var alwaysFailsTests = tests.Where(t => t.Resource == AlwaysFails).ToList();
+            alwaysFailsTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
+            CheckForEnoughNumberOfStackFrames(alwaysFailsTests);
+            alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._er"));
+            alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._eh"));
+            alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("error.debug_info_captured"));
+            alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_hash"));
+            alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_id"));
+
+            // AlwaysPasses => 1
+            var alwaysPassesTests = tests.Where(t => t.Resource == AlwaysPasses).ToList();
+            alwaysPassesTests.Should().HaveCount(1);
+            alwaysPassesTests.Should().OnlyContain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
+            alwaysPassesTests.Should().NotContain(t => t.Meta.ContainsKey("_dd.di._er"));
+            alwaysPassesTests.Should().NotContain(t => t.Meta.ContainsKey("_dd.di._eh"));
+            alwaysPassesTests.Should().NotContain(t => t.Meta.ContainsKey("error.debug_info_captured"));
+            alwaysPassesTests.Should().NotContain(t => t.Meta.ContainsKey("_dd.debug.error.exception_hash"));
+            alwaysPassesTests.Should().NotContain(t => t.Meta.ContainsKey("_dd.debug.error.exception_id"));
+
+            // TrueAtLastRetry => 1 + 5 retries
+            var trueAtLastRetryTests = tests.Where(t => t.Resource == TrueAtLastRetry).ToList();
+            trueAtLastRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
+            trueAtLastRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
+            CheckForEnoughNumberOfStackFrames(trueAtLastRetryTests);
+            trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._er"));
+            trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._eh"));
+            trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("error.debug_info_captured"));
+            trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_hash"));
+            trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_id"));
+
+            // TrueAtThirdRetry => 1 + 3 retries
+            var trueAtThirdRetryTests = tests.Where(t => t.Resource == TrueAtThirdRetry).ToList();
+            trueAtThirdRetryTests.Should().HaveCount(1 + 3);
+            trueAtThirdRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
+            trueAtThirdRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
+            CheckForEnoughNumberOfStackFrames(trueAtThirdRetryTests);
+            trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._er"));
+            trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._eh"));
+            trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("error.debug_info_captured"));
+            trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_hash"));
+            trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.debug.error.exception_id"));
+        }
+        catch
+        {
+            Output.WriteLine("Tests (in JSON):\n{0}", JsonConvert.SerializeObject(tests,  Formatting.Indented));
+            throw;
+        }
+    }
+
+    private static void CheckForEnoughNumberOfStackFrames(List<MockCIVisibilityTest> tests)
+    {
+        Skip.If(
+            tests.Any(t => NumberOfOccurrences(t.Meta["error.stack"], "\\n   at ") == 1),
+            "There are stacktraces with only 1 stackframe, these kind of exception doesn't have any debugger info because that stack frame always refers to the throw frame.");
+
+        Skip.If(
+            tests.Any(t => NumberOfOccurrences(t.Meta["error.stack"], "\\n   at ") == NumberOfOccurrences(t.Meta["error.stack"], "\\n   at Xunit.")),
+            "All stackframes in the exception contains information of the Xunit assembly only.");
+    }
+
+    private static int NumberOfOccurrences(ReadOnlySpan<char> value, ReadOnlySpan<char> pattern, bool allowOverlap = false)
+    {
+        if (pattern.IsEmpty)
+        {
+            return 0; // empty pattern has 0 occurrences
+        }
+
+        var count = 0;
+        var shift = allowOverlap ? 1 : pattern.Length;
+        while (value.Length >= pattern.Length)
+        {
+            var pos = value.IndexOf(pattern);
+            if (pos < 0)
+            {
+                break;
+            }
+
+            count++;
+            value = value.Slice(pos + shift);
+        }
+
+        return count;
     }
 }
 #endif

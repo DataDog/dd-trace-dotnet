@@ -398,6 +398,7 @@
   "DD_CIVISIBILITY_FLAKY_RETRY_COUNT": "ci_visibility_flaky_retry_count",
   "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT": "ci_visibility_total_flaky_retry_count",
   "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED": "dd_civisibility_impacted_tests_detection_enabled",
+  "DD_CIVISIBILITY_DI_ENABLED": "ci_visibility_dynamic_instrumentation_enabled",
   "DD_TEST_MANAGEMENT_ENABLED": "test_management_enabled",
   "DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES": "test_management_attempt_to_fix_retries",
   "DD_TEST_SESSION_NAME": "test_session_name",
@@ -692,5 +693,6 @@
   "DD_PROFILING_MANAGED_ACTIVATION_ENABLED": "trace_profiler_managed_activation_enabled",
   "DD_CALLSITE_MANAGED_ACTIVATION_ENABLED": "trace_callsite_managed_activation_enabled",
   "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS": "trace_graphql_error_extensions",
-  "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED":"application_monitoring_config_file_enabled"
+  "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED":"application_monitoring_config_file_enabled",
+  "DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED": "trace_azure_servicebus_batch_links_enabled"
 }
