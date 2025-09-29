@@ -298,6 +298,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix();
             }
         }
+
 #endif
 
         private static string GetSuffix(string packageVersion)

@@ -20,6 +20,7 @@ public class EndpointsCollectionTests
     {
         var settings = new CustomSettingsForTests(new Dictionary<string, object>
         {
+            { ConfigurationKeys.AppSec.Enabled, true },
             { ConfigurationKeys.AppSec.ApiSecurityEnabled, true },
             { ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled, true }
         });
@@ -35,6 +36,7 @@ public class EndpointsCollectionTests
     {
         var settings = new CustomSettingsForTests(new Dictionary<string, object>
         {
+            { ConfigurationKeys.AppSec.Enabled, true },
             { ConfigurationKeys.AppSec.ApiSecurityEnabled, false },
             { ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled, true }
         });
@@ -45,10 +47,24 @@ public class EndpointsCollectionTests
     }
 
     [Fact]
+    public void GivenConfiguration_WhenAppsecDisabled_IsEndpointsNotCollected()
+    {
+        var settings = new CustomSettingsForTests(new Dictionary<string, object>
+        {
+            { ConfigurationKeys.AppSec.Enabled, false },
+        });
+        var security = new SecuritySettings(settings, NullConfigurationTelemetry.Instance);
+        var apisec = new ApiSecurity(security);
+
+        apisec.CanCollectEndpoints().Should().BeFalse();
+    }
+
+    [Fact]
     public void GivenConfiguration_WhenEndpointsCollectionDisabled_IsEndpointsNotCollected()
     {
         var settings = new CustomSettingsForTests(new Dictionary<string, object>
         {
+            { ConfigurationKeys.AppSec.Enabled, true },
             { ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled, false }
         });
         var security = new SecuritySettings(settings, NullConfigurationTelemetry.Instance);

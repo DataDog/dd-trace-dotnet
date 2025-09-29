@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Threading;
@@ -12,6 +13,8 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -31,6 +34,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class SendServiceBusMessageBatchIntegration
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SendServiceBusMessageBatchIntegration));
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -40,8 +45,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         /// <param name="message">The message instance</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TMessage>(TTarget instance, TMessage message)
+            where TTarget : IServiceBusMessageBatch, IDuckType
             where TMessage : IServiceBusMessage
         {
+            Scope? messageScope = null;
+
             if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
                 && Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
             {
@@ -51,7 +59,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 AzureServiceBusCommon.SetMessage(message.ApplicationProperties, message.Instance);
             }
 
-            return CallTargetState.GetDefault();
+            // Create TryAdd message spans for batch with links when enabled
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false) &&
+                Tracer.Instance.Settings.AzureServiceBusBatchLinksEnabled)
+            {
+                messageScope = CreateAddMessageSpan(instance, message);
+            }
+
+            return new CallTargetState(messageScope);
+        }
+
+        internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(TTarget instance, bool returnValue, Exception? exception, in CallTargetState state)
+        {
+            if (state.Scope != null)
+            {
+                if (returnValue && instance != null)
+                {
+                    ServiceBusBatchSpanContext.AddMessageSpanContext(instance, state.Scope.Span.Context);
+                }
+
+                state.Scope.DisposeWithException(exception);
+            }
+
+            return new CallTargetReturn<bool>(returnValue);
+        }
+
+        private static Scope? CreateAddMessageSpan(IServiceBusMessageBatch batch, IServiceBusMessage message)
+        {
+            var messageEnumerable = new[] { message };
+            var state = AzureServiceBusCommon.CreateSenderSpan(
+                batch.ClientDiagnostics,
+                operationName: "create",
+                messages: messageEnumerable,
+                messageCount: 1);
+
+            return state.Scope;
         }
     }
 }

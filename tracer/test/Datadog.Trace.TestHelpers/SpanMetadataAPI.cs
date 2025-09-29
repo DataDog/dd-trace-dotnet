@@ -193,6 +193,13 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAzureServiceBusOutboundAPMV0(excludeTags),
             };
 
+        public static Result IsAzureServiceBusCreateAPM(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAzureServiceBusCreateV1(excludeTags),
+                _ => span.IsAzureServiceBusCreateV0(excludeTags),
+            };
+
         public static Result IsAzureServiceBusRequest(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
             metadataSchemaVersion switch
             {
