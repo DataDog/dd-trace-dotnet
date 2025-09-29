@@ -1454,11 +1454,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             if (major >= 10)
             {
                 activatedKeywords |= ClrEventsParser::KEYWORD_ALLOCATION_SAMPLING;
+
+                Log::Debug("Listen to AllocationSampled event");
             }
             else
             {
                 // the documentation states that AllocationTick is Informational but... need Verbose  :^(
                 verbosity = VerboseVerbosity;
+
+                Log::Debug("Listen to AllocationTick event");
             }
         }
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
