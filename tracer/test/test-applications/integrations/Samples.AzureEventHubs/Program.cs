@@ -10,7 +10,8 @@ namespace Samples.AzureEventHubs
     public enum TestMode
     {
         Default,
-        TestEventHubsMessageBatch
+        TestEventHubsMessageBatch,
+        TestEventHubsEnumerable
     }
 
     public class Program
@@ -48,6 +49,9 @@ namespace Samples.AzureEventHubs
                 {
                     case TestMode.TestEventHubsMessageBatch:
                         await TestEventHubsMessageBatchAsync(producerClient, consumerClient);
+                        break;
+                    case TestMode.TestEventHubsEnumerable:
+                        await TestEventHubsEnumerableAsync(producerClient, consumerClient);
                         break;
                     case TestMode.Default:
                     default:
@@ -264,6 +268,101 @@ namespace Samples.AzureEventHubs
 
             Console.WriteLine($"Completed processing {totalEventsReceived} events");
             Console.WriteLine("EventHubs Message Batch test completed");
+        }
+
+        private static async Task TestEventHubsEnumerableAsync(EventHubProducerClient producerClient, EventHubConsumerClient consumerClient)
+        {
+            Console.WriteLine("\n=== EventHubs Enumerable Test ===");
+
+            var partitionIds = await consumerClient.GetPartitionIdsAsync();
+            Console.WriteLine("Creating enumerable of events...");
+
+            var events = new[]
+            {
+                new EventData(Encoding.UTF8.GetBytes("Enumerable event 1"))
+                {
+                    MessageId = Guid.NewGuid().ToString(),
+                    ContentType = "EnumerableTest1"
+                },
+                new EventData(Encoding.UTF8.GetBytes("Enumerable event 2"))
+                {
+                    MessageId = Guid.NewGuid().ToString(),
+                    ContentType = "EnumerableTest2"
+                },
+                new EventData(Encoding.UTF8.GetBytes("Enumerable event 3"))
+                {
+                    MessageId = Guid.NewGuid().ToString(),
+                    ContentType = "EnumerableTest3"
+                }
+            };
+
+            Console.WriteLine("Setting properties on events...");
+            for (int i = 0; i < events.Length; i++)
+            {
+                events[i].Properties["Subject"] = $"EnumerableTest{i + 1}";
+                Console.WriteLine($"Event {i + 1} (ID: {events[i].MessageId}) prepared");
+            }
+
+            var sendTime = DateTimeOffset.UtcNow;
+
+            Console.WriteLine("Sending enumerable of events...");
+            await producerClient.SendAsync(events);
+            Console.WriteLine($"Successfully sent enumerable with {events.Length} events");
+
+            Console.WriteLine("Receiving events from enumerable...");
+            Console.WriteLine($"Found {partitionIds.Length} partitions to read from");
+
+            int totalEventsReceived = 0;
+            var readTimeout = TimeSpan.FromSeconds(10);
+
+            foreach (var partitionId in partitionIds)
+            {
+                Console.WriteLine($"Reading from partition {partitionId}...");
+                var startTime = DateTime.UtcNow;
+
+                try
+                {
+                    await foreach (PartitionEvent partitionEvent in consumerClient.ReadEventsFromPartitionAsync(
+                        partitionId,
+                        EventPosition.FromEnqueuedTime(sendTime),
+                        new ReadEventOptions { MaximumWaitTime = readTimeout }))
+                    {
+                        if (partitionEvent.Data != null)
+                        {
+                            var body = partitionEvent.Data.EventBody.ToString();
+                            var messageId = partitionEvent.Data.MessageId;
+                            var subject = partitionEvent.Data.Properties.ContainsKey("Subject")
+                                ? partitionEvent.Data.Properties["Subject"]
+                                : "Unknown";
+
+                            Console.WriteLine($"Processing event ID: {messageId}, Subject: {subject}, Body: {body}");
+                            totalEventsReceived++;
+
+                            if (totalEventsReceived >= events.Length)
+                            {
+                                break;
+                            }
+                        }
+
+                        if (DateTime.UtcNow - startTime > readTimeout)
+                        {
+                            break;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading from partition {partitionId}: {ex.Message}");
+                }
+
+                if (totalEventsReceived >= events.Length)
+                {
+                    break;
+                }
+            }
+
+            Console.WriteLine($"Completed processing {totalEventsReceived} events");
+            Console.WriteLine("EventHubs Enumerable test completed");
         }
     }
 }

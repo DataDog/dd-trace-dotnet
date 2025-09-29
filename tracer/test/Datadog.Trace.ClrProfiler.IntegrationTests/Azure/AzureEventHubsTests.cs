@@ -108,6 +108,52 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
+        public async Task TestEventHubsEnumerableIntegration(string packageVersion, string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "true");
+            SetEnvironmentVariable("EVENTHUBS_TEST_MODE", "TestEventHubsEnumerable");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+
+                var sendSpans = spans.Where(span => span.Name == "azure_eventhubs.send").ToList();
+                var receiveSpans = spans.Where(span => span.Name == "azure_eventhubs.receive").ToList();
+
+                Output.WriteLine($"Send spans found: {sendSpans.Count}");
+                Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
+
+                sendSpans.Should().HaveCount(1, "Expected 1 SendAsync span with azure_eventhubs.send operation for enumerable");
+                receiveSpans.Should().HaveCount(1, "Expected 1 receive span");
+
+                var enumerableSendSpans = sendSpans.Where(s => s.Resource == "samples-eventhubs-hub").ToList();
+                enumerableSendSpans.Should().HaveCount(1, "Expected 1 enumerable send span from SendAsync operation");
+
+                foreach (var sendSpan in sendSpans)
+                {
+                    var result = ValidateIntegrationSpan(sendSpan, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Send span validation failed: {result}");
+                }
+
+                foreach (var receiveSpan in receiveSpans)
+                {
+                    var result = ValidateIntegrationSpan(receiveSpan, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
+                }
+
+                ValidateSpanLinks(sendSpans, receiveSpans, spans);
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
         public async Task TestEventHubsMessageBatchIntegrationWithoutBatchLinks(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
@@ -135,6 +181,51 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
 
                 sendSpans.Should().HaveCount(1, "Expected 1 SendAsync span (no individual TryAdd spans when batch links disabled)");
+                receiveSpans.Should().HaveCount(1, "Expected 1 receive span");
+
+                foreach (var span in spans)
+                {
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"EventHubs span validation failed: {result}");
+                }
+
+                foreach (var receiveSpan in receiveSpans)
+                {
+                    receiveSpan.SpanLinks.Should().BeNullOrEmpty("No span links expected when batch linking is disabled");
+                }
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestEventHubsEnumerableIntegrationWithoutBatchLinks(string packageVersion, string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "false");
+            SetEnvironmentVariable("EVENTHUBS_TEST_MODE", "TestEventHubsEnumerable");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, Tags=[{string.Join(", ", span.Tags.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]");
+                }
+
+                var sendSpans = spans.Where(span => span.Name == "azure_eventhubs.send").ToList();
+                var receiveSpans = spans.Where(span => span.Name == "azure_eventhubs.receive").ToList();
+
+                Output.WriteLine($"Send spans found: {sendSpans.Count}");
+                Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
+
+                sendSpans.Should().HaveCount(1, "Expected 1 SendAsync span for enumerable (no individual event spans when batch links disabled)");
                 receiveSpans.Should().HaveCount(1, "Expected 1 receive span");
 
                 var createSpans = spans.Where(span => span.Name == "azure_eventhubs.create").ToList();
