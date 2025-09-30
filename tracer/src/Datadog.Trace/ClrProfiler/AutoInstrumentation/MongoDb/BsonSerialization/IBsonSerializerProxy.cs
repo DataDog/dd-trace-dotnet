@@ -4,9 +4,15 @@
 // </copyright>
 
 #nullable enable
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 
+/// <summary>
+/// Proxy for https://github.com/mongodb/mongo-csharp-driver/blob/4027d482d14960364c14be1ca59f7f6e350042a3/src/MongoDB.Bson/Serialization/IBsonSerializer.cs#L23
+/// </summary>
 internal interface IBsonSerializerProxy
 {
+    [Duck(ParameterTypeNames = ["MongoDB.Bson.Serialization.BsonSerializationContext, MongoDB.Bson", "MongoDB.Bson.Serialization.BsonSerializationArgs, MongoDB.Bson", ClrNames.Object])]
     void Serialize(object context, object args, object value);
 }

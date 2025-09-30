@@ -33,7 +33,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private readonly TaskCompletionSource<bool> _processExit = new();
 
-        private int _disposed = 0;
         private int _isPollingStarted;
         private bool _isRcmEnabled;
         private bool _gitMetadataAddedToRequestTags;
@@ -115,10 +114,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public void Dispose()
         {
-            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            if (_processExit.TrySetResult(true))
             {
                 _discoveryService.RemoveSubscription(SetRcmEnabled);
-                _processExit.SetResult(true);
             }
             else
             {

@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.6
 
+# See alpine.build.dockerfile for more information on how to build this image
 FROM alpine:3.18 as base
 
 RUN apk update \

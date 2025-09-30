@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     ParameterTypeNames = ["!0"],
     ReturnTypeName = "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
     MinimumVersion = "1.0.0",
-    MaximumVersion = "2.*.*",
+    MaximumVersion = "3.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -36,7 +36,7 @@ public static class XUnitTestClassRunnerRunV3Integration
 
         if (TestModule.Current is { } testModule)
         {
-            return new CallTargetState(null, testModule.InternalGetOrCreateSuite(context.TestClass.TestClassName ?? string.Empty));
+            return new CallTargetState(null, testModule.GetOrCreateSuite(context.TestClass.TestClassName ?? string.Empty));
         }
 
         Common.Log.Warning("Test module cannot be found.");

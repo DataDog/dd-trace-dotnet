@@ -61,8 +61,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private readonly Tracer _tracer;
         private readonly Security _security;
         private readonly Iast.Iast _iast;
-        private readonly LiveDebugger _liveDebugger;
-        private readonly SpanCodeOriginManager _spanOriginManager;
+        private readonly SpanCodeOrigin _spanCodeOrigin;
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
         private string _mvcAfterActionEventKey;
@@ -72,17 +71,16 @@ namespace Datadog.Trace.DiagnosticListeners
         private string _routingEndpointMatchedKey;
 
         public AspNetCoreDiagnosticObserver()
-            : this(null, null, null, null, null)
+            : this(null, null, null, null)
         {
         }
 
-        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, LiveDebugger liveDebugger, SpanCodeOriginManager spanOriginManager)
+        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, SpanCodeOrigin spanCodeOrigin)
         {
             _tracer = tracer;
             _security = security;
             _iast = iast;
-            _liveDebugger = liveDebugger;
-            _spanOriginManager = spanOriginManager;
+            _spanCodeOrigin = spanCodeOrigin;
         }
 
         protected override string ListenerName => DiagnosticListenerName;
@@ -93,9 +91,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
 
-        private LiveDebugger CurrentLiveDebugger => _liveDebugger ?? LiveDebugger.Instance;
-
-        private SpanCodeOriginManager CurrentCodeOriginManager => _spanOriginManager ?? SpanCodeOriginManager.Instance;
+        private SpanCodeOrigin CurrentCodeOrigin => _spanCodeOrigin ?? DebuggerManager.Instance.CodeOrigin;
 
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
@@ -442,7 +438,10 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName: string.Empty);
+                    // If the app is using resource-based sampling rules, then we need to set a resource straight
+                    // away, so force that by using null.
+                    var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
+                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName);
                     if (shouldSecure)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
@@ -525,17 +524,16 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                var isCodeOriginEnabled = CurrentLiveDebugger?.Settings.CodeOriginForSpansEnabled ?? false;
-                if (isCodeOriginEnabled)
+                if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true })
                 {
                     var method = routeEndpoint?.RequestDelegate?.Method;
                     if (method != null)
                     {
-                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
+                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
                     }
                     else if (routeEndpoint?.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
                     {
-                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
                     }
                 }
 
@@ -601,11 +599,10 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
-            var liveDebugger = CurrentLiveDebugger;
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.AppsecEnabled;
             var shouldUseIast = CurrentIast.Settings.Enabled;
-            var isCodeOriginEnabled = liveDebugger?.Settings.CodeOriginForSpansEnabled ?? false;
+            var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
             if (!shouldTrace && !shouldSecure && !shouldUseIast && !isCodeOriginEnabled)
             {
@@ -638,7 +635,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     if (isCodeOriginEnabled && TryGetTypeAndMethod(typedArg, out var type, out var method))
                     {
-                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }
 
                     CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);

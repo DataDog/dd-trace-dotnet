@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 
 #nullable enable
@@ -19,6 +20,7 @@ namespace Datadog.Trace
         /// Initializes a new instance of the <see cref="SpanContextInjector"/> class
         /// </summary>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public SpanContextInjector()
         {
         }
@@ -33,6 +35,7 @@ namespace Datadog.Trace
         /// <param name="context">The context you want to inject</param>
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Inject<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
         {
         }
@@ -50,6 +53,7 @@ namespace Datadog.Trace
         /// <param name="target">For Data Streams Monitoring: The queue or topic where the data being injected will be sent.</param>
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void InjectIncludingDsm<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string messageType, string target)
         {
         }

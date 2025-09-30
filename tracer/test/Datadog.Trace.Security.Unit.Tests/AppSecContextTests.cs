@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
@@ -13,23 +14,70 @@ namespace Datadog.Trace.Security.Unit.Tests;
 
 public class AppSecContextTests
 {
-    [InlineData(-2, -2, -1, -2, -1)]
-    [InlineData(2, -2, -1, null, -1)]
-    [InlineData(2, 2, 1, null, null)]
+    [InlineData(-2, -2, -1, 0, -2, -1)]
+    [InlineData(2, -2, -1, 1, null, -1)]
+    [InlineData(2, 2, 1, 2, null, null)]
     [Theory]
-    public void GivenAQuery_WhenWAFError_ThenSpanHasErrorTags(int raspErrorCode, int wafErrorCode, int wafErrorCode2, int? expectedRaspErrorCode, int? expectedWafErrorCode)
+    public void GivenAQuery_WhenWAFError_ThenSpanHasErrorTags(int raspErrorCode, int wafErrorCode, int wafErrorCode2, int wafTimeouts, int? expectedRaspErrorCode, int? expectedWafErrorCode)
     {
         var settings = TracerSettings.Create(new Dictionary<string, object>());
         var tracer = new Tracer(settings, null, null, null, null);
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
 
         var appSecContext = rootTestScope.Span.Context.TraceContext.AppSecRequestContext;
-        appSecContext.CheckWAFError(raspErrorCode, true);
-        appSecContext.CheckWAFError(wafErrorCode, false);
-        appSecContext.CheckWAFError(wafErrorCode2, false);
-        TraceTagCollection tags = new();
-        appSecContext.CloseWebSpan(tags, rootTestScope.Span);
-        tags.GetTag(Tags.WafError).Should().Be(expectedWafErrorCode?.ToString());
-        tags.GetTag(Tags.RaspWafError).Should().Be(expectedRaspErrorCode?.ToString());
+        int timeouts = wafTimeouts;
+
+        appSecContext.CheckWAFError(new MockResult(raspErrorCode, timeouts-- > 0), true);
+        appSecContext.CheckWAFError(new MockResult(wafErrorCode, timeouts-- > 0), false);
+        appSecContext.CheckWAFError(new MockResult(wafErrorCode2, timeouts-- > 0), false);
+        appSecContext.CloseWebSpan(rootTestScope.Span);
+        rootTestScope.Span.GetMetric(Metrics.WafError).Should().Be(expectedWafErrorCode);
+        rootTestScope.Span.GetMetric(Metrics.RaspWafError).Should().Be(expectedRaspErrorCode);
+
+        if (wafTimeouts > 0)
+        {
+            rootTestScope.Span.GetMetric(Metrics.WafTimeouts).Should().Be(wafTimeouts);
+        }
+    }
+
+    private class MockResult : IResult
+    {
+        public MockResult(int returnCode, bool timeout)
+        {
+            ReturnCode = (WafReturnCode)returnCode;
+            Timeout = timeout;
+        }
+
+        public WafReturnCode ReturnCode { get; }
+
+        public bool Timeout { get; }
+
+        public bool ShouldBlock => throw new System.NotImplementedException();
+
+        public Dictionary<string, object> BlockInfo => throw new System.NotImplementedException();
+
+        public Dictionary<string, object> RedirectInfo => throw new System.NotImplementedException();
+
+        public Dictionary<string, object> SendStackInfo => throw new System.NotImplementedException();
+
+        public IReadOnlyCollection<object> Data => throw new System.NotImplementedException();
+
+        public Dictionary<string, object> Actions => throw new System.NotImplementedException();
+
+        public ulong AggregatedTotalRuntime => throw new System.NotImplementedException();
+
+        public ulong AggregatedTotalRuntimeWithBindings => throw new System.NotImplementedException();
+
+        public ulong AggregatedTotalRuntimeRasp => throw new System.NotImplementedException();
+
+        public ulong AggregatedTotalRuntimeWithBindingsRasp => throw new System.NotImplementedException();
+
+        public uint RaspRuleEvaluations => throw new System.NotImplementedException();
+
+        public Dictionary<string, object> ExtractSchemaDerivatives => throw new System.NotImplementedException();
+
+        public Dictionary<string, object> FingerprintDerivatives => throw new System.NotImplementedException();
+
+        public bool ShouldReportSecurityResult => throw new System.NotImplementedException();
     }
 }

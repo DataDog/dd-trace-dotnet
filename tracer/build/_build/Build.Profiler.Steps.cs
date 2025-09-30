@@ -15,6 +15,7 @@ using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Collections;
+using NativeValidation;
 using Logger = Serilog.Log;
 
 partial class Build
@@ -154,7 +155,8 @@ partial class Build
             var (arch, _) = GetUnixArchitectureAndExtension();
             var libraryPath = ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
             var snapshotName = $"native-wrapper-symbols-{UnixArchitectureIdentifier}";
-            CompareNativeSymbolsSnapshot(libraryPath, snapshotName);
+            var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
+            nativeLibHelper.ValidateNativeSymbols(libraryPath, snapshotName);
         });
 
     Target CompileNativeWrapperNativeTests => _ => _
@@ -876,15 +878,11 @@ partial class Build
                 ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 16), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
             };
 
+            var helper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
             foreach (var (file, expectedGlibcVersion, allowedSymbols, snapshotPrefix) in filesAndVersion)
             {
                 var dest = ProfilerDeployDirectory / arch / $"{file}.{extension}";
-                ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion, allowedSymbols);
-
-                if (IsAlpine)
-                {
-                    CompareNativeSymbolsSnapshot(dest, snapshotPrefix);
-                }
+                helper.ValidateNativeLibraryCompatibility(dest, expectedGlibcVersion, snapshotPrefix, allowedSymbols);
             }
         });
 
@@ -910,6 +908,7 @@ partial class Build
                 { "DD_PROFILING_HEAP_ENABLED", "1"},
                 { "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED", "1" },
                 { "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED", "1" },
+                { "DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0" },  // disable StableConfig (i.e. don't wait for the tracer to set the configuration)
             };
 
         if (IsLinux)

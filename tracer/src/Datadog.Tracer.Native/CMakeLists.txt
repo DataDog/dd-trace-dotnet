@@ -12,7 +12,7 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 3.22.0)
+project("Datadog.Tracer.Native" VERSION 3.28.0)
 
 # ******************************************************
 # Environment detection
@@ -251,7 +251,7 @@ elseif(ISLINUX)
         ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++
-        -Wl,--build-id
+        -Wl,--build-id=sha1
     )
 endif()
 

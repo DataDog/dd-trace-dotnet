@@ -38,11 +38,6 @@ bool IsTraceAnnotationEnabled()
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::trace_annotations_enabled), true);
 }
 
-bool IsAzureFunctionsEnabled()
-{
-    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::azure_functions_enabled), true);
-}
-
 bool IsVersionCompatibilityEnabled()
 {
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::internal_version_compatibility), true);
@@ -66,6 +61,11 @@ bool IsRaspSettingEnabled()
 bool IsRaspEnabled()
 {
     return IsRaspSettingEnabled() && IsAsmSettingEnabled();
+}
+
+bool IsCallSiteManagedActivationEnabled()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::callsite_managed_activation_enabled), true);
 }
 
 bool IsEditAndContinueEnabledCore()

@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -640,7 +640,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: GEOADD StackExchange.Redis.Database.Geo,
+      redis.raw_command: GEOADD StackExchange.Redis.Database.GeoAdd,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -692,7 +692,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: GEODIST StackExchange.Redis.Database.Geo,
+      redis.raw_command: GEODIST StackExchange.Redis.Database.GeoDistance,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -744,7 +744,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: GEOHASH StackExchange.Redis.Database.Geo,
+      redis.raw_command: GEOHASH StackExchange.Redis.Database.GeoHash,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -796,7 +796,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: GEOPOS StackExchange.Redis.Database.Geo,
+      redis.raw_command: GEOPOS StackExchange.Redis.Database.GeoPosition,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -848,7 +848,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: GEORADIUSBYMEMBER StackExchange.Redis.Database.Geo,
+      redis.raw_command: GEORADIUSBYMEMBER StackExchange.Redis.Database.GeoRadius,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -1192,7 +1192,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: HDEL StackExchange.Redis.Database.Hash,
+      redis.raw_command: HDEL StackExchange.Redis.Database.HashDelete,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -1244,7 +1244,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: HEXISTS StackExchange.Redis.Database.Hash,
+      redis.raw_command: HEXISTS StackExchange.Redis.Database.HashExists,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -1270,7 +1270,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: HGET StackExchange.Redis.Database.Hash,
+      redis.raw_command: HGET StackExchange.Redis.Database.HashGet,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -1322,7 +1322,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: HGETALL StackExchange.Redis.Database.Hash,
+      redis.raw_command: HGETALL StackExchange.Redis.Database.HashGetAll,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -1348,7 +1348,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: HINCRBY StackExchange.Redis.Database.Hash,
+      redis.raw_command: HINCRBY StackExchange.Redis.Database.HashIncrement,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -1426,7 +1426,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Database.Hash,
+      redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Database.HashDecrement,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -1478,7 +1478,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: HKEYS StackExchange.Redis.Database.Hash,
+      redis.raw_command: HKEYS StackExchange.Redis.Database.HashKeys,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -1530,7 +1530,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: HLEN StackExchange.Redis.Database.Hash,
+      redis.raw_command: HLEN StackExchange.Redis.Database.HashLength,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -1582,7 +1582,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: HMSET StackExchange.Redis.Database.Hash,
+      redis.raw_command: HMSET StackExchange.Redis.Database.HashSet,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -1634,7 +1634,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: HVALS StackExchange.Redis.Database.Hash,
+      redis.raw_command: HVALS StackExchange.Redis.Database.HashValues,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis
@@ -5061,7 +5061,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       language: dotnet,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREM StackExchange.Redis.Database.Geo,
+      redis.raw_command: ZREM StackExchange.Redis.Database.GeoRemove,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.StackExchange.Redis

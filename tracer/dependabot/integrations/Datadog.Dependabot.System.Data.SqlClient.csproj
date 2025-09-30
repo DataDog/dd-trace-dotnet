@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: System.Data -->
+    <!--    Assembly: System.Data -->
+    <!-- Integration: System.Data.SqlClient -->
+    <!--    Assembly: System.Data.SqlClient -->
+    <!-- Latest package https://www.nuget.org/packages/System.Data.SqlClient/4.9.0 -->
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
+  </ItemGroup>
+
+</Project>

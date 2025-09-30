@@ -202,14 +202,14 @@ public class SettingsInstrumentationTests
         var changedValues = manual.ToDictionary();
 
         IConfigurationSource configSource = useLegacySettings
-                               ? new ManualInstrumentationLegacyConfigurationSource(changedValues)
-                               : new ManualInstrumentationConfigurationSource(changedValues);
+                               ? new ManualInstrumentationLegacyConfigurationSource(changedValues, useDefaultSources: false)
+                               : new ManualInstrumentationConfigurationSource(changedValues, useDefaultSources: false);
         var automatic = new TracerSettings(configSource);
 
         AssertEquivalent(manual, automatic);
         automatic.ServiceNameMappings.Should().Equal(mappings);
-        automatic.HttpClientErrorStatusCodes.Should().Equal(TracerSettings.ParseHttpCodesToArray(string.Join(",", clientErrors)));
-        automatic.HttpServerErrorStatusCodes.Should().Equal(TracerSettings.ParseHttpCodesToArray(string.Join(",", serverErrors)));
+        automatic.HttpClientErrorStatusCodes.Should().Equal(MutableSettings.ParseHttpCodesToArray(string.Join(",", clientErrors)));
+        automatic.HttpServerErrorStatusCodes.Should().Equal(MutableSettings.ParseHttpCodesToArray(string.Join(",", serverErrors)));
 
         automatic.Integrations[IntegrationId.OpenTelemetry].Enabled.Should().BeFalse();
         automatic.Integrations[IntegrationId.Kafka].Enabled.Should().BeFalse();
@@ -236,7 +236,11 @@ public class SettingsInstrumentationTests
         manual.GlobalSamplingRate.Should().Be(automatic.GlobalSamplingRate);
         manual.GlobalTags.Should().BeEquivalentTo(automatic.GlobalTags);
         manual.HeaderTags.Should().BeEquivalentTo(automatic.HeaderTags);
-        manual.Integrations.Settings.Should().BeEquivalentTo(automatic.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x));
+        // force fluent assertions to just compare the properties, not use the `Equals` implementation
+        manual.Integrations.Settings.Should()
+              .BeEquivalentTo(
+                   automatic.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x),
+                   options => options.ComparingByMembers(typeof(IntegrationSettings)));
         manual.KafkaCreateConsumerScopeEnabled.Should().Be(automatic.KafkaCreateConsumerScopeEnabled);
         manual.LogsInjectionEnabled.Should().Be(automatic.LogsInjectionEnabled);
         manual.MaxTracesSubmittedPerSecond.Should().Be(automatic.MaxTracesSubmittedPerSecond);
@@ -262,7 +266,7 @@ public class SettingsInstrumentationTests
 
         manual.AnalyticsEnabled.Should().Be(automatic.AnalyticsEnabled);
         manual.CustomSamplingRules.Should().Be(automatic.CustomSamplingRules);
-        manual.DiagnosticSourceEnabled.Should().Be(automatic.DiagnosticSourceEnabled);
+        manual.DiagnosticSourceEnabled.Should().Be(GlobalSettings.Instance.DiagnosticSourceEnabled);
         manual.Environment.Should().Be(automatic.Environment);
         manual.GlobalSamplingRate.Should().Be(automatic.GlobalSamplingRate);
         manual.GlobalTags.Should().BeEquivalentTo(automatic.GlobalTags);
@@ -332,7 +336,7 @@ public class SettingsInstrumentationTests
             { ConfigurationKeys.MaxTracesSubmittedPerSecond, 50 },
             { ConfigurationKeys.ServiceName, "my-test-service" },
             { ConfigurationKeys.ServiceVersion, "1.2.3" },
-            { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+            { ConfigurationKeys.StartupDiagnosticLogEnabled, false }, // can't actually be changed
             { ConfigurationKeys.StatsComputationEnabled, true },
             { ConfigurationKeys.TraceEnabled, false },
             { ConfigurationKeys.TracerMetricsEnabled, true },
@@ -345,7 +349,7 @@ public class SettingsInstrumentationTests
         // verify that all the settings are as expected
         automatic.AnalyticsEnabled.Should().Be(true);
         automatic.CustomSamplingRules.Should().Be("""[{"sample_rate":0.3, "service":"shopping-cart.*"}]""");
-        automatic.DiagnosticSourceEnabled.Should().Be(true);
+        GlobalSettings.Instance.DiagnosticSourceEnabled.Should().Be(true);
         automatic.DisabledIntegrationNames.Should().BeEquivalentTo(["something", "OpenTelemetry", "Kafka"]);
         automatic.Environment.Should().Be("my-test-env");
         automatic.GlobalSamplingRate.Should().Be(0.5);

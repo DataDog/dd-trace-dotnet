@@ -4,6 +4,8 @@
 // </copyright>
 
 using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -43,7 +45,13 @@ public sealed class TracerSettings
     /// <summary>
     /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
     /// </summary>
+    /// <remarks>As of tracer version 3.27.0, this method is hidden, as it encourages the pattern of
+    /// not reading from the default configuration sources, which is discouraged. Use
+    /// <see cref="FromDefaultSources" /> instead.</remarks>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public TracerSettings()
         : this(PopulateDictionary(new(), useDefaultSources: false), isFromDefaultSources: false)
     {
@@ -57,9 +65,15 @@ public sealed class TracerSettings
     /// or initializes the configuration from environment variables and configuration files.
     /// Calling <c>new TracerSettings(true)</c> is equivalent to calling <c>TracerSettings.FromDefaultSources()</c>
     /// </summary>
+    /// <remarks>As of tracer version 3.27.0, this method is hidden, as it encourages the pattern of
+    /// not reading from the default configuration sources, which is discouraged. Use
+    /// <see cref="FromDefaultSources" /> instead.</remarks>
     /// <param name="useDefaultSources">If <c>true</c>, creates a <see cref="TracerSettings"/> populated from
     /// the default sources such as environment variables etc. If <c>false</c>, uses the default values.</param>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public TracerSettings(bool useDefaultSources)
         : this(PopulateDictionary(new(), useDefaultSources), useDefaultSources)
     {
@@ -136,17 +150,22 @@ public sealed class TracerSettings
     /// of System.Diagnostics.DiagnosticSource is enabled.
     /// Default is <c>true</c>.
     /// </summary>
-    /// <remark>
+    /// <remarks>
     /// This value cannot be set in code. Instead,
     /// set it using the <c>DD_DIAGNOSTIC_SOURCE_ENABLED</c>
     /// environment variable or in configuration files.
-    /// </remark>
-    [Instrumented]
+    /// </remarks>
     public bool DiagnosticSourceEnabled
     {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _diagnosticSourceEnabled;
 
         [Obsolete("This value cannot be set in code. Instead, set it using the DD_DIAGNOSTIC_SOURCE_ENABLED environment variable, or in configuration files")]
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         set
         {
             // As this was previously obsolete, we could just remove it?
@@ -161,6 +180,7 @@ public sealed class TracerSettings
     public string? Environment
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _environment.Value;
         set => _environment = _environment.Override(value);
     }
@@ -172,6 +192,7 @@ public sealed class TracerSettings
     public string? ServiceName
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _serviceName.Value;
         set => _serviceName = _serviceName.Override(value);
     }
@@ -182,6 +203,7 @@ public sealed class TracerSettings
     public string? ServiceVersion
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _serviceVersion.Value;
         set => _serviceVersion = _serviceVersion.Override(value);
     }
@@ -196,6 +218,7 @@ public sealed class TracerSettings
     public bool AnalyticsEnabled
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _analyticsEnabled.Value;
         set => _analyticsEnabled = _analyticsEnabled.Override(value);
     }
@@ -206,6 +229,7 @@ public sealed class TracerSettings
     public double? GlobalSamplingRate
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _globalSamplingRate.Value;
         set => _globalSamplingRate = _globalSamplingRate.Override(value);
     }
@@ -216,6 +240,7 @@ public sealed class TracerSettings
     public IDictionary<string, string> GlobalTags
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _globalTags.Value;
         set => _globalTags = _globalTags.Override(value);
     }
@@ -227,6 +252,7 @@ public sealed class TracerSettings
     public IDictionary<string, string> GrpcTags
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _grpcTags.Value;
         set => _grpcTags = _grpcTags.Override(value);
     }
@@ -238,6 +264,7 @@ public sealed class TracerSettings
     public IDictionary<string, string> HeaderTags
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _headerTags.Value;
         set => _headerTags = _headerTags.Override(value);
     }
@@ -249,6 +276,7 @@ public sealed class TracerSettings
     public bool KafkaCreateConsumerScopeEnabled
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _kafkaCreateConsumerScopeEnabled.Value;
         set => _kafkaCreateConsumerScopeEnabled = _kafkaCreateConsumerScopeEnabled.Override(value);
     }
@@ -261,6 +289,7 @@ public sealed class TracerSettings
     public bool LogsInjectionEnabled
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _logsInjectionEnabled.Value;
         set => _logsInjectionEnabled = _logsInjectionEnabled.Override(value);
     }
@@ -272,6 +301,7 @@ public sealed class TracerSettings
     public int MaxTracesSubmittedPerSecond
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _maxTracesSubmittedPerSecond.Value;
         set => _maxTracesSubmittedPerSecond = _maxTracesSubmittedPerSecond.Override(value);
     }
@@ -282,6 +312,7 @@ public sealed class TracerSettings
     public string? CustomSamplingRules
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _customSamplingRules.Value;
         set => _customSamplingRules = _customSamplingRules.Override(value);
     }
@@ -292,6 +323,7 @@ public sealed class TracerSettings
     public bool StartupDiagnosticLogEnabled
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _startupDiagnosticLogEnabled.Value;
         set => _startupDiagnosticLogEnabled = _startupDiagnosticLogEnabled.Override(value);
     }
@@ -303,6 +335,7 @@ public sealed class TracerSettings
     public bool TraceEnabled
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _traceEnabled.Value;
         set => _traceEnabled = _traceEnabled.Override(value);
     }
@@ -313,6 +346,7 @@ public sealed class TracerSettings
     public HashSet<string> DisabledIntegrationNames
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _disabledIntegrationNames.Value;
         set => _disabledIntegrationNames = _disabledIntegrationNames.Override(value);
     }
@@ -324,17 +358,26 @@ public sealed class TracerSettings
     public bool TracerMetricsEnabled
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _tracerMetricsEnabled.Value;
         set => _tracerMetricsEnabled = _tracerMetricsEnabled.Override(value);
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether stats are computed on the tracer side
+    /// Gets or sets a value indicating whether stats are computed on the tracer side.
     /// </summary>
+    /// <remarks>As of tracer version 3.27.0, this property cannot be used to enable or
+    /// disable stats computation. You must use a static configuration source such
+    /// as environment variables or datadog.json to set the property instead. This
+    /// property will be marked obsolete and removed in a future version of Datadog.Trace.
+    /// </remarks>
     public bool StatsComputationEnabled
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _statsComputationEnabled.Value;
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         set => _statsComputationEnabled = _statsComputationEnabled.Override(value);
     }
 
@@ -342,31 +385,48 @@ public sealed class TracerSettings
     /// Gets or sets the Uri where the Tracer can connect to the Agent.
     /// Default is <c>"http://localhost:8126"</c>.
     /// </summary>
+    /// <remarks>As of tracer version 3.27.0, this property cannot be used to set the
+    /// agent URI. You must instead use a static configuration source such
+    /// as environment variables or datadog.json to set the value instead. This
+    /// property will be marked obsolete and removed in a future version of Datadog.Trace.
+    /// </remarks>
     public Uri AgentUri
     {
         [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         get => _agentUri.Value;
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         set => _agentUri = _agentUri.Override(value);
     }
 
     /// <summary>
     /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.
     /// </summary>
-    [Instrumented]
-    public IntegrationSettingsCollection Integrations { get; }
+    public IntegrationSettingsCollection Integrations
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Gets the transport settings that dictate how the tracer connects to the agent.
     /// </summary>
     [Obsolete("This property is obsolete and will be removed in a future version. To set the AgentUri, use the TracerSettings.AgentUri property")]
-    [Instrumented]
-    public ExporterSettings Exporter { get; }
+    public ExporterSettings Exporter
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get;
+    }
 
     /// <summary>
     /// Create a <see cref="TracerSettings"/> populated from the default sources.
     /// </summary>
     /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static TracerSettings FromDefaultSources() => new(PopulateDictionary(new(), useDefaultSources: true), isFromDefaultSources: true);
 
     /// <summary>
@@ -406,7 +466,6 @@ public sealed class TracerSettings
     /// </summary>
     /// <param name="mappings">Mappings to use from original service name (e.g. <code>sql-server</code> or <code>graphql</code>)
     /// as the <see cref="KeyValuePair{TKey, TValue}.Key"/>) to replacement service names as <see cref="KeyValuePair{TKey, TValue}.Value"/>).</param>
-    [PublicApi]
     public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
     {
         // Check for null to be safe as it's a public API.
@@ -420,6 +479,7 @@ public sealed class TracerSettings
     }
 
     [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static Dictionary<string, object?> PopulateDictionary(Dictionary<string, object?> values, bool useDefaultSources)
     {
         // The automatic tracer populates the dictionary with values which are then used to create the tracer

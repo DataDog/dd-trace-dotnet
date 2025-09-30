@@ -7,7 +7,9 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.LibDatadog.DataPipeline;
+using Datadog.Trace.LibDatadog.HandsOffConfiguration.InteropStructs;
+using Datadog.Trace.LibDatadog.Logging;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
 
 namespace Datadog.Trace.LibDatadog;
@@ -15,14 +17,6 @@ namespace Datadog.Trace.LibDatadog;
 internal class NativeInterop
 {
     private const string DllName = "LibDatadog";
-
-    // This will never change, so we use a lazy to cache the result.
-    // This confirms that we are in an automatic instrumentation environment (and so PInvokes have been re-written)
-    // and that the libdatadog library has been deployed (which is not the case in many serverless environments).
-    // We should add or remove conditions from here as our deployment requirements change.
-    private static readonly Lazy<bool> LibDatadogAvailable = new(() => !Util.EnvironmentHelpers.IsServerlessEnvironment() && Instrumentation.ProfilerAttached);
-
-    public static bool IsLibDatadogAvailable => LibDatadogAvailable.Value;
 
     internal static class Exporter
     {
@@ -39,7 +33,7 @@ internal class NativeInterop
         internal static extern TraceExporterErrorHandle Send(SafeHandle handle, ByteSlice trace, UIntPtr traceCount, ref IntPtr response);
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_response_get_body")]
-        internal static extern IntPtr GetResponseBody(IntPtr outHandle);
+        internal static extern IntPtr GetResponseBody(SafeHandle outHandle, ref UIntPtr len);
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_response_free")]
         internal static extern void FreeResponse(IntPtr handle);
@@ -88,6 +82,9 @@ internal class NativeInterop
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_client_computed_stats")]
         internal static extern TraceExporterErrorHandle SetClientComputedStats(SafeHandle config, bool clientComputedStats);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_connection_timeout")]
+        internal static extern TraceExporterErrorHandle SetConnectionTimeout(SafeHandle config, ulong timeout_ms);
     }
 
     internal static class Logger
@@ -113,6 +110,12 @@ internal class NativeInterop
         [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
         internal static extern void Drop(ErrorHandle error);
 
+        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
+        internal static extern void DropError(ref Error errorHandle);
+    }
+
+    internal static class LibraryConfig
+    {
         [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
         internal static extern TracerMemfdHandleResult StoreTracerMetadata(
             byte schemaVersion,
@@ -124,7 +127,22 @@ internal class NativeInterop
             CharSlice serviceEnv,
             CharSlice serviceVersion);
 
-        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
-        internal static extern void DropError(ref Error errorHandle);
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_new")]
+        internal static extern IntPtr ConfiguratorNew(byte debugLogs, CharSlice language);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_with_local_path")]
+        internal static extern IntPtr ConfiguratorWithLocalPath(IntPtr configurator, CString localPath);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_with_fleet_path")]
+        internal static extern IntPtr ConfiguratorWithFleetPath(IntPtr configurator, CString fleetPath);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_get")]
+        internal static extern LibraryConfigResult ConfiguratorGet(IntPtr configurator);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_configurator_drop")]
+        internal static extern void ConfiguratorDrop(IntPtr configurator);
+
+        [DllImport(DllName, EntryPoint = "ddog_library_config_drop")]
+        internal static extern void LibraryConfigDrop(LibraryConfigs configs);
     }
 }

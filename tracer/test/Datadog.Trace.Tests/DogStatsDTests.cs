@@ -237,6 +237,7 @@ namespace Datadog.Trace.Tests
                 {
                     { ConfigurationKeys.AgentUri, $"http://127.0.0.1:{agent.Port}" },
                     { ConfigurationKeys.TracerMetricsEnabled, tracerMetricsEnabled },
+                    { ConfigurationKeys.RuntimeMetricsEnabled, tracerMetricsEnabled },
                     { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
                     { ConfigurationKeys.TraceDataPipelineEnabled, false },
                 });

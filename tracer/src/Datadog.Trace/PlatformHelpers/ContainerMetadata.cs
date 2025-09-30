@@ -3,12 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETFRAMEWORK
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -117,8 +122,8 @@ namespace Datadog.Trace.PlatformHelpers
             {
                 var tuple = ParseControllerAndPathFromCgroupLine(line);
                 if (tuple is not null
-                    && !string.IsNullOrEmpty(tuple.Item2)
-                    && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)))
+                 && !string.IsNullOrEmpty(tuple.Item2)
+                 && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)))
                 {
                     string controller = tuple.Item1;
                     string cgroupNodePath = tuple.Item2;
@@ -149,6 +154,49 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         internal static bool TryGetInode(string path, out long result)
+            => TryGetInodeUsingPInvoke(path, out result)
+            || TryGetInodeUsingStat(path, out result);
+
+        // Internal for testing
+        internal static bool TryGetInodeUsingPInvoke(string path, out long result)
+        {
+            result = 0;
+
+            try
+            {
+                if (!NativeMethods.TryGetInodeForPath(path, out result))
+                {
+                    LogError(null, "Error obtaining inode using PInvoke, returned " + result);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogError(ex, "Error obtaining inode using PInvoke");
+                return false;
+            }
+
+            static void LogError(Exception ex, string message)
+            {
+#pragma warning disable DDLOG004 // Must use constant strings - disabled as it's an integer only, and only called twice in the app lifetime
+                if (EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe())
+                {
+                    // if it's attached, then this really is an error
+                    Log.Error(ex, message);
+                }
+                else
+                {
+                    // The profiler isn't there, so this is "normal"
+                    Log.Debug(ex, message);
+                }
+            }
+#pragma warning restore DDLOG004
+        }
+
+        // Internal for testing
+        internal static bool TryGetInodeUsingStat(string path, out long result)
         {
             result = 0;
 
@@ -159,7 +207,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Error obtaining inode.");
+                Log.Warning(ex, "Error obtaining inode using stat");
                 return false;
             }
         }
@@ -223,3 +271,4 @@ namespace Datadog.Trace.PlatformHelpers
         }
     }
 }
+#endif

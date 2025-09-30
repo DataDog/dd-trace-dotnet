@@ -34,7 +34,8 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
             ScopedTracer tracer = null;
             try
             {
-                Profiler.SetInstanceForTests(new Profiler(contextTracker.Object, new Mock<IProfilerStatus>().Object));
+                var profilerSettings = new ProfilerSettings(ProfilerState.Enabled);
+                Profiler.SetInstanceForTests(new Profiler(contextTracker.Object, new Mock<IProfilerStatus>().Object, profilerSettings));
 
                 tracer = TracerHelper.Create(new TracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>());
 

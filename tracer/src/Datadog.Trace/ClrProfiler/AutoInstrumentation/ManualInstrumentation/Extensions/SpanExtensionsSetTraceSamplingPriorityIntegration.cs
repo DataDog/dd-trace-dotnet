@@ -39,15 +39,15 @@ public class SpanExtensionsSetTraceSamplingPriorityIntegration
         // it's most likely to be a duck-typed Span, so try that first
         if (span is IDuckType { Instance: Span s })
         {
-            s.SetTraceSamplingPriorityInternal(samplingPriority);
+            s.SetTraceSamplingPriority(samplingPriority);
         }
         else if (span is Span autoSpan)
         {
-            autoSpan.SetTraceSamplingPriorityInternal(samplingPriority);
+            autoSpan.SetTraceSamplingPriority(samplingPriority);
         }
 
         // If this isn't an automatic span, or the span is null, then this almost certainly won't work,
-        // because SetTraceSamplingPriorityInternal tries to extract the "real" SpanContext from it
+        // because SetTraceSamplingPriority tries to extract the "real" SpanContext from it
         return CallTargetState.GetDefault();
     }
 }

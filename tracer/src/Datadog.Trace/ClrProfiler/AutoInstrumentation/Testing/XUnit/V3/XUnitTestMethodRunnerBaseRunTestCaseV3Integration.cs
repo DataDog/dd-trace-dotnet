@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     ParameterTypeNames = ["!0", "!2"],
     ReturnTypeName = "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
     MinimumVersion = "1.0.0",
-    MaximumVersion = "2.*.*",
+    MaximumVersion = "3.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -199,6 +199,15 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
                     if (doRetry)
                     {
+                        // check if is the first execution and the dynamic instrumentation feature is enabled
+                        if (isFlakyRetryEnabled && isFirstExecution && testCaseMetadata.HasAnException && testOptimization.DynamicInstrumentationFeature?.Enabled == true)
+                        {
+                            // let's wait for the instrumentation of an exception has been done
+                            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: First execution with an exception detected. Waiting for the exception instrumentation.");
+                            await testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).ConfigureAwait(false);
+                            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Exception instrumentation was set or timed out.");
+                        }
+
                         // Let's execute the retry
                         var retryNumber = testCaseMetadata.ExecutionIndex + 1;
 

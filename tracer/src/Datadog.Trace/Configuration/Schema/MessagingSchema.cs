@@ -120,5 +120,16 @@ namespace Datadog.Trace.Configuration.Schema
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new RabbitMQTags(spanKind),
                 _ => new RabbitMQV1Tags(spanKind),
             };
+
+        public AzureServiceBusTags CreateAzureServiceBusTags(string spanKind)
+        {
+            var tags = _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AzureServiceBusTags(),
+                _ => new AzureServiceBusV1Tags(),
+            };
+            tags.SpanKind = spanKind;
+            return tags;
+        }
     }
 }

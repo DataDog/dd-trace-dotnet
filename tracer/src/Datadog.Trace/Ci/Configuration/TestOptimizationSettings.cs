@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
@@ -80,6 +81,9 @@ namespace Datadog.Trace.Ci.Configuration
             {
                 EarlyFlakeDetectionEnabled = false;
             }
+
+            // Dynamic Instrumentation
+            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled).AsBool(false);
 
             // RUM flush milliseconds
             RumFlushWaitMillis = config.WithKeys(ConfigurationKeys.CIVisibility.RumFlushWaitMillis).AsInt32(500);
@@ -240,6 +244,11 @@ namespace Datadog.Trace.Ci.Configuration
         public bool? KnownTestsEnabled { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether the Dynamic Instrumentation feature is enabled.
+        /// </summary>
+        public bool? DynamicInstrumentationEnabled { get; private set; }
+
+        /// <summary>
         /// Gets a value indicating the number of milliseconds to wait after flushing RUM data.
         /// </summary>
         public int RumFlushWaitMillis { get; }
@@ -304,6 +313,11 @@ namespace Datadog.Trace.Ci.Configuration
             KnownTestsEnabled = value;
         }
 
+        internal void SetDynamicInstrumentationEnabled(bool value)
+        {
+            DynamicInstrumentationEnabled = value;
+        }
+
         internal void SetEarlyFlakeDetectionEnabled(bool value)
         {
             EarlyFlakeDetectionEnabled = value;
@@ -345,10 +359,10 @@ namespace Datadog.Trace.Ci.Configuration
         }
 
         private TracerSettings InitializeTracerSettings()
-            => InitializeTracerSettings(GlobalConfigurationSource.CreateDefaultConfigurationSource());
+            => InitializeTracerSettings(GlobalConfigurationSource.Instance);
 
         // Internal for testing
-        internal TracerSettings InitializeTracerSettings(CompositeConfigurationSource source)
+        internal TracerSettings InitializeTracerSettings(IConfigurationSource source)
         {
             // This is a somewhat hacky way to "tell" TracerSettings that we're running in CI Visibility
             // There's no doubt various other ways we could flag it based on values we're _already_ extracting,
@@ -368,7 +382,7 @@ namespace Datadog.Trace.Ci.Configuration
             }
 
             var newSource = new CompositeConfigurationSource([new DictionaryObjectConfigurationSource(additionalSource), source]);
-            return new TracerSettings(newSource, telemetry, new OverrideErrorLog());
+            return new TracerSettings(newSource, telemetry, new OverrideErrorLog(), new LibDatadogAvailableResult(false));
         }
     }
 }

@@ -104,6 +104,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headersCollection.Value, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());
                 }
 
+                tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
+
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }

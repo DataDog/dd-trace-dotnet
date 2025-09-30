@@ -64,17 +64,11 @@ internal partial class TestSpanTags : TestSuiteSpanTags
     [Tag(TestTags.Parameters)]
     public string? Parameters { get; set; }
 
-    [Tag(TestTags.SourceFile)]
-    public string? SourceFile { get; set; }
-
     [Metric(TestTags.SourceStart)]
     public double? SourceStart { get; set; }
 
     [Metric(TestTags.SourceEnd)]
     public double? SourceEnd { get; set; }
-
-    [Tag(TestTags.CodeOwners)]
-    public string? CodeOwners { get; set; }
 
     [Tag(TestTags.Traits)]
     public string? Traits { get; set; }

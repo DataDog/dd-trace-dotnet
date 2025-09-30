@@ -17,6 +17,6 @@ internal interface IListObjectsV2Request : IDuckType
     /// <summary>
     /// Gets the S3 bucket name.
     /// </summary>
-    [DuckField(Name = "bucketName")]
-    string BucketName { get; }
+    [Duck(Name = "BucketName")]
+    string? BucketName { get; }
 }

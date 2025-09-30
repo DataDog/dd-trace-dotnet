@@ -38,6 +38,7 @@
 #include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
+#include "PInvoke.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -55,6 +56,7 @@ class IExporter;
 class RawSampleTransformer;
 class RuntimeIdStore;
 class TimerCreateCpuProfiler;
+class CpuSampleProvider;
 class NetworkProvider;
 
 #ifdef LINUX
@@ -202,6 +204,9 @@ public:
     // for SSI, the services need to be started after the runtime is initialized
     void OnStartDelayedProfiling() override;
 
+    // for Stable Configuration, the managed layer will enable/disable the profiler
+    // but also will provide values "dynamically" computed for environment/version/service name
+    bool SetConfiguration(shared::StableConfig::SharedConfig config);
 
 // Access to global services
 // All services are allocated/started and stopped/deleted by the CorProfilerCallback (no need to use unique_ptr/shared_ptr)
@@ -254,12 +259,14 @@ private :
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
     TimerCreateCpuProfiler* _pCpuProfiler = nullptr;
+    CpuSampleProvider* _pCpuSampleProvider = nullptr;
 #endif
 
     std::vector<std::unique_ptr<IService>> _services;
 
     std::unique_ptr<IExporter> _pExporter = nullptr;
     std::shared_ptr<IConfiguration> _pConfiguration = nullptr;
+    bool _IsManagedConfigurationSet = false; // profiler can't start before this becomes true
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;

@@ -166,7 +166,7 @@ internal static class DatadogLoggingFactory
 
     // Internal for testing
     internal static string GetLogDirectory(IConfigurationTelemetry telemetry)
-        => GetLogDirectory(GlobalConfigurationSource.CreateDefaultConfigurationSource(), telemetry);
+        => GetLogDirectory(GlobalConfigurationSource.Instance, telemetry);
 
     private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
@@ -195,25 +195,37 @@ internal static class DatadogLoggingFactory
         //   - Path.GetTempPath
         if (string.IsNullOrEmpty(logDirectory))
         {
-#if NETFRAMEWORK
-            logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
-#else
             var isWindows = FrameworkDescription.Instance.IsWindows();
 
-            if (ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry))
+            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry) ||
+                ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry))
             {
                 return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
             }
-            else if (isWindows)
+
+            if (isWindows)
             {
-                logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
+                // On Nano Server, this returns "", so we fallback to reading from the env var set in the base image instead
+                // - https://github.com/dotnet/runtime/issues/22690
+                // - https://github.com/dotnet/runtime/issues/21430
+                // - https://github.com/dotnet/runtime/pull/109673
+                // If _that_ fails, we just hard code it to "C:\ProgramData", which is what the native components do anyway
+                var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                if (string.IsNullOrEmpty(programData))
+                {
+                    programData = Environment.GetEnvironmentVariable("ProgramData");
+                    if (string.IsNullOrEmpty(programData))
+                    {
+                        programData = @"C:\ProgramData";
+                    }
+                }
+
+                logDirectory = Path.Combine(programData, "Datadog .NET Tracer", "logs");
             }
             else
             {
-                // Linux or GCP Functions
                 logDirectory = "/var/log/datadog/dotnet";
             }
-#endif
         }
 
         if (!Directory.Exists(logDirectory))
@@ -255,7 +267,7 @@ internal static class DatadogLoggingFactory
         var maxLogFileSize = new ConfigurationBuilder(source, telemetry)
                             .WithKeys(ConfigurationKeys.MaxLogFileSize)
                             .GetAs(
-                                 () => DefaultMaxLogFileSize,
+                                 defaultValue: new(DefaultMaxLogFileSize, DefaultMaxLogFileSize.ToString(CultureInfo.InvariantCulture)),
                                  converter: x => long.TryParse(x, out var maxLogSize)
                                                      ? maxLogSize
                                                      : ParsingResult<long>.Failure(),

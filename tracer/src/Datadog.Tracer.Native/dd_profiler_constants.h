@@ -29,8 +29,7 @@ const shared::WSTRING env_vars_to_display[]{environment::tracing_enabled,
                                     environment::ci_visibility_enabled,
                                     environment::azure_app_services,
                                     environment::azure_app_services_app_pool_id,
-                                    environment::azure_app_services_cli_telemetry_profile_value,
-                                    environment::iast_enabled};
+                                    environment::azure_app_services_cli_telemetry_profile_value};
 
 const shared::WSTRING skip_assembly_prefixes[]{
     WStr("Microsoft.AI"),
@@ -63,48 +62,6 @@ const shared::WSTRING include_assemblies[]{
     WStr("System.Runtime.Remoting"),
 };
 
-// Note that this list should be kept in sync with the values in shared/src/Datadog.Trace.ClrProfiler.Native/util.h
-// Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
-// FIXME: this should also take into account case insensitivity, but that is not yet supported
-// https://devblogs.microsoft.com/oldnewthing/20241007-00/?p=110345
-const shared::WSTRING default_exclude_assemblies[]{
-    WStr("aspnet_compiler.exe"),
-    WStr("aspnet_state.exe"),
-    WStr("CollectGuestLogs.exe"), // https://github.com/Azure/WindowsVMAgent
-    WStr("csc.exe"),
-    WStr("dd-trace"),
-    WStr("dd-trace.exe"),
-    WStr("devenv.exe"),
-    WStr("iisexpresstray.exe"),
-    WStr("InetMgr.exe"),
-    WStr("Microsoft.ServiceHub.Controller.exe"),
-    WStr("MSBuild.exe"),
-    WStr("MsDtsSrvr.exe"),
-    WStr("msvsmon.exe"),
-    WStr("PerfWatson2.exe"),
-    WStr("powershell.exe"),
-    WStr("pwsh.exe"),
-    WStr("pwsh"),
-    WStr("ServiceHub.DataWarehouseHost.exe"),
-    WStr("ServiceHub.Host.CLR.exe"),
-    WStr("ServiceHub.Host.CLR.x86.exe"),
-    WStr("ServiceHub.IdentityHost.exe"),
-    WStr("ServiceHub.RoslynCodeAnalysisService32.exe"),
-    WStr("ServiceHub.SettingsHost.exe"),
-    WStr("ServiceHub.TestWindowStoreHost.exe"),
-    WStr("ServiceHub.ThreadedWaitDialog.exe"),
-    WStr("ServiceHub.VSDetouredHost.exe"),
-    WStr("sqlagent.exe"),
-    WStr("sqlbrowser.exe"),
-    WStr("sqlservr.exe"),
-    WStr("VBCSCompiler.exe"),
-    WStr("vsdbg"),
-    WStr("vsdbg.exe"),
-    WStr("WaAppAgent.exe"),            // https://github.com/Azure/WindowsVMAgent
-    WStr("WerFault.exe"),              // WER = Windows Error Reporting - can kick in when a process crashes
-    WStr("WindowsAzureGuestAgent.exe") // https://github.com/Azure/WindowsVMAgent
-};
-
 const shared::WSTRING skip_traceattribute_assembly_prefixes[]{
     WStr("System."), WStr("Microsoft."), WStr("Datadog.")};
 
@@ -122,7 +79,7 @@ const shared::WSTRING system_private_corelib_assemblyName = WStr("System.Private
 const shared::WSTRING datadog_trace_clrprofiler_managed_loader_assemblyName = WStr("Datadog.Trace.ClrProfiler.Managed.Loader");
 
 const shared::WSTRING managed_profiler_full_assembly_version =
-    WStr("Datadog.Trace, Version=3.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+    WStr("Datadog.Trace, Version=3.28.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const shared::WSTRING managed_profiler_name = WStr("Datadog.Trace");
 const shared::WSTRING manual_instrumentation_name = WStr("Datadog.Trace.Manual");
@@ -156,9 +113,13 @@ const shared::WSTRING libdatadog_exporter_nativemethods_type = WStr("Datadog.Tra
 const shared::WSTRING libdatadog_config_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+Config");
 const shared::WSTRING libdatadog_common_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+Common");
 const shared::WSTRING libdatadog_logger_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+Logger");
+const shared::WSTRING libdatadog_libraryconfig_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+LibraryConfig");
 
 const shared::WSTRING calltargetstate_type_name = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
 const shared::WSTRING calltargetstate_skipmethodbody_function_name = WStr("GetSkipMethodBody");
+
+// Also defined in `debugger_tokens.h` as `managed_profiler_debugger_async_method_invoker_type`
+const shared::WSTRING asyncmethoddebuggerinvokerv2_type_name = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncMethodDebuggerInvokerV2");
 
 #ifdef _WIN32
 const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACER.NATIVE.DLL");
@@ -179,7 +140,7 @@ const AssemblyProperty managed_profiler_assembly_property = AssemblyProperty(
                   49,  105, 236, 40,  21,  176, 12, 238, 238, 204, 141, 90,  27,  244, 61,  182, 125, 41,  97,  163,
                   233, 190, 161, 57,  127, 4,   62, 192, 116, 145, 112, 150, 73,  37,  47,  85,  101, 183, 86,  197},
     160, 32772, 1)
-        .WithVersion(3, 22, 0, 0);
+        .WithVersion(3, 28, 0, 0);
 
 } // namespace trace
 

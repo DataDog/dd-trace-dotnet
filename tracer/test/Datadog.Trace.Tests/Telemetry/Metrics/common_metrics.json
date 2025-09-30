@@ -304,6 +304,16 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "context_header_style.malformed": {
+      "tags": [
+        "header_style"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "The number of times a context propagation header is dropped because it is malformed, tagged by the header style (`header_style:baggage`)",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "stats_buckets": {
       "tags": [],
       "metric_type": "gauge",

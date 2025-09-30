@@ -56,11 +56,18 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 9.0.203
+  dotnetCoreSdkLatestVersion: 10.0.100-rc.1.25451.107
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 9.0.203
+  dotnetCoreSdkLatestVersionShort: 10.0.100-rc.1
   nativeBuildDotnetSdkVersion: 7.0.306
+  # These are the Managed DevOps pool names we use
+  linuxTasksPool: azure-managed-linux-tasks
+  linuxX64SmokePool: azure-managed-linux-smoke-2
+  linuxX64Pool: azure-managed-linux-x64-2
+  linuxArm64Pool: azure-managed-linux-arm64-1
+  windowsX64Pool: azure-managed-windows-x64-2
+
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -96,6 +103,8 @@ variables:
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY_PROD)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
+  DD_LOGGER_DD_TRACE_LOG_DIRECTORY: $(System.DefaultWorkingDirectory)/artifacts/build_data/infra_logs
+  DD_TRACE_DEBUG: $[eq(variables['ForceDebugRun'], 'true')]
   DD_LOGGER_TF_BUILD: True
   DD_LOGGER_BUILD_BUILDID: $(Build.BuildId)
   DD_LOGGER_BUILD_DEFINITIONNAME: $(Build.DefinitionName)
@@ -119,7 +128,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.22.0
+  ToolVersion: 3.28.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -165,7 +174,7 @@ stages:
   - job: fetch
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-linux-tasks
+      name: $(linuxTasksPool)
 
     steps:
     - checkout: none
@@ -207,7 +216,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -233,7 +242,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -278,7 +287,7 @@ stages:
 
   - job: build
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -333,7 +342,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -396,8 +405,8 @@ stages:
       timeoutInMinutes: 60 #default value
       dependsOn: []
       pool:
-        name: azure-managed-linux-x64-1
-      
+        name: $(linuxX64Pool)
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -459,7 +468,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -510,7 +519,7 @@ stages:
           artifactSuffix: linux-musl-x64
           useNativeSdkVersion: ""
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -572,7 +581,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -664,7 +673,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
     workspace:
       clean: all
     steps:
@@ -707,7 +716,7 @@ stages:
     dependsOn: []
 
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
     workspace:
       clean: all
     steps:
@@ -757,7 +766,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
     workspace:
       clean: all
     steps:
@@ -799,7 +808,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
     workspace:
       clean: all
     steps:
@@ -847,14 +856,14 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-      
+
       # Download _both_ musl and glibc if we're building the universal package
       # but only the musl package if we're building alpine package
     - template: steps/download-artifact.yml
@@ -1000,7 +1009,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-managed-windows-x64-2
+    name: $(windowsX64Pool)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1024,8 +1033,8 @@ stages:
           artifact: dd-dotnet-win-x64
           path: $(monitoringHome)/win-x64
 
-      - script: tracer\build.cmd PackageTracerHome PublishFleetInstaller
-        displayName: Build MSI and Tracer home
+      - script: tracer\build.cmd PackageTracerHome PublishFleetInstaller DownloadWinSsiTelemetryForwarder
+        displayName: Build MSI, Tracer home, FleetInstaller, and TelemetryForwarder
         retryCountOnTaskFailure: 1
 
       - publish: $(artifacts)/windows-tracer-home.zip
@@ -1044,6 +1053,10 @@ stages:
         displayName: Publish fleet installer
         artifact: fleet-installer
 
+      - publish: $(artifacts)/telemetry_forwarder.exe
+        displayName: Publish telemetry-forwarder
+        artifact: fleet-installer-telemetry-forwarder
+
 - stage: build_dd_dotnet_windows
   dependsOn: [merge_commit_id]
   variables:
@@ -1059,7 +1072,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1100,7 +1113,7 @@ stages:
           artifactSuffix: linux-musl-x64
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1147,7 +1160,7 @@ stages:
           artifactSuffix: linux-musl-arm64
 
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1197,7 +1210,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
       - template: steps/clone-repo.yml
@@ -1233,7 +1246,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1248,7 +1261,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
     workspace:
       clean: all
     steps:
@@ -1286,7 +1299,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-managed-windows-x64-2
+    name: $(windowsX64Pool)
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1400,7 +1413,7 @@ stages:
       matrix:
         $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_x64_matrix'] ]
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1457,7 +1470,7 @@ stages:
         matrix:
           $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_arm64_matrix'] ]
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
       workspace:
         clean: all
       steps:
@@ -1473,7 +1486,15 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
+            command: "BuildManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
+            apiKey: $(DD_LOGGER_DD_API_KEY)
+            retryCountForRunCommand: 3
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: $(baseImage)
+            command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - template: steps/make-artifacts-uploadable.yml
@@ -1503,7 +1524,7 @@ stages:
     - job: standalone
       timeoutInMinutes: 60 #default value
       pool:
-        name: azure-managed-windows-x64-2
+        name: $(windowsX64Pool)
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1549,8 +1570,10 @@ stages:
             framework: net8.0
           net9.0:
             framework: net9.0
+          net10.0:
+            framework: net10.0
       pool:
-        name: azure-managed-windows-x64-2
+        name: $(windowsX64Pool)
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1622,7 +1645,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -1710,7 +1733,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_debugger_matrix'] ]
@@ -1775,7 +1798,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1839,7 +1862,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1853,7 +1876,7 @@ stages:
         where dotnet
       displayName: 'Rename default dotnet.exe'
     - template: steps/restore-working-directory.yml
-        
+
     - template: steps/install-msi.yml
       parameters:
         # Pin to a specific version of Azure Functions, as beyond this requires Azurite
@@ -1916,7 +1939,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1953,7 +1976,7 @@ stages:
 - stage: static_analysis_tests_profiler
   condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -1967,7 +1990,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     timeoutInMinutes: 60 #default value
 
     steps:
@@ -2000,7 +2023,7 @@ stages:
   - job: Linux
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2042,7 +2065,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     variables:
       relativeMsiOutputDirectory: /artifacts/msi/$(targetPlatform)/en-us
 
@@ -2122,7 +2145,7 @@ stages:
   - job: fleet_installer_tests
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
     variables:
       framework: net48
 
@@ -2184,7 +2207,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2260,7 +2283,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2376,7 +2399,7 @@ stages:
           publishTargetFramework: "net9.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9"
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2406,7 +2429,7 @@ stages:
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
-        
+
     - script: |
         # Include the serverless dockerfile
         docker-compose -p $(DockerComposeProjectName) \
@@ -2555,7 +2578,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2645,7 +2668,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2717,7 +2740,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2791,7 +2814,7 @@ stages:
   #address sanitizer tests
   condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -2808,13 +2831,16 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
+    - script: |
+        sudo sysctl vm.mmap_rnd_bits=28
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2832,7 +2858,7 @@ stages:
         baseImage: debian
         command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        
+
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
@@ -2852,7 +2878,7 @@ stages:
     condition: false
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2871,9 +2897,9 @@ stages:
 
 - stage: ubsan_profiler_tests
 #undefined behavior sanitizer tests
-  condition: > 
+  condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -2889,7 +2915,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
 
@@ -2933,7 +2959,7 @@ stages:
   #thread sanitizer tests
   condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -2950,13 +2976,17 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
+    - script: |
+        sudo sysctl vm.mmap_rnd_bits=28
+        sudo sysctl kernel.randomize_va_space=1
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2981,7 +3011,7 @@ stages:
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
 
- 
+
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -2994,7 +3024,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -3064,7 +3094,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -3177,7 +3207,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -3258,11 +3288,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      name: azure-managed-windows-x64-2
-
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent_no_pull
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -3274,6 +3300,28 @@ stages:
 
     - script: tracer\build.cmd SetupExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
+
+    - powershell: |
+        dotnet build -c Release $(System.DefaultWorkingDirectory)\tracer\tools\MockAgent
+        $serviceName = "MockAgent"
+        $exePath = "$(System.DefaultWorkingDirectory)\tracer\tools\MockAgent\bin\release\net9.0\MockAgent.exe"
+
+        # Check if service already exists
+        if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+            Write-Host "Service $serviceName already exists. Stopping and removing..."
+            Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
+            sc.exe delete $serviceName | Out-Null
+        }
+
+        # Install the service
+        sc.exe create $serviceName binPath= "`"$exePath`"" start= auto DisplayName= "Datadog Mock Agent"
+
+        # Start the service
+        Start-Service -Name $serviceName
+
+        # Verify
+        Get-Service -Name $serviceName
+      displayName: Start Mock Agent
 
     - script: tracer\build.cmd RunExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest $(explorationTestUseCase) $(explorationTestName)
@@ -3314,7 +3362,7 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
     pool:
-      name: azure-managed-linux-x64-1
+      name: $(linuxX64Pool)
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3410,7 +3458,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -3624,7 +3672,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-managed-windows-x64-2
+      name: $(windowsX64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -3708,22 +3756,22 @@ stages:
         x64:
           baseImage: debian
           artifactSuffix: linux-x64
-          poolName: azure-managed-linux-x64-1
+          poolName: $(linuxX64Pool)
           targetArch: x64
         alpine_x64:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolName: azure-managed-linux-x64-1
+          poolName: $(linuxX64Pool)
           targetArch: x64
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
-          poolname: azure-managed-linux-arm64-2
+          poolname: $(linuxArm64Pool)
           targetArch: arm64
         alpine_arm64:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
-          poolname: azure-managed-linux-arm64-2
+          poolname: $(linuxArm64Pool)
           targetArch: arm64
 
     pool:
@@ -4148,9 +4196,18 @@ stages:
             AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
-# Only run these on merges to master etc
+# Only run these on merges to master and PRs with the docker_image_artifacts label
 - stage: upload_container_images
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainOrReleaseBranch, true))
+  condition: |
+      or(
+        and( succeeded()
+          , eq( variables['Build.Reason'], 'IndividualCI')
+          , eq( variables['isMainOrReleaseBranch'], true)
+        ),
+        and( in( dependencies.upload_to_azure.result, 'Succeeded')
+          , eq( variables['Build.Reason'], 'PullRequest')
+        )
+      )
   dependsOn: [upload_to_azure]
   jobs:
     - job: upload
@@ -4161,16 +4218,36 @@ stages:
       - checkout: none
       - template: steps/create-github-app-token.yml
       - bash: |
-          echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId) and is_release_version=False"
+          REF=$(Build.SourceBranch)
+          BRANCH_NAME="latest_snapshot"
+          if [ "$(Build.Reason)" = "PullRequest" ]; then
+            LABELS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$(System.PullRequest.PullRequestNumber)" \
+            | jq -r '.labels[].name')
+
+            if echo "$LABELS" | grep -q "docker_image_artifacts"; then
+              BRANCH_NAME="$(System.PullRequest.SourceBranch)"
+              REF="refs/heads/$BRANCH_NAME"
+            else
+              echo "Label 'docker_image_artifacts' not found in PR — skipping Docker image build"
+              exit 0
+            fi
+          fi
+
+          echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml with ref=$REF and azdo_build_id=$(Build.BuildId) and is_release_version=False"
           curl \
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token $GITHUB_TOKEN"\
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml/dispatches \
-            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)"}}'
+            -d "{\"ref\":\"$REF\",\"inputs\":{\"azdo_build_id\":\"$(Build.BuildId)\",\"branch_name\":\"$BRANCH_NAME\"}}"
         displayName: Start the generation of docker base images on GitHub Actions worfklow
-        condition: eq(variables['isMainBranch'], true)
+        condition: |
+          or(
+            eq( variables['isMainBranch'], true ),
+            eq( variables['Build.Reason'],  'PullRequest' )
+          )
         env:
           GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
 
@@ -4205,7 +4282,7 @@ stages:
     - job: Windows
       dependsOn: create_github_token
       variables:
-        GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]  
+        GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]
 
       timeoutInMinutes: 30
 
@@ -4246,7 +4323,7 @@ stages:
           GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
 
 - stage: execution_benchmarks
-  dependsOn: [build_windows_tracer, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_profiler, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -4278,7 +4355,7 @@ stages:
 
     - template: steps/download-artifact.yml
       parameters:
-        artifact: windows-tracer-home
+        artifact: windows-profiler-home
         path: $(monitoringHome)
         retryCountOnTaskFailure: 5
 
@@ -4300,12 +4377,19 @@ stages:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
         DD_CIVISIBILITY_LOGS_ENABLED: 0
         DD_CIVISIBILITY_ITR_ENABLED: 0
+        LOG_ARTIFACT_DIR: $(System.DefaultWorkingDirectory)/artifacts/build_data/logs
 
     - powershell: |
         mkdir -p $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
         cp $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)/results_*.json $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
       displayName: Copy the results to benchmarks dir
       condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/logs
+      displayName: Uploading logs
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
       continueOnError: true
 
     - publish: "$(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks"
@@ -4592,16 +4676,16 @@ stages:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [compute_scenarios, tests]
-        
+
     - job: compute_scenarios
       timeoutInMinutes: 60
       displayName: Compute system-tests scenarios
       pool:
           vmImage: ubuntu-latest
-          
+
       steps:
         - checkout: none
-          
+
         - task: UsePythonVersion@0
           inputs:
             versionSpec: '3.12'
@@ -4609,15 +4693,15 @@ stages:
 
         - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
           displayName: Get system tests repo
-          
+
         - script: |
             ./build.sh -i runner
           displayName: Install runner
           workingDirectory: system-tests
-          
+
         - script: |
             set -e
-            
+
             source venv/bin/activate
             # Try to get each workflow to take 15 mins = 900s
             PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g "$(scenarioGroups)" -s "$(additionalScenarios)" -t 900 > out.txt
@@ -4627,7 +4711,7 @@ stages:
 
             echo "Found scenario groups: $endtoend_scenario_groups"
             echo "Found weblogs: $endtoend_weblogs"
-            
+
             # Write the weblogs to a file (for later use to generate the docker images)
             python -c "import json; variants = json.loads('$endtoend_weblogs'); print('\n'.join(variants))" > /tmp/weblogs_list.txt
             # Generate matrix and write to file
@@ -4652,7 +4736,7 @@ stages:
           displayName: Generate scenarios matrix JSON
           name: create_matrix
           workingDirectory: system-tests
-          
+
         - template: steps/download-artifact.yml
           parameters:
             artifact: linux-packages-linux-x64
@@ -4669,14 +4753,14 @@ stages:
             set -e
             cd system-tests
             mkdir -p ../docker-images
-        
+
             while read w; do
               echo "------------------------------------"
               echo "Building images for variant: $w"
               echo "------------------------------------"
               # Build the images. For example:
               ./build.sh dotnet --weblog-variant $w
-            
+
               # Save weblog variant image
               docker save system_tests/weblog:latest -o ../docker-images/$w.tar
             done < /tmp/weblogs_list.txt
@@ -4697,7 +4781,7 @@ stages:
       pool:
           vmImage: ubuntu-latest
       dependsOn: compute_scenarios
-     
+
       strategy:
         matrix: $[ dependencies.compute_scenarios.outputs['create_matrix.matrixJson'] ]
 
@@ -4711,7 +4795,7 @@ stages:
 
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
-        
+
       - template: steps/download-artifact.yml
         parameters:
           artifact: system-test-docker-images
@@ -4734,7 +4818,7 @@ stages:
       - script: |
           echo "Loading images for variant: $(WEBLOG_VARIANT)"
           docker load -i "$(Build.SourcesDirectory)/$(WEBLOG_VARIANT).tar"
-          
+
           echo "Available Docker images after loading:"
           docker images
         displayName: Docker load the correct variant
@@ -4762,7 +4846,13 @@ stages:
           # Replace ',' with ' +S ' and add initial +S prefix
           SCENARIOS=$(SCENARIO)
           SCENARIOS_TO_RUN="+S ${SCENARIOS//,/ +S }"
-          ./run.sh $SCENARIOS_TO_RUN --splits=$(N) --group=$(I)
+
+          DEBUG_FLAG=""
+          if [[ "$(DD_TRACE_DEBUG)" == "True" ]]; then
+            DEBUG_FLAG="--force-dd-trace-debug"
+          fi
+
+          ./run.sh $SCENARIOS_TO_RUN --splits=$(N) --group=$(I) $DEBUG_FLAG
         workingDirectory: system-tests
         displayName: Run tests
         env:
@@ -4798,7 +4888,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -4860,7 +4950,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
         apikey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: installer_chiseled_smoke_tests
@@ -4880,8 +4970,8 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-smoke
-      
+        name: $(linuxX64SmokePool)
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -4910,7 +5000,7 @@ stages:
           parameters:
             target: 'chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
-        
+
         # Run the "dd-dotnet" installer smoke tests
         - script: |
             docker-compose -p $(DockerComposeProjectName) build \
@@ -4935,6 +5025,12 @@ stages:
           condition: always()
           continueOnError: true
 
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: alpine
+            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
+
 - stage: nuget_installer_smoke_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
@@ -4953,7 +5049,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -5023,7 +5119,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: trimmed_installer_smoke_tests
   dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
@@ -5042,7 +5138,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-smoke
+        name: $(linuxX64SmokePool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -5095,7 +5191,7 @@ stages:
           parameters:
             build: true
             baseImage: alpine
-            command: "CheckSmokeTestsForErrors"
+            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_nuget_smoke_tests_linux
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5115,7 +5211,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -5159,7 +5255,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_smoke_tests_linux
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5179,7 +5275,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-smoke
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -5227,7 +5323,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_self_instrument_smoke_tests_linux
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5251,7 +5347,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      name: azure-managed-linux-smoke
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -5304,7 +5400,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: installer_smoke_tests_arm64
   dependsOn: [package_arm64, generate_variables, merge_commit_id]
@@ -5323,7 +5419,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -5341,7 +5437,7 @@ stages:
             mkdir -p artifacts/build_data/logs
           displayName: create test data directories
 
-        # Run the "normal" installer smoke tests 
+        # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
@@ -5386,7 +5482,7 @@ stages:
           parameters:
             build: true
             baseImage: alpine
-            command: "CheckSmokeTestsForErrors"
+            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: installer_chiseled_smoke_tests_arm64
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5406,7 +5502,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -5419,7 +5515,7 @@ stages:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
-        # Run the "normal" installer smoke tests 
+        # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
@@ -5436,7 +5532,7 @@ stages:
           parameters:
             target: 'chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
-        
+
         # Run the "dd-dotnet" installer smoke tests
         - script: |
             docker-compose -p $(DockerComposeProjectName) build \
@@ -5461,6 +5557,12 @@ stages:
           condition: always()
           continueOnError: true
 
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: alpine
+            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
+
 - stage: nuget_installer_smoke_tests_arm64
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
@@ -5479,7 +5581,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
 
     steps:
     - template: steps/clone-repo.yml
@@ -5549,7 +5651,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: dotnet_tool_smoke_tests_arm64
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5569,7 +5671,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-linux-arm64-2
+      name: $(linuxArm64Pool)
 
     steps:
     - template: steps/download-artifact.yml
@@ -5612,7 +5714,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckSmokeTestsForErrors"
+        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
 
 - stage: nuget_installer_smoke_tests_windows
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5708,8 +5810,10 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors
-      displayName: CheckSmokeTestsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: dotnet_tool_smoke_tests_windows
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5781,8 +5885,10 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors
-      displayName: CheckSmokeTestsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: msi_installer_smoke_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5853,8 +5959,10 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors
-      displayName: CheckSmokeTestsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: dd_dotnet_msi_installer_smoke_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5877,7 +5985,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         vmImage: windows-2022
-      
+
       steps:
         - template: steps/install-docker-compose-v1.yml
           parameters:
@@ -5926,8 +6034,10 @@ stages:
           continueOnError: true
 
         - template: steps/install-latest-dotnet-sdk.yml
-        - script: tracer\build.cmd CheckSmokeTestsForErrors
-          displayName: CheckSmokeTestsForErrors
+        - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: tracer_home_smoke_tests
   dependsOn: [package_windows, generate_variables, merge_commit_id]
@@ -5947,7 +6057,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-managed-windows-x64-2
+      vmImage: windows-2022
 
     steps:
     - template: steps/install-docker-compose-v1.yml
@@ -5996,8 +6106,10 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors
-      displayName: CheckSmokeTestsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: fleet_installer_iis_smoke_tests
   dependsOn: [package_windows, generate_variables, merge_commit_id]
@@ -6039,6 +6151,11 @@ stages:
             artifact: fleet-installer
             path: $(smokeTestAppDir)/artifacts/installer
 
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: fleet-installer-telemetry-forwarder
+            path: $(smokeTestAppDir)/artifacts/installer
+
         - powershell: |
             ls $(smokeTestAppDir)/artifacts
             ls $(smokeTestAppDir)/artifacts/installer
@@ -6074,8 +6191,10 @@ stages:
           continueOnError: true
 
         - template: steps/install-latest-dotnet-sdk.yml
-        - script: tracer\build.cmd CheckSmokeTestsForErrors
-          displayName: CheckSmokeTestsForErrors
+        - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: dotnet_tool_nuget_smoke_tests_macos
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -6098,7 +6217,7 @@ stages:
         snapshotOutputDir: "$(System.DefaultWorkingDirectory)/artifacts/build_data/snapshots"
       pool:
         vmImage: $(vmImage)
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -6151,7 +6270,7 @@ stages:
             echo "##vso[task.setvariable variable=AGENT_PID]$agent_pid"
             echo "Agent PID: $agent_pid, waiting for startup"
 
-            while ! nc -z localhost 8126; do   
+            while ! nc -z localhost 8126; do
               sleep 0.1 # wait for 1/10 of the second before check again
             done
 
@@ -6187,10 +6306,10 @@ stages:
         - script: |
             echo "Dumping traces"
             $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_traces.json "http://localhost:8126$(TRACE_DUMP_ENDPOINT)"
-            
+
             echo "Dumping stats"
             $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_stats.json "http://localhost:8126$(STATS_DUMP_ENDPOINT)"
-            
+
             echo "Dumping all requests"
             $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
 
@@ -6203,8 +6322,10 @@ stages:
           condition: always()
           continueOnError: true
 
-        - script: ./tracer/build.sh CheckSmokeTestsForErrors
-          displayName: CheckSmokeTestsForErrors
+        - script: ./tracer/build.sh CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
         - script: kill -15 $(AGENT_PID)
           displayName: Close test agent
@@ -6230,7 +6351,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         vmImage: ubuntu-latest
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -6283,7 +6404,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-managed-linux-arm64-2
+        name: $(linuxArm64Pool)
 
       steps:
         - template: steps/clone-repo.yml
@@ -6317,3 +6438,5 @@ stages:
             echo $result
 
           displayName: Run artifact test (expecting failure)
+
+- template: steps/update-github-pipeline-status.yml # Template reference

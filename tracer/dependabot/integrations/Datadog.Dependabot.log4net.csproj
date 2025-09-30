@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: log4net -->
+    <!--    Assembly: log4net -->
+    <!-- Latest package https://www.nuget.org/packages/log4net/3.2.0 -->
+    <PackageReference Include="log4net" Version="3.2.0" />
+  </ItemGroup>
+
+</Project>

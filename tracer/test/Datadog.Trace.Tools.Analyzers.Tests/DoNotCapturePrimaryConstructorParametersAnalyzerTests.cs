@@ -8,8 +8,9 @@ using Datadog.Trace.Tools.Analyzers.PrimaryConstructorAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
-using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.XUnit.AnalyzerVerifier<
-    Datadog.Trace.Tools.Analyzers.PrimaryConstructorAnalyzer.DoNotCapturePrimaryConstructorParametersAnalyzer>;
+using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
+    Datadog.Trace.Tools.Analyzers.PrimaryConstructorAnalyzer.DoNotCapturePrimaryConstructorParametersAnalyzer,
+    Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests;
 

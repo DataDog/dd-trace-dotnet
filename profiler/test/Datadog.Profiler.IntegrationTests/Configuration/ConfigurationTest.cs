@@ -26,7 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
         // NOTE: we don't need to validate ALL runtimes but just one
         //
 
-        [TestAppFact("Samples.Computer01", new[] { "net9.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckEnvVarsInLogWithDefaultProfilers(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
@@ -45,6 +45,7 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
             bool etwIsLogged = false;
             bool gcCpuIsLogged = false;
             bool threadLifetimeIsLogged = false;
+            bool stableConfigIsLogged = false;
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
                                    .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
@@ -103,6 +104,14 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
                 {
                     threadLifetimeIsLogged = true;
                 }
+                else if (line.Contains("DD_PROFILING_MANAGED_ACTIVATION_ENABLED"))
+                {
+                    stableConfigIsLogged = true;
+                }
+                else if (line.Contains("DD_INJECTION_ENABLED"))
+                {
+                    // this could happen on SSI deployments such as developer's machine
+                }
                 else if (line.Contains("] Configuration: DD_"))
                 {
                     // This is the default value
@@ -121,9 +130,10 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
             etwIsLogged.Should().BeTrue();
             gcCpuIsLogged.Should().BeTrue();
             threadLifetimeIsLogged.Should().BeTrue();
+            stableConfigIsLogged.Should().BeTrue();
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net9.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckEnvVarsInLogWithDisabledProfilers(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
@@ -143,6 +153,7 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
             bool etwIsLogged = false;
             bool gcCpuIsLogged = false;
             bool threadLifetimeIsLogged = false;
+            bool stableConfigIsLogged = false;
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
                                    .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
@@ -201,6 +212,14 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
                 {
                     threadLifetimeIsLogged = true;
                 }
+                else if (line.Contains("DD_PROFILING_MANAGED_ACTIVATION_ENABLED"))
+                {
+                    stableConfigIsLogged = true;
+                }
+                else if (line.Contains("DD_INJECTION_ENABLED"))
+                {
+                    // this could happen on SSI deployments such as developer's machine
+                }
                 else if (line.Contains("] Configuration: DD_"))
                 {
                     // This is the default value
@@ -219,6 +238,7 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
             etwIsLogged.Should().BeTrue();
             gcCpuIsLogged.Should().BeTrue();
             threadLifetimeIsLogged.Should().BeTrue();
+            stableConfigIsLogged.Should().BeTrue();
         }
     }
 }

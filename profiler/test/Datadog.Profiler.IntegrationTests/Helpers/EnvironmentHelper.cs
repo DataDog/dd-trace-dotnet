@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using Datadog.Profiler.IntegrationTests.Xunit;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
@@ -29,6 +30,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             if (enableTracer)
             {
                 EnableTracer();
+            }
+            else
+            {
+                // With Stable Configuration, it is needed to wait for the tracer to enable/disable/auto the profiler
+                // So, use the kill switch to rely on env vars instead
+                CustomEnvironmentVariables["DD_PROFILING_MANAGED_ACTIVATION_ENABLED"] = "0";
             }
 
             InitializeLogAndPprofEnvironmentVariables();

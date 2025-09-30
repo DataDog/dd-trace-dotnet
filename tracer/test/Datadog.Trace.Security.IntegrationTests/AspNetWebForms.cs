@@ -40,6 +40,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             const string url = "/";
 
             var settings = VerifyHelper.GetSpanVerifierSettings(ruleTriggerStatusCode, returnedStatusCode);
+            FilterConnectionHeader(settings);
             var userAgent = "Canary/v3_" + ruleTriggerStatusCode;
 
             var minDateTime = DateTime.UtcNow;
@@ -112,6 +113,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body);
+            FilterConnectionHeader(settings);
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 1, settings, "application/x-www-form-urlencoded");
         }
 
@@ -125,6 +127,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url = "/Health";
 
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            FilterConnectionHeader(settings);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
 

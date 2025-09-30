@@ -24,5 +24,6 @@ EXPORTS
     ShouldHeal
     ReportSuccessfulInstrumentation
     GetUserStrings
+    GetInodeForPath
     InitEmbeddedCallSiteDefinitions
     InitEmbeddedCallTargetDefinitions

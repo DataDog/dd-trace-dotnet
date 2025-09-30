@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 3.22.0)
+project("Datadog.Profiler.Native.Linux" VERSION 3.28.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -142,7 +142,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -lstdc++fs
     -pthread
     -ldl
-    -Wl,--build-id
+    -Wl,--build-id=sha1
 )
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)

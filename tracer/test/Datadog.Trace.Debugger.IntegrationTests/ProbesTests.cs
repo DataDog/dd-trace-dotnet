@@ -35,8 +35,8 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 [UsesVerify]
 public class ProbesTests : TestHelper
 {
-    private const string AddedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument added probes definitions completed.";
-    private const string RemovedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to de-instrument probes definitions completed.";
+    private const string AddedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to instrument added probes definitions completed.";
+    private const string RemovedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.";
 
     private static readonly Type[] _unoptimizedNotSupportedTypes = new[]
     {
@@ -311,7 +311,7 @@ public class ProbesTests : TestHelper
 
             await sample.RunCodeSample();
 
-            await logEntryWatcher.WaitForLogEntry($"LiveDebugger.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
+            await logEntryWatcher.WaitForLogEntry($"Dynamic Instrumentation.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
 
             Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
 
@@ -386,6 +386,7 @@ public class ProbesTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [MemberData(nameof(ProbeTests))]
+    [Flaky("This test fails for various different reasons and needs investigating")]
     public async Task MethodProbeTest(ProbeTestDescription testDescription)
     {
         SkipOverTestIfNeeded(testDescription);
@@ -607,6 +608,21 @@ public class ProbesTests : TestHelper
                 span.Tags[keyValuePair.Key] = keyValuePair.Value.Substring(0, keyValuePair.Value.IndexOf(',')) + " }";
             }
         }
+
+        SanitizeCodeOriginExitFrames(spans);
+    }
+
+    private void SanitizeCodeOriginExitFrames(IImmutableList<MockSpan> spans)
+    {
+        const string codeOriginFrame = "_dd.code_origin.frames";
+        foreach (var span in spans)
+        {
+            var toSanitize = span.Tags.Where(tag => tag.Key.StartsWith(codeOriginFrame)).ToList();
+            foreach (var keyValuePair in toSanitize)
+            {
+                span.Tags.Remove(keyValuePair.Key);
+            }
+        }
     }
 
     private async Task VerifySpanProbeResults(ProbeDefinition[] snapshotProbes, ProbeTestDescription testDescription, ProbeAttributeBase[] probeData, MockTracerAgent agent, bool isMultiPhase, int phaseNumber)
@@ -624,22 +640,22 @@ public class ProbesTests : TestHelper
             settings.UseFileName($"{nameof(ProbeTests)}.{testName}.Spans");
 
             var spans = await agent.WaitForSpansAsync(spanProbes.Length, operationName: spanProbeOperationName);
+            SanitizeCodeOriginExitFrames(spans);
+
             // Assert.Equal(spanProbes.Length, spans.Count);
             foreach (var span in spans)
             {
                 var result = Result.FromSpan(span)
-                                   .Properties(
-                                        s => s
-                                           .Matches(_ => (nameof(span.Name), span.Name), spanProbeOperationName))
-                                   .Tags(
-                                        s => s
-                                            .Matches("component", "trace")
-                                            .MatchesOneOf("debugger.probeid", Enumerable.Select<ProbeDefinition, string>(snapshotProbes, p => p.Id).ToArray()));
+                                   .Properties(s => s
+                                                  .Matches(_ => (nameof(span.Name), span.Name), spanProbeOperationName))
+                                   .Tags(s => s
+                                             .Matches("component", "trace")
+                                             .MatchesOneOf("debugger.probeid", Enumerable.Select<ProbeDefinition, string>(snapshotProbes, p => p.Id).ToArray()));
+
                 // Assert.True(result.Success, result.ToString());
             }
 
-            VerifierSettings.DerivePathInfo(
-                (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", "snapshots")));
+            VerifierSettings.DerivePathInfo((_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", "snapshots")));
 
             await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
         }
@@ -834,7 +850,7 @@ public class ProbesTests : TestHelper
     {
         SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");

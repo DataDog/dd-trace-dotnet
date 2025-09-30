@@ -52,14 +52,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 #endif
 
-    public class TraceAnnotationsVersionMismatchNewerNuGetTests : TraceAnnotationsTests
-    {
-        public TraceAnnotationsVersionMismatchNewerNuGetTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.NewerNuGet", enableTelemetry: false, output)
-        {
-        }
-    }
-
     [UsesVerify]
     public abstract class TraceAnnotationsTests : TestHelper
     {
@@ -86,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public async Task SubmitTraces()
         {
-            const int expectedSpanCount = 50;
+            const int expectedSpanCount = 51;
             var ddTraceMethodsString = string.Empty;
 
             foreach (var type in TestTypes)
@@ -106,7 +98,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
-                var orderedSpans = spans.OrderBy(s => s.Start).ToList();
+                // Exclude the http span
+                var orderedSpans = spans
+                                  .Where(s => !s.Tags.ContainsKey("http-client-handler-type"))
+                                  .OrderBy(s => s.Start)
+                                  .ToList();
                 var rootSpan = orderedSpans.First();
                 var remainingSpans = orderedSpans.Skip(1).ToList();
 
@@ -192,6 +188,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Don't bother with telemetry in version mismatch scenarios because older versions may only support V1 telemetry
             // which we no longer support in our mock telemetry agent
             // FIXME: Could be fixed with an upgrade to the NuGet package (after .NET 8?)
+            EnvironmentHelper.DebugModeEnabled = true;
             MockTelemetryAgent telemetry = _enableTelemetry ? this.ConfigureTelemetry() : null;
             SetEnvironmentVariable("DD_TRACE_METHODS", string.Empty);
             SetEnvironmentVariable("DD_TRACE_ANNOTATIONS_ENABLED", "false");
@@ -200,7 +197,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var process = await RunSampleAndWaitForExit(agent);
             var spans = agent.Spans;
 
-            Assert.Empty(spans);
+            // Only the http client spans should be there
+            spans.Should().OnlyContain(s => s.Tags.ContainsKey("http-client-handler-type"));
             if (telemetry != null)
             {
                 await telemetry.AssertIntegrationAsync(IntegrationId.TraceAnnotations, enabled: false, autoEnabled: false);

@@ -37,6 +37,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             "http.request.headers.sample_correlation_identifier",
             "http.response.headers.sample_correlation_identifier",
             "http.response.headers.server",
+            "baggage.user.id",
+            "baggage.session.id",
+            "baggage.account.id",
         };
 
         private readonly bool _enableRouteTemplateResourceNames;

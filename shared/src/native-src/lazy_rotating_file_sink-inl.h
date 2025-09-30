@@ -69,12 +69,12 @@ SPDLOG_INLINE filename_t lazy_rotating_file_sink<Mutex>::filename()
 template<typename Mutex>
 SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::sink_it_(const details::log_msg &msg)
 {
-     if (!file_opened_)
-    {
-        // I _think_ this is called under a mutex, so we don't need to lock here.
-        file_opened_ = true;
-        file_helper_.open(calc_filename(base_filename_, 0));
-        current_size_ = file_helper_.size(); // expensive. called only once
+    try {
+        // let's open the file if is needed
+        open_if_needed_();
+    } catch (const spdlog_ex&) {
+        file_opened_ = false;
+        return;
     }
 
     memory_buf_t formatted;
@@ -93,8 +93,12 @@ SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::sink_it_(const details::log_m
             new_size = formatted.size();
         }
     }
-    file_helper_.write(formatted);
-    current_size_ = new_size;
+
+    if (file_opened_)
+    {
+        file_helper_.write(formatted);
+        current_size_ = new_size;
+    }
 }
 
 template<typename Mutex>
@@ -117,6 +121,7 @@ SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::rotate_()
     using details::os::filename_to_str;
     using details::os::path_exists;
 
+    file_opened_ = false;
     file_helper_.close();
     for (auto i = max_files_; i > 0; --i)
     {
@@ -137,11 +142,24 @@ SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::rotate_()
             {
                 file_helper_.reopen(true); // truncate the log file anyway to prevent it to grow beyond its limit!
                 current_size_ = 0;
+                file_opened_ = true;
                 throw_spdlog_ex("lazy_rotating_file_sink: failed renaming " + filename_to_str(src) + " to " + filename_to_str(target), errno);
             }
         }
     }
     file_helper_.reopen(true);
+    file_opened_ = true;
+}
+
+template<typename Mutex>
+SPDLOG_INLINE void lazy_rotating_file_sink<Mutex>::open_if_needed_()
+{
+    if (!file_opened_)
+    {
+        file_helper_.open(calc_filename(base_filename_, 0));
+        current_size_ = file_helper_.size(); // expensive. called only once
+        file_opened_ = true;
+    }
 }
 
 // delete the target if exists, and rename the src file  to target

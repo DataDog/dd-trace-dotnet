@@ -129,6 +129,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         {
             runnerInstance.SkipReason = "Flaky test is disabled by Datadog";
             testRunnerInstance.SkipReason = runnerInstance.SkipReason;
+            testCaseMetadata.Skipped = true;
             Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Skipping test: {Class}.{Name} Reason: {Reason}", runnerInstance.TestClass?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty, runnerInstance.SkipReason);
             XUnitIntegration.CreateTest(ref runnerInstance, testCaseMetadata);
         }
@@ -221,6 +222,15 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
                     if (doRetry)
                     {
+                        // check if is the first execution and the dynamic instrumentation feature is enabled
+                        if (isFlakyRetryEnabled && isFirstExecution && testCaseMetadata.HasAnException && testOptimization.DynamicInstrumentationFeature?.Enabled == true)
+                        {
+                            // let's wait for the instrumentation of an exception has been done
+                            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: First execution with an exception detected. Waiting for the exception instrumentation.");
+                            await testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).ConfigureAwait(false);
+                            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Exception instrumentation was set or timed out.");
+                        }
+
                         // Let's execute the retry
                         var retryNumber = testCaseMetadata.ExecutionIndex + 1;
 
