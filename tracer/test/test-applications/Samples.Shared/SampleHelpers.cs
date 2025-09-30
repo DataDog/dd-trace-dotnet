@@ -374,9 +374,9 @@ namespace Samples
 
             var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
                           from prefix in prefixes
-                          let key = envVar.Key as string
+                          let key = (envVar.Key as string)?.ToUpperInvariant() // use ToUpperInvariant() because in .NET Framework string.Contains() doesn't have StringComparison overload
                           let value = envVar.Value as string
-                          where key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !key.Contains("API_KEY", StringComparison.OrdinalIgnoreCase)
+                          where key.StartsWith(prefix, StringComparison.Ordinal) && !key.Contains("API_KEY")
                           orderby key
                           select new KeyValuePair<string, string>(key, value);
 
