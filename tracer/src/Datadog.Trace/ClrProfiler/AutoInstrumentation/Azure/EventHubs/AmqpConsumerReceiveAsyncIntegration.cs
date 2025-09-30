@@ -35,7 +35,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class AmqpConsumerReceiveAsyncIntegration
     {
-        private const string OperationName = "azure_eventhubs.receive";
+        private const string OperationName = "receive";
+        private const string SpanOperationName = "azure_eventhubs.receive";
         private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AmqpConsumerReceiveAsyncIntegration));
 
@@ -136,11 +137,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             try
             {
                 var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Consumer);
-                tags.MessagingOperation = "receive";
+                tags.MessagingOperation = OperationName;
 
                 var links = spanLinks?.Select(ctx => new SpanLink(ctx));
 
-                var scope = tracer.StartActiveInternal(OperationName, tags: tags, links: links);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
+                var scope = tracer.StartActiveInternal(SpanOperationName, tags: tags, serviceName: serviceName, links: links);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Queue;

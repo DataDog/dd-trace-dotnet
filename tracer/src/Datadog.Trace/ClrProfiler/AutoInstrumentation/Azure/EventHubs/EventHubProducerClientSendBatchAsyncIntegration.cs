@@ -31,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class EventHubProducerClientSendBatchAsyncIntegration
     {
+        private const string OperationName = "send";
+
         internal static CallTargetState OnMethodBegin<TTarget, TEventBatch>(
             TTarget instance,
             TEventBatch eventBatch,
@@ -44,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 
             return EventHubsCommon.CreateSenderSpan(
                 instance,
+                OperationName,
                 messages: null,
                 messageCount: messageCount,
                 spanLinks: spanLinks);

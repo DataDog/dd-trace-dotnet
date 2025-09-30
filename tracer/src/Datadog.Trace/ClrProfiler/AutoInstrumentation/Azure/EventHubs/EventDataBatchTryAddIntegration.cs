@@ -31,7 +31,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class EventDataBatchTryAddIntegration
     {
-        private const string OperationName = "azure_eventhubs.create";
+        private const string OperationName = "create";
+        private const string SpanOperationName = "azure_eventhubs.create";
         private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventDataBatchTryAddIntegration));
 
@@ -47,30 +48,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 return CallTargetState.GetDefault();
             }
 
-            var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Producer);
-            tags.MessagingOperation = "create";
-            tags.MessagingDestinationName = instance.EventHubName;
+            var messages = eventData?.Instance != null ? new[] { eventData.Instance } : null;
 
-            var scope = Tracer.Instance.StartActiveInternal(OperationName, tags: tags);
-            var span = scope.Span;
-
-            span.Type = SpanTypes.Queue;
-            span.ResourceName = instance.EventHubName;
-
-            if (!string.IsNullOrEmpty(instance.FullyQualifiedNamespace))
-            {
-                tags.NetworkDestinationName = instance.FullyQualifiedNamespace;
-            }
-
-            if (eventData?.Instance != null)
-            {
-                if (!string.IsNullOrEmpty(eventData.MessageId))
-                {
-                    tags.MessagingMessageId = eventData.MessageId;
-                }
-            }
-
-            return new CallTargetState(scope);
+            return EventHubsCommon.CreateSenderSpan(
+                instance,
+                OperationName,
+                messages: messages,
+                messageCount: 1,
+                spanLinks: null);
         }
 
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(

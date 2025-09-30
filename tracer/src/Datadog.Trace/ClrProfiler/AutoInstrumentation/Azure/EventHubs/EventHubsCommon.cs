@@ -21,7 +21,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 {
     internal static class EventHubsCommon
     {
-        private const string OperationName = "azure_eventhubs.send";
         private const int DefaultEventHubsPort = 5671;
         private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubsCommon));
@@ -79,12 +78,56 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             }
         }
 
-        internal static CallTargetState CreateSenderSpan<TTarget>(
-            TTarget instance,
+        internal static CallTargetState CreateSenderSpan(
+            IEventHubProducerClient instance,
+            string operationName,
             IEnumerable? messages = null,
             int? messageCount = null,
             IEnumerable<SpanLink>? spanLinks = null)
-            where TTarget : IEventHubProducerClient, IDuckType
+        {
+            var endpoint = instance.Connection?.ServiceEndpoint;
+            var networkDestinationName = endpoint?.Host;
+            var networkDestinationPort = endpoint?.Port is null or -1 or 5671 ?
+                                            "5671" :
+                                            endpoint.Port.ToString();
+
+            return CreateSenderSpanInternal(
+                instance.EventHubName,
+                networkDestinationName,
+                networkDestinationPort,
+                operationName,
+                messages,
+                messageCount,
+                spanLinks);
+        }
+
+        internal static CallTargetState CreateSenderSpan(
+            IEventDataBatch instance,
+            string operationName,
+            IEnumerable? messages = null,
+            int? messageCount = null,
+            IEnumerable<SpanLink>? spanLinks = null)
+        {
+            var networkDestinationName = instance.FullyQualifiedNamespace;
+
+            return CreateSenderSpanInternal(
+                instance.EventHubName,
+                networkDestinationName,
+                null,
+                operationName,
+                messages,
+                messageCount,
+                spanLinks);
+        }
+
+        private static CallTargetState CreateSenderSpanInternal(
+            string? eventHubName,
+            string? networkDestinationName,
+            string? networkDestinationPort,
+            string operationName,
+            IEnumerable? messages,
+            int? messageCount,
+            IEnumerable<SpanLink>? spanLinks)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
@@ -97,21 +140,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             try
             {
                 var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Producer);
-                tags.MessagingDestinationName = instance.EventHubName;
-                tags.MessagingOperation = "send";
+                tags.MessagingDestinationName = eventHubName;
+                tags.MessagingOperation = operationName;
 
-                scope = tracer.StartActiveInternal(OperationName, tags: tags, links: spanLinks);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
+                scope = tracer.StartActiveInternal("azure_eventhubs." + operationName, tags: tags, serviceName: serviceName, links: spanLinks);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Queue;
-                span.ResourceName = instance.EventHubName;
+                span.ResourceName = eventHubName;
 
-                var endpoint = instance.Connection?.ServiceEndpoint;
-                if (endpoint != null)
+                if (!string.IsNullOrEmpty(networkDestinationName))
                 {
-                    tags.NetworkDestinationName = endpoint.Host;
-                    var port = endpoint.Port == -1 ? DefaultEventHubsPort : endpoint.Port;
-                    tags.NetworkDestinationPort = port.ToString();
+                    tags.NetworkDestinationName = networkDestinationName;
+                }
+
+                if (!string.IsNullOrEmpty(networkDestinationPort))
+                {
+                    tags.NetworkDestinationPort = networkDestinationPort;
                 }
 
                 var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
