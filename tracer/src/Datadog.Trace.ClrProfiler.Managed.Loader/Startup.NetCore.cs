@@ -4,6 +4,9 @@
 // </copyright>
 
 #if NETCOREAPP
+
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,24 +19,39 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private static CachedAssembly[] _assemblies;
+        private static CachedAssembly[]? _assemblies;
 
         internal static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
 
-        private static string ResolveManagedProfilerDirectory()
+        internal static string? ResolveManagedProfilerDirectory(IEnvironmentVariableProvider envVars)
         {
-            string tracerFrameworkDirectory = "netstandard2.0";
+            var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
 
-            var version = Environment.Version;
-
-            // Old versions of .net core have a major version of 4
-            if ((version.Major == 3 && version.Minor >= 1) || version.Major >= 5)
+            if (tracerHomeDirectory is null)
             {
-                tracerFrameworkDirectory = version.Major >= 6 ? "net6.0" : "netcoreapp3.1";
+                return null;
             }
 
-            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
-            var fullPath = Path.GetFullPath(Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory));
+            var version = Environment.Version;
+            string managedLibrariesDirectory;
+
+            if (version.Major >= 6)
+            {
+                // version > 6.0
+                managedLibrariesDirectory = "net6.0";
+            }
+            else if (version is { Major: 3, Minor: >= 1 } || version.Major == 5)
+            {
+                // version is 3.1 or 5.0
+                managedLibrariesDirectory = "netcoreapp3.1";
+            }
+            else
+            {
+                // version < 3.1 (note: previous versions of .NET Core had major version 4)
+                managedLibrariesDirectory = "netstandard2.0";
+            }
+
+            var fullPath = Path.Combine(Path.GetFullPath(tracerHomeDirectory), managedLibrariesDirectory);
 
             if (!Directory.Exists(fullPath))
             {
@@ -54,12 +72,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return fullPath;
         }
 
-        private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
+        private static Assembly? AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
             return ResolveAssembly(args.Name);
         }
 
-        private static Assembly ResolveAssembly(string name)
+        private static Assembly? ResolveAssembly(string name)
         {
             var assemblyName = new AssemblyName(name);
 
@@ -108,15 +126,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
-        private static bool IsDatadogAssembly(string path, out Assembly cachedAssembly)
+        private static bool IsDatadogAssembly(string path, out Assembly? cachedAssembly)
         {
-            for (var i = 0; i < _assemblies.Length; i++)
+            if (_assemblies is not null)
             {
-                var assembly = _assemblies[i];
-                if (assembly.Path == path)
+                for (var i = 0; i < _assemblies.Length; i++)
                 {
-                    cachedAssembly = assembly.Assembly;
-                    return true;
+                    var assembly = _assemblies[i];
+                    if (assembly.Path == path)
+                    {
+                        cachedAssembly = assembly.Assembly;
+                        return true;
+                    }
                 }
             }
 
@@ -126,12 +147,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static void SetDatadogAssembly(string path, Assembly cachedAssembly)
         {
-            for (var i = 0; i < _assemblies.Length; i++)
+            if (_assemblies is not null)
             {
-                if (_assemblies[i].Path == path)
+                for (var i = 0; i < _assemblies.Length; i++)
                 {
-                    _assemblies[i] = new CachedAssembly(path, cachedAssembly);
-                    break;
+                    if (_assemblies[i].Path == path)
+                    {
+                        _assemblies[i] = new CachedAssembly(path, cachedAssembly);
+                        return;
+                    }
                 }
             }
         }
@@ -139,9 +163,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private readonly struct CachedAssembly
         {
             public readonly string Path;
-            public readonly Assembly Assembly;
+            public readonly Assembly? Assembly;
 
-            public CachedAssembly(string path, Assembly assembly)
+            public CachedAssembly(string path, Assembly? assembly)
             {
                 Path = path;
                 Assembly = assembly;
