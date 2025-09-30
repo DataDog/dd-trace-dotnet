@@ -96,19 +96,11 @@ run-benchmarks:
 
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
-  # TODO: Tune
-  artifacts:
-    name: "artifacts"
-    when: always
-    paths:
-      - platform/artifacts/
-    expire_in: 1 day
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
-    - echo "Not running benchmarks, testing the PR comment"
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    # - ./platform/steps/run-windows-benchmarks.sh
+    - ./platform/steps/run-windows-benchmarks.sh
   after_script:
     # TODO: Ideally, should be in a script.
     - |
@@ -140,11 +132,11 @@ upload-to-bp-ui:
     AWS_REGION: "us-east-1"
 
     # Here, we don't include BP_INFRA since we don't use BP_INFRA in this job.
+    # TODO: Change to dd-trace-dotnet/micro before merging
     BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
 
     # Where to fetch results from
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
   script:
-    # TODO: Change to dd-trace-dotnet/micro before merging
     - git clone --branch $BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/upload-to-bp-ui.sh
