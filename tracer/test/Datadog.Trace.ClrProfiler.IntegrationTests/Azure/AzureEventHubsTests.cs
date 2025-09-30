@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("Category", "ArmUnsupported")]
     public class AzureEventHubsTests : TracingIntegrationTest
     {
         public AzureEventHubsTests(ITestOutputHelper output)
@@ -226,6 +227,113 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
 
                 sendSpans.Should().HaveCount(1, "Expected 1 SendAsync span for enumerable (no individual event spans when batch links disabled)");
+                receiveSpans.Should().HaveCount(1, "Expected 1 receive span");
+
+                var createSpans = spans.Where(span => span.Name == "azure_eventhubs.create").ToList();
+                createSpans.Should().BeEmpty("Expected no individual message spans (azure_eventhubs.create) when batch links disabled");
+
+                foreach (var span in spans)
+                {
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"EventHubs span validation failed: {result}");
+                }
+
+                foreach (var receiveSpan in receiveSpans)
+                {
+                    receiveSpan.SpanLinks.Should().BeNullOrEmpty("No span links expected when batch linking is disabled");
+                }
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestEventHubsBufferedProducerIntegration(string packageVersion, string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "true");
+            SetEnvironmentVariable("EVENTHUBS_TEST_MODE", "TestEventHubsBufferedProducer");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+
+                var createSpans = spans.Where(span => span.Name == "azure_eventhubs.create").ToList();
+                var sendSpans = spans.Where(span => span.Name == "azure_eventhubs.send").ToList();
+                var receiveSpans = spans.Where(span => span.Name == "azure_eventhubs.receive").ToList();
+
+                Output.WriteLine($"Create spans found: {createSpans.Count}");
+                Output.WriteLine($"Send spans found: {sendSpans.Count}");
+                Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
+
+                createSpans.Should().HaveCount(3, "Expected 3 EnqueueEventAsync spans with azure_eventhubs.create operation");
+                sendSpans.Should().HaveCount(1, "Expected 1 buffered send span with azure_eventhubs.send operation");
+                receiveSpans.Should().HaveCount(1, "Expected 1 receive span");
+
+                var individualMessageSpans = createSpans.Where(s => s.Resource == "samples-eventhubs-hub").ToList();
+                individualMessageSpans.Should().HaveCount(3, "Expected 3 individual message spans from EnqueueEventAsync operations");
+
+                var bufferedSendSpans = sendSpans.Where(s => s.Resource == "samples-eventhubs-hub").ToList();
+                bufferedSendSpans.Should().HaveCount(1, "Expected 1 buffered send span from FlushAsync operation");
+
+                foreach (var createSpan in createSpans)
+                {
+                    var result = ValidateIntegrationSpan(createSpan, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Create span validation failed: {result}");
+                }
+
+                foreach (var sendSpan in sendSpans)
+                {
+                    var result = ValidateIntegrationSpan(sendSpan, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Send span validation failed: {result}");
+                }
+
+                foreach (var receiveSpan in receiveSpans)
+                {
+                    var result = ValidateIntegrationSpan(receiveSpan, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
+                }
+
+                var allProducerSpans = createSpans.Concat(sendSpans).ToList();
+                ValidateSpanLinks(allProducerSpans, receiveSpans, spans);
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestEventHubsBufferedProducerIntegrationWithoutBatchLinks(string packageVersion, string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "false");
+            SetEnvironmentVariable("EVENTHUBS_TEST_MODE", "TestEventHubsBufferedProducer");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, Tags=[{string.Join(", ", span.Tags.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]");
+                }
+
+                var sendSpans = spans.Where(span => span.Name == "azure_eventhubs.send").ToList();
+                var receiveSpans = spans.Where(span => span.Name == "azure_eventhubs.receive").ToList();
+
+                Output.WriteLine($"Send spans found: {sendSpans.Count}");
+                Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
+
+                sendSpans.Should().HaveCount(1, "Expected 1 buffered send span (no individual EnqueueEventAsync spans when batch links disabled)");
                 receiveSpans.Should().HaveCount(1, "Expected 1 receive span");
 
                 var createSpans = spans.Where(span => span.Name == "azure_eventhubs.create").ToList();

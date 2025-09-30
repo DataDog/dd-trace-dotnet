@@ -7,7 +7,7 @@
         "Entities": [
           {
             "Name": "samples-eventhubs-hub",
-            "PartitionCount": 2,
+            "PartitionCount": 1,
             "ConsumerGroups": [
               {
                 "Name": "cg1"

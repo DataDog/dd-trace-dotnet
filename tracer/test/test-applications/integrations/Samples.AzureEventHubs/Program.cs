@@ -11,7 +11,8 @@ namespace Samples.AzureEventHubs
     {
         Default,
         TestEventHubsMessageBatch,
-        TestEventHubsEnumerable
+        TestEventHubsEnumerable,
+        TestEventHubsBufferedProducer
     }
 
     public class Program
@@ -52,6 +53,9 @@ namespace Samples.AzureEventHubs
                         break;
                     case TestMode.TestEventHubsEnumerable:
                         await TestEventHubsEnumerableAsync(producerClient, consumerClient);
+                        break;
+                    case TestMode.TestEventHubsBufferedProducer:
+                        await TestEventHubsBufferedProducerAsync(consumerClient);
                         break;
                     case TestMode.Default:
                     default:
@@ -363,6 +367,130 @@ namespace Samples.AzureEventHubs
 
             Console.WriteLine($"Completed processing {totalEventsReceived} events");
             Console.WriteLine("EventHubs Enumerable test completed");
+        }
+
+        private static async Task TestEventHubsBufferedProducerAsync(EventHubConsumerClient consumerClient)
+        {
+            Console.WriteLine("\n=== EventHubs Buffered Producer Test ===");
+
+            var partitionIds = await consumerClient.GetPartitionIdsAsync();
+            Console.WriteLine("Creating buffered producer client...");
+
+            var bufferedProducerClient = new EventHubBufferedProducerClient(ConnectionString, EventHubName);
+
+            var successCount = 0;
+            var failureCount = 0;
+
+            bufferedProducerClient.SendEventBatchSucceededAsync += args =>
+            {
+                Console.WriteLine($"Batch succeeded: {args.EventBatch.Count} events sent to partition {args.PartitionId}");
+                successCount += args.EventBatch.Count;
+                return Task.CompletedTask;
+            };
+
+            bufferedProducerClient.SendEventBatchFailedAsync += args =>
+            {
+                Console.WriteLine($"Batch failed: {args.EventBatch.Count} events for partition {args.PartitionId}, Error: {args.Exception.Message}");
+                failureCount += args.EventBatch.Count;
+                return Task.CompletedTask;
+            };
+
+            Console.WriteLine("Enqueueing events to buffered producer...");
+
+            var events = new[]
+            {
+                new EventData(Encoding.UTF8.GetBytes("Buffered event 1"))
+                {
+                    MessageId = Guid.NewGuid().ToString(),
+                    ContentType = "BufferedTest1"
+                },
+                new EventData(Encoding.UTF8.GetBytes("Buffered event 2"))
+                {
+                    MessageId = Guid.NewGuid().ToString(),
+                    ContentType = "BufferedTest2"
+                },
+                new EventData(Encoding.UTF8.GetBytes("Buffered event 3"))
+                {
+                    MessageId = Guid.NewGuid().ToString(),
+                    ContentType = "BufferedTest3"
+                }
+            };
+
+            for (int i = 0; i < events.Length; i++)
+            {
+                events[i].Properties["Subject"] = $"BufferedTest{i + 1}";
+                Console.WriteLine($"Event {i + 1} (ID: {events[i].MessageId}) prepared");
+            }
+
+            var sendTime = DateTimeOffset.UtcNow;
+
+            Console.WriteLine("Enqueueing events...");
+            await bufferedProducerClient.EnqueueEventsAsync(events);
+            Console.WriteLine($"Successfully enqueued {events.Length} events");
+
+            Console.WriteLine("Flushing buffered producer...");
+            await bufferedProducerClient.FlushAsync();
+            Console.WriteLine("Flush completed");
+
+            Console.WriteLine($"Success count: {successCount}, Failure count: {failureCount}");
+
+            Console.WriteLine("Receiving events from buffered producer...");
+            Console.WriteLine($"Found {partitionIds.Length} partitions to read from");
+
+            int totalEventsReceived = 0;
+            var readTimeout = TimeSpan.FromSeconds(10);
+
+            foreach (var partitionId in partitionIds)
+            {
+                Console.WriteLine($"Reading from partition {partitionId}...");
+                var startTime = DateTime.UtcNow;
+
+                try
+                {
+                    await foreach (PartitionEvent partitionEvent in consumerClient.ReadEventsFromPartitionAsync(
+                        partitionId,
+                        EventPosition.FromEnqueuedTime(sendTime),
+                        new ReadEventOptions { MaximumWaitTime = readTimeout }))
+                    {
+                        if (partitionEvent.Data != null)
+                        {
+                            var body = partitionEvent.Data.EventBody.ToString();
+                            var messageId = partitionEvent.Data.MessageId;
+                            var subject = partitionEvent.Data.Properties.ContainsKey("Subject")
+                                ? partitionEvent.Data.Properties["Subject"]
+                                : "Unknown";
+
+                            Console.WriteLine($"Processing event ID: {messageId}, Subject: {subject}, Body: {body}");
+                            totalEventsReceived++;
+
+                            if (totalEventsReceived >= events.Length)
+                            {
+                                break;
+                            }
+                        }
+
+                        if (DateTime.UtcNow - startTime > readTimeout)
+                        {
+                            break;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading from partition {partitionId}: {ex.Message}");
+                }
+
+                if (totalEventsReceived >= events.Length)
+                {
+                    break;
+                }
+            }
+
+            Console.WriteLine($"Completed processing {totalEventsReceived} events");
+
+            await bufferedProducerClient.DisposeAsync();
+            Console.WriteLine("Buffered producer disposed");
+            Console.WriteLine("EventHubs Buffered Producer test completed");
         }
     }
 }
