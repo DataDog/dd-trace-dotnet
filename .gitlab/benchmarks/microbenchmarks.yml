@@ -107,7 +107,7 @@ run-benchmarks:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
     - echo "Not running benchmarks, testing the PR comment"
-    # - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     # - ./platform/steps/run-windows-benchmarks.sh
   after_script:
     # TODO: Ideally, should be in a script.
