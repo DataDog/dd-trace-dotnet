@@ -1,3 +1,33 @@
+# master/hotfix branches should always run
+trigger:
+  branches:
+    include:
+      - master
+      - release/*
+      - hotfix/*
+    exclude:
+      - refs/pull/*/head
+
+# Changes in PRs and other branches need to run, if
+# - There were any code changes
+# - There were any changes to the AzDo or GitLab builds
+# They don't need to run if there are changes to
+# - Standalone samples
+# - Docs
+# - Any other non-build related files (but these rarely change, so just suck it up)
+pr:
+  branches:
+    include:
+      - '*' # default
+  paths:
+    exclude:
+      - .azure-pipelines/noop-pipeline.yml
+      - .github/
+      - docs/
+      - tracer/README.MD
+      - tracer/samples/
+      - .gitlab-ci.yml # just for testing, remove before merging
+
 stages:
   - build
   - publish
