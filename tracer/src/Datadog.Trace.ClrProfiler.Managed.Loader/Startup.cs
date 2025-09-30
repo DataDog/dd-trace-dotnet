@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 {
                     // we require dynamic code so we should just bail out ASAP.
                     // This doesn't tell us for sure (the switch is only available on .NET 8+) but it's a minimum requirement
-                    StartupLogger.Log("Dynamic code is not supported (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported context switch is false). Automatic instrumentation will be disabled");
+                    StartupLogger.Log("Dynamic code is not supported (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported context switch is false). Datadog SDK will be disabled.");
                     return;
                 }
 #endif
@@ -58,11 +58,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
                 if (ManagedProfilerDirectory is null)
                 {
-                    StartupLogger.Log("Managed profiler directory doesn't exist. Automatic instrumentation will be disabled");
+                    StartupLogger.Log("Could not determine Datadog.Trace.dll directory or it doesn't exist. Datadog SDK will be disabled.");
                     return;
                 }
 
-                StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
+                StartupLogger.Debug("Resolved Datadog.Trace.dll directory to: {0}", ManagedProfilerDirectory);
 
                 try
                 {
@@ -84,18 +84,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 }
 #endif
 
+                const string methodName = "Initialize";
+
                 var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
                 if (runInAas)
                 {
                     // With V3, pretty much all scenarios require the trace-agent and dogstatsd, so we enable them by default
-                    StartupLogger.Log("Invoking managed method to start external processes.");
                     TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
+                    const string processManagerTypeName = "Datadog.Trace.AgentProcessManager";
+                    StartupLogger.Log($"Invoking {processManagerTypeName}.{methodName}() to start external processes.");
                 }
 
-                // We need to invoke the managed tracer regardless of whether tracing is enabled
+                // We need to initialize the managed tracer regardless of whether tracing is enabled
                 // because other products rely on it
-                StartupLogger.Log("Invoking managed tracer.");
                 TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
+                const string instrumentationTypeName = "Datadog.Trace.ClrProfiler.Instrumentation";
+                StartupLogger.Log($"Invoking {instrumentationTypeName}.{methodName}() to initialize instrumentation.");
             }
             catch (Exception ex)
             {
