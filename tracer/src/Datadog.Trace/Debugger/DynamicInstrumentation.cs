@@ -33,7 +33,8 @@ namespace Datadog.Trace.Debugger
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
 
-        private readonly TaskCompletionSource<bool> _processExit;
+        private readonly SemaphoreSlim _rcmAvailabilitySemaphore;
+        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly IDiscoveryService _discoveryService;
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
@@ -46,7 +47,9 @@ namespace Datadog.Trace.Debugger
         private readonly IDogStatsd _dogStats;
         private readonly DebuggerSettings _settings;
         private readonly object _instanceLock = new();
-        private int _disposeState;
+        private volatile bool _isRcmAvailable;
+        private int _initState = 0; // 0=not initialized, 1=initializing, 2=initialized
+        private int _disposeState = 0; // 0=not disposed, 1=disposing or disposed
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -59,9 +62,9 @@ namespace Datadog.Trace.Debugger
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
         {
-            Log.Information("Initializing Dynamic Instrumentation");
             _settings = settings;
-            _processExit = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _rcmAvailabilitySemaphore = new SemaphoreSlim(0, 1);
+            _cancellationTokenSource = new CancellationTokenSource();
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _snapshotUploader = snapshotUploader;
@@ -71,6 +74,7 @@ namespace Datadog.Trace.Debugger
             _configurationUpdater = configurationUpdater;
             _dogStats = dogStats;
             _unboundProbes = new List<ProbeDefinition>();
+            _discoveryService.SubscribeToChanges(DiscoveryCallback);
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
@@ -83,61 +87,87 @@ namespace Datadog.Trace.Debugger
 
         public bool IsDisposed => Volatile.Read(ref _disposeState) != 0;
 
-        public bool IsInitialized { get; private set; }
+        public bool IsInitialized => Volatile.Read(ref _initState) == 2;
 
         internal void Initialize()
         {
-            if (!_settings.DynamicInstrumentationEnabled)
+            var originalState = Interlocked.CompareExchange(ref _initState, 1, 0);
+
+            // If we weren't in "not initialized" state, return early
+            if (originalState != 0)
             {
                 return;
             }
 
-            _ = InitializeAsync();
+            try
+            {
+                if (!_settings.DynamicInstrumentationEnabled)
+                {
+                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
+                    // Reset to "not initialized"
+                    Interlocked.Exchange(ref _initState, 0);
+                    return;
+                }
+
+                Log.Information("Dynamic Instrumentation initialization started");
+
+                // Initialize without blocking
+                _ = Task.Run(async () => await InitializeAsync().ConfigureAwait(false), _cancellationTokenSource.Token);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Initializing Dynamic Instrumentation failed.");
+                // Reset to "not initialized"
+                Interlocked.Exchange(ref _initState, 0);
+            }
         }
 
         private async Task InitializeAsync()
         {
             try
             {
-                var isRcmAvailable = await WaitForRcmAvailabilityAsync().ConfigureAwait(false);
+                var rcmTimeout = TimeSpan.FromMinutes(5);
+                var isRcmAvailable = await WaitForRcmAvailabilityAsync(rcmTimeout).ConfigureAwait(false);
+
                 if (!isRcmAvailable)
                 {
+                    Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available after waiting {Timeout} seconds. Please note that Dynamic Instrumentation is not supported in all environments (e.g. AAS). Ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.", rcmTimeout.TotalSeconds);
+
+                    // Reset to "not initialized"
+                    Interlocked.Exchange(ref _initState, 0);
                     return;
                 }
 
                 _subscriptionManager.SubscribeToChanges(_subscription);
+
                 AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
-                StartBackgroundProcess();
-                IsInitialized = true;
+
+                StartInBackground();
+
+                // Transition to "initialized" after successful initialization
+                Interlocked.Exchange(ref _initState, 2);
+
                 Log.Information("Dynamic Instrumentation initialization completed successfully");
             }
             catch (OperationCanceledException e)
             {
-                Log.Debug(e, "Dynamic Instrumentation stopped due task cancellation");
+                Log.Debug(e, "Async initialization of Dynamic Instrumentation stopped due task cancellation.");
+                // Reset to "not initialized"
+                Interlocked.Exchange(ref _initState, 0);
             }
             catch (Exception e)
             {
-                Log.Error(e, "Dynamic Instrumentation initialization failed");
+                Log.Error(e, "Async initialization of Dynamic Instrumentation failed.");
+                // Reset to "not initialized"
+                Interlocked.Exchange(ref _initState, 0);
             }
         }
 
-        private void StartBackgroundProcess()
+        private void StartInBackground()
         {
             _probeStatusPoller.StartPolling();
-
-            _ = _diagnosticsUploader.StartFlushingAsync()
-                                    .ContinueWith(
-                                         t => Log.Error(t?.Exception, "Error in diagnostic uploader"),
-                                         CancellationToken.None,
-                                         TaskContinuationOptions.OnlyOnFaulted,
-                                         TaskScheduler.Default);
-
-            _ = _snapshotUploader.StartFlushingAsync()
-                                 .ContinueWith(
-                                      t => Log.Error(t?.Exception, "Error in snapshot uploader"),
-                                      CancellationToken.None,
-                                      TaskContinuationOptions.OnlyOnFaulted,
-                                      TaskScheduler.Default);
+            _ = _diagnosticsUploader.StartFlushingAsync();
+            _ = _snapshotUploader.StartFlushingAsync();
         }
 
         internal void UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
@@ -520,66 +550,71 @@ namespace Datadog.Trace.Debugger
             SetProbeStatusToEmitting(probe);
         }
 
-        private async Task<bool> WaitForRcmAvailabilityAsync()
+        private async Task<bool> WaitForRcmAvailabilityAsync(TimeSpan timeout)
         {
-            var rcmAvailabilityTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _discoveryService.SubscribeToChanges(DiscoveryCallback);
+            if (_isRcmAvailable)
+            {
+                return true;
+            }
 
             try
             {
-                var rcmTimeout = TimeSpan.FromMinutes(5);
-                var timeoutTask = Task.Delay(rcmTimeout);
-
-                var completedTask = await Task.WhenAny(rcmAvailabilityTcs.Task, timeoutTask, _processExit.Task).ConfigureAwait(false);
-                if (completedTask == timeoutTask)
-                {
-                    Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available after waiting {Timeout} seconds. Please note that Dynamic Instrumentation is not supported in all environments (e.g. AAS). Ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.", rcmTimeout.TotalSeconds);
-                    return false;
-                }
-
-                return completedTask == rcmAvailabilityTcs.Task;
+                await _rcmAvailabilitySemaphore.WaitAsync(timeout, _cancellationTokenSource.Token).ConfigureAwait(false);
+                return _isRcmAvailable;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error while waiting for RCM availability");
                 return false;
             }
-            finally
-            {
-                _discoveryService.RemoveSubscription(DiscoveryCallback);
-            }
+        }
 
-            void DiscoveryCallback(AgentConfiguration x)
+        private void DiscoveryCallback(AgentConfiguration x)
+        {
+            var isRcmAvailable = !string.IsNullOrEmpty(x.ConfigurationEndpoint);
+
+            if (isRcmAvailable)
             {
-                var isRcmAvailable = !string.IsNullOrEmpty(x.ConfigurationEndpoint);
-                if (isRcmAvailable)
+                _isRcmAvailable = true;
+
+                try
                 {
-                    rcmAvailabilityTcs.TrySetResult(true);
+                    _rcmAvailabilitySemaphore.Release();
                 }
+                catch (SemaphoreFullException)
+                {
+                    // Already released
+                }
+
+                _discoveryService.RemoveSubscription(DiscoveryCallback);
             }
         }
 
         public void Dispose()
         {
-            // Already disposed
-            if (Interlocked.CompareExchange(ref _disposeState, 1, 0) != 0)
+            var originalState = Interlocked.CompareExchange(ref _disposeState, 1, 0);
+
+            // Already disposing or disposed
+            if (originalState != 0)
             {
                 return;
             }
 
-            if (_processExit.Task.IsCompleted)
-            {
-                return;
-            }
-
-            _processExit.TrySetResult(true);
             AppDomain.CurrentDomain.AssemblyLoad -= CheckUnboundProbes;
             SafeDisposal.New()
+                        .Execute(() => _cancellationTokenSource.Cancel(), "cancel dynamic instrumentation operations")
+                        .Execute(() => _discoveryService.RemoveSubscription(DiscoveryCallback), "removing discovery service subscription")
                         .Execute(() => _subscriptionManager.Unsubscribe(_subscription), "unsubscribing from RCM")
                         .Add(_snapshotUploader)
                         .Add(_diagnosticsUploader)
                         .Add(_probeStatusPoller)
                         .Add(_dogStats)
+                        .Add(_rcmAvailabilitySemaphore)
+                        .Add(_cancellationTokenSource)
                         .DisposeAll();
         }
     }

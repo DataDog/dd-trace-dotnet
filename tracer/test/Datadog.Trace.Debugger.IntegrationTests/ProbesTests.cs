@@ -608,21 +608,6 @@ public class ProbesTests : TestHelper
                 span.Tags[keyValuePair.Key] = keyValuePair.Value.Substring(0, keyValuePair.Value.IndexOf(',')) + " }";
             }
         }
-
-        SanitizeCodeOriginExitFrames(spans);
-    }
-
-    private void SanitizeCodeOriginExitFrames(IImmutableList<MockSpan> spans)
-    {
-        const string codeOriginFrame = "_dd.code_origin.frames";
-        foreach (var span in spans)
-        {
-            var toSanitize = span.Tags.Where(tag => tag.Key.StartsWith(codeOriginFrame)).ToList();
-            foreach (var keyValuePair in toSanitize)
-            {
-                span.Tags.Remove(keyValuePair.Key);
-            }
-        }
     }
 
     private async Task VerifySpanProbeResults(ProbeDefinition[] snapshotProbes, ProbeTestDescription testDescription, ProbeAttributeBase[] probeData, MockTracerAgent agent, bool isMultiPhase, int phaseNumber)
@@ -640,22 +625,22 @@ public class ProbesTests : TestHelper
             settings.UseFileName($"{nameof(ProbeTests)}.{testName}.Spans");
 
             var spans = await agent.WaitForSpansAsync(spanProbes.Length, operationName: spanProbeOperationName);
-            SanitizeCodeOriginExitFrames(spans);
-
             // Assert.Equal(spanProbes.Length, spans.Count);
             foreach (var span in spans)
             {
                 var result = Result.FromSpan(span)
-                                   .Properties(s => s
-                                                  .Matches(_ => (nameof(span.Name), span.Name), spanProbeOperationName))
-                                   .Tags(s => s
-                                             .Matches("component", "trace")
-                                             .MatchesOneOf("debugger.probeid", Enumerable.Select<ProbeDefinition, string>(snapshotProbes, p => p.Id).ToArray()));
-
+                                   .Properties(
+                                        s => s
+                                           .Matches(_ => (nameof(span.Name), span.Name), spanProbeOperationName))
+                                   .Tags(
+                                        s => s
+                                            .Matches("component", "trace")
+                                            .MatchesOneOf("debugger.probeid", Enumerable.Select<ProbeDefinition, string>(snapshotProbes, p => p.Id).ToArray()));
                 // Assert.True(result.Success, result.ToString());
             }
 
-            VerifierSettings.DerivePathInfo((_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", "snapshots")));
+            VerifierSettings.DerivePathInfo(
+                (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", "snapshots")));
 
             await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
         }

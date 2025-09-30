@@ -27,7 +27,6 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal SpanCodeOrigin(DebuggerSettings settings)
         {
-            Log.Information("Initializing Code Origin for Spans");
             Settings = settings;
             _tags = new CodeOriginTags(Settings.CodeOriginMaxUserFrames);
         }
@@ -36,9 +35,8 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
-            if (span == null)
+            if (span == null || !Settings.CodeOriginForSpansEnabled)
             {
-                Log.Debug("Can not add code origin when span is null");
                 return;
             }
 
@@ -62,9 +60,9 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         {
             if (span == null ||
                 type == null ||
-                method == null)
+                method == null ||
+                !Settings.CodeOriginForSpansEnabled)
             {
-                Log.Debug("Can not add code origin when one of the arguments is null");
                 return;
             }
 
