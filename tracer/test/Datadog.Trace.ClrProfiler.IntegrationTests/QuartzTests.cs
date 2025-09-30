@@ -102,6 +102,9 @@ public class QuartzTests : TracingIntegrationTest
     {
         if (string.IsNullOrEmpty(packageVersion))
         {
+#if NETCOREAPP3_1
+            return new("V3NETCOREAPP31", 2);
+#endif
             return new("V3", 2);
         }
 
