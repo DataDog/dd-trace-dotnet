@@ -45,10 +45,12 @@ internal class MetricState
         switch (_identity.InstrumentType)
         {
             case InstrumentType.Counter:
-            case InstrumentType.ObservableCounter:
             case InstrumentType.UpDownCounter:
-            case InstrumentType.ObservableUpDownCounter:
                 point.UpdateCounter(value);
+                break;
+            case InstrumentType.ObservableCounter:
+            case InstrumentType.ObservableUpDownCounter:
+                point.UpdateObservableCounter(value);
                 break;
             case InstrumentType.Gauge:
             case InstrumentType.ObservableGauge:
@@ -76,10 +78,14 @@ internal class MetricState
         switch (_identity.InstrumentType)
         {
             case InstrumentType.Counter:
-            case InstrumentType.ObservableCounter:
             case InstrumentType.UpDownCounter:
-            case InstrumentType.ObservableUpDownCounter:
+                // Sync instruments: Add the delta
                 point.UpdateCounter(value);
+                break;
+            case InstrumentType.ObservableCounter:
+            case InstrumentType.ObservableUpDownCounter:
+                // Observable instruments: Set to current absolute value
+                point.UpdateObservableCounter(value);
                 break;
             case InstrumentType.Gauge:
             case InstrumentType.ObservableGauge:
@@ -103,7 +109,17 @@ internal class MetricState
     public void RecordMeasurementHistogramDouble(double value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
         => GetOrCreatePoint(tags).UpdateHistogram(value);
 
-    public IEnumerable<MetricPoint> GetMetricPoints() => _points.Values;
+    public IEnumerable<MetricPoint> GetMetricPoints()
+    {
+        var points = new List<MetricPoint>();
+        foreach (var point in _points.Values)
+        {
+            var snapshot = point.CreateSnapshotAndReset(point.AggregationTemporality == AggregationTemporality.Delta);
+            points.Add(snapshot);
+        }
+
+        return points;
+    }
 
     public MetricStreamIdentity GetIdentity() => _identity;
 

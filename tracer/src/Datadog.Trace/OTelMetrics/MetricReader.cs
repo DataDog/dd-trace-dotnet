@@ -8,80 +8,111 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.OTelMetrics;
-
-internal static class MetricReader
+namespace Datadog.Trace.OTelMetrics
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReader));
-
-    private static System.Diagnostics.Metrics.MeterListener? _meterListenerInstance;
-    private static int _initialized;
-    private static int _stopped;
-
-    public static bool IsRunning =>
-        Interlocked.CompareExchange(ref _initialized, 1, 1) == 1 &&
-        Interlocked.CompareExchange(ref _stopped, 0, 0) == 0;
-
-    public static void Initialize()
+    internal static class MetricReader
     {
-        if (Interlocked.CompareExchange(ref _initialized, 1, 0) == 1)
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReader));
+
+        private static System.Diagnostics.Metrics.MeterListener? _meterListenerInstance;
+        private static MetricExporter? _metricExporter;
+        private static Timer? _exportTimer;
+        private static int _initialized;
+        private static int _stopped;
+
+        public static void Initialize()
         {
-            return;
+            if (Interlocked.CompareExchange(ref _initialized, 1, 0) == 1)
+            {
+                return;
+            }
+
+            var meterListener = new System.Diagnostics.Metrics.MeterListener
+            {
+                MeasurementsCompleted = static (_, _) => { },
+                InstrumentPublished = MetricReaderHandler.OnInstrumentPublished
+            };
+
+            meterListener.SetMeasurementEventCallback<byte>(MetricReaderHandler.OnMeasurementRecordedByte);
+            meterListener.SetMeasurementEventCallback<short>(MetricReaderHandler.OnMeasurementRecordedShort);
+            meterListener.SetMeasurementEventCallback<int>(MetricReaderHandler.OnMeasurementRecordedInt);
+            meterListener.SetMeasurementEventCallback<long>(MetricReaderHandler.OnMeasurementRecordedLong);
+            meterListener.SetMeasurementEventCallback<float>(MetricReaderHandler.OnMeasurementRecordedFloat);
+            meterListener.SetMeasurementEventCallback<double>(MetricReaderHandler.OnMeasurementRecordedDouble);
+
+            meterListener.Start();
+            _meterListenerInstance = meterListener;
+
+            _metricExporter = new OtlpExporter(Tracer.Instance.Settings);
+
+            var settings = Tracer.Instance.Settings;
+            var exportInterval = TimeSpan.FromMilliseconds(settings.OtelMetricExportIntervalMs);
+            _exportTimer = new Timer(
+                callback: _ => ExportMetrics(),
+                state: null,
+                dueTime: exportInterval,
+                period: exportInterval);
+
+            Interlocked.Exchange(ref _stopped, 0);
+
+            // Register for graceful shutdown
+            LifetimeManager.Instance.AddAsyncShutdownTask((_) => StopAsync());
+
+            Log.Debug("MeterListener initialized successfully.");
         }
 
-        var meterListener = new System.Diagnostics.Metrics.MeterListener();
-
-#if NET6_0 || NET7_0 || NET8_0
-        // Ensures instruments are fully de-registered on Dispose() for 6–8
-        // Static lambda => no captures/allocations
-        meterListener.MeasurementsCompleted = static (_, __) => { };
-#endif
-
-        meterListener.InstrumentPublished = MetricReaderHandler.OnInstrumentPublished;
-
-        meterListener.SetMeasurementEventCallback<byte>(MetricReaderHandler.OnMeasurementRecordedByte);
-        meterListener.SetMeasurementEventCallback<short>(MetricReaderHandler.OnMeasurementRecordedShort);
-        meterListener.SetMeasurementEventCallback<int>(MetricReaderHandler.OnMeasurementRecordedInt);
-        meterListener.SetMeasurementEventCallback<long>(MetricReaderHandler.OnMeasurementRecordedLong);
-        meterListener.SetMeasurementEventCallback<float>(MetricReaderHandler.OnMeasurementRecordedFloat);
-        meterListener.SetMeasurementEventCallback<double>(MetricReaderHandler.OnMeasurementRecordedDouble);
-
-        meterListener.Start();
-
-        Interlocked.Exchange(ref _meterListenerInstance, meterListener);
-        Interlocked.Exchange(ref _stopped, 0);
-
-        Log.Debug("MeterListener initialized successfully.");
-    }
-
-    public static void Stop()
-    {
-        var listener = Interlocked.Exchange(ref _meterListenerInstance, null);
-        if (listener is IDisposable disposableListener)
+        public static void Stop()
         {
-            disposableListener.Dispose();
-            Interlocked.Exchange(ref _stopped, 1);
-            Interlocked.Exchange(ref _initialized, 0);
-            Log.Debug("MeterListener stopped.");
+            if (_meterListenerInstance is IDisposable disposableListener)
+            {
+                _meterListenerInstance = null;
+                disposableListener.Dispose();
+                Interlocked.Exchange(ref _stopped, 1);
+                Log.Debug("MeterListener stopped.");
+            }
+
+            _exportTimer?.Dispose();
+            _exportTimer = null;
         }
-    }
 
-    internal static void CollectObservableInstruments()
-    {
-        if (_meterListenerInstance != null)
+        public static async Task StopAsync()
         {
+            _exportTimer?.DisposeAsync();
+            _exportTimer = null;
+
+            // Ensure any pending exports complete before shutdown
             try
             {
-                _meterListenerInstance.RecordObservableInstruments();
+                // Do a final export before shutdown
+                await ExportMetricsAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Error collecting observable instruments.");
+                Log.Warning(ex, "Error during final metrics export on shutdown");
+            }
+            finally
+            {
+                _metricExporter?.Shutdown(5000); // 5 second timeout
+                _metricExporter = null;
+            }
+        }
+
+        internal static void CollectObservableInstruments()
+        {
+            if (_meterListenerInstance != null)
+            {
+                try
+                {
+                    _meterListenerInstance.RecordObservableInstruments();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Error collecting observable instruments.");
+                }
             }
         }
 
@@ -135,4 +166,3 @@ internal static class MetricReader
     }
 }
 #endif
-

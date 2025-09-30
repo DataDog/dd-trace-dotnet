@@ -43,11 +43,37 @@ internal class MetricPoint(string instrumentName, string meterName, InstrumentTy
 
     internal long[] RunningBucketCounts => _runningBucketCounts;
 
+    public DateTimeOffset StartTime { get; private set; } = DateTimeOffset.UtcNow;
+
+    public DateTimeOffset EndTime { get; private set; } = DateTimeOffset.UtcNow;
+
+    public long SnapshotCount { get; private set; }
+
+    public double SnapshotSum { get; private set; }
+
+    public double SnapshotGaugeValue { get; private set; }
+
+    public double SnapshotMin { get; private set; }
+
+    public double SnapshotMax { get; private set; }
+
+    public long[] SnapshotBucketCounts { get; private set; } = [];
+
     internal void UpdateCounter(double value)
     {
         lock (_histogramLock)
         {
             _runningDoubleValue += value;
+        }
+    }
+
+    internal void UpdateObservableCounter(double currentValue)
+    {
+        // For Observable instruments, the callback returns the ABSOLUTE current value
+        // We need to compute the delta ourselves
+        lock (_histogramLock)
+        {
+            _runningDoubleValue = currentValue; // Just store the current value directly
         }
     }
 
@@ -84,7 +110,59 @@ internal class MetricPoint(string instrumentName, string meterName, InstrumentTy
             }
         }
 
-        return DefaultHistogramBounds.Length;
+        return DefaultHistogramBounds.Length; // Overflow bucket
+    }
+
+    /// <summary>
+    /// Creates a snapshot copy of the current metric state for export.
+    /// For delta temporality, this resets the running values after taking the snapshot.
+    /// For cumulative temporality, this preserves the running values.
+    /// </summary>
+    /// <param name="resetAfterSnapshot">True if this is a delta export (reset after snapshot), false for cumulative</param>
+    /// <returns>A new MetricPoint containing the snapshot values</returns>
+    public MetricPoint CreateSnapshotAndReset(bool resetAfterSnapshot)
+    {
+        lock (_histogramLock)
+        {
+            var endTime = DateTimeOffset.UtcNow;
+
+            // Create a snapshot copy with current values
+            var snapshot = new MetricPoint(InstrumentName, MeterName, InstrumentType, AggregationTemporality, Tags)
+            {
+                StartTime = this.StartTime,
+                EndTime = endTime,
+                SnapshotCount = _runningCountValue,
+                SnapshotSum = _runningDoubleValue,
+                SnapshotGaugeValue = _runningDoubleValue,
+                SnapshotMin = _runningMin,
+                SnapshotMax = _runningMax
+            };
+
+            // Copy bucket counts for histograms
+            if (_runningBucketCounts.Length > 0)
+            {
+                snapshot.SnapshotBucketCounts = new long[_runningBucketCounts.Length];
+                Array.Copy(_runningBucketCounts, snapshot.SnapshotBucketCounts, _runningBucketCounts.Length);
+            }
+
+            // For delta temporality, reset the running values after taking snapshot
+            if (resetAfterSnapshot)
+            {
+                _runningCountValue = 0;
+                _runningDoubleValue = 0.0;
+                _runningMin = double.PositiveInfinity;
+                _runningMax = double.NegativeInfinity;
+                if (_runningBucketCounts.Length > 0)
+                {
+                    Array.Clear(_runningBucketCounts, 0, _runningBucketCounts.Length);
+                }
+
+                // Update start time for next delta window
+                StartTime = endTime;
+            }
+
+            return snapshot;
+        }
     }
 }
 #endif

@@ -60,16 +60,9 @@ namespace Datadog.Trace.OTelMetrics
 
             try
             {
-                // Take snapshots of all metrics for export
-                var metricPoints = new List<MetricPoint>();
-                foreach (var metric in metrics)
-                {
-                    metric.TakeSnapshot(outputDelta: _settings.OtlpMetricsTemporalityPreference == Configuration.OtlpTemporality.Delta);
-                    metricPoints.Add(metric);
-                }
-
+                // Metrics are already snapshots from MetricState.GetMetricPoints()
                 // Serialize to OTLP protobuf format
-                var otlpPayload = OtlpMetricsSerializer.SerializeMetrics(metricPoints, _settings);
+                var otlpPayload = OtlpMetricsSerializer.SerializeMetrics(metrics, _settings);
 
                 // Send to OTLP endpoint asynchronously for optimal performance
                 var success = await SendOtlpRequest(otlpPayload).ConfigureAwait(false);
@@ -189,7 +182,7 @@ namespace Datadog.Trace.OTelMetrics
             const int maxRetries = 3;
             var retryDelay = TimeSpan.FromMilliseconds(100); // Initial delay
 
-            for (int attempt = 0; attempt <= maxRetries; attempt++)
+            for (var attempt = 0; attempt <= maxRetries; attempt++)
             {
                 try
                 {

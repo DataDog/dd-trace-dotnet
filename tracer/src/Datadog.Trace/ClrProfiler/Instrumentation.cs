@@ -324,14 +324,10 @@ namespace Datadog.Trace.ClrProfiler
 #if NET6_0_OR_GREATER
             try
             {
-                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
+                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled is true && Tracer.Instance.Settings.OtelMetricsExporterEnabled is true)
                 {
-                    // Check if the apporach I have for all works or should follow this setting as OTEL does.
-                    if (Tracer.Instance.Settings.OpenTelemetryMeterNames.Length > 0)
-                    {
-                        Log.Debug("Initializing OTel Metrics collection.");
-                        OTelMetrics.MetricReader.Initialize();
-                    }
+                    Log.Debug("Initializing Opentelemetry Protocol Metrics collection.");
+                    OTelMetrics.MetricReader.Initialize();
                 }
             }
             catch (Exception ex)
@@ -341,7 +337,7 @@ namespace Datadog.Trace.ClrProfiler
 #else
             if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
             {
-                Log.Information("Unable to initialize OTel Metrics collection, this is only available starting with .NET 6.0.");
+                Log.Information("Unable to initialize Opentelemetry Protocol Metrics collection, this is only available starting with .NET 6.0.");
             }
 #endif
 

@@ -27,7 +27,7 @@ namespace Datadog.Trace.OTelMetrics
         private const int Fixed64 = 1;
         private const int LengthDelimited = 2;
 
-        private static byte[] SerializeResourceMetrics(List<MetricPoint> metrics, TracerSettings settings)
+        private static byte[] SerializeResourceMetrics(IReadOnlyList<MetricPoint> metrics, TracerSettings settings)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -133,7 +133,7 @@ namespace Datadog.Trace.OTelMetrics
                    tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static byte[] SerializeScopeMetrics(List<MetricPoint> metrics, TracerSettings settings)
+        private static byte[] SerializeScopeMetrics(IReadOnlyList<MetricPoint> metrics, TracerSettings settings)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -158,16 +158,19 @@ namespace Datadog.Trace.OTelMetrics
                 var metric = metrics[i];
                 byte[]? metricData = null;
 
-                if (metric.InstrumentType == InstrumentType.Counter || metric.InstrumentType == InstrumentType.UpDownCounter ||
-                    metric.InstrumentType == InstrumentType.ObservableCounter || metric.InstrumentType == InstrumentType.ObservableUpDownCounter)
+                if (metric.InstrumentType is InstrumentType.Counter
+                    || metric.InstrumentType is InstrumentType.UpDownCounter
+                    || metric.InstrumentType is InstrumentType.ObservableCounter
+                    || metric.InstrumentType is InstrumentType.ObservableUpDownCounter)
                 {
                     metricData = SerializeCounterMetric(metric, settings);
                 }
-                else if (metric.InstrumentType == InstrumentType.Gauge || metric.InstrumentType == InstrumentType.ObservableGauge)
+                else if (metric.InstrumentType is InstrumentType.Gauge
+                         || metric.InstrumentType is InstrumentType.ObservableGauge)
                 {
                     metricData = SerializeGaugeMetric(metric);
                 }
-                else if (metric.InstrumentType == InstrumentType.Histogram)
+                else if (metric.InstrumentType is InstrumentType.Histogram)
                 {
                     metricData = SerializeHistogramMetric(metric, settings);
                 }
@@ -281,15 +284,15 @@ namespace Datadog.Trace.OTelMetrics
             int temporality;
             bool isMonotonic;
 
-            if (metric.InstrumentType == InstrumentType.UpDownCounter || metric.InstrumentType == InstrumentType.ObservableUpDownCounter)
+            if (metric.InstrumentName.Contains("upDownCounter"))
             {
-                // UpDownCounter/ObservableUpDownCounter: always Cumulative (per RFC table), not monotonic
+                // UpDownCounter: always Cumulative (per RFC table), not monotonic
                 temporality = 2; // Cumulative
                 isMonotonic = false;
             }
             else
             {
-                // Regular Counter/ObservableCounter: Delta for Delta/LowMemory, Cumulative for Cumulative preference
+                // Regular Counter: Delta for Delta/LowMemory, Cumulative for Cumulative preference
                 temporality = settings.OtlpMetricsTemporalityPreference switch
                 {
                     OtlpTemporality.Delta => 1,      // Delta
@@ -370,8 +373,10 @@ namespace Datadog.Trace.OTelMetrics
             WriteTag(writer, FieldNumbers.NumberDataPointTimeUnixNano, Fixed64);
             writer.Write((ulong)metric.EndTime.ToUnixTimeNanoseconds());
 
-            // Value (use AsInt for integer measurements, AsDouble for floating point)
-            if (metric.InstrumentType is InstrumentType.Counter or InstrumentType.UpDownCounter or InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
+            if (metric.InstrumentType is InstrumentType.Counter
+                or InstrumentType.UpDownCounter
+                or InstrumentType.ObservableCounter
+                or InstrumentType.ObservableUpDownCounter)
             {
                 WriteTag(writer, FieldNumbers.NumberDataPointAsInt, Fixed64);
                 writer.Write((long)metric.SnapshotSum);
@@ -407,17 +412,9 @@ namespace Datadog.Trace.OTelMetrics
             WriteTag(writer, FieldNumbers.NumberDataPointTimeUnixNano, Fixed64);
             writer.Write((ulong)metric.EndTime.ToUnixTimeNanoseconds());
 
-            // Value (use gauge value, not sum)
-            if (metric.InstrumentType is InstrumentType.Counter or InstrumentType.UpDownCounter or InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
-            {
-                WriteTag(writer, FieldNumbers.NumberDataPointAsInt, Fixed64);
-                writer.Write((long)metric.SnapshotGaugeValue);
-            }
-            else
-            {
-                WriteTag(writer, FieldNumbers.NumberDataPointAsDouble, Fixed64);
-                writer.Write(metric.SnapshotGaugeValue);
-            }
+            // Value (gauges use SnapshotGaugeValue, not SnapshotSum)
+            WriteTag(writer, FieldNumbers.NumberDataPointAsDouble, Fixed64);
+            writer.Write(metric.SnapshotGaugeValue);
 
             return buffer.ToArray();
         }
@@ -549,19 +546,14 @@ namespace Datadog.Trace.OTelMetrics
         }
 
         /// <summary>
-        /// Serializes metrics to OTLP ExportMetricsServiceRequest binary format
-        /// High-performance: synchronous serialization, no external dependencies (Datadog pattern)
-        /// Supports: Counter, Gauge metric types
+        /// Serializes metrics to OTLP MetricsData binary format
         /// </summary>
-        public static byte[] SerializeMetrics(List<MetricPoint> metrics, TracerSettings settings)
+        public static byte[] SerializeMetrics(IReadOnlyList<MetricPoint> metrics, TracerSettings settings)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            // Build ResourceMetrics message (synchronous serialization - Datadog pattern!)
             var resourceMetricsData = SerializeResourceMetrics(metrics, settings);
-
-            // Write ExportMetricsServiceRequest
             WriteTag(writer, FieldNumbers.ResourceMetrics, LengthDelimited);
             WriteVarInt(writer, resourceMetricsData.Length);
             writer.Write(resourceMetricsData);
@@ -569,10 +561,8 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        // Field numbers from OTLP proto schema
         public static class FieldNumbers
         {
-            // ExportMetricsServiceRequest
             public const int ResourceMetrics = 1;
 
             // ResourceMetrics
@@ -632,5 +622,4 @@ namespace Datadog.Trace.OTelMetrics
         }
     }
 }
-
 #endif
