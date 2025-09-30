@@ -136,6 +136,20 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 #if NETFRAMEWORK
     private static ServicePoint ConfigureServicePoint(Uri baseUri)
     {
+        /*
+         This helper shapes how .NET's ServicePoint pool behaves for the endpoint. We call it before
+         each request so that, regardless of when the ServicePoint was first created, the lease/idle thresholds
+         reflect the values we want. ConnectionLeaseTimeout tells the runtime to retire sockets that have lived
+         longer than the configured window the next time they transition back to idle, which forces the following
+         request to open a new TCP connection instead of reusing a potentially stale keep-alive that the load
+         balancer already closed. MaxIdleTime complements that by expiring sockets that sit idle for more than
+         20 seconds, preventing us from reviving a broken connection even if the total lifetime is below the lease.
+         Expect100Continue and Nagle are disabled per ServicePoint to avoid extra round-trips and delays that can
+         surface when the proxy/LB behaves differently across connections. If we still observe a keep-alive failure
+         despite these proactive limits, CloseConnectionGroupOnFailure tears down the pool immediately before the
+         retry so that the next attempt is guaranteed to create a fresh socket.
+        */
+
         var sp = ServicePointManager.FindServicePoint(baseUri);
 
         // Kill “zombie” keep-alives proactively
@@ -153,6 +167,14 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
     private static void CloseConnectionGroupOnFailure(Uri baseUri, Exception exception)
     {
+        /*
+         When the agent or an intermediate proxy closes the TCP connection while we still have it in the
+         ServicePoint pool, the next reuse attempt faults before we can refresh the socket. By explicitly closing
+         the connection group on these WebException statuses we drop every cached socket for the target endpoint,
+         guaranteeing that the retry path rebuilds the connection from scratch (DNS, TCP handshake, TLS) instead
+         of surfacing "connection was closed unexpectedly" repeatedly.
+        */
+
         if (exception is not WebException webException)
         {
             return;
