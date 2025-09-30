@@ -368,15 +368,15 @@ namespace Samples
             SetExceptionMethod.Invoke(span, new object[] { new Exception() });
         }
 
-        public static IEnumerable<KeyValuePair<string, string>> GetDatadogEnvironmentVariables()
+        public static List<KeyValuePair<string, string>> GetDatadogEnvironmentVariables()
         {
             var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
 
             var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
                           from prefix in prefixes
-                          let key = (envVar.Key as string)?.ToUpperInvariant()
+                          let key = envVar.Key as string
                           let value = envVar.Value as string
-                          where key.StartsWith(prefix)
+                          where key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !key.Contains("API_KEY", StringComparison.OrdinalIgnoreCase)
                           orderby key
                           select new KeyValuePair<string, string>(key, value);
 
