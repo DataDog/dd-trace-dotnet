@@ -36,6 +36,8 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> NetworkDestinationPortBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
         // MessagingBatchMessageCountBytes = MessagePack.Serialize("messaging.batch.message_count");
         private static ReadOnlySpan<byte> MessagingBatchMessageCountBytes => new byte[] { 189, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 98, 97, 116, 99, 104, 46, 109, 101, 115, 115, 97, 103, 101, 95, 99, 111, 117, 110, 116 };
+        // MessagingMessageIdBytes = MessagePack.Serialize("messaging.message_id");
+        private static ReadOnlySpan<byte> MessagingMessageIdBytes => new byte[] { 180, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 95, 105, 100 };
 
         public override string? GetTag(string key)
         {
@@ -51,6 +53,7 @@ namespace Datadog.Trace.Tagging
                 "network.destination.name" => NetworkDestinationName,
                 "network.destination.port" => NetworkDestinationPort,
                 "messaging.batch.message_count" => MessagingBatchMessageCount,
+                "messaging.message_id" => MessagingMessageId,
                 _ => base.GetTag(key),
             };
         }
@@ -79,6 +82,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "messaging.batch.message_count": 
                     MessagingBatchMessageCount = value;
+                    break;
+                case "messaging.message_id": 
+                    MessagingMessageId = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -141,6 +147,11 @@ namespace Datadog.Trace.Tagging
             if (MessagingBatchMessageCount is not null)
             {
                 processor.Process(new TagItem<string>("messaging.batch.message_count", MessagingBatchMessageCount, MessagingBatchMessageCountBytes));
+            }
+
+            if (MessagingMessageId is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.message_id", MessagingMessageId, MessagingMessageIdBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -215,6 +226,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("messaging.batch.message_count (tag):")
                   .Append(MessagingBatchMessageCount)
+                  .Append(',');
+            }
+
+            if (MessagingMessageId is not null)
+            {
+                sb.Append("messaging.message_id (tag):")
+                  .Append(MessagingMessageId)
                   .Append(',');
             }
 

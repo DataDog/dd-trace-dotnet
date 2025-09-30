@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             }
 
             var spanLinks = linksEnabled ? ExtractSpanLinksFromMessages(tracer, events) : null;
-            var scope = CreateAndConfigureSpan(tracer, spanLinks, messageCount, eventHubName);
+            var scope = CreateAndConfigureSpan(tracer, spanLinks, messageCount, eventHubName, events);
 
             if (scope != null && events.Count > 0)
             {
@@ -131,7 +131,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             return spanLinks;
         }
 
-        private static Scope? CreateAndConfigureSpan(Tracer tracer, List<SpanContext>? spanLinks, int messageCount, string eventHubName)
+        private static Scope? CreateAndConfigureSpan(Tracer tracer, List<SpanContext>? spanLinks, int messageCount, string eventHubName, List<object> events)
         {
             try
             {
@@ -149,6 +149,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 if (messageCount > 1)
                 {
                     tags.MessagingBatchMessageCount = messageCount.ToString();
+                }
+
+                if (messageCount == 1)
+                {
+                    var eventObj = events[0];
+                    if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true)
+                    {
+                        var messageId = eventData.MessageId;
+                        if (!string.IsNullOrEmpty(messageId))
+                        {
+                            tags.MessagingMessageId = messageId;
+                        }
+                    }
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);

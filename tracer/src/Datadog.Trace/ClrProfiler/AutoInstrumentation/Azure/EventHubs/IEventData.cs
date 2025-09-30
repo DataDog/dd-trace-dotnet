@@ -17,6 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     {
         IDictionary<string, object> Properties { get; }
 
-        string? MessageId { get; }
+        string MessageId { get; }
     }
 }

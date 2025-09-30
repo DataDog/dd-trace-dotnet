@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             {
                 if (!string.IsNullOrEmpty(eventData.MessageId))
                 {
-                    span.SetTag("messaging.message_id", eventData.MessageId);
+                    tags.MessagingMessageId = eventData.MessageId;
                 }
             }
 

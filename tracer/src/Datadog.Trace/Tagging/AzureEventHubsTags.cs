@@ -48,6 +48,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.MessagingBatchMessageCount)]
         public string MessagingBatchMessageCount { get; set; }
 
+        [Tag(Trace.Tags.MessagingMessageId)]
+        public string MessagingMessageId { get; set; }
+
         [Metric(Trace.Metrics.MessageQueueTimeMs)]
         public double? MessageQueueTimeMs { get; set; }
     }

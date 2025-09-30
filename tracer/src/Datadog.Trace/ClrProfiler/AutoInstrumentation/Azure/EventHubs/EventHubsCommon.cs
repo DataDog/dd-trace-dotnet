@@ -115,9 +115,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 }
 
                 var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
+                string? singleMessageId = null;
+
                 if (actualMessageCount > 1)
                 {
                     tags.MessagingBatchMessageCount = actualMessageCount.ToString();
+                }
+
+                if (actualMessageCount == 1 && messages != null)
+                {
+                    foreach (var message in messages)
+                    {
+                        var duckTypedMessage = message?.DuckCast<IEventData>();
+                        singleMessageId = duckTypedMessage?.MessageId;
+                        break;
+                    }
+
+                    if (!string.IsNullOrEmpty(singleMessageId))
+                    {
+                        tags.MessagingMessageId = singleMessageId;
+                    }
                 }
 
                 return new CallTargetState(scope);
