@@ -67,7 +67,6 @@ namespace Datadog.Trace.Configuration
         Ssrf,
         AwsKinesis,
         AzureServiceBus,
-        AzureEventHubs,
         SystemRandom,
         AwsDynamoDb,
         HardcodedSecret,
@@ -87,6 +86,7 @@ namespace Datadog.Trace.Configuration
         SessionTimeout,
         DatadogTraceManual,
         EmailHtmlInjection,
-        Protobuf
+        Protobuf,
+        AzureEventHubs
     }
 }

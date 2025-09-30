@@ -13,6 +13,11 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class AzureEventHubsTags : InstrumentationTags
     {
+        public AzureEventHubsTags()
+            : this(SpanKinds.Producer)
+        {
+        }
+
         public AzureEventHubsTags(string spanKind)
         {
             SpanKind = spanKind;
@@ -58,6 +63,11 @@ namespace Datadog.Trace.Tagging
     internal partial class AzureEventHubsV1Tags : AzureEventHubsTags
     {
         private string _peerServiceOverride = null;
+
+        public AzureEventHubsV1Tags()
+            : base()
+        {
+        }
 
         public AzureEventHubsV1Tags(string spanKind)
             : base(spanKind)

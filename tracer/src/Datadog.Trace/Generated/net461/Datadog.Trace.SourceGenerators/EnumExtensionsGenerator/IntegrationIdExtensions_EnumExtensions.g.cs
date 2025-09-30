@@ -85,7 +85,6 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Ssrf => nameof(Datadog.Trace.Configuration.IntegrationId.Ssrf),
             Datadog.Trace.Configuration.IntegrationId.AwsKinesis => nameof(Datadog.Trace.Configuration.IntegrationId.AwsKinesis),
             Datadog.Trace.Configuration.IntegrationId.AzureServiceBus => nameof(Datadog.Trace.Configuration.IntegrationId.AzureServiceBus),
-            Datadog.Trace.Configuration.IntegrationId.AzureEventHubs => nameof(Datadog.Trace.Configuration.IntegrationId.AzureEventHubs),
             Datadog.Trace.Configuration.IntegrationId.SystemRandom => nameof(Datadog.Trace.Configuration.IntegrationId.SystemRandom),
             Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb => nameof(Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb),
             Datadog.Trace.Configuration.IntegrationId.HardcodedSecret => nameof(Datadog.Trace.Configuration.IntegrationId.HardcodedSecret),
@@ -106,6 +105,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual => nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
             Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection => nameof(Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection),
             Datadog.Trace.Configuration.IntegrationId.Protobuf => nameof(Datadog.Trace.Configuration.IntegrationId.Protobuf),
+            Datadog.Trace.Configuration.IntegrationId.AzureEventHubs => nameof(Datadog.Trace.Configuration.IntegrationId.AzureEventHubs),
             _ => value.ToString(),
         };
 
@@ -174,7 +174,6 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Ssrf,
             Datadog.Trace.Configuration.IntegrationId.AwsKinesis,
             Datadog.Trace.Configuration.IntegrationId.AzureServiceBus,
-            Datadog.Trace.Configuration.IntegrationId.AzureEventHubs,
             Datadog.Trace.Configuration.IntegrationId.SystemRandom,
             Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb,
             Datadog.Trace.Configuration.IntegrationId.HardcodedSecret,
@@ -195,6 +194,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual,
             Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection,
             Datadog.Trace.Configuration.IntegrationId.Protobuf,
+            Datadog.Trace.Configuration.IntegrationId.AzureEventHubs,
         };
 
     /// <summary>
@@ -263,7 +263,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.Ssrf),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsKinesis),
             nameof(Datadog.Trace.Configuration.IntegrationId.AzureServiceBus),
-            nameof(Datadog.Trace.Configuration.IntegrationId.AzureEventHubs),
             nameof(Datadog.Trace.Configuration.IntegrationId.SystemRandom),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb),
             nameof(Datadog.Trace.Configuration.IntegrationId.HardcodedSecret),
@@ -284,5 +283,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
             nameof(Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection),
             nameof(Datadog.Trace.Configuration.IntegrationId.Protobuf),
+            nameof(Datadog.Trace.Configuration.IntegrationId.AzureEventHubs),
         };
 }
