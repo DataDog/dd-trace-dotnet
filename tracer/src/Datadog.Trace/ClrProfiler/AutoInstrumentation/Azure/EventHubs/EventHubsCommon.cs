@@ -6,16 +6,23 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 {
     internal static class EventHubsCommon
     {
+        private const string OperationName = "azure_eventhubs.send";
+        private const int DefaultEventHubsPort = 5671;
         private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubsCommon));
 
@@ -84,6 +91,71 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 Log.Warning(ex, LogPrefix + "Failed to retrieve span contexts for EventDataBatch");
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Creates a producer span for EventHub send operations
+        /// </summary>
+        internal static CallTargetState CreateSenderSpan<TTarget>(
+            TTarget instance,
+            IEnumerable? messages = null,
+            int? messageCount = null,
+            IEnumerable<SpanLink>? spanLinks = null)
+            where TTarget : IEventHubProducerClient, IDuckType
+        {
+            var tracer = Tracer.Instance;
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            Scope? scope = null;
+
+            try
+            {
+                var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Producer);
+                tags.MessagingDestinationName = instance.EventHubName;
+                tags.MessagingOperation = "send";
+
+                scope = tracer.StartActiveInternal(OperationName, tags: tags, links: spanLinks);
+                var span = scope.Span;
+
+                span.Type = SpanTypes.Queue;
+                span.ResourceName = instance.EventHubName;
+
+                // Set network destination tags
+                var endpoint = instance.Connection?.ServiceEndpoint;
+                if (endpoint != null)
+                {
+                    tags.NetworkDestinationName = endpoint.Host;
+                    var port = endpoint.Port == -1 ? DefaultEventHubsPort : endpoint.Port;
+                    tags.NetworkDestinationPort = port.ToString();
+                }
+
+                // Set event count metric
+                var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
+                if (actualMessageCount > 0)
+                {
+                    span.SetMetric("eventhubs.batch.event_count", actualMessageCount);
+                }
+
+                return new CallTargetState(scope);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, LogPrefix + "Error creating producer span");
+                scope?.Dispose();
+                return CallTargetState.GetDefault();
+            }
+        }
+
+        /// <summary>
+        /// Completes the producer span for async send operations
+        /// </summary>
+        internal static TReturn OnAsyncMethodEnd<TReturn>(TReturn returnValue, Exception? exception, in CallTargetState state)
+        {
+            state.Scope?.DisposeWithException(exception);
+            return returnValue;
         }
     }
 }
