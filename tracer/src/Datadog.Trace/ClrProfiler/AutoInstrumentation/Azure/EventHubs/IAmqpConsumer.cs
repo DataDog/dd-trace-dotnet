@@ -14,9 +14,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     /// </summary>
     internal interface IAmqpConsumer : IDuckType
     {
-        /// <summary>
-        /// Gets the name of the Event Hub
-        /// </summary>
         string EventHubName { get; }
     }
 }

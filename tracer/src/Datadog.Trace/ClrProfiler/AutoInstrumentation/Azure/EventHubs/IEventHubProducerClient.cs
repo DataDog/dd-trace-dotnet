@@ -15,27 +15,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     /// </summary>
     internal interface IEventHubProducerClient : IDuckType
     {
-        /// <summary>
-        /// Gets the name of the Event Hub
-        /// </summary>
         string EventHubName { get; }
 
-        /// <summary>
-        /// Gets the fully qualified namespace
-        /// </summary>
         string FullyQualifiedNamespace { get; }
 
-        /// <summary>
-        /// Gets the connection for the Event Hub (private property access)
-        /// </summary>
         IEventHubConnection Connection { get; }
     }
 
     internal interface IEventHubConnection
     {
-        /// <summary>
-        /// Gets the service endpoint for the Event Hub (internal property access)
-        /// </summary>
         Uri? ServiceEndpoint { get; }
     }
 }

@@ -26,16 +26,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubsCommon));
 
-        /// <summary>
-        /// Maps EventDataBatch instances to lists of SpanContext objects from TryAdd operations
-        /// </summary>
+        // Maps EventDataBatch instances to their collection of message span contexts
         private static readonly ConditionalWeakTable<object, ConcurrentBag<SpanContext>> BatchToSpanContexts = new();
 
-        /// <summary>
-        /// Stores a span context associated with an EventDataBatch instance
-        /// </summary>
-        /// <param name="batchInstance">The EventDataBatch instance</param>
-        /// <param name="spanContext">The span context to store</param>
         public static void StoreSpanContext(object batchInstance, SpanContext spanContext)
         {
             if (batchInstance == null || spanContext == null)
@@ -56,11 +49,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             }
         }
 
-        /// <summary>
-        /// Retrieves and removes all stored span contexts for an EventDataBatch instance
-        /// </summary>
-        /// <param name="batchInstance">The EventDataBatch instance</param>
-        /// <returns>Collection of stored SpanContext objects, or null if none found</returns>
         public static IEnumerable<SpanContext>? RetrieveAndClearSpanContexts(object? batchInstance)
         {
             if (batchInstance == null)
@@ -76,12 +64,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                     return null;
                 }
 
-                // Return the stored span contexts
                 var contexts = spanContexts.ToList();
 
                 Log.Debug(LogPrefix + "Retrieved {Count} span contexts for batch send operation", (object)contexts.Count);
 
-                // Clear the stored contexts since the batch is being sent
                 BatchToSpanContexts.Remove(batchInstance);
 
                 return contexts.Count > 0 ? contexts : null;
@@ -93,9 +79,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             }
         }
 
-        /// <summary>
-        /// Creates a producer span for EventHub send operations
-        /// </summary>
         internal static CallTargetState CreateSenderSpan<TTarget>(
             TTarget instance,
             IEnumerable? messages = null,
@@ -123,7 +106,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = instance.EventHubName;
 
-                // Set network destination tags
                 var endpoint = instance.Connection?.ServiceEndpoint;
                 if (endpoint != null)
                 {
@@ -132,7 +114,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                     tags.NetworkDestinationPort = port.ToString();
                 }
 
-                // Set event count metric
                 var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
                 if (actualMessageCount > 0)
                 {
@@ -149,9 +130,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             }
         }
 
-        /// <summary>
-        /// Completes the producer span for async send operations
-        /// </summary>
         internal static TReturn OnAsyncMethodEnd<TReturn>(TReturn returnValue, Exception? exception, in CallTargetState state)
         {
             state.Scope?.DisposeWithException(exception);

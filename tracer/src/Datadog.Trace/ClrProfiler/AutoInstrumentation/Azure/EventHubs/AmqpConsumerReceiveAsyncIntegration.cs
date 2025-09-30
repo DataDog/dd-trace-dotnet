@@ -54,8 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 
             try
             {
-                // Check if we have a list of EventData
-                if (returnValue is System.Collections.Generic.IReadOnlyList<object> readOnlyList && readOnlyList.Count > 0)
+                if (returnValue is IReadOnlyList<object> readOnlyList && readOnlyList.Count > 0)
                 {
                     ProcessReceivedEvents(readOnlyList, instance.EventHubName);
                 }
@@ -72,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             return returnValue;
         }
 
-        private static void ProcessReceivedEvents(System.Collections.Generic.IReadOnlyList<object> eventsList, string eventHubName)
+        private static void ProcessReceivedEvents(IReadOnlyList<object> eventsList, string eventHubName)
         {
             var tracer = Tracer.Instance;
             var messageCount = eventsList.Count;
@@ -80,7 +79,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 
             Log.Debug(LogPrefix + "Processing {0} EventHub messages{1}", (object)messageCount, linksEnabled ? " with span links" : " without span links");
 
-            // Convert to list for duck typing and multiple enumeration
             var events = new List<object>();
             foreach (var evt in eventsList)
             {
@@ -93,13 +91,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             var spanLinks = linksEnabled ? ExtractSpanLinksFromMessages(tracer, events) : null;
             var scope = CreateAndConfigureSpan(tracer, spanLinks, messageCount, eventHubName);
 
-            // Re-inject the new span context into all messages so downstream processing will use it as parent
             if (scope != null && events.Count > 0)
             {
                 ReinjectContextIntoMessages(tracer, scope, events);
             }
 
-            // Clean up the span immediately since this is a receive operation
             scope?.Dispose();
         }
 
@@ -142,7 +138,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Consumer);
                 tags.MessagingOperation = "receive";
 
-                // Convert SpanContext list to SpanLink list for the tracer
                 var links = spanLinks?.Select(ctx => new SpanLink(ctx));
 
                 var scope = tracer.StartActiveInternal(OperationName, tags: tags, links: links);
@@ -168,7 +163,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         {
             try
             {
-                // Re-inject the new span context into all messages for downstream processing
                 foreach (var eventObj in eventsList)
                 {
                     if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true)

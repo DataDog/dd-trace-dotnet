@@ -15,14 +15,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     /// </summary>
     internal interface IEventData : IDuckType
     {
-        /// <summary>
-        /// Gets the application properties associated with the event
-        /// </summary>
         IDictionary<string, object> Properties { get; }
 
-        /// <summary>
-        /// Gets the message ID
-        /// </summary>
         string? MessageId { get; }
     }
 }

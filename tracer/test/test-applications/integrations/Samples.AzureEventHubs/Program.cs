@@ -36,7 +36,6 @@ namespace Samples.AzureEventHubs
                 var consumerClient = new EventHubConsumerClient(ConsumerGroup, ConnectionString, EventHubName);
                 Console.WriteLine("EventHubs producer and consumer clients created successfully");
 
-                // Test basic connection
                 var properties = await producerClient.GetEventHubPropertiesAsync();
                 Console.WriteLine($"EventHub properties retrieved: Name={properties.Name}, PartitionCount={properties.PartitionIds.Length}");
 
@@ -63,7 +62,6 @@ namespace Samples.AzureEventHubs
                         break;
                 }
 
-                // Clean up
                 await producerClient.DisposeAsync();
                 await consumerClient.DisposeAsync();
                 Console.WriteLine("Resources disposed successfully");
@@ -82,7 +80,6 @@ namespace Samples.AzureEventHubs
         {
             Console.WriteLine("\n=== Single Event Operations ===");
 
-            // Single event
             var singleEvent = new EventData(Encoding.UTF8.GetBytes("Hello from EventHubs test!"))
             {
                 MessageId = Guid.NewGuid().ToString()
@@ -95,11 +92,9 @@ namespace Samples.AzureEventHubs
 
             Console.WriteLine("\n=== EventDataBatch Operations ===");
 
-            // Create an EventDataBatch
             var batch = await producerClient.CreateBatchAsync();
             Console.WriteLine("EventDataBatch created successfully");
 
-            // Add events to batch (this should trigger EventDataBatchTryAddIntegration)
             for (int i = 0; i < 3; i++)
             {
                 var eventData = new EventData(Encoding.UTF8.GetBytes($"Batch event {i}"));
@@ -113,15 +108,13 @@ namespace Samples.AzureEventHubs
 
             Console.WriteLine($"Batch ready with {batch.Count} events, size: {batch.SizeInBytes} bytes");
 
-            // Send the batch (this should trigger EventHubProducerClientSendBatchAsyncIntegration)
             Console.WriteLine("Sending EventDataBatch...");
             await producerClient.SendAsync(batch);
+
             Console.WriteLine("EventDataBatch sent successfully");
-
             Console.WriteLine("\n=== Consumer Operations ===");
-
-            // Read events from all partitions (starting from earliest to catch our sent events)
             Console.WriteLine("Attempting to read events from all partitions...");
+
             var partitionIds = await consumerClient.GetPartitionIdsAsync();
             Console.WriteLine($"Found {partitionIds.Length} partitions");
 
@@ -134,7 +127,6 @@ namespace Samples.AzureEventHubs
 
                 try
                 {
-                    // Read events from this partition (should trigger consumer integration)
                     var startTime = DateTime.UtcNow;
                     await foreach (PartitionEvent partitionEvent in consumerClient.ReadEventsFromPartitionAsync(
                         partitionId,
@@ -153,7 +145,6 @@ namespace Samples.AzureEventHubs
                             totalEventsReceived++;
                         }
 
-                        // Break after reasonable timeout or limit
                         if (DateTime.UtcNow - startTime > TimeSpan.FromSeconds(10) || totalEventsReceived >= 10)
                         {
                             break;

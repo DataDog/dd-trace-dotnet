@@ -27,17 +27,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
-        {
-            // Temporarily use a simple version array until PackageVersions.AzureEventHubs is generated
-            var packageVersions = new[]
-            {
-                new object[] { string.Empty }, // Default version
-            };
-
-            return from packageVersionArray in packageVersions
-                   from metadataSchemaVersion in new[] { "v0", "v1" }
-                   select new[] { packageVersionArray[0], metadataSchemaVersion };
-        }
+            => from packageVersionArray in PackageVersions.AzureEventHubs
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {

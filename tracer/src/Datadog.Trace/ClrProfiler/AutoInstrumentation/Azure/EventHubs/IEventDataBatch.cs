@@ -14,25 +14,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     /// </summary>
     internal interface IEventDataBatch : IDuckType
     {
-        /// <summary>
-        /// Gets the number of events in the batch
-        /// </summary>
         int Count { get; }
 
-        /// <summary>
-        /// Gets the size of the batch in bytes
-        /// </summary>
         long SizeInBytes { get; }
 
-        /// <summary>
-        /// Gets the name of the Event Hub that the batch is associated with
-        /// </summary>
         string EventHubName { get; }
 
-        /// <summary>
-        /// Gets the fully qualified Event Hubs namespace that the batch is associated with
-        /// </summary>
-        [Duck(Name = "FullyQualifiedNamespace")]
         string FullyQualifiedNamespace { get; }
     }
 }
