@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
@@ -17,10 +18,17 @@ internal class AgentlessRequest : IApiRequest
     private readonly string _path;
     private readonly NameValueCollection _headers;
 
-    public AgentlessRequest(Uri endpoint)
+    public AgentlessRequest(Uri endpoint, KeyValuePair<string, string>[] defaultHeaders)
     {
-        _path = endpoint.OriginalString;
+        _path = endpoint.AbsolutePath;
         _headers = new NameValueCollection();
+        if (defaultHeaders != null)
+        {
+            foreach (var header in defaultHeaders)
+            {
+                _headers.Add(header.Key, header.Value);
+            }
+        }
     }
 
     public void AddHeader(string name, string value) => _headers.Add(name, value);

@@ -5,13 +5,18 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.Transports;
 
 internal class AgentlessRequestFactory : IApiRequestFactory
 {
+    private readonly Uri _baseEndpoint;
+    private readonly KeyValuePair<string, string>[] _defaultHeaders;
+
     static AgentlessRequestFactory()
     {
         NativeAgentless.Initialize();
@@ -22,11 +27,17 @@ internal class AgentlessRequestFactory : IApiRequestFactory
         });
     }
 
-    public string Info(Uri endpoint) => endpoint.OriginalString;
+    public AgentlessRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders)
+    {
+        _baseEndpoint = baseEndpoint;
+        _defaultHeaders = defaultHeaders;
+    }
 
-    public Uri GetEndpoint(string relativePath) => new(relativePath, UriKind.Relative);
+    public string Info(Uri endpoint) => endpoint.ToString();
 
-    public IApiRequest Create(Uri endpoint) => new AgentlessRequest(endpoint);
+    public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpoint, relativePath);
+
+    public IApiRequest Create(Uri endpoint) => new AgentlessRequest(endpoint, _defaultHeaders);
 
     public void SetProxy(WebProxy proxy, NetworkCredential credential)
     {

@@ -41,7 +41,7 @@ internal static class AgentTransportStrategy
         Func<HttpHeaderHelperBase> getHttpHeaderHelper,
         Func<Uri, Uri> getBaseEndpoint)
     {
-        return new AgentlessRequestFactory();
+        return new AgentlessRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders);
 /*
         var strategy = settings.TracesTransport;
 
