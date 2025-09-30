@@ -115,9 +115,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 }
 
                 var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
-                if (actualMessageCount > 0)
+                if (actualMessageCount > 1)
                 {
-                    span.SetMetric("eventhubs.batch.event_count", actualMessageCount);
+                    tags.MessagingBatchMessageCount = actualMessageCount.ToString();
                 }
 
                 return new CallTargetState(scope);

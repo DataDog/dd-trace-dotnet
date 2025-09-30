@@ -145,7 +145,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
 
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = eventHubName;
-                span.SetMetric("eventhubs.message_count", messageCount);
+
+                if (messageCount > 1)
+                {
+                    tags.MessagingBatchMessageCount = messageCount.ToString();
+                }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);
                 Log.Debug(LogPrefix + "Created receive span with {0} message(s) and {1} link(s)", (object)messageCount, (object)(spanLinks?.Count ?? 0));

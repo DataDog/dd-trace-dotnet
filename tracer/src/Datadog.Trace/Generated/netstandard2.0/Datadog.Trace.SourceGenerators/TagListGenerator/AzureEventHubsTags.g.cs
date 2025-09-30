@@ -34,6 +34,8 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> NetworkDestinationNameBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
         // NetworkDestinationPortBytes = MessagePack.Serialize("network.destination.port");
         private static ReadOnlySpan<byte> NetworkDestinationPortBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
+        // MessagingBatchMessageCountBytes = MessagePack.Serialize("messaging.batch.message_count");
+        private static ReadOnlySpan<byte> MessagingBatchMessageCountBytes => new byte[] { 189, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 98, 97, 116, 99, 104, 46, 109, 101, 115, 115, 97, 103, 101, 95, 99, 111, 117, 110, 116 };
 
         public override string? GetTag(string key)
         {
@@ -48,6 +50,7 @@ namespace Datadog.Trace.Tagging
                 "message_bus.destination" => LegacyMessageBusDestination,
                 "network.destination.name" => NetworkDestinationName,
                 "network.destination.port" => NetworkDestinationPort,
+                "messaging.batch.message_count" => MessagingBatchMessageCount,
                 _ => base.GetTag(key),
             };
         }
@@ -73,6 +76,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "network.destination.port": 
                     NetworkDestinationPort = value;
+                    break;
+                case "messaging.batch.message_count": 
+                    MessagingBatchMessageCount = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -130,6 +136,11 @@ namespace Datadog.Trace.Tagging
             if (NetworkDestinationPort is not null)
             {
                 processor.Process(new TagItem<string>("network.destination.port", NetworkDestinationPort, NetworkDestinationPortBytes));
+            }
+
+            if (MessagingBatchMessageCount is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.batch.message_count", MessagingBatchMessageCount, MessagingBatchMessageCountBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -197,6 +208,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("network.destination.port (tag):")
                   .Append(NetworkDestinationPort)
+                  .Append(',');
+            }
+
+            if (MessagingBatchMessageCount is not null)
+            {
+                sb.Append("messaging.batch.message_count (tag):")
+                  .Append(MessagingBatchMessageCount)
                   .Append(',');
             }
 

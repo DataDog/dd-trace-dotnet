@@ -45,6 +45,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.NetworkDestinationPort)]
         public string NetworkDestinationPort { get; set; }
 
+        [Tag(Trace.Tags.MessagingBatchMessageCount)]
+        public string MessagingBatchMessageCount { get; set; }
+
         [Metric(Trace.Metrics.MessageQueueTimeMs)]
         public double? MessageQueueTimeMs { get; set; }
     }
