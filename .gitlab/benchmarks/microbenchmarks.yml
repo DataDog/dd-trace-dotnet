@@ -79,6 +79,7 @@ run-benchmarks:
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
+  # TODO: Revert to the commented lines before merging
   when: manual
   # rules:
   #   - when: on_success
@@ -95,7 +96,11 @@ run-benchmarks:
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
 
     # Whether to cleanup ephemeral instances after benchmarks are run
-    CLEANUP: "true"
+    # TODO: Revert to true before merging
+    CLEANUP: "false"
+
+    # TODO: Remove before merging
+    BP_INFRA_TEST: "false"
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
