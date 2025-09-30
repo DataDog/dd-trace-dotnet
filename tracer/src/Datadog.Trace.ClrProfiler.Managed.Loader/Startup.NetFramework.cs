@@ -5,6 +5,8 @@
 
 #if NETFRAMEWORK
 
+#nullable enable
+
 using System;
 using System.IO;
 using System.Reflection;
@@ -16,10 +18,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private static string ResolveManagedProfilerDirectory()
+        internal static string? ResolveManagedProfilerDirectory(IEnvironmentVariableProvider envVars)
         {
-            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
-            var fullPath = Path.GetFullPath(Path.Combine(tracerHomeDirectory, "net461"));
+            var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
+
+            if (tracerHomeDirectory is null)
+            {
+                return null;
+            }
+
+            var fullPath = Path.Combine(Path.GetFullPath(tracerHomeDirectory), "net461");
+
             if (!Directory.Exists(fullPath))
             {
                 StartupLogger.Log($"Tracer home directory not found at '{fullPath}'");
@@ -29,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return fullPath;
         }
 
-        private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
+        private static Assembly? AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
             try
             {
@@ -43,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
-        private static Assembly ResolveAssembly(string name)
+        private static Assembly? ResolveAssembly(string name)
         {
             var assemblyName = new AssemblyName(name);
 
@@ -64,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             if (File.Exists(path))
             {
-                if (name.StartsWith("Datadog.Trace, Version=") && name != AssemblyName)
+                if (name.StartsWith("Datadog.Trace, Version=", StringComparison.Ordinal) && name != AssemblyName)
                 {
                     StartupLogger.Debug("  Trying to load '{0}' which does not match the expected version ('{1}'). [Path={2}]", name, AssemblyName, path);
                     return null;
