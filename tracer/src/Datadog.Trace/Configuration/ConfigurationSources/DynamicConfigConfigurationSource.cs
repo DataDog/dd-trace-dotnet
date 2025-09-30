@@ -36,6 +36,12 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             TreatNullDictionaryAsEmpty = false;
         }
 
+        internal DynamicConfigConfigurationSource(JToken? configToken, ConfigurationOrigins origin)
+            : base(configToken, origin, GetLibConfigToken)
+        {
+            TreatNullDictionaryAsEmpty = false;
+        }
+
         private static JToken? Deserialize(string config)
         {
             var jobject = JsonConvert.DeserializeObject(config) as JObject;
@@ -46,6 +52,11 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             }
 
             return jobject;
+        }
+
+        private static JToken? GetLibConfigToken(JToken? configToken)
+        {
+            return configToken != null ? configToken["lib_config"] : configToken;
         }
 
         private static Dictionary<string, string> ReadHeaderTags(JToken token)
