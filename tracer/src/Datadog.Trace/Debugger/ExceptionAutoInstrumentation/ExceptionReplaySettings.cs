@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            var erEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled, fallbackKey: ConfigurationKeys.Debugger.ExceptionDebuggingEnabled).AsBoolResult();
+            var erEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBoolResult();
             Enabled = erEnabledResult.WithDefault(false);
             CanBeEnabled = erEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
 
