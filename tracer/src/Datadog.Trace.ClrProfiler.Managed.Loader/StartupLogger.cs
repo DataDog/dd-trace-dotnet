@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -13,12 +15,21 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     {
         private const string NixDefaultDirectory = "/var/log/datadog/dotnet";
 
-        private static readonly bool DebugEnabled = IsDebugEnabled();
-        private static readonly string LogDirectory = GetLogDirectory();
-        private static readonly string StartupLogFilePath = SetStartupLogFilePath();
+        private static readonly bool DebugEnabled;
+        private static readonly string? StartupLogFilePath;
         private static readonly object PadLock = new();
 
-        public static void Log(string message, params object[] args)
+        static StartupLogger()
+        {
+            var envVars = new EnvironmentVariableProvider(false);
+
+            DebugEnabled = envVars.GetBooleanEnvironmentVariable("DD_TRACE_DEBUG", false);
+
+            var logDirectory = GetLogDirectory(envVars);
+            StartupLogFilePath = SetStartupLogFilePath(logDirectory);
+        }
+
+        public static void Log(string message, params object?[] args)
         {
             if (StartupLogFilePath == null)
             {
@@ -48,13 +59,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        public static void Log(Exception ex, string message, params object[] args)
+        public static void Log(Exception ex, string message, params object?[] args)
         {
-            message = $"{message}{Environment.NewLine}{ex}";
-            Log(message, args);
+            Log($"{message}{Environment.NewLine}{ex}", args);
         }
 
-        public static void Debug(string message, params object[] args)
+        public static void Debug(string message, params object?[] args)
         {
             if (DebugEnabled)
             {
@@ -62,17 +72,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        private static string GetLogDirectory()
+        internal static string? GetLogDirectory(IEnvironmentVariableProvider envVars)
         {
-            string logDirectory = null;
+            string? logDirectory;
 
             try
             {
-                logDirectory = Environment.GetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY");
+                logDirectory = envVars.GetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY");
 
                 if (logDirectory == null)
                 {
-                    var nativeLogFile = Environment.GetEnvironmentVariable("DD_TRACE_LOG_PATH");
+                    var nativeLogFile = envVars.GetEnvironmentVariable("DD_TRACE_LOG_PATH");
 
                     if (!string.IsNullOrEmpty(nativeLogFile))
                     {
@@ -126,7 +136,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return logDirectory;
         }
 
-        private static string CreateDirectoryIfMissing(string pathToCreate)
+        private static string? CreateDirectoryIfMissing(string pathToCreate)
         {
             try
             {
@@ -141,53 +151,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        private static string SetStartupLogFilePath()
+        private static string? SetStartupLogFilePath(string? logDirectory)
         {
-            if (LogDirectory == null)
+            if (logDirectory == null)
             {
                 return null;
             }
 
             try
             {
-                var process = Process.GetCurrentProcess();
+                using var process = Process.GetCurrentProcess();
                 // Do our best to not block other processes on write
-                return Path.Combine(LogDirectory, $"dotnet-tracer-loader-{process.ProcessName}-{process.Id}.log");
+                return Path.Combine(logDirectory, $"dotnet-tracer-loader-{process.ProcessName}-{process.Id}.log");
             }
             catch
             {
                 // We can't get the process info
-                return Path.Combine(LogDirectory, "dotnet-tracer-loader.log");
-            }
-        }
-
-        private static bool IsDebugEnabled()
-        {
-            try
-            {
-                var ddTraceDebugValue = Environment.GetEnvironmentVariable("DD_TRACE_DEBUG");
-
-                if (ddTraceDebugValue == null)
-                {
-                    return false;
-                }
-
-                switch (ddTraceDebugValue.ToUpperInvariant())
-                {
-                    case "TRUE":
-                    case "YES":
-                    case "Y":
-                    case "T":
-                    case "1":
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-            catch
-            {
-                // Default to not enabled
-                return false;
+                return Path.Combine(logDirectory, "dotnet-tracer-loader.log");
             }
         }
     }

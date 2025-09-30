@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -17,7 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     public partial class Startup
     {
         private const string AssemblyName = "Datadog.Trace, Version=3.30.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
-        private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
+        private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
+        private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
 
         private static int _startupCtorInitialized;
 
@@ -55,7 +57,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 }
 #endif
 
-                ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+                var envVars = new EnvironmentVariableProvider(logErrors: true);
+                ManagedProfilerDirectory = ResolveManagedProfilerDirectory(envVars);
+
                 if (ManagedProfilerDirectory is null)
                 {
                     StartupLogger.Log("Could not determine Datadog.Trace.dll directory or it doesn't exist. Datadog SDK will be disabled.");
@@ -85,21 +89,21 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 #endif
 
                 const string methodName = "Initialize";
+                var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable(AzureAppServicesSiteExtensionKey, defaultValue: false);
 
-                var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
-                if (runInAas)
+                if (usingAasSiteExtension)
                 {
                     // With V3, pretty much all scenarios require the trace-agent and dogstatsd, so we enable them by default
-                    TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
                     const string processManagerTypeName = "Datadog.Trace.AgentProcessManager";
                     StartupLogger.Log($"Invoking {processManagerTypeName}.{methodName}() to start external processes.");
+                    TryInvokeManagedMethod(processManagerTypeName, methodName, "Datadog.Trace.AgentProcessManagerLoader");
                 }
 
                 // We need to initialize the managed tracer regardless of whether tracing is enabled
                 // because other products rely on it
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
                 const string instrumentationTypeName = "Datadog.Trace.ClrProfiler.Instrumentation";
                 StartupLogger.Log($"Invoking {instrumentationTypeName}.{methodName}() to initialize instrumentation.");
+                TryInvokeManagedMethod(instrumentationTypeName, methodName, "Datadog.Trace.ClrProfiler.InstrumentationLoader");
             }
             catch (Exception ex)
             {
@@ -177,32 +181,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 return assembly;
             }
-        }
-
-        private static string? ReadEnvironmentVariable(string key)
-        {
-            try
-            {
-                return Environment.GetEnvironmentVariable(key);
-            }
-            catch (Exception ex)
-            {
-                StartupLogger.Log(ex, "Error while loading environment variable " + key);
-            }
-
-            return null;
-        }
-
-        private static bool ReadBooleanEnvironmentVariable(string key, bool defaultValue)
-        {
-            var value = ReadEnvironmentVariable(key);
-
-            return value switch
-            {
-                "1" or "true" or "True" or "TRUE" or "t" or "T" => true,
-                "0" or "false" or "False" or "FALSE" or "f" or "F" => false,
-                _ => defaultValue
-            };
         }
     }
 }
