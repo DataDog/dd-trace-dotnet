@@ -38,4 +38,6 @@ internal class TracerSettingKeyConstants
     public const string StatsComputationEnabledKey = "DD_TRACE_STATS_COMPUTATION_ENABLED";
     public const string TraceEnabledKey = "DD_TRACE_ENABLED";
     public const string TracerMetricsEnabledKey = "DD_TRACE_METRICS_ENABLED";
+    public const string ProfilingEnabledKey = "DD_PROFILING_ENABLED";
+    public const string DataStreamsEnabledKey = "DD_DATA_STREAMS_ENABLED";
 }

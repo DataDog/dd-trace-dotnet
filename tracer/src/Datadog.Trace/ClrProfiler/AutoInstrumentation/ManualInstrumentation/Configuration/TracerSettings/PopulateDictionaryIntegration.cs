@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.ContinuousProfiler;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 
@@ -70,6 +71,9 @@ public class PopulateDictionaryIntegration
 
         values[TracerSettingKeyConstants.GlobalTagsKey] = settings.GlobalTags;
         values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.Integrations);
+
+        values[TracerSettingKeyConstants.ProfilingEnabledKey] = Profiler.Instance.Settings.IsProfilerEnabled;
+        values[TracerSettingKeyConstants.DataStreamsEnabledKey] = settings.IsDataStreamsMonitoringEnabled;
     }
 
     private static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings)

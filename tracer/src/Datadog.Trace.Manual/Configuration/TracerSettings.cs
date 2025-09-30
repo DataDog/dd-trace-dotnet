@@ -34,6 +34,8 @@ public sealed class TracerSettings
     private OverrideValue<string?> _customSamplingRules;
     private OverrideValue<bool> _startupDiagnosticLogEnabled;
     private OverrideValue<bool> _traceEnabled;
+    private OverrideValue<bool> _profilingEnabled;
+    private OverrideValue<bool> _dataStreamsEnabled;
     private OverrideValue<HashSet<string>> _disabledIntegrationNames;
     private OverrideValue<bool> _tracerMetricsEnabled;
     private OverrideValue<bool> _statsComputationEnabled;
@@ -102,7 +104,9 @@ public sealed class TracerSettings
         _startupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
         _statsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, true);
         _traceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
+        _profilingEnabled = GetValue(initialValues, TracerSettingKeyConstants.ProfilingEnabledKey, false);
         _tracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
+        _dataStreamsEnabled = GetValue(initialValues, TracerSettingKeyConstants.DataStreamsEnabledKey, false);
         _isFromDefaultSources = isFromDefaultSources;
 
         // This is just a bunch of indirection to not change the public API for now
@@ -338,6 +342,30 @@ public sealed class TracerSettings
         [MethodImpl(MethodImplOptions.NoInlining)]
         get => _traceEnabled.Value;
         set => _traceEnabled = _traceEnabled.Override(value);
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether continuous profiler is enabled.
+    /// Default is <c>true</c>.
+    /// </summary>
+    public bool ProfilingEnabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get => _profilingEnabled.Value;
+        set => _profilingEnabled = _profilingEnabled.Override(value);
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether data streams is enabled.
+    /// Default is <c>true</c>.
+    /// </summary>
+    public bool DataStreamsEnabled
+    {
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get => _dataStreamsEnabled.Value;
+        set => _dataStreamsEnabled = _dataStreamsEnabled.Override(value);
     }
 
     /// <summary>
