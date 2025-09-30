@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests.DuckTypeAnalyzers;
 
 public class DuckTypeNullCheckAnalyzerTests
 {
-    private const DiagnosticSeverity Severity = DiagnosticSeverity.Error;
+    private const DiagnosticSeverity Severity = DiagnosticSeverity.Warning;
     private const string DiagnosticId = DuckDiagnostics.DuckTypeNullCheckDiagnosticId;
 
     private static string DuckTypeDefinitions { get; } = """

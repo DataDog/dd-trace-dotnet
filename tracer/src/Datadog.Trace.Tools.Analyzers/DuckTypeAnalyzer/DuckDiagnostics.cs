@@ -22,6 +22,6 @@ public class DuckDiagnostics
         title: "Checking IDuckType for null",
         messageFormat: "The IDuckType is almost always non-null, check the Instance for null to ensure we have access to the duck typed object",
         category: "CodeQuality",
-        defaultSeverity: DiagnosticSeverity.Error,
+        defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 }
