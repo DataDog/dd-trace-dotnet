@@ -53,7 +53,7 @@ public class SpanExtensionsSetUserIntegration
                 // but we could throw, or log?
             }
 
-            realSpan?.SetUserInternal(
+            realSpan?.SetUser(
                 new UserDetails(id)
                 {
                     Email = email,

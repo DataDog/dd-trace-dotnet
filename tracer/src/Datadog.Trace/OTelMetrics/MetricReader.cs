@@ -84,10 +84,8 @@ namespace Datadog.Trace.OTelMetrics
             _exportTimer?.DisposeAsync();
             _exportTimer = null;
 
-            // Ensure any pending exports complete before shutdown
             try
             {
-                // Do a final export before shutdown
                 await ExportMetricsAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -96,7 +94,7 @@ namespace Datadog.Trace.OTelMetrics
             }
             finally
             {
-                _metricExporter?.Shutdown(5000); // 5 second timeout
+                _metricExporter?.Shutdown(5000);
                 _metricExporter = null;
             }
         }
@@ -138,10 +136,8 @@ namespace Datadog.Trace.OTelMetrics
 
             try
             {
-                // Collect observable instruments first (like OpenTelemetry SDK)
                 CollectObservableInstruments();
 
-                // Get captured metrics for export
                 var capturedMetrics = MetricReaderHandler.GetMetricsForExport();
 
                 if (capturedMetrics.Count == 0)
@@ -150,8 +146,6 @@ namespace Datadog.Trace.OTelMetrics
                     return;
                 }
 
-                // Export via MetricExporter interface (this is the key RFC pattern!)
-                // Use async method for better performance
                 var result = await _metricExporter.ExportAsync(capturedMetrics).ConfigureAwait(false);
                 if (result == ExportResult.Failure)
                 {

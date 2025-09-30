@@ -69,11 +69,9 @@ internal class MetricPoint(string instrumentName, string meterName, InstrumentTy
 
     internal void UpdateObservableCounter(double currentValue)
     {
-        // For Observable instruments, the callback returns the ABSOLUTE current value
-        // We need to compute the delta ourselves
         lock (_histogramLock)
         {
-            _runningDoubleValue = currentValue; // Just store the current value directly
+            _runningDoubleValue = currentValue;
         }
     }
 

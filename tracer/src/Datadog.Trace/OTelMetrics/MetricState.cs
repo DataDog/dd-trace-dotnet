@@ -79,12 +79,10 @@ internal class MetricState
         {
             case InstrumentType.Counter:
             case InstrumentType.UpDownCounter:
-                // Sync instruments: Add the delta
                 point.UpdateCounter(value);
                 break;
             case InstrumentType.ObservableCounter:
             case InstrumentType.ObservableUpDownCounter:
-                // Observable instruments: Set to current absolute value
                 point.UpdateObservableCounter(value);
                 break;
             case InstrumentType.Gauge:

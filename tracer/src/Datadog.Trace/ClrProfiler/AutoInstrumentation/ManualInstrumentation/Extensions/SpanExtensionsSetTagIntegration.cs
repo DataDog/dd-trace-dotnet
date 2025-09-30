@@ -39,11 +39,11 @@ public class SpanExtensionsSetTagIntegration
         if (span is IDuckType { Instance: Span s })
         {
             // this is the "typical" scenario
-            s.SetTagInternal(key, value);
+            s.SetTag(key, value);
         }
         else if (span is Span autoSpan)
         {
-            autoSpan.SetTagInternal(key, value);
+            autoSpan.SetTag(key, value);
         }
         else if (span is null)
         {

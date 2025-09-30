@@ -8,6 +8,8 @@
 #include <mutex>
 #include <winerror.h>
 
+#include "shared/src/native-src/stable_config.h"
+
 /*
    TL;DR When returning a boolean value to the managed part, we must use a C BOOL type instead of C++ bool type.
 
@@ -41,3 +43,5 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext();
 extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version);
 
 extern "C" void __stdcall FlushProfile();
+
+extern "C" bool __stdcall SetConfiguration(shared::StableConfig::SharedConfig config);

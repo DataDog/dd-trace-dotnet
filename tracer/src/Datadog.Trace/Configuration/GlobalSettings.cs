@@ -88,14 +88,7 @@ namespace Datadog.Trace.Configuration
         /// Affects the level of logs written to file.
         /// </summary>
         /// <param name="enabled">Whether debug is enabled.</param>
-        [PublicApi]
-        public static void SetDebugEnabled(bool enabled)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_SetDebugEnabled);
-            SetDebugEnabledInternal(enabled);
-        }
-
-        internal static void SetDebugEnabledInternal(bool enabled)
+        internal static void SetDebugEnabled(bool enabled)
         {
             Instance.DebugEnabledInternal = enabled;
 
@@ -130,18 +123,6 @@ namespace Datadog.Trace.Configuration
 
             GlobalConfigurationSource.Reload(isLibdatadogAvailable.IsAvailable);
             Instance = CreateFromDefaultSources();
-        }
-
-        /// <summary>
-        /// Create a <see cref="GlobalSettings"/> populated from the default sources
-        /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
-        /// </summary>
-        /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
-        [PublicApi]
-        public static GlobalSettings FromDefaultSources()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_FromDefaultSources);
-            return CreateFromDefaultSources();
         }
 
         private static GlobalSettings CreateFromDefaultSources()
